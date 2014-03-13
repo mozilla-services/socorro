@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.field import Field
@@ -80,4 +80,4 @@ class IntegrationTestField(PostgreSQLTestCase):
         eq_(res, res_expected)
 
         # expect a failure
-        self.assertRaises(MissingArgumentError, api.get)
+        assert_raises(MissingArgumentError, api.get)

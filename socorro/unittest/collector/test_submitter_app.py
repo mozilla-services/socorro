@@ -7,7 +7,7 @@ import mock
 import time
 import json
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.collector.submitter_app import (
     SubmitterApp,
@@ -291,7 +291,7 @@ class TestSubmitterApp(unittest.TestCase):
         eq_(itera.next(), ((1,), {}))
         eq_(itera.next(), ((2,), {}))
         eq_(itera.next(), ((3,), {}))
-        self.assertRaises(StopIteration, itera.next)
+        assert_raises(StopIteration, itera.next)
 
         # Test with number of submissions equal to forever
         # It never raises StopIterations
@@ -328,7 +328,7 @@ class TestSubmitterApp(unittest.TestCase):
         eq_(itera.next(), ((3,), {}))
         eq_(itera.next(), ((1,), {}))
         eq_(itera.next(), ((2,), {}))
-        self.assertRaises(StopIteration, itera.next)
+        assert_raises(StopIteration, itera.next)
 
         # Test with number of submissions equal to an integer < number of items
         # It raises StopIterations after some number of elements were called
@@ -343,4 +343,4 @@ class TestSubmitterApp(unittest.TestCase):
         sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
 
         eq_(itera.next(), ((1,), {}))
-        self.assertRaises(StopIteration, itera.next)
+        assert_raises(StopIteration, itera.next)

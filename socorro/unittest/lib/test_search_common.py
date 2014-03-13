@@ -5,7 +5,7 @@
 import datetime
 import unittest
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 
 from socorro.external import BadArgumentError
@@ -170,7 +170,7 @@ class TestSearchBase(unittest.TestCase):
         with _get_config_manager().context() as config:
             search = SearchBase(config=config)
 
-        self.assertRaises(
+        assert_raises(
             BadArgumentError,
             search.get_parameters,
             date='>1999-01-01'
@@ -264,8 +264,8 @@ class TestSearchCommon(unittest.TestCase):
         eq_(res.month, 1)
 
         # Test error
-        self.assertRaises(ValueError, convert_to_type, 'abds', 'int')
-        self.assertRaises(ValueError, convert_to_type, '2013-02-32', 'date')
+        assert_raises(ValueError, convert_to_type, 'abds', 'int')
+        assert_raises(ValueError, convert_to_type, '2013-02-32', 'date')
 
     #--------------------------------------------------------------------------
     def test_get_parameters(self):
@@ -352,5 +352,5 @@ class TestSearchCommon(unittest.TestCase):
         restricted_fields = restrict_fields(fields, authorized_fields)
         eq_(restricted_fields, theoric_fields)
 
-        self.assertRaises(ValueError, restrict_fields, fields, [])
-        self.assertRaises(TypeError, restrict_fields, fields, None)
+        assert_raises(ValueError, restrict_fields, fields, [])
+        assert_raises(TypeError, restrict_fields, fields, None)

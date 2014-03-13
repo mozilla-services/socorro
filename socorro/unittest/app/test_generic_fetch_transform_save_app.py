@@ -4,7 +4,7 @@
 
 import unittest
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
@@ -220,7 +220,7 @@ class TestFetchTransformSaveApp(unittest.TestCase):
 
         fts_app = FetchTransformSaveApp(config)
 
-        self.assertRaises(TypeError, fts_app.main)
+        assert_raises(TypeError, fts_app.main)
 
     def test_no_destination(self):
         class FakeStorageSource(object):
@@ -271,4 +271,4 @@ class TestFetchTransformSaveApp(unittest.TestCase):
 
         fts_app = FetchTransformSaveApp(config)
 
-        self.assertRaises(TypeError, fts_app.main)
+        assert_raises(TypeError, fts_app.main)

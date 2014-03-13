@@ -8,7 +8,7 @@ import mock
 from datetime import datetime, timedelta
 
 from configman import ConfigurationManager
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.processor.registration_client import (
   ProcessorAppRegistrationClient,
@@ -196,7 +196,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             eq_('host', i)
             i = registrar._requested_processor_id('auto')
             eq_('auto', i)
-            self.assertRaises(ValueError,
+            assert_raises(ValueError,
                               registrar._requested_processor_id,
                               'dwight')
 
@@ -539,7 +539,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
             with mock.patch(mock_os_uname_str) as mock_uname:
                 mock_uname.return_value = (0, 'wilma')
 
-                self.assertRaises(RegistrationError,
+                assert_raises(RegistrationError,
                                   ProcessorAppRegistrationClient,
                                   config)
 

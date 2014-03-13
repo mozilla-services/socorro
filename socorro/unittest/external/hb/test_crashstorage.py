@@ -6,7 +6,7 @@ import unittest
 import json
 
 import mock
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.lib.util import SilentFakeLogger, DotDict
 from socorro.external.crashstorage_base import Redactor
@@ -170,7 +170,7 @@ class TestCrashStorage(unittest.TestCase):
     def test_get_processed_failure(self):
         with self.storage.hbase() as conn:
             conn.client.getRowWithColumns.return_value = []
-            self.assertRaises(
+            assert_raises(
                 CrashIDNotFound,
                 self.storage.get_processed,
                 "936ce666-ff3b-4c7a-9674-367fe2120408"

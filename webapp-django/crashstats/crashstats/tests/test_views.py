@@ -11,7 +11,7 @@ import urllib
 import pyquery
 
 from cStringIO import StringIO
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from nose.plugins.skip import SkipTest
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -3709,7 +3709,7 @@ class TestViews(BaseTestViews):
 
         url = reverse('crashstats:report_index',
                       args=[crash_id])
-        self.assertRaises(
+        assert_raises(
             models.BadStatusCodeError,
             self.client.get,
             url

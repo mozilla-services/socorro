@@ -4,7 +4,7 @@
 
 import unittest
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.collector.crashmover_app import CrashMoverApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
@@ -215,7 +215,7 @@ class TestCrashMoverApp(unittest.TestCase):
 
         fts_app = CrashMoverApp(config)
 
-        self.assertRaises(TypeError, fts_app.main)
+        assert_raises(TypeError, fts_app.main)
 
     def test_no_destination(self):
         class FakeStorageSource(object):
@@ -267,4 +267,4 @@ class TestCrashMoverApp(unittest.TestCase):
 
         fts_app = CrashMoverApp(config)
 
-        self.assertRaises(TypeError, fts_app.main)
+        assert_raises(TypeError, fts_app.main)

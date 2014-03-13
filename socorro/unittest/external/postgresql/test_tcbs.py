@@ -6,7 +6,7 @@ import datetime
 import mock
 import socorro.external.postgresql.tcbs as tcbs
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 from socorro.lib import datetimeutil, util
 from .unittestbase import PostgreSQLTestCase
 
@@ -177,11 +177,11 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
         eq_(sig_2[8].date(), lastweek)
         eq_(sig_1[10], 0.58333333333333304)
         eq_(sig_2[10], 0.41666666666666702)
-        self.assertRaises(StopIteration, res.next)
+        assert_raises(StopIteration, res.next)
 
         # Test if raises ValueError when are passed wrong parameters
         params.product = None
-        self.assertRaises(
+        assert_raises(
             ValueError,
             tcbs.getListOfTopCrashersBySignature,
             self.connection,
@@ -209,7 +209,7 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
         eq_(sig_2[8].date(), lastweek)
         eq_(sig_1[10], 0.625)
         eq_(sig_2[10], 0.375)
-        self.assertRaises(StopIteration, generate.next)
+        assert_raises(StopIteration, generate.next)
 
     #--------------------------------------------------------------------------
     def test_listOfListsWithChangeInRank(self):

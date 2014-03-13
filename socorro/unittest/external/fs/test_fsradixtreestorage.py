@@ -3,7 +3,7 @@ import os
 import shutil
 from mock import Mock
 from configman import ConfigurationManager
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.fs.crashstorage import FSRadixTreeStorage
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -68,7 +68,7 @@ class TestFSRadixTreeStorage(unittest.TestCase):
         self._make_test_crash()
         eq_(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
                          "TEST")
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_crash,
+        assert_raises(CrashIDNotFound, self.fsrts.get_raw_crash,
                           self.CRASH_ID_2)
 
     def test_get_unredacted_processed_crash(self):
@@ -77,7 +77,7 @@ class TestFSRadixTreeStorage(unittest.TestCase):
                          "TEST")
         ok_('email' in
                         self.fsrts.get_unredacted_processed(self.CRASH_ID_2))
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
+        assert_raises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
                           self.CRASH_ID_1)
 
     def test_get_processed_crash(self):
@@ -86,7 +86,7 @@ class TestFSRadixTreeStorage(unittest.TestCase):
                          "TEST")
         ok_('email' not in
                         self.fsrts.get_processed(self.CRASH_ID_2))
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
+        assert_raises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
                           self.CRASH_ID_1)
 
     def test_get_raw_dump(self):
@@ -96,9 +96,9 @@ class TestFSRadixTreeStorage(unittest.TestCase):
         eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1,
                                                  self.fsrts.config.dump_field),
                          "baz")
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_dump,
+        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dump,
                           self.CRASH_ID_2, "foo")
-        self.assertRaises(IOError, self.fsrts.get_raw_dump,
+        assert_raises(IOError, self.fsrts.get_raw_dump,
                           self.CRASH_ID_1, "foor")
 
     def test_get_raw_dumps(self):
@@ -107,7 +107,7 @@ class TestFSRadixTreeStorage(unittest.TestCase):
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         })
-        self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_dumps,
+        assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
                           self.CRASH_ID_2)
 
     def test_remove(self):
@@ -117,5 +117,5 @@ class TestFSRadixTreeStorage(unittest.TestCase):
         self.fsrts.remove(self.CRASH_ID_3)
         ok_(not os.path.exists(
             self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1)))
-        self.assertRaises(CrashIDNotFound, self.fsrts.remove,
+        assert_raises(CrashIDNotFound, self.fsrts.remove,
                           self.CRASH_ID_2)

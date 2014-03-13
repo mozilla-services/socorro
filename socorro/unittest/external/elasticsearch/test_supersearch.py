@@ -5,7 +5,7 @@
 import datetime
 import mock
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import BadArgumentError
 from socorro.external.elasticsearch import crashstorage
@@ -746,7 +746,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res['facets']['release_channel'], expected_signatures)
 
         # Test errors
-        self.assertRaises(
+        assert_raises(
             BadArgumentError,
             self.api.get,
             _facets=['unkownfield']

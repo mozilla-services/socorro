@@ -5,7 +5,7 @@
 import unittest
 
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.hb import connection_context
 from socorro.lib.util import SilentFakeLogger, DotDict
@@ -115,7 +115,7 @@ class TestConnectionContext(unittest.TestCase):
             def bad_deal(connection, dummy):
                 raise KeyError('fred')
 
-            self.assertRaises(KeyError, transaction, bad_deal, 'hello')
+            assert_raises(KeyError, transaction, bad_deal, 'hello')
             eq_(
                 a_fake_hbase_connection.close_counter,
                 2
@@ -216,7 +216,7 @@ class TestHBasePooledConnectionContext(unittest.TestCase):
             def bad_deal(connection, dummy):
                 raise KeyError('fred')
 
-            self.assertRaises(KeyError, transaction, bad_deal, 'hello')
+            assert_raises(KeyError, transaction, bad_deal, 'hello')
             # at this point, the underlying connection has been deleted from
             # the pool, because it was considered to be a bad connection.
             eq_(

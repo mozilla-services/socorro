@@ -9,7 +9,7 @@ import unittest
 from contextlib import nested
 
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager
 
 from socorro.external.hbase import hbase_client
@@ -142,7 +142,7 @@ else:
                                  fake_dumps['adrian'])
 
                 # hasn't been processed yet
-                self.assertRaises(CrashIDNotFound,
+                assert_raises(CrashIDNotFound,
                                   crashstorage.get_processed,
                                   crash_id)
 
@@ -199,7 +199,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
                        '"submitted_timestamp":"%d"}' % time.time())
 
                 # Note, we're not expect it to raise an error
-                self.assertRaises(ValueError,
+                assert_raises(ValueError,
                   crashstorage.save_raw_crash,
                   json.loads(raw),
                   raw,
@@ -245,7 +245,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
             crashstorage = HBaseCrashStorage(config)
             raw = ('{"name":"Peter", '
                    '"submitted_timestamp":"%d"}' % time.time())
-            self.assertRaises(SomeThriftError,
+            assert_raises(SomeThriftError,
               crashstorage.save_raw_crash,
               json.loads(raw),
               raw,

@@ -8,7 +8,7 @@ import shutil
 import datetime
 import json
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
 import socorro.external.filesystem.json_dump_storage as JDS
 import socorro.lib.util
@@ -292,7 +292,7 @@ class TestJsonDumpStorage(unittest.TestCase):
 
     assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
     assert [] == alllinks, 'Expect that all links are gone, but found %s' % alllinks
-    self.assertRaises(JDS.NoSuchUuidFound, storage.remove, "bogusdatax3yymmdd")
+    assert_raises(JDS.NoSuchUuidFound, storage.remove, "bogusdatax3yymmdd")
 
   def testRemoveAlsoNames(self):
     """testJsonDumpStorage:TestJsonDumpStorage.testRemoveAlsoNames(self)
@@ -433,7 +433,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     actual_dump_path = storage.getDump(crash_id, 'aux_dump_1')
     eq_(expected_dump_path, actual_dump_path)
 
-    self.assertRaises(OSError, storage.getDump,
+    assert_raises(OSError, storage.getDump,
                                crash_id, 'does_not_exist')
 
   def test_remove(self):
@@ -445,8 +445,8 @@ class TestJsonDumpStorage(unittest.TestCase):
     crash_id = '0bba61c5-dfc3-3333-dead-8afd20081225'
     storage.remove(crash_id)
 
-    self.assertRaises(OSError, storage.getDump, crash_id)
-    self.assertRaises(OSError, storage.get_dumps, crash_id)
+    assert_raises(OSError, storage.getDump, crash_id)
+    assert_raises(OSError, storage.get_dumps, crash_id)
 
   def test_quickDelete(self):
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
@@ -457,8 +457,8 @@ class TestJsonDumpStorage(unittest.TestCase):
     crash_id = '0bba61c5-dfc3-3333-dead-8afd20081225'
     storage.quickDelete(crash_id)
 
-    self.assertRaises(OSError, storage.getDump, crash_id)
-    self.assertRaises(OSError, storage.get_dumps, crash_id)
+    assert_raises(OSError, storage.getDump, crash_id)
+    assert_raises(OSError, storage.get_dumps, crash_id)
 
 
 

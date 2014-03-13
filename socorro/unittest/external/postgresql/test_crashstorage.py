@@ -6,7 +6,7 @@ import time
 import unittest
 
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 import psycopg2
 from psycopg2 import OperationalError
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
@@ -326,7 +326,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
                 "submitted_timestamp": time.time(),
                 "unknown_field": 'whatever'
             }
-            self.assertRaises(KeyError,
+            assert_raises(KeyError,
                               crashstorage.save_processed,
                               broken_processed_crash)
 
@@ -499,7 +499,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
             m.__enter__.return_value = m
             database = crashstorage.database.return_value = m
             m.cursor.side_effect = OperationalError('bad')
-            self.assertRaises(OperationalError,
+            assert_raises(OperationalError,
                               crashstorage.save_processed,
                               a_processed_crash)
             eq_(m.cursor.call_count, 3)

@@ -6,7 +6,7 @@ import datetime
 import json
 import mock
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from pyelasticsearch.exceptions import (
     ElasticHttpError,
     ElasticHttpNotFoundError,
@@ -125,14 +125,14 @@ class IntegrationTestQuery(ElasticSearchTestCase):
     @mock.patch('socorro.external.elasticsearch.query.pyelasticsearch')
     def test_get_with_errors(self, mocked_es):
         # Test missing argument.
-        self.assertRaises(
+        assert_raises(
             BadArgumentError,
             self.api.get,
             query='hello!',
         )
 
         # Test invalid JSON argument.
-        self.assertRaises(
+        assert_raises(
             MissingArgumentError,
             self.api.get,
         )
@@ -142,7 +142,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         mocked_es.ElasticSearch.return_value = mocked_connection
 
         mocked_connection.search.side_effect = ElasticHttpNotFoundError('aaa')
-        self.assertRaises(
+        assert_raises(
             ResourceNotFound,
             self.api.get,
             query='{}',
@@ -150,7 +150,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
 
         # Test invalid JSON response from elasticsearch.
         mocked_connection.search.side_effect = InvalidJsonResponseError('aaa')
-        self.assertRaises(
+        assert_raises(
             DatabaseError,
             self.api.get,
             query='{}',
@@ -158,7 +158,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
 
         # Test HTTP error from elasticsearch.
         mocked_connection.search.side_effect = ElasticHttpError('aaa')
-        self.assertRaises(
+        assert_raises(
             DatabaseError,
             self.api.get,
             query='{}',

@@ -9,7 +9,7 @@ import tempfile
 import inspect
 import unittest
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager
 from mock import Mock
 
@@ -124,21 +124,21 @@ class TestFileSystemCrashStorage(unittest.TestCase):
         )
         eq_(['upload_file_minidump', 'aux01'], dumps.keys())
         eq_(['this is a fake dump', 'aux01 fake dump'],
-                         dumps.values())
+            dumps.values())
 
         crashstorage.remove('114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
-                          crashstorage.std_crash_store.getJson,
-                          '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
-                          crashstorage.std_crash_store.getDump,
-                          '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(CrashIDNotFound,
-                          crashstorage.get_raw_crash,
-                          '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(CrashIDNotFound,
-                          crashstorage.get_raw_dump,
-                          '114559a5-d8e6-428c-8b88-1c1f22120314')
+        assert_raises(OSError,
+                      crashstorage.std_crash_store.getJson,
+                      '114559a5-d8e6-428c-8b88-1c1f22120314')
+        assert_raises(OSError,
+                      crashstorage.std_crash_store.getDump,
+                      '114559a5-d8e6-428c-8b88-1c1f22120314')
+        assert_raises(CrashIDNotFound,
+                      crashstorage.get_raw_crash,
+                      '114559a5-d8e6-428c-8b88-1c1f22120314')
+        assert_raises(CrashIDNotFound,
+                      crashstorage.get_raw_dump,
+                      '114559a5-d8e6-428c-8b88-1c1f22120314')
 
     def _common_throttle_test(self, config, crashstorage):
         fake_dump = 'this is a fake dump'
@@ -173,10 +173,10 @@ class TestFileSystemCrashStorage(unittest.TestCase):
           os.path.exists(
             crashstorage.def_crash_store.getDump(
                 '114559a5-d8e6-428c-8b88-1c1f22120314')))
-        self.assertRaises(OSError,
+        assert_raises(OSError,
                           crashstorage.std_crash_store.getJson,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
+        assert_raises(OSError,
                           crashstorage.std_crash_store.getDump,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
 
@@ -191,16 +191,16 @@ class TestFileSystemCrashStorage(unittest.TestCase):
         ok_("fake dump" in dump)
 
         crashstorage.remove('114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
+        assert_raises(OSError,
                           crashstorage.def_crash_store.getJson,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
+        assert_raises(OSError,
                           crashstorage.def_crash_store.getDump,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
+        assert_raises(OSError,
                           crashstorage.std_crash_store.getJson,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertRaises(OSError,
+        assert_raises(OSError,
                           crashstorage.std_crash_store.getDump,
                           '114559a5-d8e6-428c-8b88-1c1f22120314')
 
@@ -227,7 +227,7 @@ class TestFileSystemCrashStorage(unittest.TestCase):
             eq_(list(crashstorage.new_crashes()), [])
 
             processed_crash = {"name": "Peter", "legacy_processing": 1}
-            self.assertRaises(
+            assert_raises(
               CrashIDNotFound,
               crashstorage.save_processed,
               processed_crash
@@ -258,7 +258,7 @@ class TestFileSystemCrashStorage(unittest.TestCase):
             )
 
             crashstorage.remove(crash_id)
-            self.assertRaises(CrashIDNotFound,
+            assert_raises(CrashIDNotFound,
                               crashstorage.get_processed,
                               crash_id)
             crashstorage.remove(crash_id)

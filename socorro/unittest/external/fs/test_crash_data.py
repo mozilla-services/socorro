@@ -8,7 +8,7 @@ import unittest
 from configman import ConfigurationManager, Namespace
 from mock import Mock
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
@@ -144,18 +144,18 @@ class IntegrationTestCrashData(unittest.TestCase):
             eq_(res, res_expected)
 
             # Test 4: missing parameters
-            self.assertRaises(
+            assert_raises(
                 MissingArgumentError,
                 service.get
             )
-            self.assertRaises(
+            assert_raises(
                 MissingArgumentError,
                 service.get,
                 **{'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'}
             )
 
             # Test 5: crash cannot be found
-            self.assertRaises(
+            assert_raises(
                 ResourceNotFound,
                 service.get,
                 **{
@@ -164,7 +164,7 @@ class IntegrationTestCrashData(unittest.TestCase):
                 }
             )
             # Test 5a: crash cannot be found
-            self.assertRaises(
+            assert_raises(
                 ResourceNotFound,
                 service.get,
                 **{
@@ -174,7 +174,7 @@ class IntegrationTestCrashData(unittest.TestCase):
             )
 
             # Test 6: not yet available crash
-            self.assertRaises(
+            assert_raises(
                 ResourceUnavailable,
                 service.get,
                 **{
@@ -188,7 +188,7 @@ class IntegrationTestCrashData(unittest.TestCase):
             priorityjobs_mock.cls.return_value.create.reset_mock()
 
             # Test 6a: not yet available crash
-            self.assertRaises(
+            assert_raises(
                 ResourceUnavailable,
                 service.get,
                 **{
@@ -201,7 +201,7 @@ class IntegrationTestCrashData(unittest.TestCase):
             )
 
             # Test 7: raw crash cannot be found
-            self.assertRaises(
+            assert_raises(
                 ResourceNotFound,
                 service.get,
                 **{
