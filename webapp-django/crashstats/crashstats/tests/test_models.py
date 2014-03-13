@@ -5,6 +5,8 @@ import tempfile
 import datetime
 import time
 import random
+import unittest
+
 import mock
 import requests
 from nose.tools import eq_, ok_, assert_raises
@@ -20,6 +22,16 @@ class Response(object):
     def __init__(self, content=None, status_code=200):
         self.content = content
         self.status_code = status_code
+
+
+class TestExceptions(unittest.TestCase):
+
+    def test_BadStatusCodeError(self):
+        try:
+            raise models.BadStatusCodeError(500, 'some message')
+        except models.BadStatusCodeError as exp:
+            ok_('500: some message' in str(exp))
+            eq_(exp.status, 500)
 
 
 class TestModels(TestCase):

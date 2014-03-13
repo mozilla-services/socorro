@@ -28,8 +28,10 @@ logger = logging.getLogger('crashstats_models')
 
 class BadStatusCodeError(Exception):
     def __init__(self, status, message="Bad status code"):
-        self.status = status
         self.message = message
+        self.status = status
+        combined = '%d: %s' % (status, message)
+        super(BadStatusCodeError, self).__init__(combined)
 
 
 class RequiredParameterError(Exception):
