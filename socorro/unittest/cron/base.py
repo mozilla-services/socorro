@@ -14,6 +14,7 @@ import mock
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from configman import ConfigurationManager
 from socorro.cron import crontabber
@@ -167,7 +168,7 @@ class IntegrationTestCaseBase(TestCaseBase):
             # if there difference is just in the microseconds, they're
             # sufficiently equal
             return not abs(val1 - val2).seconds
-        self.assertEqual(val1, val2)
+        eq_(val1, val2)
 
     def _load_structure(self):
         cursor = self.conn.cursor()

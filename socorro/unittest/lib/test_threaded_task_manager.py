@@ -5,6 +5,8 @@
 import time
 import unittest
 
+from nose.tools import ok_
+
 from  socorro.lib.threaded_task_manager import ThreadedTaskManager, \
       ThreadedTaskManagerWithConfigSetup, \
       default_task_func
@@ -26,10 +28,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         config.maximum_queue_size = 1
         ttm = ThreadedTaskManager(config)
         try:
-            self.assertTrue(ttm.config == config)
-            self.assertTrue(ttm.logger == self.logger)
-            self.assertTrue(ttm.task_func == default_task_func)
-            self.assertTrue(ttm.quit == False)
+            ok_(ttm.config == config)
+            ok_(ttm.logger == self.logger)
+            ok_(ttm.task_func == default_task_func)
+            ok_(ttm.quit == False)
         finally:
             # we got threads to join
             ttm._kill_worker_threads()
@@ -43,14 +45,14 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            self.assertTrue(ttm.queuing_thread.isAlive(),
+            ok_(ttm.queuing_thread.isAlive(),
                             "the queing thread is not running")
-            self.assertTrue(len(ttm.thread_list) == 1,
+            ok_(len(ttm.thread_list) == 1,
                             "where's the worker thread?")
-            self.assertTrue(ttm.thread_list[0].isAlive(),
+            ok_(ttm.thread_list[0].isAlive(),
                             "the worker thread is stillborn")
             ttm.stop()
-            self.assertTrue(ttm.queuing_thread.isAlive() == False,
+            ok_(ttm.queuing_thread.isAlive() == False,
                             "the queuing thread did not stop")
         except Exception:
             # we got threads to join
@@ -72,10 +74,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            self.assertTrue(len(my_list) == 10,
+            ok_(len(my_list) == 10,
                             'expected to do 10 inserts, '
                                'but %d were done instead' % len(my_list))
-            self.assertTrue(my_list == range(10),
+            ok_(my_list == range(10),
                             'expected %s, but got %s' % (range(10), my_list))
             ttm.stop()
         except Exception:
@@ -101,13 +103,13 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            self.assertTrue(len(ttm.thread_list) == 2,
+            ok_(len(ttm.thread_list) == 2,
                             "expected 2 threads, but found %d"
                               % len(ttm.thread_list))
-            self.assertTrue(len(my_list) == 10,
+            ok_(len(my_list) == 10,
                             'expected to do 10 inserts, '
                               'but %d were done instead' % len(my_list))
-            self.assertTrue(sorted(my_list) == range(10),
+            ok_(sorted(my_list) == range(10),
                             'expected %s, but got %s' % (range(10),
                                                          sorted(my_list)))
         except Exception:
@@ -135,13 +137,13 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            self.assertTrue(len(ttm.thread_list) == 2,
+            ok_(len(ttm.thread_list) == 2,
                             "expected 2 threads, but found %d"
                               % len(ttm.thread_list))
-            self.assertTrue(len(my_list) == 5,
+            ok_(len(my_list) == 5,
                             'expected to do 5 inserts, '
                               'but %d were done instead' % len(my_list))
-            self.assertTrue(sorted(my_list) == range(5),
+            ok_(sorted(my_list) == range(5),
                             'expected %s, but got %s' % (range(5),
                                                          sorted(my_list)))
         except Exception:
@@ -180,13 +182,13 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         try:
             ttm.start()
             time.sleep(0.2)
-            self.assertTrue(len(ttm.thread_list) == 1,
+            ok_(len(ttm.thread_list) == 1,
                             "expected 1 threads, but found %d"
                               % len(ttm.thread_list))
-            self.assertTrue(sorted(my_list) == [0, 1, 2, 4, 5, 6, 7, 8, 9],
+            ok_(sorted(my_list) == [0, 1, 2, 4, 5, 6, 7, 8, 9],
                             'expected %s, but got %s'
                               % ([0, 1, 2, 5, 6, 7, 8, 9], sorted(my_list)))
-            self.assertTrue(len(my_list) == 9,
+            ok_(len(my_list) == 9,
                             'expected to do 9 inserts, '
                               'but %d were done instead' % len(my_list))
         except Exception:

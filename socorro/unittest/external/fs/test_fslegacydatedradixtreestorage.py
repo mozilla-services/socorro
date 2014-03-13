@@ -3,6 +3,7 @@ import os
 import shutil
 from mock import Mock
 from configman import ConfigurationManager
+from nose.tools import eq_, ok_
 
 from socorro.external.fs.crashstorage import FSLegacyDatedRadixTreeStorage
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -56,11 +57,11 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
 
     def test_save_raw_crash(self):
         self._make_test_crash()
-        self.assertTrue(os.path.islink(
+        ok_(os.path.islink(
             os.path.join(
               self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
               self.fsrts._get_date_root_name(self.CRASH_ID_1))))
-        self.assertTrue(os.path.exists(
+        ok_(os.path.exists(
             os.path.join(
               self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
               self.fsrts._get_date_root_name(self.CRASH_ID_1),
@@ -68,16 +69,16 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
 
     def test_get_raw_crash(self):
         self._make_test_crash()
-        self.assertEqual(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
+        eq_(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
                          "TEST")
         self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_crash,
                           self.CRASH_ID_2)
 
     def test_get_raw_dump(self):
         self._make_test_crash()
-        self.assertEqual(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),
+        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),
                          "bar")
-        self.assertEqual(self.fsrts.get_raw_dump(self.CRASH_ID_1,
+        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1,
                                                  self.fsrts.config.dump_field),
                          "baz")
         self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_dump,
@@ -87,7 +88,7 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        self.assertEqual(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
+        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         })
@@ -104,7 +105,7 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
               self.fsrts._get_date_root_name(self.CRASH_ID_1)))
 
         p = os.path.join(parent, self.CRASH_ID_1)
-        self.assertTrue(not os.path.exists(p))
+        ok_(not os.path.exists(p))
 
         self.assertRaises(CrashIDNotFound, self.fsrts.remove,
                           self.CRASH_ID_2)
@@ -113,8 +114,8 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
         self.fsrts._current_slot = lambda: ['00', '00_00']
         self._make_test_crash()
         self.fsrts._current_slot = lambda: ['00', '00_01']
-        self.assertEqual(list(self.fsrts.new_crashes()), [self.CRASH_ID_1])
-        self.assertEqual(list(self.fsrts.new_crashes()), [])
+        eq_(list(self.fsrts.new_crashes()), [self.CRASH_ID_1])
+        eq_(list(self.fsrts.new_crashes()), [])
         self.fsrts.remove(self.CRASH_ID_1)
         del self.fsrts._current_slot
 
@@ -138,7 +139,7 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
                    os.sep.join([webhead_path, self.CRASH_ID_1]))
 
         self.fsrts._current_slot = lambda: ['00', '00_02']
-        self.assertEqual(list(self.fsrts.new_crashes()),
+        eq_(list(self.fsrts.new_crashes()),
                          [self.CRASH_ID_1])
 
     def test_orphaned_symlink_clean_up(self):
@@ -160,7 +161,7 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
             self.CRASH_ID_1,
             self.fsrts._current_slot()
         )
-        self.assertTrue(os.path.islink(
+        ok_(os.path.islink(
             './crashes/20071025/date/00/00_01/0bba929f-8721-460c-dead-'
             'a43c20071025'
         ))
@@ -170,7 +171,7 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
         # we don't bother saving the crashes, as we don't need them.
         for x in self.fsrts.new_crashes():
             pass
-        self.assertFalse(os.path.exists(
+        ok_(not os.path.exists(
             './crashes/20071025/date/00/00_01/0bba929f-8721-460c-dead-'
             'a43c20071025'
         ))

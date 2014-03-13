@@ -6,6 +6,7 @@ import unittest
 import mock
 import pyelasticsearch
 from pyelasticsearch.exceptions import IndexAlreadyExistsError
+from nose.tools import eq_, ok_
 
 from configman import ConfigurationManager
 
@@ -108,11 +109,11 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
 
             # The index does not exist and is created
             es_storage.save_processed(crash_report)
-            self.assertEqual(mock_es.create_index.call_count, 1)
+            eq_(mock_es.create_index.call_count, 1)
             call_args = [
                 args for args, kwargs in mock_logging.info.call_args_list
             ]
-            self.assertTrue(
+            ok_(
                 ('created new elasticsearch index: %s', 'socorro201300')
                 in call_args
             )
@@ -121,11 +122,11 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             crash_report['date_processed'] = '2013-01-10 10:56:41.558922'
             es_storage.save_processed(crash_report)
 
-            self.assertEqual(mock_es.create_index.call_count, 2)
+            eq_(mock_es.create_index.call_count, 2)
             call_args = [
                 args for args, kwargs in mock_logging.info.call_args_list
             ]
-            self.assertTrue(
+            ok_(
                 ('created new elasticsearch index: %s', 'socorro201301')
                 not in call_args
             )

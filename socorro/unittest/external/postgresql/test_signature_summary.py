@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.signature_summary import SignatureSummary
 from socorro.lib import datetimeutil
@@ -678,7 +679,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
             self.assertNotEqual(res, [])
-            self.assertEqual(res, data['res_expected'])
+            eq_(res, data['res_expected'])
 
     def test_get_with_product(self):
         """same test as above but this time, add row to product_version_builds
@@ -688,7 +689,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         self.setup_data()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
-            self.assertEqual(res, data['res_expected'])
+            eq_(res, data['res_expected'])
 
     def test_get_with_(self):
         signature_summary = SignatureSummary(config=self.config)

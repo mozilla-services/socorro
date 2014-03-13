@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
+from nose.tools import eq_, ok_
 import psycopg2
 from configman import Namespace, ConfigurationManager, class_converter
 import socorro.database.transaction_executor
@@ -109,9 +111,9 @@ class TestTransactionExecutor(unittest.TestCase):
                 _function_calls.append(connection)
 
             executor(mock_function)
-            self.assertTrue(_function_calls)
-            self.assertEqual(commit_count, 1)
-            self.assertEqual(rollback_count, 0)
+            ok_(_function_calls)
+            eq_(commit_count, 1)
+            eq_(rollback_count, 0)
 
     def test_rollback_transaction_exceptions_with_postgres(self):
         required_config = Namespace()
@@ -150,9 +152,9 @@ class TestTransactionExecutor(unittest.TestCase):
 
             self.assertRaises(SomeError, executor, mock_function)
 
-            self.assertEqual(commit_count, 0)
-            self.assertEqual(rollback_count, 1)
-            self.assertTrue(mock_logging.errors)
+            eq_(commit_count, 0)
+            eq_(rollback_count, 1)
+            ok_(mock_logging.errors)
 
     def test_basic_usage_with_postgres_with_backoff(self):
         required_config = Namespace()
@@ -187,9 +189,9 @@ class TestTransactionExecutor(unittest.TestCase):
                 _function_calls.append(connection)
 
             executor(mock_function)
-            self.assertTrue(_function_calls)
-            self.assertEqual(commit_count, 1)
-            self.assertEqual(rollback_count, 0)
+            ok_(_function_calls)
+            eq_(commit_count, 1)
+            eq_(rollback_count, 0)
 
     def test_operation_error_with_postgres_with_backoff(self):
         required_config = Namespace()
@@ -243,12 +245,12 @@ class TestTransactionExecutor(unittest.TestCase):
 
             try:
                 executor(mock_function)
-                self.assertTrue(_function_calls)
-                self.assertEqual(commit_count, 1)
-                self.assertEqual(rollback_count, 5)
-                self.assertTrue(mock_logging.criticals)
-                self.assertEqual(len(mock_logging.criticals), 5)
-                self.assertTrue(len(_sleep_count) > 10)
+                ok_(_function_calls)
+                eq_(commit_count, 1)
+                eq_(rollback_count, 5)
+                ok_(mock_logging.criticals)
+                eq_(len(mock_logging.criticals), 5)
+                ok_(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 
@@ -306,12 +308,12 @@ class TestTransactionExecutor(unittest.TestCase):
 
             try:
                 executor(mock_function)
-                self.assertTrue(_function_calls)
-                self.assertEqual(commit_count, 1)
-                self.assertEqual(rollback_count, 5)
-                self.assertTrue(mock_logging.criticals)
-                self.assertEqual(len(mock_logging.criticals), 5)
-                self.assertTrue(len(_sleep_count) > 10)
+                ok_(_function_calls)
+                eq_(commit_count, 1)
+                eq_(rollback_count, 5)
+                ok_(mock_logging.criticals)
+                eq_(len(mock_logging.criticals), 5)
+                ok_(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 
@@ -370,12 +372,12 @@ class TestTransactionExecutor(unittest.TestCase):
 
             try:
                 executor(mock_function_struggling)
-                self.assertTrue(_function_calls)
-                self.assertEqual(commit_count, 1)
-                self.assertEqual(rollback_count, 5)
-                self.assertTrue(mock_logging.criticals)
-                self.assertEqual(len(mock_logging.criticals), 5)
-                self.assertTrue(len(_sleep_count) > 10)
+                ok_(_function_calls)
+                eq_(commit_count, 1)
+                eq_(rollback_count, 5)
+                ok_(mock_logging.criticals)
+                eq_(len(mock_logging.criticals), 5)
+                ok_(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 

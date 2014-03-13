@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 import psycopg2
 import psycopg2.extras
 
@@ -144,14 +145,14 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             "repository": "mozilla-central"
         }
         product, version = builds.create(**params)
-        self.assertEqual(params["product"], product)
-        self.assertEqual(params["version"], version)
+        eq_(params["product"], product)
+        eq_(params["version"], version)
 
         # Verify that build has been created in the DB
         res = self._get_builds_for_product(params["product"])
 
-        self.assertEqual(1, len(res))
-        self.assertEqual(params, res[0])
+        eq_(1, len(res))
+        eq_(params, res[0])
 
         #......................................................................
         # Test 2: required parameters
@@ -170,8 +171,8 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             "platform": "win32"
         }
         product, version = builds.create(**params)
-        self.assertEqual(params["product"], product)
-        self.assertEqual(params["version"], version)
+        eq_(params["product"], product)
+        eq_(params["version"], version)
 
         # Verify that build has been created in the DB
         res = self._get_builds_for_product(params["product"])
@@ -179,8 +180,8 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         # create() supplies an empty repository as the default
         params["repository"] = ""
 
-        self.assertEqual(1, len(res))
-        self.assertEqual(params, res[0])
+        eq_(1, len(res))
+        eq_(params, res[0])
 
         #......................................................................
         # Test 4: beta_number required if build_type is beta
@@ -205,10 +206,10 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
             "platform": "windows"
         }
         product, version = builds.create(**params)
-        self.assertEqual(params["product"], product)
-        self.assertEqual(params["version"], version)
+        eq_(params["product"], product)
+        eq_(params["version"], version)
 
         # Verify that build has been created in the DB
         res = self._get_builds_for_version(params["version"])
 
-        self.assertEqual(1, len(res))
+        eq_(1, len(res))

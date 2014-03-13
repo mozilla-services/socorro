@@ -6,6 +6,8 @@ from mock import patch, Mock, MagicMock
 import unittest
 import socket
 
+from nose.tools import eq_
+
 from socorro.lib.util import SilentFakeLogger, DotDict
 
 from socorro.external.http.crashstorage import HTTPPOSTCrashStorage
@@ -65,7 +67,7 @@ class TestCrashStorage(unittest.TestCase):
 
                 self.storage.save_raw_crash(raw_crash, dumps, crash_id)
 
-                self.assertEqual(m_poster.encode.MultipartParam.call_count, 2)
+                eq_(m_poster.encode.MultipartParam.call_count, 2)
                 m_poster.encode.multipart_encode.assert_called_once_with(
                     raw_crash
                 )
@@ -105,9 +107,6 @@ class TestCrashStorage(unittest.TestCase):
                     raw_crash, dumps, crash_id,
                 )
 
-                self.assertEqual(m_poster.encode.MultipartParam.call_count, 4)
-                self.assertEqual(m_urllib.Request.call_count, 2)
-                self.assertEqual(m_urllib.urlopen.call_count, 2)
-
-
-
+                eq_(m_poster.encode.MultipartParam.call_count, 4)
+                eq_(m_urllib.Request.call_count, 2)
+                eq_(m_urllib.urlopen.call_count, 2)

@@ -8,6 +8,7 @@ import unittest
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
@@ -113,7 +114,7 @@ class IntegrationTestCrashData(unittest.TestCase):
                             'application/octet-stream')
             res = service.get(**params)
 
-            self.assertEqual(res, res_expected)
+            eq_(res, res_expected)
 
             # Test 2: get a raw crash
             params['datatype'] = 'meta'
@@ -124,7 +125,7 @@ class IntegrationTestCrashData(unittest.TestCase):
             }
             res = service.get(**params)
 
-            self.assertEqual(res, res_expected)
+            eq_(res, res_expected)
 
             # Test 3: get a processed crash
             params['datatype'] = 'processed'
@@ -135,7 +136,7 @@ class IntegrationTestCrashData(unittest.TestCase):
             }
             res = service.get(**params)
 
-            self.assertEqual(res, res_expected)
+            eq_(res, res_expected)
 
             # Test 3a: get a unredacted processed crash
             params['datatype'] = 'unredacted'
@@ -147,7 +148,7 @@ class IntegrationTestCrashData(unittest.TestCase):
             }
             res = service.get(**params)
 
-            self.assertEqual(res, res_expected)
+            eq_(res, res_expected)
 
             # Test 4: missing parameters
             self.assertRaises(

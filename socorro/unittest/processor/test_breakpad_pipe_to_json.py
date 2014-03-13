@@ -4,6 +4,8 @@
 
 import unittest
 
+from nose.tools import eq_, ok_
+
 import socorro.processor.breakpad_pipe_to_json as bpj
 
 from socorro.lib.util import DotDict
@@ -249,25 +251,25 @@ cannonical_json_dump = {
 class TestCase(unittest.TestCase):
     def test_get(self):
         a_list = ['a', 'b', 'c']
-        self.assertEqual(bpj._get(a_list, 0, None), 'a')
-        self.assertEqual(bpj._get(a_list, 1, None), 'b')
-        self.assertEqual(bpj._get(a_list, 2, None), 'c')
-        self.assertEqual(bpj._get(a_list, 3, None), None)
+        eq_(bpj._get(a_list, 0, None), 'a')
+        eq_(bpj._get(a_list, 1, None), 'b')
+        eq_(bpj._get(a_list, 2, None), 'c')
+        eq_(bpj._get(a_list, 3, None), None)
 
     def test_get_int(self):
         a_list = ['a', '1', 'c']
-        self.assertEqual(bpj._get_int(a_list, 0, None), None)
-        self.assertEqual(bpj._get_int(a_list, 1, None), 1)
-        self.assertEqual(bpj._get_int(a_list, 2, None), None)
-        self.assertEqual(bpj._get_int(a_list, 3, None), None)
+        eq_(bpj._get_int(a_list, 0, None), None)
+        eq_(bpj._get_int(a_list, 1, None), 1)
+        eq_(bpj._get_int(a_list, 2, None), None)
+        eq_(bpj._get_int(a_list, 3, None), None)
 
 
     def test_extract_OS_info(self):
         info = ['OS', 'Windows NT', '5.1.2600 Service Pack 2']
         d = DotDict()
         bpj._extract_OS_info(info, d)
-        self.assertTrue('system_info' in d)
-        self.assertEqual(
+        ok_('system_info' in d)
+        eq_(
             d.system_info,
             {
                 'os': 'Windows NT',
@@ -279,15 +281,15 @@ class TestCase(unittest.TestCase):
         info = ['OS',]
         d = DotDict()
         bpj._extract_OS_info(info, d)
-        self.assertTrue('system_info' in d)
-        self.assertEqual(d.system_info, {})
+        ok_('system_info' in d)
+        eq_(d.system_info, {})
 
     def test_extract_CPU_info(self):
         info = ['CPU', 'x86', 'GenuineIntel family 6 model 22 stepping 1', 1]
         d = DotDict()
         bpj._extract_CPU_info(info, d)
-        self.assertTrue('system_info' in d)
-        self.assertEqual(
+        ok_('system_info' in d)
+        eq_(
             d.system_info,
             {
                 "cpu_arch": 'x86',
@@ -302,8 +304,8 @@ class TestCase(unittest.TestCase):
         bpj._extract_OS_info(info, d)
         info = ['CPU', 'x86', 'GenuineIntel family 6 model 22 stepping 1', 1]
         bpj._extract_CPU_info(info, d)
-        self.assertTrue('system_info' in d)
-        self.assertEqual(
+        ok_('system_info' in d)
+        eq_(
             d.system_info,
             {
                 'os': 'Windows NT',
@@ -318,8 +320,8 @@ class TestCase(unittest.TestCase):
         info = ['Crash', 'EXCEPTION_ACCESS_VIOLATION_READ', '0x676c', 1]
         d = DotDict()
         crashing_thread = bpj._extract_crash_info(info, d)
-        self.assertTrue('crash_info' in d)
-        self.assertEqual(
+        ok_('crash_info' in d)
+        eq_(
             d.crash_info,
             {
                 "type": 'EXCEPTION_ACCESS_VIOLATION_READ',
@@ -327,7 +329,7 @@ class TestCase(unittest.TestCase):
                 "crashing_thread": 1
             }
         )
-        self.assertEqual(crashing_thread, 1)
+        eq_(crashing_thread, 1)
 
     def test_extract_module_info(self):
         info = ['Module', 'firefox.exe', '24.0.0.4925', 'firefox.pdb',
@@ -335,10 +337,10 @@ class TestCase(unittest.TestCase):
                 '0x004e0fff', '1']
         d = DotDict()
         bpj._extract_module_info(info, d, 17)
-        self.assertTrue('modules' in d)
-        self.assertTrue(len(d.modules), 1)
-        self.assertEqual(d.main_module, 17)
-        self.assertEqual(
+        ok_('modules' in d)
+        ok_(len(d.modules), 1)
+        eq_(d.main_module, 17)
+        eq_(
             d.modules[0],
             {
                 "filename": 'firefox.exe',
@@ -356,10 +358,10 @@ class TestCase(unittest.TestCase):
                 '0x004e0fff', '0']
         d = DotDict()
         bpj._extract_module_info(info, d, 17)
-        self.assertTrue('modules' in d)
-        self.assertTrue(len(d.modules), 1)
-        self.assertTrue('main_module' not in d)
-        self.assertEqual(
+        ok_('modules' in d)
+        ok_(len(d.modules), 1)
+        ok_('main_module' not in d)
+        eq_(
             d.modules[0],
             {
                 "filename": 'firefloosy.exe',
@@ -377,9 +379,9 @@ class TestCase(unittest.TestCase):
                 'f:\\src\\threadex.c', '314', '0x6']
         d = DotDict()
         bpj._extract_frame_info(info, d)
-        self.assertTrue('threads' in d)
-        self.assertEqual(len(d.threads), 1)
-        self.assertEqual(
+        ok_('threads' in d)
+        eq_(len(d.threads), 1)
+        eq_(
             d.threads[0],
             {
                 "frame_count": 1,
@@ -400,9 +402,9 @@ class TestCase(unittest.TestCase):
                 'f:\\src\\threadex.c', '314', '0x6']
         d = DotDict()
         bpj._extract_frame_info(info, d)
-        self.assertTrue('threads' in d)
-        self.assertEqual(len(d.threads), 5)
-        self.assertEqual(
+        ok_('threads' in d)
+        eq_(len(d.threads), 5)
+        eq_(
             d.threads[4],
             {
                 "frame_count": 1,
@@ -448,5 +450,4 @@ class TestCase(unittest.TestCase):
             "1|1|lars_crash.dll|ha_ha2|no source|0|0x5|0x1|0x3",
         ]
         json_dump = bpj.pipe_dump_to_json_dump(pipe_dump)
-        self.assertEqual(json_dump, cannonical_json_dump)
-
+        eq_(json_dump, cannonical_json_dump)

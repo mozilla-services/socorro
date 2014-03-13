@@ -5,6 +5,7 @@
 import datetime
 import os
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 from dateutil import tz
 from socorro.cron import crontabber
 from ..base import IntegrationTestCaseBase
@@ -83,10 +84,10 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         # it means that all bugs are rejected
         cursor.execute('select count(*) from bugs')
         count, = cursor.fetchone()
-        self.assertTrue(not count)
+        ok_(not count)
         cursor.execute('select count(*) from bug_associations')
         count, = cursor.fetchone()
-        self.assertTrue(not count)
+        ok_(not count)
 
     def test_basic_run_job_with_some_reports(self):
         config_manager = self._setup_config_manager(3)
@@ -116,16 +117,16 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
         cursor.execute('select id from bugs order by id')
         bugs = cursor.fetchall()
-        self.assertEqual(len(bugs), 2)
+        eq_(len(bugs), 2)
         # the only bugs with matching those signatures are: 5 and 8
         bug_ids = [x[0] for x in bugs]
-        self.assertEqual(bug_ids, [5, 8])
+        eq_(bug_ids, [5, 8])
 
         cursor.execute('select bug_id from bug_associations order by bug_id')
         associations = cursor.fetchall()
-        self.assertEqual(len(associations), 2)
+        eq_(len(associations), 2)
         bug_ids = [x[0] for x in associations]
-        self.assertEqual(bug_ids, [5, 8])
+        eq_(bug_ids, [5, 8])
 
     def test_basic_run_job_with_reports_with_existing_bugs_different(self):
         config_manager = self._setup_config_manager(3)
@@ -172,12 +173,12 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
         cursor.execute('select id, short_desc from bugs where id = 8')
         bug = cursor.fetchone()
-        self.assertEqual(bug[1], 'newlines in sigs')
+        eq_(bug[1], 'newlines in sigs')
 
         cursor.execute(
           'select signature from bug_associations where bug_id = 8')
         association = cursor.fetchone()
-        self.assertEqual(association[0], 'legitimate(sig)')
+        eq_(association[0], 'legitimate(sig)')
 
     def test_basic_run_job_with_reports_with_existing_bugs_same(self):
         config_manager = self._setup_config_manager(3)
@@ -218,10 +219,10 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
         cursor.execute('select id, short_desc from bugs where id = 8')
         bug = cursor.fetchone()
-        self.assertEqual(bug[1], 'newlines in sigs')
+        eq_(bug[1], 'newlines in sigs')
 
         cursor.execute(
           'select signature from bug_associations where bug_id = 8')
         association = cursor.fetchone()
-        self.assertEqual(association[0], 'legitimate(sig)')
+        eq_(association[0], 'legitimate(sig)')
         cursor.execute('select * from bug_associations')

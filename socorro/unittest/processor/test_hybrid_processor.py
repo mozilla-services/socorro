@@ -3,8 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-import mock
 import copy
+
+import mock
+from nose.tools import eq_, ok_
 
 from datetime import datetime
 
@@ -240,7 +242,7 @@ class TestHybridProcessor(unittest.TestCase):
         s = '/a/a, /b/b, /c/c'
         r = create_symbol_path_str(s)
         e = '"/a/a" "/b/b" "/c/c"'
-        self.assertEqual(r, e)
+        eq_(r, e)
 
     def test_hybrid_processor_basics(self):
         config = setup_config_with_mocks()
@@ -248,14 +250,14 @@ class TestHybridProcessor(unittest.TestCase):
             'socorro.processor.hybrid_processor.TransformRuleSystem'
         with mock.patch(mocked_transform_rules_str) as m_transform:
             leg_proc = HybridCrashProcessor(config, config.mock_quit_fn)
-            self.assertEqual(leg_proc.quit_check, config.mock_quit_fn)
-            self.assertEqual(config.transaction, leg_proc.transaction)
-            self.assertEqual(config.database,  leg_proc.database)
-            self.assertEqual(
+            eq_(leg_proc.quit_check, config.mock_quit_fn)
+            eq_(config.transaction, leg_proc.transaction)
+            eq_(config.database,  leg_proc.database)
+            eq_(
               leg_proc.mdsw_command_line,
               '/bin/mdsw -m DUMPFILEPATHNAME "/a/a" "/b/b" "/c/c" 2>/dev/null'
             )
-            self.assertEqual(m_transform.call_count, 3)
+            eq_(m_transform.call_count, 3)
 
     def test_convert_raw_crash_to_processed_crash_basic(self):
         config = setup_config_with_mocks()
@@ -310,14 +312,14 @@ class TestHybridProcessor(unittest.TestCase):
                     )
 
                 # test the result
-                self.assertEqual(1, leg_proc._log_job_start.call_count)
+                eq_(1, leg_proc._log_job_start.call_count)
                 leg_proc._log_job_start.assert_called_with(raw_crash.uuid)
 
-                self.assertEqual(1, m_transform.apply_all_rules.call_count)
+                eq_(1, m_transform.apply_all_rules.call_count)
                 m_transform.apply_all_rules.has_calls(
                     mock.call(raw_crash, leg_proc),
                 )
-                self.assertEqual(
+                eq_(
                     2,
                     m_transform.apply_until_action_succeeds.call_count
                 )
@@ -325,7 +327,7 @@ class TestHybridProcessor(unittest.TestCase):
                     mock.call(raw_crash, processed_crash, leg_proc)
                 )
 
-                self.assertEqual(
+                eq_(
                   1,
                   leg_proc._create_basic_processed_crash.call_count
                 )
@@ -340,13 +342,13 @@ class TestHybridProcessor(unittest.TestCase):
                   ]
                 )
 
-                self.assertEqual(
+                eq_(
                   2,
                   leg_proc._do_breakpad_stack_dump_analysis.call_count
                 )
                 first_call, second_call = \
                     leg_proc._do_breakpad_stack_dump_analysis.call_args_list
-                self.assertEqual(
+                eq_(
                   first_call,
                   ((raw_crash.uuid,
                     '/some/path/%s.dump' % raw_crash.uuid,
@@ -357,7 +359,7 @@ class TestHybridProcessor(unittest.TestCase):
                       'HybridCrashProcessor'
                    ]),)
                 )
-                self.assertEqual(
+                eq_(
                   second_call,
                   ((raw_crash.uuid,
                    '/some/path/aux_001.%s.dump' % raw_crash.uuid,
@@ -369,7 +371,7 @@ class TestHybridProcessor(unittest.TestCase):
                    ]),)
                 )
 
-                self.assertEqual(1, leg_proc._log_job_end.call_count)
+                eq_(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
                   datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
                   True,
@@ -390,7 +392,7 @@ class TestHybridProcessor(unittest.TestCase):
                 epc.Winsock_LSP = None
                 epc.additional_minidumps = ['aux_dump_001']
                 epc.aux_dump_001 = {'success': True}
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   dict(epc)
                 )
@@ -456,7 +458,7 @@ class TestHybridProcessor(unittest.TestCase):
                       raw_dump
                     )
 
-                self.assertEqual(1, leg_proc._log_job_end.call_count)
+                eq_(1, leg_proc._log_job_end.call_count)
                 leg_proc._log_job_end.assert_called_with(
                   datetime(2012, 5, 4, 15, 11, tzinfo=UTC),
                   False,
@@ -476,7 +478,7 @@ class TestHybridProcessor(unittest.TestCase):
                   'java_stack_trace': None,
                   'additional_minidumps': [],
                 }
-                self.assertEqual(e, dict(processed_crash))
+                eq_(e, dict(processed_crash))
                 leg_proc._statistics.assert_has_calls(
                     [
                         mock.call.incr('jobs'),
@@ -517,7 +519,7 @@ class TestHybridProcessor(unittest.TestCase):
                   processor_notes,
                 )
                 assert 'exploitability' in processed_crash
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   dict(cannonical_basic_processed_crash)
                 )
@@ -536,13 +538,13 @@ class TestHybridProcessor(unittest.TestCase):
                 processed_crash_missing_product = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_missing_product.product = None
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   processed_crash_missing_product
                 )
-                self.assertTrue('WARNING: raw_crash missing ProductName' in
+                ok_('WARNING: raw_crash missing ProductName' in
                                 processor_notes)
-                self.assertEqual(len(processor_notes), 1)
+                eq_(len(processor_notes), 1)
 
                 # test 03
                 processor_notes = []
@@ -558,13 +560,13 @@ class TestHybridProcessor(unittest.TestCase):
                 processed_crash_missing_version = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_missing_version.version = None
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   processed_crash_missing_version
                 )
-                self.assertTrue('WARNING: raw_crash missing Version' in
+                ok_('WARNING: raw_crash missing Version' in
                                 processor_notes)
-                self.assertEqual(len(processor_notes), 1)
+                eq_(len(processor_notes), 1)
 
                 # test 04
                 processor_notes = []
@@ -583,11 +585,11 @@ class TestHybridProcessor(unittest.TestCase):
                 processed_crash_with_hangid.hangid = \
                     raw_crash_with_hangid.HangID
                 processed_crash_with_hangid.hang_type = -1
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   processed_crash_with_hangid
                 )
-                self.assertEqual(len(processor_notes), 0)
+                eq_(len(processor_notes), 0)
 
                 # test 05
                 processor_notes = []
@@ -605,11 +607,11 @@ class TestHybridProcessor(unittest.TestCase):
                 processed_crash_with_pluginhang.hangid = \
                     'fake-3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
                 processed_crash_with_pluginhang.hang_type = -1
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   processed_crash_with_pluginhang
                 )
-                self.assertEqual(len(processor_notes), 0)
+                eq_(len(processor_notes), 0)
 
                 # test 06
                 processor_notes = []
@@ -625,11 +627,11 @@ class TestHybridProcessor(unittest.TestCase):
                 processed_crash_with_hang_only = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_with_hang_only.hang_type = 1
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   processed_crash_with_hang_only
                 )
-                self.assertEqual(len(processor_notes), 0)
+                eq_(len(processor_notes), 0)
                 leg_proc._statistics.assert_has_calls(
                     [
                         mock.call.incr('restarts'),
@@ -651,11 +653,11 @@ class TestHybridProcessor(unittest.TestCase):
                 processed_crash_with_hang_only = \
                     copy.copy(cannonical_basic_processed_crash)
                 processed_crash_with_hang_only.hang_type = 0
-                self.assertEqual(
+                eq_(
                   processed_crash,
                   processed_crash_with_hang_only
                 )
-                self.assertEqual(len(processor_notes), 0)
+                eq_(len(processor_notes), 0)
                 leg_proc._statistics.assert_has_calls(
                     [
                         mock.call.incr('restarts'),
@@ -674,8 +676,8 @@ class TestHybridProcessor(unittest.TestCase):
                   started_timestamp,
                   processor_notes,
                 )
-                self.assertEqual(processed_crash.last_crash, None)
-                self.assertTrue(
+                eq_(processed_crash.last_crash, None)
+                ok_(
                     'non-integer value of "SecondsSinceLastCrash"' in
                     processor_notes
                 )
@@ -691,8 +693,8 @@ class TestHybridProcessor(unittest.TestCase):
                   started_timestamp,
                   processor_notes,
                 )
-                self.assertEqual(processed_crash.crash_time, 0)
-                self.assertTrue(
+                eq_(processed_crash.crash_time, 0)
+                ok_(
                     'non-integer value of "CrashTime"' in processor_notes
                 )
 
@@ -709,14 +711,14 @@ class TestHybridProcessor(unittest.TestCase):
                   started_timestamp,
                   processor_notes,
                 )
-                self.assertEqual(processed_crash.install_age, 0)
-                self.assertTrue(
+                eq_(processed_crash.install_age, 0)
+                ok_(
                     'non-integer value of "StartupTime"' in processor_notes
                 )
-                self.assertTrue(
+                ok_(
                     'non-integer value of "InstallTime"' in processor_notes
                 )
-                self.assertTrue(
+                ok_(
                     'non-integer value of "CrashTime"' in processor_notes
                 )
 
@@ -756,7 +758,7 @@ class TestHybridProcessor(unittest.TestCase):
                   ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
                   ('elemhidehelper@adblockplus.org', '1.2.1')
                 ]
-                self.assertEqual(addon_list, expected_addon_list)
+                eq_(addon_list, expected_addon_list)
 
                 # test colon in version case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -769,7 +771,7 @@ class TestHybridProcessor(unittest.TestCase):
                 expected_addon_list = [
                   ('adblockpopups@jessehakanen.net', '0:3:1'),
                 ]
-                self.assertEqual(addon_list, expected_addon_list)
+                eq_(addon_list, expected_addon_list)
                 leg_proc._statistics.assert_has_calls(
                     [
                         mock.call.incr('restarts'),
@@ -799,8 +801,8 @@ class TestHybridProcessor(unittest.TestCase):
                 pc_update = leg_proc._add_process_type_to_processed_crash(
                   raw_crash
                 )
-                self.assertEqual(pc_update, {})
-                self.assertEqual(processor_notes, [])
+                eq_(pc_update, {})
+                eq_(processor_notes, [])
 
                 # test unknown case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -809,13 +811,13 @@ class TestHybridProcessor(unittest.TestCase):
                 pc_update = leg_proc._add_process_type_to_processed_crash(
                   raw_crash
                 )
-                self.assertEqual(
+                eq_(
                   pc_update,
                   {
                     'process_type': 'unknown',
                   }
                 )
-                self.assertEqual(processor_notes, [])
+                eq_(processor_notes, [])
 
                 #test plugin null case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -824,7 +826,7 @@ class TestHybridProcessor(unittest.TestCase):
                 pc_update = leg_proc._add_process_type_to_processed_crash(
                   raw_crash
                 )
-                self.assertEqual(
+                eq_(
                   pc_update,
                   {
                     'process_type': 'plugin',
@@ -833,7 +835,7 @@ class TestHybridProcessor(unittest.TestCase):
                     'PluginVersion': '',
                   }
                 )
-                self.assertEqual(processor_notes, [])
+                eq_(processor_notes, [])
 
                 #test plugin case
                 raw_crash = copy.copy(canonical_standard_raw_crash)
@@ -845,7 +847,7 @@ class TestHybridProcessor(unittest.TestCase):
                 pc_update = leg_proc._add_process_type_to_processed_crash(
                   raw_crash
                 )
-                self.assertEqual(
+                eq_(
                   pc_update,
                   {
                     'process_type': 'plugin',
@@ -854,7 +856,7 @@ class TestHybridProcessor(unittest.TestCase):
                     'PluginVersion': '6.6.6',
                   }
                 )
-                self.assertEqual(processor_notes, [])
+                eq_(processor_notes, [])
 
     def test_do_breakpad_stack_dump_analysis(self):
         m_iter = mock.MagicMock()
@@ -937,9 +939,9 @@ class TestHybridProcessor(unittest.TestCase):
                   'json_dump': {'status': 'unknown error'},
                 })
 
-                self.assertEqual(e_pcu, processed_crash_update)
+                eq_(e_pcu, processed_crash_update)
                 excess = list(m_iter)
-                self.assertEqual(len(excess), 0)
+                eq_(len(excess), 0)
                 # even though we're testing _do_breakpad_stack_dump_analysis
                 # for a successful run, it technically fails because the
                 # return code of mdsw is non-zero.  Well take advantage of that
@@ -951,7 +953,7 @@ class TestHybridProcessor(unittest.TestCase):
                     ],
                     any_order=True
                 )
-                self.assertTrue(
+                ok_(
                     "MDSW terminated with SIGKILL due to timeout"
                     in processor_notes
                 )
@@ -999,8 +1001,8 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertEqual(result.signature, 'sig01 | sig02')
-                self.assertFalse(result.truncated)
+                eq_(result.signature, 'sig01 | sig02')
+                ok_(not result.truncated)
 
                 # test two - crashed thread missing
                 def dump_iter():
@@ -1021,15 +1023,15 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertTrue(result.success)
-                self.assertEqual(result.os_name, 'Windows NT')
-                self.assertEqual(result.os_version, '6.1.7601 Service Pack 1')
-                self.assertEqual(result.cpu_name, 'x86')
-                self.assertEqual(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
-                self.assertEqual(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
-                self.assertEqual(result.address, '0xffffffffdadadada')
-                self.assertEqual(result.crashedThread, None)
-                self.assertTrue(
+                ok_(result.success)
+                eq_(result.os_name, 'Windows NT')
+                eq_(result.os_version, '6.1.7601 Service Pack 1')
+                eq_(result.cpu_name, 'x86')
+                eq_(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
+                eq_(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
+                eq_(result.address, '0xffffffffdadadada')
+                eq_(result.crashedThread, None)
+                ok_(
                     'MDSW did not identify the crashing thread' in
                     processor_notes
                 )
@@ -1048,19 +1050,19 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertTrue(result.success)
-                self.assertEqual(result.os_name, None)
-                self.assertEqual(result.os_version, None)
-                self.assertEqual(result.cpu_name, None)
-                self.assertEqual(result.cpu_info, None)
-                self.assertEqual(result.reason, None)
-                self.assertEqual(result.address, None)
-                self.assertEqual(result.crashedThread, None)
-                self.assertTrue(
+                ok_(result.success)
+                eq_(result.os_name, None)
+                eq_(result.os_version, None)
+                eq_(result.cpu_name, None)
+                eq_(result.cpu_info, None)
+                eq_(result.reason, None)
+                eq_(result.address, None)
+                eq_(result.crashedThread, None)
+                ok_(
                     'MDSW did not identify the crashing thread' in
                     processor_notes
                 )
-                self.assertTrue(
+                ok_(
                     'MDSW emitted no header lines' in
                     processor_notes
                 )
@@ -1089,18 +1091,18 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertEqual(result.signature, 'sig01 | sig02')
-                self.assertFalse(result.truncated)
-                self.assertEqual(len(processor_notes), 3)
-                self.assertTrue(
+                eq_(result.signature, 'sig01 | sig02')
+                ok_(not result.truncated)
+                eq_(len(processor_notes), 3)
+                ok_(
                     "Bad frame line detected - wrong number of fields" in
                     processor_notes[0]
                 )
-                self.assertTrue(
+                ok_(
                     "Bad frame line detected - wrong number of fields" in
                     processor_notes[1]
                 )
-                self.assertTrue(
+                ok_(
                     "thread_num is not an int while reading frames" in
                     processor_notes[2]
                 )
@@ -1144,14 +1146,14 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertTrue(result.success)
-                self.assertEqual(result.os_name, 'Windows NT')
-                self.assertEqual(result.os_version, '6.1.7601 Service Pack 1')
-                self.assertEqual(result.cpu_name, 'x86')
-                self.assertEqual(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
-                self.assertEqual(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
-                self.assertEqual(result.address, '0xffffffffdadadada')
-                self.assertEqual(result.crashedThread, 0)
+                ok_(result.success)
+                eq_(result.os_name, 'Windows NT')
+                eq_(result.os_version, '6.1.7601 Service Pack 1')
+                eq_(result.cpu_name, 'x86')
+                eq_(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
+                eq_(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
+                eq_(result.address, '0xffffffffdadadada')
+                eq_(result.crashedThread, 0)
 
                 # test two - crashed thread missing
                 def dump_iter():
@@ -1172,15 +1174,15 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertTrue(result.success)
-                self.assertEqual(result.os_name, 'Windows NT')
-                self.assertEqual(result.os_version, '6.1.7601 Service Pack 1')
-                self.assertEqual(result.cpu_name, 'x86')
-                self.assertEqual(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
-                self.assertEqual(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
-                self.assertEqual(result.address, '0xffffffffdadadada')
-                self.assertEqual(result.crashedThread, None)
-                self.assertTrue(
+                ok_(result.success)
+                eq_(result.os_name, 'Windows NT')
+                eq_(result.os_version, '6.1.7601 Service Pack 1')
+                eq_(result.cpu_name, 'x86')
+                eq_(result.cpu_info, 'GenuineIntel family 6 model 42 stepping 7 | 8')
+                eq_(result.reason, 'EXCEPTION_ACCESS_VIOLATION_READ')
+                eq_(result.address, '0xffffffffdadadada')
+                eq_(result.crashedThread, None)
+                ok_(
                     'MDSW did not identify the crashing thread' in
                     processor_notes
                 )
@@ -1199,19 +1201,19 @@ class TestHybridProcessor(unittest.TestCase):
                     processor_notes
                 )
 
-                self.assertTrue(result.success)
-                self.assertEqual(result.os_name, None)
-                self.assertEqual(result.os_version, None)
-                self.assertEqual(result.cpu_name, None)
-                self.assertEqual(result.cpu_info, None)
-                self.assertEqual(result.reason, None)
-                self.assertEqual(result.address, None)
-                self.assertEqual(result.crashedThread, None)
-                self.assertTrue(
+                ok_(result.success)
+                eq_(result.os_name, None)
+                eq_(result.os_version, None)
+                eq_(result.cpu_name, None)
+                eq_(result.cpu_info, None)
+                eq_(result.reason, None)
+                eq_(result.address, None)
+                eq_(result.crashedThread, None)
+                ok_(
                     'MDSW did not identify the crashing thread' in
                     processor_notes
                 )
-                self.assertTrue(
+                ok_(
                     'MDSW emitted no header lines' in
                     processor_notes
                 )
@@ -1226,7 +1228,7 @@ class TestHybridProcessor(unittest.TestCase):
             'e\n',
             'f\n',
         ]
-        self.assertEqual(
+        eq_(
             'a\nb\nc\n\ne\nf\n',
             HybridCrashProcessor._create_pipe_dump_entry(t1)
         )
@@ -1240,7 +1242,7 @@ class TestHybridProcessor(unittest.TestCase):
             'e',
             'f',
         ]
-        self.assertEqual(
+        eq_(
             'a\nb\nc\n\ne\nf\n',
             HybridCrashProcessor._create_pipe_dump_entry(t2)
         )
@@ -1258,7 +1260,7 @@ class TestHybridProcessor(unittest.TestCase):
 
             with processor._temp_file_context('foo.txt'):
                 pass
-            self.assertEqual(mocked_unlink.call_count, 0)
+            eq_(mocked_unlink.call_count, 0)
             mocked_unlink.reset_mock()
 
             try:
@@ -1274,7 +1276,7 @@ class TestHybridProcessor(unittest.TestCase):
                     raise KeyError('oops')
             except KeyError:
                 pass
-            self.assertEqual(mocked_unlink.call_count, 0)
+            eq_(mocked_unlink.call_count, 0)
 
     def test_temp_raw_crash_json_file(self):
         config = setup_config_with_mocks()
@@ -1304,4 +1306,3 @@ class TestHybridProcessor(unittest.TestCase):
                 '/tmp/fake_crash_id.MainThread.TEMPORARY.json'
             )
             mocked_unlink.reset_mock()
-

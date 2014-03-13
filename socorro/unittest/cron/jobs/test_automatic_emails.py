@@ -6,6 +6,7 @@ import datetime
 import mock
 import os
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from configman import ConfigurationManager
 
@@ -50,58 +51,58 @@ class TestAutomaticEmails(TestCaseBase):
         with config_manager.context() as config:
             app = automatic_emails.AutomaticEmailsCronApp(config, '')
             # easy corrections
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@YAHOOO.COM', typo_correct=True),
                 'peterbe@yahoo.com'
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@gmai.com', typo_correct=True),
                 'peterbe@gmail.com'
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@gmaill.com', typo_correct=True),
                 'peterbe@gmail.com'
             )
-            self.assertEqual(
+            eq_(
                 # case insensitive
                 app.correct_email('peterbe@Gamil.com', typo_correct=True),
                 'peterbe@gmail.com'
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@gmaiK.com', typo_correct=True),
                 'peterbe@gmail.com'
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@gmail..com', typo_correct=True),
                 'peterbe@gmail.com'
             )
 
             # dots here and there
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@gmail.com.'),
                 'peterbe@gmail.com'
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@.gmail.com'),
                 'peterbe@gmail.com'
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@.gmail.com.'),
                 'peterbe@gmail.com'
             )
 
             # dots and typos
-            self.assertEqual(
+            eq_(
                 # case insensitive
                 app.correct_email('peterbe@Gamil.com.', typo_correct=True),
                 'peterbe@gmail.com'
             )
 
             # What doesn't work are edit distances greater than 1
-            self.assertFalse(app.correct_email('peterbe@gamill.com'))
-            self.assertFalse(app.correct_email('peterbe@gmil.cam'))
+            ok_(not app.correct_email('peterbe@gamill.com'))
+            ok_(not app.correct_email('peterbe@gmil.cam'))
             # and don't mess with @ signs
-            self.assertFalse(
+            ok_(not
                 app.correct_email('peterbe@hotmail.com@gamil.com')
             )
 
@@ -113,11 +114,11 @@ class TestAutomaticEmails(TestCaseBase):
             # because 'gmail.com' and 'mail.com' is so similar,
             # we don't want correction of 'mail.com' to incorrectly
             # become 'gmail.com'
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@gmail.com', typo_correct=True),
                 None
             )
-            self.assertEqual(
+            eq_(
                 app.correct_email('peterbe@mail.com', typo_correct=True),
                 None
             )
@@ -479,7 +480,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             assert information['automatic-emails']
             assert not information['automatic-emails']['last_error']
             assert information['automatic-emails']['last_success']
-            self.assertEqual(et_mock.trigger_send.call_count, 4)
+            eq_(et_mock.trigger_send.call_count, 4)
 
             last_email = u'z\xc0drian@example.org'
 
@@ -509,13 +510,13 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             )
             search = search.filter(_id__in=emails_list)
             res = search.values_list('last_sending')
-            self.assertEqual(len(res), 3)
+            eq_(len(res), 3)
             now = utc_now()
             for row in res:
                 date = string_to_datetime(row[0])
-                self.assertEqual(date.year, now.year)
-                self.assertEqual(date.month, now.month)
-                self.assertEqual(date.day, now.day)
+                eq_(date.year, now.year)
+                eq_(date.month, now.month)
+                eq_(date.day, now.day)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run(self, exacttarget_mock):
@@ -525,7 +526,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             job.run(utc_now())
 
             et_mock = exacttarget_mock.return_value
-            self.assertEqual(et_mock.trigger_send.call_count, 4)
+            eq_(et_mock.trigger_send.call_count, 4)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run_no_generic_email(self, exacttarget_mock):
@@ -537,7 +538,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             et_mock = exacttarget_mock.return_value
             # Only 1 crash has a valid classification, the others would
             # be sent the default email and are thus not processed.
-            self.assertEqual(et_mock.trigger_send.call_count, 1)
+            eq_(et_mock.trigger_send.call_count, 1)
 
         config_manager = self._setup_simple_config(
             email_template='',
@@ -550,16 +551,16 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             et_mock = exacttarget_mock.return_value
             # None have a valid classification, all would be sent the default
             # email and are thus not processed. The call count stays the same.
-            self.assertEqual(et_mock.trigger_send.call_count, 1)
+            eq_(et_mock.trigger_send.call_count, 1)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_run_with_classifications(self, exacttarget_mock):
         # Verify that classifications work.
         def mocked_trigger_send(email_template, fields):
             if fields['EMAIL_ADDRESS_'] == 'anotherone@example.com':
-                self.assertEqual(email_template, 'socorro_bitguard_en')
+                eq_(email_template, 'socorro_bitguard_en')
             else:
-                self.assertEqual(email_template, 'socorro_dev_test')
+                eq_(email_template, 'socorro_dev_test')
 
         exacttarget_mock.return_value.trigger_send.side_effect = \
             mocked_trigger_send
@@ -570,7 +571,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             job.run(utc_now())
 
             et_mock = exacttarget_mock.return_value
-            self.assertEqual(et_mock.trigger_send.call_count, 4)
+            eq_(et_mock.trigger_send.call_count, 4)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_send_email(self, exacttarget_mock):
@@ -656,7 +657,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'socorro_dev_test',
                 fields
             )
-            self.assertEqual(config.logger.error.call_count, 1)
+            eq_(config.logger.error.call_count, 1)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, error is: %s',
                 email, 'error', exc_info=True
@@ -689,7 +690,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'socorro_dev_test',
                 fields
             )
-            self.assertEqual(config.logger.error.call_count, 2)
+            eq_(config.logger.error.call_count, 2)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, fields are %s, error is: %s',
                 'fake@example.com',
@@ -721,10 +722,10 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'email_template': '',
             })
 
-            self.assertEqual(config.logger.error.call_count, 0)
+            eq_(config.logger.error.call_count, 0)
 
         # note that this means only one attempt was made
-        self.assertEqual(attempted_emails, ['fake@example.com'])
+        eq_(attempted_emails, ['fake@example.com'])
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_error_in_send_email_with_clever_recovery(self, exacttarget_mock):
@@ -752,9 +753,9 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'email_template': '',
             })
 
-            self.assertEqual(config.logger.error.call_count, 0)
+            eq_(config.logger.error.call_count, 0)
 
-        self.assertEqual(
+        eq_(
             attempted_emails,
             ['fake@exampl.com', 'fake@example.com']
         )
@@ -783,13 +784,13 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'email_template': '',
             })
 
-            self.assertEqual(config.logger.error.call_count, 1)
+            eq_(config.logger.error.call_count, 1)
             config.logger.error.assert_called_with(
                 'Unable to send a corrected email to %s, error is: %s',
                 'fake@example.com', 'error', exc_info=True
             )
 
-        self.assertEqual(
+        eq_(
             attempted_emails,
             ['fake@exampl.com', 'fake@example.com']
         )
@@ -827,13 +828,13 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                 'email_template': '',
             })
 
-            self.assertEqual(config.logger.error.call_count, 1)
+            eq_(config.logger.error.call_count, 1)
             config.logger.error.assert_called_with(
                 'Unable to send an email to %s, error is: %s',
                 email, 'error', exc_info=True
             )
 
-        self.assertEqual(
+        eq_(
             attempted_emails,
             [email]
         )
@@ -861,8 +862,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             s = search.filter(_id='someone@example.com')
             res = list(s.values_list('last_sending'))
 
-            self.assertEqual(len(res), 1)
-            self.assertEqual(res[0][0], now)
+            eq_(len(res), 1)
+            eq_(res[0][0], now)
 
             # Test with a non-existing user
             job.update_user('idonotexist@example.com', now, connection)
@@ -871,8 +872,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             s = search.filter(_id='idonotexist@example.com')
             res = list(s.values_list('last_sending'))
 
-            self.assertEqual(len(res), 1)
-            self.assertEqual(res[0][0], now)
+            eq_(len(res), 1)
+            eq_(res[0][0], now)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_email_cannot_be_sent_twice(self, exacttarget_mock):
@@ -905,13 +906,13 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             information = self._load_structure()
             assert information['automatic-emails']
             assert information['automatic-emails']['last_error']
-            self.assertEqual(
+            eq_(
                 information['automatic-emails']['last_error']['type'],
                 str(SomeRandomError)
             )
 
             # Verify that user's data was updated, but not all of it
-            self.assertEqual(_email_sent, ['a@example.org', 'b@example.org'])
+            eq_(_email_sent, ['a@example.org', 'b@example.org'])
             emails_list = (
                 'a@example.org',
                 'b@example.org',
@@ -933,15 +934,15 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             search = search.filter(_id__in=emails_list)
             res = search.execute()
-            self.assertEqual(res.count, 2)
+            eq_(res.count, 2)
 
             now = utc_now()
             for row in res.results:
                 assert row['_id'] in ('a@example.org', 'b@example.org')
                 date = string_to_datetime(row['_source']['last_sending'])
-                self.assertEqual(date.year, now.year)
-                self.assertEqual(date.month, now.month)
-                self.assertEqual(date.day, now.day)
+                eq_(date.year, now.year)
+                eq_(date.month, now.month)
+                eq_(date.day, now.day)
 
             # Run crontabber again and verify that all users are updated,
             # and emails are not sent twice
@@ -957,7 +958,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             assert information['automatic-emails']['last_success']
 
             # Verify that users were not sent an email twice
-            self.assertEqual(_email_sent, [
+            eq_(_email_sent, [
                 'a@example.org',
                 'b@example.org',
                 'c@example.org',
@@ -1004,7 +1005,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
                     'TOKEN': email
                 }
             )
-            self.assertEqual(trigger_send_mock.call_count, 1)
+            eq_(trigger_send_mock.call_count, 1)
 
             # 2. Test that before 'delay' is passed user doesn't receive
             # another email
@@ -1033,7 +1034,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             assert information['automatic-emails']['last_success']
 
             # No new email was sent
-            self.assertEqual(trigger_send_mock.call_count, 1)
+            eq_(trigger_send_mock.call_count, 1)
 
             # 3. Verify that, after 'delay' is passed, a new email is sent
             # to our user
@@ -1062,7 +1063,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             assert information['automatic-emails']['last_success']
 
             # A new email was sent
-            self.assertEqual(trigger_send_mock.call_count, 2)
+            eq_(trigger_send_mock.call_count, 2)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_sending_many_emails(self, exacttarget_mock):
@@ -1094,4 +1095,4 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             et_mock = exacttarget_mock.return_value
             # Verify that we have the default 4 results + the 21 we added.
-            self.assertEqual(et_mock.trigger_send.call_count, 25)
+            eq_(et_mock.trigger_send.call_count, 25)

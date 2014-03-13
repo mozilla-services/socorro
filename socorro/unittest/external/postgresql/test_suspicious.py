@@ -5,6 +5,7 @@
 import datetime
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.suspicious import SuspiciousCrashSignatures
 from socorro.lib import datetimeutil
@@ -67,11 +68,11 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         mware = SuspiciousCrashSignatures(config=self.config)
         stats = mware.get()
 
-        self.assertEquals(1, len(stats['hits']))
+        eq_(1, len(stats['hits']))
         now = datetimeutil.utc_now().strftime('%Y-%m-%d')
-        self.assertEquals(now, stats['hits'][0]['date'])
-        self.assertEquals(1, len(stats['hits'][0]['signatures']))
-        self.assertEquals('testsignature1', stats['hits'][0]['signatures'][0])
+        eq_(now, stats['hits'][0]['date'])
+        eq_(1, len(stats['hits'][0]['signatures']))
+        eq_('testsignature1', stats['hits'][0]['signatures'][0])
 
     def test_get_with_start(self):
         mware = SuspiciousCrashSignatures(config=self.config)
@@ -84,16 +85,16 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         now = now.strftime('%Y-%m-%d')
         fifteen = fifteen.strftime('%Y-%m-%d')
         stats = mware.get(start_date=sometimeago)
-        self.assertEquals(2, len(stats['hits']))
+        eq_(2, len(stats['hits']))
 
         stats['hits'].sort(key=lambda x: x['date'])
-        self.assertEquals(fifteen, stats['hits'][0]['date'])
-        self.assertEquals(now, stats['hits'][1]['date'])
+        eq_(fifteen, stats['hits'][0]['date'])
+        eq_(now, stats['hits'][1]['date'])
 
-        self.assertEquals(1, len(stats['hits'][0]['signatures']))
-        self.assertEquals(1, len(stats['hits'][1]['signatures']))
-        self.assertEquals('testsignature2', stats['hits'][0]['signatures'][0])
-        self.assertEquals('testsignature1', stats['hits'][1]['signatures'][0])
+        eq_(1, len(stats['hits'][0]['signatures']))
+        eq_(1, len(stats['hits'][1]['signatures']))
+        eq_('testsignature2', stats['hits'][0]['signatures'][0])
+        eq_('testsignature1', stats['hits'][1]['signatures'][0])
 
     def test_get_with_start_end(self):
         mware = SuspiciousCrashSignatures(config=self.config)
@@ -107,10 +108,10 @@ class IntegrationTestSuspicious(PostgreSQLTestCase):
         stats = mware.get(start_date=start, end_date=end)
         fifteen = datetimeutil.utc_now() - datetime.timedelta(15)
         fifteen = fifteen.strftime('%Y-%m-%d')
-        self.assertEquals(1, len(stats['hits']))
-        self.assertEquals(fifteen, stats['hits'][0]['date'])
-        self.assertEquals(1, len(stats['hits'][0]['signatures']))
-        self.assertEquals('testsignature2', stats['hits'][0]['signatures'][0])
+        eq_(1, len(stats['hits']))
+        eq_(fifteen, stats['hits'][0]['date'])
+        eq_(1, len(stats['hits'][0]['signatures']))
+        eq_('testsignature2', stats['hits'][0]['signatures'][0])
 
     def tearDown(self):
         """Clean up the database, delete tables and functions. """

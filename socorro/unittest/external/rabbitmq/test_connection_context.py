@@ -4,6 +4,7 @@
 
 import unittest
 
+from nose.tools import eq_, ok_
 from mock import (
     Mock,
     call,
@@ -31,11 +32,11 @@ class TestConnection(unittest.TestCase):
             config,
             faked_connection_object
         )
-        self.assertTrue(conn.config is config)
-        self.assertTrue(conn.connection is faked_connection_object)
+        ok_(conn.config is config)
+        ok_(conn.connection is faked_connection_object)
         faked_connection_object.channel.called_once_with()
 
-        self.assertEqual(
+        eq_(
             faked_connection_object.channel.return_value
                 .queue_declare.call_count,
             3
@@ -45,7 +46,7 @@ class TestConnection(unittest.TestCase):
             call(queue='socorro.priority', durable=True),
             call(queue='socorro.reprocessing', durable=True),
         ]
-        self.assertEqual(
+        eq_(
             faked_connection_object.channel.return_value.queue_declare \
                 .call_args_list,
             expected_queue_declare_call_args
@@ -79,7 +80,7 @@ class TestConnectionContext(unittest.TestCase):
         config.priority_queue_name = 'wilma'
         config.reprocessing_queue_name = 'betty'
         config.rabbitmq_connection_wrapper_class = Connection
-        
+
         config.executor_identity = lambda: 'MainThread'
 
         return config
@@ -87,7 +88,7 @@ class TestConnectionContext(unittest.TestCase):
     #--------------------------------------------------------------------------
     def test_constructor(self):
         conn_context_functor = ConnectionContext(self._setup_config)
-        self.assertTrue(
+        ok_(
             conn_context_functor.config is conn_context_functor.local_config
         )
 
@@ -110,13 +111,13 @@ class TestConnectionContext(unittest.TestCase):
             mocked_pika_module.BlockingConnection.assert_called_one_with(
                 mocked_pika_module.ConnectionParameters.return_value
             )
-            self.assertTrue(isinstance(conn, Connection))
-            self.assertTrue(conn.config is config)
-            self.assertTrue(
+            ok_(isinstance(conn, Connection))
+            ok_(conn.config is config)
+            ok_(
                 conn.connection is
                     mocked_pika_module.BlockingConnection.return_value
             )
-            self.assertTrue(
+            ok_(
                 conn.channel is conn.connection.channel.return_value
             )
         expected_queue_declare_call_args = [
@@ -124,7 +125,7 @@ class TestConnectionContext(unittest.TestCase):
             call(queue='wilma', durable=True),
             call(queue='betty', durable=True),
         ]
-        self.assertEqual(
+        eq_(
             conn.channel.queue_declare.call_args_list,
             expected_queue_declare_call_args
         )
@@ -136,7 +137,7 @@ class TestConnectionContext(unittest.TestCase):
         with patch(pika_string) as mocked_pika_module:
             conn_context_functor = ConnectionContext(config)
             with conn_context_functor() as conn_context:
-                self.assertTrue(isinstance(conn_context, Connection))
+                ok_(isinstance(conn_context, Connection))
             conn_context.connection.close.assert_called_once_with()
 
 #==============================================================================
@@ -157,16 +158,16 @@ class TestConnectionContextPooled(unittest.TestCase):
         config.logger = Mock()
 
         config.executor_identity = lambda: 'MainThread'
-        
+
         return config
 
     #--------------------------------------------------------------------------
     def test_constructor(self):
         conn_context_functor = ConnectionContextPooled(self._setup_config)
-        self.assertTrue(
+        ok_(
             conn_context_functor.config is conn_context_functor.local_config
         )
-        self.assertEqual(len(conn_context_functor.pool), 0)
+        eq_(len(conn_context_functor.pool), 0)
 
     #--------------------------------------------------------------------------
     def test_connection(self):
@@ -175,16 +176,16 @@ class TestConnectionContextPooled(unittest.TestCase):
         with patch(pika_string) as mocked_pika_module:
             conn_context_functor = ConnectionContextPooled(config)
             conn = conn_context_functor.connection()
-            self.assertTrue(
+            ok_(
                 conn is conn_context_functor.pool[currentThread().getName()]
             )
             conn = conn_context_functor.connection('dwight')
-            self.assertTrue(
+            ok_(
                 conn is conn_context_functor.pool['dwight']
             )
             # get the same connection again to make sure it really is the same
             conn = conn_context_functor.connection()
-            self.assertTrue(
+            ok_(
                 conn is conn_context_functor.pool[currentThread().getName()]
             )
 
@@ -195,22 +196,22 @@ class TestConnectionContextPooled(unittest.TestCase):
         with patch(pika_string) as mocked_pika_module:
             conn_context_functor = ConnectionContextPooled(config)
             conn = conn_context_functor.connection('dwight')
-            self.assertTrue(
+            ok_(
                 conn is conn_context_functor.pool['dwight']
             )
             conn_context_functor.close_connection(conn)
             # should be no change
-            self.assertTrue(
+            ok_(
                 conn is conn_context_functor.pool['dwight']
             )
-            self.assertEqual(len(conn_context_functor.pool), 1)
+            eq_(len(conn_context_functor.pool), 1)
 
             conn_context_functor.close_connection(conn, True)
             self.assertRaises(
                 KeyError,
                 lambda : conn_context_functor.pool['dwight']
             )
-            self.assertEqual(len(conn_context_functor.pool), 0)
+            eq_(len(conn_context_functor.pool), 0)
 
 
     #--------------------------------------------------------------------------
@@ -223,7 +224,7 @@ class TestConnectionContextPooled(unittest.TestCase):
             conn = conn_context_functor.connection('dwight')
             conn = conn_context_functor.connection('wilma')
             conn_context_functor.close()
-            self.assertEqual(len(conn_context_functor.pool), 0)
+            eq_(len(conn_context_functor.pool), 0)
 
     #--------------------------------------------------------------------------
     def test_force_reconnect(self):
@@ -232,11 +233,10 @@ class TestConnectionContextPooled(unittest.TestCase):
         with patch(pika_string) as mocked_pika_module:
             conn_context_functor = ConnectionContextPooled(config)
             conn = conn_context_functor.connection()
-            self.assertTrue(
+            ok_(
                 conn is conn_context_functor.pool[currentThread().getName()]
             )
             conn_context_functor.force_reconnect()
-            self.assertEqual(len(conn_context_functor.pool), 0)
+            eq_(len(conn_context_functor.pool), 0)
             conn2 = conn_context_functor.connection()
-            self.assertFalse(conn == conn2)
-
+            ok_(not conn == conn2)

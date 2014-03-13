@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.error import Error
 from socorro.lib import datetimeutil
@@ -126,4 +127,4 @@ class IntegrationTestError(PostgreSQLTestCase):
                 'total': 1
             }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

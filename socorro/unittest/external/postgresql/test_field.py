@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.field import Field
@@ -56,7 +57,7 @@ class IntegrationTestField(PostgreSQLTestCase):
             'product': 'WaterWolf'
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # expect a result
         res = api.get(name='field2')
@@ -66,7 +67,7 @@ class IntegrationTestField(PostgreSQLTestCase):
             'product': 'WaterWolf'
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # expect no result
         res = api.get(name='i-do-not-exist')
@@ -76,7 +77,7 @@ class IntegrationTestField(PostgreSQLTestCase):
             'product': None
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # expect a failure
         self.assertRaises(MissingArgumentError, api.get)

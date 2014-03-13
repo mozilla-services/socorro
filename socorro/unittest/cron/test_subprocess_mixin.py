@@ -5,6 +5,8 @@
 import os
 import unittest
 
+from nose.tools import eq_
+
 from socorro.cron.mixins import with_subprocess
 
 
@@ -17,30 +19,30 @@ class TestSubprocessMixin(unittest.TestCase):
         exit_code, stdout, stderr = self.run_process(
             [_SCRIPT]
         )
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, '')
-        self.assertEqual(stderr, '')
+        eq_(exit_code, 0)
+        eq_(stdout, '')
+        eq_(stderr, '')
 
     def test_failing_one_error(self):
         exit_code, stdout, stderr = self.run_process(
             [_SCRIPT, '--exit', 1, '-e', 'Error']
         )
-        self.assertEqual(exit_code, 1)
-        self.assertEqual(stdout, '')
-        self.assertEqual(stderr, 'Error')
+        eq_(exit_code, 1)
+        eq_(stdout, '')
+        eq_(stderr, 'Error')
 
     def test_clean_some_output(self):
         exit_code, stdout, stderr = self.run_process(
             [_SCRIPT, '-o', 'Blather']
         )
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, 'Blather')
-        self.assertEqual(stderr, '')
+        eq_(exit_code, 0)
+        eq_(stdout, 'Blather')
+        eq_(stderr, '')
 
     def test_as_command_string(self):
         exit_code, stdout, stderr = self.run_process(
             '%s --exit=9 -o Blather -e Error' % _SCRIPT
         )
-        self.assertEqual(exit_code, 9)
-        self.assertEqual(stdout, 'Blather')
-        self.assertEqual(stderr, 'Error')
+        eq_(exit_code, 9)
+        eq_(stdout, 'Blather')
+        eq_(stderr, 'Error')

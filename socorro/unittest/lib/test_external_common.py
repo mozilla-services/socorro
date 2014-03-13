@@ -5,6 +5,8 @@
 import unittest
 import datetime
 
+from nose.tools import eq_, ok_
+
 from socorro.lib import external_common, util
 
 
@@ -18,7 +20,7 @@ class TestExternalCommon(unittest.TestCase):
         param = None
         datatype = "datetime"
         res = external_common.check_type(param, datatype)
-        self.assertEqual(res, None)
+        eq_(res, None)
 
         # .....................................................................
         # Test 2: integer
@@ -26,8 +28,8 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "int"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, int))
-        self.assertEqual(res, param)
+        ok_(isinstance(res, int))
+        eq_(res, param)
 
         # .....................................................................
         # Test 3: integer
@@ -35,8 +37,8 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "int"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, int))
-        self.assertEqual(res, 12)
+        ok_(isinstance(res, int))
+        eq_(res, 12)
 
         # .....................................................................
         # Test 4: string
@@ -44,8 +46,8 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "str"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, str))
-        self.assertEqual(res, "2012-01-01 00:00:00")
+        ok_(isinstance(res, str))
+        eq_(res, "2012-01-01 00:00:00")
 
         # .....................................................................
         # Test 5: boolean
@@ -53,8 +55,8 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, bool))
-        self.assertEqual(res, True)
+        ok_(isinstance(res, bool))
+        eq_(res, True)
 
         # .....................................................................
         # Test 6: boolean
@@ -62,8 +64,8 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, bool))
-        self.assertEqual(res, True)
+        ok_(isinstance(res, bool))
+        eq_(res, True)
 
         # .....................................................................
         # Test 7: boolean
@@ -71,8 +73,8 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "bool"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, bool))
-        self.assertEqual(res, False)
+        ok_(isinstance(res, bool))
+        eq_(res, False)
 
         # .....................................................................
         # Test 8: datetime
@@ -80,10 +82,10 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "datetime"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, datetime.datetime))
-        self.assertEqual(res.year, 2012)
-        self.assertEqual(res.month, 1)
-        self.assertEqual(res.hour, 0)
+        ok_(isinstance(res, datetime.datetime))
+        eq_(res.year, 2012)
+        eq_(res.month, 1)
+        eq_(res.hour, 0)
 
         # .....................................................................
         # Test 9: timedelta
@@ -91,18 +93,18 @@ class TestExternalCommon(unittest.TestCase):
         datatype = "timedelta"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, datetime.timedelta))
-        self.assertEqual(res.days, 3)
+        ok_(isinstance(res, datetime.timedelta))
+        eq_(res.days, 3)
 
         # Test: date
         param = "2012-01-01"
         datatype = "date"
         res = external_common.check_type(param, datatype)
 
-        self.assertTrue(isinstance(res, datetime.date))
-        self.assertEqual(res.year, 2012)
-        self.assertEqual(res.month, 1)
-        self.assertEqual(res.day, 1)
+        ok_(isinstance(res, datetime.date))
+        eq_(res.year, 2012)
+        eq_(res.month, 1)
+        eq_(res.day, 1)
 
     #--------------------------------------------------------------------------
     def test_parse_arguments(self):
@@ -123,4 +125,4 @@ class TestExternalCommon(unittest.TestCase):
 
         params = external_common.parse_arguments(filters, arguments)
 
-        self.assertEqual(params, params_exp)
+        eq_(params, params_exp)

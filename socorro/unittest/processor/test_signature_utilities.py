@@ -3,7 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
+
 import mock
+from nose.tools import eq_, ok_
 
 import socorro.processor.signature_utilities as sig
 import socorro.lib.util as sutil
@@ -20,7 +22,7 @@ from mock import (Mock, patch, call)
 class BaseTestClass(unittest.TestCase):
 
     def assert_equal_with_nicer_output (self, expected, received):
-        self.assertEqual(
+        eq_(
             expected,
             received,
             'expected:\n%s\nbut got:\n%s' % (expected, received)
@@ -326,38 +328,38 @@ class TestCSignatureToolDB(BaseTestClass):
                 c_sig_tool.database,
                 None
             )
-            self.assertEqual(
+            eq_(
                 c_sig_tool.signatures_with_line_numbers_re.pattern,
                 expected_re_dict['signatures_with_line_numbers_re']
             )
-            self.assertEqual(
+            eq_(
                 c_sig_tool.irrelevant_signature_re.pattern,
                 expected_re_dict['irrelevant_signature_re']
             )
-            self.assertEqual(
+            eq_(
                 c_sig_tool.prefix_signature_re.pattern,
                 expected_re_dict['prefix_signature_re']
             )
-            self.assertEqual(len(c_sig_tool.signature_sentinels), 3)
-            self.assertEqual(
+            eq_(len(c_sig_tool.signature_sentinels), 3)
+            eq_(
                 c_sig_tool.signature_sentinels[0],
                 expected_re_dict['signature_sentinels'][0]
             )
-            self.assertEqual(
+            eq_(
                 c_sig_tool.signature_sentinels[1][0],
                 expected_re_dict['signature_sentinels'][1][0]
             )
-            self.assertEqual(
+            eq_(
                 c_sig_tool.signature_sentinels[2],
                 expected_re_dict['signature_sentinels'][2]
             )
             actual_fn = c_sig_tool.signature_sentinels[1][1]
             # can't test directly for equality of lambdas - so test
             # functionality instead
-            self.assertTrue(
+            ok_(
                 actual_fn(['x', 'y', 'z', 'mmm', 'i', 'j', 'k'])
             )
-            self.assertFalse(
+            ok_(not
                 actual_fn(['x', 'y', 'z', 'i', 'j', 'k'])
             )
 

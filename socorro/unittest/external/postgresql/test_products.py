@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.products import Products
 from socorro.lib import datetimeutil
@@ -230,7 +231,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 1
         }
 
-        self.assertEqual(
+        eq_(
             sorted(res['hits'][0]),
             sorted(res_expected['hits'][0])
         )
@@ -267,7 +268,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 2
         }
 
-        self.assertEqual(
+        eq_(
             sorted(res['hits'][0]),
             sorted(res_expected['hits'][0])
         )
@@ -283,7 +284,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             "total": 0
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 4: Test products list is returned with no parameters
@@ -343,22 +344,22 @@ class IntegrationTestProducts(PostgreSQLTestCase):
                 "total": 4
         }
 
-        self.assertEqual(res['total'], res_expected['total'])
-        self.assertEqual(
+        eq_(res['total'], res_expected['total'])
+        eq_(
             sorted(res['products']),
             sorted(res_expected['products'])
         )
-        self.assertEqual(sorted(res['hits']), sorted(res_expected['hits']))
+        eq_(sorted(res['hits']), sorted(res_expected['hits']))
         for product in sorted(res['hits'].keys()):
-            self.assertEqual(
+            eq_(
                 sorted(res['hits'][product][0]),
                 sorted(res_expected['hits'][product][0])
             )
 
         # test returned order of versions
         assert len(res['hits']['Fennec']) == 2
-        self.assertEqual(res['hits']['Fennec'][0]['version'], '12.0b1')
-        self.assertEqual(res['hits']['Fennec'][1]['version'], '11.0.1')
+        eq_(res['hits']['Fennec'][0]['version'], '12.0b1')
+        eq_(res['hits']['Fennec'][1]['version'], '11.0.1')
 
         #......................................................................
         # Test 5: An invalid versions list is passed, all versions are returned
@@ -366,7 +367,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             'versions': [1]
         }
         res = products.get(**params)
-        self.assertEqual(res['total'], 4)
+        eq_(res['total'], 4)
 
     def test_get_webapp_products(self):
         api = Products(config=self.config)
@@ -412,7 +413,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             },
             'total': 3
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_default_version(self):
         products = Products(config=self.config)
@@ -427,7 +428,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             }
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 2: default version for one product
         params = {"products": "Firefox"}
@@ -438,7 +439,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             }
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 3: default version for two products
         params = {"products": ["Firefox", "Thunderbird"]}
@@ -450,4 +451,4 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             }
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

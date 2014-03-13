@@ -8,6 +8,7 @@ import os
 from subprocess import PIPE
 import mock
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 from socorro.cron import crontabber
 from ..base import IntegrationTestCaseBase
 
@@ -78,20 +79,20 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
 
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')
-            self.assertTrue(private in os.listdir(self.tempdir))
-            self.assertTrue(public in os.listdir(self.tempdir))
+            ok_(private in os.listdir(self.tempdir))
+            ok_(public in os.listdir(self.tempdir))
 
             private_path = os.path.join(self.tempdir, private)
             f = gzip.open(private_path)
             try:
-                self.assertEqual(f.read(), '')
+                eq_(f.read(), '')
             finally:
                 f.close()
 
             public_path = os.path.join(self.tempdir, public)
             f = gzip.open(public_path)
             try:
-                self.assertEqual(f.read(), '')
+                eq_(f.read(), '')
             finally:
                 f.close()
 
@@ -189,23 +190,23 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
 
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')
-            self.assertTrue(private in os.listdir(self.tempdir))
-            self.assertTrue(public in os.listdir(self.tempdir))
+            ok_(private in os.listdir(self.tempdir))
+            ok_(public in os.listdir(self.tempdir))
 
             private_path = os.path.join(self.tempdir, private)
             f = gzip.open(private_path)
             try:
                 content = f.read()
-                self.assertTrue(content)
+                ok_(content)
                 lines = content.splitlines()
                 header = lines[0]
                 payload = lines[1:]
-                self.assertEqual(header.split('\t')[0], 'signature')
-                self.assertEqual(header.split('\t')[1], 'url')
+                eq_(header.split('\t')[0], 'signature')
+                eq_(header.split('\t')[1], 'url')
                 urls = [x.split('\t')[1] for x in payload]
-                self.assertTrue('http://porn.xxx' in urls)
+                ok_('http://porn.xxx' in urls)
                 signatures = [x.split('\t')[0] for x in payload]
-                self.assertEqual(sorted(signatures),
+                eq_(sorted(signatures),
                                  ['FakeSignature1',
                                   'FakeSignature2',
                                   'FakeSignature3',
@@ -217,16 +218,16 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             f = gzip.open(public_path)
             try:
                 content = f.read()
-                self.assertTrue(content)
+                ok_(content)
                 lines = content.splitlines()
                 header = lines[0]
                 payload = lines[1:]
-                self.assertEqual(header.split('\t')[0], 'signature')
-                self.assertEqual(header.split('\t')[1], 'URL (removed)')
+                eq_(header.split('\t')[0], 'signature')
+                eq_(header.split('\t')[1], 'URL (removed)')
                 urls = [x.split('\t')[1] for x in payload]
-                self.assertTrue('http://porn.xxx' not in urls)
+                ok_('http://porn.xxx' not in urls)
                 signatures = [x.split('\t')[0] for x in payload]
-                self.assertEqual(sorted(signatures),
+                eq_(sorted(signatures),
                                  ['FakeSignature1',
                                   'FakeSignature2',
                                   'FakeSignature3',
@@ -257,7 +258,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             assert information['daily-url']
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
-            self.assertTrue(config.logger.warn.called)
+            ok_(config.logger.warn.called)
 
     def test_run_job_with_no_data_with_ssh_errors(self):
         config_manager = self._setup_config_manager(
@@ -292,7 +293,7 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
             assert not information['daily-url']['last_error']
             assert information['daily-url']['last_success']
 
-            self.assertTrue(config.logger.warn.called)
+            ok_(config.logger.warn.called)
 
     def test_run_job_with_mocked_data_with_wrong_products(self):
         config_manager = self._setup_config_manager(
@@ -316,12 +317,12 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
 
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')
-            self.assertTrue(private in os.listdir(self.tempdir))
-            self.assertTrue(public not in os.listdir(self.tempdir))
+            ok_(private in os.listdir(self.tempdir))
+            ok_(public not in os.listdir(self.tempdir))
 
             private_path = os.path.join(self.tempdir, private)
             f = gzip.open(private_path)
             try:
-                self.assertEqual(f.read(), '')
+                eq_(f.read(), '')
             finally:
                 f.close()

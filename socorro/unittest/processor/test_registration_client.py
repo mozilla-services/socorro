@@ -8,6 +8,7 @@ import mock
 from datetime import datetime, timedelta
 
 from configman import ConfigurationManager
+from nose.tools import eq_, ok_
 
 from socorro.processor.registration_client import (
   ProcessorAppRegistrationClient,
@@ -56,11 +57,11 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
 
         with config_manager.context() as config:
             registrar = NoRegister(config)
-            self.assertEqual(registrar.last_checkin_ts,
+            eq_(registrar.last_checkin_ts,
                              datetime(1999, 1, 1, tzinfo=UTC))
-            self.assertTrue(registrar.processor_id is None)
-            self.assertEqual(registrar.processor_name, 'unknown')
-            self.assertEqual(m_registration.call_count, 1)
+            ok_(registrar.processor_id is None)
+            eq_(registrar.processor_name, 'unknown')
+            eq_(m_registration.call_count, 1)
 
     def test_checkin_done(self):
         mock_logging = mock.Mock()
@@ -161,7 +162,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
 
                 registrar.checkin()
 
-                self.assertEqual(m_execute.call_count, 0)
+                eq_(m_execute.call_count, 0)
 
     def test_requested_processor_id(self):
         mock_logging = mock.Mock()
@@ -188,13 +189,13 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
         with config_manager.context() as config:
             registrar = NoRegister(config)
             i = registrar._requested_processor_id(0)
-            self.assertEqual(i, 0)
+            eq_(i, 0)
             i = registrar._requested_processor_id(1)
-            self.assertEqual(1, i)
+            eq_(1, i)
             i = registrar._requested_processor_id('host')
-            self.assertEqual('host', i)
+            eq_('host', i)
             i = registrar._requested_processor_id('auto')
-            self.assertEqual('auto', i)
+            eq_('auto', i)
             self.assertRaises(ValueError,
                               registrar._requested_processor_id,
                               'dwight')
@@ -247,9 +248,9 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 registrar = ProcessorAppRegistrationClient(config)
                 name = registrar.processor_name
                 # There should be 1 and only 1 occurance of a '.' in the name
-                self.assertEqual(name.find('.'), name.rfind('.'))
+                eq_(name.find('.'), name.rfind('.'))
 
-                self.assertEqual(mock_execute.call_count, 4)
+                eq_(mock_execute.call_count, 4)
 
                 expected_execute_args = (
                     (("select now() - interval %s", (frequency,)),),
@@ -270,7 +271,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 actual_execute_args = mock_execute.call_args_list
                 for expected, actual in zip(expected_execute_args,
                                             actual_execute_args):
-                    self.assertEqual(expected, actual)
+                    eq_(expected, actual)
 
     def test_select_forcehost_mode_success(self):
         a_date = datetime(year=2012,
@@ -320,7 +321,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 registrar = ProcessorAppRegistrationClient(config)
                 name = registrar.processor_name
 
-                self.assertEqual(mock_execute.call_count, 4)
+                eq_(mock_execute.call_count, 4)
 
                 expected_execute_args = (
                     (("select now() - interval %s", (frequency,)),),
@@ -339,7 +340,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 actual_execute_args = mock_execute.call_args_list
                 for expected, actual in zip(expected_execute_args,
                                             actual_execute_args):
-                    self.assertEqual(expected, actual)
+                    eq_(expected, actual)
 
     def test_select_host_mode_not_found_start_new(self):
         a_date = datetime(year=2012,
@@ -392,7 +393,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 registrar = ProcessorAppRegistrationClient(config)
                 name = registrar.processor_name
 
-                self.assertEqual(mock_execute.call_count, 4)
+                eq_(mock_execute.call_count, 4)
 
                 expected_execute_args = (
                     (("select now() - interval %s", (frequency,)),),
@@ -416,7 +417,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 actual_execute_args = mock_execute.call_args_list
                 for expected, actual in zip(expected_execute_args,
                                             actual_execute_args):
-                    self.assertEqual(expected, actual)
+                    eq_(expected, actual)
 
     def test_select_forcehost_mode_not_found_start_new(self):
         a_date = datetime(year=2012,
@@ -468,7 +469,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 registrar = ProcessorAppRegistrationClient(config)
                 name = registrar.processor_name
 
-                self.assertEqual(mock_execute.call_count, 3)
+                eq_(mock_execute.call_count, 3)
 
                 expected_execute_args = (
                     (("select now() - interval %s", (frequency,)),),
@@ -489,7 +490,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 actual_execute_args = mock_execute.call_args_list
                 for expected, actual in zip(expected_execute_args,
                                             actual_execute_args):
-                    self.assertEqual(expected, actual)
+                    eq_(expected, actual)
 
     def test_select_host_mode_not_dead_fail(self):
         a_date = datetime(year=2012,
@@ -542,7 +543,7 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                                   ProcessorAppRegistrationClient,
                                   config)
 
-                self.assertEqual(mock_execute.call_count, 3)
+                eq_(mock_execute.call_count, 3)
 
                 expected_execute_args = (
                     (("select now() - interval %s", (frequency,)),),
@@ -555,4 +556,4 @@ class TestProcessorAppRegistrationAgent(unittest.TestCase):
                 actual_execute_args = mock_execute.call_args_list
                 for expected, actual in zip(expected_execute_args,
                                             actual_execute_args):
-                    self.assertEqual(expected, actual)
+                    eq_(expected, actual)

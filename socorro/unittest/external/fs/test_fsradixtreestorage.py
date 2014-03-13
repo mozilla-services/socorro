@@ -3,6 +3,7 @@ import os
 import shutil
 from mock import Mock
 from configman import ConfigurationManager
+from nose.tools import eq_, ok_
 
 from socorro.external.fs.crashstorage import FSRadixTreeStorage
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -53,46 +54,46 @@ class TestFSRadixTreeStorage(unittest.TestCase):
 
     def test_save_raw_crash(self):
         self._make_test_crash()
-        self.assertTrue(os.path.exists(
+        ok_(os.path.exists(
             self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1)))
 
     def test_save_processed(self):
         self._make_processed_test_crash()
-        self.assertTrue(os.path.exists(
+        ok_(os.path.exists(
             os.path.join(
                 self.fsrts._get_radixed_parent_directory(self.CRASH_ID_2),
                 self.CRASH_ID_2 + self.fsrts.config.jsonz_file_suffix)))
 
     def test_get_raw_crash(self):
         self._make_test_crash()
-        self.assertEqual(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
+        eq_(self.fsrts.get_raw_crash(self.CRASH_ID_1)['test'],
                          "TEST")
         self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_crash,
                           self.CRASH_ID_2)
 
     def test_get_unredacted_processed_crash(self):
         self._make_processed_test_crash()
-        self.assertEqual(self.fsrts.get_unredacted_processed(self.CRASH_ID_2)['test'],
+        eq_(self.fsrts.get_unredacted_processed(self.CRASH_ID_2)['test'],
                          "TEST")
-        self.assertTrue('email' in
+        ok_('email' in
                         self.fsrts.get_unredacted_processed(self.CRASH_ID_2))
         self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
                           self.CRASH_ID_1)
 
     def test_get_processed_crash(self):
         self._make_processed_test_crash()
-        self.assertEqual(self.fsrts.get_processed(self.CRASH_ID_2)['test'],
+        eq_(self.fsrts.get_processed(self.CRASH_ID_2)['test'],
                          "TEST")
-        self.assertTrue('email' not in
+        ok_('email' not in
                         self.fsrts.get_processed(self.CRASH_ID_2))
         self.assertRaises(CrashIDNotFound, self.fsrts.get_unredacted_processed,
                           self.CRASH_ID_1)
 
     def test_get_raw_dump(self):
         self._make_test_crash()
-        self.assertEqual(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),
+        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1, 'foo'),
                         "bar")
-        self.assertEqual(self.fsrts.get_raw_dump(self.CRASH_ID_1,
+        eq_(self.fsrts.get_raw_dump(self.CRASH_ID_1,
                                                  self.fsrts.config.dump_field),
                          "baz")
         self.assertRaises(CrashIDNotFound, self.fsrts.get_raw_dump,
@@ -102,7 +103,7 @@ class TestFSRadixTreeStorage(unittest.TestCase):
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        self.assertEqual(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
+        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
         })
@@ -114,7 +115,7 @@ class TestFSRadixTreeStorage(unittest.TestCase):
         self._make_test_crash(self.CRASH_ID_3)
         self.fsrts.remove(self.CRASH_ID_1)
         self.fsrts.remove(self.CRASH_ID_3)
-        self.assertTrue(not os.path.exists(
+        ok_(not os.path.exists(
             self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1)))
         self.assertRaises(CrashIDNotFound, self.fsrts.remove,
                           self.CRASH_ID_2)

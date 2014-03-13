@@ -6,6 +6,7 @@ import functools
 
 import mock
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.cron import crontabber
 from ..base import IntegrationTestCaseBase
@@ -104,34 +105,34 @@ class TestModulelist(IntegrationTestCaseBase):
             yesterday = utc_now()
             yesterday -= datetime.timedelta(days=1)
             yesterday_fmt = yesterday.strftime('%Y%m%d')
-            self.assertTrue(
+            ok_(
                 'PIG_CLASSPATH=/some/place pig' in first
             )
-            self.assertTrue(
+            ok_(
                 '-param start_date=%s' % yesterday_fmt in first
             )
-            self.assertTrue(
+            ok_(
                 '-param end_date=%s' % yesterday_fmt in first
             )
-            self.assertTrue(
+            ok_(
                 '/some/place/modulelist.pig' in first
             )
 
-            self.assertTrue(
+            ok_(
                 'PIG_CLASSPATH=/some/place hadoop fs -getmerge' in second
             )
-            self.assertTrue(
+            ok_(
                 'modulelist-%s-%s' % (yesterday_fmt, yesterday_fmt) in second
             )
-            self.assertTrue(
+            ok_(
                 '/some/other/place/%s-modulelist.txt' % (yesterday_fmt,)
                 in second
             )
 
-            self.assertTrue(
+            ok_(
                 'PIG_CLASSPATH=/some/place hadoop fs ' in third
             )
-            self.assertTrue(
+            ok_(
                 'modulelist-%s-%s' % (yesterday_fmt, yesterday_fmt) in second
             )
 
@@ -158,9 +159,9 @@ class TestModulelist(IntegrationTestCaseBase):
             assert information['modulelist']
             assert information['modulelist']['last_error']
             _traceback = information['modulelist']['last_error']['traceback']
-            self.assertTrue('pig run failed' in _traceback)
+            ok_('pig run failed' in _traceback)
             # the other two where cancelled
-            self.assertEqual(len(commands_sent), 1)
+            eq_(len(commands_sent), 1)
             config.logger.error.has_calls([
                 mock.call('First command failed :(')
             ])
@@ -185,9 +186,9 @@ class TestModulelist(IntegrationTestCaseBase):
             assert information['modulelist']
             assert information['modulelist']['last_error']
             _traceback = information['modulelist']['last_error']['traceback']
-            self.assertTrue('hadoop getmerge failed' in _traceback)
+            ok_('hadoop getmerge failed' in _traceback)
             # the other two where cancelled
-            self.assertEqual(len(commands_sent), 2)
+            eq_(len(commands_sent), 2)
             config.logger.error.has_calls([mock.call('Enormity')])
 
     def test_failing_hadoop_cleanup_job(self):
@@ -209,7 +210,7 @@ class TestModulelist(IntegrationTestCaseBase):
             assert information['modulelist']
             assert information['modulelist']['last_error']
             _traceback = information['modulelist']['last_error']['traceback']
-            self.assertTrue('hadoop cleanup failed' in _traceback)
+            ok_('hadoop cleanup failed' in _traceback)
             # the other two where cancelled
-            self.assertEqual(len(commands_sent), 3)
+            eq_(len(commands_sent), 3)
             config.logger.error.has_calls([mock.call('Iniquity')])

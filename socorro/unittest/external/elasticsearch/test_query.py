@@ -6,6 +6,7 @@ import datetime
 import json
 import mock
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 from pyelasticsearch.exceptions import (
     ElasticHttpError,
     ElasticHttpNotFoundError,
@@ -98,9 +99,9 @@ class IntegrationTestQuery(ElasticSearchTestCase):
             }
         }
         res = self.api.get(query=json.dumps(query))
-        self.assertTrue(res)
-        self.assertTrue('hits' in res)
-        self.assertEqual(res['hits']['total'], 4)
+        ok_(res)
+        ok_('hits' in res)
+        eq_(res['hits']['total'], 4)
 
         query = {
             'query': {
@@ -117,9 +118,9 @@ class IntegrationTestQuery(ElasticSearchTestCase):
             }
         }
         res = self.api.get(query=json.dumps(query))
-        self.assertTrue(res)
-        self.assertTrue('hits' in res)
-        self.assertEqual(res['hits']['total'], 1)
+        ok_(res)
+        ok_('hits' in res)
+        eq_(res['hits']['total'], 1)
 
     @mock.patch('socorro.external.elasticsearch.query.pyelasticsearch')
     def test_get_with_errors(self, mocked_es):

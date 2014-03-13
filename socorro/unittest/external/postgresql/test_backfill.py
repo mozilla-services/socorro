@@ -4,6 +4,7 @@
 
 from .unittestbase import PostgreSQLTestCase
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 import datetime
 
 from socorro.external.postgresql.backfill import Backfill
@@ -303,4 +304,4 @@ class TestBackfill(PostgreSQLTestCase):
         for test, data in self.test_source_data.items():
             data['params']['backfill_type'] = str(test)
             res = backfill.get(**data['params'])
-            self.assertEqual(res[0], data['res_expected'][0])
+            eq_(res[0], data['res_expected'][0])

@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from nose.tools import ok_
+
 from socorro.unittest.external.postgresql.unittestbase import \
     PostgreSQLTestCase
 from socorro.lib import buildutil
@@ -107,7 +109,7 @@ class TestBuildUtil(PostgreSQLTestCase):
                                    'VERSIONAME5', 'PLATFORMNAME5',
                                    '20110101', 'Release',
                                    '5', 'REPO5', 'build1')
-        self.assertTrue(actual)
+        ok_(actual)
 
         # Test 2: fail at inserting a build
         buildutil.insert_build(cursor, 'Unknown', 'VERSIONAME5',
@@ -117,4 +119,4 @@ class TestBuildUtil(PostgreSQLTestCase):
                                    'VERSIONAME5', 'PLATFORMNAME5',
                                    '20110101', 'Release',
                                    '5', 'REPO5', 'build1')
-        self.assertFalse(actual)
+        ok_(not actual)

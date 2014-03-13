@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.platforms import Platforms
 
@@ -76,4 +77,4 @@ class IntegrationTestPlatforms(PostgreSQLTestCase):
             "total": 3
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

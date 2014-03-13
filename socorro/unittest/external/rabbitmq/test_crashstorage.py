@@ -2,6 +2,8 @@ import unittest
 
 from mock import Mock, MagicMock
 
+from nose.tools import eq_, ok_
+
 from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
 )
@@ -25,7 +27,7 @@ class TestCrashStorage(unittest.TestCase):
     def test_constructor(self):
         config = self._setup_config()
         crash_store = RabbitMQCrashStorage(config)
-        self.assertEqual(len(crash_store.acknowledgement_token_cache), 0)
+        eq_(len(crash_store.acknowledgement_token_cache), 0)
         config.rabbitmq_class.assert_called_once_with(config)
         config.transaction_executor_class.assert_called_once_with(
             config,
@@ -43,7 +45,7 @@ class TestCrashStorage(unittest.TestCase):
             dumps=DotDict(),
             crash_id='crash_id'
         )
-        self.assertFalse(crash_store.transaction.called)
+        ok_(not crash_store.transaction.called)
         config.logger.reset_mock()
 
         # test for normal save
@@ -68,7 +70,7 @@ class TestCrashStorage(unittest.TestCase):
             dumps=DotDict,
             crash_id='crash_id'
         )
-        self.assertFalse(crash_store.transaction.called)
+        ok_(not crash_store.transaction.called)
 
     def test_save_raw_crash_no_legacy(self):
         config = self._setup_config()
@@ -185,7 +187,7 @@ class TestCrashStorage(unittest.TestCase):
 
         expected = 'crash_id'
         for result in crash_store.new_crashes():
-            self.assertEqual(expected, result)
+            eq_(expected, result)
 
     def test_new_crash_standard_queue(self):
         """ Tests queue with standard queue items only
@@ -218,7 +220,7 @@ class TestCrashStorage(unittest.TestCase):
 
         expected = ['normal_crash_id']
         for result in crash_store.new_crashes():
-            self.assertEqual(expected.pop(), result)
+            eq_(expected.pop(), result)
 
     def test_new_crash_reprocessing_queue(self):
         """ Tests queue with reprocessing, standard items; no priority items
@@ -253,4 +255,4 @@ class TestCrashStorage(unittest.TestCase):
 
         expected = ['normal_crash_id', 'reprocessing_crash_id']
         for result in crash_store.new_crashes():
-            self.assertEqual(expected.pop(), result)
+            eq_(expected.pop(), result)

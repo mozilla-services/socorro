@@ -5,6 +5,7 @@
 import datetime
 import mock
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external import BadArgumentError
 from socorro.external.elasticsearch import crashstorage
@@ -37,7 +38,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        self.assertEqual(res, ['socorro_integration_test'])
+        eq_(res, ['socorro_integration_test'])
 
         config = self.get_config_context(es_index='socorro_%Y%W')
         api = SuperSearch(config=config)
@@ -48,7 +49,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        self.assertEqual(res, ['socorro_200004', 'socorro_200005'])
+        eq_(res, ['socorro_200004', 'socorro_200005'])
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -56,7 +57,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        self.assertEqual(
+        eq_(
             res,
             [
                 'socorro_200001', 'socorro_200002', 'socorro_200003',
@@ -277,25 +278,25 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         """Test a search with default values returns the right structure. """
         res = self.api.get()
 
-        self.assertTrue('total' in res)
-        self.assertEqual(res['total'], 21)
+        ok_('total' in res)
+        eq_(res['total'], 21)
 
-        self.assertTrue('hits' in res)
-        self.assertEqual(len(res['hits']), res['total'])
+        ok_('hits' in res)
+        eq_(len(res['hits']), res['total'])
 
-        self.assertTrue('facets' in res)
-        self.assertTrue('signature' in res['facets'])
+        ok_('facets' in res)
+        ok_('signature' in res['facets'])
 
         expected_signatures = [
             {'term': 'js::break_your_browser', 'count': 20},
             {'term': 'my_bad', 'count': 1},
         ]
-        self.assertEqual(res['facets']['signature'], expected_signatures)
+        eq_(res['facets']['signature'], expected_signatures)
 
         # Test fields are being renamed
-        self.assertTrue('date' in res['hits'][0])  # date_processed > date
-        self.assertTrue('build_id' in res['hits'][0])  # build > build_id
-        self.assertTrue('platform' in res['hits'][0])  # os_name > platform
+        ok_('date' in res['hits'][0])  # date_processed > date
+        ok_('build_id' in res['hits'][0])  # build > build_id
+        ok_('platform' in res['hits'][0])  # os_name > platform
 
     def test_get_individual_filters(self):
         """Test a search with single filters returns expected results. """
@@ -304,159 +305,159 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'signature': 'my_bad',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_bad')
 
         # Test product
         kwargs = {
             'product': 'EarthRaccoon',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['product'], 'EarthRaccoon')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['product'], 'EarthRaccoon')
 
         # Test version
         kwargs = {
             'version': '2.0',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['version'], '2.0')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['version'], '2.0')
 
         # Test release_channel
         kwargs = {
             'release_channel': 'aurora',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['release_channel'], 'aurora')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['release_channel'], 'aurora')
 
         # Test platform
         kwargs = {
             'platform': 'Windows',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['platform'], 'Windows NT')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['platform'], 'Windows NT')
 
         # Test build_id
         kwargs = {
             'build_id': '987654321',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['build_id'], 987654321)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['build_id'], 987654321)
 
         # Test reason
         kwargs = {
             'reason': 'MOZALLOC_WENT_WRONG',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertEqual(res['hits'][0]['reason'], 'MOZALLOC_WENT_WRONG')
+        eq_(res['total'], 20)
+        eq_(res['hits'][0]['reason'], 'MOZALLOC_WENT_WRONG')
 
         kwargs = {
             'reason': ['very_bad_exception'],
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['reason'], 'VERY_BAD_EXCEPTION')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['reason'], 'VERY_BAD_EXCEPTION')
 
         # Test process_type
         kwargs = {
             'process_type': 'plugin',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 3)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['process_type'], 'plugin')
+        eq_(res['total'], 3)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['process_type'], 'plugin')
 
         # Test url
         kwargs = {
             'url': 'https://mozilla.org',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 19)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertTrue('mozilla.org' in res['hits'][0]['url'])
+        eq_(res['total'], 19)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        ok_('mozilla.org' in res['hits'][0]['url'])
 
         # Test user_comments
         kwargs = {
             'user_comments': 'WaterWolf',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 2)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertTrue('WaterWolf' in res['hits'][0]['user_comments'])
+        eq_(res['total'], 2)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        ok_('WaterWolf' in res['hits'][0]['user_comments'])
 
         # Test address
         kwargs = {
             'address': '0x0',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue('0x0' in res['hits'][0]['address'])
+        eq_(res['total'], 20)
+        ok_('0x0' in res['hits'][0]['address'])
 
         # Test accessibility
         kwargs = {
             'accessibility': False,
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertTrue(not res['hits'][0]['accessibility'])
+        eq_(res['total'], 1)
+        ok_(not res['hits'][0]['accessibility'])
 
         kwargs = {
             'accessibility': 'True',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 8)
-        self.assertTrue(res['hits'][0]['accessibility'])
+        eq_(res['total'], 8)
+        ok_(res['hits'][0]['accessibility'])
 
         # Test b2g_os_version
         kwargs = {
             'b2g_os_version': '1.3',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['b2g_os_version'], '1.3')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['b2g_os_version'], '1.3')
 
         # Test bios_manufacturer
         kwargs = {
             'bios_manufacturer': 'aidivn',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['bios_manufacturer'], 'aidivn')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['bios_manufacturer'], 'aidivn')
 
         # Test is_garbage_collecting
         kwargs = {
             'is_garbage_collecting': True,
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertTrue(res['hits'][0]['is_garbage_collecting'])
+        eq_(res['total'], 1)
+        ok_(res['hits'][0]['is_garbage_collecting'])
 
         # Test vendor
         kwargs = {
             'vendor': 'gnusmas',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['vendor'], 'gnusmas')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['vendor'], 'gnusmas')
 
         # Test useragent_locale
         kwargs = {
             'useragent_locale': 'fr',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['useragent_locale'], 'fr')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['useragent_locale'], 'fr')
 
     def test_get_with_range_operators(self):
         """Test a search with several filters and operators returns expected
@@ -472,51 +473,51 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             ]
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_little_signature')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_little_signature')
 
         # Test build id
         kwargs = {
             'build_id': '<1234567890',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertTrue(res['hits'][0]['build_id'] < 1234567890)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        ok_(res['hits'][0]['build_id'] < 1234567890)
 
         kwargs = {
             'build_id': '>1234567889',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertTrue(report['build_id'] > 1234567889)
+            ok_(report['build_id'] > 1234567889)
 
         kwargs = {
             'build_id': '<=1234567890',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 21)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 21)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertTrue(report['build_id'] <= 1234567890)
+            ok_(report['build_id'] <= 1234567890)
 
         # Test available_virtual_memory
         kwargs = {
             'available_virtual_memory': '>=1',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 8)
+        eq_(res['total'], 8)
         for report in res['hits']:
-            self.assertTrue(report['available_virtual_memory'] >= 1)
+            ok_(report['available_virtual_memory'] >= 1)
 
         kwargs = {
             'available_virtual_memory': '<1',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['available_virtual_memory'], 0)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['available_virtual_memory'], 0)
 
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
@@ -526,133 +527,133 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'signature': ['js', 'break_your_browser'],
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertEqual(report['signature'], 'js::break_your_browser')
+            eq_(report['signature'], 'js::break_your_browser')
 
         # - Test contains mode
         kwargs = {
             'signature': '~bad',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_bad')
 
         kwargs = {
             'signature': '~js::break',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertEqual(report['signature'], 'js::break_your_browser')
+            eq_(report['signature'], 'js::break_your_browser')
 
         # - Test is_exactly mode
         kwargs = {
             'signature': '=js::break_your_browser',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertEqual(report['signature'], 'js::break_your_browser')
+            eq_(report['signature'], 'js::break_your_browser')
 
         kwargs = {
             'signature': '=my_bad',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_bad')
 
         # - Test starts_with mode
         kwargs = {
             'signature': '$js',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertEqual(report['signature'], 'js::break_your_browser')
+            eq_(report['signature'], 'js::break_your_browser')
 
         # - Test ends_with mode
         kwargs = {
             'signature': '^browser',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertEqual(report['signature'], 'js::break_your_browser')
+            eq_(report['signature'], 'js::break_your_browser')
 
         # Test email
         kwargs = {
             'email': 'sauron@mordor.info',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertTrue(res['hits'])
-        self.assertEqual(res['hits'][0]['email'], 'sauron@mordor.info')
+        eq_(res['total'], 1)
+        ok_(res['hits'])
+        eq_(res['hits'][0]['email'], 'sauron@mordor.info')
 
         kwargs = {
             'email': '~mail.com',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 19)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 19)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertTrue('@' in report['email'])
-            self.assertTrue('mail.com' in report['email'])
+            ok_('@' in report['email'])
+            ok_('mail.com' in report['email'])
 
         kwargs = {
             'email': '$sauron@',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 2)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 2)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertTrue('sauron@' in report['email'])
+            ok_('sauron@' in report['email'])
 
         # Test url
         kwargs = {
             'url': 'https://mozilla.org',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 19)
+        eq_(res['total'], 19)
 
         kwargs = {
             'url': '~mozilla.org',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertTrue('mozilla.org' in report['url'])
+            ok_('mozilla.org' in report['url'])
 
         kwargs = {
             'url': '^.com',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['url'], 'http://www.example.com')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['url'], 'http://www.example.com')
 
         # Test user_comments
         kwargs = {
             'user_comments': '~love',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(res['hits'][0]['user_comments'], 'I love WaterWolf')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['hits'][0]['user_comments'], 'I love WaterWolf')
 
         kwargs = {
             'user_comments': '$WaterWolf',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertEqual(
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(
             res['hits'][0]['user_comments'],
             'WaterWolf is so bad'
         )
@@ -661,35 +662,35 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'user_comments': '__null__',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 19)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
+        eq_(res['total'], 19)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
         for hit in res['hits']:
-            self.assertEqual(hit['user_comments'], '')
+            eq_(hit['user_comments'], '')
 
         # Test address
         kwargs = {
             'address': '^0',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 21)
+        eq_(res['total'], 21)
         kwargs = {
             'address': '~a2',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         # Test android_model
         kwargs = {
             'android_model': '~PediaMad',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         kwargs = {
             'android_model': '=PediaMad 17 Heavy',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
     def test_get_with_facets(self):
         """Test a search with facets returns expected results. """
@@ -699,21 +700,21 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        self.assertTrue('facets' in res)
-        self.assertTrue('signature' in res['facets'])
+        ok_('facets' in res)
+        ok_('signature' in res['facets'])
 
         expected_signatures = [
             {'term': 'js::break_your_browser', 'count': 20},
             {'term': 'my_bad', 'count': 1},
         ]
-        self.assertEqual(res['facets']['signature'], expected_signatures)
+        eq_(res['facets']['signature'], expected_signatures)
 
-        self.assertTrue('platform' in res['facets'])
+        ok_('platform' in res['facets'])
         expected_platforms = [
             {'term': 'Linux', 'count': 20},
             {'term': 'Windows NT', 'count': 1},
         ]
-        self.assertEqual(res['facets']['platform'], expected_platforms)
+        eq_(res['facets']['platform'], expected_platforms)
 
         # Test one facet with filters
         kwargs = {
@@ -722,12 +723,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        self.assertTrue('release_channel' in res['facets'])
+        ok_('release_channel' in res['facets'])
 
         expected_signatures = [
             {'term': 'aurora', 'count': 1},
         ]
-        self.assertEqual(res['facets']['release_channel'], expected_signatures)
+        eq_(res['facets']['release_channel'], expected_signatures)
 
         # Test one facet with a different filter
         kwargs = {
@@ -736,13 +737,13 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         }
         res = self.api.get(**kwargs)
 
-        self.assertTrue('release_channel' in res['facets'])
+        ok_('release_channel' in res['facets'])
 
         expected_signatures = [
             {'term': 'release', 'count': 19},
             {'term': 'aurora', 'count': 1},
         ]
-        self.assertEqual(res['facets']['release_channel'], expected_signatures)
+        eq_(res['facets']['release_channel'], expected_signatures)
 
         # Test errors
         self.assertRaises(
@@ -757,32 +758,32 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_results_number': '10',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 21)
-        self.assertEqual(len(res['hits']), 10)
+        eq_(res['total'], 21)
+        eq_(len(res['hits']), 10)
 
         kwargs = {
             '_results_number': '10',
             '_results_offset': '10',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 21)
-        self.assertEqual(len(res['hits']), 10)
+        eq_(res['total'], 21)
+        eq_(len(res['hits']), 10)
 
         kwargs = {
             '_results_number': '10',
             '_results_offset': '15',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 21)
-        self.assertEqual(len(res['hits']), 6)
+        eq_(res['total'], 21)
+        eq_(len(res['hits']), 6)
 
         kwargs = {
             '_results_number': '10',
             '_results_offset': '30',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 21)
-        self.assertEqual(len(res['hits']), 0)
+        eq_(res['total'], 21)
+        eq_(len(res['hits']), 0)
 
     def test_get_with_not_operator(self):
         """Test a search with a few NOT operators. """
@@ -791,65 +792,65 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'signature': ['js', 'break_your_browser'],
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertEqual(report['signature'], 'js::break_your_browser')
+            eq_(report['signature'], 'js::break_your_browser')
 
         # - Test contains mode
         kwargs = {
             'signature': '!~bad',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
+        eq_(res['total'], 20)
 
         # - Test is_exactly mode
         kwargs = {
             'signature': '!=js::break_your_browser',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_bad')
 
         # - Test starts_with mode
         kwargs = {
             'signature': '!$js',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_bad')
 
         # - Test ends_with mode
         kwargs = {
             'signature': '!^browser',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'my_bad')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'my_bad')
 
         # Test build id
         kwargs = {
             'build_id': '!<1234567890',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 20)
-        self.assertTrue(res['hits'])
+        eq_(res['total'], 20)
+        ok_(res['hits'])
         for report in res['hits']:
-            self.assertTrue(report['build_id'] > 1234567889)
+            ok_(report['build_id'] > 1234567889)
 
         kwargs = {
             'build_id': '!>1234567889',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res['hits'][0]['signature'], 'js::break_your_browser')
-        self.assertTrue(res['hits'][0]['build_id'] < 1234567890)
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['signature'], 'js::break_your_browser')
+        ok_(res['hits'][0]['build_id'] < 1234567890)
 
         kwargs = {
             'build_id': '!<=1234567890',
         }
         res = self.api.get(**kwargs)
-        self.assertEqual(res['total'], 0)
+        eq_(res['total'], 0)
 
     @mock.patch(
         'socorro.external.elasticsearch.supersearch.SuperSearch.get_indexes'
@@ -864,7 +865,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'total': 0,
             'facets': {},
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         mocked_get_indexes.return_value = [
             'socorro_integration_test',
@@ -874,14 +875,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         res = self.api.get()
 
-        self.assertTrue('total' in res)
-        self.assertEqual(res['total'], 21)
+        ok_('total' in res)
+        eq_(res['total'], 21)
 
-        self.assertTrue('hits' in res)
-        self.assertEqual(len(res['hits']), res['total'])
+        ok_('hits' in res)
+        eq_(len(res['hits']), res['total'])
 
-        self.assertTrue('facets' in res)
-        self.assertTrue('signature' in res['facets'])
+        ok_('facets' in res)
+        ok_('signature' in res['facets'])
 
     def test_return_query_mode(self):
         kwargs = {
@@ -889,6 +890,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             '_return_query': 'true'
         }
         res = self.api.get(**kwargs)
-        self.assertTrue('filter' in res)
-        self.assertTrue('facets' in res)
-        self.assertTrue('size' in res)
+        ok_('filter' in res)
+        ok_('facets' in res)
+        ok_('size' in res)

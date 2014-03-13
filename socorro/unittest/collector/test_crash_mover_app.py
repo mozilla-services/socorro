@@ -4,6 +4,8 @@
 
 import unittest
 
+from nose.tools import eq_, ok_
+
 from socorro.collector.crashmover_app import CrashMoverApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.util import DotDict, SilentFakeLogger
@@ -44,10 +46,10 @@ class TestCrashMoverApp(unittest.TestCase):
 
         fts_app = TestCrashMoverClass(config)
         fts_app.main()
-        self.assertTrue(len(fts_app.the_list) == 5,
+        ok_(len(fts_app.the_list) == 5,
                         'expected to do 5 inserts, '
                           'but %d were done instead' % len(fts_app.the_list))
-        self.assertTrue(sorted(fts_app.the_list) == range(5),
+        ok_(sorted(fts_app.the_list) == range(5),
                         'expected %s, but got %s' % (range(5),
                                                      sorted(fts_app.the_list)))
 
@@ -117,9 +119,9 @@ class TestCrashMoverApp(unittest.TestCase):
         source = fts_app.source
         destination = fts_app.destination
 
-        self.assertEqual(source.store, destination.store)
-        self.assertEqual(len(destination.dumps), 4)
-        self.assertEqual(destination.dumps['1237'],
+        eq_(source.store, destination.store)
+        eq_(len(destination.dumps), 4)
+        eq_(destination.dumps['1237'],
                          source.get_raw_dumps('1237'))
 
     def test_source_iterator(self):
@@ -170,16 +172,16 @@ class TestCrashMoverApp(unittest.TestCase):
         error_detected = False
         for x, y in zip(xrange(1002), (a for a in fts_app.source_iterator())):
             if x == 0:
-                self.assertTrue(y is None)
+                ok_(y is None)
             elif x < 1000:
                 if x - 1 != y[0][0] and not error_detected:
                     error_detected = True
-                    self.assertEqual(x, y,
+                    eq_(x, y,
                                      'iterator fails on iteration %d' % x)
             else:
                 if y is not None and not error_detected:
                     error_detected = True
-                    self.assertTrue(x is None,
+                    ok_(x is None,
                                     'iterator fails on iteration %d' % x)
 
     def test_no_source(self):

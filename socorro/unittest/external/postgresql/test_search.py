@@ -4,6 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql.search import Search
 from socorro.lib import datetimeutil
@@ -252,14 +253,14 @@ class IntegrationTestSearch(PostgreSQLTestCase):
         # Test 1
         params = {}
         res = search.get(**params)
-        self.assertEqual(res['total'], 5)
+        eq_(res['total'], 5)
 
         # Test 2
         params = {
             'products': 'WaterWolf'
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 3)
+        eq_(res['total'], 3)
 
         # Test 3
         params = {
@@ -267,7 +268,7 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             'versions': 'WaterWolf:2.0'
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         # Test 4
         params = {
@@ -278,7 +279,7 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             'reasons': 'STACK_OVERFLOW'
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
         res_expected = {
             'hits': [{
@@ -303,14 +304,14 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             }],
             'total': 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 5
         params = {
             'terms': 'sig1'
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         res_expected = {
             'hits': [{
@@ -325,15 +326,15 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             }],
             'total': 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # with parameters renaming
         params = {
             'for': 'sig1'
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 1)
-        self.assertEqual(res, res_expected)
+        eq_(res['total'], 1)
+        eq_(res, res_expected)
 
         # Test 6: plugins
         params = {
@@ -343,11 +344,11 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             'plugin_search_mode': 'contains',
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         hits = res['hits'][0]
-        self.assertEqual(hits['count'], 1)
-        self.assertEqual(hits['pluginfilename'], 'NPSWF32_11_5_502_146.dll')
+        eq_(hits['count'], 1)
+        eq_(hits['pluginfilename'], 'NPSWF32_11_5_502_146.dll')
 
         # Test 7: plugins
         params = {
@@ -357,18 +358,18 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             'plugin_search_mode': 'starts_with',
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 1)
+        eq_(res['total'], 1)
 
         hits = res['hits'][0]
-        self.assertEqual(hits['count'], 1)
-        self.assertEqual(hits['pluginname'], 'Flash')
+        eq_(hits['count'], 1)
+        eq_(hits['pluginname'], 'Flash')
 
         # Test 8: parameters renaming
         params = {
             'to_date': self.twodaysago
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
         res_expected = {
             'hits': [{
@@ -392,31 +393,31 @@ class IntegrationTestSearch(PostgreSQLTestCase):
             }],
             'total': 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # with parameter renaming
         params = {
             'to': self.twodaysago
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 2)
-        self.assertEqual(res, res_expected)
+        eq_(res['total'], 2)
+        eq_(res, res_expected)
 
         # Test 9: release channels
         params = {
             'release_channels': ['Nightly']
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 2)
+        eq_(res['total'], 2)
 
         hits = res['hits'][0]
-        self.assertEqual(hits['signature'], 'js::functions::call::hello_world')
+        eq_(hits['signature'], 'js::functions::call::hello_world')
         hits = res['hits'][1]
-        self.assertEqual(hits['signature'], 'sig2')
+        eq_(hits['signature'], 'sig2')
 
         # verify that several values work, verify that it's case insensitive
         params = {
             'release_channels': ['NiGhTlY', 'release']
         }
         res = search.get(**params)
-        self.assertEqual(res['total'], 5)
+        eq_(res['total'], 5)

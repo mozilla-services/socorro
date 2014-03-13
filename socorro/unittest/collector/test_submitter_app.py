@@ -7,6 +7,8 @@ import mock
 import time
 import json
 
+from nose.tools import eq_, ok_
+
 from socorro.collector.submitter_app import (
     SubmitterApp,
     SubmitterFileSystemWalkerSource,
@@ -45,8 +47,8 @@ class TestSubmitterFileSystemWalkerSource(unittest.TestCase):
     def test_setup(self):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
-        self.assertEqual(sub_walker.config, config)
-        self.assertEqual(sub_walker.config.logger, config.logger)
+        eq_(sub_walker.config, config)
+        eq_(sub_walker.config.logger, config.logger)
 
     #--------------------------------------------------------------------------
     def test_get_raw_crash(self):
@@ -64,8 +66,8 @@ class TestSubmitterFileSystemWalkerSource(unittest.TestCase):
                       ]
 
         raw_crash = sub_walker.get_raw_crash(path_tuple)
-        self.assertTrue(isinstance(raw_crash, DotDict))
-        self.assertEqual(raw_crash['name'], 'Gabi')
+        ok_(isinstance(raw_crash, DotDict))
+        eq_(raw_crash['name'], 'Gabi')
 
     #--------------------------------------------------------------------------
     def test_get_raw_dumps_as_files(self):
@@ -87,8 +89,8 @@ class TestSubmitterFileSystemWalkerSource(unittest.TestCase):
              '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump'
              }
 
-        self.assertTrue(isinstance(raw_dumps_files, dict))
-        self.assertEqual(raw_dumps_files, dump_names)
+        ok_(isinstance(raw_dumps_files, dict))
+        eq_(raw_dumps_files, dump_names)
 
     #--------------------------------------------------------------------------
     def test_new_crashes(self):
@@ -102,10 +104,10 @@ class TestSubmitterFileSystemWalkerSource(unittest.TestCase):
         sub_walker.new_crashes = mock.Mock(side_effect=crash_path)
         new_crashes = sub_walker.new_crashes()
 
-        self.assertTrue(isinstance(new_crashes.next(), str))
-        self.assertEqual(new_crashes.next(),
+        ok_(isinstance(new_crashes.next(), str))
+        eq_(new_crashes.next(),
             './7611a662-e70f-4ba5-a397-69a3a2121129.json')
-        self.assertTrue(new_crashes.next().endswith(".json"))
+        ok_(new_crashes.next().endswith(".json"))
 
 
 #==============================================================================
@@ -131,8 +133,8 @@ class TestDBSamplingCrashSource(unittest.TestCase):
     def test_setup(self):
         config = self.get_standard_config()
         db_sampling = DBSamplingCrashSource(config)
-        self.assertEqual(db_sampling.config, config)
-        self.assertEqual(db_sampling.config.logger, config.logger)
+        eq_(db_sampling.config, config)
+        eq_(db_sampling.config.logger, config.logger)
 
     #--------------------------------------------------------------------------
     def test_new_crashes(self):
@@ -151,10 +153,10 @@ class TestDBSamplingCrashSource(unittest.TestCase):
         conn.cursor.return_value = m_cursor
 
         r = dbapi2_util.execute_query_iter(conn, config.sql)
-        self.assertEqual(r.next().next(),
+        eq_(r.next().next(),
                          '114559a5-d8e6-428c-8b88-1c1f22120314')
-        self.assertEqual(conn.cursor.call_count, 1)
-        self.assertEqual(m_cursor.execute.call_count, 1)
+        eq_(conn.cursor.call_count, 1)
+        eq_(m_cursor.execute.call_count, 1)
         m_cursor.execute.assert_called_once_with(config.sql, None)
 
     #--------------------------------------------------------------------------
@@ -172,8 +174,8 @@ class TestDBSamplingCrashSource(unittest.TestCase):
         db_sampling._implementation.get_raw_crash = mocked_get_raw_crash
 
         raw_crash = db_sampling._implementation.get_raw_crash(crash_id)
-        self.assertTrue(isinstance(raw_crash, DotDict))
-        self.assertEqual(raw_crash['name'], 'Gabi')
+        ok_(isinstance(raw_crash, DotDict))
+        eq_(raw_crash['name'], 'Gabi')
         db_sampling._implementation.get_raw_crash.assert_called_with(crash_id)
 
     #--------------------------------------------------------------------------
@@ -193,8 +195,8 @@ class TestDBSamplingCrashSource(unittest.TestCase):
 
         raw_dumps_as_files = \
             db_sampling._implementation.get_raw_dumps_as_files(crash_id)
-        self.assertTrue(isinstance(raw_dumps_as_files, dict))
-        self.assertEqual(raw_dumps_as_files['upload_file_minidump'],
+        ok_(isinstance(raw_dumps_as_files, dict))
+        eq_(raw_dumps_as_files['upload_file_minidump'],
                          '86b58ff2-9708-487d-bfc4-9dac32121214.' \
                          'upload_file_minidump.TEMPORARY.dump'
                         )
@@ -244,8 +246,8 @@ class TestSubmitterApp(unittest.TestCase):
     def test_setup(self):
         config = self.get_standard_config()
         sub = SubmitterApp(config)
-        self.assertEqual(sub.config, config)
-        self.assertEqual(sub.config.logger, config.logger)
+        eq_(sub.config, config)
+        eq_(sub.config.logger, config.logger)
 
     #--------------------------------------------------------------------------
     def test_transform(self):
@@ -286,9 +288,9 @@ class TestSubmitterApp(unittest.TestCase):
         sequence_generator = sequencer(1, 2, 3)
         sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
 
-        self.assertEqual(itera.next(), ((1,), {}))
-        self.assertEqual(itera.next(), ((2,), {}))
-        self.assertEqual(itera.next(), ((3,), {}))
+        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((2,), {}))
+        eq_(itera.next(), ((3,), {}))
         self.assertRaises(StopIteration, itera.next)
 
         # Test with number of submissions equal to forever
@@ -302,12 +304,12 @@ class TestSubmitterApp(unittest.TestCase):
         sequence_generator = sequencer(1, 2, 3)
         sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
 
-        self.assertEqual(itera.next(), ((1,), {}))
-        self.assertEqual(itera.next(), ((2,), {}))
-        self.assertEqual(itera.next(), ((3,), {}))
-        self.assertEqual(itera.next(), ((1,), {}))
-        self.assertEqual(itera.next(), ((2,), {}))
-        self.assertEqual(itera.next(), ((3,), {}))
+        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((2,), {}))
+        eq_(itera.next(), ((3,), {}))
+        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((2,), {}))
+        eq_(itera.next(), ((3,), {}))
 
         # Test with number of submissions equal to an integer > number of items
         # It raises StopIterations after some number of elements were called
@@ -321,11 +323,11 @@ class TestSubmitterApp(unittest.TestCase):
         sequence_generator = sequencer(1, 2, 3)
         sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
 
-        self.assertEqual(itera.next(), ((1,), {}))
-        self.assertEqual(itera.next(), ((2,), {}))
-        self.assertEqual(itera.next(), ((3,), {}))
-        self.assertEqual(itera.next(), ((1,), {}))
-        self.assertEqual(itera.next(), ((2,), {}))
+        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((2,), {}))
+        eq_(itera.next(), ((3,), {}))
+        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((2,), {}))
         self.assertRaises(StopIteration, itera.next)
 
         # Test with number of submissions equal to an integer < number of items
@@ -340,5 +342,5 @@ class TestSubmitterApp(unittest.TestCase):
         sequence_generator = sequencer(1, 2, 3)
         sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
 
-        self.assertEqual(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((1,), {}))
         self.assertRaises(StopIteration, itera.next)

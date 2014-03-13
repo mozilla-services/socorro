@@ -6,6 +6,7 @@ import datetime
 import mock
 import socorro.external.postgresql.tcbs as tcbs
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 from socorro.lib import datetimeutil, util
 from .unittestbase import PostgreSQLTestCase
 
@@ -170,12 +171,12 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
 
         sig_1 = res.next()
         sig_2 = res.next()
-        self.assertEqual(sig_1[0], "Fake Signature #1")
-        self.assertEqual(sig_2[0], "Fake Signature #2")
-        self.assertEqual(sig_1[8].date(), lastweek)
-        self.assertEqual(sig_2[8].date(), lastweek)
-        self.assertEqual(sig_1[10], 0.58333333333333304)
-        self.assertEqual(sig_2[10], 0.41666666666666702)
+        eq_(sig_1[0], "Fake Signature #1")
+        eq_(sig_2[0], "Fake Signature #2")
+        eq_(sig_1[8].date(), lastweek)
+        eq_(sig_2[8].date(), lastweek)
+        eq_(sig_1[10], 0.58333333333333304)
+        eq_(sig_2[10], 0.41666666666666702)
         self.assertRaises(StopIteration, res.next)
 
         # Test if raises ValueError when are passed wrong parameters
@@ -202,12 +203,12 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
         generate = res.next()
         sig_1 = generate.next()
         sig_2 = generate.next()
-        self.assertEqual(sig_1[0], "Fake Signature #1")
-        self.assertEqual(sig_2[0], "Fake Signature #2")
-        self.assertEqual(sig_1[8].date(), lastweek)
-        self.assertEqual(sig_2[8].date(), lastweek)
-        self.assertEqual(sig_1[10], 0.625)
-        self.assertEqual(sig_2[10], 0.375)
+        eq_(sig_1[0], "Fake Signature #1")
+        eq_(sig_2[0], "Fake Signature #2")
+        eq_(sig_1[8].date(), lastweek)
+        eq_(sig_2[8].date(), lastweek)
+        eq_(sig_1[10], 0.625)
+        eq_(sig_2[10], 0.375)
         self.assertRaises(StopIteration, generate.next)
 
     #--------------------------------------------------------------------------
@@ -273,7 +274,7 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
             'total_crashes': 8
         }]]
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     #--------------------------------------------------------------------------
     def test_latestEntryBeforeOrEqualTo(self):
@@ -290,7 +291,7 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
             product,
             version
         )
-        self.assertEqual(res, lastweek)
+        eq_(res, lastweek)
 
     #--------------------------------------------------------------------------
     def test_twoPeriodTopCrasherComparison(self):
@@ -356,7 +357,7 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
             'totalNumberOfCrashes': 24L
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     #--------------------------------------------------------------------------
     def test_twoPeriodTopCrasherComparisonLimited(self):
@@ -401,4 +402,4 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
             'totalNumberOfCrashes': 24L
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)

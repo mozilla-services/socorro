@@ -4,6 +4,7 @@
 
 import unittest
 import mock
+from nose.tools import eq_, ok_
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -86,7 +87,7 @@ class TestBase(unittest.TestCase):
                               crashstorage.get_unredacted_processed, 'ooid')
             self.assertRaises(NotImplementedError,
                               crashstorage.remove, 'ooid')
-            self.assertEquals(crashstorage.new_crashes(), [])
+            eq_(crashstorage.new_crashes(), [])
             crashstorage.close()
 
     def test_polyerror(self):
@@ -106,15 +107,15 @@ class TestBase(unittest.TestCase):
                 p.gather_current_exception()
             raise p
         except PolyStorageError, x:
-            self.assertEqual(len(x), 3)
-            self.assertTrue(x.has_exceptions())
+            eq_(len(x), 3)
+            ok_(x.has_exceptions())
             types = [NameError, KeyError, AttributeError]
-            [self.assertEqual(a[0], b) for a, b in zip(x, types)]
-            self.assertTrue(1 not in x)
-            self.assertTrue(str(x[0][1]), 'dwight')
+            [eq_(a[0], b) for a, b in zip(x, types)]
+            ok_(1 not in x)
+            ok_(str(x[0][1]), 'dwight')
 
             x[0] = x[1]
-            self.assertEqual(x[0], x[1])
+            eq_(x[0], x[1])
 
     def test_poly_crash_storage(self):
         n = Namespace()
@@ -134,25 +135,25 @@ class TestBase(unittest.TestCase):
                 }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            self.assertEqual(config.storage0.crashstorage_class.foo, 'a')
-            self.assertEqual(config.storage1.crashstorage_class.foo, 'a')
-            self.assertEqual(config.storage1.y, 37)
-            self.assertEqual(config.storage2.crashstorage_class.foo, 'b')
+            eq_(config.storage0.crashstorage_class.foo, 'a')
+            eq_(config.storage1.crashstorage_class.foo, 'a')
+            eq_(config.storage1.y, 37)
+            eq_(config.storage2.crashstorage_class.foo, 'b')
 
             poly_store = config.storage(config)
             l = len(poly_store.storage_namespaces)
-            self.assertEqual(l, 3, 'expected poly_store to have lenth of 3, '
+            eq_(l, 3, 'expected poly_store to have lenth of 3, '
                                   'but %d was found instead' % l)
-            self.assertEqual(poly_store.storage_namespaces[0], 'storage0')
-            self.assertEqual(poly_store.storage_namespaces[1], 'storage1')
-            self.assertEqual(poly_store.storage_namespaces[2], 'storage2')
+            eq_(poly_store.storage_namespaces[0], 'storage0')
+            eq_(poly_store.storage_namespaces[1], 'storage1')
+            eq_(poly_store.storage_namespaces[2], 'storage2')
             l = len(poly_store.stores)
-            self.assertEqual(l, 3,
+            eq_(l, 3,
                              'expected poly_store.store to have lenth of 3, '
                                   'but %d was found instead' % l)
-            self.assertEqual(poly_store.stores.storage0.foo, 'a')
-            self.assertEqual(poly_store.stores.storage1.foo, 'a')
-            self.assertEqual(poly_store.stores.storage2.foo, 'b')
+            eq_(poly_store.stores.storage0.foo, 'a')
+            eq_(poly_store.stores.storage1.foo, 'a')
+            eq_(poly_store.stores.storage2.foo, 'b')
 
             raw_crash = {'ooid': ''}
             dump = '12345'
@@ -233,8 +234,8 @@ class TestBase(unittest.TestCase):
             argv_source=[]
         )
         with cm.context() as config:
-            self.assertEqual(config.primary.storage_class.foo, 'a')
-            self.assertEqual(config.fallback.storage_class.foo, 'b')
+            eq_(config.primary.storage_class.foo, 'a')
+            eq_(config.fallback.storage_class.foo, 'b')
 
             raw_crash = {'ooid': ''}
             crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
@@ -251,7 +252,7 @@ class TestBase(unittest.TestCase):
               dump,
               crash_id
             )
-            self.assertEqual(fb_store.fallback_store.save_raw_crash.call_count,
+            eq_(fb_store.fallback_store.save_raw_crash.call_count,
                              0)
 
             fb_store.primary_store.save_raw_crash = Mock()
@@ -294,7 +295,7 @@ class TestBase(unittest.TestCase):
             fb_store.primary_store.save_processed.assert_called_with(
               processed_crash
             )
-            self.assertEqual(fb_store.fallback_store.save_processed.call_count,
+            eq_(fb_store.fallback_store.save_processed.call_count,
                              0)
 
             fb_store.primary_store.save_processed = Mock()
@@ -365,8 +366,8 @@ class TestBase(unittest.TestCase):
                 }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
-            self.assertEqual(config.primary.storage_class.foo, 'a')
-            self.assertEqual(config.deferred.storage_class.foo, 'b')
+            eq_(config.primary.storage_class.foo, 'a')
+            eq_(config.deferred.storage_class.foo, 'b')
 
             raw_crash = {'ooid': ''}
             crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
@@ -384,7 +385,7 @@ class TestBase(unittest.TestCase):
               dump,
               crash_id
             )
-            self.assertEqual(pd_store.deferred_store.save_raw_crash.call_count,
+            eq_(pd_store.deferred_store.save_raw_crash.call_count,
                              0)
 
             pd_store.save_raw_crash(deferred_crash, dump, crash_id)
@@ -401,7 +402,7 @@ class TestBase(unittest.TestCase):
             pd_store.primary_store.save_processed.assert_called_with(
               processed_crash
             )
-            self.assertEqual(pd_store.deferred_store.save_processed.call_count,
+            eq_(pd_store.deferred_store.save_processed.call_count,
                              0)
 
             pd_store.save_processed(deferred_crash)
@@ -460,9 +461,9 @@ class TestBase(unittest.TestCase):
             argv_source=[]
         )
         with cm.context() as config:
-            self.assertEqual(config.primary.storage_class.foo, 'a')
-            self.assertEqual(config.deferred.storage_class.foo, 'b')
-            self.assertEqual(config.processed.storage_class.foo, 'b')
+            eq_(config.primary.storage_class.foo, 'a')
+            eq_(config.deferred.storage_class.foo, 'b')
+            eq_(config.processed.storage_class.foo, 'b')
 
             raw_crash = {'ooid': ''}
             crash_id = '1498dee9-9a45-45cc-8ec8-71bb62121203'
@@ -481,7 +482,7 @@ class TestBase(unittest.TestCase):
               dump,
               crash_id
             )
-            self.assertEqual(pd_store.deferred_store.save_raw_crash.call_count,
+            eq_(pd_store.deferred_store.save_raw_crash.call_count,
                              0)
 
             pd_store.save_raw_crash(deferred_crash, dump, crash_id)
@@ -499,7 +500,7 @@ class TestBase(unittest.TestCase):
             pd_store.processed_store.save_processed.assert_called_with(
               processed_crash
             )
-            self.assertEqual(pd_store.primary_store.save_processed.call_count,
+            eq_(pd_store.primary_store.save_processed.call_count,
                              0)
 
             pd_store.save_processed(deferred_crash)
@@ -557,7 +558,7 @@ class TestRedactor(unittest.TestCase):
         d['upload_file_minidump_browser.json_dump.sensitive.exploitable'] = 55
         d['upload_file_minidump_browser.json_dump.sensitive.secret'] = 66
 
-        self.assertTrue('json_dump' in d)
+        ok_('json_dump' in d)
 
         config = DotDict()
         config.forbidden_keys = Redactor.required_config.forbidden_keys.default
@@ -577,11 +578,11 @@ class TestRedactor(unittest.TestCase):
         redactor(d)
         actual_surviving_keys = [x for x in d.keys()]
         actual_surviving_keys.sort()
-        self.assertEqual(
+        eq_(
             len(actual_surviving_keys),
             len(expected_surviving_keys)
         )
-        self.assertEqual(
+        eq_(
             actual_surviving_keys,
             expected_surviving_keys
         )

@@ -4,6 +4,7 @@
 
 import mock
 from nose.plugins.attrib import attr
+from nose.tools import ok_
 
 from socorro.cron import crontabber
 from socorro.cron import base
@@ -163,12 +164,12 @@ class TestMatviews(IntegrationTestCaseBase):
                              'explosiveness-matview',
                              'graphics-device-matview',):
 
-                self.assertTrue(app_name in information, app_name)
-                self.assertTrue(
+                ok_(app_name in information, app_name)
+                ok_(
                     not information[app_name]['last_error'],
                     app_name
                 )
-                self.assertTrue(
+                ok_(
                     information[app_name]['last_success'],
                     app_name
                 )

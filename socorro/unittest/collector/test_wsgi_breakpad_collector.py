@@ -4,7 +4,7 @@
 
 import unittest
 import mock
-
+from nose.tools import eq_, ok_
 from datetime import datetime
 
 from configman.dotdict import DotDict
@@ -41,12 +41,12 @@ class TestCollectorApp(unittest.TestCase):
     def test_setup(self):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
-        self.assertEqual(c.config, config)
-        self.assertEqual(c.logger, config.logger)
-        self.assertEqual(c.throttler, config.throttler)
-        self.assertEqual(c.crash_storage, config.crash_storage)
-        self.assertEqual(c.dump_id_prefix, 'bp-')
-        self.assertEqual(c.dump_field, 'dump')
+        eq_(c.config, config)
+        eq_(c.logger, config.logger)
+        eq_(c.throttler, config.throttler)
+        eq_(c.crash_storage, config.crash_storage)
+        eq_(c.dump_id_prefix, 'bp-')
+        eq_(c.dump_field, 'dump')
 
     def test_make_raw_crash(self):
         config = self.get_standard_config()
@@ -59,10 +59,10 @@ class TestCollectorApp(unittest.TestCase):
         form.some_other_field = ObjectWithValue('XYZ')
 
         rc, dmp = c._make_raw_crash_and_dumps(form)
-        self.assertEqual(rc.ProductName, 'FireSquid')
-        self.assertEqual(rc.Version, '99')
-        self.assertEqual(rc.some_field, '23')
-        self.assertEqual(rc.some_other_field, 'XYZ')
+        eq_(rc.ProductName, 'FireSquid')
+        eq_(rc.Version, '99')
+        eq_(rc.some_field, '23')
+        eq_(rc.some_other_field, 'XYZ')
 
     def test_POST(self):
         config = self.get_standard_config()
@@ -104,8 +104,8 @@ class TestCollectorApp(unittest.TestCase):
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (ACCEPT, 100)
                         r = c.POST()
-                        self.assertTrue(r.startswith('CrashID=bp-'))
-                        self.assertTrue(r.endswith('120504\n'))
+                        ok_(r.startswith('CrashID=bp-'))
+                        ok_(r.endswith('120504\n'))
                         erc['uuid'] = r[11:-1]
                         c.crash_storage.save_raw_crash.assert_called_with(
                           erc,
@@ -154,8 +154,8 @@ class TestCollectorApp(unittest.TestCase):
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (IGNORE, None)
                         r = c.POST()
-                        self.assertEqual(r, "Unsupported=1\n")
-                        self.assertFalse(
+                        eq_(r, "Unsupported=1\n")
+                        ok_(not
                           c.crash_storage.save_raw_crash.call_count
                         )
 
@@ -200,8 +200,8 @@ class TestCollectorApp(unittest.TestCase):
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (ACCEPT, 100)
                         r = c.POST()
-                        self.assertTrue(r.startswith('CrashID=bp-'))
-                        self.assertTrue(r.endswith('120504\n'))
+                        ok_(r.startswith('CrashID=bp-'))
+                        ok_(r.endswith('120504\n'))
                         erc['uuid'] = r[11:-1]
                         c.crash_storage.save_raw_crash.assert_called_with(
                           erc,
@@ -255,8 +255,8 @@ class TestCollectorApp(unittest.TestCase):
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (DEFER, 100)
                         r = c.POST()
-                        self.assertTrue(r.startswith('CrashID=bp-'))
-                        self.assertTrue(r.endswith('140107\n'))
+                        ok_(r.startswith('CrashID=bp-'))
+                        ok_(r.endswith('140107\n'))
                         c.crash_storage.save_raw_crash.assert_called_with(
                           erc,
                           {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
@@ -305,8 +305,8 @@ class TestCollectorApp(unittest.TestCase):
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (ACCEPT, 100)
                         r = c.POST()
-                        self.assertTrue(r.startswith('CrashID=bp-'))
-                        self.assertTrue(r.endswith('120504\n'))
+                        ok_(r.startswith('CrashID=bp-'))
+                        ok_(r.endswith('120504\n'))
                         erc['uuid'] = r[11:-1]
                         c.crash_storage.save_raw_crash.assert_called_with(
                           erc,
@@ -361,8 +361,8 @@ class TestCollectorApp(unittest.TestCase):
                         mocked_time.time.return_value = 3.0
                         c.throttler.throttle.return_value = (DEFER, 100)
                         r = c.POST()
-                        self.assertTrue(r.startswith('CrashID=bp-'))
-                        self.assertTrue(r.endswith('140107\n'))
+                        ok_(r.startswith('CrashID=bp-'))
+                        ok_(r.endswith('140107\n'))
                         c.crash_storage.save_raw_crash.assert_called_with(
                           erc,
                           {'dump':'fake dump', 'aux_dump':'aux_dump contents'},

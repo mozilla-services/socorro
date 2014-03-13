@@ -6,6 +6,7 @@ import random
 import unittest
 import datetime
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external import (
     MissingArgumentError,
@@ -78,10 +79,10 @@ class TestCrashes(unittest.TestCase):
         }
 
         params = crashes.prepare_search_params(**args)
-        self.assertTrue("signature" in params)
-        self.assertTrue("terms" in params)
-        self.assertEqual(params["signature"], "something")
-        self.assertEqual(params["signature"], params["terms"])
+        ok_("signature" in params)
+        ok_("terms" in params)
+        eq_(params["signature"], "something")
+        eq_(params["signature"], params["terms"])
 
         # .....................................................................
         # Test 3: some OS
@@ -91,10 +92,10 @@ class TestCrashes(unittest.TestCase):
         }
 
         params = crashes.prepare_search_params(**args)
-        self.assertTrue("os" in params)
-        self.assertEqual(len(params["os"]), 2)
-        self.assertEqual(params["os"][0], "Windows NT")
-        self.assertEqual(params["os"][1], "Linux")
+        ok_("os" in params)
+        eq_(len(params["os"]), 2)
+        eq_(params["os"][0], "Windows NT")
+        eq_(params["os"][1], "Linux")
 
         # .....................................................................
         # Test 4: with a plugin
@@ -106,8 +107,8 @@ class TestCrashes(unittest.TestCase):
         }
 
         params = crashes.prepare_search_params(**args)
-        self.assertTrue("plugin_terms" in params)
-        self.assertEqual(params["plugin_terms"], "%some plugin%")
+        ok_("plugin_terms" in params)
+        eq_(params["plugin_terms"], "%some plugin%")
 
     def test_get_signatures_with_too_big_date_range(self):
         # This can all be some fake crap because we're testing that
@@ -559,7 +560,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_comments(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 2: no results
         params = {
@@ -571,7 +572,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_comments(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 3: missing parameter
         self.assertRaises(MissingArgumentError, crashes.get_comments)
@@ -595,7 +596,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_comments(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test an invalid rapid beta versions
         params = {
@@ -604,16 +605,16 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_comments(**params)
-        self.assertTrue(res)
-        self.assertEqual(len(res['hits']), 2)
-        self.assertEqual(res['total'], 2)
+        ok_(res)
+        eq_(len(res['hits']), 2)
+        eq_(res['total'], 2)
 
         # use pagination
         params['result_number'] = 1
         params['result_offset'] = 0
         res = crashes.get_comments(**params)
-        self.assertEqual(len(res['hits']), 1)
-        self.assertEqual(res['total'], 2)
+        eq_(len(res['hits']), 1)
+        eq_(res['total'], 2)
 
     #--------------------------------------------------------------------------
     def test_get_daily(self):
@@ -643,7 +644,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_daily(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 2: one product, several versions, range by build date,
         # simple version
@@ -686,7 +687,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_daily(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 3: one product, one version, extended fields, complex version
         params = {
@@ -724,7 +725,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_daily(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 4: report type filter, complex version
         params = {
@@ -749,7 +750,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_daily(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 5: extended fields, by build date and with report type,
         # complex version
@@ -796,7 +797,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_daily(**params)
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         # Test 6: missing parameters
         self.assertRaises(MissingArgumentError, crashes.get_daily)
@@ -825,7 +826,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_count_by_day(**params)
-        self.assertEquals(res, expected)
+        eq_(res, expected)
 
         params = {
             'signature': 'nothing',
@@ -838,7 +839,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_count_by_day(**params)
-        self.assertEquals(res, expected)
+        eq_(res, expected)
 
         params = {
             'signature': 'js',
@@ -855,7 +856,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_count_by_day(**params)
-        self.assertEquals(res, expected)
+        eq_(res, expected)
 
     #--------------------------------------------------------------------------
     def test_get_frequency(self):
@@ -904,7 +905,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
         res = crashes.get_frequency(**params)
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2
@@ -928,7 +929,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
         res = crashes.get_frequency(**params)
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     #--------------------------------------------------------------------------
     def test_get_paireduuid(self):
@@ -952,7 +953,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             ],
             "total": 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: a uuid only
@@ -971,7 +972,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             ],
             "total": 2
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 3: a query with no result
@@ -983,7 +984,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "hits": [],
             "total": 0
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 4: one result that was yesterday
@@ -999,7 +1000,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             ],
             "total": 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 5: missing argument
@@ -1037,7 +1038,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_exploitability()
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_exploitibility_by_report_date(self):
         crashes = Crashes(config=self.config)
@@ -1070,7 +1071,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             start_date=yesterday,
             end_date=yesterday
         )
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_exploitibility_by_product(self):
         crashes = Crashes(config=self.config)
@@ -1098,7 +1099,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "total": 2,
         }
         res = crashes.get_exploitability(product='Firefox')
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_exploitibility_by_product_and_version(self):
         crashes = Crashes(config=self.config)
@@ -1118,7 +1119,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_exploitability(product='Firefox', version='14.0b')
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
     def test_get_exploitibility_with_pagination(self):
         crashes = Crashes(config=self.config)
@@ -1165,16 +1166,16 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.connection.commit()
 
         res = crashes.get_exploitability()
-        self.assertEqual(len(res['hits']), res['total'])
-        self.assertTrue(res['total'] >= 3 * 10)
+        eq_(len(res['hits']), res['total'])
+        ok_(res['total'] >= 3 * 10)
 
         res = crashes.get_exploitability(
             start_date=yesterday_date,
             end_date=self.now
         )
-        self.assertEqual(len(res['hits']), res['total'])
-        self.assertTrue(res['total'] >= 2 * 10)
-        self.assertTrue(res['total'] < 3 * 10)
+        eq_(len(res['hits']), res['total'])
+        ok_(res['total'] >= 2 * 10)
+        ok_(res['total'] < 3 * 10)
 
         # passing a `page` without `batch` will yield an error
         self.assertRaises(
@@ -1196,19 +1197,19 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             batch=15
         )
         self.assertNotEqual(len(res['hits']), res['total'])
-        self.assertEqual(len(res['hits']), 15)
-        self.assertTrue(res['total'] >= 3 * 10)
+        eq_(len(res['hits']), 15)
+        ok_(res['total'] >= 3 * 10)
         # since it's ordered by "medium + high"...
 
         med_or_highs = [
             x['medium_count'] + x['high_count']
             for x in res['hits']
         ]
-        self.assertEqual(
+        eq_(
             med_or_highs[0],
             max(med_or_highs)
         )
-        self.assertEqual(
+        eq_(
             med_or_highs[-1],
             min(med_or_highs)
         )

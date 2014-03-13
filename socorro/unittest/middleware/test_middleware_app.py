@@ -11,6 +11,7 @@ import unittest
 import urllib
 from paste.fixture import TestApp, AppError
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from configman import (
     ConfigurationManager,
@@ -157,13 +158,13 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         testapp = TestApp(server._wsgi_func)
         response = testapp.get('/aux/')
-        self.assertEqual(response.status, 200)
-        self.assertEqual(json.loads(response.body), {'age': 100})
+        eq_(response.status, 200)
+        eq_(json.loads(response.body), {'age': 100})
 
         logging_info.assert_called_with('Running AuxImplementation1')
 
         response = testapp.get('/xxxjunkxxx', expect_errors=True)
-        self.assertEqual(response.status, 404)
+        eq_(response.status, 404)
 
     @mock.patch('logging.info')
     def test_basic_get_args(self, logging_info):
@@ -186,23 +187,23 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         testapp = TestApp(server._wsgi_func)
         response = testapp.get('/aux/age/')
-        self.assertEqual(response.status, 200)
-        self.assertEqual(json.loads(response.body), {'age': 100})
-        self.assertEqual(response.header_dict['content-length'],
+        eq_(response.status, 200)
+        eq_(json.loads(response.body), {'age': 100})
+        eq_(response.header_dict['content-length'],
                          str(len(response.body)))
-        self.assertEqual(response.header_dict['content-type'],
+        eq_(response.header_dict['content-type'],
                          'application/json')
 
         logging_info.assert_called_with('Running AuxImplementation2')
 
         response = testapp.get('/aux/gender/', expect_errors=True)
-        self.assertEqual(response.status, 200)
-        self.assertEqual(json.loads(response.body), {'gender': 0})
+        eq_(response.status, 200)
+        eq_(json.loads(response.body), {'gender': 0})
 
         # if the URL allows a certain first argument but the implementation
         # isn't prepared for it, it barfs a 405 at you
         response = testapp.get('/aux/misconfigured/', expect_errors=True)
-        self.assertEqual(response.status, 405)
+        eq_(response.status, 405)
 
     @mock.patch('logging.info')
     def test_basic_post(self, logging_info):
@@ -226,13 +227,13 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         testapp = TestApp(server._wsgi_func)
         response = testapp.post('/aux/')
-        self.assertEqual(response.status, 200)
-        self.assertEqual(json.loads(response.body), {'age': 100})
+        eq_(response.status, 200)
+        eq_(json.loads(response.body), {'age': 100})
 
         logging_info.assert_called_with('Running AuxImplementation3')
 
         response = testapp.get('/aux/', expect_errors=True)
-        self.assertEqual(response.status, 405)
+        eq_(response.status, 405)
 
     @mock.patch('logging.info')
     def test_put_with_data(self, logging_info):
@@ -256,8 +257,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         testapp = TestApp(server._wsgi_func)
         response = testapp.put('/aux/', params={'add': 1})
-        self.assertEqual(response.status, 200)
-        self.assertEqual(json.loads(response.body), {'age': 101})
+        eq_(response.status, 200)
+        eq_(json.loads(response.body), {'age': 101})
 
         logging_info.assert_called_with('Running AuxImplementation4')
 
@@ -285,8 +286,8 @@ class ImplementationWrapperTestCase(unittest.TestCase):
             '/aux/',
             {'foo': 'bar', 'names': ['peter', 'anders']},
         )
-        self.assertEqual(response.status, 200)
-        self.assertEqual(json.loads(response.body),
+        eq_(response.status, 200)
+        eq_(json.loads(response.body),
                          {'foo': 'bar',
                           'names': ['peter', 'anders']})
 
@@ -331,45 +332,45 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         # Test a Not Found error
         response = testapp.get('/aux/notfound', expect_errors=True)
-        self.assertEqual(response.status, 404)
-        self.assertEqual(
+        eq_(response.status, 404)
+        eq_(
             response.header('content-type'),
             'application/json; charset=UTF-8'
         )
         body = json.loads(response.body)
-        self.assertEqual(body['error']['message'], 'not here')
+        eq_(body['error']['message'], 'not here')
 
         # Test a Timeout error
         response = testapp.get('/aux/unavailable', expect_errors=True)
-        self.assertEqual(response.status, 408)
-        self.assertEqual(
+        eq_(response.status, 408)
+        eq_(
             response.header('content-type'),
             'application/json; charset=UTF-8'
         )
         body = json.loads(response.body)
-        self.assertEqual(body['error']['message'], 'unavailable')
+        eq_(body['error']['message'], 'unavailable')
 
         # Test BadRequest errors
         response = testapp.get('/aux/missing', expect_errors=True)
-        self.assertEqual(response.status, 400)
-        self.assertEqual(
+        eq_(response.status, 400)
+        eq_(
             response.header('content-type'),
             'application/json; charset=UTF-8'
         )
         body = json.loads(response.body)
-        self.assertEqual(
+        eq_(
             body['error']['message'],
             "Mandatory parameter(s) 'missing arg' is missing or empty."
         )
 
         response = testapp.get('/aux/bad', expect_errors=True)
-        self.assertEqual(response.status, 400)
-        self.assertEqual(
+        eq_(response.status, 400)
+        eq_(
             response.header('content-type'),
             'application/json; charset=UTF-8'
         )
         body = json.loads(response.body)
-        self.assertEqual(
+        eq_(
             body['error']['message'],
             "Bad value for parameter(s) 'bad arg'"
         )
@@ -415,7 +416,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
         testapp = TestApp(server._wsgi_func)
         response = testapp.get('/aux/bla', expect_errors=True)
-        self.assertEqual(response.status, 500)
+        eq_(response.status, 500)
         mock_logging.info.has_call([mock.call(
             'Error captured in Sentry. Reference: 123456789'
         )])
@@ -583,7 +584,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             server = middleware_app.application
 
             response = self.get(server, '/crash/', {'uuid': self.uuid})
-            self.assertEqual(response.data, ['all', 'your', 'base'])
+            eq_(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
         imp_list_option = (
@@ -609,12 +610,12 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             # normal call
             params = {'uuid': self.uuid}
             response = self.get(server, '/crash/', params)
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
             # forcing implementation at runtime
             params = {'uuid': self.uuid, '_force_api_impl': 'testy'}
             response = self.get(server, '/crash/', params)
-            self.assertEqual(response.data, ['all', 'your', 'base'])
+            eq_(response.data, ['all', 'your', 'base'])
 
             # forcing unexisting implementation at runtime
             params = {'uuid': self.uuid, '_force_api_impl': 'TYPO'}
@@ -634,7 +635,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             assert isinstance(server, MyWSGIServer)
 
             response = self.get(server, '/crash/', {'uuid': self.uuid})
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_crashes(self):
         config_manager = self._setup_config_manager()
@@ -649,7 +650,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/crashes/comments/',
                 {'signature': 'xxx', 'from': '2011-05-01'}
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
@@ -661,7 +662,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'to': '2011-05-05',
                 }
             )
-            self.assertEqual(response.data, {'hits': {}})
+            eq_(response.data, {'hits': {}})
 
             response = self.get(
                 server,
@@ -672,27 +673,27 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'to_date': '2011-05-05',
                 }
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
                 '/crashes/paireduuid/',
                 {'uuid': self.uuid}
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
                 '/crashes/signatures/',
                 {'product': 'Firefox', 'version': '9.0a1'}
             )
-            self.assertEqual(response.data['crashes'], [])
+            eq_(response.data['crashes'], [])
 
             response = self.get(
                 server,
                 '/crashes/exploitability/'
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_crashes_comments_with_data(self):
         config_manager = self._setup_config_manager()
@@ -731,8 +732,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/crashes/comments/',
                 {'signature': 'sig1', 'from': now, 'to': now}
             )
-            self.assertEqual(response.data['total'], 1)
-            self.assertEqual(response.data['hits'][0]['user_comments'], 'crap')
+            eq_(response.data['total'], 1)
+            eq_(response.data['hits'][0]['user_comments'], 'crap')
 
     def test_extensions(self):
         config_manager = self._setup_config_manager()
@@ -747,7 +748,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/extensions/',
                 {'uuid': self.uuid, 'date': '2012-02-29T01:23:45+00:00'}
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
             now = datetimeutil.utc_now()
             uuid = "%%s-%s" % now.strftime("%y%m%d")
@@ -799,7 +800,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/extensions/',
                 {'uuid': uuid % 'a1', 'date': now.isoformat()}
             )
-            self.assertEqual(response.data['total'], 3)
+            eq_(response.data['total'], 3)
 
     def test_field(self):
         config_manager = self._setup_config_manager()
@@ -814,7 +815,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/field/',
                 {'name': 'something'}
             )
-            self.assertEqual(response.data, {
+            eq_(response.data, {
                 'name': None,
                 'transforms': None,
                 'product': None
@@ -838,7 +839,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'version': '13.0a1',
                 }
             )
-            self.assertEqual(response.data, {'crashtrends': []})
+            eq_(response.data, {'crashtrends': []})
 
     def test_job(self):
         config_manager = self._setup_config_manager()
@@ -853,7 +854,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/job/',
                 {'uuid': self.uuid}
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_platforms(self):
         config_manager = self._setup_config_manager()
@@ -864,7 +865,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
             server = middleware_app.application
 
             response = self.get(server, '/platforms/')
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_priorityjobs(self):
         config_manager = self._setup_config_manager()
@@ -880,14 +881,14 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {'uuid': self.uuid},
                 expect_errors=True
             )
-            self.assertEqual(response.status, 500)
+            eq_(response.status, 500)
 
             response = self.post(
                 server,
                 '/priorityjobs/',
                 {'uuid': self.uuid}
             )
-            self.assertTrue(response.data)
+            ok_(response.data)
 
     def test_products(self):
         config_manager = self._setup_config_manager()
@@ -902,7 +903,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/products/',
                 {'versions': 'Firefox:9.0a1'}
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_products_builds(self):
         config_manager = self._setup_config_manager()
@@ -917,7 +918,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/products/builds/',
                 {'product': 'Firefox', 'version': ':9.0a1'}
             )
-            self.assertEqual(response.data, [])
+            eq_(response.data, [])
 
     def test_products_builds_post(self):
         config_manager = self._setup_config_manager()
@@ -989,8 +990,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                  "repository": "mozilla-central"
                  }
             )
-            self.assertEqual(response.status, 200)
-            self.assertEqual(response.body, 'Firefox')
+            eq_(response.status, 200)
+            eq_(response.body, 'Firefox')
 
     def test_releases(self):
         config_manager = self._setup_config_manager()
@@ -1005,7 +1006,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/releases/featured/',
                 {'products': ['Firefox', 'Fennec']}
             )
-            self.assertEqual(response.data, {'hits': {}, 'total': 0})
+            eq_(response.data, {'hits': {}, 'total': 0})
 
     def test_releases_featured_put(self):
         config_manager = self._setup_config_manager()
@@ -1020,7 +1021,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/releases/featured/',
                 {'Firefox': '15.0a1,14.0b1'},
             )
-            self.assertEqual(response.data, False)
+            eq_(response.data, False)
 
     def test_signatureurls(self):
         config_manager = self._setup_config_manager()
@@ -1041,7 +1042,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'versions': ['Firefox:4.0.1', 'Fennec:13.0'],
                 }
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_search(self):
         config_manager = self._setup_config_manager()
@@ -1064,7 +1065,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'os': 'Windows',
                 }
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_server_status(self):
         breakpad_revision = '1.0'
@@ -1092,7 +1093,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/server_status/',
                 {'duration': 12}
             )
-            self.assertEqual(response.data, {
+            eq_(response.data, {
                 'hits': [],
                 'total': 0,
                 'breakpad_revision': breakpad_revision,
@@ -1121,7 +1122,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'to': '2011-05-05',
                 }
             )
-            self.assertEqual(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_util_versions_info(self):
         config_manager = self._setup_config_manager()
@@ -1136,7 +1137,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/util/versions_info/',
                 {'versions': ['Firefox:9.0a1', 'Fennec:7.0']}
             )
-            self.assertEqual(response.data, {})
+            eq_(response.data, {})
 
     def test_bugs(self):
         config_manager = self._setup_config_manager()
@@ -1151,7 +1152,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/bugs/',
                 {'signatures': ['sign1', 'sign2']}
             )
-            self.assertEqual(response.data, {'hits': [], u'total': 0})
+            eq_(response.data, {'hits': [], u'total': 0})
 
             # because the bugs API is using POST and potentially multiple
             # signatures, it's a good idea to write a full integration test
@@ -1177,8 +1178,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {'signatures': ['si/gn1', 'sign2+']}
             )
             hits = sorted(response.data['hits'], key=lambda k: k['id'])
-            self.assertEqual(response.data['total'], 2)
-            self.assertEqual(hits,
+            eq_(response.data['total'], 2)
+            eq_(hits,
                              [{u'id': 2, u'signature': u'sign2+'},
                               {u'id': 3, u'signature': u'si/gn1'}])
 
@@ -1187,8 +1188,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/bugs/',
                 {'signatures': 'othersig'}
             )
-            self.assertEqual(response.data['total'], 1)
-            self.assertEqual(response.data['hits'],
+            eq_(response.data['total'], 1)
+            eq_(response.data['hits'],
                              [{u'id': 1, u'signature': u'othersig'}])
 
             response = self.post(
@@ -1196,7 +1197,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/bugs/',
                 {'signatures': ['never', 'heard', 'of']}
             )
-            self.assertEqual(response.data, {'hits': [], u'total': 0})
+            eq_(response.data, {'hits': [], u'total': 0})
 
     def test_signaturesummary(self):
         config_manager = self._setup_config_manager()
@@ -1217,7 +1218,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                     'versions': [1, 2],
                 }
             )
-            self.assertEqual(response.data, [])
+            eq_(response.data, [])
 
     def test_backfill(self):
         config_manager = self._setup_config_manager()
@@ -1245,7 +1246,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/backfill/',
                 {'backfill_type': 'adu', 'update_day': '2013-08-22'}
             )
-            self.assertEqual(response.status, 200)
+            eq_(response.status, 200)
 
     def test_missing_argument_yield_bad_request(self):
         config_manager = self._setup_config_manager()
@@ -1261,24 +1262,24 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {'xx': 'yy'},
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('uuid' in response.body)
+            eq_(response.status, 400)
+            ok_('uuid' in response.body)
 
             response = self.get(
                 server,
                 '/crashes/comments/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('signature' in response.body)
+            eq_(response.status, 400)
+            ok_('signature' in response.body)
 
             response = self.get(
                 server,
                 '/crashes/daily/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('product' in response.body)
+            eq_(response.status, 400)
+            ok_('product' in response.body)
 
             response = self.get(
                 server,
@@ -1286,24 +1287,24 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {'product': 'Firefox'},
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('versions' in response.body)
+            eq_(response.status, 400)
+            ok_('versions' in response.body)
 
             response = self.get(
                 server,
                 '/crashes/paireduuid/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('uuid' in response.body)
+            eq_(response.status, 400)
+            ok_('uuid' in response.body)
 
             response = self.get(
                 server,
                 '/job/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('uuid' in response.body)
+            eq_(response.status, 400)
+            ok_('uuid' in response.body)
 
             response = self.post(
                 server,
@@ -1311,29 +1312,29 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {},
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('signatures' in response.body)
+            eq_(response.status, 400)
+            ok_('signatures' in response.body)
 
             response = self.get(
                 server,
                 '/priorityjobs/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 500)
+            eq_(response.status, 500)
 
             response = self.post(
                 server,
                 '/priorityjobs/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
+            eq_(response.status, 400)
 
             response = self.post(
                 server,
                 '/priorityjobs/',
                 {'uuid': 1234689},
             )
-            self.assertEqual(response.status, 200)
+            eq_(response.status, 200)
 
             response = self.post(
                 server,
@@ -1341,8 +1342,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {'xxx': ''},
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('product' in response.body)
+            eq_(response.status, 400)
+            ok_('product' in response.body)
 
             response = self.get(
                 server,
@@ -1356,8 +1357,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 },
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
-            self.assertTrue('signature' in response.body)
+            eq_(response.status, 400)
+            ok_('signature' in response.body)
 
     def test_setting_up_with_lists_overridden(self):
 
@@ -1377,15 +1378,15 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
-            self.assertEqual(
+            eq_(
                 app.config.webapi.non_release_channels,
                 ['Foo', 'Bar']
             )
-            self.assertEqual(
+            eq_(
                 app.config.webapi.restricted_channels,
                 ['foo', 'bar']
             )
-            self.assertEqual(
+            eq_(
                 app.config.webapi.platforms,
                 platforms
             )
@@ -1402,8 +1403,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 server,
                 '/laglog/',
             )
-            self.assertEqual(response.status, 200)
-            self.assertEqual(json.loads(response.body), {'replicas': []})
+            eq_(response.status, 200)
+            eq_(json.loads(response.body), {'replicas': []})
 
     def test_graphics_devices(self):
         config_manager = self._setup_config_manager()
@@ -1418,15 +1419,15 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/graphics_devices/',
                 expect_errors=True
             )
-            self.assertEqual(response.status, 400)
+            eq_(response.status, 400)
 
             response = self.get(
                 server,
                 '/graphics_devices/',
                 {'vendor_hex': '0x1002', 'adapter_hex': '0x0166'},
             )
-            self.assertEqual(response.status, 200)
-            self.assertEqual(
+            eq_(response.status, 200)
+            eq_(
                 json.loads(response.body),
                 {'hits': [], 'total': 0}
             )
@@ -1452,8 +1453,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 # try to urlencode it
                 json.dumps(payload)
             )
-            self.assertEqual(response.status, 200)
-            self.assertEqual(
+            eq_(response.status, 200)
+            eq_(
                 json.loads(response.body),
                 True
             )
@@ -1464,8 +1465,8 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 '/graphics_devices/',
                 json.dumps([{'rubbish': 'stuff'}])
             )
-            self.assertEqual(response.status, 200)
-            self.assertEqual(
+            eq_(response.status, 200)
+            eq_(
                 json.loads(response.body),
                 False
             )

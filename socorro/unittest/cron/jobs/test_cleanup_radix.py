@@ -10,6 +10,7 @@ import tempfile
 import mock
 from configman import ConfigurationManager
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.cron import crontabber
 from ..base import IntegrationTestCaseBase
@@ -74,8 +75,8 @@ class TestCleanupRadix(IntegrationTestCaseBase):
         }, self.CRASH_ID)
         self.fsrts._current_slot = lambda: ['10', '00_01']
 
-        self.assertEqual(list(self.fsrts.new_crashes()), [self.CRASH_ID])
-        self.assertEqual(list(self.fsrts.new_crashes()), [])
+        eq_(list(self.fsrts.new_crashes()), [self.CRASH_ID])
+        eq_(list(self.fsrts.new_crashes()), [])
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
@@ -87,7 +88,7 @@ class TestCleanupRadix(IntegrationTestCaseBase):
         assert not information['cleanup_radix']['last_error']
         assert information['cleanup_radix']['last_success']
 
-        self.assertEqual(os.listdir(self.fsrts.config.fs_root), [])
+        eq_(os.listdir(self.fsrts.config.fs_root), [])
 
         future = (utc_now() + datetime.timedelta(days=10)).strftime("%Y%m%d")
         future_id = "0bba929f-8721-460c-dead-a43c%s" % future
@@ -101,9 +102,9 @@ class TestCleanupRadix(IntegrationTestCaseBase):
         }, future_id)
         self.fsrts._current_slot = lambda: ['10', '00_01']
 
-        self.assertEqual(list(self.fsrts.new_crashes()), [future_id])
-        self.assertEqual(list(self.fsrts.new_crashes()), [])
+        eq_(list(self.fsrts.new_crashes()), [future_id])
+        eq_(list(self.fsrts.new_crashes()), [])
 
         tab.run_all()
 
-        self.assertEqual(os.listdir(self.fsrts.config.fs_root), [future])
+        eq_(os.listdir(self.fsrts.config.fs_root), [future])

@@ -8,6 +8,7 @@ from functools import wraps
 from cStringIO import StringIO
 import mock
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 from socorro.cron import crontabber
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
@@ -37,23 +38,23 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2_patcher.stop()
 
     def test_urljoin(self):
-        self.assertEqual(
+        eq_(
             ftpscraper.urljoin('http://google.com', '/page.html'),
             'http://google.com/page.html'
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.urljoin('http://google.com/', '/page.html'),
             'http://google.com/page.html'
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.urljoin('http://google.com/', 'page.html'),
             'http://google.com/page.html'
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.urljoin('http://google.com', 'page.html'),
             'http://google.com/page.html'
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.urljoin('http://google.com', 'dir1', ''),
             'http://google.com/dir1/'
         )
@@ -87,8 +88,8 @@ class TestFTPScraper(TestCaseBase):
             'http://doesntmatt.er',
             sleep_time=25
         )
-        self.assertEqual(content, "<html>content</html>")
-        self.assertEqual(sleeps, [25, 25, 25])
+        eq_(content, "<html>content</html>")
+        eq_(sleeps, [25, 25, 25])
 
     @mock.patch('socorro.cron.jobs.ftpscraper.time')
     def test_patient_urlopen_impatient_retriederror(self, mocked_time):
@@ -120,7 +121,7 @@ class TestFTPScraper(TestCaseBase):
             'http://doesntmatt.er',
             max_attempts=1
         )
-        self.assertEqual(len(mock_calls), 1)
+        eq_(len(mock_calls), 1)
 
         # less impatient
         mock_calls = []
@@ -130,7 +131,7 @@ class TestFTPScraper(TestCaseBase):
             'http://doesntmatt.er',
             max_attempts=2
         )
-        self.assertEqual(len(mock_calls), 2)
+        eq_(len(mock_calls), 2)
 
     @mock.patch('socorro.cron.jobs.ftpscraper.time')
     def test_patient_urlopen_some_raise_errors(self, mocked_time):
@@ -169,7 +170,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
         response = ftpscraper.patient_urlopen('http://doesntmatt.er')
-        self.assertEqual(response, None)
+        eq_(response, None)
         assert len(mock_calls) == 1, mock_calls
 
     @mock.patch('socorro.cron.jobs.ftpscraper.time')
@@ -199,7 +200,7 @@ class TestFTPScraper(TestCaseBase):
             ftpscraper.patient_urlopen,
             'http://doesntmatt.er',
         )
-        self.assertTrue(len(mock_calls) > 1)
+        ok_(len(mock_calls) > 1)
 
     def test_getLinks(self):
         @stringioify
@@ -212,19 +213,19 @@ class TestFTPScraper(TestCaseBase):
             raise NotImplementedError(url)
 
         self.urllib2.side_effect = mocked_urlopener
-        self.assertEqual(
+        eq_(
             ftpscraper.getLinks('ONE'),
             []
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.getLinks('ONE', startswith='One'),
             ['One.html']
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.getLinks('ONE', endswith='.html'),
             ['One.html']
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.getLinks('ONE', startswith='Two'),
             []
         )
@@ -235,7 +236,7 @@ class TestFTPScraper(TestCaseBase):
             raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
 
         self.urllib2.side_effect = mocked_urlopener
-        self.assertEqual(
+        eq_(
             ftpscraper.getLinks('ONE'),
             []
         )
@@ -260,27 +261,27 @@ class TestFTPScraper(TestCaseBase):
             raise NotImplementedError(url)
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('ONE'),
             ({'BUILDID': '123'}, [])
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('TWO'),
             ({'BUILDID': '123',
               'buildID': '456'}, [])
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('THREE', nightly=True),
             ({'buildID': '123',
               'rev': 'http://hg.mozilla.org/123'}, [])
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('FOUR', nightly=True),
             ({'buildID': '123',
               'rev': 'http://hg.mozilla.org/123',
               'altrev': 'http://git.mozilla.org/123'}, [])
         )
-        self.assertEqual(
+        eq_(
             ftpscraper.parseB2GFile('FIVE', nightly=True),
             ({"buildid": "20130309070203",
               "update_channel": "nightly",
@@ -297,12 +298,12 @@ class TestFTPScraper(TestCaseBase):
             raise NotImplementedError(url)
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('ONE'),
             ({}, ['BUILDID'])
         )
 
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('TWO'),
             ({'BUILDID': '123'}, ['buildID'])
         )
@@ -315,7 +316,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             ftpscraper.parseInfoFile('ONE'),
             ({}, [])
         )
@@ -343,11 +344,11 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getRelease('TWO', 'http://x')),
             []
         )
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getRelease('ONE', 'http://x')),
             [('linux', 'ONE',
              {'BUILDID': '123', 'version_build': 'build-11'}, [])]
@@ -359,7 +360,7 @@ class TestFTPScraper(TestCaseBase):
             raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             ftpscraper.parseB2GFile('FIVE', nightly=True),
             None
         )
@@ -388,11 +389,11 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getNightly('TWO', 'http://x')),
             []
         )
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getNightly('ONE', 'http://x')),
             [('linux', 'ONE', 'firefox',
               {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, []),
@@ -426,11 +427,11 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getB2G('ONE', 'http://x')),
             []
         )
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getB2G('TWO', 'http://x')),
             [
                 ('unagi', 'b2g-release', u'18.0', {
@@ -682,11 +683,11 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
-        self.assertTrue('20120516114455' in build_ids)
-        self.assertTrue('20120516113045' in build_ids)
-        self.assertTrue('20120505030510' in build_ids)
-        self.assertTrue('20120505443322' in build_ids)
-        self.assertEqual(builds, [{
+        ok_('20120516114455' in build_ids)
+        ok_('20120516113045' in build_ids)
+        ok_('20120505030510' in build_ids)
+        ok_('20120505443322' in build_ids)
+        eq_(builds, [{
             'build_id': 20120516113045,
             'product_name': 'mobile',
             'build_type': 'release'
@@ -709,13 +710,13 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         }])
 
         assert len(build_ids) == 4
-        self.assertEqual(build_ids['20120516114455']['build_type'],
+        eq_(build_ids['20120516114455']['build_type'],
                          'beta')
-        self.assertEqual(build_ids['20120516113045']['build_type'],
+        eq_(build_ids['20120516113045']['build_type'],
                          'release')
-        self.assertEqual(build_ids['20120505030510']['build_type'],
+        eq_(build_ids['20120505030510']['build_type'],
                          'nightly')
-        self.assertEqual(build_ids['20120505443322']['build_type'],
+        eq_(build_ids['20120505443322']['build_type'],
                          'aurora')
 
         # just one more time, pretend that we run it immediately again
@@ -848,10 +849,10 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         """ % ','.join(columns))
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
-        self.assertTrue('20120516114455' not in build_ids)
-        self.assertTrue('20120505030510' in build_ids)
-        self.assertTrue('20120505443322' in build_ids)
-        self.assertEqual(len(build_ids), 2)
+        ok_('20120516114455' not in build_ids)
+        ok_('20120505030510' in build_ids)
+        ok_('20120505443322' in build_ids)
+        eq_(len(build_ids), 2)
 
     def test_getJsonRelease(self):
         @stringioify
@@ -910,11 +911,11 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
 
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getJsonRelease('TWO', 'http://x')),
             []
         )
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getJsonRelease('ONE', 'http://x')),
             [('win', 'ONE', {
                 u'moz_app_version': u'27.0',
@@ -933,7 +934,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
                 'version_build': 'build-12'
             })]
         )
-        self.assertEqual(
+        eq_(
             list(ftpscraper.getJsonRelease('THREE', 'http://x')),
             []
         )
@@ -1120,11 +1121,11 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         builds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         build_ids = dict((str(x['build_id']), x) for x in builds)
 
-        self.assertTrue('20140113161827' in build_ids)
-        self.assertTrue('20140113161826' in build_ids)
-        self.assertTrue('20140205030203' in build_ids)
+        ok_('20140113161827' in build_ids)
+        ok_('20140113161826' in build_ids)
+        ok_('20140205030203' in build_ids)
         assert len(build_ids) == 4
-        self.assertEqual(builds, [{
+        eq_(builds, [{
             'build_id': 20140113161827,
             'product_name': 'firefox',
             'build_type': 'release'

@@ -6,6 +6,7 @@ import unittest
 
 from mock import Mock, MagicMock, patch
 from nose.plugins.attrib import attr
+from nose.tools import eq_, ok_
 
 from socorro.external.rabbitmq import priorityjobs
 
@@ -54,23 +55,23 @@ class IntegrationTestPriorityjobs(unittest.TestCase):
             jobs = priorityjobs.Priorityjobs(config=self.config)
             mocked_connection =  self.config.rabbitmq.rabbitmq_class
             mocked_connection.return_value.return_value = MagicMock()
-            self.assertEqual(mocked_connection.call_count, 1)
-            self.assertEqual(jobs.config.host, 'localhost')
-            self.assertEqual(jobs.config.port, 5672)
-            self.assertEqual(jobs.config.virtual_host, '/')
-            self.assertEqual(jobs.config.rabbitmq_user, 'guest')
-            self.assertEqual(jobs.config.rabbitmq_password, 'guest')
-            self.assertEqual(jobs.config.standard_queue_name, 'socorro.normal')
-            self.assertEqual(
+            eq_(mocked_connection.call_count, 1)
+            eq_(jobs.config.host, 'localhost')
+            eq_(jobs.config.port, 5672)
+            eq_(jobs.config.virtual_host, '/')
+            eq_(jobs.config.rabbitmq_user, 'guest')
+            eq_(jobs.config.rabbitmq_password, 'guest')
+            eq_(jobs.config.standard_queue_name, 'socorro.normal')
+            eq_(
                 jobs.config.priority_queue_name,
                 'socorro.priority'
             )
-            self.assertEqual(jobs.create(uuid='b1'), True)
+            eq_(jobs.create(uuid='b1'), True)
 
             #..................................................................
             self.assertRaises(priorityjobs.MissingArgumentError,
                               jobs.create)
-            self.assertTrue(
+            ok_(
                 mocked_connection.return_value.channel. \
                     basic_publish.called_once_with(
                         '',

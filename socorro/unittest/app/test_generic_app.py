@@ -7,6 +7,7 @@ import shutil
 import os
 import unittest
 import mock
+from nose.tools import eq_
 from configman import Namespace
 from configman.config_file_future_proxy import ConfigFileFutureProxy
 from socorro.app.generic_app import App, main
@@ -62,14 +63,14 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
     def test_overriding_config_path(self, logging):
         vsl = (ConfigFileFutureProxy,)
         exit_code = main(MyApp, values_source_list=vsl)
-        self.assertEqual(exit_code, 0)
+        eq_(exit_code, 0)
 
         os.environ['DEFAULT_SOCORRO_CONFIG_PATH'] = '/foo/bar'
         self.assertRaises(IOError, main, (MyApp,), values_source_list=vsl)
 
         os.environ['DEFAULT_SOCORRO_CONFIG_PATH'] = self.tempdir
         exit_code = main(MyApp, values_source_list=vsl)
-        self.assertEqual(exit_code, 0)
+        eq_(exit_code, 0)
 
         logging.getLogger().error.assert_called_with(' - MainThread - colour')
 
@@ -78,7 +79,7 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
             f.write('color_or_colour=color\n')
 
         exit_code = main(MyApp, values_source_list=vsl)
-        self.assertEqual(exit_code, 0)
+        eq_(exit_code, 0)
 
         logging.getLogger().error.assert_called_with(' - MainThread - color')
 
@@ -86,12 +87,12 @@ class TestGenericAppConfigPathLoading(unittest.TestCase):
     def test_exit_codes(self, logging):
         vsl = (ConfigFileFutureProxy, {'exit_code': 123})
         exit_code = main(ExitingApp, values_source_list=vsl)
-        self.assertEqual(exit_code, 123)
+        eq_(exit_code, 123)
 
         vsl = (ConfigFileFutureProxy, {'exit_code': 0})
         exit_code = main(ExitingApp, values_source_list=vsl)
-        self.assertEqual(exit_code, 0)
+        eq_(exit_code, 0)
 
         vsl = (ConfigFileFutureProxy, {'exit_code': None})
         exit_code = main(ExitingApp, values_source_list=vsl)
-        self.assertEqual(exit_code, 0)
+        eq_(exit_code, 0)

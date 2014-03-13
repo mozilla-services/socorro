@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.plugins.attrib import attr
+from nose.tools import eq_
 
 from socorro.external.postgresql import job
 
@@ -91,7 +92,7 @@ class IntegrationTestJob(PostgreSQLTestCase):
             ],
             "total": 1
         }
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 2: an invalid job
@@ -104,7 +105,7 @@ class IntegrationTestJob(PostgreSQLTestCase):
             "total": 0
         }
 
-        self.assertEqual(res, res_expected)
+        eq_(res, res_expected)
 
         #......................................................................
         # Test 3: missing argument
