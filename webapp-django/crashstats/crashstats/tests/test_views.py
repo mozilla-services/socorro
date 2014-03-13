@@ -1090,7 +1090,7 @@ class TestViews(BaseTestViews):
         ok_('FakeSignature 2' not in response.content)
         ok_('FakeSignature 3' in response.content)
 
-        report_list_url = reverse('crashstats.report_list')
+        report_list_url = reverse('crashstats:report_list')
         report_list_url1 = (
             '%s?signature=%s' % (
                 report_list_url,
