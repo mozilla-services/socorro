@@ -5,12 +5,22 @@
 import calendar
 from collections import defaultdict
 
+from socorro.external import BadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.lib import external_common
 
 
 class LagLog(PostgreSQLBase):
 
     def get(self, **kwargs):
+
+        filters = [
+            ('limit', 500, 'int'),
+            ('offset', 0, 'int'),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+        if params['limit'] > 1000:
+            raise BadArgumentError('Max limit is 1000')
 
         sql = """
             /* socorro.external.postgresql.laglog.LagLog.get */
@@ -27,9 +37,11 @@ class LagLog(PostgreSQLBase):
             ) AS average
             FROM lag_log
             ORDER BY moment
+            LIMIT %(limit)s
+            OFFSET %(offset)s
         """
 
-        results = self.query(sql)
+        results = self.query(sql, params)
         averages = defaultdict(list)
         all = defaultdict(list)
         for row in results:
