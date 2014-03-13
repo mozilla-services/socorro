@@ -31,7 +31,7 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
                   {% set signature = s['signature'] %}
                 <table class="captioned-data-table tcr-signature" aria-expanded="true">
                     <caption>
-                        <a href="{{ url('crashstats.report_list') }}?signature={{ signature | urlencode }}">{{ signature }}</a>
+                        <a href="{{ url('crashstats:report_list') }}?signature={{ signature | urlencode }}">{{ signature }}</a>
                         <a href="javascript:void(0)" class="toggle-sig-details" title="Hide Details">
                             <span aria-hidden="false" class="expanded expander-icon" data-icon="&#xe803;"></span>
                         </a>
