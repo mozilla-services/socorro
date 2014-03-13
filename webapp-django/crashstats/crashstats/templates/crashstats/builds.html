@@ -35,7 +35,7 @@ Nightly Builds for {{ product }} {% if version %}{{ version }}{% endif %}
                     <td>{{ version }}</td>
                     <td>
                     {% for r in builds %}
-                        <a href="{{ url('crashstats.query') }}?product={{ r.product }}&amp;version={{ r.product }}%3A{{ r.version }}&amp;build_id={{ r.buildid }}&amp;do_query=1">{{ r.platform }}</a>
+                        <a href="{{ url('crashstats:query') }}?product={{ r.product }}&amp;version={{ r.product }}%3A{{ r.version }}&amp;build_id={{ r.buildid }}&amp;do_query=1">{{ r.platform }}</a>
                     {% endfor %}
                     </td>
                 </tr>
@@ -45,9 +45,9 @@ Nightly Builds for {{ product }} {% if version %}{{ version }}{% endif %}
 
         <p>
            {% if version %}
-               {% set builds_rss_url = url('crashstats.buildsrss', product, version) %}
+               {% set builds_rss_url = url('crashstats:buildsrss', product, version) %}
            {% else %}
-               {% set builds_rss_url = url('crashstats.buildsrss', product) %}
+               {% set builds_rss_url = url('crashstats:buildsrss', product) %}
            {% endif %}
            <a href="{{ builds_rss_url }}"><img src="{{ static('img/feed-icon16x16.png') }}" alt="Subscribe"></a>
            <a href="{{ builds_rss_url }}">Subscribe</a>

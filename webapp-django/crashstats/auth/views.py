@@ -12,8 +12,8 @@ class CustomBrowserIDVerify(Verify):
         # to `/?bid_login_failed=1` which will redirect to
         # `/home/products/:defaultproduct` without the `?bid_login_failed=1`
         # part which doesn't tell browserID that it went wrong
-        return reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+        return reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))
 
     @property
     def success_url(self):
-        return reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+        return reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))

@@ -33,7 +33,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
 
         self._login()
@@ -79,7 +79,7 @@ class TestViews(BaseTestViews):
         })
         self.assertRedirects(
             response,
-            reverse('crashstats.login') + '?next=%s' % url
+            reverse('crashstats:login') + '?next=%s' % url
         )
 
         # try again, but this time logged in

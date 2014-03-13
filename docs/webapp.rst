@@ -83,7 +83,7 @@ using the ``user.has_perm()`` function.
 Here's an example in a template::
 
     {% if request.user.has_perm('crashstats.save_search') %}
-    <form action="{{ url('crashstats.save_search') }}" method="post">
+    <form action="{{ url('crashstats:save_search') }}" method="post">
     <button>Save this search</button>
     </form>
     {% endif %}

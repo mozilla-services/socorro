@@ -30,7 +30,7 @@ class TestViews(TestCase):
 
     @property
     def _home_url(self):
-        return reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+        return reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))
 
     def test_invalid(self):
         """Bad BrowserID form (i.e. no assertion) -> failure."""
