@@ -1651,6 +1651,13 @@ def status_json(request):
     return response
 
 
+def status_revision(request):
+    return http.HttpResponse(
+        models.Status().get()['socorro_revision'],
+        content_type='text/plain'
+    )
+
+
 @pass_default_context
 def crontabber_state(request, default_context=None):
     context = default_context or {}
