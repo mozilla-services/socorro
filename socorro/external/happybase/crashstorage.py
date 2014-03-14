@@ -115,25 +115,6 @@ class HBaseCrashStorage(CrashStorageBase):
                 row_id,
                 columns_and_values
             )
-            submitted_time_index = connection.table(
-                'crash_reports_index_submitted_time'
-            )
-            submitted_time_index.put(
-                row_id,
-                {
-                    "ids:ooid": crash_id
-                }
-            )
-            # TODO: not required?
-            #unprocessed_flag_index = connection.table(
-                #'crash_reports_index_unprocessed_flag'
-            #)
-            #unprocessed_flag_index.put(
-                #row_id,
-                #{
-                    #"ids:ooid": crash_id
-                #}
-            #)
         self.transaction(do_save, raw_crash, dumps, crash_id)
 
     def save_processed(self, processed_crash):

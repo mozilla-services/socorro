@@ -107,8 +107,8 @@ class TestCrashStorage(unittest.TestCase):
             "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
         }, {}, "0bba929f-8721-460c-dead-a43c20071027")
         with self.storage.hbase() as conn:
-            self.assertEqual(conn.table.call_count, 2)
-            self.assertEqual(conn.table.return_value.put.call_count, 2)
+            self.assertEqual(conn.table.call_count, 1)
+            self.assertEqual(conn.table.return_value.put.call_count, 1)
 
     def test_save_raw_crash_hang(self):
         self.storage.save_raw_crash({
@@ -116,8 +116,8 @@ class TestCrashStorage(unittest.TestCase):
             "HangID": "?"
         }, {}, "0bba929f-8721-460c-dead-a43c20071027")
         with self.storage.hbase() as conn:
-            self.assertEqual(conn.table.call_count, 2)
-            self.assertEqual(conn.table.return_value.put.call_count, 2)
+            self.assertEqual(conn.table.call_count, 1)
+            self.assertEqual(conn.table.return_value.put.call_count, 1)
 
     def test_get_raw_dumps(self):
         self.storage.get_raw_dumps("936ce666-ff3b-4c7a-9674-367fe2120408")
