@@ -80,3 +80,8 @@ def downgrade():
     op.drop_index('ix_correlations_core_signature_id', table_name='correlations_core')
     op.drop_index('ix_correlations_core_report_date', table_name='correlations_core')
     op.drop_table(u'correlations_core')
+    op.create_table(u'correlation_cores', sa.Column(u'dummy', sa.TEXT(), nullable=False))
+    op.create_table(u'correlation_modules', sa.Column(u'dummy', sa.TEXT(), nullable=False))
+    op.create_table(u'correlation_addons', sa.Column(u'dummy', sa.TEXT(), nullable=False))
+    op.create_table(u'correlations', sa.Column(u'dummy', sa.TEXT(), nullable=False))
+
