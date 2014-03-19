@@ -32,13 +32,7 @@ from django.contrib.contenttypes.models import ContentType
 from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
 
-
-class Response(object):
-    def __init__(self, content=None, status_code=200):
-        if not isinstance(content, basestring):
-            content = json.dumps(content)
-        self.content = content
-        self.status_code = status_code
+from .test_models import Response
 
 
 SAMPLE_STATUS = {
