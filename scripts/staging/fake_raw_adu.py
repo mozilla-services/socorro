@@ -23,8 +23,20 @@ if csd_cur.fetchone()[0] > 0:
 
 #dump raw_adu to file
 csd_cur.execute("""
-    INSERT into raw_adu
-        (SELECT adu_count,
+    INSERT into raw_adu (
+        adu_count,
+        date,
+        product_name,
+        product_os_platform,
+        product_os_version,
+        product_version,
+        build,
+        build_channel,
+        product_guid,
+        update_channel
+    )
+    (
+        SELECT adu_count,
         'yesterday'::date as "date",
         product_name,
         product_os_platform,
