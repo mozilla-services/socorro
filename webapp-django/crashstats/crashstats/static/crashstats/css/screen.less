@@ -1628,3 +1628,49 @@ table.data-table {
         line-height: 200%;
     }
 }
+
+/* ujumbe status messages */
+.ujumbe-error,
+.ujumbe-success,
+.ujumbe-info {
+    position: relative;
+    padding: .7em;
+    color: white;
+    width: 100%;
+    /* IE8 */
+    font-size: 1.2em;
+    font-size: 1rem;
+    text-shadow: 0 -1px 0 #333;
+    border: 1px solid #999;
+    border-bottom: 1px solid #333;
+    border-radius: 6px;
+    opacity: 1;
+}
+.ujumbe-info {
+    #gradient > .vertical(#5BC0DE, #339BB9);
+}
+.ujumbe-error {
+    #gradient > .vertical(#EE5F5B, #C43C35);
+}
+.ujumbe-success {
+    #gradient > .vertical(#62C462, #57A957);
+}
+.ujumbe-notification-close {
+    display: inline-block;
+    background: none;
+    color: white;
+    position: absolute;
+    top: 13%;
+    right: 6px;
+    border: 0;
+    width: 2%;
+    height: 50%;
+    /* IE8 */
+    font-size: 1.2em;
+    font-size: 1.2rem;
+    text-shadow: 0 2px 0 #333;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}
+

@@ -22,16 +22,15 @@ $(function() {
         var bugNumber = $.trim($('#bug_number').val());
 
         if (pattern.test(bugNumber)) {
-            socorro.ui.removeUserMsg('#signature-details');
+            ujumbe.removeUserMsg('#signature-details');
         } else {
             event.preventDefault();
 
-            var response = {
-                status: 'error',
-                message: 'Only numbers are allowed as the bug number.'
+            var options = {
+                status: 'error'
             };
 
-            socorro.ui.setUserMsg('#signature-details', response);
+            ujumbe.showUserMsg('#signature-details', options);
         }
     });
 });
