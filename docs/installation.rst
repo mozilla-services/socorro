@@ -261,6 +261,13 @@ to remove this for production installs):
 ::
   psql template1 -c "create user test with password 'aPassword' superuser"
 
+Also, before you run unit tests or make, be sure to copy and edit this file:
+
+  cp config/alembic.ini-dist config/alembic.ini
+
+The important line to update is for *sqlalchemy.url*.
+
+
 Allow local connections for PostgreSQL
 --------------------------------------
 
@@ -374,7 +381,7 @@ Copy default config files
 You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 
-By default they listen on localhost only. 
+By default they listen on localhost only.
 
 Before running Socorro (specifically the "web" Django service), make sure
 that lessc is installed and on your $PATH
