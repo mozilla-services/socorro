@@ -1841,3 +1841,103 @@ class TestViews(BaseTestViews):
         for __ in range(10):
             response = self.client.get(url)
         eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_SuperSearch(self, rget):
+
+        def mocked_get(url, params, **options):
+            if '/supersearch' in url:
+                ok_('exploitability' not in params)
+                return Response({
+                    'hits': [
+                        {
+                            'signature': 'abcdef',
+                            'product': 'WaterWolf',
+                            'version': '1.0',
+                            'email': 'thebig@lebowski.net',
+                            'exploitability': 'high',
+                            'url': 'http://embarassing.website.com',
+                            'user_comments': 'hey I am thebig@lebowski.net',
+                        }
+                    ],
+                    'facets': {
+                        'signature': []
+                    },
+                    'total': 0
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('SuperSearch',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        res = json.loads(response.content)
+
+        ok_(res['hits'])
+        ok_(res['facets'])
+
+        # Verify forbidden fields are not exposed.
+        ok_('email' not in res['hits'])
+        ok_('exploitability' not in res['hits'])
+        ok_('url' not in res['hits'])
+
+        # Verify user comments are scrubbed.
+        ok_('thebig@lebowski.net' not in res['hits'][0]['user_comments'])
+
+        # Verify it's not possible to use restricted parameters.
+        response = self.client.get(url, {'exploitability': 'high'})
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_SuperSearchUnredacted(self, rget):
+
+        def mocked_get(url, params, **options):
+            if '/supersearch' in url:
+                ok_('exploitability' in params)
+                return Response({
+                    'hits': [
+                        {
+                            'signature': 'abcdef',
+                            'product': 'WaterWolf',
+                            'version': '1.0',
+                            'email': 'thebig@lebowski.net',
+                            'exploitability': 'high',
+                            'url': 'http://embarassing.website.com',
+                            'user_comments': 'hey I am thebig@lebowski.net',
+                        }
+                    ],
+                    'facets': {
+                        'signature': []
+                    },
+                    'total': 0
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
+        response = self.client.get(url, {'exploitability': 'high'})
+        eq_(response.status_code, 403)
+
+        # Log in to get permissions.
+        user = self._login()
+        self._add_permission(user, 'view_pii')
+        self._add_permission(user, 'view_exploitability')
+
+        response = self.client.get(url, {'exploitability': 'high'})
+        eq_(response.status_code, 200)
+        res = json.loads(response.content)
+
+        ok_(res['hits'])
+        ok_(res['facets'])
+
+        # Verify forbidden fields are exposed.
+        ok_('email' in res['hits'][0])
+        ok_('exploitability' in res['hits'][0])
+        ok_('url' in res['hits'][0])
+
+        # Verify user comments are not scrubbed.
+        ok_('thebig@lebowski.net' in res['hits'][0]['user_comments'])

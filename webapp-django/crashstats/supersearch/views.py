@@ -19,7 +19,7 @@ from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
 from . import forms
 from .form_fields import split_on_operator
-from .models import SuperSearch, Query
+from .models import SuperSearchUnredacted, Query
 
 
 ALL_POSSIBLE_FIELDS = (
@@ -258,7 +258,7 @@ def search_results(request):
         current_query.urlencode()
     )
 
-    api = SuperSearch()
+    api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
     except models.BadStatusCodeError, e:
@@ -403,7 +403,7 @@ def search_custom(request, default_context=None):
     else:
         # Get the JSON query that supersearch generates and show it.
         params['_return_query'] = 'true'
-        api = SuperSearch()
+        api = SuperSearchUnredacted()
         try:
             query = api.get(**params)
         except models.BadStatusCodeError, e:

@@ -6,6 +6,7 @@ $(function () {
     var fieldsURL = form.data('fields-url');
     var resultsURL = form.data('results-url');
     var customURL = form.data('custom-url');
+    var publicApiUrl = form.data('public-api-url');
 
     var submitButton = $('button[type=submit]', form);
     var newLineBtn = $('.new-line');
@@ -15,6 +16,7 @@ $(function () {
     var optionsElt = $('fieldset.options', form);
     var facetsInput = $('input[name=_facets]', form);
     var columnsInput = $('input[name=_columns_fake]', form);
+    var publicApiUrlInput = $('input[name=_public_api_url]', form);
 
     // From http://stackoverflow.com/questions/5914020/
     function padStr(i) {
@@ -121,6 +123,14 @@ $(function () {
         if ('page' in params) {
             delete params.page;
         }
+
+        // Remove all private parameters (beginning with a _).
+        for (var p in params) {
+            if (p.charAt(0) === '_') {
+                delete params[p];
+            }
+        }
+
         return params;
     }
 
@@ -148,9 +158,17 @@ $(function () {
         return '?' + queryString;
     }
 
+    function updatePublicApiUrl(params) {
+        // Update the public API URL.
+        var queryString = $.param(params, true);
+        publicApiUrlInput.val(BASE_URL + publicApiUrl + '?' + queryString);
+    }
+
     submitButton.click(function (e) {
         e.preventDefault();
         var params = form.dynamicForm('getParams');
+        updatePublicApiUrl(params);
+
         var url = prepareResultsQueryString(params);
         window.history.pushState(params, 'Search results', url);
 
@@ -173,6 +191,7 @@ $(function () {
             queryString = $.param(params, true);
             showResults(resultsURL + '?' + queryString);
             params = getFilteredParams(params);
+            updatePublicApiUrl(params);
             form.dynamicForm('setParams', params);
         }
         else {
@@ -246,6 +265,8 @@ $(function () {
             // from it and show the results. This will avoid strange behaviors
             // that can be caused by manually set parameters, for example.
             var params = form.dynamicForm('getParams');
+            updatePublicApiUrl(params);
+
             params.page = page;
             var url = prepareResultsQueryString(params);
             showResults(resultsURL + url);
