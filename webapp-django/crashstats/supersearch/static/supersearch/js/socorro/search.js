@@ -2,15 +2,19 @@ $(function () {
     'use strict';
 
     // parameters
-    var fieldsURL = '/search/fields/';
-    var resultsURL = '/search/results/';
     var form = $('#search-form form');
+    var fieldsURL = form.data('fields-url');
+    var resultsURL = form.data('results-url');
+    var customURL = form.data('custom-url');
+
     var submitButton = $('button[type=submit]', form);
     var newLineBtn = $('.new-line');
+    var customizeBtn = $('.customize');
+
     var contentElt = $('#search_results');
+    var optionsElt = $('fieldset.options', form);
     var facetsInput = $('input[name=_facets]', form);
     var columnsInput = $('input[name=_columns_fake]', form);
-    var optionsElt = $('fieldset.options', form);
 
     // From http://stackoverflow.com/questions/5914020/
     function padStr(i) {
@@ -184,13 +188,23 @@ $(function () {
         form.dynamicForm('newLine');
     });
 
+    customizeBtn.click(function (e) {
+        e.preventDefault();
+        var params = form.dynamicForm('getParams');
+        var url = prepareResultsQueryString(params);
+
+        window.location = customURL + url;
+    });
+
     facetsInput.select2({
         'data': window.FACETS,
-        'multiple': true
+        'multiple': true,
+        'width': 'element'
     });
     columnsInput.select2({
         'data': window.COLUMNS,
-        'multiple': true
+        'multiple': true,
+        'width': 'element'
     });
 
     // Make the columns input sortable

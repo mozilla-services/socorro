@@ -377,7 +377,10 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         if params['_return_query'][0].value[0]:
             # Return only the JSON query that would be sent to elasticsearch.
-            return search._build_query()
+            return {
+                'query': search._build_query(),
+                'indices': indexes,
+            }
 
         # We call elasticsearch with a computed list of indices, based on
         # the date range. However, if that list contains indices that do not

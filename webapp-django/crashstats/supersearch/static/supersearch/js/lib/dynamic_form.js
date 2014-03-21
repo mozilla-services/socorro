@@ -361,7 +361,8 @@
             this.line.append(this.fieldInput);
 
             this.fieldInput.select2({
-                placeholder: 'Choose a field'
+                placeholder: 'Choose a field',
+                width: 'element'
             });
             this.fieldInput.on('change', this.createOperatorInput.bind(this));
 
@@ -395,14 +396,16 @@
 
             this.line.append(this.operatorInput);
 
-            this.operatorInput.select2();
+            this.operatorInput.select2({
+                width: 'element'
+            });
             this.operatorInput.on('change', function (e) {
                 // We should create the value input only if there was no value
                 // yet or the previous operator was a "no-value" one, and
                 // the new operator accepts values.
                 if (
                     OPERATORS_NO_VALUE.indexOf(e.added.id) === -1 && (
-                        !e.removed.text ||
+                        !e.removed ||
                         OPERATORS_NO_VALUE.indexOf(e.removed.id) > -1
                     )
                 ) {
@@ -458,7 +461,8 @@
             this.line.append(this.valueInput);
 
             var selectParams = {
-                'separator': VALUES_SEPARATOR
+                'separator': VALUES_SEPARATOR,
+                'width': 'element'
             };
             if (field.extendable !== false) {
                 selectParams.tags = values;

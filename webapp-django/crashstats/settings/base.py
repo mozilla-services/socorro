@@ -273,6 +273,10 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.3'
 # Leave empty to use the default
 SEARCH_MIDDLEWARE_IMPL = None
 
+# The index schema used in our elasticsearch databases, used in the
+# Super Search Custom Query page.
+ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
+
 # Valid type for correlations reports
 CORRELATION_REPORT_TYPES = (
     'core-counts',

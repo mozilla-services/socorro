@@ -20,6 +20,12 @@
     .new-line:before {
         content: url(../../img/3rdparty/silk/application_form_add.png);
     }
+    .customize {
+        clear: both;
+    }
+    .customize:before {
+        content: url(../../img/3rdparty/silk/wrench.png);
+    }
 
     fieldset {
         padding: 10px 0;
@@ -79,6 +85,16 @@
             display: inline;
             width: 500px;
         }
+
+        input[name=search_indices] {
+            display: inline;
+            width: 80%;
+        }
+    }
+
+    textarea {
+        height: 300px;
+        width: 600px;
     }
 }
 
@@ -102,4 +118,18 @@
     height: 19px;
     margin: auto;
     width: 220px;
+}
+
+/* Custom Query styles */
+#editor {
+    border: 1px solid lightgray;
+    height: 400px;
+    margin: 0;
+    width: 80%;
+}
+.json-results {
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace;
+    font-size: 12px;
+    height: 500px;
+    width: 100%;
 }

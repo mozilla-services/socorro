@@ -5,6 +5,7 @@
 import datetime
 import json
 import pyelasticsearch
+import re
 from pyelasticsearch.exceptions import (
     ElasticHttpError,
     ElasticHttpNotFoundError,
@@ -18,6 +19,7 @@ from socorro.external import (
     ResourceNotFound,
 )
 from socorro.external.elasticsearch.base import ElasticSearchBase
+from socorro.external.elasticsearch.supersearch import BAD_INDEX_REGEX
 from socorro.lib import external_common
 from socorro.lib.datetimeutil import utc_now
 
@@ -74,7 +76,10 @@ class Query(ElasticSearchBase):
                 **search_args
             )
         except ElasticHttpNotFoundError, e:
-            raise ResourceNotFound(e)
+            missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
+            raise ResourceNotFound(
+                "elasticsearch index '%s' does not exist" % missing_index
+            )
         except (InvalidJsonResponseError, ElasticHttpError), e:
             raise DatabaseError(e)
 
