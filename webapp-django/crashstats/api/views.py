@@ -13,10 +13,18 @@ from django import forms
 from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
 
+import crashstats.supersearch.models
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.tokens.models import Token
 from .cleaner import Cleaner
+
+
+# List of all modules that contain models we want to expose.
+MODELS_MODULES = (
+    models,
+    crashstats.supersearch.models,
+)
 
 
 # See http://www.iana.org/assignments/http-status-codes
@@ -163,9 +171,14 @@ def has_permissions(user, permissions):
 def model_wrapper(request, model_name):
     if model_name in BLACKLIST:
         raise http.Http404("Don't know what you're talking about!")
-    try:
-        model = getattr(models, model_name)
-    except AttributeError:
+
+    for source in MODELS_MODULES:
+        try:
+            model = getattr(source, model_name)
+            break
+        except AttributeError:
+            pass
+    else:
         raise http.Http404('no model called `%s`' % model_name)
 
     required_permissions = getattr(model, 'API_REQUIRED_PERMISSIONS', None)
@@ -274,8 +287,11 @@ def documentation(request):
     endpoints = [
     ]
 
-    for name in dir(models):
-        model = getattr(models, name)
+    all_models = []
+    for source in MODELS_MODULES:
+        all_models += [getattr(source, x) for x in dir(source)]
+
+    for model in all_models:
         try:
             if not issubclass(model, models.SocorroMiddleware):
                 continue
@@ -315,7 +331,7 @@ def _describe_model(model):
     methods = []
     if model.get:
         methods.append('GET')
-    elif models.post:
+    elif model.post:
         methods.append('POST')
 
     docstring = model.__doc__

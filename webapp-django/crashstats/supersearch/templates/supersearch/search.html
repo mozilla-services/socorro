@@ -19,6 +19,7 @@
             data-fields-url="{{ url('supersearch.search_fields') }}"
             data-results-url="{{ url('supersearch.search_results') }}"
             data-custom-url="{{ url('supersearch.search_custom') }}"
+            data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
         >
             <button type="submit" id="search-button">Search</button>
             <button class="new-line">new line</button>
@@ -39,6 +40,10 @@
                     Show columns:
                     <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
                     <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+                    <div class="public-api-url">
+                        Public API URL:
+                        <input type="text" name="_public_api_url">
+                    </div>
                 </div>
             </fieldset>
         </form>
@@ -77,6 +82,7 @@
 <script>
 var COLUMNS = {{ possible_columns | json_dumps }};
 var FACETS = {{ possible_facets | json_dumps }};
+var BASE_URL = location.protocol + '//' + location.host;
 </script>
 
     {% compress js %}
