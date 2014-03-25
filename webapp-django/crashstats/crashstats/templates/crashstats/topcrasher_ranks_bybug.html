@@ -74,12 +74,12 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
             {% endif %}
         </section>
     </main>
+    <span id="ujumbe" data-error="Only numbers are allowed as the bug number."></span>
 {% endblock %}
 
 {% block site_js %}
   {{ super() }}
   {% compress js %}
-  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/tcr_bybug.js') }}"></script>
   {% endcompress %}
 {% endblock %}
