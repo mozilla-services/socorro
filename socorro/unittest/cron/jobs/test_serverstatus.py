@@ -6,9 +6,9 @@ from mock import Mock, MagicMock
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
 
-from ..base import IntegrationTestCaseBase
+from crontabber.tests.base import IntegrationTestCaseBase
 
 
 #==============================================================================
@@ -103,7 +103,7 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
         cursor.execute('select count(*) from server_status')
 

@@ -7,7 +7,7 @@ crontabber
 
 ``crontabber`` is a script that handles all cron job scripting. Unlike
 traditional UNIX ``crontab`` all execution is done via the
-`./crontabber.py` script and the configuration about frequency and
+`./crontabber_app.py` script and the configuration about frequency and
 exact time to run is part of the configuration files. The
 configuration is done using ``configman`` and it looks something like
 this::
@@ -19,7 +19,7 @@ this::
          socorro.cron.jobs.bar.BarCronApp|1d
          socorro.cron.jobs.pgjob.PGCronApp|1d|03:00
 
-The default config lives in socorro/cron/crontabber.py as ``DEFAULT_JOBS``.
+The default config lives in socorro/cron/crontabber_app.py as ``DEFAULT_JOBS``.
 
 crontab runs crontabber
 -----------------------
@@ -32,7 +32,7 @@ However, it can't be run as daemon. It actually needs to be run by
 UNIX ``crontab`` every, say, 5 minutes. So instead of your ``crontab``
 being a huge list of jobs at different times, all you need is this::
 
-    */5 * * * * PYTHONPATH="..." socorro/cron/crontabber.py
+    */5 * * * * PYTHONPATH="..." crontabber
 
 That's all you need! Obviously the granularity of ``crontabber`` is
 limited by the granularity you execute it.
@@ -57,7 +57,7 @@ Overriding dependencies is possible with the ``--force`` parameter.
 For example, suppose you know ``BarCronApp`` can now be run you do
 that like this::
 
-    ./crontabber.py --job=BarCronApp --force
+    ./crontabber --job=BarCronApp --force
 
 Dependencies inside the cron apps are defined by settings a class
 attribute on the cron app. The attribute is called ``depends_on`` and
@@ -65,7 +65,7 @@ its value can be a string, a tuple or a list.
 In this example, since ``BarCronApp``
 depends on ``FooCronApp`` it's class would look something like this::
 
-    from socorro.cron.base import BaseCronApp
+    from crontabber.base import BaseCronApp
 
     class BarCronApp(BaseCronApp):
         app_name = 'BarCronApp'
@@ -85,7 +85,7 @@ configuration options add the ``required_config`` class attribute.
 Here's an example::
 
     from configman import Namespace
-    from socorro.cron.base import BaseCronApp
+    from crontabber.base import BaseCronApp
 
     class FooCronApp(BaseCronApp):
         app_name = 'foo'
@@ -113,9 +113,9 @@ this app.
 To override cron app specific options on the command line you need to
 use a special syntax to associate it with this cron app class.
 Usually, the best hint of how to do this is to use ``python
-crontabber.py --help``. In this example it would be::
+crontabber_app.py --help``. In this example it would be::
 
-    python crontabber.py --job=foo --class-FooCronApp.bugzilla_url=...
+    crontabber --job=foo --class-FooCronApp.bugzilla_url=...
 
 App names versus/or class names
 -------------------------------
@@ -207,14 +207,14 @@ from files called ``crontabber.ini``, ``crontabber.conf`` or
 ``crontabber.json``. To create a new config file, use
 ``admin.dump_config`` like this::
 
-    python socorro/cron/crontabber.py --admin.dump_conf ini
+    python socorro/cron/crontabber_app.py --admin.dump_conf=ini
 
 All errors that happen are reported to the standard python ``logging``
 module. Also, the latest error (type, value and traceback) is stored
 in the JSON database too. If any of your cron apps have an error you
 can see it with::
 
-    python socorro/cron/crontabber.py --list-jobs
+    python socorro/cron/crontabber_app.py --list-jobs
 
 Here's a sample output::
 
@@ -232,11 +232,11 @@ Here's a sample output::
     Last run:    2012-04-05 14:49:56  (1 minute ago)
     Next run:    2012-04-06 14:49:56  (in 23 hours, 58 minutes)
     Error!!      (1 times)
-      File "socorro/cron/crontabber.py", line 316, in run_one
+      File "socorro/cron/crontabber_app.py", line 316, in run_one
         self._run_job(job_class)
-      File "socorro/cron/crontabber.py", line 369, in _run_job
+      File "socorro/cron/crontabber_app.py", line 369, in _run_job
         instance.main()
-      File "/Use[snip]orro/socorro/cron/crontabber.py", line 47, in main
+      File "/Use[snip]orro/socorro/cron/crontabber_app.py", line 47, in main
         self.run()
       File "/Use[snip]orro/socorro/cron/jobs/bar.py", line 10, in run
         raise NameError('doesnotexist')
@@ -254,9 +254,9 @@ So, suppose you inspect the error and write a fix. If you're impatient
 and don't want to wait till it's time to run again, you can start it
 again like this::
 
-    python socorro/cron/crontabber.py --job=my-app-name
+    python socorro/cron/crontabber_app.py --job=my-app-name
     # or if you prefer
-    python socorro/cron/crontabber.py --job=path.to.MyCronAppClass
+    python socorro/cron/crontabber_app.py --job=path.to.MyCronAppClass
 
 This will attempt it again and no matter if it works or errors it will
 pick up the frequency from the configuration and update what time it
@@ -268,7 +268,7 @@ Resetting a job
 If you want to pretend that a job has never run before you can use the
 ``--reset`` switch. It expects the name of the app. Like this::
 
-    python socorro/cron/crontabber.py --reset=my-app-name
+    python socorro/cron/crontabber_app.py --reset=my-app-name
 
 That's going to wipe that job out of the state database rendering
 basically as if it's never run before. That can make this tool useful
@@ -281,7 +281,7 @@ Nagios monitoring
 To hook up crontabber to Nagios monitoring as an NRPE plugin you can
 use the ``--nagios`` switch like this::
 
-    python socorro/cron/crontabber.py --nagios
+    python socorro/cron/crontabber_app.py --nagios
 
 What this will do is the following:
 
@@ -323,7 +323,7 @@ If you're ever uncertain that your recent changes to the configuration
 file is correct or not, instead of waiting around you can check it
 with::
 
-    python socorro/cron/crontabber.py --configtest
+    python socorro/cron/crontabber_app.py --configtest
 
 which will do nothing if all is OK.
 
@@ -412,14 +412,14 @@ For "backfill-based" jobs, you will need to reset them to run them immediately -
 
 Example::
 
-    PYTHONPATH=. socorro/cron/crontabber.py --admin.conf=config/crontabber.ini --reset-job=ftpscraper
+    PYTHONPATH=. socorro/cron/crontabber_app.py --admin.conf=config/crontabber.ini --reset-job=ftpscraper
 
 Then you can run them::
 
-    PYTHONPATH=. socorro/cron/crontabber.py --admin.conf=config/crontabber.ini --job=ftpscraper
+    PYTHONPATH=. socorro/cron/crontabber_app.py --admin.conf=config/crontabber.ini --job=ftpscraper
 
 To dump a configuration file initially::
 
-    PYTHONPATH=. socorro/cron/crontabber.py --admin.dump=ftpscraper.ini --job=ftpscraper
+    PYTHONPATH=. socorro/cron/crontabber_app.py --admin.dump=ftpscraper.ini --job=ftpscraper
 
 Check that configuration over and then add it to your config. config/crontabber.ini-dist is our default config file from the distro.

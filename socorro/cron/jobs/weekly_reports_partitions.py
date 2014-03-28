@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import (
+from crontabber.base import BaseCronApp
+from crontabber.mixins import (
     with_postgres_transactions,
     with_single_postgres_transaction,
 )

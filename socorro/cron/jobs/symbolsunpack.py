@@ -6,8 +6,8 @@ import os
 
 from configman import Namespace
 
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import with_subprocess
+from crontabber.base import BaseCronApp
+from crontabber.mixins import with_subprocess
 
 from socorro.lib.datetimeutil import utc_now
 

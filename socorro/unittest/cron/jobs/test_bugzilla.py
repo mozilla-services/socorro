@@ -7,8 +7,8 @@ import os
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 from dateutil import tz
-from socorro.cron import crontabber
-from ..base import IntegrationTestCaseBase
+from crontabber.app import CronTabber
+from crontabber.tests.base import IntegrationTestCaseBase
 
 
 SAMPLE_CSV = [
@@ -34,6 +34,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         TRUNCATE TABLE bugs CASCADE;
         TRUNCATE TABLE bug_associations CASCADE;
         """)
+        self.conn.commit()
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
@@ -72,7 +73,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         assert count == 0, "'bug_associations' table not cleaned"
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -107,7 +108,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -134,10 +135,13 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from bugs')
         count, = cursor.fetchone()
-        assert not count
+        assert not count, count
         cursor.execute('select count(*) from bug_associations')
         count, = cursor.fetchone()
-        assert not count
+        assert not count, count
+        cursor.execute('select count(*) from reports')
+        count, = cursor.fetchone()
+        assert not count, count
 
         # these are matching the SAMPLE_CSV above
         cursor.execute("""insert into reports
@@ -163,7 +167,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -209,7 +213,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()

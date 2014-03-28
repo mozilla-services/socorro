@@ -8,8 +8,8 @@ import mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
-from socorro.cron import crontabber
-from ..base import IntegrationTestCaseBase
+from crontabber.app import CronTabber
+from crontabber.tests.base import IntegrationTestCaseBase
 import datetime
 
 from socorro.lib.datetimeutil import utc_now
@@ -88,7 +88,7 @@ class TestModulelist(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -152,7 +152,7 @@ class TestModulelist(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -179,7 +179,7 @@ class TestModulelist(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -204,7 +204,7 @@ class TestModulelist(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
             information = self._load_structure()
             assert information['modulelist']

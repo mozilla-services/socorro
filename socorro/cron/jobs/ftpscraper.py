@@ -4,8 +4,8 @@ import lxml.html
 import json
 import time
 from configman import Namespace
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import (
+from crontabber.base import BaseCronApp
+from crontabber.mixins import (
     as_backfill_cron_app,
     with_postgres_transactions
 )
@@ -332,19 +332,19 @@ class FTPScraperCronApp(BaseCronApp):
             logger.debug('scraping %s releases for date %s',
                          product_name, date)
             if product_name == 'b2g':
-                self.database_transaction(
+                self.database_transaction_executor(
                     self.scrapeB2G,
                     product_name,
                     date
                 )
             elif product_name == 'firefox':
-                self.database_transaction(
+                self.database_transaction_executor(
                     self._scrape_json_releases_and_nightlies,
                     product_name,
                     date
                 )
             else:
-                self.database_transaction(
+                self.database_transaction_executor(
                     self._scrape_releases_and_nightlies,
                     product_name,
                     date

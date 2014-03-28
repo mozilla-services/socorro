@@ -8,8 +8,8 @@ import datetime
 from math import sqrt, log, pi, cos, sin, exp
 
 from configman import Namespace
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import (
+from crontabber.base import BaseCronApp
+from crontabber.mixins import (
     with_postgres_transactions,
     with_single_postgres_transaction,
     as_backfill_cron_app
