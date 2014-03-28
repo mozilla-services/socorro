@@ -10,14 +10,15 @@ from nose.tools import eq_, ok_
 
 from configman import ConfigurationManager
 
-from socorro.cron import crontabber
+from crontabber import crontabber
 from socorro.cron.jobs import automatic_emails
 from socorro.external.exacttarget import exacttarget
 from socorro.external.elasticsearch.crashstorage import \
     ElasticSearchCrashStorage
 from socorro.external.elasticsearch.supersearch import SuperS
 from socorro.lib.datetimeutil import string_to_datetime, utc_now
-from ..base import IntegrationTestCaseBase, TestCaseBase
+#from ..base import IntegrationTestCaseBase, TestCaseBase
+from crontabber.tests.base import IntegrationTestCaseBase, TestCaseBase
 
 # Remove debugging noise during development
 # import logging
