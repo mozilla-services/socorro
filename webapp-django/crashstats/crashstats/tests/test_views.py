@@ -159,6 +159,14 @@ class BaseTestViews(TestCase):
                         "id": 920},
                        {"product": "WaterWolf",
                         "throttle": "100.00",
+                        "end_date": "2012-03-09",
+                        "start_date": "2012-03-08",
+                        "featured": true,
+                        "version": "19.1",
+                        "release": "Nightly",
+                        "id": 928},
+                       {"product": "WaterWolf",
+                        "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
                         "featured": true,
@@ -725,7 +733,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('Total Volume of GC Crashes for WaterWolf 20.0'
+        ok_('Total Volume of GC Crashes for WaterWolf 19.1'
             in response.content)
 
         response = self.client.get(invalid_version_url)

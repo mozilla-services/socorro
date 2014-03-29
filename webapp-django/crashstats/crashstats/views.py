@@ -229,19 +229,23 @@ def frontpage_json(request, default_context=None):
     days = form.cleaned_data['duration']
     assert isinstance(days, int) and days > 0, days
 
+    end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=days + 1)
+
     if not versions:
         versions = []
         for release in default_context['currentversions']:
             if release['product'] == product and release['featured']:
-                versions.append(release['version'])
+                current_end_date = (
+                    datetime.datetime.strptime(release['end_date'], '%Y-%m-%d')
+                )
+                if end_date.date() <= current_end_date.date():
+                    versions.append(release['version'])
 
     default = request.session.get('date_range_type', 'report')
     date_range_type = form.cleaned_data['date_range_type'] or default
     assert date_range_type in date_range_types
     request.session['date_range_type'] = date_range_type
-
-    end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=days + 1)
 
     api = models.CrashesPerAdu()
     crashes = api.get(
