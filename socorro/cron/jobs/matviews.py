@@ -291,6 +291,7 @@ class CrashAduByBuildSignatureCronApp(_MatViewBackfillBase):
     depends_on = (
         'adu-matview',
         'reports-clean',
+        'build-adu-matview',
     )
 
 
