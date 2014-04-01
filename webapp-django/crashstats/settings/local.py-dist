@@ -143,3 +143,13 @@ SECRET_KEY = 'you must change this'
 
 # Set to True enable analysis of all model fetches
 #ANALYZE_MODEL_FETCHES = True
+
+# If you crashstats behind a load balancer, your `REMOTE_ADDR` header
+# will be that of the load balancer instead of the actual user.
+# The solution is to instead rely on the `X-Forwarded-For` header.
+# You ONLY want this if you know you can trust `X-Forwarded-For`.
+# (Note! Make sure you uncomment the line `from . import base` at
+# the top of this file first)
+#base.MIDDLEWARE_CLASSES += (
+#    'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
+#)

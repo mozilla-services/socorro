@@ -4,6 +4,7 @@ import unittest
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
+from django.conf import settings
 
 import mock
 from nose.tools import eq_, ok_
@@ -67,6 +68,17 @@ class TestViews(BaseTestViews):
     @staticmethod
     def tearDownClass():
         TestViews.switch.delete()
+
+    def setUp(self):
+        super(TestViews, self).setUp()
+        self._middleware_classes = settings.MIDDLEWARE_CLASSES
+        settings.MIDDLEWARE_CLASSES += (
+            'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
+        )
+
+    def tearDown(self):
+        super(TestViews, self).tearDown()
+        settings.MIDDLEWARE_CLASSES = self._middleware_classes
 
     def test_invalid_url(self):
         url = reverse('api:model_wrapper', args=('BlaBLabla',))
@@ -1828,6 +1840,10 @@ class TestViews(BaseTestViews):
         for __ in range(10):
             response = self.client.get(url)
         eq_(response.status_code, 429)
+
+        # but it'll work if you use a different X-Forwarded-For IP
+        response = self.client.get(url, HTTP_X_FORWARDED_FOR='11.11.11.11')
+        eq_(response.status_code, 200)
 
         user = User.objects.create(username='test')
         token = Token.objects.create(
