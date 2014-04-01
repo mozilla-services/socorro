@@ -160,10 +160,22 @@ def has_permissions(user, permissions):
     return True
 
 
+def _get_request_ip(request):
+    """Return the current actual remote IP"""
+    try:
+        return request.META['HTTP_X_FORWARDED_FOR'].split(',')[-1].strip()
+    except KeyError:
+        return request.META['REMOTE_ADDR']
+
+
 @waffle_switch('app_api_all')
 @ratelimit(
     method=['GET', 'POST', 'PUT'],
     rate='10/m',
+    ip=False,
+    # because we only do ratelimiting for anonymous users,
+    # we only hash on the remote IP
+    keys=[_get_request_ip],
     skip_if=_skip_ratelimit
 )
 @utils.add_CORS_header  # must be before `utils.json_view`

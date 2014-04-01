@@ -1829,6 +1829,10 @@ class TestViews(BaseTestViews):
             response = self.client.get(url)
         eq_(response.status_code, 429)
 
+        # but it'll work if you use a different X-Forwarded-For IP
+        response = self.client.get(url, HTTP_X_FORWARDED_FOR='11.11.11.11')
+        eq_(response.status_code, 200)
+
         user = User.objects.create(username='test')
         token = Token.objects.create(
             user=user,
