@@ -18,7 +18,10 @@ var Comments = (function() {
                $('.loading-placeholder', $panel).hide();
                $('.inner', $panel).html(response);
                var $wrapper = $('.wrapper', $panel);
-               var count = $wrapper.data('count');
+               var count = 0;
+               if ($wrapper.length) {
+                   count = $wrapper.data('count');
+               }
                var $tab = $('#report-list-nav a[href="#comments"] span');
                $tab.text($tab.text() + ' (' + count + ')');
                deferred.resolve();
