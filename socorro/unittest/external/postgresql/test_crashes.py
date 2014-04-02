@@ -512,6 +512,23 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
              'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500)
         """.format(now=self.now, yesterday=yesterday))
 
+        cursor.execute("""
+            INSERT INTO crash_adu_by_build_signature
+            (signature_id, signature, adu_date, build_date, buildid,
+             crash_count, adu_count, os_name, channel)
+            VALUES
+            (1, 'canIhaveYourSignature()', '{yesterday}', '2014-03-01',
+             '201403010101', 3, 1023, 'Mac OS X', 'release'),
+            (1, 'canIhaveYourSignature()', '{yesterday}', '2014-04-01',
+             '201404010101', 4, 1024, 'Windows NT', 'release'),
+            (1, 'canIhaveYourSignature()', '2014-01-01', '2014-04-01',
+             '201404010101', 4, 1024, 'Windows NT', 'release'),
+            (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
+             '201404010101', 4, 1024, 'Windows NT', 'release'),
+            (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
+             '201404010101', 4, 1024, 'Windows NT', 'release')
+        """.format(yesterday=yesterday))
+
         self.connection.commit()
         cursor.close()
 
@@ -525,7 +542,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                      process_types, os_names, signatures,
                      product_versions, product_release_channels,
                      release_channels, products, exploitability_reports,
-                     reports_clean
+                     reports_clean, crash_adu_by_build_signature
             CASCADE
         """)
         self.connection.commit()
@@ -1212,4 +1229,56 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         eq_(
             med_or_highs[-1],
             min(med_or_highs)
+        )
+
+    #--------------------------------------------------------------------------
+    def test_get_adu_by_signature(self):
+        crashes = Crashes(config=self.config)
+
+        signature = "canIhaveYourSignature()"
+        channel = "release"
+        yesterday_date = (self.now - datetime.timedelta(days=1)).date()
+        yesterday = datetimeutil.date_to_string(yesterday_date)
+
+        res_expected = {
+            "hits": [
+                {
+                    "signature": signature,
+                    "adu_date": yesterday,
+                    "build_date": "2014-03-01",
+                    "buildid": '201403010101',
+                    "crash_count": 3,
+                    "adu_count": 1023,
+                    "os_name": "Mac OS X",
+                    "channel": channel
+                },
+                {
+                    "signature": signature,
+                    "adu_date": yesterday,
+                    "build_date": "2014-04-01",
+                    "buildid": '201404010101',
+                    "crash_count": 4,
+                    "adu_count": 1024,
+                    "os_name": "Windows NT",
+                    "channel": channel
+                },
+            ],
+            "total": 2,
+        }
+
+        res = crashes.get_adu_by_signature(
+            start_date=yesterday,
+            end_date=yesterday,
+            signature=signature,
+            channel=channel
+        )
+        eq_(res, res_expected)
+
+        assert_raises(
+            BadArgumentError,
+            crashes.get_adu_by_signature,
+            start_date=(yesterday_date - datetime.timedelta(days=61)),
+            end_date=yesterday,
+            signature=signature,
+            channel=channel
         )

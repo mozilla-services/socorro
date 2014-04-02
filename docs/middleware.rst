@@ -26,6 +26,7 @@ Documented services
     * `/crashes/signatures <#crashes-signatures-service>`_
     * `/crashes/signature_history <#crashes-signature-history-service>`_
     * `/crashes/exploitability <#crashes-exploitability-service>`_
+    * `/crashes/adu_by_signature <#crashes-adu_by_signature>`_
 * `/crashtrends/ <#crash-trends-service>`_
 * `/crontabber_state/ <#crontabber-state-service>`_
 * `/extensions/ <#extensions-service>`_
@@ -1129,6 +1130,71 @@ Return an object like the following::
         },
       ],
       "total": 2
+    }
+
+Crashes per ADU By Signature service
+------------------------------
+
+Return a list of crash and ADU counts by signature.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+------------------------------------+
+| HTTP method    | GET                                |
++----------------+------------------------------------+
+| URL            | /crashes/adu_by_signature/         |
++----------------+------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++-----------------+---------------+---------------+------------------------------------+
+| Name            | Type of value | Default value | Description                        |
++=================+===============+===============+====================================+
+| start_date      | Date          | 1 week ago    | Start date of query range          |
++-----------------+---------------+---------------+------------------------------------+
+| end_date        | Date          | Today         | End date of query range            |
++-----------------+---------------+---------------+------------------------------------+
+| signature       | String        | None          | The signature we are interested in |
++-----------------+---------------+---------------+------------------------------------+
+| channel         | String        | None          | The channel we are interested in   |
++-----------------+---------------+---------------+------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return an object like the following::
+
+    {
+        "hits": [
+            {
+                "signature": "gfxContext::PushClipsToDT(mozilla::gfx::DrawTarget*)",
+                "adu_date": "2014-03-01",
+                "build_date": "2014-03-01",
+                "buildid": '201403010101',
+                "crash_count": 3,
+                "adu_count": 1023,
+                "os_name": "Mac OS X",
+                "channel": "release"
+            },
+            {
+                "signature": "gfxContext::PushClipsToDT(mozilla::gfx::DrawTarget*)"
+                "adu_date": "2014-04-01",
+                "build_date": "2014-04-01",
+                "buildid": '201404010101',
+                "crash_count": 4,
+                "adu_count": 1024,
+                "os_name": "Windows NT",
+                "channel": "release"
+            },
+        ],
+        "total": 2,
     }
 
 

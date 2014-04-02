@@ -41,7 +41,7 @@ SERVICES_LIST = (
     (r'/crash/(.*)', 'crash.Crash'),
     (r'/crashes/'
      r'(comments|count_by_day|daily|frequency|paireduuid|signatures|'
-     r'signature_history|exploitability)/(.*)',
+     r'signature_history|exploitability|adu_by_signature)/(.*)',
      'crashes.Crashes'),
     (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/field/(.*)', 'field.Field'),
