@@ -23,8 +23,8 @@ $(function () {
     // Django CSRF protection
     var csrftoken = $('input[name=csrfmiddlewaretoken]').val();
 
-    function beautifulJSON(json) {
-        return JSON.stringify(JSON.parse(json), null, 4);
+    function beautifulJSON(data) {
+        return JSON.stringify(data, null, 4);
     }
 
     function csrfSafeMethod(method) {
@@ -48,6 +48,7 @@ $(function () {
             url: resultsURL,
             data: {'query': query, 'indices': indices},
             type: 'POST',
+            traditional: true,
             success: function(data) {
                 // Render that JSON beautiful.
                 data = beautifulJSON(data);
@@ -72,7 +73,7 @@ $(function () {
         e.preventDefault();
 
         var query = editor.getValue();
-        var indices = indicesElt.select2('data');
+        var indices = indicesElt.select2('val');
         var state = {
             'query': query,
             'indices': indices
@@ -104,7 +105,7 @@ $(function () {
     if (!jsonQuery) {
         jsonQuery = defaultQuery;
     }
-    editorElt.html(beautifulJSON(jsonQuery));
+    editorElt.html(beautifulJSON(JSON.parse(jsonQuery)));
 
     // Prepare the ACE editor for JSON content.
     editor = ace.edit('editor');
