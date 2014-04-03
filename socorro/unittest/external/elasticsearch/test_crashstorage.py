@@ -176,7 +176,6 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
             )
             expected_request_kwargs = {
                 'id': crash_id,
-                'replication': 'async',
             }
 
             mock_es.index.assert_called_with(
@@ -234,7 +233,6 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                 expected_crash
             )
             expected_request_kwargs = {
-                'replication': 'async',
                 'id': crash_id,
             }
 
@@ -297,7 +295,6 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                 expected_crash
             )
             expected_request_kwargs = {
-                'replication': 'async',
                 'id': crash_id,
             }
 
@@ -367,7 +364,6 @@ class TestElasticsearchCrashStorage(unittest.TestCase):
                 expected_crash
             )
             expected_request_kwargs = {
-                'replication': 'async',
                 'id': crash_id,
             }
 

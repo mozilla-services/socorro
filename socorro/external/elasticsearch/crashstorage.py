@@ -167,7 +167,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
                 es_doctype,
                 crash_document,
                 id=crash_id,
-                replication='async'
             )
         except pyelasticsearch.exceptions.ConnectionError:
             self.logger.critical('%s may not have been submitted to '
