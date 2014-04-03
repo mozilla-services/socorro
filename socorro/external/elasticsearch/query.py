@@ -27,13 +27,14 @@ from socorro.lib.datetimeutil import utc_now
 class Query(ElasticSearchBase):
     '''Implement the /query service with ElasticSearch. '''
 
+    filters = [
+        ('query', None, 'str'),
+        ('indices', None, ['list', 'str']),
+    ]
+
     def get(self, **kwargs):
         '''Return the result of a custom query. '''
-        filters = [
-            ('query', None, 'str'),
-            ('indices', None, ['list', 'str']),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
+        params = external_common.parse_arguments(self.filters, kwargs)
 
         if not params.query:
             raise MissingArgumentError('query')
