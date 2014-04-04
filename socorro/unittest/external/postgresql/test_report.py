@@ -4,8 +4,9 @@
 
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
+from socorro.external import BadArgumentError
 from socorro.external.postgresql.report import Report
 from socorro.lib import datetimeutil
 
@@ -448,6 +449,49 @@ class IntegrationTestReport(PostgreSQLTestCase):
         )
         res = report.get_list(**params)
         eq_(res['total'], 1)
+
+    def test_get_list_with_sort(self):
+        now = self.now
+        yesterday = now - datetime.timedelta(days=1)
+        yesterday = datetimeutil.date_to_string(yesterday)
+        report = Report(config=self.config)
+
+        base_params = {
+            'signature': 'sig1',
+            'from_date': yesterday,
+            'to_date': now,
+        }
+
+        res = report.get_list(**base_params)
+        # by default it's sorted by date_processed
+        eq_(
+            res['hits'],
+            sorted(res['hits'], key=lambda x: x['date_processed'])
+        )
+        # now sort by 'reason'
+        res = report.get_list(**dict(base_params, sort='reason'))
+        eq_(
+            res['hits'],
+            sorted(res['hits'], key=lambda x: x['reason'])
+        )
+        res = report.get_list(**dict(
+            base_params,
+            sort='reason',
+            reverse=True
+        ))
+        # be default it's sorted by date_processed
+        eq_(
+            res['hits'],
+            sorted(res['hits'], key=lambda x: x['reason'], reverse=True)
+        )
+        assert_raises(
+            BadArgumentError,
+            report.get_list,
+            **dict(
+                base_params,
+                sort='neverheardof'
+            )
+        )
 
     def test_get_list_with_raw_crash(self):
         now = self.now

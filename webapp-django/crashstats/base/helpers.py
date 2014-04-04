@@ -38,7 +38,11 @@ def change_query_string(context, **kwargs):
         <a href=/page>
 
     """
-    base = context['request'].META['PATH_INFO']
+    if kwargs.get('_no_base'):
+        kwargs.pop('_no_base')
+        base = ''
+    else:
+        base = context['request'].META['PATH_INFO']
     qs = cgi.parse_qs(context['request'].META['QUERY_STRING'])
     for key, value in kwargs.items():
         if value is None:

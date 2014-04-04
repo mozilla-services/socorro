@@ -692,6 +692,8 @@ class ReportList(SocorroMiddleware):
         'result_number',
         'result_offset',
         'include_raw_crash',
+        'sort',
+        'reverse',
     )
 
     aliases = {

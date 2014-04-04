@@ -47,6 +47,48 @@ class Report(PostgreSQLBase):
             raise BadArgumentError(
                 'Span between from_date and to_date can not be more than 30'
             )
+
+        # start with the default
+        sort_order = {
+            'key': 'date_processed',
+            'direction': 'DESC'
+        }
+        if 'sort' in kwargs:
+            sort_order['key'] = kwargs.pop('sort')
+            _recognized_sort_orders = (
+                'date_processed',
+                'uptime',
+                'user_comments',
+                'uuid',
+                'uuid_text',
+                'product',
+                'version',
+                'build',
+                'signature',
+                'url',
+                'os_name',
+                'os_version',
+                'cpu_name',
+                'cpu_info',
+                'address',
+                'reason',
+                'last_crash',
+                'install_age',
+                'hangid',
+                'process_type',
+                'release_channel',
+                'install_time',
+                'duplicate_of',
+            )
+            if sort_order['key'] not in _recognized_sort_orders:
+                raise BadArgumentError(
+                    '%s is not a recognized sort order key' % sort_order['key']
+                )
+            sort_order['direction'] = 'ASC'
+            if 'reverse' in kwargs:
+                if kwargs.pop('reverse'):
+                    sort_order['direction'] = 'DESC'
+
         include_raw_crash = kwargs.get('include_raw_crash') or False
         params = search_common.get_parameters(kwargs)
 
@@ -172,8 +214,8 @@ class Report(PostgreSQLBase):
         )
 
         sql_order = """
-            ORDER BY r.date_processed DESC
-        """
+            ORDER BY %(key)s %(direction)s
+        """ % sort_order
 
         sql_limit, sql_params = self.build_reports_sql_limit(
             params,
