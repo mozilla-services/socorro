@@ -51,3 +51,9 @@ class TestChangeURL(TestCase):
         context['request'] = RequestFactory().get('/page/?foo=bar&other=thing')
         result = change_query_string(context, foo=None)
         eq_(result, '/page/?other=thing')
+
+    def test_change_query_without_base(self):
+        context = {}
+        context['request'] = RequestFactory().get('/page/?foo=bar')
+        result = change_query_string(context, foo='else', _no_base=True)
+        eq_(result, '?foo=else')

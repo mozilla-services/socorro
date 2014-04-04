@@ -2,11 +2,13 @@
 <div class="wrapper" data-columns="{{ columns_values_joined }}">
 {{ pagination(report_list, current_url, current_page, '#tab-reports') }}
 
-<table class="tablesorter data-table" id="reportsList">
+<table class="data-table tablesorter " id="reportsList">
     <thead>
         <tr>
             {% for column in columns %}
-            <th scope="col">{{ column.label }}</th>
+            <th scope="col" class="header {% if sort==column.key %}headerSort{% if column.reverse %}Up{% else %}Down{% endif %}{% endif %}">
+                <a href="{{ change_query_string(sort=column.key, reverse=column.reverse, _no_base=True) }}" class="sort-header" data-key="{{ column.key }}">{{ column.label }}</a>
+            </th>
             {% endfor %}
         </tr>
     </thead>

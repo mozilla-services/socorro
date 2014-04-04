@@ -1285,10 +1285,13 @@ def report_list(request, partial=None, default_context=None):
         ('cpu_name', 'Build Arch', True),
         ('reason', 'Reason', True),
         ('address', 'Address', True),
-        ('crash_type', 'Crash Type', True),
         ('uptime', 'Uptime', True),
         ('install_time', 'Install Time', True),
         ('user_comments', 'Comments', True),
+    )
+    # columns that should, by default, start in descending order
+    DEFAULT_REVERSE_COLUMNS = (
+        'date_processed',
     )
 
     _default_column_keys = [x[0] for x in ALL_REPORTS_COLUMNS if x[2]]
@@ -1312,15 +1315,25 @@ def report_list(request, partial=None, default_context=None):
     )
 
     if partial == 'reports':
+        context['sort'] = request.GET.get('sort', 'date_processed')
+        context['reverse'] = request.GET.get('reverse', 'false').lower()
+        context['reverse'] = context['reverse'] != 'false'
 
         columns = request.GET.getlist('c')
         # these are the columns used to render the table in reports.html
         context['columns'] = []
         for key, label, default in ALL_REPORTS_COLUMNS:
             if (not columns and default) or key in columns:
+                reverse_ = None
+                if key == context['sort']:
+                    reverse_ = not context['reverse']
+                else:
+                    if key in DEFAULT_REVERSE_COLUMNS:
+                        reverse_ = True
                 context['columns'].append({
                     'key': key,
                     'label': label,
+                    'reverse': reverse_
                 })
         context['columns_values_joined'] = ','.join(
             x['key'] for x in context['columns']
@@ -1334,6 +1347,12 @@ def report_list(request, partial=None, default_context=None):
                 break
 
         context['include_raw_crash'] = include_raw_crash
+
+        # some column keys have ids that aren't real fields,
+        # so transform those before sending to the middleware
+        sort_ = context['sort']
+        if sort_ == 'os_and_version':
+            sort_ = 'os_name'
 
         assert start_date and end_date
         api = models.ReportList()
@@ -1354,7 +1373,9 @@ def report_list(request, partial=None, default_context=None):
             plugin_terms=form.cleaned_data['plugin_query'],
             include_raw_crash=include_raw_crash,
             result_number=results_per_page,
-            result_offset=result_offset
+            result_offset=result_offset,
+            sort=sort_,
+            reverse=context['reverse'],
         )
 
         current_query = request.GET.copy()

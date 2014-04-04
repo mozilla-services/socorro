@@ -6,6 +6,25 @@ var Reports = (function() {
 
     function post_activate($panel) {
 
+        // replace every pagination HREF URL with the partial-url instead
+        // but keep the query string part
+        var partial_url = $('#reports').data('partial-url');
+        $('.pagination a', $panel).each(function() {
+            var old_pathname = this.pathname;
+            this.pathname = partial_url;
+            var href = this.href;
+            this.pathname = old_pathname;
+            $(this).click(function(event) {
+                event.preventDefault();
+                Reports.reload(href);
+            });
+        });
+
+        $('a[href="#reports-form"]', $panel).click(function(event)  {
+            event.preventDefault();
+            document.getElementById('reports-form').scrollIntoView();
+        });
+
         $wrapper = $('.wrapper', $panel);
         var columns = $wrapper.data('columns');
         var report_list = $('#reportsList');
@@ -20,50 +39,28 @@ var Reports = (function() {
             });
             $('.visually-hidden', $panel).removeClass('visually-hidden');
 
-            // set up table sort on the big table
-            $.tablesorter.addParser({
-                id: "hexToInt",
-                is: function(s) {
-                    return false;
-                },
-                format: function(s) {
-                    return parseInt(s, 16);
-                },
-                type: "digit"
-            });
-            var ths = $('#reportsList thead th', $panel);
-            var headers = {};
-            ths.each(function(i, each) {
-                var label = $(each).text();
-                if (label === 'Version') {
-                    headers[i] = { sorter: 'floating' };
-                } else if (label === 'Address') {
-                    headers[i] = { sorter: 'hexToInt' };
-                } else if (label === 'Uptime') {
-                    headers[i] = { sorter: 'digit' };
-                } else {
-                    headers[i] = { sorter: 'text' };  // default
-                }
-            });
-
-            report_list.tablesorter({
-                textExtraction: "complex",
-                headers: headers
+            $('a.sort-header', $panel).each(function() {
+                $(this).click(function(event) {
+                    event.preventDefault();
+                    this.pathname = partial_url;
+                    Reports.reload(this.href);
+                });
             });
         }
     }
 
     return {
-       reload: function() {
+       reload: function(url) {
            loaded = false;
            var $panel = $('#reports');
            $('.loading-placeholder', $panel).show();
            $('.inner', $panel).html('');
            $('form', $panel).addClass('visually-hidden');
            $('.reports-form-hint', $panel).addClass('visually-hidden');
-           return Reports.activate();
+           return Reports.activate(url);
        },
-       activate: function() {
+       activate: function(url) {
+           url = url || null;
            if (loaded) return;
            if (Columns.value() === null) {
                // the storage hasn't returned yet!
@@ -73,9 +70,11 @@ var Reports = (function() {
 
            var $panel = $('#reports');
            var deferred = $.Deferred();
-           var url = $panel.data('partial-url');
-           var qs = location.href.split('?')[1].split('#')[0];
-           url += '?' + qs;
+           if (!url) {
+               url = $panel.data('partial-url');
+               var qs = location.href.split('?')[1].split('#')[0];
+               url += '?' + qs;
+           }
            // do this so that the URL becomes /?c=One&c=Two&c=Three
            if (Columns.value().length) {
                url += '&c=' + Columns.value().join('&c=');
