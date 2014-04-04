@@ -326,6 +326,7 @@ class CSignatureTool(CSignatureToolBase):
           'mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame',
           'mozilla::ipc::RPCChannel::EnteredCxxStack',
           'mozilla::ipc::RPCChannel::Send',
+          'mozilla.*FatalError',
           'moz_xmalloc',
           'moz_xrealloc',
           'NP_Shutdown',
