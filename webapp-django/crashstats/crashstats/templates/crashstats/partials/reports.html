@@ -26,12 +26,6 @@
                     <a href="{{ url('crashstats:report_index', crash.duplicate_of) }}">dup</a></td>
                   {% endif %}
                 </td>
-              {% elif column.key == 'crash_type' %}
-                <td>
-                  <div class="signature-icons">
-                    <input type="hidden" name="url0" value="/report/hang_pairs/99ba73dd-34b6-48da-ab53-71b992120511" class="ajax_endpoint" />
-                  </div>
-                </td>
               {% elif column.key == 'os_and_version' %}
                 <td>{{ crash.os_name }} {{ crash.os_version }}</td>
               {% elif column.key == 'comments' or column.key == 'Comments' %}
