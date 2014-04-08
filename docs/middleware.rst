@@ -26,7 +26,7 @@ Documented services
     * `/crashes/signatures <#crashes-signatures-service>`_
     * `/crashes/signature_history <#crashes-signature-history-service>`_
     * `/crashes/exploitability <#crashes-exploitability-service>`_
-    * `/crashes/adu_by_signature <#crashes-adu_by_signature>`_
+    * `/crashes/adu_by_signature <#crashes-per-adu-by-signature-service>`_
 * `/crashtrends/ <#crash-trends-service>`_
 * `/crontabber_state/ <#crontabber-state-service>`_
 * `/extensions/ <#extensions-service>`_
