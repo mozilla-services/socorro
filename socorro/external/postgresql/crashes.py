@@ -734,3 +734,64 @@ class Crashes(PostgreSQLBase):
             "hits": crashes,
             "total": total_crashes_count
         }
+
+    def get_adu_by_signature(self, **kwargs):
+        """Return a list of ADUs and crash counts by signature and ADU date
+        """
+        now = datetimeutil.utc_now().date()
+        lastweek = now - datetime.timedelta(weeks=1)
+
+        filters = [
+            ("start_date", lastweek, "date"),
+            ("end_date", now, "date"),
+            ("signature", None, "str"),
+            ("channel", None, "str")
+        ]
+
+        params = external_common.parse_arguments(filters, kwargs)
+
+        for param in ("start_date", "end_date", "signature", "channel"):
+            if not params[param]:
+                raise MissingArgumentError(param)
+
+        if (params.end_date - params.start_date) > datetime.timedelta(days=60):
+            raise BadArgumentError('Duration too long. Max 60 days.')
+
+        sql_query = """
+            SELECT
+                signature,
+                adu_date::TEXT,
+                build_date::TEXT,
+                buildid::TEXT,
+                crash_count,
+                adu_count,
+                os_name,
+                channel
+            FROM crash_adu_by_build_signature
+            WHERE adu_date BETWEEN %(start_date)s AND %(end_date)s
+            AND channel = %(channel)s
+            AND signature = %(signature)s
+            ORDER BY buildid
+        """
+
+        error_message = (
+            "Failed to retrieve crash ADU by build signature from PostgreSQL"
+        )
+        results = self.query(sql_query, params, error_message=error_message)
+
+        fields = [
+            'signature',
+            'adu_date',
+            'build_date',
+            'buildid',
+            'crash_count',
+            'adu_count',
+            'os_name',
+            'channel'
+        ]
+        crashes = [dict(zip(fields, row)) for row in results]
+
+        return {
+            "hits": crashes,
+            "total": len(crashes)
+        }

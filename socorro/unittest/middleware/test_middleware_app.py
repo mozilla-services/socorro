@@ -1470,3 +1470,23 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 json.loads(response.body),
                 False
             )
+
+    def test_adu_by_signature(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/crashes/adu_by_signature/',
+                {
+                    'start_date': '2012-03-01',
+                    'end_date': '2012-03-15',
+                    'signature': 'Firefox',
+                    'channel': 'aurora',
+                }
+            )
+            eq_(response.data, {'hits': [], 'total':0})
