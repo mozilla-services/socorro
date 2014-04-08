@@ -71,7 +71,6 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.BuildADUCronApp|1d|10:00
   socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|10:00
   socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|10:00
-  socorro.cron.jobs.matviews.CorrelationsCronApp|1d|10:00
   socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|10:00
   socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|10:00
   socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|10:00

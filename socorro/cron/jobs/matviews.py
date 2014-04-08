@@ -114,12 +114,6 @@ class CrashesByUserBuildCronApp(_MatViewBackfillBase):
     )
 
 
-class CorrelationsCronApp(_MatViewBackfillBase):
-    proc_name = 'update_correlations'
-    app_name = 'correlations-matview'
-    depends_on = ('reports-clean',)
-
-
 class HomePageGraphCronApp(_MatViewBackfillBase):
     proc_name = 'update_home_page_graph'
     app_name = 'home-page-graph-matview'
