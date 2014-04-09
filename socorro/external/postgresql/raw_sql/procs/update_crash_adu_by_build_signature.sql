@@ -52,6 +52,7 @@ AS
     FROM build_adus
     JOIN sigreports ON sigreports.os_name = build_adus.os_name AND
     to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date
+    WHERE length(build::text) >= 8
 ;
 
 PERFORM 1 FROM new_build_adus;
