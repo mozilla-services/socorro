@@ -729,7 +729,7 @@ int main(int argc, char** argv)
   SimpleSymbolSupplier symbol_supplier(symbol_paths);
   BasicSourceLineResolver resolver;
   StackFrameSymbolizerForward symbolizer(&symbol_supplier, &resolver);
-  MinidumpProcessor minidump_processor(&symbolizer, false);
+  MinidumpProcessor minidump_processor(&symbolizer, true);
   ProcessState process_state;
   ProcessResult result =
     minidump_processor.Process(&minidump, &process_state);
