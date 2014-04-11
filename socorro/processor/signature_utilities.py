@@ -267,6 +267,7 @@ class CSignatureTool(CSignatureToolBase):
           'overall signature',
       default="""'|'.join([
           '@0x0',
+          '.*::CrashAtUnhandlableOOM',
           'Abort',
           '.*abort',
           '_alloca_probe.*',
