@@ -135,7 +135,6 @@ class TestMatviews(IntegrationTestCaseBase):
           'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.CorrelationsCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
@@ -157,7 +156,6 @@ class TestMatviews(IntegrationTestCaseBase):
                              'build-adu-matview',
                              'crashes-by-user-matview',
                              'crashes-by-user-build-matview',
-                             'correlations-matview',
                              'home-page-graph-matview',
                              'home-page-graph-matview-build',
                              'tcbs-build-matview',
