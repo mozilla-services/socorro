@@ -619,3 +619,19 @@ class FSLegacyDatedRadixTreeStorage(FSDatedRadixTreeStorage,
                                       exc_info=True)
             else:
                 self.logger.critical("unknown file %s found", namedir)
+
+
+class FSTemporaryStorage(FSLegacyDatedRadixTreeStorage):
+    """This crash storage system uses only the day of the month as the root of
+    the daily directories.  This means that it will recycle directories starting
+    at the beginning of each month"""
+    def _get_base(self, crash_id):
+        date = dateFromOoid(crash_id)
+        if not date:
+            date = utc_now()
+        date_formatted = "%02d" % (date.day,)
+        return [self.config.fs_root, date_formatted]
+
+# more user friendly aliases for commonly used classes
+FSPermanentStorage = FSLegacyRadixTreeStorage
+FSDatedPermanentStorage = FSLegacyDatedRadixTreeStorage
