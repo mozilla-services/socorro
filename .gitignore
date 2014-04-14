@@ -1,0 +1,36 @@
+# exclude config overrides to prevent accidental check-ins
+socorro/unittest/config/*.py
+*.py[co]
+*.sw[po]
+*.log
+distribute*.tar.gz
+analysis/build/
+google-breakpad
+nosetests.xml
+scripts/config/*.py
+socorro/unittest/config/*.py
+socorro-virtualenv
+socorro-vagrant-virtualenv
+socorro/unittest/database/logs/
+socorro/unittest/testlib/logs/
+stackwalk/
+exploitable/
+docs/_build/
+*~
+coverage.xml
+.coverage
+cover/
+.vagrant
+socorro/cron/crontabber.json
+vagrantconfig_local.yaml
+/config/*.ini
+node_modules
+pip-cache
+pip-log.txt
+build
+.DS_Store
+
+# exclude filesystem storage directories
+primaryCrashStore/
+processedCrashStore/
+minidump-stackwalk/*.o

@@ -1,0 +1,143 @@
+#search-form {
+    background: #dae2e5;
+    margin: -1em -2em;
+    margin-bottom: 20px;
+    padding: 1em 112px;
+
+    button {
+        cursor: pointer;
+        float: right;
+        padding: 6px 15px;
+        font-size: 1.2em;
+    }
+    button:before {
+        padding-right: 8px;
+        vertical-align: middle;
+    }
+    #search-button:before {
+        content: url(../../img/search-icon.png);
+    }
+    .new-line:before {
+        content: url(../../img/3rdparty/silk/application_form_add.png);
+    }
+    .customize {
+        clear: both;
+    }
+    .customize:before {
+        content: url(../../img/3rdparty/silk/wrench.png);
+    }
+
+    fieldset {
+        padding: 10px 0;
+
+        .select2-container {
+            margin-right: 10px;
+        }
+    }
+    fieldset + fieldset {
+        border-top: 1px solid #ccc;
+    }
+    select {
+        margin: 20px;
+        width: 20em;
+    }
+
+    .value {
+        width: 30em;
+    }
+
+    .dynamic-line-delete {
+        float: left;
+        display: inline-block;
+        margin: 5px 10px 0 0;
+        vertical-align: middle;
+        background-image: url(../../img/3rdparty/silk/delete.png);
+        height: 16px;
+        width: 16px;
+        text-indent: -9999px;
+    }
+
+    fieldset.options {
+        h4 {
+            cursor: pointer;
+
+            span {
+                color: #555;
+                text-transform: uppercase;
+                font-size: 0.7em;
+                font-weigth: bold;
+            }
+            .hide {
+                display: none;
+            }
+        }
+
+        h4 + div {
+            display: none;
+        }
+
+        input[name=_facets] {
+            display: inline;
+            width: 300px;
+        }
+
+        input[name=_columns_fake] {
+            display: inline;
+            width: 500px;
+        }
+
+        input[name=search_indices] {
+            display: inline;
+            width: 80%;
+        }
+
+        div.public-api-url {
+            margin: 10px 0;
+        }
+        input[name=_public_api_url] {
+            padding: 5px 8px;
+            width: 100%;
+        }
+    }
+
+    textarea {
+        height: 300px;
+        width: 600px;
+    }
+}
+
+#search_results {
+    table {
+        caption {
+            font-size: 1.7rem;
+            margin: 0 0 1em 0;
+        }
+    }
+
+    .external-link {
+        background: transparent url(../../img/icons/external.png) left top no-repeat;
+        display: inline-block;
+        padding-left: 17px;
+    }
+}
+
+.loader {
+    background-image: url(../../img/ajax-loader.gif);
+    height: 19px;
+    margin: auto;
+    width: 220px;
+}
+
+/* Custom Query styles */
+#editor {
+    border: 1px solid lightgray;
+    height: 400px;
+    margin: 0;
+    width: 80%;
+}
+.json-results {
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace;
+    font-size: 12px;
+    height: 500px;
+    width: 100%;
+}

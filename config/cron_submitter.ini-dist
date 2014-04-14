@@ -1,0 +1,198 @@
+# this ini file is for the app .../socorro/collector/submitter_app.py to get that app
+# to do the same thing that the cron_submitter.sh script used to do.
+
+# name: application
+# doc: the fully qualified module or class of the application
+# converter: configman.converters.class_converter
+#application='SubmitterApp'
+
+[destination]
+
+    # name: crashstorage_class
+    # doc: the destination storage class
+    # converter: configman.converters.class_converter
+    crashstorage_class='socorro.collector.submitter_app.SubmitterCrashStorageDestination'
+
+    # name: url
+    # doc: The url of the Socorro collector to submit to
+    # converter: str
+    url='http://127.0.0.1:8882/submit'
+
+[logging]
+
+    # name: stderr_error_logging_level
+    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    stderr_error_logging_level='10'
+
+    # name: stderr_line_format_string
+    # doc: python logging system format for logging to stderr
+    # converter: str
+    stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_error_logging_level
+    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # converter: int
+    syslog_error_logging_level='40'
+
+    # name: syslog_facility_string
+    # doc: syslog facility string ("user", "local0", etc)
+    # converter: str
+    syslog_facility_string='user'
+
+    # name: syslog_host
+    # doc: syslog hostname
+    # converter: str
+    syslog_host='localhost'
+
+    # name: syslog_line_format_string
+    # doc: python logging system format for syslog entries
+    # converter: str
+    syslog_line_format_string='submitter_app (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+
+    # name: syslog_port
+    # doc: syslog port
+    # converter: int
+    syslog_port='514'
+
+[producer_consumer]
+
+    # name: idle_delay
+    # doc: the delay in seconds if no job is found
+    # converter: int
+    idle_delay='7'
+
+    # name: maximum_queue_size
+    # doc: the maximum size of the internal queue
+    # converter: int
+    maximum_queue_size='8'
+
+    # name: number_of_threads
+    # doc: the number of threads
+    # converter: int
+    number_of_threads='1'
+
+    # name: producer_consumer_class
+    # doc: the class implements a threaded producer consumer queue
+    # converter: configman.converters.class_converter
+    producer_consumer_class='socorro.lib.threaded_task_manager.ThreadedTaskManager'
+
+[source]
+
+    # name: crashstorage_class
+    # doc: the source storage class
+    # converter: configman.converters.class_converter
+    crashstorage_class='socorro.collector.submitter_app.SamplingCrashStorageSource'
+
+    # name: database_class
+    # doc: the class that connects to the database
+    # converter: configman.converters.class_converter
+    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+    # name: database_host
+    # doc: the hostname of the database
+    # converter: str
+    database_host='localhost'
+
+    # name: database_name
+    # doc: the name of the database
+    # converter: str
+    database_name='breakpad'
+
+    # name: database_password
+    # doc: the user's database password
+    # converter: str
+    database_password='aPassword'
+
+    # name: database_port
+    # doc: the port for the database
+    # converter: int
+    database_port='5432'
+
+    # name: database_user
+    # doc: the name of the user within the database
+    # converter: str
+    database_user='breakpad_rw'
+
+    # name: dump_file_suffix
+    # doc: the suffix used to identify a dump file (for use in temp files)
+    # converter: str
+    dump_file_suffix='.dump'
+
+    # name: forbidden_keys
+    # doc: a comma delimited list of keys banned from the processed crash in HBase
+    # converter: socorro.external.hbase.connection_context.<lambda>
+    forbidden_keys='email, url, user_id, exploitability'
+
+    # name: hbase_connection_pool_class
+    # doc: the class responsible for pooling and giving out HBaseconnections
+    # converter: configman.converters.class_converter
+    hbase_connection_pool_class='socorro.external.hbase.connection_context.HBaseConnectionContextPooled'
+
+    # name: hbase_host
+    # doc: Host to HBase server
+    # converter: str
+    hbase_host='localhost'
+
+    # name: hbase_port
+    # doc: Port to HBase server
+    # converter: int
+    hbase_port='9090'
+
+    # name: hbase_timeout
+    # doc: timeout in milliseconds for an HBase connection
+    # converter: int
+    hbase_timeout='5000'
+
+    # name: number_of_retries
+    # doc: Max. number of retries when fetching from hbaseClient
+    # converter: int
+    number_of_retries='2'
+
+    # name: source_implementation
+    # doc: a class for a source of raw crashes
+    # converter: configman.converters.class_converter
+    source_implementation='socorro.external.hbase.crashstorage.HBaseCrashStorage'
+
+    # name: sql
+    # doc: an sql string that selects crash_ids
+    # converter: str
+    sql='select uuid from jobs order by queueddatetime DESC limit 1000'
+
+    # name: temporary_file_system_storage_path
+    # doc: a local filesystem path where dumps temporarily during processing
+    # converter: str
+    temporary_file_system_storage_path='/home/socorro/temp'
+
+    # name: transaction_executor_class
+    # doc: a class that will execute transactions
+    # converter: configman.converters.class_converter
+    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+    # name: backoff_delays
+    # doc: delays in seconds between retries
+    # converter: eval
+    backoff_delays="10, 30, 60, 120, 300"
+
+    # name: wait_log_interval
+    # doc: seconds between log during retries
+    # converter: int
+    wait_log_interval='5'
+
+[submitter]
+
+    # name: delay
+    # doc: pause between submission queuing in milliseconds
+    # converter: <lambda>
+    delay='0.0'
+
+    # name: dry_run
+    # doc: don't actually submit, just print product/version from raw crash
+    # converter: configman.converters.boolean_converter
+    dry_run='False'
+
+    # name: number_of_submissions
+    # doc: the number of crashes to submit (all, forever, 1...)
+    # converter: str
+    number_of_submissions='all'
+

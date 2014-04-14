@@ -1,0 +1,42 @@
+.container {
+    border: 2px solid #ccc;
+    clear: left;
+    margin: 40px;
+    padding: 20px;
+}
+.message-NORMAL {
+    background:#eaf4ef;
+    border-color:#99ccb2
+}
+.message-CRITICAL {
+    background:#fdf5ed;
+    border-color:#EA3B28;
+}
+.message-CRITICAL h3, .message-CRITICAL h4, .message-CRITICAL h2 {
+    color: #EA3B28;
+}
+.message-WARNING {
+    background:#f9eae5;
+    border-color:#FF9500;
+}
+.message-WARNING h3, .message-WARNING h4, .message-WARNING h2 {
+    color: #FF9500;
+}
+
+.container .numbers {
+    float: left;
+    text-align: center;
+}
+.container .numbers h5 {
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 0px;
+}
+.container .numbers h3 {
+    margin-top: 0px;
+    font-size: 2.0em;
+}
+.container .chart {
+    width: 300px;
+    margin-left: 200px;
+}

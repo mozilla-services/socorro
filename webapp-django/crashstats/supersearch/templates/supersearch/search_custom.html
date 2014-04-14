@@ -1,0 +1,65 @@
+{% extends "crashstats_base.html" %}
+{% block page_title %}Search - Mozilla Crash Reports{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Super Search</h2>
+        <ul class="options">
+            <li><a href="{{ url('supersearch.search') }}">Search by fields</a></li>
+            <li><a href="{{ url('supersearch.search_custom') }}" class="selected">Custom query</a></li>
+        </ul>
+    </div>
+
+    <section id="search-form">
+        <form method="post" action=""
+            data-results-url="{{ url('supersearch.search_query') }}"
+        >
+            {{ csrf() }}
+            <button type="submit" id="search-button">Search</button>
+
+            <div id="editor">{% if query %}{{ query }}{% endif %}</div>
+            <fieldset class="options">
+                <p>elasticsearch indices to query. Schema is socorroYYYYWW. Use <kbd>ALL</kbd> to query all existing indices (not recommended).</p>
+                <input type="text" id="search_indices" name="search_indices" value="{{ indices }}">
+            </fieldset>
+        </form>
+    </section>
+
+    <div class="panel">
+        <div class="title">
+            <h2>Search results</h2>
+        </div>
+
+        <div class="body" id="search_results">
+            <p>Run a search to get some results. </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block site_css %}
+    {{ super() }}
+    {% compress css %}
+<link href="{{ static('supersearch/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+
+<script>
+var ELASTICSEARCH_INDICES = {{ elasticsearch_indices | json_dumps }};
+</script>
+
+    {% compress js %}
+<script src="{{ static('supersearch/js/lib/select2/select2.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/ace/ace.js') }}"></script>
+<script src="{{ static('supersearch/js/socorro/search_custom.js') }}"></script>
+    {% endcompress %}
+
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - {{ page_title }}{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  table.data-table th {
+      width: 250px;
+  }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - {{ page_title }}{% endblock %}
+
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('manage/js/graphics_devices.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+      <h3>Edit or Add a Graphic Device</h3>
+      <form class="edit" action="" method="post"
+       data-lookup-url="{{ url('manage:graphics_devices_lookup') }}">{{ csrf() }}
+        <table class="data-table">
+        {{ form }}
+        <tr>
+          <th>&nbsp;</th>
+          <td><input type="submit" value="Save"></td>
+        </tr>
+        </table>
+      </form>
+
+      <h3>CSV Upload</h3>
+      <form class="upload" action="" method="post" enctype="multipart/form-data">{{ csrf() }}
+        <table class="data-table">
+        {{ upload_form }}
+        <tr>
+          <th>&nbsp;</th>
+          <td>This CSV file is expected to be in the same format at <a href="http://www.pcidatabase.com/reports.php?type=tab-delimeted">PCIDatabase.com's format</a>.</td>
+        </tr>
+        <tr>
+          <th>&nbsp;</th>
+          <td><input type="submit" value="Upload"></td>
+        </tr>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

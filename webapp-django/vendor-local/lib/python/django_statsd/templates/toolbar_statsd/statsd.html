@@ -1,0 +1,89 @@
+<section id="statsd"
+  data-graphite="{{ graphite }}"
+  data-roots-timers="{% for root in timers %}{{ root }}{% if not forloop.last %}|{% endif %}{% endfor %}"
+  data-roots-counts="{% for root in counts %}{{ root }}{% if not forloop.last %}|{% endif %}{% endfor %}">
+<table id="timings">
+  <thead>
+    <tr>
+      <th>Stat</th>
+      <th class="timeline">Timing</th>
+      <th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for value in timings %}
+    <tr>
+      <td><a href="#" class="statsd" data-key="{{ value.0 }}" data-type="timing">{{ value.0 }}</a></td>
+      <td class="timeline">
+        <div class="djDebugTimeline">
+          <div class="djDebugLineChart" style="left: {{ value.1 }}%;">
+            <strong style="width: {{ value.2 }}%; background: grey;">&nbsp;</strong>
+          </div>
+      </div>
+      </td>
+      <td>{{ value.3 }}ms</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th>Stat</th>
+      <th>Total</th>
+      <th>Count</th>
+      <th>Values</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in statsd %}
+    <tr>
+      <td><a href="#" class="statsd" data-key="{{ record.name }}" data-type="{{ record.type }}">{{ record.name }}</a></td>
+      <td>{{ record.total }}{% if record.type == 'timing' %}ms{% endif %}</td>
+      <td>{{ record.count }}</td>
+      <td>
+        {% if record.count > 1 %}
+          <span class="values" data-count="{{ record.count }}">
+            {% for value in record.values %}
+              {{ value.0 }}{% if record.type == 'timing' %}ms{% endif %}|{{ value.1 }}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          </span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</section>
+
+<div id="graphs" img="graphite?width=586&amp;height=308&amp;target=root.key&amp;target=root.key.lower&amp;target=root.key.mean&amp;target=root.key.upper_90&amp;target=scale(root.key.count,0.1)&amp;from=-24hours&amp;title=24 hours" />
+
+<script type="text/javascript">
+  // TODO: inlining is bad, this should be external.
+
+$(document).ready(function() {
+    var graphite = $('#statsd').attr('data-graphite'),
+        timers = $('#statsd').attr('data-roots-timers').split('|'),
+        counts = $('#statsd').attr('data-roots-counts').split('|'),
+        target = $('#graphs'),
+        img = target.attr('img');
+
+      $('a.statsd').click(function() {
+         var that = $(this),
+             roots = timers;
+         if (that.attr("data-type") == "count") {
+            roots = counts;
+         }
+         target.html('');
+         $.each(roots, function(root) {
+            var custom = img.replace('graphite', graphite, 'g')
+                            .replace('root', roots[root], 'g')
+                            .replace('key', that.attr('data-key'), 'g');
+                            target.append('<p><b>' + roots[root] + '.' + that.attr('data-key') + '</b></p><img src="' + custom + '">');
+                            console.log(custom);
+        })
+      });
+})
+</script>
+

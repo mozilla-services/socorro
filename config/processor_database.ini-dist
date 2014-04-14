@@ -1,0 +1,49 @@
+# name: database_host
+# doc: the hostname of the database
+# converter: str
+# OPS important line
+#database_host='localhost'
+
+# name: database_name
+# doc: the name of the database
+# converter: str
+# OPS set once
+#database_name='breakpad'
+
+# name: database_password
+# doc: the user's database password
+# converter: str
+# OPS set once
+#database_password='aPassword'
+
+# name: database_port
+# doc: the port for the database
+# converter: int
+# OPS set once
+#database_port='5432'
+
+# name: database_user
+# doc: the name of the user within the database
+# converter: str
+# OPS set once
+#database_user='breakpad_rw'
+
+# name: database_class
+# doc: None
+# converter: configman.converters.class_converter
+#database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+# name: backoff_delays
+# doc: delays in seconds between retries
+# converter: eval
+#backoff_delays="10, 30, 60, 120, 300"
+
+# name: wait_log_interval
+# doc: seconds between log during retries
+# converter: int
+#wait_log_interval='1'
+
+# name: transaction_executor_class
+# doc: a class that will execute transactions
+# converter: configman.converters.class_converter
+#transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'

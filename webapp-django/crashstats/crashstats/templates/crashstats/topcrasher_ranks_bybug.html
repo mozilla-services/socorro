@@ -1,0 +1,85 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+    <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/tcr_bybug.less') }}" media="screen" />
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
+{% endblock %}
+
+{% block content %}
+    <main role="main">
+        <header>
+            <h2>Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}</h2>
+        </header>
+
+        <form name="bug_signatures" id="bug_signatures" class="bug-signatures" action="{{ url('crashstats:topcrasher_ranks_bybug') }}" method="get">
+            <fieldset>
+                <legend class="visually-hidden">Find Signatured for Bug Number</legend>
+                <label for="bug_number">Bug Number:</label>
+                <input type="text" name="bug_number" id="bug_number" required="true" />
+                <input type="submit" value="Find Signatures" />
+            </fieldset>
+        </form>
+
+        <section id="signature-details">
+            {% if signatures|length > 0 %}
+                {% for s in signatures %}
+                  {% set signature = s['signature'] %}
+                <table class="captioned-data-table tcr-signature" aria-expanded="true">
+                    <caption>
+                        <a href="{{ url('crashstats:report_list') }}?signature={{ signature | urlencode }}">{{ signature }}</a>
+                        <a href="javascript:void(0)" class="toggle-sig-details" title="Hide Details">
+                            <span aria-hidden="false" class="expanded expander-icon" data-icon="&#xe803;"></span>
+                        </a>
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Product</th>
+                            <th>Version</th>
+                            <th>Process Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% if not top_crashes[signature] %}
+                      <tr><td colspan="4">Not found in active topcrash lists</td></tr>
+                    {% else %}
+                      {% for product in top_crashes[signature] %}
+                        {% for version in top_crashes[signature][product] %}
+                        <tr>
+                            <td>{{ top_crashes[signature][product][version]['currentRank']|int + 1}}</td>
+                            <td class="product">{{ product }}</td>
+                            <td class="version">{{ version }}</td>
+                            <td>
+                              {% if top_crashes[signature][product][version]['plugin_count'] == 0 %}
+                              Browser
+                              {% else %}
+                              Plugin
+                              {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                      {% endfor %}
+                    {% endif %}
+                    </tbody>
+                </table>
+                {% endfor %}
+            {% elif bug_number %}
+                <!-- Only show the message if a bug number exists else, this is first load. -->
+                <p class="info">No signatures found for bug id {{ bug_number }}.</p>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/tcr_bybug.js') }}"></script>
+  {% endcompress %}
+{% endblock %}

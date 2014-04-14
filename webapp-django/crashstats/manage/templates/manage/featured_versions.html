@@ -1,0 +1,104 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Featured Versions{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+    {% compress js %}
+    <script type="text/javascript" src="{{ static('manage/js/featured-versions.js') }}"></script>
+    {% endcompress %}
+{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  a.top {
+      float: right;
+      margin: 10px;
+  }
+  thead th {
+      /* roughly 100/7 */
+      width:14.2%;
+  }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Featured Versions{% endblock %}
+
+{% block mainbody %}
+
+    <div class="panel">
+      <div class="body notitle">
+        <p>Go straight to...</p>
+        <ul>
+          {% for product in products %}
+          <li><a href="#{{ product }}">{{ product }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="body notitle">
+      <form action="{{ url('manage:update_featured_versions') }}" class="products" method="post">
+      {{ csrf() }}
+      {% for product in products %}
+      <div class="product">
+      <a name="{{ product }}"></a>
+      {% if not loop.first %}
+      <a href="#top" class="top">&#x25B2; Go back to the top</a>
+      {% endif %}
+      <h4>
+      {{ product }}
+      </h4>
+      <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Version</th>
+              <th>Release</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Featured</th>
+              <th>Throttle</th>
+            </tr>
+          </thead>
+          <tfoot>
+              <tr>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>&nbsp;</td>
+                  <td>
+                    <input class="update_featured_btn" name="{{ product }}" value="Update Featured Versions" type="submit">
+                  </td>
+                  <td>&nbsp;</td>
+              </tr>
+          </tfoot>
+          <tbody>
+            {% for release in releases[product] %}
+              <tr>
+                  <td class="text">{{ release.product }}</td>
+                  <td class="text">{{ release.version }}</td>
+                  <td class="text">{{ release.release }}</td>
+                  <td class="date">{{ release.start_date }}</td>
+                  <td class="date">{{ release.end_date }}</td>
+                  <td class="featured">
+                      <input type="checkbox" name="{{ product }}" value="{{ release.version }}"
+                       {% if release.featured %}checked{% endif %}>
+                  </td>
+                  <td class="throttle">{{ release.throttle|show_percentage() }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+      </table>
+      </div>
+      {% endfor %}
+      </form>
+
+      </div>
+    </div>
+
+{% endblock %}

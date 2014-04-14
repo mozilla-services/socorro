@@ -1,0 +1,137 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}API Documentation{% endblock %}
+
+{% block product_nav_filter %}&nbsp;{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link rel="stylesheet" href="{{ static('api/css/documentation.css') }}" type="text/css">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+    {% compress js %}
+    <script type="text/javascript" src="{{ static('api/js/testdrive.js') }}"></script>
+    {% endcompress %}
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>API Documentation</h2>
+    </div>
+
+    <div class="panel">
+      <div class="body notitle">
+        <p class="tokens-callout">
+	  You current have <a href="{{ url('tokens:home') }}">{{ count_tokens }} active API Token{{ count_tokens|pluralize }}</a>.
+	</p>
+        <p>
+        These API endpoints are publicly available. The parameters to some endpoints
+        are non-trivial as some might require deeper understanding of the Soccoro backend.
+        </p>
+        <p>
+          <b>Note:</b> The API does depend on <a href="{{ url('crashstats:permissions') }}">your permissions</a>
+          and if you include an <a href="{{ url('tokens:home') }}">API Token</a> with your requests.<br>
+          Some endpoints' accessibility depend entirely on your permissions and use of API Tokens.
+        </p>
+      </div>
+    </div>
+
+    {% for endpoint in endpoints %}
+    <div class="panel" id="{{ endpoint.name }}">
+        <div class="title">
+        {% if endpoint.required_permissions %}
+          <p class="required-permission">
+            Only available if used with an <b>API Token</b> associated with
+            {% for permission in endpoint.required_permissions %}
+              <b>{{ permission }}</b>
+              {% if not loop.last %} and {% endif %}
+            {% endfor %}
+            permission.
+          </p>
+        {% endif %}
+        <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
+        </div>
+        <div class="body">
+        <form class="testdrive">
+        <p class="url">
+          <strong>{{ ' | '.join(endpoint.methods) }}</strong>
+          <code>{{ base_url }}{{ endpoint.url }}</code>
+        </p>
+
+        {% if endpoint.docstring %}
+        <p class="docstring">Documentation notes</p>
+        <pre class="docstring">{{ endpoint.docstring }}</pre>
+        {% endif %}
+
+        {% if endpoint.parameters %}
+        <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th class="fixed" scope="col">Parameter key</th>
+              <th class="fixed" scope="col">Required?</th>
+              <th class="fixed" scope="col">Type</th>
+              <th class="fixed" scope="col">Default</th>
+              <th>Test drive</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for parameter in endpoint.parameters %}
+          <tr>
+            <td class="fixed"><strong>{{ parameter.name }}</strong></td>
+            <td class="fixed">
+              {% if parameter.required %}Required
+              {% else %}Optional
+              {% endif %}
+            </td>
+            <td class="fixed">
+              {{ describe_friendly_type(parameter['type']) }}
+            </td>
+            <td class="fixed">
+              <code>{{ endpoint['defaults'].get(parameter['name'], '') }}</code>
+            </td>
+            <td>
+              {{ make_test_input(parameter, endpoint['defaults']) }}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p><em>Takes no parameters</em></p>
+        {% endif %}
+
+          <!-- for starting a test drive -->
+          <div class="run-test">
+          <button type="submit">Run Test Drive!</button>
+          <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
+          <button type="button" class="close">&times; Close</button>
+          </div>
+
+          <div class="test-drive">
+          <p class="status-error">
+            An error happened on the server when trying this URL.
+          </p>
+          <p class="used-url">
+            <strong>Using</strong><br>
+            <a href=""><code></code></a>
+          </p>
+          <p class="status">
+            Status <code></code>
+          </p>
+          <p><strong>Output:</strong></p>
+          <pre></pre>
+
+          </div>
+        </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

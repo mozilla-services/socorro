@@ -1,0 +1,69 @@
+/* apply a natural box layout model to all elements */
+.box-sizing (@model: border-box) {
+    -moz-box-sizing: @model;
+    -webkit-box-sizing: @model;
+    box-sizing: @model;
+}
+.rounded-corners (@radius: 5px) {
+    -webkit-border-radius: @radius;
+    -moz-border-radius: @radius;
+    border-radius: @radius;
+}
+.rounded-corners (@top-left, @top-right, @bottom-right: 0, @bottom-left: 0) {
+    -webkit-border-radius: @arguments;
+    -moz-border-radius: @arguments;
+    border-radius: @arguments;
+}
+.shadow (@x, @y, @blur, @spread, @color) {
+    -webkit-box-shadow: @arguments;
+    -moz-box-shadow: @arguments;
+    box-shadow: @arguments;
+}
+/* apply a natural box layout model to elements */
+.border-sizing(@model) {
+    -webkit-box-sizing: @model;
+    -moz-box-sizing: @model;
+    box-sizing: @model;
+}
+.transition(@prop, @duration: 1s) {
+    -webkit-transition: @prop @duration;
+    -moz-transition: @prop @duration;
+    transition: @prop @duration;
+}
+.rotate(@deg) {
+    -webkit-transform: rotate(@deg);
+    -moz-transform: rotate(@deg);
+    transform: rotate(@deg);
+}
+.transformOrigin(@top, @left) {
+    -webkit-transform-origin: @top @left;
+    -moz-transform-origin: @top @left;
+    transform-origin: @top @left;
+}
+.button() {
+    background-color: rgb(46, 93, 116);
+    color: #fff;
+    padding: .5em .5em;
+    border: none;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    .rounded-corners(.5em);
+}
+.notification {
+    background-color: #fff;
+    margin: 1rem;
+    padding: .5rem;
+    .rounded-corners(6px);
+}
+/*http://developer.yahoo.com/blogs/ydn/posts/2012/10/clip-your-hidden-content-for-better-accessibility/*/
+.accessibly-hidden() {
+    position: absolute;
+    clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+    clip: rect(1px, 1px, 1px, 1px);
+    padding:0;
+    border:0;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+}

@@ -1,0 +1,29 @@
+<div class="wrapper"
+     data-count="{{ bug_associations|count }}">
+      <div class="bug_ids_expanded_list">
+        <h3>Bugs for <code>{{ signature }}</code></h3>
+        {% for bug in bug_associations %}
+          {% if bug.signature == signature %}
+        <ul class="bug_ids_expanded full_bug_ids full">
+          <li>{{ show_bug_link(bug.id) }}</li>
+        </ul>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if bug_associations|count > 1 %}
+        <h2>Related Crash Signatures:</h2>
+        {% for bug in bug_associations %}
+          {% if bug.signature != signature %}
+            <div class="bug_ids_expanded_list">
+              <ul class="bug_ids_expanded full_bug_ids full">
+                Bugs for <code>{{ bug.signature }}</code>
+                <li>{{ show_bug_link(bug.id) }}</li>
+              </ul>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+    <br class="cb" />
+</div>

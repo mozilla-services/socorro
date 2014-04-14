@@ -1,0 +1,128 @@
+CREATE OR REPLACE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true, check_period interval DEFAULT '01:00:00'::interval) RETURNS boolean
+    LANGUAGE plpgsql
+    SET "TimeZone" TO 'UTC'
+    AS $$
+DECLARE thisday DATE := firstday;
+    last_rc timestamptz;
+    first_rc timestamptz;
+    last_adu DATE;
+    tablename TEXT;
+BEGIN
+-- this producedure is meant to be called manually
+-- by administrators in order to clear and backfill
+-- the various matviews in order to recalculate old
+-- data which was erroneous.
+-- it requires a start date, and optionally an end date
+-- no longer takes a product parameter
+-- optionally disable reports_clean backfill
+-- since that takes a long time
+
+-- this is a temporary fix for matview backfill for mobeta
+-- a more complete fix is coming in 19.0.
+
+-- set start date for r_c
+first_rc := firstday AT TIME ZONE 'UTC';
+
+-- check parameters
+IF firstday > current_date OR lastday > current_date THEN
+    RAISE NOTICE 'date parameter error: cannot backfill into the future';
+    RETURN FALSE;
+END IF;
+
+-- set optional end date
+IF lastday IS NULL or lastday = current_date THEN
+    last_rc := date_trunc('hour', now()) - INTERVAL '3 hours';
+ELSE
+    last_rc := ( lastday + 1 ) AT TIME ZONE 'UTC';
+END IF;
+
+-- check if lastday is after we have ADU;
+-- if so, adjust lastday
+SELECT max("date")
+INTO last_adu
+FROM raw_adu;
+
+IF lastday > last_adu THEN
+    RAISE INFO 'last day of backfill period is after final day of ADU.  adjusting last day to %',last_adu;
+    lastday := last_adu;
+END IF;
+
+-- fill in products
+PERFORM update_product_versions();
+
+-- backfill reports_clean.  this takes a while
+-- we provide a switch to disable it
+IF reportsclean THEN
+    RAISE INFO 'backfilling reports_clean';
+    PERFORM backfill_reports_clean(first_rc, last_rc);
+    RAISE INFO 'backfilling raw_update_channel';
+    PERFORM backfill_raw_update_channel(first_rc, last_rc);
+END IF;
+
+
+CREATE TEMPORARY TABLE temp_signature_summaries (name TEXT)
+ON COMMIT DROP;
+
+INSERT INTO temp_signature_summaries
+    VALUES
+        ('signature_summary_products')
+        ,('signature_summary_installations')
+        ,('signature_summary_uptime')
+        ,('signature_summary_os')
+        ,('signature_summary_process_type')
+        ,('signature_summary_architecture')
+        ,('signature_summary_flash_version')
+        ,('signature_summary_device')
+;
+
+-- loop through the days, backfilling one at a time
+WHILE thisday <= lastday LOOP
+    RAISE INFO 'backfilling other matviews for %',thisday;
+    RAISE INFO 'adu';
+    PERFORM backfill_adu(thisday);
+    PERFORM backfill_build_adu(thisday);
+    RAISE INFO 'signatures';
+    PERFORM update_signatures(thisday, FALSE);
+    RAISE INFO 'tcbs';
+    PERFORM backfill_tcbs(thisday, check_period);
+    PERFORM backfill_tcbs_build(thisday);
+    DROP TABLE IF EXISTS new_tcbs;
+    RAISE INFO 'crashes by user';
+    PERFORM backfill_crashes_by_user(thisday);
+    PERFORM backfill_crashes_by_user_build(thisday);
+    RAISE INFO 'home page graph';
+    PERFORM backfill_home_page_graph(thisday);
+    PERFORM backfill_home_page_graph_build(thisday);
+    DROP TABLE IF EXISTS new_signatures;
+    RAISE INFO 'nightly builds';
+    PERFORM backfill_nightly_builds(thisday);
+    RAISE INFO 'exploitability';
+    PERFORM backfill_exploitability(thisday);
+    RAISE INFO 'android_devices';
+    PERFORM backfill_android_devices(thisday);
+    RAISE INFO 'graphics_devices';
+    PERFORM backfill_graphics_devices(thisday);
+    RAISE INFO 'crash_adu_by_build_signature';
+    PERFORM backfill_crash_adu_by_build_signature(thisday);
+    FOR tablename in SELECT name from temp_signature_summaries LOOP
+        RAISE INFO 'signature summary - %', tablename;
+        PERFORM backfill_named_table(tablename, thisday);
+    END LOOP;
+    RAISE INFO 'gccrashes';
+    PERFORM backfill_gccrashes(thisday, check_period);
+    thisday := thisday + 1;
+
+END LOOP;
+
+-- finally rank_compare, which doesn't need to be filled in for each day
+RAISE INFO 'rank_compare';
+PERFORM backfill_rank_compare(lastday);
+RAISE INFO 'explosiveness (slow)';
+PERFORM backfill_explosiveness(thisday);
+
+DROP TABLE temp_signature_summaries;
+
+RETURN true;
+END; $$;
+
+

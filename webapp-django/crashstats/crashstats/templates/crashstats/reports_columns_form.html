@@ -1,0 +1,32 @@
+     <form action="" class="visually-hidden" id="reports-form">
+       <table>
+         <tr>
+           <th>Available columns</th>
+           <th>&nbsp;</th>
+           <th>Chosen columns</th>
+         </tr>
+         <tr>
+           <td>
+             <select name="available" size="12" multiple>
+               {% for column in all_reports_columns %}
+               <option value="{{ column.value }}">{{ column.label }}</option>
+               {% endfor %}
+             </select>
+           </td>
+           <td>
+             <button name="remove">&laquo;</button>
+             <button name="add">&raquo;</button>
+           </td>
+           <td>
+             <select name="chosen" size="12" multiple>
+             </select>
+           </td>
+         </tr>
+         <tr>
+           <td colspan="3" style="text-align:center">
+             <button name="save" class="disabled">Save and reload</button>
+           </td>
+         </tr>
+       </table>
+       <p>* Fields specifically from the raw crash</p>
+     </form>

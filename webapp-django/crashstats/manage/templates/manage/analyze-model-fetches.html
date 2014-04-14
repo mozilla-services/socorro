@@ -1,0 +1,73 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Analyze Model Fetches{% endblock %}
+
+{% block admin_title %}Analyze Model Fetches{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+    <ul class="only-filter">
+      <li><a href="#" class="only-classes">Only API Classes</a></li>
+      <li><a href="#" class="only-urls">Only URLs</a></li>
+      <li><a href="#" class="selected both">Both</a></li>
+    </ul>
+
+    <table class="data-table vertical analysis tablesorter">
+      <thead>
+        <tr>
+          <th rowspan="2">API / URL</th>
+          <th colspan="3" class="{sorter: false}"># Uses</th>
+          <th colspan="3" class="{sorter: false}">Times (sec)</th>
+        </tr>
+        <tr class="sort-keys">
+          <th>Hits</th>
+          <th>Misses</th>
+          <th>Both</th>
+          <th>Hits</th>
+          <th>Misses</th>
+          <th>Both</th>
+        </tr>
+      </thead>
+      <tbody>
+    {% for label, value_type, records in measurements %}
+        {% for item, info in records %}
+          <tr class="type-{{ value_type}}">
+            <td>{{ truncatechars(item, 150) }}</td>
+            <td>{{ info['uses']['hits'] }}</td>
+            <td>{{ info['uses']['misses'] }}</td>
+            <td>{{ info['uses']['both'] }}</td>
+            <td>{{ info['times']['hits'] | msec2sec }}</td>
+            <td>{{ info['times']['misses'] | msec2sec }}</td>
+            <td>{{ info['times']['both'] | msec2sec }}</td>
+          </tr>
+        {% endfor %}
+    {% endfor %}
+      </tbody>
+    </table>
+
+
+    <p><b>How This Works</b></p>
+    <p>Every time our Django views need data from the middleware, a bean counter
+    is incremented on it being used, how long it took and whether or not it was
+    able to draw from the cache.
+    </p>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block site_css %}
+{{ super() }}
+<link href="{{ static('manage/tablesorter/style.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('manage/css/analyze-model-fetches.css') }}" type="text/css" rel="stylesheet">
+{% endblock %}
+
+{% block site_js %}
+{{ super() }}
+<script src="{{ static('manage/tablesorter/jquery.tablesorter.min.js') }}"></script>
+<script src="{{ static('manage/tablesorter/jquery.metadata.js') }}"></script>
+<script src="{{ static('manage/js/analyze-model-fetches.js') }}"></script>
+{% endblock %}

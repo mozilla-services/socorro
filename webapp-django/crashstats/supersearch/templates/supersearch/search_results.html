@@ -1,0 +1,109 @@
+{% from "macros/pagination.html" import pagination %}
+
+{% if query.total > 0 %}
+
+<ul id="search_results-nav">
+    <li><a href="#crash-reports"><span>Crash Reports</span></a></li>
+    {% for facet in query.facets %}
+    <li><a href="#facet-{{ facet }}"><span>{{ facet | replace('_', ' ') | capitalize }} facet</span></a></li>
+    {% endfor %}
+</ul>
+
+<div id="crash-reports">
+    {{ pagination(query, current_url, current_page) }}
+    <table id="reports-list" class="tablesorter data-table">
+        <caption>Crash Reports</caption>
+        <thead>
+            <tr>
+                <th scope="col">Crash ID</th>
+                {% for column in columns %}
+                <th scope="col">{{ column | replace('_', ' ') | capitalize }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for crash in query.hits %}
+            <tr>
+                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
+                {% for column in columns %}
+                <td>
+                    {% if crash[column] %}
+                        {% if column == 'date' %}
+                            {{ crash[column] | human_readable_iso_date }}
+                        {% else %}
+                            <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" title="Add this term to the search form">
+                                {{ crash[column] }}
+                            </a>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if column == 'signature' %}
+                    &nbsp;
+                    <em><a href="{{ url('crashstats:report_list') }}?signature={{ crash.signature|urlencode }}&amp;{{ report_list_query_string }}" class="external-link">
+                        (See the full report for that signature)
+                    </a></em>
+                    {% endif %}
+
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ pagination(query, current_url, current_page) }}
+</div>
+
+{% for facet in query.facets %}
+<div id="facet-{{ facet }}" class="ui-tabs-hide">
+    <table id="facets-list" class="tablesorter data-table facet">
+        <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
+        <thead>
+            <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">{{ facet | replace('_', ' ') | capitalize }}</th>
+                <th scope="col">Count</th>
+                <th scope="col">%</th>
+                {% if facet == 'signature' %}
+                <th scope="col">Bugs</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for hit in query.facets[facet] %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                    <a href="#" class="term" data-field="{{ facet }}" title="Add this term to the search form">{{ hit.term }}</a>
+                    {% if facet == 'signature' %}
+                    <em><a href="{{ url('crashstats:report_list') }}?signature={{ hit.term|urlencode }}&amp;{{ report_list_query_string }}">
+                        (See the full report for that signature)
+                    </a></em>
+                    {% endif %}
+                </td>
+                <td>{{ hit.count }}</td>
+                <td>{{ '%.2f' | format(100.0 * hit.count / query.total) }} %</td>
+                {% if facet == 'signature' %}
+                <td>
+                    {% for bug in hit.bugs %}
+                    {{ show_bug_link(bug) }}
+                    {% endfor %}
+                    <div class="bug_ids_expanded_list">
+                        <h3>Bugs for <code>{{ hit.term }}</code></h3>
+                        <ul class="bug_ids_expanded full_bug_ids popup">
+                            {% for bug in hit.bugs %}
+                            {{ show_bug_link(bug) }}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+
+{% else %}
+<p>No results were found.</p>
+{% endif %}

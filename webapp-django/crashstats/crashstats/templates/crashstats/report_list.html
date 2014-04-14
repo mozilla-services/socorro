@@ -1,0 +1,193 @@
+{% extends "crashstats/report_list_base.html" %}
+
+{% block site_css %}
+  {{ super() }}
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
+  {% endcompress %}
+  {% compress css %}
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
+  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+  {% endcompress %}
+{% endblock %}
+
+
+{% block report %}
+<div id="report-list">
+    <ul id="report-list-nav">
+        <li><a href="#sigsummary"><span>Signature Summary</span></a></li>
+        <li><a href="#graph"><span>Graph</span></a></li>
+        <li><a href="#table"><span>Table</span></a></li>
+        <li><a href="#reports"><span>Reports</span></a></li>
+        <li><a href="#bugzilla"><span>Bugzilla</span></a></li>
+        <li><a href="#comments"><span>Comments</span></a></li>
+        <li><a id="correlations-report-list" href="#correlations"><span>Correlations</span></a></li>
+        {% if request.user.has_perm('crashstats.view_pii') %}
+        <li><a href="#sigurls"><span>URLs</span></a></li>
+        {% endif %}
+    </ul>
+
+    <div id="sigsummary" data-url="{{ url('crashstats:signature_summary') }}?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date | urlencode }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading signature summary...
+       </p>
+
+       <p class="loading-failed">
+         Unable to load signature summary. Please try again later.
+       </p>
+
+      <div class="inner">
+      {# the signature_summary.html doesn't contain any generated data so no point in loading it as a partial #}
+      {% include "crashstats/signature_summary.html" %}
+      </div>
+
+    </div>
+
+    <div id="graph" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading graph...
+       </p>
+
+       <p class="loading-failed">
+         Unable to load graph data. Please try again later.
+       </p>
+
+       <div class="inner"></div>
+
+    </div>
+
+    <div id="table" class="ui-tabls-hide"
+         data-partial-url="{{ url('crashstats:report_list_partial', 'table') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading build table...
+       </p>
+       <p class="loading-failed">
+         Unable to load build table. Please try again later.
+       </p>
+
+       <div class="inner"></div>
+
+    </div>
+
+    <div id="reports" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats:report_list_partial', 'reports') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading reports...
+       </p>
+       <p class="loading-failed">
+         Unable to load reports. Please try again later.
+       </p>
+
+       {% include "crashstats/reports_columns_form_hint.html" %}
+
+       <div class="inner"></div>
+
+       {% include "crashstats/reports_columns_form.html" %}
+
+    </div><!-- /reports -->
+
+    <div id="bugzilla" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats:report_list_partial', 'bugzilla') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading bugs...
+       </p>
+       <p class="loading-failed">
+         Unable to load bugs. Please try again later.
+       </p>
+
+       <div class="inner"></div>
+
+    </div><!-- /bugzilla -->
+
+    <div id="comments" class="ui-tabs-hide"
+          data-partial-url="{{ url('crashstats:report_list_partial', 'comments') }}">
+
+       <p class="loading-placeholder">
+         <img src="{{ static('img/loading.png') }}" alt="Loading">
+         Loading comments...
+        </p>
+
+       <div class="inner"></div>
+
+    </div>
+
+    <div id="correlations" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats:report_list_partial', 'correlations') }}">
+
+      <p class="loading-placeholder">
+        <img src="{{ static('img/loading.png') }}" alt="Loading">
+        Loading correlations...
+      </p>
+      <p class="loading-failed">
+        Unable to load correlations. Please try again later.
+      </p>
+
+      <div class="inner"></div>
+
+    </div><!-- /correlation -->
+
+    <div id="sigurls" class="ui-tabs-hide"
+         data-partial-url="{{ url('crashstats:report_list_partial', 'sigurls') }}">
+
+      <p class="loading-placeholder">
+        <img src="{{ static('img/loading.png') }}" alt="Loading">
+	Loading signature URLs...
+      </p>
+      <p class="loading-failed">
+        Unable to load signature URLs. Please try again later.
+      </p>
+
+      <div class="inner"></div>
+
+    </div><!-- /sigurls -->
+
+</div>
+
+{% endblock %}
+
+{% block site_js %}
+{{ super() }}
+{% compress js %}
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/lib/awty.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_graph.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_reports.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_comments.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_correlations.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_sigurls.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_bugzilla.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_table.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+{% endcompress %}
+
+<script type="text/javascript">
+var SocReport = {
+    base: '{{ url('crashstats:correlations_json') }}',
+    product: '{{ product }}',
+    signature: '{{ signature|urlencode }}'
+};
+</script>
+
+{% endblock %}

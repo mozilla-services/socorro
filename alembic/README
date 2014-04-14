@@ -1,0 +1,72 @@
+= Using Alembic for schema migrations =
+
+To use Alembic for your next schema change:
+
+Enable your virtualenv.
+
+Create an initial database using setupdb_app.py. See the Makefile for examples of usage.
+
+Make a change to:
+
+    socorro/external/postgresql/models.py
+
+And then:
+
+    PYTHONPATH=. alembic revision --autogenerate -m "Making an important change to the schema"
+
+A migration script will be put into:
+
+    alembic/versions
+
+Now you can modify it to meet your needs.
+
+Then, to apply the migration:
+
+    PYTHONPATH=. alembic upgrade head
+
+Downgrade to previous revision:
+
+    PYTHONPATH=. alembic downgrade -1
+
+
+== Dealing with unsupported or custom TYPEs ==
+
+We use a few types not currently supported by SQLAlchemy, so you may
+need to modify the migration slightly.
+
+
+== Helper functions in socorro.lib.migrations
+
+We have a couple helper functions for doing cleanup tasks, and adding custom
+types. These functions and classes are imported by the default template for
+a migration.
+
+=== Fixing permissions after adding a table
+
+This is hardcoded to change the owner of a table to `breakpad_rw`.
+
+Example:
+
+    fix_permissions(op, u'tablename')
+
+=== Loading a new stored proc
+
+Example:
+
+    load_stored_proc(op, ['update_matviews.sql', 'backfill_matviews.sql'])
+
+=== JSON datatype example
+
+Modify to import JSON type from socorro's model:
+
+    sa.Column(u'raw_crash', jsontype.JsonType(), nullable=False),
+
+=== CITEXT datatype example
+
+    sa.Column(u'new_stuff', citexttype.CitextType(), nullable=False),
+
+
+== Adding an index
+
+    sa.Column(u'uuid', postgresql.UUID(), nullable=False, index=True, unique=True),
+

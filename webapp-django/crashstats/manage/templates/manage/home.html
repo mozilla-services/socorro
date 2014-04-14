@@ -1,0 +1,49 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}Admin{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+
+  </style>
+{% endblock %}
+
+
+{% block admin_title %}Admin Home{% endblock %}
+
+{% block mainbody %}
+
+    <div class="panel">
+      <div class="body notitle">
+
+      <p>
+        <a href="{{ url('manage:featured_versions') }}">Featured Versions</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:fields') }}">Fields</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:skiplist') }}">Skiplist</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:users') }}">Users</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:groups') }}">Groups</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:analyze_model_fetches') }}">Analyze Model Fetches</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:graphics_devices') }}">Graphics Devices</a>
+      </p>
+      <p>
+         <a href="{{ url('manage:symbols_uploads') }}">Symbols Uploads</a>
+      </p>
+
+      </div>
+    </div>
+
+{% endblock %}

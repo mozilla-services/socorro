@@ -1,0 +1,27 @@
+#chart {
+    height: 500px;
+}
+
+.node rect {
+    cursor: move;
+    fill-opacity: 0.9;
+    shape-renderong: crispEdges;
+}
+
+.link {
+    fill: none;
+    stroke: #000;
+    stroke-opacity:0.2;
+}
+
+.link:hover {
+    stroke-opacity: 0.35;
+}
+
+thead td {
+    font-weight: bold;
+}
+
+.tablesorter .header {
+	padding: 0.5em;
+}

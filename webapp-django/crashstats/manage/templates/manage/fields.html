@@ -1,0 +1,54 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Fields{% endblock %}
+
+{% block site_js %}
+    {{ super() }}
+    {% compress js %}
+    <script type="text/javascript" src="{{ static('manage/js/fields.js') }}"></script>
+    {% endcompress %}
+{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  form label { font-weight: bold; }
+  .results { display: none; }
+  .results tbody td { font-family: 'Courier New', Courier; sans-serif; }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Fields{% endblock %}
+
+{% block mainbody %}
+
+    <div class="panel">
+      <div class="body notitle">
+      <form action="{{ url('manage:field_lookup') }}" method="post" class="lookup">
+        <p>
+          <label for="id_name">Name:</label>
+          <input name="name" id="id_name" class="name">
+          <button type="submit">Look up</button>
+        </p>
+      </form>
+
+      <div class="results">
+        <h3>Product: <span class="product"></span></h3>
+        <div class="transforms">
+          <table class="data-table vertical">
+            <thead>
+              <tr>
+                <th>Transform key</th>
+                <th>Transform value</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      </div>
+    </div>
+
+{% endblock %}
