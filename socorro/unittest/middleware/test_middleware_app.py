@@ -1485,7 +1485,7 @@ class IntegrationTestMiddlewareApp(unittest.TestCase):
                 {
                     'start_date': '2012-03-01',
                     'end_date': '2012-03-15',
-                    'signature': 'Firefox',
+                    'signature': 'FakeSignature1',
                     'channel': 'aurora',
                 }
             )
