@@ -210,6 +210,7 @@ class CrashAduByBuildSignature(DeclarativeBase):
 
     #column definitions
     adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(), primary_key=True, autoincrement=True)
+    product_name = Column(u'product_name', CITEXT(), primary_key=False, nullable=False, index=True)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
     signature = Column(u'signature', CITEXT(), primary_key=False, nullable=False)
     adu_date = Column(u'adu_date', DATE(), primary_key=False, nullable=False, index=True)

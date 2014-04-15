@@ -514,19 +514,21 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         cursor.execute("""
             INSERT INTO crash_adu_by_build_signature
-            (signature_id, signature, adu_date, build_date, buildid,
-             crash_count, adu_count, os_name, channel)
+            (product_name, signature_id, signature, adu_date, build_date,
+             buildid, crash_count, adu_count, os_name, channel)
             VALUES
-            (1, 'canIhaveYourSignature()', '{yesterday}', '2014-03-01',
-             '201403010101', 3, 1023, 'Mac OS X', 'release'),
-            (1, 'canIhaveYourSignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release'),
-            (1, 'canIhaveYourSignature()', '2014-01-01', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release'),
-            (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release'),
-            (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release')
+            ('WaterWolf', 1, 'canIhaveYourSignature()', '{yesterday}',
+             '2014-03-01', '201403010101', 3, 1023, 'Mac OS X', 'release'),
+            ('WaterWolf', 1, 'canIhaveYourSignature()', '{yesterday}',
+             '2014-04-01', '201404010101', 4, 1024, 'Windows NT', 'release'),
+            ('NightTrain', 1, 'canIhaveYourSignature()', '{yesterday}',
+             '2014-04-01', '201404010101', 4, 1024, 'Windows NT', 'release'),
+            ('WaterWolf', 1, 'canIhaveYourSignature()', '2014-01-01',
+             '2014-04-01', '201404010101', 4, 1024, 'Windows NT', 'release'),
+            ('WaterWolf', 2, 'youMayNotHaveMySignature()', '{yesterday}',
+             '2014-04-01', '201404010101', 4, 1024, 'Windows NT', 'release'),
+            ('WaterWolf', 2, 'youMayNotHaveMySignature()', '{yesterday}',
+             '2014-04-01', '201404010101', 4, 1024, 'Windows NT', 'release')
         """.format(yesterday=yesterday))
 
         self.connection.commit()
@@ -1243,6 +1245,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res_expected = {
             "hits": [
                 {
+                    "product_name": 'WaterWolf',
                     "signature": signature,
                     "adu_date": yesterday,
                     "build_date": "2014-03-01",
@@ -1253,6 +1256,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                     "channel": channel
                 },
                 {
+                    "product_name": 'WaterWolf',
                     "signature": signature,
                     "adu_date": yesterday,
                     "build_date": "2014-04-01",
@@ -1267,6 +1271,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_adu_by_signature(
+            product_name='WaterWolf',
             start_date=yesterday,
             end_date=yesterday,
             signature=signature,

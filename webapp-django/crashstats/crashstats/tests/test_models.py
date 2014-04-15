@@ -1500,6 +1500,9 @@ class TestModels(TestCase):
         def mocked_get(url, params, **options):
             assert '/adu_by_signature/' in url
 
+            ok_('product_name' in params)
+            eq_(params['product_name'], 'WaterWolf')
+
             ok_('signature' in params)
             eq_(params['signature'], 'FakeSignature1')
 
@@ -1530,7 +1533,8 @@ class TestModels(TestCase):
         """)
 
         rget.side_effect = mocked_get
-        r = api.get(signature='FakeSignature1',
+        r = api.get(product_name='WaterWolf',
+                    signature='FakeSignature1',
                     channel='nightly')
         eq_(r['total'], 2)
 

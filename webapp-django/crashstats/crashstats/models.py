@@ -1476,6 +1476,7 @@ class AduBySignature(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/adu_by_signature/'
     required_params = (
+        'product_name',
         'signature',
         'channel',
     )
