@@ -29,7 +29,7 @@ fi
 source $VENV/bin/activate
 
 echo "Linting..."
-find crashstats/ | grep '\.py$' | xargs check.py | grep -v "unable to detect undefined names" | awk '{ if ($0 ~ /[A-Za-z]/) { print; exit 1 } }'
+find crashstats/ | grep '\.py$' | xargs check.py | grep -v "unable to detect undefined names" | grep -v settings/local.py | awk '{ if ($0 ~ /[A-Za-z]/) { print; exit 1 } }'
 
 echo "Starting tests..."
 FORCE_DB=true coverage run manage.py test --noinput --with-xunit

@@ -27,9 +27,7 @@ def preview_archive_content(file_object, content_type):
 
     elif content_type == 'application/x-tar':
         zf = tarfile.TarFile(fileobj=file_object)
-        #print dir(zf)
         for member in zf.getmembers():
-            #print dir(member)
             if member.isfile():
                 print >>out, member.name.ljust(70),
                 print >>out, str(member.size).rjust(9)
