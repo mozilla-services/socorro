@@ -59,6 +59,8 @@ var ELASTICSEARCH_INDICES = {{ elasticsearch_indices | json_dumps }};
     {% compress js %}
 <script src="{{ static('supersearch/js/lib/select2/select2.js') }}"></script>
 <script src="{{ static('supersearch/js/lib/ace/ace.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/ace/theme-monokai.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/ace/mode-json.js') }}"></script>
 <script src="{{ static('supersearch/js/socorro/search_custom.js') }}"></script>
     {% endcompress %}
 
