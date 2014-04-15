@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from crontabber.crontabber import CronTabber, main
+from crontabber.app import CronTabber, main
 
 
 DEFAULT_JOBS = '''
@@ -50,12 +50,16 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|30d
 '''
 
-class CrontabberWrapper(CronTabber):
+class CronTabberWrapper(CronTabber):
     pass
 
-CrontabberWrapper.required_config.default = DEFAULT_JOBS
 
+CronTabberWrapper.required_config.crontabber.jobs.default = DEFAULT_JOBS
+CronTabberWrapper.required_config.crontabber.database_class.default = (
+    'socorro.external.postgresql.connection_context.ConnectionContext'
+)
 
 
 if __name__ == '__main__':  # pragma: no cover
+    import sys
     sys.exit(main(CronTabberWrapper))

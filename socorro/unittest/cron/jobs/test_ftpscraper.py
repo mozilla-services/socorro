@@ -9,10 +9,10 @@ from cStringIO import StringIO
 import mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
-from ..base import TestCaseBase, IntegrationTestCaseBase
+from crontabber.tests.base import TestCaseBase, IntegrationTestCaseBase
 
 
 def stringioify(func):
@@ -666,7 +666,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -725,7 +725,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         assert count_before == 5, count_before
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -825,7 +825,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -1104,7 +1104,7 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
         config_manager = self._setup_config_manager_firefox()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()

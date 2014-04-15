@@ -6,10 +6,10 @@ import mock
 from nose.plugins.attrib import attr
 from nose.tools import ok_
 
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
 from socorro.cron import base
 from socorro.lib.datetimeutil import utc_now
-from ..base import IntegrationTestCaseBase
+from crontabber.tests.base import IntegrationTestCaseBase
 
 from socorro.cron.jobs import matviews
 
@@ -96,7 +96,7 @@ class TestMatviews(IntegrationTestCaseBase):
         )
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -112,7 +112,7 @@ class TestMatviews(IntegrationTestCaseBase):
             assert not information['product-versions-matview']['last_error']
             assert information['product-versions-matview']['last_success']
 
-    @mock.patch('socorro.cron.crontabber.utc_now')
+    @mock.patch('crontabber.app.utc_now')
     def test_all_matviews(self, mocked_utc_now):
 
         # Pretend it's 03AM UTC
@@ -143,7 +143,7 @@ class TestMatviews(IntegrationTestCaseBase):
         )
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -179,7 +179,7 @@ class TestMatviews(IntegrationTestCaseBase):
         )
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -193,7 +193,7 @@ class TestMatviews(IntegrationTestCaseBase):
         )
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()

@@ -8,9 +8,9 @@ import random
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
 from socorro.lib.datetimeutil import utc_now
-from ..base import IntegrationTestCaseBase
+from crontabber.tests.base import IntegrationTestCaseBase
 
 SQL_INSERT = """
 INSERT INTO
@@ -106,7 +106,7 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()

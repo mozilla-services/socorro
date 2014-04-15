@@ -12,8 +12,8 @@ from configman import ConfigurationManager
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
-from socorro.cron import crontabber
-from ..base import IntegrationTestCaseBase
+from crontabber.app import CronTabber
+from crontabber.tests.base import IntegrationTestCaseBase
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
@@ -80,7 +80,7 @@ class TestCleanupRadix(IntegrationTestCaseBase):
 
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
         information = self._load_structure()

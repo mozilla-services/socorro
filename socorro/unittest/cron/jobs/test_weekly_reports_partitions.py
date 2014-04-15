@@ -4,8 +4,8 @@
 
 from nose.plugins.attrib import attr
 
-from socorro.cron import crontabber
-from ..base import IntegrationTestCaseBase
+from crontabber.app import CronTabber
+from crontabber.tests.base import IntegrationTestCaseBase
 
 
 #==============================================================================
@@ -22,7 +22,7 @@ class TestWeeklyReportsPartitions(IntegrationTestCaseBase):
     def test_run_weekly_reports_partitions(self):
         config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()

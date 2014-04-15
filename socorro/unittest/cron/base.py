@@ -17,7 +17,7 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from configman import ConfigurationManager
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
 from socorro.unittest.config.commonconfig import (
     databaseHost,
     databaseName,

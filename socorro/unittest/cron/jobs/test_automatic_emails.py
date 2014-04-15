@@ -10,14 +10,13 @@ from nose.tools import eq_, ok_
 
 from configman import ConfigurationManager
 
-from crontabber import crontabber
+from crontabber.app import CronTabber
 from socorro.cron.jobs import automatic_emails
 from socorro.external.exacttarget import exacttarget
 from socorro.external.elasticsearch.crashstorage import \
     ElasticSearchCrashStorage
 from socorro.external.elasticsearch.supersearch import SuperS
 from socorro.lib.datetimeutil import string_to_datetime, utc_now
-#from ..base import IntegrationTestCaseBase, TestCaseBase
 from crontabber.tests.base import IntegrationTestCaseBase, TestCaseBase
 
 # Remove debugging noise during development
@@ -474,7 +473,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         )
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -901,7 +900,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         et_mock.trigger_send = trigger_send
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -990,7 +989,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
         with config_manager.context() as config:
             # 1. Send an email to the user and update emailing data
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -1023,8 +1022,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             storage.es.refresh()
 
             # Run crontabber with time pushed by two hours
-            with mock.patch('socorro.cron.crontabber.utc_now') as cronutc_mock:
-                with mock.patch('socorro.cron.base.utc_now') as baseutc_mock:
+            with mock.patch('crontabber.app.utc_now') as cronutc_mock:
+                with mock.patch('crontabber.base.utc_now') as baseutc_mock:
                     cronutc_mock.return_value = twohourslater
                     baseutc_mock.return_value = twohourslater
                     tab.run_all()
@@ -1052,8 +1051,8 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             storage.es.refresh()
 
             # Run crontabber with time pushed by a day
-            with mock.patch('socorro.cron.crontabber.utc_now') as cronutc_mock:
-                with mock.patch('socorro.cron.base.utc_now') as baseutc_mock:
+            with mock.patch('crontabber.app.utc_now') as cronutc_mock:
+                with mock.patch('crontabber.base.utc_now') as baseutc_mock:
                     cronutc_mock.return_value = tomorrow
                     baseutc_mock.return_value = tomorrow
                     tab.run_all()
