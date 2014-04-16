@@ -864,7 +864,6 @@ class RawCrash(SocorroMiddleware):
         'Vendor',
         'EMCheckCompatibility',
         'Throttleable',
-        #'URL',
         'version',
         'AdapterDeviceID',
         'ReleaseChannel',

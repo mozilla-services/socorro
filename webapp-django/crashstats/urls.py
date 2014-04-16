@@ -41,6 +41,6 @@ urlpatterns = patterns(
     (r'', include('django_browserid.urls')),
 )
 
-## In DEBUG mode, serve media files through Django.
+# In DEBUG mode, serve media files through Django.
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
