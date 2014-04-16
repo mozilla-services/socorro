@@ -1,6 +1,6 @@
 import json
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_
 
 from django.conf import settings
 from django.test import TestCase
@@ -37,14 +37,14 @@ class TestViews(TestCase):
         response = self._login_attempt(None, None)
         eq_(response.status_code, 403)
         context = json.loads(response.content)
-        ok_(context['redirect'].endswith('?bid_login_failed=1'))
+        eq_(context['redirect'], self._home_url)
 
     def test_bad_verification(self):
         """Bad verification -> failure."""
         response = self._login_attempt(None)
         eq_(response.status_code, 403)
         context = json.loads(response.content)
-        ok_(context['redirect'].endswith('?bid_login_failed=1'))
+        eq_(context['redirect'], self._home_url)
 
     def test_successful_redirect(self):
         response = self._login_attempt(
