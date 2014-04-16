@@ -24,6 +24,7 @@ import datetime
 
 def upgrade():
     load_stored_proc(op, ['update_crash_adu_by_build_signature.sql'])
+    op.execute(""" TRUNCATE crash_adu_by_build_signature """)
     op.add_column(u'crash_adu_by_build_signature',
                   sa.Column(u'product_name', citexttype.CitextType(),
                   nullable=False))
