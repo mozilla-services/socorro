@@ -745,7 +745,8 @@ class Crashes(PostgreSQLBase):
             ("start_date", lastweek, "date"),
             ("end_date", now, "date"),
             ("signature", None, "str"),
-            ("channel", None, "str")
+            ("channel", None, "str"),
+            ("product_name", None, "str"),
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
@@ -759,6 +760,7 @@ class Crashes(PostgreSQLBase):
 
         sql_query = """
             SELECT
+                product_name,
                 signature,
                 adu_date::TEXT,
                 build_date::TEXT,
@@ -769,6 +771,7 @@ class Crashes(PostgreSQLBase):
                 channel
             FROM crash_adu_by_build_signature
             WHERE adu_date BETWEEN %(start_date)s AND %(end_date)s
+            AND product_name = %(product_name)s
             AND channel = %(channel)s
             AND signature = %(signature)s
             ORDER BY buildid
@@ -780,6 +783,7 @@ class Crashes(PostgreSQLBase):
         results = self.query(sql_query, params, error_message=error_message)
 
         fields = [
+            'product_name',
             'signature',
             'adu_date',
             'build_date',

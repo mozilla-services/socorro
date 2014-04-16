@@ -12,6 +12,7 @@ CREATE TEMPORARY TABLE new_build_adus
 AS
     WITH build_adus AS (
         SELECT
+            product_versions.product_name,
             build_adu.build_date,
             SUM(build_adu.adu_count) AS aducount,
             build_adu.os_name,
@@ -20,7 +21,7 @@ AS
         FROM build_adu
     JOIN product_versions USING (product_version_id)
         WHERE adu_date BETWEEN updateday and updateday + 1
-        GROUP BY build_adu.product_version_id,
+        GROUP BY product_versions.product_name,
             build_adu.build_date,
             build_adu.os_name,
             build_adu.adu_date,
@@ -40,6 +41,7 @@ AS
         GROUP BY build, os_name, reports_clean.signature_id, signatures.signature
     )
     SELECT
+        build_adus.product_name as product_name,
         build_adus.build_date as build_date,
         build_adus.aducount as adu_count,
         build_adus.os_name as os_name,
@@ -66,6 +68,7 @@ END IF;
 ANALYZE new_build_adus;
 
 INSERT INTO crash_adu_by_build_signature (
+    product_name,
     signature_id,
     signature,
     adu_date,
@@ -77,6 +80,7 @@ INSERT INTO crash_adu_by_build_signature (
     channel
 )
 SELECT
+    new_build_adus.product_name,
     new_build_adus.signature_id,
     new_build_adus.signature,
     new_build_adus.adu_date,
