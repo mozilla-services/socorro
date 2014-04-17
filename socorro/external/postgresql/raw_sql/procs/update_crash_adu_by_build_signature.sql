@@ -23,6 +23,7 @@ AS
         JOIN product_versions USING (product_version_id)
         WHERE adu_date >= updateday
         AND adu_date < updateday + interval '1 day'
+        AND product_versions.product_name is not NULL
         GROUP BY product_versions.product_name,
             build_adu.build_date,
             build_adu.os_name,

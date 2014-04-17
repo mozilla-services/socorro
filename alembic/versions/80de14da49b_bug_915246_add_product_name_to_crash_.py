@@ -37,7 +37,7 @@ def upgrade():
             select
             backfill_crash_adu_by_build_signature(
               ('%s'::date - '%s days'::interval)::date) """ % (today, i))
-        op.execute(""" COMMIT """)
+    op.execute(""" COMMIT """)
 
 
 def downgrade():
