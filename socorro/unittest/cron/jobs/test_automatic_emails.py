@@ -9,7 +9,6 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
 from configman import ConfigurationManager
-
 from crontabber.app import CronTabber
 from socorro.cron.jobs import automatic_emails
 from socorro.external.exacttarget import exacttarget
@@ -946,9 +945,9 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
 
             # Run crontabber again and verify that all users are updated,
             # and emails are not sent twice
-            state = tab.job_database['automatic-emails']
+            state = tab.job_state_database['automatic-emails']
             self._wind_clock(state, hours=1)
-            tab.job_database['automatic-emails'] = state
+            tab.job_state_database['automatic-emails'] = state
 
             tab.run_all()
 
