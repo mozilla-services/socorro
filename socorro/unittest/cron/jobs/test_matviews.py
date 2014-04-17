@@ -7,7 +7,7 @@ from nose.plugins.attrib import attr
 from nose.tools import ok_
 
 from crontabber.app import CronTabber
-from socorro.cron import base
+from crontabber import base
 from socorro.lib.datetimeutil import utc_now
 from crontabber.tests.base import IntegrationTestCaseBase
 

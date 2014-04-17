@@ -4,7 +4,7 @@
 
 """an app to monitor and report on replication lag in PG databases"""
 
-from socorro.cron.base import BaseCronApp
+from crontabber.base import BaseCronApp
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
     execute_query_fetchall,
