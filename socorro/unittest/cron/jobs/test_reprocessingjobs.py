@@ -48,7 +48,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
 
         return _super(
             'socorro.cron.jobs.reprocessingjobs.ReprocessingJobsApp|5m',
-            extra_value_source={'queue_class': self.rabbit_queue_mocked}
+            extra_value_source={'queuing_class': self.rabbit_queue_mocked}
         )
 
     def test_reprocessing(self):
@@ -73,6 +73,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
             tab = crontabber.CronTabber(config)
             tab.run_all()
 
+        cursor = self.conn.cursor()
         cursor.execute('select count(*) from reprocessing_jobs')
 
         res_expected = 0
