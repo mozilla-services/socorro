@@ -17,15 +17,18 @@ AS
             SUM(build_adu.adu_count) AS aducount,
             build_adu.os_name,
             build_adu.adu_date,
-            build_type_enum as channel
+            build_type_enum as channel,
+            build_adu.product_version_id
         FROM build_adu
-    JOIN product_versions USING (product_version_id)
-        WHERE adu_date BETWEEN updateday and updateday + 1
+        JOIN product_versions USING (product_version_id)
+        WHERE adu_date >= updateday
+        AND adu_date < updateday + interval '1 day'
         GROUP BY product_versions.product_name,
             build_adu.build_date,
             build_adu.os_name,
             build_adu.adu_date,
-            product_versions.build_type_enum
+            product_versions.build_type_enum,
+            build_adu.product_version_id
     ),
     sigreports AS (
         SELECT
@@ -33,14 +36,18 @@ AS
             COUNT(*) AS crashcount,
             os_name,
             reports_clean.signature_id,
-            signatures.signature as signature
+            signatures.signature as signature,
+            reports_clean.product_version_id as product_version_id
         FROM reports_clean
         JOIN signatures ON reports_clean.signature_id = signatures.signature_id
         WHERE
-            date_processed BETWEEN updateday and updateday + 1
-        GROUP BY build, os_name, reports_clean.signature_id, signatures.signature
+            date_processed >= updateday
+        AND date_processed < updateday + interval '1 day'
+        GROUP BY build, os_name, reports_clean.signature_id,
+            signatures.signature, product_version_id
     )
     SELECT
+        build_adus.product_version_id as product_version_id,
         build_adus.product_name as product_name,
         build_adus.build_date as build_date,
         build_adus.aducount as adu_count,
@@ -53,7 +60,8 @@ AS
         sigreports.crashcount as crash_count
     FROM build_adus
     JOIN sigreports ON sigreports.os_name = build_adus.os_name AND
-    to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date
+        to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date AND
+        sigreports.product_version_id = build_adus.product_version_id
     WHERE length(build::text) >= 8
 ;
 
