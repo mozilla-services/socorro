@@ -86,7 +86,12 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         cursor = self.conn.cursor()
 
         # Test exception handling
-        cursor.execute('drop table reprocessing_jobs')
+        cursor.execute("""
+            alter table reprocessing_jobs RENAME TO test_reprocessing_jobs
+        """)
+        # Unsure how to test the exception handling without committing
+        # because the crontabber invocation happens in a different Pg
+        # transaction.
         self.conn.commit()
 
         with config_manager.context() as config:
@@ -100,3 +105,9 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         res_expected = "<class 'psycopg2.ProgrammingError'>"
         res, = cursor.fetchone()
         eq_(res, res_expected)
+
+        # Change table name back
+        cursor.execute("""
+            alter table test_reprocessing_jobs RENAME TO reprocessing_jobs
+        """)
+        self.conn.commit()
