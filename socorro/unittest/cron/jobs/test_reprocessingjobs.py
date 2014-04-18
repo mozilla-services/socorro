@@ -94,20 +94,22 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         # transaction.
         self.conn.commit()
 
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            tab.run_all()
+        try:
+            with config_manager.context() as config:
+                tab = crontabber.CronTabber(config)
+                tab.run_all()
 
-        cursor.execute("""
-            select json_extract_path_text(last_error, 'type')
-            from crontabber
-        """)
-        res_expected = "<class 'psycopg2.ProgrammingError'>"
-        res, = cursor.fetchone()
-        eq_(res, res_expected)
+            cursor.execute("""
+                select json_extract_path_text(last_error, 'type')
+                from crontabber
+            """)
+            res_expected = "<class 'psycopg2.ProgrammingError'>"
+            res, = cursor.fetchone()
+            eq_(res, res_expected)
 
-        # Change table name back
-        cursor.execute("""
-            alter table test_reprocessing_jobs RENAME TO reprocessing_jobs
-        """)
-        self.conn.commit()
+        finally:
+            # Change table name back
+            cursor.execute("""
+                alter table test_reprocessing_jobs RENAME TO reprocessing_jobs
+            """)
+            self.conn.commit()
