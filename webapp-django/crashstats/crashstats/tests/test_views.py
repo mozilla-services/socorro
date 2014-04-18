@@ -439,7 +439,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:home', args=('WaterWolf',))
 
         def mocked_get(url, params, **options):
-            if '/products' in url and not 'versions' in params:
+            if '/products' in url and 'versions' not in params:
                 return Response("""
                     {
                         "products": [
@@ -494,7 +494,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-         # Testing with valid version for product
+        # Testing with valid version for product
         url = reverse('crashstats:home', args=('WaterWolf', '19.0'))
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1659,7 +1659,7 @@ class TestViews(BaseTestViews):
             'WaterWolf 19.0 ADI',
             'WaterWolf 19.0 Throttle',
             'WaterWolf 19.0 Ratio'
-            ])
+        ])
         first_row = rows[1]
         eq_(first_row[0], '2012-09-23')
 
@@ -1797,7 +1797,7 @@ class TestViews(BaseTestViews):
             'WaterWolf 20.0 on Amiga ADI',
             'WaterWolf 20.0 on Amiga Throttle',
             'WaterWolf 20.0 on Amiga Ratio'
-            ])
+        ])
         eq_(first_row[0], '2012-09-23')
 
     def test_daily_legacy_redirect(self):
@@ -5126,7 +5126,7 @@ class TestViews(BaseTestViews):
         # 'report' but if you switch to 'build' it'll remember that
 
         def mocked_get(url, params, **options):
-            if '/products' in url and not 'versions' in params:
+            if '/products' in url and 'versions' not in params:
                 return Response("""
                     {
                         "products": [

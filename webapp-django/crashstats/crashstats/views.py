@@ -501,10 +501,10 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         # is required. Socorro and the world will be a better place
         # once https://bugzilla.mozilla.org/show_bug.cgi?id=790642 lands.
         os_short_name_binding = {'lin': 'linux'}
-        for os in operating_systems:
-            os_code = os['code'][0:3].lower()
+        for _os in operating_systems:
+            os_code = _os['code'][0:3].lower()
             key = '%s_count' % os_short_name_binding.get(os_code, os_code)
-            crash_counts.append([crash[key], os['name']])
+            crash_counts.append([crash[key], _os['name']])
 
         crash['correlation_os'] = max(crash_counts)[1]
         sig = crash['signature']
