@@ -18,9 +18,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
     def _clear_tables(self):
         self.conn.cursor().execute("""
             TRUNCATE
-                crontabber
-                , crontabber_log
-                --, reprocessing_jobs
+                reprocessing_jobs
             CASCADE
         """)
 
@@ -89,7 +87,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         cursor.execute("""
             alter table reprocessing_jobs RENAME TO test_reprocessing_jobs
         """)
-        # Unsure how to test the exception handling without committing
+        # Need to commit this in order to test the exception handling
         # because the crontabber invocation happens in a different Pg
         # transaction.
         self.conn.commit()
@@ -99,12 +97,9 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
                 tab = crontabber.CronTabber(config)
                 tab.run_all()
 
-            cursor.execute("""
-                select json_extract_path_text(last_error, 'type')
-                from crontabber
-            """)
+            state = tab.job_database['reprocessing-jobs']
             res_expected = "<class 'psycopg2.ProgrammingError'>"
-            res, = cursor.fetchone()
+            res = state['last_error']['type']
             eq_(res, res_expected)
 
         finally:
