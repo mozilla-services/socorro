@@ -58,21 +58,21 @@ def with_transactional_resource(transactional_resource_class, resource_name):
             raise Exception(
                 '%s must have RequiredConfig as a base class' % cls
             )
-        if not hasattr(cls, 'required_config'):
-            cls.requried_config = Namespace()
-        cls.required_config.namespace(resource_name)
-        cls.required_config[resource_name].add_option(
+        new_req = cls.get_required_config()
+        new_req.namespace(resource_name)
+        new_req[resource_name].add_option(
             '%s_class' % resource_name,
             default=transactional_resource_class,
             from_string_converter=class_converter,
         )
-        cls.required_config[resource_name].add_option(
+        new_req[resource_name].add_option(
             '%s_transaction_executor_class' % resource_name,
             default=
             'socorro.database.transaction_executor.TransactionExecutor',
             doc='a class that will execute transactions',
             from_string_converter=class_converter,
         )
+        cls.required_config = new_req
 
         #------------------------------------------------------------------
         def new__init__(self, *args, **kwargs):
