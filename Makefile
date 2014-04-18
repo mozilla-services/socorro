@@ -89,7 +89,7 @@ lint:
 	$(PYLINT) -f parseable --rcfile=pylintrc socorro > pylint.txt
 
 clean:
-	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
+	find ./socorro/ ./alembic/versions -type f -name "*.pyc" -exec rm {} \;
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
 	cd minidump-stackwalk; make clean
