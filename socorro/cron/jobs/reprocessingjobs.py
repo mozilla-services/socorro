@@ -18,7 +18,7 @@ _reprocessing_sql = """ DELETE FROM reprocessing_jobs RETURNING crash_id """
 @with_single_postgres_transaction()
 @with_transactional_resource(
     'socorro.external.rabbitmq.crashstorage.ReprocessingRabbitMQCrashStore',
-    'queue'
+    'queuing'
 )
 class ReprocessingJobsApp(BaseCronApp):
     app_name = 'reprocessing-jobs'
@@ -31,7 +31,7 @@ class ReprocessingJobsApp(BaseCronApp):
     def run(self, connection):
 
         for crash_id in execute_query_iter(connection, _reprocessing_sql):
-            self.queue_connection.save_raw_crash(
+            self.queuing_connection.save_raw_crash(
                 {'legacy_processing': True},
                 [],
                 crash_id
