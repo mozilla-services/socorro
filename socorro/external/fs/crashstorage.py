@@ -346,6 +346,10 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
     SLOT_DEPTH = 2
     DIR_DEPTH = 2
 
+    def _get_current_date(self):
+        date = utc_now()
+        return "%02d%02d%02d" % (date.year, date.month, date.day)
+
     def _get_date_root_name(self, crash_id):
         return 'date_root'
 
@@ -476,9 +480,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
           the crash_id.
         """
         current_slot = self._current_slot()
-
-        date = utc_now()
-        current_date = "%4d%02d%02d" % (date.year, date.month, date.day)
+        current_date = self. _get_current_date()
 
         dates = os.listdir(self.config.fs_root)
         for date in dates:
@@ -529,7 +531,7 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                         # is safe to remove.
                         os.rmdir(hour_slot_base)
                     except OSError:
-                       self.logger.error("could not fully remove directory: "
+                        self.logger.error("could not fully remove directory: "
                                           "%s; are there more crashes in it?",
                                           hour_slot_base,
                                           exc_info=True)
@@ -625,6 +627,10 @@ class FSTemporaryStorage(FSLegacyDatedRadixTreeStorage):
     """This crash storage system uses only the day of the month as the root of
     the daily directories.  This means that it will recycle directories
     starting at the beginning of each month"""
+
+    def _get_current_date(self):
+        date = utc_now()
+        return "%02d" % date.day
 
     def _get_base(self, crash_id):
         """this method overrides the base method to define the daily file
