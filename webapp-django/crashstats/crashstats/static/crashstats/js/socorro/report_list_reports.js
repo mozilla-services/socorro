@@ -46,6 +46,10 @@ var Reports = (function() {
                     Reports.reload(this.href);
                 });
             });
+
+            $('th.header', $panel).click(function() {
+                $('a.sort-header', this).click();
+            });
         }
     }
 
