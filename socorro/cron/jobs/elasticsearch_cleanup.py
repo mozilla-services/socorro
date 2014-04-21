@@ -9,7 +9,7 @@ import re
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.cron.base import BaseCronApp
+from crontabber.base import BaseCronApp
 from socorro.lib.datetimeutil import utc_now
 
 

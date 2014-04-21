@@ -12,11 +12,12 @@ from nose.tools import assert_raises
 
 from configman import ConfigurationManager
 
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
+from crontabber.tests.base import IntegrationTestCaseBase
+
 from socorro.external.elasticsearch.crashstorage import \
     ElasticSearchCrashStorage
 from socorro.lib.datetimeutil import utc_now
-from ..base import IntegrationTestCaseBase
 
 # Remove debugging noise during development
 import logging
@@ -102,7 +103,7 @@ class IntegrationTestElasticsearchCleanup(IntegrationTestCaseBase):
             es.status(now_index)
             es.status(last_week_index)
 
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()
@@ -153,7 +154,7 @@ class IntegrationTestElasticsearchCleanup(IntegrationTestCaseBase):
             # This will raise an error if the index was not correctly created.
             es.status('socorro_emails')
 
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
             information = self._load_structure()

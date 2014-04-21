@@ -6,9 +6,9 @@ from mock import Mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
-from socorro.cron import crontabber
+from crontabber.app import CronTabber
 
-from ..base import IntegrationTestCaseBase
+from crontabber.tests.base import IntegrationTestCaseBase
 
 
 #==============================================================================
@@ -68,7 +68,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         self.conn.commit()
 
         with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
+            tab = CronTabber(config)
             tab.run_all()
 
         cursor = self.conn.cursor()
@@ -94,10 +94,10 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
 
         try:
             with config_manager.context() as config:
-                tab = crontabber.CronTabber(config)
+                tab = CronTabber(config)
                 tab.run_all()
 
-            state = tab.job_database['reprocessing-jobs']
+            state = tab.job_state_database['reprocessing-jobs']
             res_expected = "<class 'psycopg2.ProgrammingError'>"
             res = state['last_error']['type']
             eq_(res, res_expected)

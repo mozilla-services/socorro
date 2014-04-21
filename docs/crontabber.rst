@@ -32,7 +32,7 @@ However, it can't be run as daemon. It actually needs to be run by
 UNIX ``crontab`` every, say, 5 minutes. So instead of your ``crontab``
 being a huge list of jobs at different times, all you need is this::
 
-    */5 * * * * PYTHONPATH="..." socorro/cron/crontabber.py
+    */5 * * * * PYTHONPATH="..." crontabber
 
 That's all you need! Obviously the granularity of ``crontabber`` is
 limited by the granularity you execute it.
@@ -57,7 +57,7 @@ Overriding dependencies is possible with the ``--force`` parameter.
 For example, suppose you know ``BarCronApp`` can now be run you do
 that like this::
 
-    ./crontabber.py --job=BarCronApp --force
+    ./crontabber --job=BarCronApp --force
 
 Dependencies inside the cron apps are defined by settings a class
 attribute on the cron app. The attribute is called ``depends_on`` and
@@ -65,7 +65,7 @@ its value can be a string, a tuple or a list.
 In this example, since ``BarCronApp``
 depends on ``FooCronApp`` it's class would look something like this::
 
-    from socorro.cron.base import BaseCronApp
+    from crontabber.base import BaseCronApp
 
     class BarCronApp(BaseCronApp):
         app_name = 'BarCronApp'
@@ -85,7 +85,7 @@ configuration options add the ``required_config`` class attribute.
 Here's an example::
 
     from configman import Namespace
-    from socorro.cron.base import BaseCronApp
+    from crontabber.base import BaseCronApp
 
     class FooCronApp(BaseCronApp):
         app_name = 'foo'
@@ -115,7 +115,7 @@ use a special syntax to associate it with this cron app class.
 Usually, the best hint of how to do this is to use ``python
 crontabber.py --help``. In this example it would be::
 
-    python crontabber.py --job=foo --class-FooCronApp.bugzilla_url=...
+    crontabber --job=foo --class-FooCronApp.bugzilla_url=...
 
 App names versus/or class names
 -------------------------------

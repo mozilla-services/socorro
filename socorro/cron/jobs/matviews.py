@@ -4,7 +4,7 @@
 
 import datetime
 
-from socorro.cron.base import BaseCronApp
+from crontabber.base import BaseCronApp
 from socorro.cron.mixins import (
     as_backfill_cron_app,
     with_postgres_transactions,

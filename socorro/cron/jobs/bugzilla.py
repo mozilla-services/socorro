@@ -8,9 +8,9 @@ import csv
 
 from dateutil import tz
 from configman import Namespace
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import with_postgres_transactions
-from socorro.cron.crontabber import database_transaction
+from crontabber.base import BaseCronApp
+from crontabber.mixins import with_postgres_transactions
+from crontabber.app import database_transaction
 from socorro.external.postgresql.dbapi2_util import (
     single_row_sql,
     execute_query_fetchall,

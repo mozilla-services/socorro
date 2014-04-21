@@ -6,7 +6,7 @@ from configman import Namespace
 from configman.converters import classes_in_namespaces_converter
 from configman.dotdict import DotDict
 
-from socorro.cron.base import BaseCronApp
+from crontabber.base import BaseCronApp
 
 from socorro.lib.datetimeutil import utc_now
 

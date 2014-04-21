@@ -34,8 +34,8 @@ honcho==0.5.0
 
 # prod requirements
 
-# sha256: tyudZoyZjmDtOc5F2np0KJ8ou_ozmohba2Wd0xfjNeY
-configman==1.1.16
+# sha256: -uiNSAmHjZDpbhQW2rP1VeHQKcy2q42YSUZx9USl6To
+configman==1.2.2
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
@@ -80,3 +80,5 @@ python-dateutil==2.1
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
 happybase==0.7
+# sha256: _cSFU_yQhOEVA7e2-M0ZO3T3R882FH_C4m2ANQWWxq0
+crontabber==0.5
