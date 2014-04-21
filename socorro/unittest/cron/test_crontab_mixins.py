@@ -122,3 +122,22 @@ class TestCrontabMixins(unittest.TestCase):
             def __init__(self, config):
                 self.config = config
         ok_(hasattr(Alpha, '_run_proxy'))
+
+    def test_no_over_propagation(self):
+
+
+        @ctm.with_postgres_transactions()
+        class Alpha(BaseCronApp):
+            required_config = Namespace()
+            required_config.add_option('a', default=0)
+
+
+        @ctm.with_rabbitmq_transactions()
+        class Beta(BaseCronApp):
+            required_config = Namespace()
+            required_config.add_option('a', default=0)
+
+        ok_('database' in Alpha.get_required_config())
+        ok_('queuing' not in Alpha.get_required_config())
+        ok_('database' not in Beta.get_required_config())
+        ok_('queuing' in Beta.get_required_config())
