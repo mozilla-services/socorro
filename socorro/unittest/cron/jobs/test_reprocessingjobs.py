@@ -94,10 +94,10 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
 
         try:
             with config_manager.context() as config:
-                tab = crontabber.CronTabber(config)
+                tab = CronTabber(config)
                 tab.run_all()
 
-            state = tab.job_database['reprocessing-jobs']
+            state = tab.job_state_database['reprocessing-jobs']
             res_expected = "<class 'psycopg2.ProgrammingError'>"
             res = state['last_error']['type']
             eq_(res, res_expected)
