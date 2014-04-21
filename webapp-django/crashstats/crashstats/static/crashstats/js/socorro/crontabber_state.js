@@ -203,7 +203,11 @@ d3.json("data.json", function(data) {
             field = tableFields[i];
             isTime = (field === "last_success" || field === "next_run");
             if (isTime) {
-                return moment(d).fromNow();
+                if (d) {
+                    return moment(d).fromNow();
+                } else {
+                    return '';
+                }
             }
             if (typeof(d) === "object") {
                 joined = _.reduce(d, function(m, i) {
