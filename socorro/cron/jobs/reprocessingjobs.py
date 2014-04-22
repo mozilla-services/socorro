@@ -30,7 +30,7 @@ class ReprocessingJobsApp(BaseCronApp):
 
     def run(self, connection):
 
-        for crash_id in execute_query_iter(connection, _reprocessing_sql):
+        for crash_id, in execute_query_iter(connection, _reprocessing_sql):
             self.queuing_connection.save_raw_crash(
                 {'legacy_processing': True},
                 [],
