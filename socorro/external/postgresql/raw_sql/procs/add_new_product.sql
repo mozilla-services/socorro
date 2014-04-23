@@ -40,10 +40,12 @@ VALUES ( prodname, current_sort + 1, initversion,
 
 INSERT INTO product_build_types ( product_name, build_type )
 WITH build_types AS (
-    select enumlabel as build_type
+    select enumlabel::build_type as build_type -- must be enum type, rather than text or name
     from pg_catalog.pg_enum WHERE enumtypid = 'build_type'::regtype
 )
-SELECT prodname, build_type
+SELECT
+    prodname, -- variable passed into function
+    build_type
 FROM build_types;
 
 -- if throttling, change throttle for release versions
