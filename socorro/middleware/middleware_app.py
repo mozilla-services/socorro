@@ -246,6 +246,13 @@ class MiddlewareApp(App):
         reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
+        'elasticsearch_timeout_extended',
+        default=120,
+        doc='the time in seconds before a query to elasticsearch fails in '
+            'restricted sections',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.webapi.add_option(
         'facets_max_number',
         default=50,
         doc='the maximum number of results a facet will return in search'
