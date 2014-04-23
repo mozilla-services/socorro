@@ -49,7 +49,7 @@ class Query(ElasticSearchBase):
 
         es = pyelasticsearch.ElasticSearch(
             urls=self.config.elasticsearch_urls,
-            timeout=self.config.elasticsearch_timeout,
+            timeout=self.config.elasticsearch_timeout_extended,
         )
 
         # Set indices.
