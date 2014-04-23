@@ -68,15 +68,18 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
             crash_id
         )
 
-        # Verify the crash has been inserted
-        crash = storage.es.get(
-            es_index,
-            es_doctype,
-            crash_id
-        )
-        assert crash['exists']
+        try:
+            # Verify the crash has been inserted
+            crash = storage.es.get(
+                es_index,
+                es_doctype,
+                crash_id
+            )
+            assert crash['exists']
 
-        print 'Success - %s/%s/%s' % (es_index, es_doctype, crash_id)
+        finally:
+            # Clean up created index.
+            storage.es.delete_index(es_index)
 
 
 if __name__ == '__main__':
