@@ -3,17 +3,18 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
-import unittest
 import json
 
 from socorro.lib.util import SilentFakeLogger, DotDict
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.happybase.crashstorage import HBaseCrashStorage, CrashIDNotFound
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.unittest.testbase import TestCase
 
 
-class TestCrashStorage(unittest.TestCase):
+class TestCrashStorage(TestCase):
     def setUp(self):
+        super(TestCrashStorage, self).setUp()
         self.context = mock.MagicMock()
         self.context.__enter__.return_value = self.context
         config = DotDict({

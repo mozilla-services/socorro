@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 import copy
 
@@ -16,6 +15,7 @@ from socorro.processor.legacy_processor import (
   create_symbol_path_str
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
+from socorro.unittest.testbase import TestCase
 
 
 def setup_config_with_mocks():
@@ -231,7 +231,7 @@ canonical_standard_raw_crash_corrupt = DotDict({
 })
 
 
-class TestLegacyProcessor(unittest.TestCase):
+class TestLegacyProcessor(TestCase):
     """
     """
 

@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_
 import psycopg2
 
 from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.unittest.testbase import TestCase
 from configman import Namespace
 
 
@@ -32,9 +31,10 @@ class MockConnection(object):
         _rollbacks += 1
 
 
-class TestConnectionContext(unittest.TestCase):
+class TestConnectionContext(TestCase):
 
     def setUp(self):
+        super(TestConnectionContext, self).setUp()
         # reset global variables so each test can run separately
         global _closes, _commits, _rollbacks
         _closes = _commits = _rollbacks = 0

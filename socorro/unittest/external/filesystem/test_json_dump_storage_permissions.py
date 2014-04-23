@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 import datetime as DT
 import os
 import os.path as p
@@ -15,10 +13,10 @@ import socorro.external.filesystem.json_dump_storage as JDS
 import uuid as socorro_uuid
 from socorro.lib.util import SilentFakeLogger
 import socorro.external.filesystem.filesystem as socorro_fs
-
+from socorro.unittest.testbase import TestCase
 from socorro.lib.datetimeutil import UTC
 
-class TestJsonDumpStoragePermissions(unittest.TestCase):
+class TestJsonDumpStoragePermissions(TestCase):
   def setUp(self):
     self.testDir = os.path.join('.','TESTPERM')
     self.testMoveFrom = os.path.join('.','TESTPERM-MOVEFROM')
@@ -63,4 +61,3 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
       # visitPath quietly ignores a file as the leaf
       socorro_fs.visitPath(os.path.join(topPath,d),datePath,assertPermVisitor)
       socorro_fs.visitPath(os.path.join(topPath,d),namePath,assertPermVisitor)
-

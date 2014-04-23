@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import datetime
 from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
@@ -11,12 +10,13 @@ from socorro.external import MissingArgumentError
 
 from socorro.external.postgresql.gccrashes import GCCrashes
 from socorro.lib import datetimeutil, util
+from socorro.unittest.testbase import TestCase
 
 from unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-class TestGCCrashes(unittest.TestCase):
+class TestGCCrashes(TestCase):
     """Test socorro.external.postgresql.gccrashes.GCCrashes class. """
 
     #--------------------------------------------------------------------------

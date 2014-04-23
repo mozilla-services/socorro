@@ -2,19 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import search_common, util
+from socorro.unittest.testbase import TestCase
 
 from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-class TestPostgreSQLBase(unittest.TestCase):
+class TestPostgreSQLBase(TestCase):
     """Test PostgreSQLBase class. """
 
     #--------------------------------------------------------------------------

@@ -2,15 +2,16 @@ import datetime
 from nose.tools import eq_, ok_
 
 from django.conf import settings
-from django.test import TestCase
 from django.utils.timezone import utc
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import forms
 
 
-class TestForms(TestCase):
+class TestForms(DjangoTestCase):
 
     def setUp(self):
+        super(TestForms, self).setUp()
         # Mocking models needed for form validation
         self.current_products = {
             'WaterWolf': [],

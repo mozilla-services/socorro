@@ -6,13 +6,13 @@ import datetime
 import shutil
 import os
 import tempfile
-import unittest
 
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.http import correlations
 from socorro.lib.util import DotDict
+from socorro.unittest.testbase import TestCase
 
 SAMPLE_CORE_COUNTS = open(
     os.path.join(os.path.dirname(__file__),
@@ -26,12 +26,14 @@ class Response(object):
         self.status_code = status_code
 
 
-class TestCorrelations(unittest.TestCase):
+class TestCorrelations(TestCase):
 
     def setUp(self):
+        super(TestCorrelations, self).setUp()
         self.temp_dirs = []
 
     def tearDown(self):
+        super(TestCorrelations, self).tearDown()
         for temp_dir in self.temp_dirs:
             shutil.rmtree(temp_dir)
 
@@ -338,7 +340,7 @@ class TestCorrelations(unittest.TestCase):
             shutil.rmtree(tmp_directory)
 
 
-class TestCorrelationsSignatures(unittest.TestCase):
+class TestCorrelationsSignatures(TestCase):
 
     @staticmethod
     def _get_model(overrides=None):

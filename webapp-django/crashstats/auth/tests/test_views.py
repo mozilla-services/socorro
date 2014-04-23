@@ -3,17 +3,13 @@ import json
 from nose.tools import eq_
 
 from django.conf import settings
-from django.test import TestCase
 from django.core.urlresolvers import reverse
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from ..browserid_mock import mock_browserid
 
 
-class TestViews(TestCase):
-
-    def shortDescription(self):
-        # Stop nose using the test docstring and instead the test method name.
-        pass
+class TestViews(DjangoTestCase):
 
     def _login_attempt(self, email, assertion='fakeassertion123', next=None):
         if not next:

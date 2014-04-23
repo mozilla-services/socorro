@@ -1,5 +1,3 @@
-import unittest
-
 from mock import Mock, MagicMock
 
 from nose.tools import eq_, ok_
@@ -9,9 +7,10 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 from socorro.lib.util import DotDict
 from socorro.external.crashstorage_base import Redactor
+from socorro.unittest.testbase import TestCase
 
 
-class TestCrashStorage(unittest.TestCase):
+class TestCrashStorage(TestCase):
 
     def _setup_config(self):
         config = DotDict()

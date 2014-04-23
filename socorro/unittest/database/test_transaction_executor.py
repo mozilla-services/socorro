@@ -2,17 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_, assert_raises
 import psycopg2
 from configman import Namespace, ConfigurationManager, class_converter
 import socorro.database.transaction_executor
 from socorro.database.transaction_executor import (
   TransactionExecutor, TransactionExecutorWithInfiniteBackoff)
-
 from socorro.external.postgresql.connection_context import ConnectionContext
-
+from socorro.unittest.testbase import TestCase
 
 class SomeError(Exception):
     pass
@@ -69,7 +66,7 @@ commit_count = 0
 rollback_count = 0
 
 
-class TestTransactionExecutor(unittest.TestCase):
+class TestTransactionExecutor(TestCase):
 
     def setUp(self):
         global commit_count, rollback_count

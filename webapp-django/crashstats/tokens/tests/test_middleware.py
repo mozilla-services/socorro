@@ -5,18 +5,18 @@ from nose.tools import eq_, ok_, assert_raises
 
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
-from django.test import TestCase
 from django.test.client import RequestFactory
 from django.contrib.auth.middleware import AuthenticationMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.contenttypes.models import ContentType
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.tokens import models
 from crashstats.tokens.middleware import APIAuthenticationMiddleware
 
 
-class TestMiddleware(TestCase):
+class TestMiddleware(DjangoTestCase):
 
     django_session_middleware = SessionMiddleware()
     django_auth_middleware = AuthenticationMiddleware()

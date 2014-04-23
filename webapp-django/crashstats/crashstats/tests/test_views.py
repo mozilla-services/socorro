@@ -13,7 +13,6 @@ import pyquery
 from cStringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from nose.plugins.skip import SkipTest
-from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
@@ -29,6 +28,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
 
@@ -125,7 +125,7 @@ BUG_STATUS = """ {
 } """
 
 
-class RobotsTestViews(TestCase):
+class RobotsTestViews(DjangoTestCase):
 
     @override_settings(ENGAGE_ROBOTS=True)
     def test_robots_txt(self):
@@ -144,7 +144,7 @@ class RobotsTestViews(TestCase):
         ok_('Disallow: /' in response.content)
 
 
-class FaviconTestViews(TestCase):
+class FaviconTestViews(DjangoTestCase):
 
     def test_favicon(self):
         tmp_static_root = tempfile.mkdtemp()
@@ -163,7 +163,7 @@ class FaviconTestViews(TestCase):
             ok_('image/x-icon' in response['Content-Type'])
 
 
-class BaseTestViews(TestCase):
+class BaseTestViews(DjangoTestCase):
 
     @mock.patch('requests.get')
     def setUp(self, rget):

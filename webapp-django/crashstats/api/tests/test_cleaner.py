@@ -1,13 +1,12 @@
-import unittest
-
 import mock
 from nose.tools import eq_, ok_
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
 from crashstats import scrubber
 
 
-class TestCleaner(unittest.TestCase):
+class TestCleaner(TestCase):
 
     def test_simplest_case(self):
         whitelist = {'hits': ('foo', 'bar')}
@@ -244,7 +243,7 @@ class TestCleaner(unittest.TestCase):
         eq_(data, expect)
 
 
-class TestSmartWhitelistMatcher(unittest.TestCase):
+class TestSmartWhitelistMatcher(TestCase):
 
     def test_basic_in(self):
         whitelist = ['some', 'thing*']

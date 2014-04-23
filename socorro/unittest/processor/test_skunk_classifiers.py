@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import copy
 
 from nose.tools import eq_, ok_
@@ -21,6 +20,7 @@ from socorro.processor.signature_utilities import CSignatureTool
 from socorro.unittest.processor.test_breakpad_pipe_to_json import (
     cannonical_json_dump
 )
+from socorro.unittest.testbase import TestCase
 
 csig_config = DotDict()
 csig_config.irrelevant_signature_re = ''
@@ -39,7 +39,7 @@ def create_basic_fake_processor():
     return fake_processor
 
 
-class TestSkunkClassificationRule(unittest.TestCase):
+class TestSkunkClassificationRule(TestCase):
 
     def test_predicate(self):
         rc = DotDict()
@@ -145,7 +145,7 @@ class TestSkunkClassificationRule(unittest.TestCase):
         ok_('normalized' in stack[0])
 
 
-class TestDontConsiderTheseFilter(unittest.TestCase):
+class TestDontConsiderTheseFilter(TestCase):
 
     def test_action_predicate_accept(self):
         """test all of the case where the predicate should return True"""
@@ -440,7 +440,8 @@ class TestDontConsiderTheseFilter(unittest.TestCase):
             fake_processor
         ))
 
-class TestUpdateWindowAttributes(unittest.TestCase):
+
+class TestUpdateWindowAttributes(TestCase):
 
     def test_action_success(self):
         jd = copy.deepcopy(cannonical_json_dump)
@@ -491,7 +492,7 @@ class TestUpdateWindowAttributes(unittest.TestCase):
 
 
 
-class TestSetWindowPos(unittest.TestCase):
+class TestSetWindowPos(TestCase):
 
     def test_action_case_1(self):
         """sentinel exsits in stack, but no secondaries"""
@@ -629,7 +630,7 @@ class TestSetWindowPos(unittest.TestCase):
 
 
 
-class TestSendWaitReceivePort(unittest.TestCase):
+class TestSendWaitReceivePort(TestCase):
 
     def test_action_case_1(self):
         """success - target found in top 5 frames of stack"""
@@ -671,7 +672,7 @@ class TestSendWaitReceivePort(unittest.TestCase):
 
 
 
-class TestBug811804(unittest.TestCase):
+class TestBug811804(TestCase):
 
     def test_action_success(self):
         """success - target signature fonud"""
@@ -716,7 +717,7 @@ class TestBug811804(unittest.TestCase):
         ok_(not 'classifications' in pc)
 
 
-class TestBug812318(unittest.TestCase):
+class TestBug812318(TestCase):
 
     def test_action_case_1(self):
         """success - both targets found in top 5 frames of stack"""

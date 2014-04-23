@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import uuid as uu
 import socorro.lib.ooid as oo
 import datetime as dt
 
 from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.unittest.testbase import TestCase
 
-class TestOoid(unittest.TestCase):
+class TestOoid(TestCase):
   def setUp(self):
     self.baseDate = dt.datetime(2008,12,25, tzinfo=UTC)
     self.rawuuids = []

@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mock import patch, Mock, MagicMock
-import unittest
 import socket
 
 from nose.tools import eq_, assert_raises
@@ -15,10 +14,12 @@ from socorro.database.transaction_executor import (
     TransactionExecutor,
     TransactionExecutorWithLimitedBackoff
 )
+from socorro.unittest.testbase import TestCase
 
 
-class TestCrashStorage(unittest.TestCase):
+class TestCrashStorage(TestCase):
     def setUp(self):
+        super(TestCrashStorage, self).setUp()
         self.config = MagicMock()
         self.config.__enter__.return_value = self.config
         config = DotDict({
@@ -32,6 +33,7 @@ class TestCrashStorage(unittest.TestCase):
         self.storage = HTTPPOSTCrashStorage(config)
 
     def setUpForTimeout(self):
+        super(TestCrashStorage, self).tearDown()
         self.config = MagicMock()
         self.config.__enter__.return_value = self.config
         config = DotDict({

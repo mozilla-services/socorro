@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import json
 
 import mock
@@ -12,10 +11,12 @@ from socorro.lib.util import SilentFakeLogger, DotDict
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.hb.crashstorage import HBaseCrashStorage, CrashIDNotFound
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.unittest.testbase import TestCase
 
 
-class TestCrashStorage(unittest.TestCase):
+class TestCrashStorage(TestCase):
     def setUp(self):
+        super(TestCrashStorage, self).setUp()
         self.context = mock.MagicMock()
         self.context.__enter__.return_value = self.context
         config = DotDict({

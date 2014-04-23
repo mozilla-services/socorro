@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
@@ -15,6 +14,7 @@ from socorro.external.crashstorage_base import (
     PrimaryDeferredProcessedStorage,
     Redactor
 )
+from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
 from configman.dotdict import DotDict
 from mock import Mock
@@ -52,7 +52,7 @@ def fake_quit_check():
     return False
 
 
-class TestBase(unittest.TestCase):
+class TestBase(TestCase):
 
     def test_basic_crashstorage(self):
 
@@ -537,7 +537,8 @@ class TestBase(unittest.TestCase):
             pd_store.deferred_store.close.assert_called_with()
 
 
-class TestRedactor(unittest.TestCase):
+class TestRedactor(TestCase):
+
     def test_redact(self):
 
         d = DotDict()

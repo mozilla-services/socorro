@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import os
 import shutil
 import datetime
@@ -15,9 +14,10 @@ import socorro.lib.util
 from socorro.lib.datetimeutil import UTC
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
+from socorro.unittest.testbase import TestCase
 
 
-class TestJsonDumpStorage(unittest.TestCase):
+class TestJsonDumpStorage(TestCase):
   def setUp(self):
     self.testDir = os.path.join('.','TEST-JSONDUMP')+'/'
     self.testMoveTo = os.path.join('.','TEST-MOVETO')

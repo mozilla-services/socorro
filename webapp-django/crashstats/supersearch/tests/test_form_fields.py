@@ -1,9 +1,9 @@
 import datetime
 from nose.tools import eq_
 
-from django.test import TestCase
 from django.utils.timezone import utc
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import form_fields
 
 

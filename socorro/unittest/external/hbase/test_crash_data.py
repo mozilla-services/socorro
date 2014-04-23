@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-import unittest
 from nose.plugins.skip import SkipTest
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
@@ -13,6 +12,7 @@ from nose.tools import eq_, assert_raises
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
 from socorro.external.hbase import crash_data, crashstorage, hbase_client
+from socorro.unittest.testbase import TestCase
 
 
 _run_integration_tests = os.environ.get('RUN_HBASE_INTEGRATION_TESTS', False)
@@ -22,7 +22,7 @@ if _run_integration_tests in ('false', 'False', 'no', '0'):
 
 
 @attr(integration='hbase')  # for nosetests
-class TestIntegrationHBaseCrashData(unittest.TestCase):
+class TestIntegrationHBaseCrashData(TestCase):
 
     def setUp(self):
         if not _run_integration_tests:

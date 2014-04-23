@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 from nose.tools import eq_, ok_
 from datetime import datetime
@@ -11,6 +10,7 @@ from configman.dotdict import DotDict
 
 from socorro.collector.wsgi_breakpad_collector import BreakpadCollector
 from socorro.collector.throttler import ACCEPT, IGNORE, DEFER
+from socorro.unittest.testbase import TestCase
 
 
 class ObjectWithValue(object):
@@ -18,7 +18,7 @@ class ObjectWithValue(object):
         self.value = v
 
 
-class TestCollectorApp(unittest.TestCase):
+class TestCollectorApp(TestCase):
 
     def get_standard_config(self):
         config = DotDict()

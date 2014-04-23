@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 from mock import Mock
@@ -10,9 +9,10 @@ from socorro.external.fs.crashstorage import (
     FSTemporaryStorage
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.unittest.testbase import TestCase
 
 
-class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
+class TestFSLegacyDatedRadixTreeStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
     CRASH_ID_3 = "0bba929f-8721-460c-dddd-a43c20071025"
@@ -183,7 +183,7 @@ class MyFSTemporaryStorage(FSTemporaryStorage):
     def _get_current_date(self):
         return "25"
 
-class TestFSTemporaryStorage(unittest.TestCase):
+class TestFSTemporaryStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
     CRASH_ID_3 = "0bba929f-8721-460c-dddd-a43c20071025"

@@ -6,13 +6,13 @@ from nose.tools import ok_
 
 from django.contrib.auth.models import User
 from django.core.files import File
-from django.test import TestCase
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.symbols import models
 from .base import ZIP_FILE
 
 
-class TestModels(TestCase):
+class TestModels(DjangoTestCase):
 
     def setUp(self):
         super(TestModels, self).setUp()

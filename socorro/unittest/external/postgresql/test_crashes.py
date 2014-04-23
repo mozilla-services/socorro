@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import random
-import unittest
 import datetime
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
@@ -14,12 +13,13 @@ from socorro.external import (
 )
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil, util
+from socorro.unittest.testbase import TestCase
 
 from unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-class TestCrashes(unittest.TestCase):
+class TestCrashes(TestCase):
     """Test socorro.external.postgresql.crashes.Crashes class. """
 
     #--------------------------------------------------------------------------

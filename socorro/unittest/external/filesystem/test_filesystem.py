@@ -2,14 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 import os
 import shutil
 import types
 
 from nose.tools import *
 import socorro.external.filesystem.filesystem as f
+from socorro.unittest.testbase import TestCase
 
 # Describes the directory/file structure we will look at:
 # key is a name
@@ -57,7 +56,7 @@ def accept2Dirs(t):
 def revcmp(d0,d1):
   return cmp(d1,d0)
 
-class TestFilesystem(unittest.TestCase):
+class TestFilesystem(TestCase):
   def createTestbed(self):
     self.deleteTestbed() # just in case
     self.createTestDir('.',testDir)
@@ -283,4 +282,3 @@ class TestFilesystem(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-

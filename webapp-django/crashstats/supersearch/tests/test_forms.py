@@ -1,7 +1,6 @@
 from nose.tools import ok_
 
-from django.test import TestCase
-
+from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
 
 

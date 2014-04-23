@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import socorro.lib.psycopghelper as ppghelper
 import psycopg2
 import psycopg2.extensions
@@ -11,6 +10,7 @@ import logging
 import threading
 
 from socorro.unittest.testlib.loggerForTest import TestingLogger
+from socorro.unittest.testbase import TestCase
 from createDBforTest import *
 from nose.plugins.attrib import attr
 
@@ -70,7 +70,7 @@ class TestSingleCursor(psycopg2.extensions.cursor):
 
 
 @attr(integration='postgres')
-class IntegrationTestPsycopghelper(unittest.TestCase):
+class IntegrationTestPsycopghelper(TestCase):
   def setUp(self):
     self.logger = TestingLogger()
     self.connectionData0 = (config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword)
@@ -266,4 +266,3 @@ class IntegrationTestPsycopghelper(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-

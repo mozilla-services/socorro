@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_, assert_raises
 from mock import (
     Mock,
@@ -18,10 +16,11 @@ from socorro.external.rabbitmq.connection_context import (
     ConnectionContextPooled
 )
 from socorro.lib.util import DotDict
+from socorro.unittest.testbase import TestCase
 
 
 #==============================================================================
-class TestConnection(unittest.TestCase):
+class TestConnection(TestCase):
     """Test PostgreSQLBase class. """
 
     #--------------------------------------------------------------------------
@@ -66,7 +65,7 @@ class TestConnection(unittest.TestCase):
 
 
 #==============================================================================
-class TestConnectionContext(unittest.TestCase):
+class TestConnectionContext(TestCase):
 
     #--------------------------------------------------------------------------
     def _setup_config(self):
@@ -141,7 +140,7 @@ class TestConnectionContext(unittest.TestCase):
             conn_context.connection.close.assert_called_once_with()
 
 #==============================================================================
-class TestConnectionContextPooled(unittest.TestCase):
+class TestConnectionContextPooled(TestCase):
 
     #--------------------------------------------------------------------------
     def _setup_config(self):

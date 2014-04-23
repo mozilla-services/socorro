@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 
 import happybase
@@ -15,6 +14,7 @@ from socorro.external.happybase.connection_context import (
 
 from socorro.lib.util import SilentFakeLogger, DotDict
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.unittest.testbase import TestCase
 from configman import Namespace
 
 from socket import timeout, error
@@ -36,7 +36,7 @@ class FakeHB_Connection(object):
         self.rollback_counter += 1
 
 
-class TestConnectionContext(unittest.TestCase):
+class TestConnectionContext(TestCase):
     def test_basic_hbase_usage(self):
         local_config = DotDict({
           'hbase_host': 'host',
@@ -161,7 +161,7 @@ class HappyBasePooledConnectionContextMock(HappyBasePooledConnectionContext):
             yield connection
 
 
-class TestPooledConnectionContext(unittest.TestCase):
+class TestPooledConnectionContext(TestCase):
     def test_basic_hbase_usage(self):
         local_config = DotDict({
           'hbase_host': 'host',
@@ -267,6 +267,3 @@ class TestPooledConnectionContext(unittest.TestCase):
                 a_fake_hbase_connection.close_counter,
                 0
             )
-
-
-

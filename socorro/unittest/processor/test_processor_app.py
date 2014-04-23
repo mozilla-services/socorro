@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 import mock
 from nose.tools import eq_
 
@@ -11,6 +9,7 @@ from configman.dotdict import DotDict
 
 from socorro.processor.processor_app import ProcessorApp
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.unittest.testbase import TestCase
 
 
 def sequencer(*args):
@@ -20,7 +19,7 @@ def sequencer(*args):
     return foo
 
 
-class TestProcessorApp(unittest.TestCase):
+class TestProcessorApp(TestCase):
 
     def get_standard_config(self):
         config = DotDict()

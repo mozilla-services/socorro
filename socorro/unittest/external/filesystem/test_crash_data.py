@@ -4,7 +4,6 @@
 
 import shutil
 import tempfile
-import unittest
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
 from nose.plugins.attrib import attr
@@ -13,10 +12,11 @@ from nose.tools import eq_, assert_raises
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
 from socorro.external.filesystem import crash_data, crashstorage
+from socorro.unittest.testbase import TestCase
 
 
 @attr(integration='filesystem')  # for nosetests
-class IntegrationTestCrashData(unittest.TestCase):
+class IntegrationTestCrashData(TestCase):
 
     def setUp(self):
         """Insert fake data into filesystem. """

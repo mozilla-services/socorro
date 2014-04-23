@@ -4,7 +4,6 @@
 
 import datetime
 import mock
-import unittest
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
@@ -13,6 +12,7 @@ from .unittestbase import ElasticSearchTestCase
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.search import Search
 from socorro.lib import util, datetimeutil
+from socorro.unittest.testbase import TestCase
 
 # Remove debugging noise during development
 # import logging
@@ -23,7 +23,7 @@ from socorro.lib import util, datetimeutil
 
 
 #==============================================================================
-class TestElasticSearchSearch(unittest.TestCase):
+class TestElasticSearchSearch(TestCase):
     """Test Search class implemented with ElasticSearch. """
 
     #--------------------------------------------------------------------------

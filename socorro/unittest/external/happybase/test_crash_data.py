@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-import unittest
 from nose.plugins.skip import SkipTest
 from nose.tools import eq_
 from configman import ConfigurationManager, Namespace
@@ -16,6 +15,7 @@ from socorro.external.happybase import crash_data, crashstorage
 from socorro.external.happybase.connection_context import (
     HappyBaseConnectionContext
 )
+from socorro.unittest.testbase import TestCase
 
 
 _run_integration_tests = os.environ.get('RUN_HBASE_INTEGRATION_TESTS', False)
@@ -24,11 +24,12 @@ if _run_integration_tests in ('false', 'False', 'no', '0'):
 
 
 @attr(integration='happybase')  # for nosetests
-class TestIntegrationHBaseCrashData(unittest.TestCase):
+class TestIntegrationHBaseCrashData(TestCase):
 
     def setUp(self):
         if not _run_integration_tests:
             raise SkipTest("Skipping HBase integration tests")
+        super(TestIntegrationHBaseCrashData, self).setUp()
         self.config_manager = self._common_config_setup()
 
         with self.config_manager.context() as config:
@@ -74,6 +75,7 @@ class TestIntegrationHBaseCrashData(unittest.TestCase):
             )
 
     def tearDown(self):
+        super(TestIntegrationHBaseCrashData, self).tearDown()
         with self.config_manager.context() as config:
             connection = hbase_client.HBaseConnectionForCrashReports(
                 config.hbase.hbase_host,

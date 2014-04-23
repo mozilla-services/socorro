@@ -5,12 +5,12 @@ from nose.tools import eq_, ok_
 from django.utils.timezone import utc
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.test import TestCase
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.tokens import models
 
 
-class TestModels(TestCase):
+class TestModels(DjangoTestCase):
 
     def test_create_token(self):
         bob = User.objects.create(username='bob')

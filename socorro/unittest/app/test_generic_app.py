@@ -5,13 +5,14 @@
 import tempfile
 import shutil
 import os
-import unittest
+
 import mock
 from nose.tools import eq_, assert_raises
 from configman import Namespace
 from configman.config_file_future_proxy import ConfigFileFutureProxy
-from socorro.app.generic_app import App, main
 
+from socorro.app.generic_app import App, main
+from socorro.unittest.testbase import TestCase
 
 class MyApp(App):
     app_name = 'myapp'
@@ -43,7 +44,7 @@ class ExitingApp(MyApp):
         return self.config.exit_code
 
 
-class TestGenericAppConfigPathLoading(unittest.TestCase):
+class TestGenericAppConfigPathLoading(TestCase):
     """
     Test that it's possible to override the default directory from where
     generic_app tries to read default settings from.

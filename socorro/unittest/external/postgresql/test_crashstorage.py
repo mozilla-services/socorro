@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import time
-import unittest
 
 import mock
 from nose.tools import eq_, ok_, assert_raises
@@ -17,6 +16,7 @@ from socorro.database.transaction_executor import (
     TransactionExecutorWithLimitedBackoff
 )
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.unittest.testbase import TestCase
 
 empty_tuple = ()
 
@@ -79,7 +79,7 @@ def remove_whitespace(string):
     return string.replace('\n', '').replace(' ', '')
 
 
-#class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
+#class TestIntegrationPostgresSQLCrashStorage(TestCase):
 class DontTestIntegrationPostgresSQLCrashStorage(object):
 
     def _setup_config_manager(self, extra_value_source=None):
@@ -233,7 +233,7 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
             eq_(uuid, a_processed_crash['uuid'])
 
 
-class TestPostgresCrashStorage(unittest.TestCase):
+class TestPostgresCrashStorage(TestCase):
     """
     Tests where the actual PostgreSQL part is mocked.
     """

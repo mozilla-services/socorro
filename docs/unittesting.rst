@@ -260,14 +260,16 @@ status of the test run.
 
 ::
 
-  import unittest
+  from socorro.unittest.testbase import TestCase
 
-  class TestClass(unittest.TestCase):
+  class TestClass(TestCase):
 
       def setUp(self):
+          super(TestClass, self).setUp()
           print "setup"
 
       def tearDown(self):
+          super(TestClass, self).tearDown()
           print "teardown"
 
       def test_something(self):
@@ -335,8 +337,9 @@ been used, like assert if the something function was called one time
 with (10,20) parameters::
 
   from mock import MagicMock
+  from socorro.unittest.testbase import TestCase
 
-  class TestClass(unittest.TestCase):
+  class TestClass(TestCase):
 
       def method(self):
           self.something(10, 20)
@@ -427,18 +430,20 @@ Code readability
 Some comments using characters can be used to improve the code
 readability::
 
-  import unittest
+  from socorro.unittest.testbase import TestCase
 
   #=============================================================================
-  class TestClass(unittest.TestCase):
+  class TestClass(TestCase):
       """A brief description about this class."""
 
       #-------------------------------------------------------------------------
       def setUp(self):
+          super(TestClass, self).setUp()
           print "setup"
 
       #-------------------------------------------------------------------------
       def tearDown(self):
+          super(TestClass, self).tearDown()
           print "teardown"
 
       #-------------------------------------------------------------------------
