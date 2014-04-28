@@ -430,7 +430,6 @@ class TestFSTemporaryStorage(unittest.TestCase):
         ))
 
         try:
-            import os
             p = './crashes/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
             x = os.path.exists(p)
             s = 'should os.path.exists ever return %s?' % x
