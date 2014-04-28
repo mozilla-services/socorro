@@ -179,6 +179,9 @@ class TestFSLegacyDatedRadixTreeStorage(unittest.TestCase):
             'a43c20071025'
         ))
 
+class MyFSTemporaryStorage(FSTemporaryStorage):
+    def _get_current_date(self):
+        return "25"
 
 class TestFSTemporaryStorage(unittest.TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
@@ -188,14 +191,14 @@ class TestFSTemporaryStorage(unittest.TestCase):
 
     def setUp(self):
         with self._common_config_setup().context() as config:
-            self.fsrts = FSTemporaryStorage(config)
+            self.fsrts = MyFSTemporaryStorage(config)
 
     def tearDown(self):
         shutil.rmtree(self.fsrts.config.fs_root)
 
     def _common_config_setup(self):
         mock_logging = Mock()
-        required_config = FSTemporaryStorage.get_required_config()
+        required_config = MyFSTemporaryStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
           [required_config],
