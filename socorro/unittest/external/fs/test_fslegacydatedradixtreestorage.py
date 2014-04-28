@@ -188,6 +188,7 @@ class TestFSTemporaryStorage(unittest.TestCase):
 
     def setUp(self):
         with self._common_config_setup().context() as config:
+
             self.fsrts = FSTemporaryStorage(config)
 
     def tearDown(self):
@@ -427,6 +428,22 @@ class TestFSTemporaryStorage(unittest.TestCase):
             './crashes/20071025/date/00/00_00/0bba929f-8721-460c-dead-'
             'a43c20071025'
         ))
+
+        try:
+            import os
+            p = './crashes/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
+            x = os.path.exists(p)
+            s = 'should os.path.exists ever return %s?' % x
+            print >>sys.stderr, s
+            print s
+            print >>sys.stderr, os.readlink(p)
+            print os.readlink(p)
+            ap = os.path.join(os.path.dirname(p), os.readlink(p))
+            print >>sys.stderr, ap
+            print ap
+        except Exception, x:
+            print >>sys.stderr, x
+            print x
 
         # should not be consumed, while in working tree, it is in active slot
         ok_(os.path.exists(
