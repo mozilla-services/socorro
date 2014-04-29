@@ -8,9 +8,8 @@ import csv
 
 from dateutil import tz
 from configman import Namespace
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import with_postgres_transactions
-from socorro.cron.crontabber import database_transaction
+from crontabber.base import BaseCronApp
+from crontabber.mixins import with_postgres_transactions
 from socorro.external.postgresql.dbapi2_util import (
     single_row_sql,
     execute_query_fetchall,
@@ -81,7 +80,8 @@ class BugzillaCronApp(BaseCronApp):
         ) in self._iterator(query):
             try:
                 # each run of this loop is a transaction
-                self.inner_transaction(
+                self.database_transaction_executor(
+                    self.inner_transaction,
                     bug_id,
                     status,
                     resolution,
@@ -91,7 +91,6 @@ class BugzillaCronApp(BaseCronApp):
             except NothingUsefulHappened:
                 pass
 
-    @database_transaction('database_transaction')
     def inner_transaction(
         self,
         connection,

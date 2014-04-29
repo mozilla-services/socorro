@@ -364,7 +364,7 @@ on a weekly basis.
 Normally this is handled automatically by the cronjob scheduler
 :ref:`crontabber-chapter` but can be run as a one-off:
 ::
-  python socorro/cron/crontabber.py --job=weekly-reports-partitions --force
+  python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
 
 Run socorro in dev mode
 -----------------------

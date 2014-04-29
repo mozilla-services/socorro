@@ -153,14 +153,15 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         sunset_date = self.now + datetime.timedelta(days=30)
 
         cursor.execute("""
-            INSERT INTO reports (date_processed, uuid, hangid)
+            TRUNCATE reports;
+            INSERT INTO reports (id, date_processed, uuid, hangid)
             VALUES
-            ('%s', '%s', '%s'),
-            ('%s', '%s', '%s'),
-            ('%s', '%s', '%s'),
-            ('%s', '%s', '%s'),
-            ('%s', '%s', '%s'),
-            ('%s', '%s', '%s')
+            (101, '%s', '%s', '%s'),
+            (102, '%s', '%s', '%s'),
+            (103, '%s', '%s', '%s'),
+            (104, '%s', '%s', '%s'),
+            (105, '%s', '%s', '%s'),
+            (106, '%s', '%s', '%s')
             ;
         """ % (self.now, uuid % "a1", "ab1",
                self.now, uuid % "a2", "ab1",

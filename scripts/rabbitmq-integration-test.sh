@@ -120,7 +120,7 @@ popd >> setupdb.log 2>&1
 cleanup_rabbitmq
 
 echo -n "INFO: setting up 'weekly-reports-partitions' via crontabber..."
-python socorro/cron/crontabber.py --resource.postgresql.database_hostname=$DB_HOST --secrets.postgresql.database_username=$DB_USER --secrets.postgresql.database_password=$DB_PASSWORD --job=weekly-reports-partitions --force >> setupdb.log 2>&1
+python socorro/cron/crontabber_app.py --resource.postgresql.database_hostname=$DB_HOST --secrets.postgresql.database_username=$DB_USER --secrets.postgresql.database_password=$DB_PASSWORD --job=weekly-reports-partitions --force >> setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "crontabber weekly-reports-partitions failed, check setupdb.log"

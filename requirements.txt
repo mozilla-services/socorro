@@ -80,3 +80,5 @@ python-dateutil==2.1
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
 happybase==0.7
+# sha256: FW4-ykwKLgSXwnyc-y7sJiFCrTCIGCtm9UCPPshqhuk
+crontabber==0.7

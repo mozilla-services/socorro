@@ -27,10 +27,12 @@ import datetime
 from configman import Namespace
 
 from socorro.lib.datetimeutil import utc_now
-from socorro.cron.base import BaseCronApp
-from socorro.cron.mixins import (
+from crontabber.base import BaseCronApp
+from crontabber.mixins import (
     with_postgres_transactions,
-    with_single_postgres_transaction,
+    with_single_postgres_transaction
+)
+from socorro.cron.mixins import (
     with_rabbitmq_transactions
 )
 
@@ -114,7 +116,7 @@ class ServerStatusCronApp(BaseCronApp):
         return reports_partition
 
     def run(self, connection):
-        message_count = self.queuing_transaction(
+        message_count = self.queuing_transaction_executor(
             lambda conn: int(conn.queue_status_standard.method.message_count)
         )
 
@@ -129,4 +131,3 @@ class ServerStatusCronApp(BaseCronApp):
         }
         cursor = connection.cursor()
         cursor.execute(query, {'start_time': start_time})
-
