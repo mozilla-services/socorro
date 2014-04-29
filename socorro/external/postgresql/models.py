@@ -219,6 +219,7 @@ class CrashAduByBuildSignature(DeclarativeBase):
     adu_count = Column(u'adu_count', INTEGER(), nullable=False, server_default=text('0'))
     os_name = Column(u'os_name', CITEXT(), primary_key=False, nullable=False)
     channel = Column(u'channel', CITEXT(), primary_key=False, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), primary_key=False, nullable=False)
 
 
 class EmailCampaignsContact(DeclarativeBase):
