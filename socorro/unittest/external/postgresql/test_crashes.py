@@ -69,8 +69,8 @@ class TestCrashes(unittest.TestCase):
         # Test 1: no args
         args = {}
         assert_raises(MissingArgumentError,
-                          crashes.prepare_search_params,
-                          **args)
+                      crashes.prepare_search_params,
+                      **args)
 
         # .....................................................................
         # Test 2: a signature
@@ -516,18 +516,18 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO crash_adu_by_build_signature
             (signature_id, signature, adu_date, build_date, buildid,
-             crash_count, adu_count, os_name, channel)
+             crash_count, adu_count, os_name, channel, product_name)
             VALUES
             (1, 'canIhaveYourSignature()', '{yesterday}', '2014-03-01',
-             '201403010101', 3, 1023, 'Mac OS X', 'release'),
+             '201403010101', 3, 1023, 'Mac OS X', 'release', 'Firefox'),
             (1, 'canIhaveYourSignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release'),
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox'),
             (1, 'canIhaveYourSignature()', '2014-01-01', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release'),
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox'),
             (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release'),
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox'),
             (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release')
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox')
         """.format(yesterday=yesterday))
 
         self.connection.commit()
@@ -820,8 +820,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         # Test 6: missing parameters
         assert_raises(MissingArgumentError, crashes.get_daily)
         assert_raises(MissingArgumentError,
-                          crashes.get_daily,
-                          **{"product": "Firefox"})
+                      crashes.get_daily,
+                      **{"product": "Firefox"})
 
     def test_get_count_by_day(self):
         crashes = Crashes(config=self.config)
@@ -1026,8 +1026,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "hangid": "c1"
         }
         assert_raises(MissingArgumentError,
-                          crashes.get_paireduuid,
-                          **params)
+                      crashes.get_paireduuid,
+                      **params)
 
     #--------------------------------------------------------------------------
     def test_get_exploitibility(self):
@@ -1251,7 +1251,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                     "crash_count": 3,
                     "adu_count": 1023,
                     "os_name": "Mac OS X",
-                    "channel": channel
+                    "channel": channel,
                 },
                 {
                     "signature": signature,
@@ -1261,7 +1261,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                     "crash_count": 4,
                     "adu_count": 1024,
                     "os_name": "Windows NT",
-                    "channel": channel
+                    "channel": channel,
                 },
             ],
             "total": 2,

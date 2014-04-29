@@ -109,7 +109,8 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
              release_channel,
              signature_id,
              uuid,
-             build_type)
+             build_type,
+             product_version_id)
             VALUES
             (1,
              '%(build)s',
@@ -123,10 +124,12 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
              'release',
              '%(signature_id)s',
              'a1',
-             'release')""" %
+             'release',
+             '%(product_version_id)s')""" %
                        {'now': now,
                         'build': now.strftime('%Y%m%d'),
-                        'signature_id': signature_id})
+                        'signature_id': signature_id,
+                        'product_version_id': product_version_id})
 
         cursor.execute("""
              INSERT INTO build_adu

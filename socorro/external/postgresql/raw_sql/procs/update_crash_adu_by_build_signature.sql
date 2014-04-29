@@ -8,51 +8,79 @@ CREATE OR REPLACE FUNCTION update_crash_adu_by_build_signature(
 AS $$
 BEGIN
 
+-- check if we've been run
+IF checkdata THEN
+    PERFORM 1 FROM crash_adu_by_build_signature WHERE adu_date = updateday LIMIT 1;
+    IF FOUND THEN
+        RAISE INFO 'update_crash_adu_by_build_signature() has already been run for %.', updateday;
+    END IF;
+END IF;
+
+
 CREATE TEMPORARY TABLE new_build_adus
 AS
     WITH build_adus AS (
         SELECT
-            build_adu.build_date,
-            SUM(build_adu.adu_count) AS aducount,
-            build_adu.os_name,
-            build_adu.adu_date,
-            build_type_enum as channel
+            product_version_id,
+            adu_date,
+            SUM(adu_count) AS aducount,
+            build_date,
+            os_name
         FROM build_adu
-    JOIN product_versions USING (product_version_id)
         WHERE adu_date BETWEEN updateday and updateday + 1
-        GROUP BY build_adu.product_version_id,
-            build_adu.build_date,
-            build_adu.os_name,
-            build_adu.adu_date,
-            product_versions.build_type_enum
+        GROUP BY product_version_id,
+            adu_date,
+            build_date,
+            os_name
     ),
     sigreports AS (
         SELECT
+            product_version_id,
             build,
             COUNT(*) AS crashcount,
-            os_name,
+            release_channel,
             reports_clean.signature_id,
-            signatures.signature as signature
+            signatures.signature as signature,
+            os_name
         FROM reports_clean
-        JOIN signatures ON reports_clean.signature_id = signatures.signature_id
+            JOIN signatures ON reports_clean.signature_id = signatures.signature_id
         WHERE
             date_processed BETWEEN updateday and updateday + 1
-        GROUP BY build, os_name, reports_clean.signature_id, signatures.signature
+        GROUP BY
+            product_version_id,
+            build,
+            reports_clean.signature_id,
+            signatures.signature,
+            os_name,
+            release_channel
     )
     SELECT
         build_adus.build_date as build_date,
-        build_adus.aducount as adu_count,
+        SUM(build_adus.aducount) as adu_count,
         build_adus.os_name as os_name,
         build_adus.adu_date as adu_date,
-        build_adus.channel as channel,
+        sigreports.release_channel as channel,
         sigreports.signature_id as signature_id,
         sigreports.signature as signature,
         sigreports.build as buildid,
-        sigreports.crashcount as crash_count
+        pv.product_name as product_name,
+        SUM(sigreports.crashcount) as crash_count
     FROM build_adus
-    JOIN sigreports ON sigreports.os_name = build_adus.os_name AND
-    to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date
+        JOIN sigreports ON
+            sigreports.product_version_id = build_adus.product_version_id AND
+            to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date AND
+            sigreports.os_name = build_adus.os_name
+        JOIN product_versions pv ON build_adus.product_version_id = pv.product_version_id
     WHERE length(build::text) >= 8
+    GROUP BY
+        build_adus.build_date,
+        build_adus.os_name,
+        build_adus.adu_date,
+        sigreports.release_channel,
+        sigreports.signature_id,
+        sigreports.signature,
+        sigreports.build,
+        pv.product_name
 ;
 
 PERFORM 1 FROM new_build_adus;
@@ -74,7 +102,8 @@ INSERT INTO crash_adu_by_build_signature (
     crash_count,
     adu_count,
     os_name,
-    channel
+    channel,
+    product_name
 )
 SELECT
     new_build_adus.signature_id,
@@ -85,7 +114,8 @@ SELECT
     new_build_adus.crash_count,
     new_build_adus.adu_count,
     new_build_adus.os_name,
-    new_build_adus.channel
+    new_build_adus.channel,
+    new_build_adus.product_name
 FROM
     new_build_adus
 ;
