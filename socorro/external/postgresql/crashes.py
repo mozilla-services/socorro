@@ -407,11 +407,11 @@ class Crashes(PostgreSQLBase):
             """ % (i["name"], i["id"]))
             sql_select.append("""
                 CASE WHEN (COUNT(CASE WHEN (r.os_name = '%s') THEN 1 END)
-                > 0) THEN (CAST(COUNT(CASE WHEN (r.signature = '%s'
+                > 0) THEN (CAST(COUNT(CASE WHEN (r.signature = %%(signature)s
                 AND r.os_name = '%s') THEN 1 END) AS FLOAT(10)) /
                 COUNT(CASE WHEN (r.os_name = '%s') THEN 1 END)) ELSE 0.0
                 END AS frequency_%s
-            """ % (i["name"], params.signature, i["name"], i["name"], i["id"]))
+            """ % (i["name"], i["name"], i["name"], i["id"]))
 
         sql_select = ", ".join(sql_select)
 

@@ -949,6 +949,14 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         eq_(res, res_expected)
 
+        #......................................................................
+        # Verify that it is not possible to break the query.
+        params = {
+            "signature": "sig'"
+        }
+        res = crashes.get_frequency(**params)
+        eq_(res["total"], 0)
+
     #--------------------------------------------------------------------------
     def test_get_paireduuid(self):
         crashes = Crashes(config=self.config)
