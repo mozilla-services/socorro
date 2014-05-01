@@ -1152,6 +1152,8 @@ Mandatory parameters
 +-----------------+---------------+---------------+------------------------------------+
 | Name            | Type of value | Default value | Description                        |
 +=================+===============+===============+====================================+
+| product_name    | String        | None          | The product we are interested in   |
++-----------------+---------------+---------------+------------------------------------+
 | start_date      | Date          | 1 week ago    | Start date of query range          |
 +-----------------+---------------+---------------+------------------------------------+
 | end_date        | Date          | Today         | End date of query range            |

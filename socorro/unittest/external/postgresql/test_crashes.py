@@ -519,15 +519,15 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
              crash_count, adu_count, os_name, channel, product_name)
             VALUES
             (1, 'canIhaveYourSignature()', '{yesterday}', '2014-03-01',
-             '201403010101', 3, 1023, 'Mac OS X', 'release', 'Firefox'),
+             '201403010101', 3, 1023, 'Mac OS X', 'release', 'WaterWolf'),
             (1, 'canIhaveYourSignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox'),
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'WaterWolf'),
             (1, 'canIhaveYourSignature()', '2014-01-01', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox'),
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'WaterWolf'),
             (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox'),
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'WaterWolf'),
             (2, 'youMayNotHaveMySignature()', '{yesterday}', '2014-04-01',
-             '201404010101', 4, 1024, 'Windows NT', 'release', 'Firefox')
+             '201404010101', 4, 1024, 'Windows NT', 'release', 'WaterWolf')
         """.format(yesterday=yesterday))
 
         self.connection.commit()
@@ -1252,6 +1252,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res_expected = {
             "hits": [
                 {
+                    "product_name": "WaterWolf",
                     "signature": signature,
                     "adu_date": yesterday,
                     "build_date": "2014-03-01",
@@ -1262,6 +1263,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                     "channel": channel,
                 },
                 {
+                    "product_name": "WaterWolf",
                     "signature": signature,
                     "adu_date": yesterday,
                     "build_date": "2014-04-01",
@@ -1276,10 +1278,11 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         }
 
         res = crashes.get_adu_by_signature(
+            product_name="WaterWolf",
             start_date=yesterday,
             end_date=yesterday,
             signature=signature,
-            channel=channel
+            channel=channel,
         )
         eq_(res, res_expected)
 

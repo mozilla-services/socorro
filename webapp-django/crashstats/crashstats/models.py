@@ -1470,3 +1470,23 @@ class LagLog(SocorroMiddleware):
 
     # never anything sensitive
     API_WHITELIST = None
+
+
+class AduBySignature(SocorroMiddleware):
+
+    URL_PREFIX = '/crashes/adu_by_signature/'
+    required_params = (
+        'product_name',
+        'signature',
+        'channel',
+    )
+
+    possible_params = (
+        ('start_date', datetime.date),
+        ('end_date', datetime.date),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
