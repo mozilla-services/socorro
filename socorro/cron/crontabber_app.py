@@ -47,6 +47,9 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.GCCrashes|1d|10:00
   #socorro.cron.jobs.symbolsunpack.SymbolsUnpackCronApp|1h
   socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|30d
+  socorro.cron.jobs.matviews.CorrelationsAddonCronApp|1d|11:00
+  socorro.cron.jobs.matviews.CorrelationsCoreCronApp|1d|11:30
+  socorro.cron.jobs.matviews.CorrelationsModuleCronApp|1d|12:00
 '''
 
 
