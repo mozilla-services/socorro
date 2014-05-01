@@ -302,3 +302,8 @@ class RawUpdateChannelCronApp(_MatViewBackfillBase):
     app_name = 'raw-update-channel-matview'
     app_version = '1.0'
     app_description = "Find new update_channels for B2G in reports"
+
+class CorrelationsCronApp(_MatViewBackfillBase):
+    proc_name = 'update_correlations'
+    app_name = 'correlations-matview'
+    depends_on = ('reports-clean',)
