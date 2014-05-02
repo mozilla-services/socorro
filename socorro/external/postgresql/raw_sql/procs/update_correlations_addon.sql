@@ -66,6 +66,8 @@ SELECT product_version_id
        , signature_id
        , count(*) as total
 FROM crash
+WHERE addon_id IS NOT null
+AND addon_version IS NOT null
 GROUP BY addon_id
          , addon_version
          , product_version_id
