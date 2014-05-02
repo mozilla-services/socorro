@@ -66,13 +66,14 @@ SELECT product_version_id
        , signature_id
        , count(*) as total
 FROM crash
+WHERE cpu_arch IS NOT null
+AND cpu_count IS NOT null
 GROUP BY cpu_arch
          , cpu_count
          , product_version_id
          , report_date
          , os_name
          , signature_id;
-
 RETURN TRUE;
 END;
 $$;
