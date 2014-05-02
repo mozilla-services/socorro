@@ -51,7 +51,7 @@ bootstrap:
 	if [[ ! "$$(type -p lessc)" ]]; then printf "\e[0;32mlessc not found! less must be installed and lessc on your path to build socorro.\e[0m\n" && exit 1; fi;
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
-	$(VIRTUALENV)/bin/pip install tools/peep-0.8.tar.gz
+	$(VIRTUALENV)/bin/pip install tools/peep-1.1.tar.gz
 	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
 install: bootstrap reinstall
