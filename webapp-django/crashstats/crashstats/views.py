@@ -1145,13 +1145,20 @@ def report_index(request, crash_id, default_context=None):
     if 'os_name' in context['report']:
         platform = context['report']['os_name']
         for report_type in settings.CORRELATION_REPORT_TYPES:
-            correlations = correlations_api.get(report_type=report_type,
-                                                product=context['product'],
-                                                version=context['version'],
-                                                platforms=platform)
-            hits = correlations['hits'] if correlations else []
-            if context['report']['signature'] in hits:
-                total_correlations += 1
+            try:
+                correlations = correlations_api.get(
+                    report_type=report_type,
+                    product=context['product'],
+                    version=context['version'],
+                    platforms=platform)
+                hits = correlations['hits'] if correlations else []
+                if context['report']['signature'] in hits:
+                    total_correlations += 1
+            except models.BadStatusCodeError:
+                # correlations failure should not block view
+                # bug 1005224 will move this to an asynchronous client
+                # request instead.
+                pass
 
     context['total_correlations'] = total_correlations
 

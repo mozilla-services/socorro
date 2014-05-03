@@ -74,6 +74,56 @@ SAMPLE_STATUS = {
     "schema_revision": "schema_12345"
 }
 
+SAMPLE_META = """ {
+    "InstallTime": "1339289895",
+    "FramePoisonSize": "4096",
+    "Theme": "classic/1.0",
+    "Version": "5.0a1",
+    "Email": "%s",
+    "Vendor": "Mozilla",
+    "URL": "%s"
+} """
+
+SAMPLE_UNREDACTED = """ {
+    "client_crash_date": "2012-06-11T06:08:45",
+    "dump": "%s",
+    "signature": "FakeSignature1",
+    "user_comments": "%s",
+    "uptime": 14693,
+    "release_channel": "nightly",
+    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+    "flash_version": "[blank]",
+    "hangid": null,
+    "distributor_version": null,
+    "truncated": true,
+    "process_type": null,
+    "id": 383569625,
+    "os_version": "10.6.8 10K549",
+    "version": "5.0a1",
+    "build": "20120609030536",
+    "ReleaseChannel": "nightly",
+    "addons_checked": null,
+    "product": "WaterWolf",
+    "os_name": "Mac OS X",
+    "last_crash": 371342,
+    "date_processed": "2012-06-11T06:08:44",
+    "cpu_name": "amd64",
+    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+    "address": "0x8",
+    "completeddatetime": "2012-06-11T06:08:57",
+    "success": true
+} """
+
+BUG_STATUS = """ {
+    "hits": [{"id": "222222",
+              "signature": "FakeSignature1"},
+             {"id": "333333",
+              "signature": "FakeSignature1"},
+             {"id": "444444",
+              "signature": "Other FakeSignature"}
+            ]
+} """
+
 
 class RobotsTestViews(TestCase):
 
@@ -3078,49 +3128,12 @@ class TestViews(BaseTestViews):
                 assert 'datatype' in params
 
                 if params['datatype'] == 'meta':
-                    return Response("""
-                    {
-                      "InstallTime": "1339289895",
-                      "FramePoisonSize": "4096",
-                      "Theme": "classic/1.0",
-                      "Version": "5.0a1",
-                      "Email": "%s",
-                      "Vendor": "Mozilla",
-                      "URL": "%s"
-                    }
-                    """ % (email0, url0))
+                    return Response(SAMPLE_META % (email0, url0))
                 if params['datatype'] == 'unredacted':
-                    return Response("""
-                    {
-                      "client_crash_date": "2012-06-11T06:08:45",
-                      "dump": "%s",
-                      "signature": "FakeSignature1",
-                      "user_comments": "%s",
-                      "uptime": 14693,
-                      "release_channel": "nightly",
-                      "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                      "flash_version": "[blank]",
-                      "hangid": null,
-                      "distributor_version": null,
-                      "truncated": true,
-                      "process_type": null,
-                      "id": 383569625,
-                      "os_version": "10.6.8 10K549",
-                      "version": "5.0a1",
-                      "build": "20120609030536",
-                      "ReleaseChannel": "nightly",
-                      "addons_checked": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "last_crash": 371342,
-                      "date_processed": "2012-06-11T06:08:44",
-                      "cpu_name": "amd64",
-                      "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                      "address": "0x8",
-                      "completeddatetime": "2012-06-11T06:08:57",
-                      "success": true
-                    }
-                    """ % (dump, comment0))
+                    return Response(SAMPLE_UNREDACTED % (
+                        dump,
+                        comment0
+                    ))
 
             if 'correlations/signatures' in url:
                 return Response("""
@@ -3138,15 +3151,7 @@ class TestViews(BaseTestViews):
 
         def mocked_post(url, **options):
             if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "222222",
-                              "signature": "FakeSignature1"},
-                             {"id": "333333",
-                              "signature": "FakeSignature1"},
-                             {"id": "444444",
-                               "signature": "Other FakeSignature"}
-                              ]}
-                """)
+                return Response(BUG_STATUS)
             raise NotImplementedError(url)
 
         rpost.side_effect = mocked_post
@@ -3191,6 +3196,45 @@ class TestViews(BaseTestViews):
         ok_('peterbe@mozilla.com' in response.content)
         ok_(email0 in response.content)
         ok_(url0 in response.content)
+        eq_(response.status_code, 200)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_report_index_correlations_failed(self, rget, rpost):
+        # using \\n because it goes into the JSON string
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        comment0 = "This is a comment"
+        email0 = "some@emailaddress.com"
+        url0 = "someaddress.com"
+
+        def mocked_get(url, params, **options):
+            if '/crash_data' in url:
+                assert 'datatype' in params
+
+                if params['datatype'] == 'meta':
+                    return Response(SAMPLE_META % (email0, url0))
+                if params['datatype'] == 'unredacted':
+                    return Response(SAMPLE_UNREDACTED % (
+                        dump,
+                        comment0
+                    ))
+
+            if 'correlations/signatures' in url:
+                raise models.BadStatusCodeError(500)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response(BUG_STATUS)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+
+        url = reverse('crashstats:report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        response = self.client.get(url)
         eq_(response.status_code, 200)
 
     def test_report_index_invalid_crash_id(self):
