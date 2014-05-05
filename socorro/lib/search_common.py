@@ -88,7 +88,7 @@ class SearchBase(object):
         SearchFilter('java_stack_trace'),
         SearchFilter('last_crash', data_type='int'),
         SearchFilter('platform'),
-        SearchFilter('platform_version'),
+        SearchFilter('platform_version', data_type='str'),
         SearchFilter('plugin_filename', data_type='str'),
         SearchFilter('plugin_name', data_type='str'),
         SearchFilter('plugin_version'),

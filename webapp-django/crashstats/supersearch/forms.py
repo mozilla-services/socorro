@@ -44,7 +44,7 @@ class SearchForm(forms.Form):
     java_stack_trace = form_fields.MultipleValueField(required=False)
     last_crash = form_fields.IntegerField(required=False)
     platform = form_fields.MultipleValueField(required=False)
-    platform_version = form_fields.MultipleValueField(required=False)
+    platform_version = form_fields.StringField(required=False)
     plugin_name = form_fields.MultipleValueField(required=False)
     plugin_filename = form_fields.MultipleValueField(required=False)
     plugin_version = form_fields.MultipleValueField(required=False)

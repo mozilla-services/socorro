@@ -263,3 +263,34 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         res = self.api.get(exploitability=['high', 'unknown'])
         eq_(res['total'], 2)
+
+    def test_platform_version_field(self):
+        """Verify that the 'platform_version' field can be queried as expected.
+        """
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120100',
+            'date_processed': self.now,
+            'os_version': '6.0.001',
+        }
+        self.storage.save_processed(processed_crash)
+        processed_crash = {
+            'uuid': '06a0c9b5-0381-42ce-855a-ccaaa2120101',
+            'date_processed': self.now,
+            'os_version': '6.0.001 Service Pack 1',
+        }
+        self.storage.save_processed(processed_crash)
+        self.storage.es.refresh()
+
+        res = self.api.get(platform_version='6.0.001')
+        eq_(res['total'], 2)
+        ok_('6.0.001' in res['hits'][0]['platform_version'])
+        ok_('6.0.001' in res['hits'][1]['platform_version'])
+
+        res = self.api.get(platform_version='6.0.001 Service Pack 1')
+        eq_(res['total'], 1)
+        eq_(res['hits'][0]['platform_version'], '6.0.001 Service Pack 1')
+
+        res = self.api.get(platform_version='$6.0')
+        eq_(res['total'], 2)
+        ok_('6.0' in res['hits'][0]['platform_version'])
+        ok_('6.0' in res['hits'][1]['platform_version'])
