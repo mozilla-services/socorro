@@ -67,8 +67,8 @@ SELECT product_version_id
        , signature_id
        , count(*) as total
 FROM crash
-WHERE module_name IS NOT NULL
-AND module_version IS NOT NULL
+WHERE (modules->'filename')::text IS NOT NULL
+AND (modules->'debug_file')::text IS NOT NULL
 GROUP BY module_name
          , module_version
          , product_version_id
