@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import copy
 
 import mock
@@ -18,6 +17,7 @@ from socorro.processor.hybrid_processor import (
 )
 from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 from socorro.lib.util import CachingIterator
+from socorro.unittest.testbase import TestCase
 
 
 def setup_config_with_mocks():
@@ -234,9 +234,7 @@ canonical_standard_raw_crash_corrupt = DotDict({
 })
 
 
-class TestHybridProcessor(unittest.TestCase):
-    """
-    """
+class TestHybridProcessor(TestCase):
 
     def test_create_symbol_path_str(self):
         s = '/a/a, /b/b, /c/c'

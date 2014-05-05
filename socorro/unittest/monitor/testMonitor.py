@@ -5,7 +5,7 @@
 #"""
 #You must run this test module using nose (chant nosetests from the command line)
 #** There are some issues with nose, offset by the fact that it does multi-thread and setup_module better than unittest
- #* This is NOT a unittest.TestCase ... it could be except that unittest screws up setup_module
+ #* This is NOT a TestCase ... it could be except that unittest screws up setup_module
  #* nosetests may hang in some ERROR conditions. SIGHUP, SIGINT and SIGSTP are not noticed. SIGKILL (-9) works
  #* You should NOT pass command line arguments to nosetests. You can pass them, but it causes trouble:
  #*   Nosetests passes them into the test environment which breaks socorro's configuration behavior

@@ -4,15 +4,15 @@
 
 import mock
 import os
-import unittest
 
 from configman import ConfigurationManager
 
 from socorro.external.elasticsearch import crashstorage
 from socorro.middleware.middleware_app import MiddlewareApp
+from socorro.unittest.testbase import TestCase
 
 
-class ElasticSearchTestCase(unittest.TestCase):
+class ElasticSearchTestCase(TestCase):
     """Base class for Elastic Search related unit tests. """
 
     def get_config_context(self, es_index=None):

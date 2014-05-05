@@ -2,22 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from mock import Mock
 from nose.tools import eq_, ok_
 
-from  socorro.lib.task_manager import TaskManager, default_task_func
+from socorro.lib.task_manager import TaskManager, default_task_func
 from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.unittest.testbase import TestCase
 
 
-class TestTaskManager(unittest.TestCase):
+class TestTaskManager(TestCase):
 
     def setUp(self):
+        super(TestTaskManager, self).setUp()
         self.logger = SilentFakeLogger()
-
-    def tearDown(self):
-        pass
 
     def test_constuctor1(self):
         config = DotDict()

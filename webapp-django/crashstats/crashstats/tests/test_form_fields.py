@@ -1,8 +1,8 @@
 from nose.tools import eq_, raises
 
 from django.forms import ValidationError
-from django.test import TestCase
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats import form_fields
 
 

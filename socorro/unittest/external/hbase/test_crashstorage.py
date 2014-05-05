@@ -5,7 +5,6 @@
 import os
 import time
 import json
-import unittest
 from contextlib import nested
 
 import mock
@@ -23,6 +22,8 @@ from socorro.unittest.config import commonconfig
 from socorro.database.transaction_executor import (
   TransactionExecutorWithLimitedBackoff
 )
+from socorro.unittest.testbase import TestCase
+
 
 class SomeThriftError(Exception):
     pass
@@ -38,7 +39,7 @@ if not _run_integration_tests:
 
 else:
 
-    class TestIntegrationHBaseCrashStorage(unittest.TestCase):
+    class TestIntegrationHBaseCrashStorage(TestCase):
         """
         If you ever get this::
             Traceback (most recent call last):
@@ -61,6 +62,7 @@ else:
         """
 
         def tearDown(self):
+            super(TestIntegrationHBaseCrashStorage, self).tearDown()
             self._truncate_hbase_table()
 
         def _truncate_hbase_table(self):
@@ -162,7 +164,7 @@ else:
                 ok_(not hb_connection.transport.isOpen())
 
 
-class TestHBaseCrashStorage(unittest.TestCase):
+class TestHBaseCrashStorage(TestCase):
     def test_hbase_crashstorage_basic_error(self):
         mock_logging = mock.Mock()
         required_config = HBaseCrashStorage.get_required_config()

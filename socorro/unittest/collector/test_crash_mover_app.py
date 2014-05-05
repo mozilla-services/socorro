@@ -2,16 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.collector.crashmover_app import CrashMoverApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.unittest.testbase import TestCase
 
 
-class TestCrashMoverApp(unittest.TestCase):
+class TestCrashMoverApp(TestCase):
 
     def test_bogus_source_iter_and_worker(self):
         class TestCrashMoverClass(CrashMoverApp):

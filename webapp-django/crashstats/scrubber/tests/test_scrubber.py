@@ -1,6 +1,6 @@
 from nose.tools import eq_, ok_
-from django.test import TestCase
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats import scrubber
 
 

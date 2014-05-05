@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 from mock import Mock
@@ -7,17 +6,20 @@ from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.unittest.testbase import TestCase
 
 
-class TestFSDatedRadixTreeStorage(unittest.TestCase):
+class TestFSDatedRadixTreeStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
 
     def setUp(self):
+        super(TestFSDatedRadixTreeStorage, self).setUp()
         with self._common_config_setup().context() as config:
             self.fsrts = FSDatedRadixTreeStorage(config)
 
     def tearDown(self):
+        super(TestFSDatedRadixTreeStorage, self).tearDown()
         shutil.rmtree(self.fsrts.config.fs_root)
 
     def _common_config_setup(self):

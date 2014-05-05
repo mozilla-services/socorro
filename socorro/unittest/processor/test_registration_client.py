@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 
 from datetime import datetime, timedelta
@@ -16,6 +15,7 @@ from socorro.processor.registration_client import (
 )
 from socorro.external.postgresql.dbapi2_util import SQLDidNotReturnSingleValue
 from socorro.lib.datetimeutil import UTC
+from socorro.unittest.testbase import TestCase
 
 def sequencer(*args):
     active_iter = iter(args)
@@ -31,7 +31,7 @@ def sequencer(*args):
     return foo
 
 
-class TestProcessorAppRegistrationAgent(unittest.TestCase):
+class TestProcessorAppRegistrationAgent(TestCase):
 
     def test_basic_setup(self):
         mock_logging = mock.Mock()

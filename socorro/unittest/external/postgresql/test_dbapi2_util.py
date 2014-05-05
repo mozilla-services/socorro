@@ -2,15 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from mock import Mock
 from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql import dbapi2_util
+from socorro.unittest.testbase import TestCase
 
 
-class TestDBAPI2Helper(unittest.TestCase):
+class TestDBAPI2Helper(TestCase):
 
     def test_single_value_sql1(self):
         m_execute = Mock()

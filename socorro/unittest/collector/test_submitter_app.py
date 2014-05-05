@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 import time
 import json
@@ -17,6 +16,7 @@ from socorro.collector.submitter_app import (
 from configman.dotdict import DotDict
 from socorro.external.postgresql import dbapi2_util
 from socorro.external.crashstorage_base import Redactor
+from socorro.unittest.testbase import TestCase
 
 
 #------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ def sequencer(*args):
 
 
 #==============================================================================
-class TestSubmitterFileSystemWalkerSource(unittest.TestCase):
+class TestSubmitterFileSystemWalkerSource(TestCase):
 
     #--------------------------------------------------------------------------
     def get_standard_config(self):
@@ -111,7 +111,7 @@ class TestSubmitterFileSystemWalkerSource(unittest.TestCase):
 
 
 #==============================================================================
-class TestDBSamplingCrashSource(unittest.TestCase):
+class TestDBSamplingCrashSource(TestCase):
 
     #--------------------------------------------------------------------------
     def get_standard_config(self):
@@ -205,7 +205,7 @@ class TestDBSamplingCrashSource(unittest.TestCase):
 
 
 #==============================================================================
-class TestSubmitterApp(unittest.TestCase):
+class TestSubmitterApp(TestCase):
 
     #--------------------------------------------------------------------------
     def get_standard_config(self):

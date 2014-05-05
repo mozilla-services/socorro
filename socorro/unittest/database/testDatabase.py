@@ -4,7 +4,6 @@
 
 # XXX Set to be deprecated in favor of socorro/external/postgresql/models.py
 
-import unittest
 import socorro.database.database as db
 import psycopg2
 import psycopg2.extensions
@@ -14,7 +13,7 @@ import threading
 from socorro.unittest.testlib.loggerForTest import TestingLogger
 from createDBforTest import *
 import socorro.lib.util as util
-
+from socorro.unittest.testbase import TestCase
 import socorro.lib.ConfigurationManager as cm
 import dbTestconfig as testConfig
 config = cm.newConfiguration(configurationModule = testConfig, applicationName='Testing Psycopghelper')
@@ -68,7 +67,7 @@ class TestSingleCursor(psycopg2.extensions.cursor):
     return self.result
 
 
-class TestDatabase(unittest.TestCase):
+class TestDatabase(TestCase):
   def setUp(self):
     self.logger = TestingLogger()
     self.connectionData0 = (config.database_hostname,config.database_name,config.database_username,config.database_password)
@@ -294,4 +293,3 @@ class TestDatabase(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-

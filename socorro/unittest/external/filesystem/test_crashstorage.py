@@ -7,7 +7,6 @@ import os.path
 import shutil
 import tempfile
 import inspect
-import unittest
 
 from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager
@@ -18,17 +17,20 @@ from socorro.external.filesystem.crashstorage import (
   FileSystemRawCrashStorage,
   FileSystemThrottledCrashStorage,
   FileSystemCrashStorage)
+from socorro.unittest.testbase import TestCase
 from socorro.lib.util import DotDict
 
 
-class TestFileSystemCrashStorage(unittest.TestCase):
+class TestFileSystemCrashStorage(TestCase):
 
     def setUp(self):
+        super(TestFileSystemCrashStorage, self).setUp()
         self.std_tmp_dir = tempfile.mkdtemp()
         self.def_tmp_dir = tempfile.mkdtemp()
         self.pro_tmp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
+        super(TestFileSystemCrashStorage, self).tearDown()
         shutil.rmtree(self.std_tmp_dir)
 
     @staticmethod

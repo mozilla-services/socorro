@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import copy
 
 from nose.tools import eq_, ok_
@@ -20,6 +19,7 @@ from socorro.processor.signature_utilities import CSignatureTool
 from socorro.unittest.processor.test_breakpad_pipe_to_json import (
     cannonical_json_dump,
 )
+from socorro.unittest.testbase import TestCase
 
 csig_config = DotDict()
 csig_config.irrelevant_signature_re = ''
@@ -39,7 +39,7 @@ def create_basic_fake_processor():
     return fake_processor
 
 
-class TestSupportClassificationRule(unittest.TestCase):
+class TestSupportClassificationRule(TestCase):
 
     def test_predicate(self):
         rc = DotDict()
@@ -91,7 +91,7 @@ class TestSupportClassificationRule(unittest.TestCase):
         )
 
 
-class TestBitguardClassfier(unittest.TestCase):
+class TestBitguardClassfier(TestCase):
 
     def test_action_success(self):
         jd = copy.deepcopy(cannonical_json_dump)
@@ -130,7 +130,7 @@ class TestBitguardClassfier(unittest.TestCase):
         ok_('classifications' not in pc)
 
 
-class TestOutOfDateClassifier(unittest.TestCase):
+class TestOutOfDateClassifier(TestCase):
 
     def test_predicate(self):
         jd = copy.deepcopy(cannonical_json_dump)

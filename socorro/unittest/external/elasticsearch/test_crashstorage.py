@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 import pyelasticsearch
 from pyelasticsearch.exceptions import IndexAlreadyExistsError
@@ -16,6 +15,7 @@ from socorro.external.elasticsearch.crashstorage import (
 from socorro.database.transaction_executor import (
     TransactionExecutorWithLimitedBackoff
 )
+from socorro.unittest.testbase import TestCase
 
 
 a_processed_crash = {
@@ -70,7 +70,7 @@ a_raw_crash = {
 }
 
 
-class TestElasticsearchCrashStorage(unittest.TestCase):
+class TestElasticsearchCrashStorage(TestCase):
 
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
     def test_indexing(self, pyes_mock):

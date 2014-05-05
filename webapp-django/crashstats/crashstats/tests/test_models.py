@@ -5,16 +5,15 @@ import tempfile
 import datetime
 import time
 import random
-import unittest
 
 import mock
 import requests
 from nose.tools import eq_, ok_, assert_raises
 
-from django.test import TestCase
 from django.core.cache import cache
 from django.conf import settings
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats import models
 
 
@@ -26,7 +25,7 @@ class Response(object):
         self.status_code = status_code
 
 
-class TestExceptions(unittest.TestCase):
+class TestExceptions(TestCase):
 
     def test_BadStatusCodeError(self):
         try:

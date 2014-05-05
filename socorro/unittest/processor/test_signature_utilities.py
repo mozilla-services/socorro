@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 import mock
 from nose.tools import eq_, ok_
 
@@ -13,13 +11,14 @@ import socorro.lib.util as sutil
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.lib.util import DotDict
 from socorro.processor.signature_utilities import JavaSignatureTool
+from socorro.unittest.testbase import TestCase
 
 import re
 
 from mock import Mock, patch
 
 
-class BaseTestClass(unittest.TestCase):
+class BaseTestClass(TestCase):
 
     def assert_equal_with_nicer_output (self, expected, received):
         eq_(

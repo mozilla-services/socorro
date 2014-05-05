@@ -1,14 +1,14 @@
 from nose.tools import eq_, ok_
 
 from django.test.client import RequestFactory
-from django.test import TestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
+from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.base import context_processors
 
 
-class TestContextProcessors(TestCase):
+class TestContextProcessors(DjangoTestCase):
 
     def test_browserid(self):
         # you're on the root page

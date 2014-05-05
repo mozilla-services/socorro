@@ -1,10 +1,9 @@
 import datetime
 from nose.tools import eq_, ok_
-from django.test import TestCase
 from django.utils.timezone import utc
 from django.core.cache import cache
 
-
+from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.helpers import (
     js_date,
     recursive_state_filter,

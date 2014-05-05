@@ -7,7 +7,6 @@ import logging
 import mock
 import os
 import psycopg2
-import unittest
 import urllib
 from paste.fixture import TestApp, AppError
 from nose.plugins.attrib import attr
@@ -33,6 +32,7 @@ from socorro.unittest.config.commonconfig import (
     databaseUserName,
     databasePassword
 )
+from socorro.unittest.testbase import TestCase
 from socorro.webapi.servers import CherryPy
 from socorro.webapi.servers import WebServerBase
 
@@ -135,7 +135,7 @@ class AuxImplementationWithBadArgumentError(_AuxImplementation):
         raise BadArgumentError('bad arg')
 
 
-class ImplementationWrapperTestCase(unittest.TestCase):
+class ImplementationWrapperTestCase(TestCase):
 
     @mock.patch('logging.info')
     def test_basic_get(self, logging_info):
@@ -423,7 +423,7 @@ class ImplementationWrapperTestCase(unittest.TestCase):
 
 
 @attr(integration='postgres')
-class IntegrationTestMiddlewareApp(unittest.TestCase):
+class IntegrationTestMiddlewareApp(TestCase):
     # test the middleware_app except that we won't start the daemon
 
     def setUp(self):

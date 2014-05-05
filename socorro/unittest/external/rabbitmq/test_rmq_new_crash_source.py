@@ -2,14 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_
 
 from socorro.external.rabbitmq.rmq_new_crash_source import (
     RMQNewCrashSource
 )
 from socorro.lib.util import DotDict
+from socorro.unittest.testbase import TestCase
 
 
 #==============================================================================
@@ -28,7 +27,7 @@ class FakeCrashStore(object):
 
 
 #==============================================================================
-class TestConnection(unittest.TestCase):
+class TestConnection(TestCase):
     """Test PostgreSQLBase class. """
 
     #--------------------------------------------------------------------------

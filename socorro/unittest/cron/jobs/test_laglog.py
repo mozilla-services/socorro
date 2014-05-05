@@ -2,18 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import datetime
 
 import mock
 
 from socorro.cron.jobs.laglog import LagLog
 from socorro.lib.util import SilentFakeLogger
+from socorro.unittest.testbase import TestCase
 
 from configman.dotdict import DotDict
 
 
-class TestLagLog(unittest.TestCase):
+class TestLagLog(TestCase):
 
     def _get_mocked_config(self):
         config = DotDict()

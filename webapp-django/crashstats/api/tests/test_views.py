@@ -1,6 +1,5 @@
 import datetime
 import json
-import unittest
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
@@ -10,6 +9,7 @@ import mock
 from nose.tools import eq_, ok_
 from waffle import Switch
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
@@ -17,7 +17,7 @@ from crashstats.crashstats.tests.test_views import (
 from crashstats.tokens.models import Token
 
 
-class TestDedentLeft(unittest.TestCase):
+class TestDedentLeft(TestCase):
 
     def test_dedent_left(self):
         from crashstats.api.views import dedent_left

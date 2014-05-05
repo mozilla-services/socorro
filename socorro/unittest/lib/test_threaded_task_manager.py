@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import time
-import unittest
 
 from nose.tools import ok_
 
@@ -11,15 +10,14 @@ from  socorro.lib.threaded_task_manager import ThreadedTaskManager, \
       ThreadedTaskManagerWithConfigSetup, \
       default_task_func
 from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.unittest.testbase import TestCase
 
 
-class TestFileSystemRawCrashStorage(unittest.TestCase):
+class TestFileSystemRawCrashStorage(TestCase):
 
     def setUp(self):
+        super(TestFileSystemRawCrashStorage, self).setUp()
         self.logger = SilentFakeLogger()
-
-    def tearDown(self):
-        pass
 
     def test_constuctor1(self):
         config = DotDict()

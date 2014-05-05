@@ -2,16 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import datetime
 
 from nose.tools import eq_, ok_
 
 from socorro.lib import external_common, util
+from socorro.unittest.testbase import TestCase
 
 
 #==============================================================================
-class TestExternalCommon(unittest.TestCase):
+class TestExternalCommon(TestCase):
     """Test functions of the external_common module. """
 
     #--------------------------------------------------------------------------

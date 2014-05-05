@@ -1,8 +1,7 @@
 from nose.tools import ok_, eq_
 
-from django.test import TestCase
-
 from crashstats.symbols import utils
+from crashstats.base.tests.testbase import TestCase
 
 from .base import (
     ZIP_FILE,

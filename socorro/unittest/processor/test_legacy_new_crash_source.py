@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import mock
 
 from datetime import timedelta
@@ -17,6 +16,7 @@ from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
     execute_query_fetchall,
 )
+from socorro.unittest.testbase import TestCase
 
 
 def sequencer(*args):
@@ -33,9 +33,7 @@ def sequencer(*args):
     return foo
 
 
-class TestLegacyNewCrashSource(unittest.TestCase):
-    """
-    """
+class TestLegacyNewCrashSource(TestCase):
 
     def test_legacy_new_crash_source_basics(self):
         m_transaction_executor_class = mock.Mock()

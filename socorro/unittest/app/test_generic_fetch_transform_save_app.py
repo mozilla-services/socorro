@@ -2,22 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.util import DotDict, SilentFakeLogger
+from socorro.unittest.testbase import TestCase
 
 
-class TestFetchTransformSaveApp(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
+class TestFetchTransformSaveApp(TestCase):
 
     def test_bogus_source_iter_and_worker(self):
         class TestFTSAppClass(FetchTransformSaveApp):

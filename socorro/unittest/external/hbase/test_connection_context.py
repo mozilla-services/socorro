@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
@@ -15,6 +13,7 @@ from socorro.external.hbase.hbase_client import (
 )
 from socorro.lib.util import SilentFakeLogger, DotDict
 from socorro.database.transaction_executor import TransactionExecutor
+from socorro.unittest.testbase import TestCase
 from configman import Namespace
 
 from hbase import ttypes
@@ -39,7 +38,7 @@ class FakeHB_Connection(object):
         self.rollback_counter += 1
 
 
-class TestConnectionContext(unittest.TestCase):
+class TestConnectionContext(TestCase):
 
     @mock.patch('socorro.external.hbase.connection_context.hbase_client')
     def test_basic_hbase_usage(self, mocked_hbcl):

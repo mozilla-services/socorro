@@ -17,7 +17,6 @@ import logging
 import os
 import psycopg2
 import time
-import unittest
 from nose.tools import *
 
 import socorro.lib.ConfigurationManager as configurationManager
@@ -27,6 +26,7 @@ from socorro.lib.datetimeutil import UTC
 
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
+from socorro.unittest.testbase import TestCase
 import cronTestconfig as testConfig
 
 class Me:
@@ -82,7 +82,7 @@ def createMe():
   me.database = sdatabase.Database(me.config)
   #me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
 
-class TestNamedCursor(unittest.TestCase):
+class TestNamedCursor(TestCase):
   def setUp(self):
     global me
     if not me:

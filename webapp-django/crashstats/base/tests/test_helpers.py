@@ -1,8 +1,8 @@
 from nose.tools import eq_
 
-from django.test import TestCase
 from django.test.client import RequestFactory
 
+from crashstats.base.tests.testbase import TestCase
 from crashstats.base.helpers import (
     change_query_string
 )

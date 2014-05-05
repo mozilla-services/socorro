@@ -4,7 +4,7 @@
 
 import shutil
 import tempfile
-import unittest
+
 from configman import ConfigurationManager, Namespace
 from mock import Mock
 from nose.plugins.attrib import attr
@@ -13,13 +13,15 @@ from nose.tools import eq_, assert_raises
 from socorro.external import MissingArgumentError, ResourceNotFound, \
                              ResourceUnavailable
 from socorro.external.fs import crash_data, crashstorage
+from socorro.unittest.testbase import TestCase
 
 
 @attr(integration='filesystem')  # for nosetests
-class IntegrationTestCrashData(unittest.TestCase):
+class IntegrationTestCrashData(TestCase):
 
     def setUp(self):
         """Insert fake data into filesystem. """
+        super(IntegrationTestCrashData, self).setUp()
         self.fs_root = tempfile.mkdtemp()
 
         self.config_manager = self._common_config_setup()
@@ -68,6 +70,7 @@ class IntegrationTestCrashData(unittest.TestCase):
 
     def tearDown(self):
         """Remove all temp files and folders. """
+        super(IntegrationTestCrashData, self).tearDown()
         shutil.rmtree(self.fs_root)
 
     def _common_config_setup(self):

@@ -5,13 +5,13 @@
 import datetime
 import exceptions
 import logging
-import unittest
 
 from nose.tools import *
 
 import socorro.lib.util as util
 
 from socorro.unittest.testlib.loggerForTest import TestingLogger
+from socorro.unittest.testbase import TestCase
 
 class TestingException(exceptions.Exception):
   pass
@@ -21,7 +21,7 @@ def ignoreAlways(*args, **kwargs):
 def ignoreNever(*args,**kwargs):
   return False
 
-class TestUtil(unittest.TestCase):
+class TestUtil(TestCase):
   def setUp(self):
     pass
 
@@ -134,4 +134,3 @@ class TestUtil(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-

@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import unittest
 
 from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
@@ -13,6 +12,7 @@ from socorro.lib import datetimeutil
 from socorro.lib.search_common import (
     SearchBase, SearchParam, convert_to_type, get_parameters, restrict_fields
 )
+from socorro.unittest.testbase import TestCase
 
 
 def _get_config_manager():
@@ -35,7 +35,7 @@ def _get_config_manager():
     return config_manager
 
 
-class TestSearchBase(unittest.TestCase):
+class TestSearchBase(TestCase):
 
     def test_get_parameters(self):
         with _get_config_manager().context() as config:
@@ -212,7 +212,7 @@ class TestSearchBase(unittest.TestCase):
 
 
 #==============================================================================
-class TestSearchCommon(unittest.TestCase):
+class TestSearchCommon(TestCase):
     """Test functions of the search_common module. """
 
     def test_convert_to_type(self):

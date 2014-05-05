@@ -5,7 +5,6 @@
 import datetime
 import json
 import mock
-import unittest
 
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
@@ -14,11 +13,12 @@ from socorro.external.elasticsearch.base import ElasticSearchBase
 
 import socorro.lib.search_common as scommon
 import socorro.lib.util as util
+from socorro.unittest.testbase import TestCase
 
 
 #==============================================================================
 @attr(integration='elasticsearch')
-class IntegrationTestElasticSearchBase(unittest.TestCase):
+class IntegrationTestElasticSearchBase(TestCase):
 
     def _get_default_config(self):
         config = util.DotDict()
@@ -70,7 +70,7 @@ class IntegrationTestElasticSearchBase(unittest.TestCase):
 
 
 #==============================================================================
-class TestElasticSearchBase(unittest.TestCase):
+class TestElasticSearchBase(TestCase):
     """Test ElasticSearchBase class. """
 
     #--------------------------------------------------------------------------

@@ -2,13 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_
 
 import socorro.processor.breakpad_pipe_to_json as bpj
 
 from socorro.lib.util import DotDict
+from socorro.unittest.testbase import TestCase
 
 cannonical_json_dump = {
     #"status": ,
@@ -248,7 +247,7 @@ cannonical_json_dump = {
 }
 
 
-class TestCase(unittest.TestCase):
+class TestCase(TestCase):
     def test_get(self):
         a_list = ['a', 'b', 'c']
         eq_(bpj._get(a_list, 0, None), 'a')

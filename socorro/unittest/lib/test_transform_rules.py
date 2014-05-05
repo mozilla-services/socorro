@@ -2,11 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
-
 from nose.tools import eq_, ok_
 
 from socorro.lib import transform_rules
+from socorro.unittest.testbase import TestCase
 
 
 def assert_expected(actual, expected):
@@ -25,7 +24,7 @@ def bar(s, d):
 
 
 #==============================================================================
-class TestTransformRules(unittest.TestCase):
+class TestTransformRules(TestCase):
 
     def test_kw_str_parse(self):
         a = 'a=1, b=2'

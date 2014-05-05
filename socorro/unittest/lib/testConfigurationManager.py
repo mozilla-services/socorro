@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import unittest
 import sys
 import os
 import copy
@@ -14,6 +13,7 @@ import datetime
 ### Just left this here as a reminder to play with it from time to time.
 #import socorro.lib.ConfigurationManager as CM
 import socorro.lib.dynamicConfigurationManager as CM
+from socorro.unittest.testbase import TestCase
 
 import optionfile
 
@@ -26,7 +26,7 @@ class HelpHandler:
     self.data = self.stringIO.getvalue()
     self.stringIO.close()
 
-class TestConfigurationManager(unittest.TestCase):
+class TestConfigurationManager(TestCase):
   def __findConfigTstPath(self):
     if os.path.exists(os.path.join('.','config.tst')):
       return os.path.join('.','config.tst')
