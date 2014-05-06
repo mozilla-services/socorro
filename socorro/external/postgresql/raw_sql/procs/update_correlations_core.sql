@@ -66,8 +66,8 @@ SELECT product_version_id
        , signature_id
        , count(*) as total
 FROM crash
-WHERE cpu_arch IS NOT null
-AND cpu_count IS NOT null
+WHERE (system_info->'cpu_arch')::text IS NOT null
+AND (system_info->'cpu_count')::text IS NOT null
 GROUP BY cpu_arch
          , cpu_count
          , product_version_id
