@@ -1001,7 +1001,17 @@ def exploitable_crashes(
         page=page,
         batch=results_per_page
     )
-    context['crashes'] = exploitable['hits']
+    crashes = []
+    bugs = defaultdict(list)
+    signatures = [x['signature'] for x in exploitable['hits']]
+    if signatures:
+        api = models.Bugs()
+        for b in api.get(signatures=signatures)['hits']:
+            bugs[b['signature']].append(b['id'])
+    for crash in exploitable['hits']:
+        crash['bugs'] = sorted(bugs.get(crash['signature'], []), reverse=True)
+        crashes.append(crash)
+    context['crashes'] = crashes
     context['pages'] = int(math.ceil(
         1.0 * exploitable['total'] / results_per_page
     ))
