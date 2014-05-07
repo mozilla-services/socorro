@@ -9,6 +9,8 @@ from django.contrib.sites.models import RequestSite
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django import forms
+# explicit import because django.forms has an __all__
+from django.forms.forms import DeclarativeFieldsMetaclass
 
 from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
@@ -129,7 +131,7 @@ def fancy_init(self, model, *args, **kwargs):
         self.fields[name] = field_class(required=required)
 
 
-class FormWrapperMeta(forms.Form.__metaclass__):
+class FormWrapperMeta(DeclarativeFieldsMetaclass):
     def __new__(cls, name, bases, attrs):
         attrs['__old_init__'] = bases[0].__init__
         attrs['__init__'] = fancy_init
