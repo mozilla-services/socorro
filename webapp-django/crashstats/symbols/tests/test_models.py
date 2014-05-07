@@ -35,6 +35,6 @@ class TestModels(DjangoTestCase):
                     content='Content'
                 )
             ok_(upload.file_exists)
-            ok_(os.path.isdir(os.path.join(self.tmp_dir, 'symbols-uploads')))
+            ok_(os.path.isdir(os.path.join(self.tmp_dir, 'symbols_upload')))
             os.remove(upload.file.path)
             ok_(not upload.file_exists)
