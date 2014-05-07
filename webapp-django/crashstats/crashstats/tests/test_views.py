@@ -1470,12 +1470,25 @@ class TestViews(BaseTestViews):
         )
         ok_(response['location'].endswith(correct_url))
 
+    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_exploitable_crashes(self, rget):
+    def test_exploitable_crashes(self, rget, rpost):
         url = reverse(
             'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT,)
         )
+
+        def mocked_post(url, **options):
+            assert '/bugs' in url, url
+            return Response({
+                "hits": [
+                    {"id": "111111111", "signature": "FakeSignature 1"},
+                    {"id": "222222222", "signature": "FakeSignature 3"},
+                    {"id": "101010101", "signature": "FakeSignature"}
+                ]
+            })
+
+        rpost.side_effect = mocked_post
 
         def mocked_get(url, params, **options):
             assert '/crashes/exploitability' in url
@@ -1519,17 +1532,35 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('FakeSignature' in response.content)
+        # only this bug ID should be shown
+        ok_('101010101' in response.content)
+        # not these bug IDs
+        ok_('222222222' not in response.content)
+        ok_('111111111' not in response.content)
 
         # if you try to mess with the paginator it should just load page 1
         response = self.client.get(url, {'page': 'meow'})
         ok_(response.status_code, 200)
 
+    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_exploitable_crashes_by_product_and_version(self, rget):
+    def test_exploitable_crashes_by_product_and_version(self, rget, rpost):
         url = reverse(
             'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT, '19.0')
         )
+
+        def mocked_post(url, **options):
+            assert '/bugs' in url, url
+            return Response({
+                "hits": [
+                    {"id": "111111111", "signature": "FakeSignature 1"},
+                    {"id": "222222222", "signature": "FakeSignature 3"},
+                    {"id": "101010101", "signature": "FakeSignature"}
+                ]
+            })
+
+        rpost.side_effect = mocked_post
 
         def mocked_get(url, params, **options):
             assert '/crashes/exploitability' in url
