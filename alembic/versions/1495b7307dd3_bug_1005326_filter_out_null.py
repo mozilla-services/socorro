@@ -1,14 +1,14 @@
 """bug 1005326 - filter out NULL
 
 Revision ID: 1495b7307dd3
-Revises: cef861648c
+Revises: 1961d1f70175
 Create Date: 2014-05-06 16:40:36.199526
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '1495b7307dd3'
-down_revision = 'cef861648c'
+down_revision = '1961d1f70175'
 
 from alembic import op
 from socorro.lib import citexttype, jsontype, buildtype
