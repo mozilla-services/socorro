@@ -22,7 +22,7 @@ def uploader(instance, filename):
     hashed_filename = (hashlib.md5(filename +
                        str(now.microsecond)).hexdigest())
     __, extension = os.path.splitext(filename)
-    return os.path.join('symbols-uploads', path, hashed_filename + extension)
+    return os.path.join('symbols_upload', path, hashed_filename + extension)
 
 
 class SymbolsUpload(models.Model):
