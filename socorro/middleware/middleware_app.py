@@ -56,6 +56,7 @@ SERVICES_LIST = (
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/search/(signatures|crashes)/(.*)', 'search.Search'),
+    (r'/supersearch/(field|fields)/(.*)', 'supersearch.SuperSearch'),
     (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
     (r'/report/(list)/(.*)', 'report.Report'),

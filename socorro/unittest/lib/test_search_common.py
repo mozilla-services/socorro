@@ -15,6 +15,90 @@ from socorro.lib.search_common import (
 from socorro.unittest.testbase import TestCase
 
 
+SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
+    'signature': {
+        'name': 'signature',
+        'data_validation_type': 'str',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'product': {
+        'name': 'product',
+        'data_validation_type': 'enum',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'version': {
+        'name': 'version',
+        'data_validation_type': 'enum',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'date': {
+        'name': 'date',
+        'data_validation_type': 'datetime',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'build_id': {
+        'name': 'build_id',
+        'data_validation_type': 'int',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'process_type': {
+        'name': 'process_type',
+        'data_validation_type': 'enum',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'hang_type': {
+        'name': 'hang_type',
+        'data_validation_type': 'enum',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'user_comments': {
+        'name': 'user_comments',
+        'data_validation_type': 'str',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+}
+
+
 def _get_config_manager():
     required_config = Namespace()
 
@@ -39,7 +123,10 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(config=config)
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
 
         args = {
             'signature': 'mysig',
@@ -89,7 +176,10 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters_with_not(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(config=config)
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
 
         args = {
             'signature': '!~mysig',
@@ -113,7 +203,10 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters_date_defaults(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(config=config)
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
 
         now = datetimeutil.utc_now()
 
@@ -168,7 +261,10 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters_date_max_range(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(config=config)
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
 
         assert_raises(
             BadArgumentError,
@@ -178,7 +274,10 @@ class TestSearchBase(TestCase):
 
     def test_process_type_parameter_correction(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(config=config)
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
 
         args = {
             'process_type': 'browser'
@@ -192,7 +291,10 @@ class TestSearchBase(TestCase):
 
     def test_hang_type_parameter_correction(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(config=config)
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
 
         args = {
             'hang_type': 'hang'
@@ -281,8 +383,12 @@ class TestSearchCommon(TestCase):
             if i in ("from_date", "to_date", "build_from", "build_to"):
                 ok_(typei is datetime.datetime)
             else:
-                ok_(not params[i] or typei is int or typei is str
-                                or typei is list)
+                ok_(
+                    not params[i] or
+                    typei is int or
+                    typei is str or
+                    typei is list
+                )
 
         # Empty params
         params = get_parameters({
@@ -310,8 +416,12 @@ class TestSearchCommon(TestCase):
             if i in ("from_date", "to_date", "build_from", "build_to"):
                 ok_(typei is datetime.datetime)
             else:
-                ok_(not params[i] or typei is int or typei is str
-                                or typei is list)
+                ok_(
+                    not params[i] or
+                    typei is int or
+                    typei is str or
+                    typei is list
+                )
 
         # Test with encoded slashes in terms and signature
         params = get_parameters({

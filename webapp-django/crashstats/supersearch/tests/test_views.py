@@ -13,6 +13,180 @@ from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.views import get_report_list_parameters
 
 
+SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
+    'signature': {
+        'name': 'signature',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'StringField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'product': {
+        'name': 'product',
+        'query_type': 'enum',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'version': {
+        'name': 'version',
+        'query_type': 'enum',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'platform': {
+        'name': 'platform',
+        'query_type': 'enum',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'dump': {
+        'name': 'dump',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': False,
+        'is_mandatory': False,
+    },
+    'release_channel': {
+        'name': 'release_channel',
+        'query_type': 'enum',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'date': {
+        'name': 'date',
+        'query_type': 'datetime',
+        'namespace': 'processed_crash',
+        'form_field_type': 'DateTimeField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'address': {
+        'name': 'address',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'StringField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'build_id': {
+        'name': 'build_id',
+        'query_type': 'int',
+        'namespace': 'processed_crash',
+        'form_field_type': 'IntegerField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'reason': {
+        'name': 'reason',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'StringField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'java_stack_trace': {
+        'name': 'java_stack_trace',
+        'query_type': 'enum',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'email': {
+        'name': 'email',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'StringField',
+        'form_field_choices': None,
+        'permissions_needed': ['crashstats.view_pii'],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'url': {
+        'name': 'url',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'StringField',
+        'form_field_choices': None,
+        'permissions_needed': ['crashstats.view_pii'],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+    'exploitability': {
+        'name': 'exploitability',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': [
+            'high', 'normal', 'low', 'none', 'unknown', 'error'
+        ],
+        'permissions_needed': ['crashstats.view_exploitability'],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
+}
+
+
 class TestViews(BaseTestViews):
 
     @staticmethod
@@ -73,6 +247,15 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_search(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+        rget.side_effect = mocked_get
+
         self._login()
         url = reverse('supersearch.search')
         response = self.client.get(url)
@@ -81,6 +264,15 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_search_fields(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+        rget.side_effect = mocked_get
+
         self._login()
         url = reverse('supersearch.search_fields')
         response = self.client.get(url)
@@ -93,8 +285,8 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_search_results(self, rget, rpost):
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
+        def mocked_post(url, **options):
+            assert 'bugs' in url, url
             return Response({
                 "hits": [
                     {
@@ -107,6 +299,9 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'product' in params and 'WaterWolf' in params['product']:
                 return Response({
@@ -318,6 +513,10 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             if '_facets' in params and 'url' in params['_facets']:
                 facets = {
                     "platform": [
@@ -462,6 +661,9 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
 
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             # Verify that all expected parameters are in the URL.
             ok_('product' in params)
             ok_('WaterWolf' in params['product'])
@@ -512,6 +714,9 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
@@ -610,6 +815,17 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_search_custom_permission(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            return Response()
+
+        rget.side_effect = mocked_get
+
         url = reverse('supersearch.search_custom')
 
         response = self.client.get(url)
@@ -623,6 +839,17 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_search_custom(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            return Response()
+
+        rget.side_effect = mocked_get
+
         self.create_custom_query_perm()
 
         url = reverse('supersearch.search_custom')
@@ -635,6 +862,9 @@ class TestViews(BaseTestViews):
         self.create_custom_query_perm()
 
         def mocked_get(url, params, **options):
+            if '/supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             if '/supersearch' in url:
                 ok_('_return_query' in params)
                 ok_('signature' in params)
@@ -657,9 +887,16 @@ class TestViews(BaseTestViews):
         ok_('socorro200000' in response.content)
         ok_('socorro200001' in response.content)
 
+    @mock.patch('requests.get')
     @mock.patch('requests.post')
-    def test_search_query(self, rpost):
+    def test_search_query(self, rget, rpost):
         self.create_custom_query_perm()
+
+        def mocked_get(url, params, **options):
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            return Response('{"hits": []}')
 
         def mocked_post(url, data, **options):
             ok_('/query' in url)
@@ -668,6 +905,7 @@ class TestViews(BaseTestViews):
 
             return Response({"hits": []})
 
+        rget.side_effect = mocked_get
         rpost.side_effect = mocked_post
 
         url = reverse('supersearch.search_query')

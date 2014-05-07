@@ -230,16 +230,6 @@ PLUGIN_FIELDS = (
     'name',
 )
 
-# exploitability values to allow in queries
-EXPLOITABILITY_VALUES = (
-    'high',
-    'normal',
-    'low',
-    'none',
-    'unknown',
-    'error',
-)
-
 # the number of result filter on tcbs
 TCBS_RESULT_COUNTS = (
     '50',

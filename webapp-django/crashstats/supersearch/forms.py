@@ -1,7 +1,6 @@
 import json
 
 from django import forms
-from django.conf import settings
 
 from crashstats.supersearch import form_fields
 
@@ -12,114 +11,16 @@ def make_restricted_choices(sequence, exclude=None):
     return [(x, x) for x in sequence if x not in exclude]
 
 
-PII_RESTRICTED_FIELDS = {
-    'email': form_fields.StringField(required=False),
-    'url': form_fields.StringField(required=False),
-}
-
-
-EXPLOITABILITY_RESTRICTED_FIELDS = {
-    'exploitability': form_fields.MultipleValueField(
-        required=False,
-        choices=make_restricted_choices(settings.EXPLOITABILITY_VALUES)
-    ),
-}
-
-
 class SearchForm(forms.Form):
     '''Handle the data populating the search form. '''
 
-    # Processed crash fields.
-    address = form_fields.StringField(required=False)
-    app_notes = form_fields.MultipleValueField(required=False)
-    build_id = form_fields.IntegerField(required=False)
-    cpu_info = form_fields.StringField(required=False)
-    cpu_name = form_fields.MultipleValueField(required=False)
-    date = form_fields.DateTimeField(required=False)
-    distributor = form_fields.MultipleValueField(required=False)
-    distributor_version = form_fields.MultipleValueField(required=False)
-    dump = form_fields.StringField(required=False)
-    flash_version = form_fields.MultipleValueField(required=False)
-    install_age = form_fields.IntegerField(required=False)
-    java_stack_trace = form_fields.MultipleValueField(required=False)
-    last_crash = form_fields.IntegerField(required=False)
-    platform = form_fields.MultipleValueField(required=False)
-    platform_version = form_fields.StringField(required=False)
-    plugin_name = form_fields.MultipleValueField(required=False)
-    plugin_filename = form_fields.MultipleValueField(required=False)
-    plugin_version = form_fields.MultipleValueField(required=False)
-    processor_notes = form_fields.MultipleValueField(required=False)
-    product = form_fields.MultipleValueField(required=False)
-    productid = form_fields.MultipleValueField(required=False)
-    reason = form_fields.StringField(required=False)
-    release_channel = form_fields.MultipleValueField(required=False)
-    signature = form_fields.StringField(required=False)
-    topmost_filenames = form_fields.MultipleValueField(required=False)
-    uptime = form_fields.IntegerField(required=False)
-    user_comments = form_fields.StringField(required=False)
-    version = form_fields.MultipleValueField(required=False)
-    winsock_lsp = form_fields.MultipleValueField(required=False)
-
-    # Raw crash fields.
-    accessibility = form_fields.BooleanField(required=False)
-    additional_minidumps = form_fields.MultipleValueField(required=False)
-    adapter_device_id = form_fields.MultipleValueField(required=False)
-    adapter_vendor_id = form_fields.MultipleValueField(required=False)
-    android_board = form_fields.MultipleValueField(required=False)
-    android_brand = form_fields.MultipleValueField(required=False)
-    android_cpu_abi = form_fields.MultipleValueField(required=False)
-    android_cpu_abi2 = form_fields.MultipleValueField(required=False)
-    android_device = form_fields.MultipleValueField(required=False)
-    android_display = form_fields.MultipleValueField(required=False)
-    android_fingerprint = form_fields.MultipleValueField(required=False)
-    android_hardware = form_fields.MultipleValueField(required=False)
-    android_manufacturer = form_fields.MultipleValueField(required=False)
-    android_model = form_fields.StringField(required=False)
-    android_version = form_fields.MultipleValueField(required=False)
-    async_shutdown_timeout = form_fields.MultipleValueField(required=False)
-    available_page_file = form_fields.IntegerField(required=False)
-    available_physical_memory = form_fields.IntegerField(required=False)
-    available_virtual_memory = form_fields.IntegerField(required=False)
-    b2g_os_version = form_fields.MultipleValueField(required=False)
-    bios_manufacturer = form_fields.MultipleValueField(required=False)
-    cpu_usage_flash_process1 = form_fields.IntegerField(required=False)
-    cpu_usage_flash_process2 = form_fields.IntegerField(required=False)
-    dom_ipc_enabled = form_fields.BooleanField(required=False)
-    em_check_compatibility = form_fields.BooleanField(required=False)
-    frame_poison_base = form_fields.MultipleValueField(required=False)
-    frame_poison_size = form_fields.IntegerField(required=False)
-    is_garbage_collecting = form_fields.BooleanField(required=False)
-    min_arm_version = form_fields.MultipleValueField(required=False)
-    number_of_processors = form_fields.IntegerField(required=False)
-    oom_allocation_size = form_fields.IntegerField(required=False)
-    plugin_cpu_usage = form_fields.IntegerField(required=False)
-    plugin_hang = form_fields.BooleanField(required=False)
-    plugin_hang_ui_duration = form_fields.IntegerField(required=False)
-    startup_time = form_fields.IntegerField(required=False)
-    system_memory_use_percentage = form_fields.IntegerField(required=False)
-    throttleable = form_fields.BooleanField(required=False)
-    throttle_rate = form_fields.IntegerField(required=False)
-    theme = form_fields.MultipleValueField(required=False)
-    total_virtual_memory = form_fields.IntegerField(required=False)
-    useragent_locale = form_fields.MultipleValueField(required=False)
-    vendor = form_fields.MultipleValueField(required=False)
-
-    process_type = form_fields.MultipleValueField(
-        required=False,
-        choices=make_restricted_choices(settings.PROCESS_TYPES, ['any', 'all'])
-    )
-    hang_type = form_fields.MultipleValueField(
-        required=False,
-        choices=make_restricted_choices(settings.HANG_TYPES, ['any', 'all'])
-    )
-
     def __init__(
         self,
+        all_fields,
         current_products,
         current_versions,
         current_platforms,
-        pii_mode,
-        exploitability_mode,
+        user,
         *args,
         **kwargs
     ):
@@ -132,15 +33,46 @@ class SearchForm(forms.Form):
             (v['version'], v['version']) for v in current_versions
         ]
 
+        # Generate the list of fields.
+        for field_data in all_fields.values():
+            if (
+                field_data['form_field_type'] is None or
+                not field_data['is_exposed']
+            ):
+                continue
+
+            if field_data['permissions_needed']:
+                user_has_permissions = True
+                for permission in field_data['permissions_needed']:
+                    if not user.has_perm(permission):
+                        user_has_permissions = False
+                        break
+
+                if not user_has_permissions:
+                    # The user is lacking one of the permissions needed
+                    # for this field, so we do not add it to the list
+                    # of fields.
+                    continue
+
+            field_type = getattr(
+                form_fields,
+                field_data['form_field_type']
+            )
+
+            field_obj = field_type(
+                required=field_data['is_mandatory']
+            )
+
+            if field_data['form_field_choices']:
+                field_obj.choices = make_restricted_choices(
+                    field_data['form_field_choices'], ['any', 'all']
+                )
+
+            self.fields[field_data['name']] = field_obj
+
         self.fields['product'].choices = products
         self.fields['version'].choices = versions
         self.fields['platform'].choices = platforms
-
-        if pii_mode:
-            self.fields.update(PII_RESTRICTED_FIELDS)
-
-        if exploitability_mode:
-            self.fields.update(EXPLOITABILITY_RESTRICTED_FIELDS)
 
     def get_fields_list(self):
         '''Return a dictionary describing the fields, to pass to the

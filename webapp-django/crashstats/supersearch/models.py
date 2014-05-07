@@ -3,8 +3,6 @@ import json
 from crashstats import scrubber
 from crashstats.crashstats import models
 
-from . import forms
-
 
 SUPERSEARCH_HITS_WHITELIST = (
     'additional_minidumps',
@@ -113,16 +111,27 @@ class SuperSearch(models.SocorroMiddleware):
         ('user_comments', scrubber.URL),
     )
 
-    # Generate the list of possible parameters from the associated form.
-    # This way we only manage one list of parameters.
-    possible_params = tuple(
-        x for x in forms.SearchForm([], [], [], False, False).fields
-    ) + (
-        '_facets',
-        '_results_offset',
-        '_results_number',
-        '_return_query',
-    )
+    def __init__(self):
+        all_fields = SuperSearchFields().get()
+
+        self.required_params = tuple(
+            x['name'] for x in all_fields.values()
+            if x['is_exposed']
+            and not x['permissions_needed']
+            and x['is_mandatory']
+        )
+
+        self.possible_params = tuple(
+            x['name'] for x in all_fields.values()
+            if x['is_exposed']
+            and not x['permissions_needed']
+            and not x['is_mandatory']
+        ) + (
+            '_facets',
+            '_results_offset',
+            '_results_number',
+            '_return_query',
+        )
 
 
 class SuperSearchUnredacted(SuperSearch):
@@ -137,21 +146,35 @@ class SuperSearchUnredacted(SuperSearch):
 
     API_CLEAN_SCRUB = None
 
-    API_REQUIRED_PERMISSIONS = (
-        'crashstats.view_exploitability',
-        'crashstats.view_pii'
-    )
+    def __init__(self):
+        all_fields = SuperSearchFields().get()
 
-    # Generate the list of possible parameters from the associated form.
-    # This way we only manage one list of parameters.
-    possible_params = tuple(
-        x for x in forms.SearchForm([], [], [], True, True).fields
-    ) + (
-        '_facets',
-        '_results_offset',
-        '_results_number',
-        '_return_query',
-    )
+        self.required_params = tuple(
+            x['name'] for x in all_fields.values()
+            if x['is_exposed'] and x['is_mandatory']
+        )
+
+        self.possible_params = tuple(
+            x['name'] for x in all_fields.values()
+            if x['is_exposed'] and not x['is_mandatory']
+        ) + (
+            '_facets',
+            '_results_offset',
+            '_results_number',
+            '_return_query',
+        )
+
+        permissions = {}
+        for field_data in all_fields.values():
+            for perm in field_data['permissions_needed']:
+                permissions[perm] = True
+
+        self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
+
+
+class SuperSearchFields(models.SocorroMiddleware):
+
+    URL_PREFIX = '/supersearch/fields/'
 
 
 class Query(models.SocorroMiddleware):

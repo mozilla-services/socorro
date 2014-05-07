@@ -15,97 +15,13 @@ from django.utils.timezone import utc
 
 from waffle.decorators import waffle_switch
 
+from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
 from . import forms
 from .form_fields import split_on_operator
-from .models import SuperSearchUnredacted, Query
+from .models import SuperSearchFields, SuperSearchUnredacted, Query
 
-
-ALL_POSSIBLE_FIELDS = (
-    # Processed crash fields.
-    'address',
-    'app_notes',
-    'build_id',
-    'cpu_info',
-    'cpu_name',
-    'date',
-    'distributor',
-    'distributor_version',
-    'flash_version',
-    'hang_type',
-    'install_age',
-    'java_stack_trace',
-    'last_crash',
-    'platform',
-    'platform_version',
-    'plugin_name',
-    'plugin_filename',
-    'plugin_version',
-    'process_type',
-    'processor_notes',
-    'product',
-    'productid',
-    'reason',
-    'release_channel',
-    'signature',
-    'topmost_filenames',
-    'uptime',
-    'user_comments',
-    'version',
-    'winsock_lsp',
-    # Raw crash fields.
-    'accessibility',
-    'additional_minidumps',
-    'adapter_device_id',
-    'adapter_vendor_id',
-    'android_board',
-    'android_brand',
-    'android_cpu_abi',
-    'android_cpu_abi2',
-    'android_device',
-    'android_display',
-    'android_fingerprint',
-    'android_hardware',
-    'android_manufacturer',
-    'android_model',
-    'android_version',
-    'async_shutdown_timeout',
-    'available_page_file',
-    'available_physical_memory',
-    'available_virtual_memory',
-    'b2g_os_version',
-    'bios_manufacturer',
-    'cpu_usage_flash_process1',
-    'cpu_usage_flash_process2',
-    'em_check_compatibility',
-    'frame_poison_base',
-    'frame_poison_size',
-    'is_garbage_collecting',
-    'min_arm_version',
-    'number_of_processors',
-    'oom_allocation_size',
-    'plugin_cpu_usage',
-    'plugin_hang',
-    'plugin_hang_ui_duration',
-    'startup_time',
-    'system_memory_use_percentage',
-    'theme',
-    'throttleable',
-    'throttle_rate',
-    'total_virtual_memory',
-    'useragent_locale',
-    'vendor',
-)
-
-PII_RESTRICTED_FIELDS = (
-    'email',
-    'url',
-)
-
-EXPLOITABILITY_RESTRICTED_FIELDS = (
-    'exploitability',
-)
 
 DEFAULT_COLUMNS = (
     'date',
@@ -123,7 +39,17 @@ DEFAULT_FACETS = (
 # Facetting on those fields doesn't provide useful information.
 EXCLUDED_FIELDS_FROM_FACETS = (
     'date',
+    'dump',
 )
+
+
+def get_allowed_fields(user):
+    return tuple(
+        x['name']
+        for x in SuperSearchFields().get().values()
+        if x['is_exposed']
+        and has_permissions(user, x['permissions_needed'])
+    )
 
 
 def get_supersearch_form(request):
@@ -131,12 +57,14 @@ def get_supersearch_form(request):
     versions = models.CurrentVersions().get()
     platforms = models.Platforms().get()
 
+    all_fields = SuperSearchFields().get()
+
     form = forms.SearchForm(
+        all_fields,
         products,
         versions,
         platforms,
-        request.user.has_perm('crashstats.view_pii'),
-        request.user.has_perm('crashstats.view_exploitability'),
+        request.user,
         request.GET
     )
     return form
@@ -159,11 +87,7 @@ def get_params(request):
 
     params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
 
-    allowed_fields = ALL_POSSIBLE_FIELDS
-    if request.user.has_perm('crashstats.view_pii'):
-        allowed_fields += PII_RESTRICTED_FIELDS
-    if request.user.has_perm('crashstats.view_exploitability'):
-        allowed_fields += EXPLOITABILITY_RESTRICTED_FIELDS
+    allowed_fields = get_allowed_fields(request.user)
 
     # Make sure only allowed fields are used
     params['_facets'] = [
@@ -176,11 +100,7 @@ def get_params(request):
 @waffle_switch('supersearch-all')
 @pass_default_context
 def search(request, default_context=None):
-    allowed_fields = ALL_POSSIBLE_FIELDS
-    if request.user.has_perm('crashstats.view_pii'):
-        allowed_fields += PII_RESTRICTED_FIELDS
-    if request.user.has_perm('crashstats.view_exploitability'):
-        allowed_fields += EXPLOITABILITY_RESTRICTED_FIELDS
+    allowed_fields = get_allowed_fields(request.user)
 
     context = default_context
     context['possible_facets'] = [
@@ -213,11 +133,7 @@ def search_results(request):
         'total_pages': 0
     }
 
-    allowed_fields = ALL_POSSIBLE_FIELDS
-    if request.user.has_perm('crashstats.view_pii'):
-        allowed_fields += PII_RESTRICTED_FIELDS
-    if request.user.has_perm('crashstats.view_exploitability'):
-        allowed_fields += EXPLOITABILITY_RESTRICTED_FIELDS
+    allowed_fields = get_allowed_fields(request.user)
 
     current_query = request.GET.copy()
     if 'page' in current_query:
