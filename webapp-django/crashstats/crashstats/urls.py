@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import patterns, url
-from django.views.generic.simple import redirect_to
+from django.views.generic import RedirectView
 from django.conf import settings
 
 from . import views, feeds
@@ -160,9 +160,11 @@ urlpatterns = patterns(
         views.query,
         name='query'),
     url(r'^query/query$',
-        redirect_to, {'url': '/query/',
-                      'permanent': perm_legacy_redirect,
-                      'query_string': True}),
+        RedirectView.as_view(
+            permanent=perm_legacy_redirect,
+            query_string=True,
+            url='/query/'
+        )),
     url(r'^buginfo/bug', views.buginfo,
         name='buginfo'),
     url(r'^topcrasher/plot_signature/(?P<product>\w+)/(?P<versions>[;\w\.()]+)'
@@ -212,46 +214,57 @@ urlpatterns = patterns(
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
-        redirect_to,
-        {'url': '/home/products/%s' % settings.DEFAULT_PRODUCT,
-         'permanent': False}),  # this is not a legacy URL
+        RedirectView.as_view(
+            url='/home/products/%s' % settings.DEFAULT_PRODUCT,
+            permanent=False  # this is not a legacy URL
+        )),
 
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',
-        redirect_to, {'url': '/home/products/%(product)s',
-                      'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/home/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/$',
-        redirect_to,
-        {'url': '/home/products/%(product)s/versions/%(versions)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/home/products/%(product)s/versions/%(versions)s',
+            permanent=perm_legacy_redirect
+        )),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
         r'builds$',
-        redirect_to,
-        {'url': '/builds/products/%(product)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/builds/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
         r'topchangers$',
-        redirect_to,
-        {'url': '/topchangers/products/%(product)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/topchangers/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
     url(r'^topcrasher/byversion/(?P<product>\w+)/(?P<versions>[;\w\.()]+)$',
-        redirect_to,
-        {'url': '/topcrasher/products/%(product)s/versions/%(versions)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/topcrasher/products/%(product)s/versions/%(versions)s',
+            permanent=perm_legacy_redirect
+        )),
     url(r'^topcrasher' + products + '/versions/$',
-        redirect_to,
-        {'url': '/topcrasher/products/%(product)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/topcrasher/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
     url(r'^topchangers' + products + '/versions/$',
-        redirect_to,
-        {'url': '/topchangers/products/%(product)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/topchangers/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
     url('^home' + products + '/versions/$',
-        redirect_to,
-        {'url': '/home/products/%(product)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/home/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
     url('^products/(?P<product>\w+)/builds/?$',
-        redirect_to,
-        {'url': '/builds/products/%(product)s',
-         'permanent': perm_legacy_redirect}),
+        RedirectView.as_view(
+            url='/builds/products/%(product)s',
+            permanent=perm_legacy_redirect
+        )),
 )

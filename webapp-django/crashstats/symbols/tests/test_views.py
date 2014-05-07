@@ -85,12 +85,12 @@ class TestViews(BaseTestViews):
                 )
                 eq_(response.status_code, 302)
 
-        symbol_upload = models.SymbolsUpload.objects.get(user=user)
-        eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
-        ok_(symbol_upload.size)
-        ok_(symbol_upload.file)
-        ok_(symbol_upload.file_exists)
-        ok_(symbol_upload.content)
+            symbol_upload = models.SymbolsUpload.objects.get(user=user)
+            eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
+            ok_(symbol_upload.size)
+            ok_(symbol_upload.file)
+            ok_(symbol_upload.file_exists)
+            ok_(symbol_upload.content)
 
     def test_api_upload_about(self):
         url = reverse('symbols:api_upload')
@@ -145,13 +145,13 @@ class TestViews(BaseTestViews):
                     {'file.zip': file_object},
                     HTTP_AUTH_TOKEN=token.key
                 )
-        eq_(response.status_code, 201)
-        symbol_upload = models.SymbolsUpload.objects.get(user=user)
-        eq_(symbol_upload.filename, 'file.zip')
-        ok_(symbol_upload.size)
-        ok_(symbol_upload.file)
-        ok_(symbol_upload.file_exists)
-        ok_(symbol_upload.content)
+            eq_(response.status_code, 201)
+            symbol_upload = models.SymbolsUpload.objects.get(user=user)
+            eq_(symbol_upload.filename, 'file.zip')
+            ok_(symbol_upload.size)
+            ok_(symbol_upload.file)
+            ok_(symbol_upload.file_exists)
+            ok_(symbol_upload.content)
 
     def test_upload_empty_file(self):
         user = User.objects.create(username='user')
@@ -188,33 +188,35 @@ class TestViews(BaseTestViews):
                     content='Content'
                 )
 
-        url = reverse('symbols:download', args=(upload.pk,))
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
-        assert self.client.login(username='test', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        eq_(response['Content-Type'], 'application/zip')
-        eq_(
-            response['Content-Disposition'],
-            'attachment; filename="sample.zip"'
-        )
+            url = reverse('symbols:download', args=(upload.pk,))
+            response = self.client.get(url)
+            eq_(response.status_code, 302)
+            self.assertRedirects(
+                response,
+                reverse('crashstats:login') + '?next=%s' % url
+            )
+            assert self.client.login(username='test', password='secret')
+            response = self.client.get(url)
+            eq_(response.status_code, 200)
+            eq_(response['Content-Type'], 'application/zip')
+            eq_(
+                response['Content-Disposition'],
+                'attachment; filename="sample.zip"'
+            )
 
-        # log in as someone else
-        user = User.objects.create_user('else', 'else@mozilla.com', 'secret')
-        assert self.client.login(username='else', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 403)
+            # log in as someone else
+            user = User.objects.create_user(
+                'else', 'else@mozilla.com', 'secret'
+            )
+            assert self.client.login(username='else', password='secret')
+            response = self.client.get(url)
+            eq_(response.status_code, 403)
 
-        user.is_superuser = True
-        user.save()
-        assert self.client.login(username='else', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
+            user.is_superuser = True
+            user.save()
+            assert self.client.login(username='else', password='secret')
+            response = self.client.get(url)
+            eq_(response.status_code, 200)
 
     def test_preview(self):
         user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
@@ -229,27 +231,29 @@ class TestViews(BaseTestViews):
                     content='Content'
                 )
 
-        url = reverse('symbols:preview', args=(upload.pk,))
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
-        assert self.client.login(username='test', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        eq_(response.content, 'Content')
-        eq_(response['Content-Type'], 'text/plain')
+            url = reverse('symbols:preview', args=(upload.pk,))
+            response = self.client.get(url)
+            eq_(response.status_code, 302)
+            self.assertRedirects(
+                response,
+                reverse('crashstats:login') + '?next=%s' % url
+            )
+            assert self.client.login(username='test', password='secret')
+            response = self.client.get(url)
+            eq_(response.status_code, 200)
+            eq_(response.content, 'Content')
+            eq_(response['Content-Type'], 'text/plain')
 
-        # log in as someone else
-        user = User.objects.create_user('else', 'else@mozilla.com', 'secret')
-        assert self.client.login(username='else', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 403)
+            # log in as someone else
+            user = User.objects.create_user(
+                'else', 'else@mozilla.com', 'secret'
+            )
+            assert self.client.login(username='else', password='secret')
+            response = self.client.get(url)
+            eq_(response.status_code, 403)
 
-        user.is_superuser = True
-        user.save()
-        assert self.client.login(username='else', password='secret')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
+            user.is_superuser = True
+            user.save()
+            assert self.client.login(username='else', password='secret')
+            response = self.client.get(url)
+            eq_(response.status_code, 200)

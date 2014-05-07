@@ -34,7 +34,7 @@ class TestModels(DjangoTestCase):
                     size=12345,
                     content='Content'
                 )
-        ok_(upload.file_exists)
-        ok_(os.path.isdir(os.path.join(self.tmp_dir, 'symbols-uploads')))
-        os.remove(upload.file.path)
-        ok_(not upload.file_exists)
+            ok_(upload.file_exists)
+            ok_(os.path.isdir(os.path.join(self.tmp_dir, 'symbols-uploads')))
+            os.remove(upload.file.path)
+            ok_(not upload.file_exists)
