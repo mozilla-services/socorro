@@ -86,6 +86,86 @@ class TestSymbolsUnpack(IntegrationTestCaseBase):
         # and the original should now have been deleted
         ok_(not os.path.isfile(source_file))
 
+    def test_symbols_unpack_subdirectories(self):
+        root_dir = self.temp_source_directory
+        foo_dir = os.path.join(root_dir, 'foo')
+        os.mkdir(foo_dir)
+        bar_dir = os.path.join(foo_dir, 'bar')
+        os.mkdir(bar_dir)
+        source_file = os.path.join(
+            bar_dir,
+            os.path.basename(ZIP_FILE)
+        )
+        shutil.copy(ZIP_FILE, source_file)
+
+        config_manager = self._setup_config_manager()
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+        information = self._load_structure()
+        assert information['symbols-unpack']
+        assert not information['symbols-unpack']['last_error']
+        assert information['symbols-unpack']['last_success']
+
+        ok_(os.listdir(self.temp_destination_directory), 'empty')
+        # there should now be a directory named `sample-<todays date>
+        destination_dir = self.temp_destination_directory
+        ok_(os.path.isdir(destination_dir))
+        # and it should contain files
+        ok_(os.listdir(destination_dir))
+        # and the original should now have been deleted
+        ok_(not os.path.isfile(source_file))
+
+        # because there was nothing else in that directory, or its parent
+        # those directories should be removed now
+        ok_(not os.path.isdir(bar_dir))
+        ok_(not os.path.isdir(foo_dir))
+        assert os.path.isdir(root_dir)
+
+    def test_symbols_unpack_subdirectories_careful_dir_cleanup(self):
+        """same test almost as test_symbols_unpack_subdirectories()
+        but this time we put a file in one of the directories and assert
+        that that does not get deleted"""
+        root_dir = self.temp_source_directory
+        foo_dir = os.path.join(root_dir, 'foo')
+        os.mkdir(foo_dir)
+        with open(os.path.join(foo_dir, 'some.file'), 'w') as f:
+            f.write('anything')
+        bar_dir = os.path.join(foo_dir, 'bar')
+        os.mkdir(bar_dir)
+        source_file = os.path.join(
+            bar_dir,
+            os.path.basename(ZIP_FILE)
+        )
+        shutil.copy(ZIP_FILE, source_file)
+
+        config_manager = self._setup_config_manager()
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+        information = self._load_structure()
+        assert information['symbols-unpack']
+        assert not information['symbols-unpack']['last_error']
+        assert information['symbols-unpack']['last_success']
+
+        ok_(os.listdir(self.temp_destination_directory), 'empty')
+        # there should now be a directory named `sample-<todays date>
+        destination_dir = self.temp_destination_directory
+        ok_(os.path.isdir(destination_dir))
+        # and it should contain files
+        ok_(os.listdir(destination_dir))
+        # and the original should now have been deleted
+        ok_(not os.path.isfile(source_file))
+
+        # because there was nothing else in that directory, or its parent
+        # those directories should be removed now
+        ok_(not os.path.isdir(bar_dir))
+        ok_(os.path.isdir(foo_dir))
+        ok_(os.path.isfile(os.path.join(foo_dir, 'some.file')))
+        assert os.path.isdir(root_dir)
+
     def test_symbols_unpack_other_files(self):
 
         source_file = os.path.join(
