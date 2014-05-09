@@ -352,7 +352,7 @@
               </thead>
               <tbody>
                 {% for frame in parsed_dump.threads[parsed_dump.crashed_thread] %}
-                <tr >
+                <tr>
                   <td>{{ frame.frame_num }}</td>
                   <td>{{ frame.module_name }}</td>
                   <td title="{{ frame.signature }}">{{ frame.signature }}</td>
@@ -361,7 +361,11 @@
                     <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
                   </td>
                   {% else %}
-                  <td>{{ frame.source }}</td>
+                  <td>
+                    {% if frame.source %}
+                      {{ frame.source }}:{{ frame.source_line }}
+                    {% endif %}
+                  </td>
                   {% endif %}
                 </tr>
                 {% endfor %}
