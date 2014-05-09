@@ -589,3 +589,45 @@ class TestPostgresCrashStorage(TestCase):
                 actual_sql = remove_whitespace(actual_sql)
                 eq_(expected_sql, actual_sql)
                 eq_(expected_params, actual_params)
+
+    def test_get_raw_crash(self):
+        mock_logging = mock.Mock()
+        mock_postgres = mock.Mock()
+        mock_postgres.return_value = mock.MagicMock()
+
+        required_config = PostgreSQLCrashStorage.get_required_config()
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'database_class': mock_postgres,
+                'transaction_executor_class':
+                    TransactionExecutorWithLimitedBackoff,
+                'backoff_delays': [0, 0, 0],
+            }],
+            argv_source=[]
+        )
+
+        with config_manager.context() as config:
+            a_crash_id = "936ce666-ff3b-4c7a-9674-367fe2120408"
+            crashstorage = PostgreSQLCrashStorage(config)
+            connection = crashstorage.database.return_value.__enter__.return_value
+            connection.cursor.return_value.fetchall.return_value = [[
+                {
+                    'uuid': a_crash_id,
+                }
+            ]]
+
+            a_crash = crashstorage.get_raw_crash(a_crash_id)
+
+            ok_(a_crash['uuid'] == a_crash_id)
+            connection.cursor.return_value.execute. \
+                assert_called_with(
+                    'select raw_crash from raw_crash_20120402 where uuid = %s',
+                    ('936ce666-ff3b-4c7a-9674-367fe2120408',)
+            )

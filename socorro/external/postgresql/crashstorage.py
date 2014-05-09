@@ -161,7 +161,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         raw_crash_table_name = (
             'raw_crash_%s' % self._table_suffix_for_crash_id(crash_id)
         )
-        fetch_sql = 'select raw_crash from %s where uuid = %ss' % \
+        fetch_sql = 'select raw_crash from %s where uuid = %%s' % \
                     raw_crash_table_name
         try:
             return single_value_sql(connection, fetch_sql, (crash_id,))
