@@ -10,6 +10,3 @@
 [submodule "webapp-django/vendor"]
     path = webapp-django/vendor
     url = git://github.com/mozilla/playdoh-lib.git
-[submodule "webapp-django/vendor-local/src/django-browserid"]
-	path = webapp-django/vendor-local/src/django-browserid
-	url = https://github.com/mozilla/django-browserid.git
