@@ -32,48 +32,62 @@ class SymbolsUnpackCronApp(BaseCronApp):
 
     def run(self):
         now = utc_now()
-        for filename in os.listdir(self.config.source_directory):
-            filepath = os.path.join(self.config.source_directory, filename)
-            if filename.lower().endswith('.tar.gz'):
-                destination = filename.replace('.tar.gz', '')
-            else:
-                destination = os.path.splitext(filename)[0]
-            destination = destination.replace(' ', '_')
-            destination += '-' + now.strftime('%Y%m%d')
 
-            destination_dir = self.config.destination_directory
-            if not os.path.isdir(destination_dir):
-                raise IOError(destination_dir)
+        walker = os.walk(self.config.source_directory, followlinks=True)
+        for path, directories, files in walker:
+            for filename in files:
+                filepath = os.path.join(path, filename)
+                if filename.lower().endswith('.tar.gz'):
+                    destination = filename.replace('.tar.gz', '')
+                else:
+                    destination = os.path.splitext(filename)[0]
+                destination = destination.replace(' ', '_')
+                destination += '-' + now.strftime('%Y%m%d')
 
-            if filename.lower().endswith('.zip'):
-                command = 'unzip -n "%s" -d "%s"' % (
-                    filepath, destination_dir
-                )
-            elif filename.lower().endswith('.tar'):
-                command = 'tar -xf "%s" -C "%s"' % (
-                    filepath, destination_dir
-                )
-            elif (
-                filename.lower().endswith('.tar.gz') or
-                filename.lower().endswith('.tgz')
-            ):
+                destination_dir = self.config.destination_directory
+                if not os.path.isdir(destination_dir):
+                    raise IOError(destination_dir)
 
-                command = 'tar -zxf "%s" -C "%s"' % (
-                    filepath, destination_dir
-                )
-            else:
-                self.config.logger.warning(
-                    "Don't know how to unpack %s" % filepath
-                )
-                continue
-
-            exit_code, stdout, stderr = self.run_process(command)
-            if exit_code:
-                # something went wrong
-                raise ValueError(
-                    'Unable to extract %s\n (out: %r)\n(error: %r)' % (
-                        filepath, stdout, stderr
+                if filename.lower().endswith('.zip'):
+                    command = 'unzip -n "%s" -d "%s"' % (
+                        filepath, destination_dir
                     )
-                )
-            else:
-                os.remove(filepath)
+                elif filename.lower().endswith('.tar'):
+                    command = 'tar -xf "%s" -C "%s"' % (
+                        filepath, destination_dir
+                    )
+                elif (
+                    filename.lower().endswith('.tar.gz') or
+                    filename.lower().endswith('.tgz')
+                ):
+
+                    command = 'tar -zxf "%s" -C "%s"' % (
+                        filepath, destination_dir
+                    )
+                else:
+                    self.config.logger.warning(
+                        "Don't know how to unpack %s" % filepath
+                    )
+                    continue
+
+                exit_code, stdout, stderr = self.run_process(command)
+                if exit_code:
+                    # something went wrong
+                    raise ValueError(
+                        'Unable to extract %s\n (out: %r)\n(error: %r)' % (
+                            filepath, stdout, stderr
+                        )
+                    )
+                else:
+                    os.remove(filepath)
+
+                    directory = path
+                    while directory != self.config.source_directory:
+                        if os.listdir(directory):
+                            break
+                        else:
+                            # it's empty
+                            os.rmdir(directory)
+                        directory = os.path.normpath(
+                            os.path.join(directory, '..')
+                        )
