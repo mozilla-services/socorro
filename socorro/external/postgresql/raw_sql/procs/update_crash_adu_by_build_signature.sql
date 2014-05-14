@@ -59,19 +59,19 @@ AS
         SUM(build_adus.aducount) as adu_count,
         build_adus.os_name as os_name,
         build_adus.adu_date as adu_date,
-        sigreports.release_channel as channel,
-        sigreports.signature_id as signature_id,
-        sigreports.signature as signature,
-        sigreports.build as buildid,
+        COALESCE(sigreports.release_channel, pv.build_type) as channel,
+        COALESCE(sigreports.signature_id, 0) as signature_id,
+        COALESCE(sigreports.signature, '') as signature,
+        COALESCE(sigreports.build, 0) as buildid,
         pv.product_name as product_name,
-        SUM(sigreports.crashcount) as crash_count
+        COALESCE(SUM(sigreports.crashcount), 0) as crash_count
     FROM build_adus
-        JOIN sigreports ON
+        LEFT OUTER JOIN sigreports ON
             sigreports.product_version_id = build_adus.product_version_id AND
             to_date(substring(sigreports.build::text from 1 for 8), 'YYYYMMDD') = build_adus.build_date AND
             sigreports.os_name = build_adus.os_name
         JOIN product_versions pv ON build_adus.product_version_id = pv.product_version_id
-    WHERE length(build::text) >= 8
+    WHERE length(build_adus.build_date::text) >= 8
     GROUP BY
         build_adus.build_date,
         build_adus.os_name,
@@ -80,7 +80,8 @@ AS
         sigreports.signature_id,
         sigreports.signature,
         sigreports.build,
-        pv.product_name
+        pv.product_name,
+        pv.build_type
 ;
 
 PERFORM 1 FROM new_build_adus;

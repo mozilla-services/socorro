@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
+
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
@@ -24,6 +26,9 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
 
         # Insert data
         self.now = datetimeutil.utc_now()
+        self.tomorrow = self.now + datetime.timedelta(days=1)
+
+        tomorrow = self.tomorrow.date()
         now = self.now.date()
 
         cursor.execute("""
@@ -143,8 +148,16 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                 '%(now)s',
                 '%(now)s',
                 'windows',
-                123)""" % {'product_version_id': product_version_id,
-                           'now': now})
+                123),
+                (%(product_version_id)s,
+                '%(tomorrow)s',
+                '%(tomorrow)s',
+                'windows',
+                321) """ % {
+                    'product_version_id': product_version_id,
+                    'now': now,
+                    'tomorrow': tomorrow
+                    })
 
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """
@@ -165,6 +178,8 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
     def test_stored_procedure(self):
         cursor = self.connection.cursor()
         now = self.now.date()
+        tomorrow = self.tomorrow.date()
+
         cursor.execute("""
             SELECT update_crash_adu_by_build_signature('%(now)s')
         """ % {'now': now})
@@ -182,7 +197,8 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                 os_name,
                 channel
             FROM
-            crash_adu_by_build_signature""")
+            crash_adu_by_build_signature
+            WHERE build_date = '%(now)s'""" % {'now': now})
         expected = ('Fake Signature #1',
                     now,
                     now,
@@ -192,3 +208,36 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                     'windows',
                     'release')
         eq_(cursor.fetchall()[0], expected)
+
+        # ensure that we show builds with no crashes
+
+        expected = ('',
+                    tomorrow,
+                    tomorrow,
+                    '0',
+                    0,
+                    321,
+                    'windows',
+                    'release')
+
+        cursor.execute("""
+            SELECT update_crash_adu_by_build_signature('%(tomorrow)s')
+        """ % {'tomorrow': tomorrow})
+
+        ok_(cursor.fetchone()[0])
+
+        cursor.execute("""
+            SELECT
+                signature,
+                adu_date,
+                build_date,
+                buildid::text,
+                crash_count,
+                adu_count,
+                os_name,
+                channel
+            FROM
+            crash_adu_by_build_signature
+            WHERE build_date = '%(tomorrow)s'""" % {'tomorrow': tomorrow})
+
+        eq_(cursor.fetchall()[1], expected)
