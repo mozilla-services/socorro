@@ -255,7 +255,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     def _create_bucket_name_for_crash_id(crash_id):
         return "%s%s" % (
             crash_id[-6:],
-            crash_id[:2 * int(crash_id[-7])]
+            crash_id[:int(crash_id[-7], 16)]
         )
 
     #--------------------------------------------------------------------------
