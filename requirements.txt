@@ -82,3 +82,5 @@ ordereddict==1.1
 happybase==0.7
 # sha256: wPqgyw40YQP3y3gYu5kpxYrVfqgfN05n-n3OGyR4CsY
 crontabber==0.8
+# sha256: wVmeZhdKbKtjPLa_XsJZDM4QTCPRY5XAK9pe2T6nlHw
+boto==2.28.0
