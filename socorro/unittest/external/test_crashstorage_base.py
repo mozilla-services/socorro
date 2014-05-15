@@ -12,7 +12,8 @@ from socorro.external.crashstorage_base import (
     FallbackCrashStorage,
     PrimaryDeferredStorage,
     PrimaryDeferredProcessedStorage,
-    Redactor
+    Redactor,
+    BenchmarkingCrashStorage
 )
 from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
@@ -586,3 +587,119 @@ class TestRedactor(TestCase):
             actual_surviving_keys,
             expected_surviving_keys
         )
+
+class TestBench(TestCase):
+
+    def test_benchmarking_crashstore(self):
+        required_config = Namespace()
+
+        mock_logging = Mock()
+        required_config.add_option('logger', default=mock_logging)
+        required_config.update(BenchmarkingCrashStorage.get_required_config())
+        fake_crash_store = Mock()
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{
+            'logger': mock_logging,
+            'wrapped_crashstore': fake_crash_store,
+            'benchmark_tag': 'test'
+          }],
+          argv_source=[]
+        )
+
+        with config_manager.context() as config:
+            crashstorage = BenchmarkingCrashStorage(
+              config,
+              quit_check_callback=fake_quit_check
+            )
+            crashstorage.start_timer = lambda: 0
+            crashstorage.end_timer = lambda: 1
+            fake_crash_store.assert_called_with(config, fake_quit_check)
+
+            crashstorage.save_raw_crash({}, 'payload', 'ooid')
+            crashstorage.wrapped_crashstore.save_raw_crash.assert_called_with(
+                {},
+                'payload',
+                'ooid'
+            )
+            mock_logging.debug.assert_called_with(
+                '%s save_raw_crash %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+            crashstorage.save_processed({})
+            crashstorage.wrapped_crashstore.save_processed.assert_called_with(
+                {}
+            )
+            mock_logging.debug.assert_called_with(
+                '%s save_processed %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+            crashstorage.get_raw_crash('uuid')
+            crashstorage.wrapped_crashstore.get_raw_crash.assert_called_with(
+                'uuid'
+            )
+            mock_logging.debug.assert_called_with(
+                '%s get_raw_crash %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+            crashstorage.get_raw_dump('uuid')
+            crashstorage.wrapped_crashstore.get_raw_dump.assert_called_with(
+                'uuid'
+            )
+            mock_logging.debug.assert_called_with(
+                '%s get_raw_dump %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+            crashstorage.get_raw_dumps('uuid')
+            crashstorage.wrapped_crashstore.get_raw_dumps.assert_called_with(
+                'uuid'
+            )
+            mock_logging.debug.assert_called_with(
+                '%s get_raw_dumps %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+            crashstorage.get_raw_dumps_as_files('uuid')
+            crashstorage.wrapped_crashstore.get_raw_dumps_as_files \
+                .assert_called_with(
+                    'uuid'
+                )
+            mock_logging.debug.assert_called_with(
+                '%s get_raw_dumps_as_files %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+            crashstorage.get_unredacted_processed('uuid')
+            crashstorage.wrapped_crashstore.get_unredacted_processed \
+                .assert_called_with(
+                    'uuid'
+                )
+            mock_logging.debug.assert_called_with(
+                '%s get_unredacted_processed %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
+
+
