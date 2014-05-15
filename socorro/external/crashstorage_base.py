@@ -8,6 +8,7 @@ saving, fetching and iterating over raw crashes, dumps and processed crashes.
 
 import sys
 import collections
+import datetime
 
 from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
@@ -836,3 +837,133 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
         """fetch an unredacted processed crash from the underlying
         storage implementation"""
         return self.processed_store.get_unredacted_processed(crash_id)
+
+#==============================================================================
+class BenchmarkingCrashStorage(CrashStorageBase):
+    """a wrapper around crash stores that will benchmark the calls in the logs
+    """
+    required_config = Namespace()
+    required_config.add_option(
+        name="benchmark_tag",
+        doc="a tag to put on logged benchmarking lines",
+        default='Benchmark',
+    )
+    required_config.add_option(
+        name="wrapped_crashstore",
+        doc="another crash store to be benchmarked",
+        default='',
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(BenchmarkingCrashStorage, self).__init__(
+            config,
+            quit_check_callback
+        )
+        self.wrapped_crashstore = config.wrapped_crashstore(
+            config,
+            quit_check_callback)
+        self.tag = config.benchmark_tag
+        self.start_timer = datetime.datetime.now
+        self.end_timer = datetime.datetime.now
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        """some implementations may need explicit closing."""
+        self.wrapped_crashstore.close()
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        start_time = self.start_timer()
+        self.wrapped_crashstore.save_raw_crash(raw_crash, dumps, crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s save_raw_crash %s',
+            self.tag,
+            end_time - start_time
+        )
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        start_time = self.start_timer()
+        self.wrapped_crashstore.save_processed(processed_crash)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s save_processed %s',
+            self.tag,
+            end_time - start_time
+        )
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, crash_id):
+        start_time = self.start_timer()
+        result = self.wrapped_crashstore.get_raw_crash(crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s get_raw_crash %s',
+            self.tag,
+            end_time - start_time
+        )
+        return result
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, crash_id, name=None):
+        start_time = self.start_timer()
+        result = self.wrapped_crashstore.get_raw_dump(crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s get_raw_dump %s',
+            self.tag,
+            end_time - start_time
+        )
+        return result
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        start_time = self.start_timer()
+        result = self.wrapped_crashstore.get_raw_dumps(crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s get_raw_dumps %s',
+            self.tag,
+            end_time - start_time
+        )
+        return result
+
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        start_time = self.start_timer()
+        result = self.wrapped_crashstore.get_raw_dumps_as_files(crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s get_raw_dumps_as_files %s',
+            self.tag,
+            end_time - start_time
+        )
+        return result
+
+    #--------------------------------------------------------------------------
+    def get_unredacted_processed(self, crash_id):
+        start_time = self.start_timer()
+        result = self.wrapped_crashstore.get_unredacted_processed(crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s get_unredacted_processed %s',
+            self.tag,
+            end_time - start_time
+        )
+        return result
+
+    #--------------------------------------------------------------------------
+    def remove(self, crash_id):
+        start_time = self.start_timer()
+        self.wrapped_crashstore.remove(crash_id)
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s remove %s',
+            self.tag,
+            end_time - start_time
+        )
+
