@@ -235,6 +235,11 @@ To run and hack on Socorro apps, you will need:
 
 2) to have your PYTHONPATH set to the location of the socorro checkout
 
+3) The Django web service and its tests need the LESS preprocessor to be
+installed and on your $PATH
+::
+  npm install -g less
+
 Socorro can install the dependencies into a virtualenv for you, then
 just activate it and set your PYTHONPATH
 ::
@@ -244,7 +249,7 @@ just activate it and set your PYTHONPATH
   export PYTHONPATH=.
 
 Or you can choose to manage the virtualenv yourself, perhaps using
-virtualenwrapper or similar.
+virtualenwrapper.
 
 
 Add a new superuser account to PostgreSQL
@@ -293,15 +298,6 @@ Restart PostgreSQL
 As the *root* user:
 ::
   service postgresql-9.3 restart
-
-
-Install the LESS preprocessor
----------------------------------
-
-The Django web service and its tests need the LESS preprocessor to be installed
-and on your $PATH
-::
-  npm install -g less
 
 
 Run unit/functional tests
