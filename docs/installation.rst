@@ -159,11 +159,11 @@ while the EPEL package is from an `i386` tree it will work on `x86_64`):
 ::
   sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 
-Install the `PGDG repository <http://yum.pgrpms.org/repopackages.php>`_. This
-package will vary depending on your distribution and environment. For example,
-if you are running RHEL 6 on i386, you would do this:
+Install the `PostgreSQL repository <http://yum.pgrpms.org/repopackages.php>`_. 
+This package will vary depending on your distribution and environment.
+For example if you are running RHEL 6 on i386, you would do this:
 ::
-  sudo rpm -ivh http://yum.pgrpms.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
+  sudo rpm -ivh http://yum.postgresql.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
 
 Install the `Elasticsearch repository <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html>`_.
 First the key:
