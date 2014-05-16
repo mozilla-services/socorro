@@ -194,7 +194,6 @@ Now you can actually install the packages:
 
 Initialize and enable RabbitMQ on startup:
 ::
-  sudo service rabbitmq-server initdb
   sudo service rabbitmq-server start
   sudo chkconfig rabbitmq-server on
 
