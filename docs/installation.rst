@@ -295,13 +295,6 @@ As the *root* user:
 ::
   service postgresql-9.3 restart
 
-Load default roles for PostgreSQL
----------------------------------
-
-Before running tests, ensure that all expected roles and passwords are present:
-::
-  psql -f sql/roles.sql postgres
-
 
 Install the LESS preprocessor
 ---------------------------------
