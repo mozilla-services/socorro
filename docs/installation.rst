@@ -302,6 +302,16 @@ Before running tests, ensure that all expected roles and passwords are present:
 ::
   psql -f sql/roles.sql postgres
 
+
+Install the LESS preprocessor
+---------------------------------
+
+The Django web service and its tests need the LESS preprocessor to be installed
+and on your $PATH
+::
+  npm install -g less
+
+
 Run unit/functional tests
 -------------------------
 
@@ -382,11 +392,6 @@ You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 
 By default they listen on localhost only.
-
-Before running Socorro (specifically the "web" Django service), make sure
-that lessc is installed and on your $PATH
-::
-  npm install -g less
 
 Run Socorro services using Honcho (configured in Procfile)
 ::
