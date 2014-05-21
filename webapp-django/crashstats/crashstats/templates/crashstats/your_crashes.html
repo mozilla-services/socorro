@@ -1,0 +1,65 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Your Crash Reports
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('crashstats/js/socorro/your_crashes.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Your Crash Reports</h2>
+    </div>
+
+    <div class="panel">
+        <div class="body notitle">
+            <p>
+                You are signed in as <b>{{ request.user.email }}</b>.
+            </p>
+
+            {% if crashes_list %}
+
+            <p>
+                Here is a list of the crash reports we have received from you,
+                and processed, in the last 4 weeks:
+            </p>
+
+            <table class="crashes_list data-table vertical">
+                <tr>
+                    <th>Date</th>
+                    <th>Crash ID</th>
+                </tr>
+            {% for crash in crashes_list %}
+                <tr>
+                    <td><time datetime="{{ crash.date }}">{{ crash.date }}</time></td>
+                    <td>
+                        <a href="{{ url('crashstats:report_index', crash.crash_id) }}">
+                            {{ crash.crash_id }}
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </table>
+
+            {% else %}
+
+            <p>
+                It seems we have received or processed <strong>no crash report
+                from you in the last 4 weeks</strong>. It's either a good news,
+                or you do not provide your email address when you send us
+                crash reports.
+            </p>
+
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

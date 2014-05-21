@@ -3143,6 +3143,104 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         eq_(sample_data, json.loads(response.content))
 
+    @mock.patch('requests.get')
+    def test_your_crashes(self, rget):
+        url = reverse('crashstats:your_crashes')
+
+        def mocked_get(url, params, **options):
+            assert '/supersearch/' in url
+
+            if '/supersearch/fields/' in url:
+                return Response({
+                    'email': {
+                        'name': 'email',
+                        'query_type': 'str',
+                        'namespace': 'processed_crash',
+                        'form_field_type': 'StringField',
+                        'form_field_choices': None,
+                        'permissions_needed': ['crashstats.view_pii'],
+                        'default_value': None,
+                        'is_exposed': True,
+                        'is_returned': True,
+                        'is_mandatory': False,
+                    }
+                })
+
+            assert 'email' in params
+            assert params['email'] == 'test@mozilla.com'
+
+            return Response({
+                'hits': [
+                    {
+                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
+                        'date': '2000-01-01T00:00:00'
+                    },
+                    {
+                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
+                        'date': '2000-01-02T00:00:00'
+                    }
+                ],
+                'total': 2
+            })
+
+        rget.side_effect = mocked_get
+
+        # A user needs to be signed in to see this page.
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse('crashstats:login') + '?next=%s' % url
+        )
+
+        self._login()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('1234abcd-ef56-7890-ab12-abcdef130801' in response.content)
+        ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
+        ok_('test@mozilla.com' in response.content)
+
+    @mock.patch('requests.get')
+    def test_your_crashes_no_data(self, rget):
+        url = reverse('crashstats:your_crashes')
+
+        def mocked_get(url, params, **options):
+            assert '/supersearch/' in url
+
+            if '/supersearch/fields/' in url:
+                return Response({
+                    'email': {
+                        'name': 'email',
+                        'query_type': 'str',
+                        'namespace': 'processed_crash',
+                        'form_field_type': 'StringField',
+                        'form_field_choices': None,
+                        'permissions_needed': ['crashstats.view_pii'],
+                        'default_value': None,
+                        'is_exposed': True,
+                        'is_returned': True,
+                        'is_mandatory': False,
+                    }
+                })
+
+            assert 'email' in params
+            assert params['email'] == 'test@mozilla.com'
+
+            return Response({
+                'hits': [],
+                'total': 0
+            })
+
+        rget.side_effect = mocked_get
+
+        self._login()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('test@mozilla.com' in response.content)
+        ok_('no crash report' in response.content)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):

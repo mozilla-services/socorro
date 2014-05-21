@@ -157,6 +157,8 @@
                     {% if request.user.is_authenticated() %}
                       {{ request.user.email }}
                       |
+                      <a href="{{ url('crashstats:your_crashes') }}">Your Crash Reports</a>
+                      |
                       <a href="{{ url('crashstats:permissions') }}">Your Permissions</a>
                       {% if request.user.is_superuser %}
                       |

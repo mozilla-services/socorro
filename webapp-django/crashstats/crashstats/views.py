@@ -20,6 +20,7 @@ from session_csrf import anonymous_csrf
 
 from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
+from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 # To prevent running in to a known Python bug
@@ -1710,6 +1711,30 @@ def crontabber_state(request, default_context=None):
 def crontabber_state_json(request):
     response = models.CrontabberState().get()
     return {'state': response['state']}
+
+
+@pass_default_context
+@login_required
+def your_crashes(request, default_context=None):
+    """Shows a logged in user a list of his or her recent crash reports. """
+    context = default_context or {}
+
+    one_month_ago = (
+        datetime.datetime.utcnow() - datetime.timedelta(weeks=4)
+    ).isoformat()
+
+    api = SuperSearchUnredacted()
+    results = api.get(
+        email=request.user.email,
+        date='>%s' % one_month_ago,
+    )
+
+    context['crashes_list'] = [
+        dict(zip(('crash_id', 'date'), (x['uuid'], x['date'])))
+        for x in results['hits']
+    ]
+
+    return render(request, 'crashstats/your_crashes.html', context)
 
 
 @pass_default_context
