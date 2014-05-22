@@ -159,11 +159,11 @@ while the EPEL package is from an `i386` tree it will work on `x86_64`):
 ::
   sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 
-Install the `PGDG repository <http://yum.pgrpms.org/repopackages.php>`_. This
-package will vary depending on your distribution and environment. For example,
-if you are running RHEL 6 on i386, you would do this:
+Install the `PostgreSQL repository <http://yum.pgrpms.org/repopackages.php>`_. 
+This package will vary depending on your distribution and environment.
+For example if you are running RHEL 6 on i386, you would do this:
 ::
-  sudo rpm -ivh http://yum.pgrpms.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
+  sudo rpm -ivh http://yum.postgresql.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
 
 Install the `Elasticsearch repository <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html>`_.
 First the key:
@@ -194,7 +194,6 @@ Now you can actually install the packages:
 
 Initialize and enable RabbitMQ on startup:
 ::
-  sudo service rabbitmq-server initdb
   sudo service rabbitmq-server start
   sudo chkconfig rabbitmq-server on
 
@@ -236,6 +235,11 @@ To run and hack on Socorro apps, you will need:
 
 2) to have your PYTHONPATH set to the location of the socorro checkout
 
+3) The Django web service and its tests need the LESS preprocessor to be
+installed and on your $PATH
+::
+  npm install -g less
+
 Socorro can install the dependencies into a virtualenv for you, then
 just activate it and set your PYTHONPATH
 ::
@@ -245,7 +249,7 @@ just activate it and set your PYTHONPATH
   export PYTHONPATH=.
 
 Or you can choose to manage the virtualenv yourself, perhaps using
-virtualenwrapper or similar.
+virtualenwrapper.
 
 
 Add a new superuser account to PostgreSQL
@@ -295,12 +299,6 @@ As the *root* user:
 ::
   service postgresql-9.3 restart
 
-Load default roles for PostgreSQL
----------------------------------
-
-Before running tests, ensure that all expected roles and passwords are present:
-::
-  psql -f sql/roles.sql postgres
 
 Run unit/functional tests
 -------------------------
@@ -382,11 +380,6 @@ You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 
 By default they listen on localhost only.
-
-Before running Socorro (specifically the "web" Django service), make sure
-that lessc is installed and on your $PATH
-::
-  npm install -g less
 
 Run Socorro services using Honcho (configured in Procfile)
 ::
