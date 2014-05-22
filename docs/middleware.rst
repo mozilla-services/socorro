@@ -52,6 +52,7 @@ Documented services
     * `/signaturesummary/report_type/uptime/ <#uptime-signature-summary-service>`_
 * `/signatureurls <#signature-urls-service>`_
 * `/skiplist/ <#skiplist-service>`_
+* `/supersearch/fields/ <#supersearch-fields-service>`_
 * `/suspicious/ <#suspicious-crash-signatures-service>`_
 
 
@@ -2714,6 +2715,69 @@ Return a list of extensions::
             },
         ]
     }
+
+
+.. ############################################################################
+   Supersearch Fields API
+   ############################################################################
+
+Supersearch Fields service
+--------------------------
+
+Returns the list of all the fields that are known to be in the elasticsearch
+database.
+
+The data returned by this service is used to generate:
+    * the list of parameters the ``/supersearch/`` middleware service accepts ;
+    * the list of parameters the SuperSearch django model accepts ;
+    * the list of fields that can be used in the Super Search page ;
+    * and the mapping of the crashes that are inserted into elasticsearch.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+----------------------+
+| HTTP method    | GET                  |
++----------------+----------------------+
+| URL            | /supersearch/fields/ |
++----------------+----------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Return value
+^^^^^^^^^^^^
+
+Returns a dictionary of ``field_name:field_data``, in this format::
+
+    {
+        "signature": {
+            "data_validation_type": "str",
+            "default_value": null,
+            "form_field_choices": null,
+            "form_field_type": "StringField",
+            "has_full_version": true,
+            "in_database_name": "signature",
+            "is_exposed": true,
+            "is_mandatory": false,
+            "is_returned": true,
+            "name": "signature",
+            "namespace": "processed_crash",
+            "permissions_needed": [],
+            "query_type": "string",
+            "storage_mapping": {
+                "type": "string"
+            }
+        }
+    }
+
 
 
 .. ############################################################################

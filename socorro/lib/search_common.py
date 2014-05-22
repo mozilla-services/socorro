@@ -69,86 +69,7 @@ class SearchFilter(object):
 
 
 class SearchBase(object):
-    filters = [
-        # Processed crash keys.
-        SearchFilter('address', data_type='str'),
-        SearchFilter('app_notes'),
-        SearchFilter('build_id', data_type='int'),
-        SearchFilter('cpu_info', data_type='str'),
-        SearchFilter('cpu_name'),
-        SearchFilter('date', data_type='datetime'),
-        SearchFilter('distributor'),
-        SearchFilter('distributor_version'),
-        SearchFilter('dump', data_type='str'),
-        SearchFilter('email', data_type='str'),
-        SearchFilter('exploitability'),
-        SearchFilter('flash_version'),
-        SearchFilter('hang_type'),
-        SearchFilter('install_age', data_type='int'),
-        SearchFilter('java_stack_trace'),
-        SearchFilter('last_crash', data_type='int'),
-        SearchFilter('platform'),
-        SearchFilter('platform_version', data_type='str'),
-        SearchFilter('plugin_filename', data_type='str'),
-        SearchFilter('plugin_name', data_type='str'),
-        SearchFilter('plugin_version'),
-        SearchFilter('processor_notes'),
-        SearchFilter('process_type'),
-        SearchFilter('product'),
-        SearchFilter('productid'),
-        SearchFilter('reason', data_type='str'),
-        SearchFilter('release_channel'),
-        SearchFilter('signature', data_type='str'),
-        SearchFilter('topmost_filenames'),
-        SearchFilter('uptime', data_type='int'),
-        SearchFilter('url', data_type='str'),
-        SearchFilter('user_comments', data_type='str'),
-        SearchFilter('version'),
-        SearchFilter('winsock_lsp'),
-        # Raw crash keys.
-        SearchFilter('accessibility', data_type='bool'),
-        SearchFilter('additional_minidumps'),
-        SearchFilter('adapter_device_id'),
-        SearchFilter('adapter_vendor_id'),
-        SearchFilter('android_board'),
-        SearchFilter('android_brand'),
-        SearchFilter('android_cpu_abi'),
-        SearchFilter('android_cpu_abi2'),
-        SearchFilter('android_device'),
-        SearchFilter('android_display'),
-        SearchFilter('android_fingerprint'),
-        SearchFilter('android_hardware'),
-        SearchFilter('android_manufacturer'),
-        SearchFilter('android_model', data_type='str'),
-        SearchFilter('android_version'),
-        SearchFilter('async_shutdown_timeout'),
-        SearchFilter('available_page_file', data_type='int'),
-        SearchFilter('available_physical_memory', data_type='int'),
-        SearchFilter('available_virtual_memory', data_type='int'),
-        SearchFilter('b2g_os_version'),
-        SearchFilter('bios_manufacturer'),
-        SearchFilter('cpu_usage_flash_process1', data_type='int'),
-        SearchFilter('cpu_usage_flash_process2', data_type='int'),
-        SearchFilter('dom_ipc_enabled', data_type='bool'),
-        SearchFilter('em_check_compatibility', data_type='bool'),
-        SearchFilter('frame_poison_base'),
-        SearchFilter('frame_poison_size', data_type='int'),
-        SearchFilter('is_garbage_collecting', data_type='bool'),
-        SearchFilter('min_arm_version'),
-        SearchFilter('number_of_processors', data_type='int'),
-        SearchFilter('oom_allocation_size', data_type='int'),
-        SearchFilter('plugin_cpu_usage', data_type='int'),
-        SearchFilter('plugin_hang'),
-        SearchFilter('plugin_hang_ui_duration', data_type='int'),
-        SearchFilter('startup_time', data_type='int'),
-        SearchFilter('system_memory_use_percentage', data_type='int'),
-        SearchFilter('theme'),
-        SearchFilter('throttleable', data_type='bool'),
-        SearchFilter('throttle_rate', data_type='int'),
-        SearchFilter('total_virtual_memory', data_type='int'),
-        SearchFilter('useragent_locale'),
-        SearchFilter('vendor'),
-        # Meta parameters.
+    meta_filters = [
         SearchFilter('_facets', default='signature'),
         SearchFilter('_results_number', data_type='int', default=100),
         SearchFilter('_results_offset', data_type='int', default=0),
@@ -163,6 +84,23 @@ class SearchBase(object):
             # old middleware
             context = self.context
         self.config = context
+
+        fields = kwargs.get('fields')
+        if fields:
+            self.build_filters(fields)
+
+    def build_filters(self, fields):
+        self.filters = []
+        for field in fields.values():
+            self.filters.append(SearchFilter(
+                field['name'],
+                default=field['default_value'],
+                data_type=field['data_validation_type'],
+                mandatory=field['is_mandatory'],
+            ))
+
+        # Add meta parameters.
+        self.filters.extend(self.meta_filters)
 
     def get_parameters(self, **kwargs):
         parameters = {}

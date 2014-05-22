@@ -2,12 +2,15 @@ from nose.tools import ok_
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
+from crashstats.supersearch.tests.test_views import (
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS
+)
 
 
 class TestForms(TestCase):
 
     def setUp(self):
-        # Mocking models needed for form validation
+        # Mocking models needed for form validation.
         self.current_products = {
             'WaterWolf': [],
             'NightTrain': [],
@@ -49,16 +52,25 @@ class TestForms(TestCase):
                 'name': 'Linux'
             }
         ]
+        self.all_fields = SUPERSEARCH_FIELDS_MOCKED_RESULTS
 
     def test_search_form(self):
 
         def get_new_form(data):
+
+            class User(object):
+                def has_perm(self, permission):
+                    return {
+                        'crashstats.view_pii': False,
+                        'crashstats.view_exploitability': False,
+                    }.get(permission, False)
+
             return forms.SearchForm(
+                self.all_fields,
                 self.current_products,
                 self.current_versions,
                 self.current_platforms,
-                False,
-                False,
+                User(),
                 data
             )
 
@@ -96,12 +108,20 @@ class TestForms(TestCase):
     def test_search_form_with_admin_mode(self):
 
         def get_new_form(data):
+
+            class User(object):
+                def has_perm(self, permission):
+                    return {
+                        'crashstats.view_pii': True,
+                        'crashstats.view_exploitability': True,
+                    }.get(permission, False)
+
             return forms.SearchForm(
+                self.all_fields,
                 self.current_products,
                 self.current_versions,
                 self.current_platforms,
-                True,
-                True,
+                User(),
                 data
             )
 

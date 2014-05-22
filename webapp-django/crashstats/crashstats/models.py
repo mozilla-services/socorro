@@ -365,7 +365,7 @@ class SocorroMiddleware(SocorroCommon):
         """
         params = {}
 
-        for param in self.__class__.get_annotated_params():
+        for param in self.get_annotated_params():
             name = param['name']
             if param['required'] and not kwargs.get(name):
                 raise RequiredParameterError(name)
@@ -404,8 +404,7 @@ class SocorroMiddleware(SocorroCommon):
             params[name] = value
         return params
 
-    @classmethod
-    def get_annotated_params(cls):
+    def get_annotated_params(self):
         """return an iterator. One dict for each parameter that the
         class takes.
         Each dict must have the following keys:
@@ -413,8 +412,8 @@ class SocorroMiddleware(SocorroCommon):
             * type
             * required
         """
-        for required, items in ((True, getattr(cls, 'required_params', [])),
-                                (False, getattr(cls, 'possible_params', []))):
+        for required, items in ((True, getattr(self, 'required_params', [])),
+                                (False, getattr(self, 'possible_params', []))):
             for item in items:
                 if isinstance(item, basestring):
                     type_ = basestring

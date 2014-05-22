@@ -12,7 +12,10 @@ from waffle import Switch
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
-    Response
+    Response,
+)
+from crashstats.supersearch.tests.test_views import (
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
 from crashstats.tokens.models import Token
 
@@ -46,7 +49,14 @@ class TestDocumentationViews(BaseTestViews):
     def tearDownClass():
         TestDocumentationViews.switch.delete()
 
-    def test_documentation_home_page(self):
+    @mock.patch('requests.get')
+    def test_documentation_home_page(self, rget):
+        def mocked_get(url, params, **options):
+            if '/supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+        rget.side_effect = mocked_get
+
         url = reverse('api:documentation')
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1862,6 +1872,9 @@ class TestViews(BaseTestViews):
     def test_SuperSearch(self, rget):
 
         def mocked_get(url, params, **options):
+            if '/supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             if '/supersearch' in url:
                 ok_('exploitability' not in params)
                 return Response({
@@ -1910,6 +1923,9 @@ class TestViews(BaseTestViews):
     def test_SuperSearchUnredacted(self, rget):
 
         def mocked_get(url, params, **options):
+            if '/supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             if '/supersearch' in url:
                 ok_('exploitability' in params)
                 return Response({

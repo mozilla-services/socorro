@@ -121,7 +121,7 @@ TYPE_MAP = {
 def fancy_init(self, model, *args, **kwargs):
     self.model = model
     self.__old_init__(*args, **kwargs)
-    for parameter in model.get_annotated_params():
+    for parameter in model().get_annotated_params():
         required = parameter['required']
         name = parameter['name']
 
@@ -150,6 +150,8 @@ BLACKLIST = (
     'Field',
     # because it's very sensitive and we don't want to expose it
     'Query',
+    # because it's an internal thing only
+    'SuperSearchFields',
 )
 
 
@@ -185,7 +187,7 @@ def model_wrapper(request, model_name):
     else:
         raise http.Http404('no model called `%s`' % model_name)
 
-    required_permissions = getattr(model, 'API_REQUIRED_PERMISSIONS', None)
+    required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
     if isinstance(required_permissions, basestring):
         required_permissions = [required_permissions]
     if (
@@ -306,9 +308,14 @@ def documentation(request):
         except TypeError:
             # most likely a builtin class or something
             continue
+
+        model_inst = model()
         if (
-            model.API_REQUIRED_PERMISSIONS and
-            not has_permissions(request.user, model.API_REQUIRED_PERMISSIONS)
+            model_inst.API_REQUIRED_PERMISSIONS and
+            not has_permissions(
+                request.user,
+                model_inst.API_REQUIRED_PERMISSIONS
+            )
         ):
             continue
         endpoints.append(_describe_model(model))
@@ -330,7 +337,8 @@ def documentation(request):
 
 
 def _describe_model(model):
-    params = list(model.get_annotated_params())
+    model_inst = model()
+    params = list(model_inst.get_annotated_params())
     params.sort(key=lambda x: (not x['required'], x['name']))
     methods = []
     if model.get:
@@ -343,8 +351,8 @@ def _describe_model(model):
         docstring = dedent_left(docstring.rstrip(), 4)
 
     required_permissions = []
-    if model.API_REQUIRED_PERMISSIONS:
-        permissions = model.API_REQUIRED_PERMISSIONS
+    if model_inst.API_REQUIRED_PERMISSIONS:
+        permissions = model_inst.API_REQUIRED_PERMISSIONS
         if isinstance(permissions, basestring):
             permissions = [permissions]
         for permission in permissions:
