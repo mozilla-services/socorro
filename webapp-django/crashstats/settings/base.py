@@ -301,3 +301,6 @@ TOKENS_DEFAULT_EXPIRATION_DAYS = 90
 
 # Store all dates timezone aware
 USE_TZ = True
+
+# Default for how many users to display in the Users Admin UI
+USERS_ADMIN_BATCH_SIZE = 10

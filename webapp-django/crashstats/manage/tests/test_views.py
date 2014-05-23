@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Group, Permission
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import utc
 
 import mock
 from nose.tools import eq_, ok_
@@ -508,6 +509,66 @@ class TestViews(BaseTestViews):
         group = groups[0]
         eq_(group['name'], 'Austrians')
         eq_(group['id'], austrians.pk)
+
+    def test_users_data_pagination(self):
+        url = reverse('manage:users_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        self.user.last_login -= datetime.timedelta(days=365)
+        self.user.save()
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        for i in range(1, 101):  # 100 times, 1-100
+            User.objects.create(
+                username='user%03d' % i,
+                email='user%03d@mozilla.com' % i,
+                last_login=now - datetime.timedelta(days=i)
+            )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 101)
+        # because it's sorted by last_login
+        eq_(data['users'][0]['email'], 'user001@mozilla.com')
+        eq_(len(data['users']), settings.USERS_ADMIN_BATCH_SIZE)
+        eq_(data['page'], 1)
+        eq_(data['batch_size'], settings.USERS_ADMIN_BATCH_SIZE)
+
+        # let's go to page 2
+        response = self.client.get(url, {'page': 2})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 101)
+        # because it's sorted by last_login
+        eq_(data['users'][0]['email'], 'user011@mozilla.com')
+        eq_(len(data['users']), settings.USERS_ADMIN_BATCH_SIZE)
+        eq_(data['page'], 2)
+        eq_(data['batch_size'], settings.USERS_ADMIN_BATCH_SIZE)
+
+        response = self.client.get(url, {'page': 11})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 101)
+        # because it's sorted by last_login
+        eq_(data['users'][0]['email'], self.user.email)
+        eq_(len(data['users']), 1)
+        eq_(data['page'], 11)
+        eq_(data['batch_size'], settings.USERS_ADMIN_BATCH_SIZE)
+
+    def test_users_data_pagination_bad_request(self):
+        url = reverse('manage:users_data')
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {'page': 0})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'page': -1})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'page': 'NaN'})
+        eq_(response.status_code, 400)
 
     def test_users_data_filter(self):
         url = reverse('manage:users_data')

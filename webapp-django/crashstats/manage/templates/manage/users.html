@@ -15,6 +15,7 @@
   <style type="text/css">
   .count {
       display: none;
+      margin-bottom: 0;
   }
   p.pleasewait {
       display: none;
@@ -29,6 +30,15 @@
   }
   form#filter {
       margin-top: 30px;
+  }
+  .page-wrapper {
+      color: #666;
+      font-size: 80%;
+  }
+  .pagination {
+      display: none;
+      float: right;
+      margin: 0 10px;
   }
   </style>
 {% endblock %}
@@ -45,9 +55,17 @@
         Loading...
       </p>
 
-      <h3 class="count"><b></b> Users found</h3>
+      <h3 class="count"><b></b> Users found
+        <span class="page-wrapper">(page <span class="page"></span>)</span>
+      </h3>
+
+      <p class="pagination">
+        <a href="" class="previous">&larr; Previous</a>
+        <a href="" class="next">Next &rarr;</a>
+      </p>
 
       <form action="" id="filter" data-dataurl="{{ url('manage:users_data') }}">
+        <input type="hidden" name="page">
         <table class="data-table vertical">
           <thead>
             <tr>
