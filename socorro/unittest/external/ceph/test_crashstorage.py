@@ -134,15 +134,15 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         # what should have happened internally
-        self.assertEqual(boto_s3_store._calling_format.call_count, 2)
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
         boto_s3_store._calling_format.assert_called_with()
 
-        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 2)
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
             boto_s3_store._mocked_connection.create_bucket.call_count,
-            2
+            1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
             '071027'
@@ -186,15 +186,15 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         # what should have happened internally
-        self.assertEqual(boto_s3_store._calling_format.call_count, 4)
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
         boto_s3_store._calling_format.assert_called_with()
 
-        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 4)
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
             boto_s3_store._mocked_connection.create_bucket.call_count,
-            4
+            1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
             '071027'
@@ -312,7 +312,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
-            '12040893'
+            '120408'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.create_bucket \
@@ -357,7 +357,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
-            '12040893'
+            '120408'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.create_bucket \
@@ -394,18 +394,18 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         # what should have happened internally
-        self.assertEqual(boto_s3_store._calling_format.call_count, 4)
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
         boto_s3_store._calling_format.assert_called_with()
 
-        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 4)
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
             boto_s3_store._mocked_connection.create_bucket.call_count,
-            4
+            1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
-            '12040893'
+            '120408'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.create_bucket \
@@ -531,7 +531,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
-            '12040893'
+            '120408'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.create_bucket \
@@ -564,7 +564,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         ]
 
         def temp_failure_fn(key):
-            self.assertEqual(key, '12040893')
+            self.assertEqual(key, '120408')
             action = actions.pop()
             if isinstance(action, Exception):
                 raise action
@@ -592,9 +592,9 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
         boto_s3_store._mocked_connection.create_bucket.assert_has_calls(
             [
-                mock.call('12040893'),
-                mock.call('12040893'),
-                mock.call('12040893'),
+                mock.call('120408'),
+                mock.call('120408'),
+                mock.call('120408'),
             ],
 
         )
@@ -613,12 +613,12 @@ class TestCase(socorro.unittest.testbase.TestCase):
     def test_create_bucket_name_for_crash_id(self):
         boto_s3_store = self.setup_mocked_s3_storage()
         cid_bucket_pairs = [
-            ('936ce666-ff3b-4c7a-9674-367fe2120408', '12040893'),
+            ('936ce666-ff3b-4c7a-9674-367fe2120408', '120408'),
             ('aabbccdd-ff3b-4c7a-9674-367fe0600504', '600504'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe1600504', '600504a'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe2600504', '600504aa'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe3600504', '600504aab'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe4600504', '600504aabb'),
+            ('aabbccdd-ff3b-4c7a-9674-367fe1600504', '600504'),
+            ('aabbccdd-ff3b-4c7a-9674-367fe2600504', '600504'),
+            ('aabbccdd-ff3b-4c7a-9674-367fe3600504', '600504'),
+            ('aabbccdd-ff3b-4c7a-9674-367fe4600504', '600504'),
         ]
         for cid, bucket_name in cid_bucket_pairs:
             self.assertEqual(
