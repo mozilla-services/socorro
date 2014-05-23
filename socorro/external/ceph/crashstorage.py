@@ -47,12 +47,12 @@ class BotoS3CrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'access_key',
-        doc="AWS_ACCESS_KEY_ID",
+        doc="access key",
         default="",
     )
     required_config.add_option(
         'secret_access_key',
-        doc="AWS_SECRET_ACCESS_KEY",
+        doc="secret access key",
         default="",
     )
     #required_config.add_option(
@@ -77,6 +77,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             config,
             quit_check_callback
         )
+        self._bucket_cache = {}
         self.transaction = config.transaction_executor_class(
             config,
             self,  # we are our own connection
@@ -253,10 +254,20 @@ class BotoS3CrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     @staticmethod
     def _create_bucket_name_for_crash_id(crash_id):
-        return "%s%s" % (
-            crash_id[-6:],
-            crash_id[:int(crash_id[-7], 16)]
-        )
+        """feel free to subclass and override this implementation for something
+        more creative"""
+        return crash_id[-6:]
+
+    #--------------------------------------------------------------------------
+    def _get_bucket(self, conn, bucket_name):
+        try:
+            return self._bucket_cache[bucket_name]
+        except KeyError:
+            now = datetime.datetime.now()
+            self._bucket_cache[bucket_name] = conn.create_bucket(bucket_name)
+            delta = datetime.datetime.now() - now
+            self.config.logger.debug('conn.create_bucket %s: %s', bucket_name, delta)
+            return self._bucket_cache[bucket_name]
 
     #--------------------------------------------------------------------------
     def _submit_to_boto_s3(self, crash_id, name_of_thing, thing):
@@ -273,7 +284,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             the_day_bucket_name = self._create_bucket_name_for_crash_id(
                 crash_id
             )
-            bucket = conn.create_bucket(the_day_bucket_name)
+            bucket = self._get_bucket(conn, the_day_bucket_name)
         except self._CreateError:
             # TODO: oops, bucket already taken
             # shouldn't ever happen, but let's handle this
@@ -301,7 +312,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             the_day_bucket_name = self._create_bucket_name_for_crash_id(
                 crash_id
             )
-            bucket = conn.create_bucket(the_day_bucket_name)
+            bucket = self._get_bucket(conn, the_day_bucket_name)
         except self._CreateError:
             # TODO: oops, bucket already taken
             # shouldn't ever happen, but let's handle this
@@ -318,14 +329,18 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _connect(self):
-        return self._connect_to_endpoint(
-            aws_access_key_id=self.config.access_key,
-            aws_secret_access_key=self.config.secret_access_key,
-            host=self.config.host,
-            port=self.config.port,
-            is_secure=False,
-            calling_format=self._calling_format(),
-        )
+        try:
+            return self.connection
+        except AttributeError:
+            self.connection = self._connect_to_endpoint(
+                aws_access_key_id=self.config.access_key,
+                aws_secret_access_key=self.config.secret_access_key,
+                host=self.config.host,
+                port=self.config.port,
+                is_secure=False,
+                calling_format=self._calling_format(),
+            )
+            return self.connection
 
     #--------------------------------------------------------------------------
     def _convert_mapping_to_string(self, a_mapping):
@@ -384,4 +399,5 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def force_reconnect(self):
-        pass
+        del self.connection
+        self._bucket_cache = {}
