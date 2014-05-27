@@ -18,6 +18,7 @@ from crashstats.crashstats.models import (
     SkipList,
     GraphicsDevices
 )
+from crashstats.supersearch.models import SuperSearchFields, SuperSearchField
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from . import forms
@@ -394,3 +395,100 @@ def symbols_uploads(request):
         .order_by('-created')
     )
     return render(request, 'manage/symbols_uploads.html', context)
+
+
+@superuser_required
+def supersearch_fields(request):
+    context = {}
+    sorted_fields = sorted(
+        SuperSearchFields().get().values(),
+        key=lambda x: x['name'].lower()
+    )
+    context['fields'] = sorted_fields
+    return render(request, 'manage/supersearch_fields.html', context)
+
+
+@superuser_required
+def supersearch_field(request):
+    context = {}
+
+    field_name = request.GET.get('name')
+
+    if field_name:
+        all_fields = SuperSearchFields().get()
+        field_data = all_fields.get(field_name)
+
+        if not field_data:
+            return http.HttpResponseBadRequest(
+                'The field "%s" does not exist' % field_name
+            )
+    else:
+        field_data = {}
+
+    context['field'] = field_data
+    perms = Permission.objects.filter(content_type__model='').order_by('name')
+    context['all_permissions'] = [
+        'crashstats.' + x.codename for x in perms
+    ]
+
+    return render(request, 'manage/supersearch_field.html', context)
+
+
+def _get_supersearch_field_data(source):
+    form = forms.SuperSearchFieldForm(source)
+
+    if not form.is_valid():
+        return str(form.errors)
+
+    return form.cleaned_data
+
+
+@superuser_required
+@require_POST
+def supersearch_field_create(request):
+    field_data = _get_supersearch_field_data(request.POST)
+
+    if isinstance(field_data, basestring):
+        return http.HttpResponseBadRequest(field_data)
+
+    api = SuperSearchField()
+    api.post(**field_data)
+
+    # Refresh the cache for the fields service.
+    SuperSearchFields().get(refresh_cache=True)
+
+    return redirect(reverse('manage:supersearch_fields'))
+
+
+@superuser_required
+@require_POST
+def supersearch_field_update(request):
+    field_data = _get_supersearch_field_data(request.POST)
+
+    if isinstance(field_data, basestring):
+        return http.HttpResponseBadRequest(field_data)
+
+    api = SuperSearchField()
+    api.put(**field_data)
+
+    # Refresh the cache for the fields service.
+    SuperSearchFields().get(refresh_cache=True)
+
+    return redirect(reverse('manage:supersearch_fields'))
+
+
+@superuser_required
+def supersearch_field_delete(request):
+    field_name = request.GET.get('name')
+
+    if not field_name:
+        return http.HttpResponseBadRequest('A "name" is needed')
+
+    api = SuperSearchField()
+    api.delete(name=field_name)
+
+    # Refresh the cache for the fields service.
+    SuperSearchFields().get(refresh_cache=True)
+
+    url = reverse('manage:supersearch_fields')
+    return redirect(url)

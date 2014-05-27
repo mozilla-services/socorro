@@ -1,0 +1,164 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Super Search Fields{% endblock %}
+
+{% block admin_title %}{{ super() }} - Super Search Fields{% endblock %}
+
+{% block site_js %}
+    {{ super() }}
+
+    {% compress js %}
+<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
+<script src="{{ static('manage/js/supersearch_field.js') }}"></script>
+    {% endcompress %}
+
+<script>
+var ALL_PERMISSIONS = {{ all_permissions | json_dumps }};
+</script>
+{% endblock %}
+
+{% block site_css %}
+    {{ super() }}
+
+    {% compress css %}
+<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
+    {% endcompress %}
+    {% compress css %}
+<link href="{{ static('manage/css/supersearch_fields.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+        <form
+            id="supersearch-field"
+            method="post"
+        {% if field.name %}
+            action="{{ url('manage:supersearch_field_update') }}"
+        {% else %}
+            action="{{ url('manage:supersearch_field_create') }}"
+        {% endif %}
+        >
+            {{ csrf() }}
+            <table class="data-table vertical">
+                <tbody>
+                    <tr>
+                        <th scope="row">Name</th>
+                        <td>
+                            <input type="text" name="name" value="{{ field.name }}"{% if field.name %} readonly="readonly"{% endif %}>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Namespace</th>
+                        <td>
+                            <input type="text" name="namespace" value="{{ field.namespace }}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Name in database</th>
+                        <td>
+                            <input type="text" name="in_database_name" value="{{ field.in_database_name }}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Description</th>
+                        <td>
+                            <textarea name="description">{{ field.description }}</textarea>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Query type</th>
+                        <td>
+                            <select name="query_type" data-selected="{{ field.query_type }}">
+                                <option value="enum">enum</option>
+                                <option value="string">string</option>
+                                <option value="number">number</option>
+                                <option value="bool">bool</option>
+                                <option value="date">date</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Data type</th>
+                        <td>
+                            <select name="data_validation_type" data-selected="{{ field.data_validation_type }}">
+                                <option value="enum">enum</option>
+                                <option value="str">str</option>
+                                <option value="int">int</option>
+                                <option value="bool">bool</option>
+                                <option value="datetime">datetime</option>
+                                <option value="date">date</option>
+                                <option value="json">json</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Permissions needed</th>
+                        <td>
+                            <input type="text" name="permissions_needed" value="{{ field.permissions_needed | join(', ') }}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Form field type</th>
+                        <td>
+                            <select name="form_field_type" data-selected="{{ field.form_field_type }}">
+                                <option value="MultipleValueField">MultipleValueField</option>
+                                <option value="StringField">StringField</option>
+                                <option value="IntegerField">IntegerField</option>
+                                <option value="BooleanField">BooleanField</option>
+                                <option value="DateTimeField">DateTimeField</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Form field choices</th>
+                        <td>
+                            <input type="text" name="form_field_choices" value="{% if field.form_field_choices %}{{ field.form_field_choices | join(', ') }}{% endif %}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Is exposed</th>
+                        <td>
+                            <input type="checkbox" name="is_exposed" {% if field.is_exposed %}checked="checkeck"{% endif %}>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Is returned</th>
+                        <td>
+                            <input type="checkbox" name="is_returned" {% if field.is_returned %}checked="checkeck"{% endif %}>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Has full version</th>
+                        <td>
+                            <input type="checkbox" name="has_full_version" {% if field.has_full_version %}checked="checkeck"{% endif %}>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Storage mapping</th>
+                        <td>
+                            <textarea name="storage_mapping">{% if field.storage_mapping %}{{ field.storage_mapping | json_dumps }}{% endif %}</textarea>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"></th>
+                        <td>
+                            {% if field.name %}
+                            <button type="submit">Update</button>
+                            {% else %}
+                            <button type="submit">Create</button>
+                            {% endif %}
+                            or <a href="{{ url('manage:supersearch_fields') }}">cancel</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+
+    </div>
+  </div>
+
+{% endblock %}

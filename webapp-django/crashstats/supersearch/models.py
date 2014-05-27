@@ -177,6 +177,42 @@ class SuperSearchFields(models.SocorroMiddleware):
     URL_PREFIX = '/supersearch/fields/'
 
 
+class SuperSearchField(models.SocorroMiddleware):
+
+    URL_PREFIX = '/supersearch/field/'
+
+    required_params = (
+        'name',
+    )
+
+    possible_params = (
+        'namespace',
+        'in_database_name',
+        'description',
+        'query_type',
+        'data_validation_type',
+        'permissions_needed',
+        'form_field_type',
+        'form_field_choices',
+        'is_exposed',
+        'is_returned',
+        'is_mandatory',
+        'has_full_version',
+        'storage_mapping',
+    )
+
+    def get(self, **kwargs):
+        raise NotImplemented()
+
+    def post(self, **kwargs):
+        params = self.kwargs_to_params(kwargs)
+        return super(SuperSearchField, self).post(self.URL_PREFIX, params)
+
+    def put(self, **kwargs):
+        params = self.kwargs_to_params(kwargs)
+        return super(SuperSearchField, self).put(self.URL_PREFIX, params)
+
+
 class Query(models.SocorroMiddleware):
     # No API_WHITELIST because this can't be accessed through the public API.
 

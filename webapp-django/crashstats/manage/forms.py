@@ -2,6 +2,7 @@ from django.contrib.auth.models import User, Group, Permission
 from django import forms
 
 from crashstats.crashstats.forms import BaseForm, BaseModelForm
+from crashstats.supersearch import form_fields
 
 
 class SkipListForm(BaseForm):
@@ -69,3 +70,21 @@ class GraphicsDeviceLookupForm(BaseForm):
 class GraphicsDeviceUploadForm(BaseForm):
 
     file = forms.FileField()
+
+
+class SuperSearchFieldForm(BaseForm):
+
+    name = forms.CharField()
+    in_database_name = forms.CharField()
+    namespace = forms.CharField(required=False)
+    description = forms.CharField(required=False)
+    query_type = forms.CharField(required=False)
+    data_validation_type = forms.CharField(required=False)
+    permissions_needed = form_fields.MultipleValueField(required=False)
+    form_field_type = forms.CharField(required=False)
+    form_field_choices = form_fields.MultipleValueField(required=False)
+    is_exposed = forms.BooleanField(required=False)
+    is_returned = forms.BooleanField(required=False)
+    is_mandatory = forms.BooleanField(required=False)
+    has_full_version = forms.BooleanField(required=False)
+    storage_mapping = forms.CharField(required=False)

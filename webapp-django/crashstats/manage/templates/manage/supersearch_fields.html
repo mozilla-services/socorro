@@ -1,0 +1,93 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Super Search Fields{% endblock %}
+
+{% block admin_title %}{{ super() }} - Super Search Fields{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script>
+$(function () {
+    $('.tablesorter').tablesorter();
+    $('.delete').click(function (e) {
+        var field_name = $(this).data('field-name');
+        return confirm('Do you really want to delete the "'+ field_name +'" field?');
+    });
+});
+</script>
+{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+
+    {% compress css %}
+<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/less" rel="stylesheet">
+<link href="{{ static('manage/css/supersearch_fields.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+        <a href="{{ url('manage:supersearch_field') }}" class="create-field">Create a new field</a>
+
+        <p>
+            Here are all the known fields in our indexed documents.
+            This list is used by the Super Search application to determine
+            which field can be queried by the user and what data can be
+            returned. It is also used to generate the elasticsearch mapping
+            that will be used to index the crash reports we receive.
+        </p>
+
+        <table class="data-table tablesorter">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Namespace</th>
+                    <th>Name in database</th>
+                    <th>Description</th>
+                    <th>Query type</th>
+                    <th>Data type</th>
+                    <th>Permissions needed</th>
+                    <th>Form field type</th>
+                    <th>Form field choices</th>
+                    <th>Is exposed</th>
+                    <th>Is returned</th>
+                    <th>Has full version</th>
+                    <th>Storage mapping</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in fields %}
+                <tr>
+                    <td>{{ field.name }}</td>
+                    <td>{{ field.namespace }}</td>
+                    <td>{{ field.in_database_name }}</td>
+                    <td>{{ field.description }}</td>
+                    <td>{{ field.query_type }}</td>
+                    <td>{{ field.data_validation_type }}</td>
+                    <td>{% if field.permissions_needed %}{{ field.permissions_needed | join(', ') }}{% endif %}</td>
+                    <td>{{ field.form_field_type }}</td>
+                    <td>{% if field.form_field_choices %}{{ field.form_field_choices | join(', ') }}{% endif %}</td>
+                    <td class="boolean"><span class="{{ field.is_exposed | lower }}" title="{{ field.is_exposed }}"></span></td>
+                    <td class="boolean"><span class="{{ field.is_returned | lower }}" title="{{ field.is_returned }}"></span></td>
+                    <td class="boolean"><span class="{{ field.has_full_version | lower }}" title="{{ field.has_full_version }}"></span></td>
+                    <td>{% if field.storage_mapping %}{{ field.storage_mapping | json_dumps }}{% endif %}</td>
+                    <td>
+                        <a href="{{ url('manage:supersearch_field') }}?name={{ field.name }}" class="modify" title="Modify this field">modify</a>
+                        <a href="{{ url('manage:supersearch_field_delete') }}?name={{ field.name }}" class="delete" data-field-name="{{ field.name }}" title="Delete this field">delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+  </div>
+
+{% endblock %}

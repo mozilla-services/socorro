@@ -889,3 +889,208 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('file.zip' in response.content)
         ok_('user@mozilla.com' in response.content)
+
+    @mock.patch('requests.get')
+    def test_supersearch_fields(self, rget):
+        self._login()
+        url = reverse('manage:supersearch_fields')
+
+        def mocked_get(url, **options):
+            assert '/supersearch/fields/' in url
+
+            return Response({
+                'signature': {
+                    'name': 'signature',
+                    'namespace': 'processed_crash',
+                    'in_database_name': 'signature',
+                    'query_type': 'str',
+                    'form_field_type': 'StringField',
+                    'form_field_choices': None,
+                    'permissions_needed': [],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                },
+                'product': {
+                    'name': 'product',
+                    'namespace': 'processed_crash',
+                    'in_database_name': 'product',
+                    'query_type': 'enum',
+                    'form_field_type': 'MultipleValueField',
+                    'form_field_choices': None,
+                    'permissions_needed': [],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                }
+            })
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('signature' in response.content)
+        ok_('StringField' in response.content)
+        ok_('product' in response.content)
+        ok_('MultipleValueField' in response.content)
+
+    @mock.patch('requests.get')
+    def test_supersearch_field(self, rget):
+        self._login()
+        url = reverse('manage:supersearch_field')
+
+        def mocked_get(url, **options):
+            assert '/supersearch/fields/' in url
+
+            return Response({
+                'signature': {
+                    'name': 'signature',
+                    'namespace': 'processed_crash',
+                    'in_database_name': 'signature',
+                    'query_type': 'str',
+                    'form_field_type': 'StringField',
+                    'form_field_choices': None,
+                    'permissions_needed': [],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                },
+                'platform': {
+                    'name': 'platform',
+                    'namespace': 'processed_crash',
+                    'in_database_name': 'platform',
+                    'query_type': 'enum',
+                    'form_field_type': 'MultipleValueField',
+                    'form_field_choices': None,
+                    'permissions_needed': [],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                }
+            })
+
+        rget.side_effect = mocked_get
+
+        # Test when creating a new field.
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('signature' not in response.content)
+        ok_('platform' not in response.content)
+
+        # Test when editing an existing field.
+        response = self.client.get(url, {'name': 'signature'})
+        eq_(response.status_code, 200)
+        ok_('signature' in response.content)
+        ok_('StringField' in response.content)
+        ok_('platform' not in response.content)
+
+        # Test a missing field.
+        response = self.client.get(url, {'name': 'unknown'})
+        eq_(response.status_code, 400)
+
+    @mock.patch('requests.get')
+    @mock.patch('requests.post')
+    def test_supersearch_field_create(self, rpost, rget):
+        self._login()
+        url = reverse('manage:supersearch_field_create')
+
+        def mocked_get(url, **options):
+            assert '/supersearch/fields/' in url
+            return Response({})
+
+        def mocked_post(url, data, **options):
+            assert '/supersearch/field/' in url
+            assert 'name' in data
+            assert 'in_database_name' in data
+
+            return Response(True)
+
+        rget.side_effect = mocked_get
+        rpost.side_effect = mocked_post
+
+        response = self.client.post(
+            url,
+            {
+                'name': 'something',
+                'in_database_name': 'something',
+            }
+        )
+        eq_(response.status_code, 302)
+
+        response = self.client.post(url)
+        eq_(response.status_code, 400)
+
+        response = self.client.post(url, {'name': 'abcd'})
+        eq_(response.status_code, 400)
+
+        response = self.client.post(url, {'in_database_name': 'bar'})
+        eq_(response.status_code, 400)
+
+    @mock.patch('requests.get')
+    @mock.patch('requests.put')
+    def test_supersearch_field_update(self, rput, rget):
+        self._login()
+        url = reverse('manage:supersearch_field_update')
+
+        def mocked_get(url, **options):
+            assert '/supersearch/fields/' in url
+            return Response({})
+
+        def mocked_put(url, data, **options):
+            assert '/supersearch/field/' in url
+            assert 'name' in data
+            assert 'description' in data
+
+            return Response(True)
+
+        rget.side_effect = mocked_get
+        rput.side_effect = mocked_put
+
+        response = self.client.post(
+            url,
+            {
+                'name': 'something',
+                'in_database_name': 'something',
+                'description': 'hello world',
+            }
+        )
+        print response
+        eq_(response.status_code, 302)
+
+        response = self.client.post(url)
+        eq_(response.status_code, 400)
+
+        response = self.client.post(url, {'name': 'foo'})
+        eq_(response.status_code, 400)
+
+        response = self.client.post(url, {'in_database_name': 'bar'})
+        eq_(response.status_code, 400)
+
+    @mock.patch('requests.get')
+    @mock.patch('requests.delete')
+    def test_supersearch_field_delete(self, rdelete, rget):
+        self._login()
+        url = reverse('manage:supersearch_field_delete')
+
+        def mocked_get(url, **options):
+            assert '/supersearch/fields/' in url
+            return Response({})
+
+        def mocked_delete(url, params, **options):
+            assert '/supersearch/field/' in url
+            assert 'name' in params
+
+            return Response(True)
+
+        rget.side_effect = mocked_get
+        rdelete.side_effect = mocked_delete
+
+        response = self.client.get(url, {'name': 'signature'})
+        eq_(response.status_code, 302)
+
+        response = self.client.get(url)
+        eq_(response.status_code, 400)

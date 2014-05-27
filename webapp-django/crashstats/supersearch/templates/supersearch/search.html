@@ -65,7 +65,9 @@
 {% block site_css %}
     {{ super() }}
     {% compress css %}
-<link href="{{ static('supersearch/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
+    {% endcompress %}
+    {% compress css %}
 <link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
     {% endcompress %}
     {% compress css %}
@@ -92,7 +94,7 @@ var BASE_URL = location.protocol + '//' + location.host;
 <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.sortable.min.js') }}"></script>
 <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
 <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
-<script src="{{ static('supersearch/js/lib/select2/select2.js') }}"></script>
+<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
 <script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
 <script src="{{ static('supersearch/js/socorro/search.js') }}"></script>
 <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>

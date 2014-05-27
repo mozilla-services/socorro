@@ -25,6 +25,7 @@ class ElasticSearchTestCase(TestCase):
 
         values_source = {
             'logger': mock_logging,
+            'elasticsearch_default_index': 'socorro_integration_test',
             'elasticsearch_index': 'socorro_integration_test',
             'backoff_delays': [1],
             'elasticsearch_timeout': 5,

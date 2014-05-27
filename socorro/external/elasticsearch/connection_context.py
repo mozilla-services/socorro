@@ -23,6 +23,12 @@ class ConnectionContext(RequiredConfig):
         reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
+        'elasticsearch_default_index',
+        default='socorro',
+        doc='the default index used to store data',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
         'elasticsearch_index',
         default='socorro%Y%W',
         doc='an index format to pull crashes from elasticsearch '
