@@ -3,16 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
-import logging
-
 import psycopg2
 
-import socorro.database.database as db
+from .dbapi2_util import (
+    execute_query_fetchall,
+    execute_no_results,
+    single_value_sql,
+)
 from socorro.external import DatabaseError
-
-from .dbapi2_util import execute_query_fetchall, single_value_sql
-
-logger = logging.getLogger("webapi")
 
 
 def add_param_to_dict(dictionary, key, value):
@@ -30,6 +28,8 @@ class PostgreSQLBase(object):
     Base class for PostgreSQL based service implementations.
     """
 
+    role = 'database'
+
     def __init__(self, *args, **kwargs):
         """
         Store the config and create a connection to the database.
@@ -39,32 +39,24 @@ class PostgreSQLBase(object):
 
         """
         self.context = kwargs.get("config")
-        if hasattr(self.context, 'database'):
-            # XXX this should be replaced with connection_context instead
-            self.context.database['database_host'] = \
-                self.context.database.database_hostname
-            self.context.database['database_port'] = \
-                self.context.database.database_port
-            self.context.database['database_name'] = \
-                self.context.database.database_name
-            self.context.database['database_username'] = \
-                self.context.database.database_username
-            self.context.database['database_password'] = \
-                self.context.database.database_password
-            self.database = db.Database(self.context.database)
-        else:
-            # the old middleware
-            self.database = db.Database(self.context)
+
+        config_for_role = self.context[self.role]
+        self.crash_store = config_for_role.crashstorage_class(config_for_role)
+        self.database = self.crash_store.database
+        self.transaction = self.crash_store.transaction
 
     @contextlib.contextmanager
     def get_connection(self):
-        connection = self.database.connection()
-        try:
+        with self.database() as connection:
             yield connection
-        finally:
-            connection.close()
 
-    def query(self, sql, params=None, error_message=None, connection=None):
+    def query(
+        self,
+        sql,
+        params=None,
+        error_message=None,
+        action=execute_query_fetchall
+    ):
         """Return the result of a query executed against PostgreSQL.
 
         Create a connection, open a cursor, execute the query and return the
@@ -74,30 +66,38 @@ class PostgreSQLBase(object):
         sql -- SQL query to execute.
         params -- Parameters to merge into the SQL query when executed.
         error_message -- Eventual error message to log.
-        connection -- Optional connection to the database. If none, a new one
-                      will be opened.
 
         """
-        fresh_connection = False
         try:
-            if not connection:
-                connection = self.database.connection()
-                fresh_connection = True
-            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
-            results = execute_query_fetchall(connection, sql, params)
-        except psycopg2.Error, e:
-            if error_message is None:
-                error_message = "Failed to execute query against PostgreSQL"
-            error_message = "%s - %s" % (error_message, str(e))
-            logger.error(error_message, exc_info=True)
+            return self.transaction(
+                action,
+                sql,
+                params
+            )
+        except psycopg2.Error, x:
+            self.context.logger.error(
+                error_message if error_message else str(x),
+                exc_info=True
+            )
             raise DatabaseError(error_message)
-        finally:
-            if connection and fresh_connection:
-                connection.close()
 
-        return results
+    def execute_no_results(self, sql, params=None, error_message=None):
+        """Return the result of a delete or update SQL query
 
-    def count(self, sql, params=None, error_message=None, connection=None):
+        Keyword arguments:
+        sql -- SQL query to execute.
+        params -- Parameters to merge into the SQL query when executed.
+        error_message -- Eventual error message to log.
+
+        """
+        return self.query(
+            sql,
+            params=params,
+            error_message=error_message,
+            action=execute_no_results
+        )
+
+    def count(self, sql, params=None, error_message=None):
         """Return the result of a count SQL query executed against PostgreSQL.
 
         Create a connection, open a cursor, execute the query and return the
@@ -107,28 +107,14 @@ class PostgreSQLBase(object):
         sql -- SQL query to execute.
         params -- Parameters to merge into the SQL query when executed.
         error_message -- Eventual error message to log.
-        connection -- Optional connection to the database. If none, a new one
-                      will be opened.
 
         """
-        fresh_connection = False
-        try:
-            if not connection:
-                connection = self.database.connection()
-                fresh_connection = True
-            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
-            result = single_value_sql(connection, sql, params)
-        except psycopg2.Error, e:
-            if error_message is None:
-                error_message = "Failed to execute count against PostgreSQL"
-            error_message = "%s - %s" % (error_message, str(e))
-            logger.error(error_message, exc_info=True)
-            raise DatabaseError(error_message)
-        finally:
-            if connection and fresh_connection:
-                connection.close()
-
-        return result
+        return self.query(
+            sql,
+            params=params,
+            error_message=error_message,
+            action=single_value_sql
+        )
 
     @staticmethod
     def parse_versions(versions_list, products):

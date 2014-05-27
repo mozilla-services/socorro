@@ -1,309 +1,513 @@
-# name: application
-# doc: the fully qualified module or class of the application
-# converter: configman.converters.class_converter
-# application='MiddlewareApp'
+# the fully qualified module or class of the application
+#application='MiddlewareApp'
+
+# a list of namespace:class associations for classes that offer  implementations of services
+#service_classes='InnerClassList'
+
+[resource]
+
+    #+include ./common_resource.ini
+
+    [[elasticsearch]]
+
+        #+include ./common_elasticsearch.ini
+
+        # String containing the URI of the Elastic Search instance.
+        #elasticSearchHostname=localhost
+
+        # String containing the port on which calling the Elastic Search instance.
+        #elasticSearchPort=9200
+
+        # the default doctype to use in elasticsearch
+        #elasticsearch_doctype=crash_reports
+
+        # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+        #elasticsearch_index=socorro%Y%W
+
+        # the time in seconds before a query to elasticsearch fails
+        #elasticsearch_timeout=30
+
+        # the time in seconds before a query to elasticsearch fails in restricted sections
+        #elasticsearch_timeout_extended=120
+
+        # the urls to the elasticsearch instances
+        #elasticsearch_urls='http://localhost:9200'
+
+    [[fs]]
+
+        #+include ./common_fs.ini
+
+        # the default dump field
+        #dump_field=upload_file_minidump
+
+        # the suffix used to identify a dump file
+        #dump_file_suffix=.dump
+
+        # a path to a file system
+        #fs_root='./crashes'
+
+        # the suffix used to identify a json file
+        #json_file_suffix=.json
+
+        # the suffix used to identify a gzipped json file
+        #jsonz_file_suffix=.jsonz
+
+        # the directory base name to use for the named radix tree storage
+        #name_branch_base=name
+
+        # umask to use for new files
+        #umask=18
+
+    [[logging]]
+
+        #+include ./common_logging.ini
+
+        # logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+        #stderr_error_logging_level=10
+
+        # python logging system format for logging to stderr
+        #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
+
+        # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+        #syslog_error_logging_level=40
+
+        # syslog facility string ("user", "local0", etc)
+        #syslog_facility_string=user
+
+        # syslog hostname
+        #syslog_host=localhost
+
+        # python logging system format for syslog entries
+        #syslog_line_format_string=middleware (pid {process}): {asctime} {levelname} - {threadName} - {message}
+
+        # syslog port
+        #syslog_port=514
+
+    [[postgresql]]
+
+        #+include ./common_postgresql.ini
+
+        # delays in seconds between retries
+        #backoff_delays='10, 30, 60, 120, 300'
+
+        # the class responsible for connecting to Postgres
+        #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+        # the hostname of the database
+        # see "resource.postgresql.database_hostname" for the default or override it here
+        #database_hostname=localhost
+
+        # the name of the database
+        # see "resource.postgresql.database_name" for the default or override it here
+        #database_name=breakpad
+
+        # the user's database password
+        # see "secrets.postgresql.database_password" for the default or override it here
+        #database_password=aPassword
+
+        # the port for the database
+        # see "resource.postgresql.database_port" for the default or override it here
+        #database_port=5432
+
+        # the name of the user within the database
+        # see "secrets.postgresql.database_username" for the default or override it here
+        #database_username=breakpad_rw
+
+        # a class that will manage transactions
+        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+        # seconds between log during retries
+        #wait_log_interval=10
+
+    [[rabbitmq]]
+
+        #+include ./common_rabbitmq.ini
+
+        # delays in seconds between retries
+        #backoff_delays='10, 30, 60, 120, 300'
+
+        # toggle for using or ignoring the throttling flag
+        #filter_on_legacy_processing='False'
+
+        # the hostname of the RabbitMQ server
+        # see "resource.rabbitmq.host" for the default or override it here
+        #host=localhost
+
+        # the port for the RabbitMQ server
+        # see "resource.rabbitmq.port" for the default or override it here
+        #port=5672
+
+        # the name of priority crash queue name within RabbitMQ
+        # see "resource.rabbitmq.priority_queue_name" for the default or override it here
+        #priority_queue_name=socorro.priority
+
+        # the class responsible for connecting to RabbitMQ
+        #rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+        # a classname for the type of wrapper for RabbitMQ connections
+        # see "resource.rabbitmq.rabbitmq_connection_wrapper_class" for the default or override it here
+        #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+        # the user's RabbitMQ password
+        # see "secrets.rabbitmq.rabbitmq_password" for the default or override it here
+        #rabbitmq_password=guest
+
+        # the name of the user within the RabbitMQ instance
+        # see "secrets.rabbitmq.rabbitmq_user" for the default or override it here
+        #rabbitmq_user=guest
+
+        # the name of reprocessing crash queue name within RabbitMQ
+        #reprocessing_queue_name=socorro.reprocessing
+
+        # the name of the queue to recieve crashes
+        #routing_key=socorro.reprocessing
+
+        # the name of standard crash queue name within RabbitMQ
+        # see "resource.rabbitmq.standard_queue_name" for the default or override it here
+        #standard_queue_name=socorro.normal
+
+        # a class that will manage transactions
+        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+        # the name of the RabbitMQ virtual host
+        # see "resource.rabbitmq.virtual_host" for the default or override it here
+        #virtual_host=/
+
+        # seconds between log during retries
+        #wait_log_interval=10
+
+    [[redactor]]
+
+        #+include ./common_redactor.ini
+
+        # a list of keys not allowed in a redacted processed crash
+        # see "resource.redactor.forbidden_keys" for the default or override it here
+        #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+        # the name of the class that implements a 'redact' method
+        #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+[secrets]
+
+    #+include ./common_secrets.ini
+
+    [[postgresql]]
+
+        #+include ./common_postgresql.ini
+
+        # the user's database password
+        #database_password=aPassword
+
+        # the name of the user within the database
+        #database_username=breakpad_rw
+
+    [[rabbitmq]]
+
+        #+include ./common_rabbitmq.ini
+
+        # the user's RabbitMQ password
+        #rabbitmq_password=guest
+
+        # the name of the user within the RabbitMQ instance
+        #rabbitmq_user=guest
+
+    [[sentry]]
+
+        #+include ./common_sentry.ini
+
+        # DSN for Sentry via raven
+        #dsn=
 
 [database]
 
-    # name: database_class
-    # doc: None
-    # converter: configman.converters.class_converter
-    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+    # delays in seconds between retries
+    # see "resource.postgresql.backoff_delays" for the default or override it here
+    #backoff_delays='10, 30, 60, 120, 300'
 
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    database_host='localhost'
+    # the class responsible for connecting to Postgres
+    # see "resource.postgresql.database_class" for the default or override it here
+    #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
 
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    database_name='breakpad'
+    # the hostname of the database
+    # see "resource.postgresql.database_hostname" for the default or override it here
+    #database_hostname=localhost
 
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    database_password='aPassword'
+    # the name of the database
+    # see "resource.postgresql.database_name" for the default or override it here
+    #database_name=breakpad
 
-    # name: database_port
-    # doc: the port for the database
-    # converter: int
-    database_port='5432'
+    # the user's database password
+    # see "secrets.postgresql.database_password" for the default or override it here
+    #database_password=aPassword
 
-    # name: database_user
-    # doc: the name of the user within the database
-    # converter: str
-    database_user='breakpad_rw'
+    # the port for the database
+    # see "resource.postgresql.database_port" for the default or override it here
+    #database_port=5432
 
-[filesystem]
+    # None
+    #database_source_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
 
-    # name: dump_field
-    # doc: the default dump field
-    # converter: str
-    dump_field='upload_file_minidump'
+    # the name of the user within the database
+    # see "secrets.postgresql.database_username" for the default or override it here
+    #database_username=breakpad_rw
 
-    # name: dump_file_suffix
-    # doc: the suffix used to identify a dump file
-    # converter: str
-    dump_file_suffix='.dump'
+    # a list of keys not allowed in a redacted processed crash
+    # see "resource.redactor.forbidden_keys" for the default or override it here
+    #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
 
-    # name: filesystem_class
-    # doc: None
-    # converter: configman.converters.class_converter
-    filesystem_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
+    # the name of the class that implements a 'redact' method
+    # see "resource.redactor.redactor_class" for the default or override it here
+    #redactor_class='socorro.external.crashstorage_base.Redactor'
 
-    # name: forbidden_keys
-    # doc: a comma delimited list of keys to not allowed in the processed crash
-    # converter: socorro.external.fs.crashstorage.<lambda>
-    forbidden_keys='url, email, user_id, exploitability'
+    # a class that will manage transactions
+    # see "resource.postgresql.transaction_executor_class" for the default or override it here
+    #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
 
-    # name: fs_root
-    # doc: a path to a file system
-    # converter: socorro.external.fs.crashstorage.<lambda>
-    fs_root='./crashes'
-
-    # name: json_file_suffix
-    # doc: the suffix used to identify a json file
-    # converter: str
-    json_file_suffix='.json'
-
-    # name: jsonz_file_suffix
-    # doc: the suffix used to identify a gzipped json file
-    # converter: str
-    jsonz_file_suffix='.jsonz'
-
-    # name: name_branch_base
-    # doc: the directory base name to use for the named radix tree storage
-    # converter: str
-    name_branch_base='name'
-
-    # name: umask
-    # doc: umask to use for new files
-    # converter: int
-    umask='18'
-
-[hbase]
-
-    # name: dump_file_suffix
-    # doc: the suffix used to identify a dump file (for use in temp files)
-    # converter: str
-    dump_file_suffix='.dump'
-
-    # name: forbidden_keys
-    # doc: a comma delimited list of keys banned from the processed crash in HBase
-    forbidden_keys='email, url, user_id, exploitability'
-
-    # name: hbase_class
-    # doc: None
-    # converter: configman.converters.class_converter
-    hbase_class='socorro.external.hb.crashstorage.HBaseCrashStorage'
-
-    # name: hbase_connection_pool_class
-    # doc: the class responsible for pooling and giving out HBaseconnections
-    # converter: configman.converters.class_converter
-    hbase_connection_pool_class='socorro.external.hb.connection_context.HBaseConnectionContextPooled'
-
-    # name: hbase_host
-    # doc: Host to HBase server
-    # converter: str
-    hbase_host='localhost'
-
-    # name: hbase_port
-    # doc: Port to HBase server
-    # converter: int
-    hbase_port='9090'
-
-    # name: hbase_timeout
-    # doc: timeout in milliseconds for an HBase connection
-    # converter: int
-    hbase_timeout='5000'
-
-    # name: number_of_retries
-    # doc: Max. number of retries when fetching from hbaseClient
-    # converter: int
-    number_of_retries='0'
-
-    # name: temporary_file_system_storage_path
-    # doc: a local filesystem path where dumps temporarily during processing
-    # converter: str
-    temporary_file_system_storage_path='/home/socorro/temp'
-
-    # name: transaction_executor_class
-    # doc: a class that will execute transactions
-    # converter: configman.converters.class_converter
-    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
-
-[rabbitmq]
-
-    # name: host
-    # doc: the hostname of the RabbitMQ server
-    # converter: str
-    host='localhost'
-
-    # name: port
-    # doc: the port for the RabbitMQ server
-    # converter: int
-    port='5672'
-
-    # name: priority_queue_name
-    # doc: the name of priority crash queue name within RabbitMQ
-    # converter: str
-    priority_queue_name='socorro.priority'
-
-    # name: rabbitmq_class
-    # doc: None
-    # converter: configman.converters.class_converter
-    rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContext'
-
-    # name: rabbitmq_connection_wrapper_class
-    # doc: a classname for the type of wrapper for RabbitMQ connections
-    # converter: configman.converters.class_converter
-    rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
-
-    # name: rabbitmq_password
-    # doc: the user's RabbitMQ password
-    # converter: str
-    rabbitmq_password='guest'
-
-    # name: rabbitmq_user
-    # doc: the name of the user within the RabbitMQ instance
-    # converter: str
-    rabbitmq_user='guest'
-
-    # name: standard_queue_name
-    # doc: the name of standard crash queue name within RabbitMQ
-    # converter: str
-    standard_queue_name='socorro.normal'
-
-    # name: virtual_host
-    # doc: the name of the RabbitMQ virtual host
-    # converter: str
-    virtual_host='/'
+    # seconds between log during retries
+    # see "resource.postgresql.wait_log_interval" for the default or override it here
+    #wait_log_interval=10
 
 [http]
 
     [[correlations]]
 
-        # name: base_url
-        # doc: Base URL where correlations text files are
-        # converter: str
-        base_url='https://crash-analysis.mozilla.com/crash_analysis/'
+        # Base URL where correlations text files are
+        #base_url=https://crash-analysis.mozilla.com/crash_analysis/
 
-        # name: save_download
-        # doc: Whether files downloaded for correlations should be temporary stored on disk
-        # converter: configman.converters.boolean_converter
-        save_download='True'
+        # Whether files downloaded for correlations should be temporary stored on disk
+        #save_download='True'
 
-        # name: save_root
-        # doc: Directory where the temporary downloads are stored (if left empty will become the systems tmp directory)
-        # converter: str
-        save_root=''
+        # Directory where the temporary downloads are stored (if left empty will become the systems tmp directory)
+        #save_root=
 
-        # name: save_seconds
-        # doc: Number of seconds that the downloaded .txt file is stored in a temporary place
-        # converter: int
-        save_seconds='600'
+        # Number of seconds that the downloaded .txt file is stored in a temporary place
+        #save_seconds=600
 
 [implementations]
 
-    # name: implementation_list
-    # doc: list of packages for service implementations
-    # converter: items_list_converter
-    #implementation_list='psql: socorro.external.postgresql, fs: socorro.external.fs, http:socorro.external.http, es:socorro.external.elasticsearch'
+    # list of packages for service implementations
+    #implementation_list='database: socorro.external.postgresql, webapi: socorro.external.elasticsearch, primary_storage: socorro.external.fs, http: socorro.external.http, queuing: socorro.external.rabbitmq'
 
-    # name: service_overrides
-    # doc: comma separated list of class overrides, e.g `Crashes: hbase`
-    # converter: items_list_converter
-    #service_overrides='CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq'
+    # comma separated list of class overrides, e.g `Crashes: hbase`
+    #service_overrides='CrashData: primary_storage, Correlations: http, CorrelationsSignatures: http, SuperSearch: webapi, Priorityjobs: queuing, Query: webapi'
+
+[laglog]
+
+    # Number of bytes that warrents a critial
+    #max_bytes_critical=33554432
+
+    # Number of bytes that warrents a warning
+    #max_bytes_warning=16777216
 
 [logging]
 
-    # name: stderr_error_logging_level
-    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    stderr_error_logging_level='10'
+    # logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # see "resource.logging.stderr_error_logging_level" for the default or override it here
+    #stderr_error_logging_level=10
 
-    # name: stderr_line_format_string
-    # doc: python logging system format for logging to stderr
-    # converter: str
-    stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+    # python logging system format for logging to stderr
+    # see "resource.logging.stderr_line_format_string" for the default or override it here
+    #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
 
-    # name: syslog_error_logging_level
-    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    syslog_error_logging_level='40'
+    # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # see "resource.logging.syslog_error_logging_level" for the default or override it here
+    #syslog_error_logging_level=40
 
-    # name: syslog_facility_string
-    # doc: syslog facility string ("user", "local0", etc)
-    # converter: str
-    syslog_facility_string='user'
+    # syslog facility string ("user", "local0", etc)
+    # see "resource.logging.syslog_facility_string" for the default or override it here
+    #syslog_facility_string=user
 
-    # name: syslog_host
-    # doc: syslog hostname
-    # converter: str
-    syslog_host='localhost'
+    # syslog hostname
+    # see "resource.logging.syslog_host" for the default or override it here
+    #syslog_host=localhost
 
-    # name: syslog_line_format_string
-    # doc: python logging system format for syslog entries
-    # converter: str
-    syslog_line_format_string='middleware (pid {process}): {asctime} {levelname} - {threadName} - {message}'
+    # python logging system format for syslog entries
+    # see "resource.logging.syslog_line_format_string" for the default or override it here
+    #syslog_line_format_string=middleware (pid {process}): {asctime} {levelname} - {threadName} - {message}
 
-    # name: syslog_port
-    # doc: syslog port
-    # converter: int
-    syslog_port='514'
+    # syslog port
+    # see "resource.logging.syslog_port" for the default or override it here
+    #syslog_port=514
+
+[primary_storage]
+
+    # the default dump field
+    # see "resource.fs.dump_field" for the default or override it here
+    #dump_field=upload_file_minidump
+
+    # the suffix used to identify a dump file
+    # see "resource.fs.dump_file_suffix" for the default or override it here
+    #dump_file_suffix=.dump
+
+    # a list of keys not allowed in a redacted processed crash
+    # see "resource.redactor.forbidden_keys" for the default or override it here
+    #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+    # a path to a file system
+    # see "resource.fs.fs_root" for the default or override it here
+    #fs_root='./crashes'
+
+    # the suffix used to identify a json file
+    # see "resource.fs.json_file_suffix" for the default or override it here
+    #json_file_suffix=.json
+
+    # the suffix used to identify a gzipped json file
+    # see "resource.fs.jsonz_file_suffix" for the default or override it here
+    #jsonz_file_suffix=.jsonz
+
+    # the directory base name to use for the named radix tree storage
+    # see "resource.fs.name_branch_base" for the default or override it here
+    #name_branch_base=name
+
+    # None
+    #primary_storage_source_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
+
+    # the name of the class that implements a 'redact' method
+    # see "resource.redactor.redactor_class" for the default or override it here
+    #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+    # umask to use for new files
+    # see "resource.fs.umask" for the default or override it here
+    #umask=18
+
+[queuing]
+
+    # delays in seconds between retries
+    # see "resource.rabbitmq.backoff_delays" for the default or override it here
+    #backoff_delays='10, 30, 60, 120, 300'
+
+    # toggle for using or ignoring the throttling flag
+    # see "resource.rabbitmq.filter_on_legacy_processing" for the default or override it here
+    #filter_on_legacy_processing='False'
+
+    # a list of keys not allowed in a redacted processed crash
+    # see "resource.redactor.forbidden_keys" for the default or override it here
+    #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+    # the hostname of the RabbitMQ server
+    # see "resource.rabbitmq.host" for the default or override it here
+    #host=localhost
+
+    # the port for the RabbitMQ server
+    # see "resource.rabbitmq.port" for the default or override it here
+    #port=5672
+
+    # the name of priority crash queue name within RabbitMQ
+    # see "resource.rabbitmq.priority_queue_name" for the default or override it here
+    #priority_queue_name=socorro.priority
+
+    # None
+    #queuing_source_class='socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
+
+    # the class responsible for connecting to RabbitMQ
+    # see "resource.rabbitmq.rabbitmq_class" for the default or override it here
+    #rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+    # a classname for the type of wrapper for RabbitMQ connections
+    # see "resource.rabbitmq.rabbitmq_connection_wrapper_class" for the default or override it here
+    #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+    # the user's RabbitMQ password
+    # see "secrets.rabbitmq.rabbitmq_password" for the default or override it here
+    #rabbitmq_password=guest
+
+    # the name of the user within the RabbitMQ instance
+    # see "secrets.rabbitmq.rabbitmq_user" for the default or override it here
+    #rabbitmq_user=guest
+
+    # the name of the class that implements a 'redact' method
+    # see "resource.redactor.redactor_class" for the default or override it here
+    #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+    # the name of reprocessing crash queue name within RabbitMQ
+    # see "resource.rabbitmq.reprocessing_queue_name" for the default or override it here
+    #reprocessing_queue_name=socorro.reprocessing
+
+    # the name of the queue to recieve crashes
+    # see "resource.rabbitmq.routing_key" for the default or override it here
+    #routing_key=socorro.reprocessing
+
+    # the name of standard crash queue name within RabbitMQ
+    # see "resource.rabbitmq.standard_queue_name" for the default or override it here
+    #standard_queue_name=socorro.normal
+
+    # a class that will manage transactions
+    # see "resource.rabbitmq.transaction_executor_class" for the default or override it here
+    #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+    # the name of the RabbitMQ virtual host
+    # see "resource.rabbitmq.virtual_host" for the default or override it here
+    #virtual_host=/
+
+    # seconds between log during retries
+    # see "resource.rabbitmq.wait_log_interval" for the default or override it here
+    #wait_log_interval=10
+
+[sentry]
+
+    # DSN for Sentry via raven
+    # see "secrets.sentry.dsn" for the default or override it here
+    #dsn=
 
 [web_server]
 
-    # name: ip_address
-    # doc: the IP address from which to accept submissions
-    # converter: str
-    ip_address='127.0.0.1'
+    # the IP address from which to accept submissions
+    #ip_address=127.0.0.1
 
-    # name: port
-    # doc: the port to listen to for submissions
-    # converter: int
-    port='8883'
+    # the port to listen to for submissions
+    #port=8883
 
-    # name: wsgi_server_class
-    # doc: a class implementing a wsgi web server
-    # converter: configman.converters.class_converter
-    wsgi_server_class='socorro.webapi.servers.CherryPy'
+    # a class implementing a wsgi web server
+    #wsgi_server_class='socorro.webapi.servers.CherryPy'
 
 [webapi]
 
-    # name: channels
-    # doc: List of release channels, excluding the `release` one.
-    # converter: string_to_list
-    channels='beta, aurora, nightly'
+    # String containing the URI of the Elastic Search instance.
+    # see "resource.elasticsearch.elasticSearchHostname" for the default or override it here
+    #elasticSearchHostname=localhost
 
-    # name: elasticSearchHostname
-    # doc: String containing the URI of the Elastic Search instance.
-    # converter: str
-    elasticSearchHostname='localhost'
+    # String containing the port on which calling the Elastic Search instance.
+    # see "resource.elasticsearch.elasticSearchPort" for the default or override it here
+    #elasticSearchPort=9200
 
-    # name: elasticSearchPort
-    # doc: String containing the port on which calling the Elastic Search instance.
-    # converter: str
-    elasticSearchPort='9200'
+    # the default doctype to use in elasticsearch
+    # see "resource.elasticsearch.elasticsearch_doctype" for the default or override it here
+    #elasticsearch_doctype=crash_reports
 
-    # name: elasticsearch_index
-    # doc: an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
-    # converter: str
-    elasticsearch_index='socorro%Y%W'
+    # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+    # see "resource.elasticsearch.elasticsearch_index" for the default or override it here
+    #elasticsearch_index=socorro%Y%W
 
-    # name: platforms
-    # doc: Array associating OS ids to full names.
-    # converter: <lambda>
-    #platforms=''
+    # the time in seconds before a query to elasticsearch fails
+    # see "resource.elasticsearch.elasticsearch_timeout" for the default or override it here
+    #elasticsearch_timeout=30
 
-    # name: restricted_channels
-    # doc: List of release channels to restrict based on build ids.
-    # converter: string_to_list
-    restricted_channels='beta'
+    # the time in seconds before a query to elasticsearch fails in restricted sections
+    # see "resource.elasticsearch.elasticsearch_timeout_extended" for the default or override it here
+    #elasticsearch_timeout_extended=120
 
-    # name: searchMaxNumberOfDistinctSignatures
-    # doc: Integer containing the maximum allowed number of distinct signatures the system should retrieve. Used mainly for performances in ElasticSearch
-    # converter: int
-    searchMaxNumberOfDistinctSignatures='1000'
+    # the urls to the elasticsearch instances
+    # see "resource.elasticsearch.elasticsearch_urls" for the default or override it here
+    #elasticsearch_urls='http://localhost:9200'
+
+    # the maximum number of results a facet will return in search
+    #facets_max_number=50
+
+    # List of channels, excluding the `release` one.
+    #non_release_channels='beta, aurora, nightly'
+
+    # Array associating OS ids to full names.
+    #platforms='{"id": "windows", "name": "Windows NT"}, {"id": "mac", "name": "Mac OS X"}, {"id": "linux", "name": "Linux"}'
+
+    # List of channels to restrict based on build ids.
+    #restricted_channels='beta'
+
+    # Integer containing the maximum allowed number of distinct signatures the system should retrieve. Used mainly for performances in ElasticSearch
+    #searchMaxNumberOfDistinctSignatures=1000
+
+    # the default date range for searches, in days
+    #search_default_date_range=7
+
+    # the maximum date range for searches, in days
+    #search_maximum_date_range=365
 

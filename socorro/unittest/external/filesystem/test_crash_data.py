@@ -77,7 +77,7 @@ class IntegrationTestCrashData(TestCase):
         mock_logging = Mock()
         required_config = Namespace()
         required_config.namespace('filesystem')
-        required_config.filesystem.filesystem_class = \
+        required_config.filesystem.crashstorage_class = \
             crashstorage.FileSystemCrashStorage
         required_config.filesystem.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(

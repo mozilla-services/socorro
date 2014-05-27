@@ -22,15 +22,24 @@ class CrashDataBase(object):
     crashstorage class.
     """
 
+    # derived classes must define these two attributes
+    #role = 'unknown'
+    #class_key = 'unknown_class'
+
     def __init__(self, *args, **kwargs):
         super(CrashDataBase, self).__init__()
         self.config = kwargs['config']
         self.all_services = kwargs['all_services']
 
     def get_storage(self):
-        """derived classes must implement this method to return an instance
-        of their own crashstorage class"""
-        raise NotImplementedError
+        try:
+            return self.config[self.role]["crashstorage_class"](
+                self.config[self.role]
+            )
+        except AttributeError, x:
+            raise NotImplementedError(
+                'derived classes are required to have attribute %s' % x
+            )
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid. """

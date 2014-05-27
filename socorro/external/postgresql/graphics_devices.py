@@ -8,6 +8,7 @@ import psycopg2
 
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external.postgresql.dbapi2_util import execute_no_results
 from socorro.lib import external_common
 
 
@@ -90,14 +91,14 @@ class GraphicsDevices(PostgreSQLBase):
         ALL SELECT * FROM insert_graphics_device
         """
 
-        with self.get_connection() as connection:
-            try:
-                for row in data:
-                    self.query(upsert, row, connection=connection)
-                connection.commit()
-                return True
-            except (psycopg2.Error, KeyError):
-                # KeyErrors happen if any of the rows don't have
-                # all the required keys
-                connection.rollback()
-                return False
+        def upsert_transaction(connection):
+            for row in data:
+                execute_no_results(connection, upsert, row)
+
+        try:
+            self.transaction(upsert_transaction)
+            return True
+        except Exception, x:
+            self.context.logger.error(str(x), exc_info=True)
+            return False
+

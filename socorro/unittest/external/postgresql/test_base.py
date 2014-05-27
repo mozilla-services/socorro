@@ -5,10 +5,15 @@
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
+from mock import Mock
+
 from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import search_common, util
 from socorro.unittest.testbase import TestCase
+from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.database.transaction_executor import TransactionExecutor
 
 from .unittestbase import PostgreSQLTestCase
 
@@ -20,13 +25,21 @@ class TestPostgreSQLBase(TestCase):
     #--------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
+        # MOCKED CONFIG DONE HERE
         context = util.DotDict()
+        context.logger = util.SilentFakeLogger()
+        context.executor_identity = lambda: ''
         context.database = util.DotDict({
             'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',
             'database_username': 'someuser',
             'database_password': 'somepasswd',
+            'crashstorage_class': PostgreSQLCrashStorage,
+            'database_class': ConnectionContext,
+            'transaction_executor_class': TransactionExecutor,
+            'redactor_class': Mock(),
+            'logger': util.SilentFakeLogger()
         })
         context.platforms = (
             {
