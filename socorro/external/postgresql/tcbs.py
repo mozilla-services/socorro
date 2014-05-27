@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-logger = logging.getLogger("webapi")
-
-import socorro.database.database as db
 from socorro.lib import datetimeutil, util
+from socorro.external.postgresql.dbapi2_util import (
+    execute_query_iter,
+    single_value_sql,
+)
 
 import datetime
 
@@ -34,11 +34,12 @@ import datetime
 """
 
 
-def getListOfTopCrashersBySignature(connection, dbParams):
+#------------------------------------------------------------------------------
+def get_list_of_top_crashers_by_signature(connection, db_params):
     """
     Answers a generator of tcbs rows
     """
-    assertPairs = {
+    assert_pairs = {
         'startDate': (datetime.date, datetime.datetime),
         'to_date': (datetime.date, datetime.datetime),
         'product': basestring,
@@ -46,16 +47,16 @@ def getListOfTopCrashersBySignature(connection, dbParams):
         'limit': int
     }
 
-    for param in assertPairs:
-        if not isinstance(dbParams[param], assertPairs[param]):
-            raise ValueError(type(dbParams[param]))
+    for param in assert_pairs:
+        if not isinstance(db_params[param], assert_pairs[param]):
+            raise ValueError(type(db_params[param]))
 
     order_by = 'report_count'  # default order field
     where = ['']  # trick for the later join
-    if dbParams['crash_type'] != 'all':
-        where.append("process_type = '%s'" % (dbParams['crash_type'],))
-    if dbParams['os']:
-        order_by = '%s_count' % dbParams['os'][0:3].lower()
+    if db_params['crash_type'] != 'all':
+        where.append("process_type = '%s'" % (db_params['crash_type'],))
+    if db_params['os']:
+        order_by = '%s_count' % db_params['os'][0:3].lower()
         where.append("%s > 0" % order_by)
 
     where = ' AND '.join(where)
@@ -63,7 +64,7 @@ def getListOfTopCrashersBySignature(connection, dbParams):
     table_to_use = 'tcbs'
     date_range_field = 'report_date'
 
-    if dbParams['date_range_type'] == 'build':
+    if db_params['date_range_type'] == 'build':
         table_to_use = 'tcbs_build'
         date_range_field = 'build_date'
 
@@ -128,109 +129,120 @@ def getListOfTopCrashersBySignature(connection, dbParams):
         order_by,
         order_by,
         order_by,
-        dbParams["limit"]
+        db_params["limit"]
     )
-    cursor = connection.cursor()
     params = (
-        dbParams['product'],
-        dbParams['version'],
-        dbParams['startDate'],
-        dbParams['to_date'],
+        db_params['product'],
+        db_params['version'],
+        db_params['startDate'],
+        db_params['to_date'],
     )
-    try:
-        return db.execute(cursor, sql, params)
-    except Exception:
-        connection.rollback()
-        raise
-    else:
-        connection.commit()
+    return execute_query_iter(connection, sql, params)
 
 
-def rangeOfQueriesGenerator(connection, dbParams, queryFunction):
-    """
-    returns a list of the results of multiple queries.
-    """
-    i = dbParams.startDate
-    to_date = dbParams.to_date
+#------------------------------------------------------------------------------
+def range_of_queries_generator(connection, db_params, query_function):
+    """returns a list of the results of multiple queries."""
+    i = db_params.startDate
+    to_date = db_params.to_date
     while i < to_date:
         params = {}
-        params.update(dbParams)
+        params.update(db_params)
         params['startDate'] = i
-        params['to_date'] = i + dbParams.duration
-        dbParams.logger.debug("rangeOfQueriesGenerator for %s to %s",
-                                                    params['startDate'],
-                                                    params['to_date'])
-        yield queryFunction(connection, params)
-        i += dbParams.duration
+        params['to_date'] = i + db_params.duration
+        db_params.logger.debug(
+            "rangeOfQueriesGenerator for %s to %s",
+            params['startDate'],
+            params['to_date']
+        )
+        yield query_function(connection, params)
+        i += db_params.duration
 
 
+#==============================================================================
 class DictList(object):
-    def __init__(self, sourceIterable):
+    #--------------------------------------------------------------------------
+    def __init__(self, source_iterable):
         super(DictList, self).__init__()
-        self.rowsBySignature = {}
+        self.rows_by_signature = {}
         self.indexes = {}
-        self.rows = list(sourceIterable)
+        self.rows = list(source_iterable)
         for i, x in enumerate(self.rows):
-            self.rowsBySignature[x['signature']] = x
+            self.rows_by_signature[x['signature']] = x
             self.indexes[x['signature']] = i
 
-    def find(self, aSignature):
-        return (self.indexes[aSignature],
-                        self.rowsBySignature[aSignature]['percentOfTotal'])
+    #--------------------------------------------------------------------------
+    def find(self, a_signature):
+        return (
+            self.indexes[a_signature],
+            self.rows_by_signature[a_signature]['percentOfTotal']
+        )
 
+    #--------------------------------------------------------------------------
     def __iter__(self):
         return iter(self.rows)
 
 
-def listOfListsWithChangeInRank(listOfQueryResultsIterable):
+#------------------------------------------------------------------------------
+def list_of_lists_with_change_in_rank(list_of_query_results_iterable):
     """
     Step through a list of query results, altering them by adding prior
     ranking. Answers all but the very first item of the input.
     """
-    listOfTopCrasherLists = []
-    for aListOfTopCrashers in listOfQueryResultsIterable:
+    list_of_top_crasher_lists = []
+    for a_list_of_top_crashers in list_of_query_results_iterable:
         try:
-            previousList = DictList(listOfTopCrasherLists[-1])
+            previous_list = DictList(list_of_top_crasher_lists[-1])
         except IndexError:
             # 1st processed - has no previous history
-            previousList = DictList([])
-        currentListOfTopCrashers = []
-        aRowAsDict = None
-        for rank, aRow in enumerate(aListOfTopCrashers):
-            #logger.debug(aRowAsDict)
-            aRowAsDict = dict(zip(['signature', 'count', 'win_count',
-                                   'linux_count', 'mac_count', 'hang_count',
-                                   'plugin_count', 'content_count',
-                                   'first_report_exact', 'versions',
-                                   'percentOfTotal', 'startup_percent',
-                                   'is_gc_count', 'total_crashes'], aRow))
-            aRowAsDict['currentRank'] = rank
-            aRowAsDict['first_report'] = (
-                aRowAsDict['first_report_exact'].strftime('%Y-%m-%d'))
-            aRowAsDict['first_report_exact'] = (
-                aRowAsDict['first_report_exact'].strftime('%Y-%m-%d %H:%M:%S'))
-            versions = aRowAsDict['versions']
-            aRowAsDict['versions_count'] = len(versions)
-            aRowAsDict['versions'] = ', '.join(versions)
+            previous_list = DictList([])
+        current_list_of_top_crashers = []
+        a_row_as_dict = None
+        for rank, aRow in enumerate(a_list_of_top_crashers):
+            a_row_as_dict = dict(
+                zip(
+                    ['signature', 'count', 'win_count',
+                     'linux_count', 'mac_count', 'hang_count',
+                     'plugin_count', 'content_count',
+                     'first_report_exact', 'versions',
+                     'percentOfTotal', 'startup_percent',
+                     'is_gc_count', 'total_crashes'],
+                    aRow
+                )
+            )
+            a_row_as_dict['currentRank'] = rank
+            a_row_as_dict['first_report'] = (
+                a_row_as_dict['first_report_exact'].strftime('%Y-%m-%d'))
+            a_row_as_dict['first_report_exact'] = (
+                a_row_as_dict['first_report_exact']
+                .strftime('%Y-%m-%d %H:%M:%S')
+            )
+            versions = a_row_as_dict['versions']
+            a_row_as_dict['versions_count'] = len(versions)
+            a_row_as_dict['versions'] = ', '.join(versions)
             try:
-                (aRowAsDict['previousRank'],
-                 aRowAsDict['previousPercentOfTotal']) = previousList.find(
-                                                    aRowAsDict['signature'])
-                aRowAsDict['changeInRank'] = aRowAsDict['previousRank'] - rank
-                aRowAsDict['changeInPercentOfTotal'] = (
-                    aRowAsDict['percentOfTotal'] -
-                    aRowAsDict['previousPercentOfTotal'])
+                a_row_as_dict['previousRank'], \
+                    a_row_as_dict['previousPercentOfTotal'] = (
+                        previous_list.find(a_row_as_dict['signature'])
+                    )
+                a_row_as_dict['changeInRank'] = (
+                    a_row_as_dict['previousRank'] - rank
+                )
+                a_row_as_dict['changeInPercentOfTotal'] = (
+                    a_row_as_dict['percentOfTotal'] -
+                    a_row_as_dict['previousPercentOfTotal'])
             except KeyError:
-                aRowAsDict['previousRank'] = "null"
-                aRowAsDict['previousPercentOfTotal'] = "null"
-                aRowAsDict['changeInRank'] = "new"
-                aRowAsDict['changeInPercentOfTotal'] = "new"
-            currentListOfTopCrashers.append(aRowAsDict)
-        listOfTopCrasherLists.append(currentListOfTopCrashers)
-    return listOfTopCrasherLists[1:]
+                a_row_as_dict['previousRank'] = "null"
+                a_row_as_dict['previousPercentOfTotal'] = "null"
+                a_row_as_dict['changeInRank'] = "new"
+                a_row_as_dict['changeInPercentOfTotal'] = "new"
+            current_list_of_top_crashers.append(a_row_as_dict)
+        list_of_top_crasher_lists.append(current_list_of_top_crashers)
+    return list_of_top_crasher_lists[1:]
 
 
-def latestEntryBeforeOrEqualTo(connection, aDate, product, version):
+#------------------------------------------------------------------------------
+def latest_entry_before_or_equal_to(connection, a_date, product, version):
     """
     Retrieve the closest report date containing the provided product and
     version that does not exceed the provided date.
@@ -248,65 +260,65 @@ def latestEntryBeforeOrEqualTo(connection, aDate, product, version):
                     AND product_name = %s
                     AND version_string = %s
                 """
-    cursor = connection.cursor()
-    try:
-        result = db.singleValueSql(cursor, sql, (aDate, product, version))
-        connection.commit()
-    except:
-        result = None
-        connection.rollback()
-    return result or aDate
+    result = single_value_sql(connection, sql, (a_date, product, version))
+    return result or a_date
 
 
-def twoPeriodTopCrasherComparison(
-            databaseConnection, context,
-            closestEntryFunction=latestEntryBeforeOrEqualTo,
-            listOfTopCrashersFunction=getListOfTopCrashersBySignature):
+#------------------------------------------------------------------------------
+def two_period_top_crasher_comparison(
+    connection,
+    config,
+    closest_entry_function=latest_entry_before_or_equal_to,
+    list_of_top_crashers_function=get_list_of_top_crashers_by_signature
+):
     try:
-        context['logger'].debug('entered twoPeriodTopCrasherComparison')
+        config['logger'].debug('entered two_period_top_crasher_comparison')
     except KeyError:
-        context['logger'] = util.SilentFakeLogger()
+        config['logger'] = util.SilentFakeLogger()
 
     assertions = ['to_date', 'duration', 'product', 'version']
 
     for param in assertions:
-        assert param in context, (
+        assert param in config, (
             "%s is missing from the configuration" % param)
 
-    context['numberOfComparisonPoints'] = 2
-    if not context['limit']:
-        context['limit'] = 100
+    config['number_of_comparison_points'] = 2
+    if not config['limit']:
+        config['limit'] = 100
 
     #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
-    context['to_date'] = closestEntryFunction(databaseConnection,
-                                              context['to_date'],
-                                              context['product'],
-                                              context['version'])
-    context['logger'].debug('New to_date: %s' % context['to_date'])
-    context['startDate'] = context.to_date - (context.duration *
-                                              context.numberOfComparisonPoints)
+    config['to_date'] = closest_entry_function(
+        connection,
+        config['to_date'],
+        config['product'],
+        config['version']
+    )
+    config['logger'].debug('New to_date: %s' % config['to_date'])
+    config['startDate'] = config.to_date - (
+        config.duration * config.number_of_comparison_points
+    )
     #context['logger'].debug('after %s' % context)
-    listOfTopCrashers = listOfListsWithChangeInRank(
-                                            rangeOfQueriesGenerator(
-                                                databaseConnection,
-                                                context,
-                                                listOfTopCrashersFunction))[0]
-    #context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)
-    totalNumberOfCrashes = totalPercentOfTotal = 0
-    for x in listOfTopCrashers:
+    list_of_top_crashers = list_of_lists_with_change_in_rank(
+        range_of_queries_generator(
+            connection,
+            config,
+            list_of_top_crashers_function
+        )
+    )[0]
+    total_number_of_crashes = totalPercentOfTotal = 0
+    for x in list_of_top_crashers:
         if 'total_crashes' in x:
-            totalNumberOfCrashes = x['total_crashes']
+            total_number_of_crashes = x['total_crashes']
             del x['total_crashes']
         totalPercentOfTotal += x.get('percentOfTotal', 0)
 
     result = {
-        'crashes': listOfTopCrashers,
+        'crashes': list_of_top_crashers,
         'start_date': datetimeutil.date_to_string(
-            context.to_date - context.duration
+            config.to_date - config.duration
         ),
-        'end_date': datetimeutil.date_to_string(context.to_date),
-        'totalNumberOfCrashes': totalNumberOfCrashes,
+        'end_date': datetimeutil.date_to_string(config.to_date),
+        'totalNumberOfCrashes': total_number_of_crashes,
         'totalPercentage': totalPercentOfTotal,
     }
-    #logger.debug("about to return %s", result)
     return result

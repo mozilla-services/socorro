@@ -246,8 +246,7 @@ class HBaseClientApp(generic_app.App):
     required_config = Namespace()
     required_config.add_option(
         'hbase_crash_storage_class',
-        default=HappyBaseCrashStorage,
-
+        default='socorro.external.happybase.HBaseCrashStorage',
         doc='the class responsible for proving an hbase connection',
         from_string_converter=class_converter
     )

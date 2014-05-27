@@ -14,7 +14,7 @@ from socorro.cron.jobs import automatic_emails
 from socorro.external.exacttarget import exacttarget
 from socorro.external.elasticsearch.crashstorage import \
     ElasticSearchCrashStorage
-from socorro.external.elasticsearch.supersearch import SuperS
+from socorro.external.elasticsearch.supersearch_service import SuperS
 from socorro.lib.datetimeutil import string_to_datetime, utc_now
 from crontabber.tests.base import IntegrationTestCaseBase, TestCaseBase
 

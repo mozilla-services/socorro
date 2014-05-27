@@ -61,6 +61,8 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
     def test_basic_run_job_without_reports(self):
         config_manager = self._setup_config_manager(3)
 
+        config = config_manager.get_config()
+
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from reports')
         count, = cursor.fetchone()
