@@ -87,8 +87,19 @@
     <div class="panel">
       <div class="body notitle">
         <p>
-          You currently do not have permission to upload symbols.
+          <b>You currently do not have permission to upload symbols.</b>
         </p>
+        <p>
+          The necessary permission you need to have is
+          <b>{{ permission.name }}</b> and this needs to be manually given
+          to you and your account.
+        </p>
+        {% if symbols_request_link %}
+        <p>
+          The best way to get this permission is to go to:
+          <a href="{{ symbols_request_link.url }}">{{ symbols_request_link.label }}</a>.
+        </p>
+        {% endif %}
       </div>
     </div>
   {% endif %}
