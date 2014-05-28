@@ -153,3 +153,10 @@ SECRET_KEY = 'you must change this'
 #base.MIDDLEWARE_CLASSES += (
 #    'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
 #)
+
+# Ensure that the uploaded file is effectively g+rw while preserving the group
+# ownership inherited from system.
+# See
+# https://docs.djangoproject.com/en/dev/topics/http/\
+#  file-uploads/#changing-upload-handler-behavior
+#FILE_UPLOAD_PERMISSIONS = 0664
