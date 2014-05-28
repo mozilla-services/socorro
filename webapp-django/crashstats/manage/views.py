@@ -194,10 +194,18 @@ def users_data(request):
     if form.cleaned_data['group']:
         users_ = users_.filter(groups=form.cleaned_data['group'])
 
+    try:
+        page = int(request.GET.get('page', 1))
+        assert page >= 1
+    except (ValueError, AssertionError):
+        return http.HttpResponseBadRequest('invalid page')
+
     count = users_.count()
     user_items = []
-    batch_size = getattr(settings, 'USERS_ADMIN_BATCH_SIZE', 10)
-    for user in users_[:batch_size]:
+    batch_size = settings.USERS_ADMIN_BATCH_SIZE
+    m = (page - 1) * batch_size
+    n = page * batch_size
+    for user in users_[m:n]:
         user_items.append({
             'id': user.pk,
             'email': user.email,
@@ -209,7 +217,12 @@ def users_data(request):
                 for x in user.groups.all()
             ]
         })
-    return {'users': user_items, 'count': count}
+    return {
+        'users': user_items,
+        'count': count,
+        'batch_size': batch_size,
+        'page': page,
+    }
 
 
 @json_view
