@@ -222,7 +222,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         fields = [
             '%s.%s' % (x['namespace'], x['in_database_name'])
             for x in self.all_fields.values()
-            if x['is_exposed'] and x['is_returned']
+            if x['is_returned']
         ]
 
         if params['_return_query'][0].value[0]:

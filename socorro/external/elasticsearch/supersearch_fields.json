@@ -1866,7 +1866,7 @@
         "in_database_name": "uuid",
         "is_exposed": false,
         "is_mandatory": false,
-        "is_returned": false,
+        "is_returned": true,
         "name": "uuid",
         "namespace": "processed_crash",
         "permissions_needed": [],
