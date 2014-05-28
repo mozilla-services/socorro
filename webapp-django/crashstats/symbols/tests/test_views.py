@@ -55,6 +55,48 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+    def test_home_with_previous_uploads(self):
+        url = reverse('symbols:home')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+
+        upload1 = models.SymbolsUpload.objects.create(
+            user=user,
+            content='file1\nfile2',
+            filename='file1.zip',
+            size=12345
+        )
+        upload2 = models.SymbolsUpload.objects.create(
+            user=user,
+            content='file1\nfile2',
+            filename='sample.zip',
+            size=10000
+        )
+        with open(ZIP_FILE) as f:
+            upload2.file.save('sample.zip', File(f))
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # note that the file for upload1 does not exist
+        ok_(
+            reverse('symbols:download', args=(upload1.pk,))
+            not in response.content
+        )
+        # but you can for upload 2
+        ok_(
+            reverse('symbols:download', args=(upload2.pk,))
+            in response.content
+        )
+        # but you can preview both
+        ok_(
+            reverse('symbols:preview', args=(upload1.pk,))
+            in response.content
+        )
+        ok_(
+            reverse('symbols:preview', args=(upload2.pk,))
+            in response.content
+        )
+
     def test_web_upload(self):
         url = reverse('symbols:web_upload')
         response = self.client.get(url)
