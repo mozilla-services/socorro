@@ -220,9 +220,14 @@ class HybridCrashProcessor(RequiredConfig):
 
         self.rule_system = DotDict()
 
+        self.rule_system.processed_transform = self._load_transform_rules(
+            "processor.processed"
+        )
+
         self.rule_system.raw_crash_transform = self._load_transform_rules(
             "processor.json_rewrite"
         )
+
         self.rule_system.skunk_classifier = self._load_transform_rules(
             "processor.classifiers"
         )
@@ -369,6 +374,8 @@ class HybridCrashProcessor(RequiredConfig):
             )
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
+            #..................................................................
+            # apply skunk classifiers
             try:
                 self.rule_system.skunk_classifier.apply_until_action_succeeds(
                     raw_crash,
@@ -384,6 +391,8 @@ class HybridCrashProcessor(RequiredConfig):
                     exc_info=True
                 )
 
+            #..................................................................
+            # apply support classifiers
             try:
                 self.rule_system.support_classifier \
                     .apply_until_action_succeeds(
@@ -399,6 +408,25 @@ class HybridCrashProcessor(RequiredConfig):
                     str(x),
                     exc_info=True
                 )
+
+            #..................................................................
+            # apply processed_transform
+            try:
+                self.rule_system.processed_transform \
+                    .apply_all_rules(
+                        raw_crash,
+                        processed_crash,
+                        self
+                    )
+            except Exception, x:
+                # let's catch any unexpected error here and not let them
+                # derail the rest of the processing.
+                self.config.logger.error(
+                    'processed_transform rules have failed: %s',
+                    str(x),
+                    exc_info=True
+                )
+
 
         except Exception, x:
             self.config.logger.warning(
@@ -1467,3 +1495,5 @@ def json_Product_rewrite_action(raw_crash, processor):
     old_product_name = raw_crash['ProductName']
     new_product_name = processor._product_id_map[product_id]['product_name']
     raw_crash['ProductName'] = new_product_name
+
+
