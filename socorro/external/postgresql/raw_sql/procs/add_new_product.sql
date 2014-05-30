@@ -28,7 +28,7 @@ IF FOUND THEN
 END IF;
 
 -- add the product
-SELECT max(sort) INTO current_sort
+SELECT COALESCE(max(sort),0) INTO current_sort
 FROM products;
 
 INSERT INTO products ( product_name, sort, rapid_release_version,
