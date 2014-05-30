@@ -237,14 +237,21 @@ To run and hack on Socorro apps, you will need:
 
 3) The Django web service and its tests need the LESS preprocessor to be
 installed and on your $PATH
+You may need to run this as the *root* user depending on how node.js was 
+installed
 ::
   npm install -g less
 
-Socorro can install the dependencies into a virtualenv for you, then
-just activate it and set your PYTHONPATH
+
+Socorro can install the dependencies into a virtualenv for you.
+You only need to run this once
 ::
   export PATH=$PATH:/usr/pgsql-9.3/bin/
-  make bootstrap
+  make bootstrap bootstrap-webapp
+
+Before running any Socorro components, always make sure that the virtualenv 
+is activated and the PYTHONPATH is set
+::
   . socorro-virtualenv/bin/activate
   export PYTHONPATH=.
 
@@ -255,15 +262,18 @@ virtualenwrapper.
 Add a new superuser account to PostgreSQL
 -----------------------------------------
 
-Create a superuser account for yourself, and one for running tests:
-As the *root* user:
+Create a superuser account for yourself. Make sure to put your username
+and desired password instead of YOURNAME and YOURPASS.
+As the *postgres* user:
 ::
-  su - postgres -c "createuser -s $USER"
+  psql template1 -c \
+    "create user YOURNAME with encrypted password 'YOURPASS' superuser"
 
 For running unit tests, you'll want a test user as well (make sure
-to remove this for production installs):
+to remove this for production installs).
 ::
-  psql template1 -c "create user test with password 'aPassword' superuser"
+  psql template1 -c \
+    "create user test with encrypted password 'aPassword' superuser"
 
 Also, before you run unit tests or make, be sure to copy and edit this file:
 
@@ -305,7 +315,7 @@ Run unit/functional tests
 
 From inside the Socorro checkout
 ::
-  make test
+  make test test-webapp
 
 
 Install stackwalker
@@ -334,12 +344,7 @@ like, you also have the option to generate and populate the DB with synthetic
 test data
 ::
   ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
-  --fakedata --dropdb --database_superusername=$USER
-
-Or, run setupdb_app.py to create an empty breakpad database and load the schema:
-::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
-  --database_superusername=$USER
+    --fakedata --dropdb
 
 IMPORTANT NOTE - many reports use the reports_clean_done() stored
 procedure to check that reports exist for the last UTC hour of the
@@ -348,10 +353,6 @@ volume does not guarantee one crash per hour, you may want to modify
 this function in
 socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
 and reload the schema
-::
-
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
-  --dropdb --database_superusername=$USER
 
 
 Create partitioned reports_* tables
@@ -374,26 +375,29 @@ Copy default config files
   cp config/processor.ini-dist config/processor.ini
   cp config/middleware.ini-dist config/middleware.ini
   cp webapp-django/crashstats/settings/local.py-dist \
-  webapp-django/crashstats/settings/local.py
+    webapp-django/crashstats/settings/local.py
 
 You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 
-By default they listen on localhost only.
+By default they listen on localhost only, which should be fine for local
+development.
 
 Run Socorro services using Honcho (configured in Procfile)
 ::
   honcho start
 
-You can also start individual services:
+Alternatively you can also start individual services:
 ::
   honcho start web
   honcho start collector
   honcho start middleware
   honcho start processor
 
-If you want to modify something that is common across config files like PostgreSQL username/hostname/etc, refer to config/common_database.ini-dist and the "+include" line in the service-specific config files (such as collector.ini
-and processor.ini). This is optional but recommended.
+If you want to modify something that is common across config files like
+PostgreSQL username/hostname/etc, refer to config/common_database.ini-dist and
+the "+include" line in the service-specific config files (such as
+collector.ini and processor.ini). This is optional but recommended.
 
 .. _systemtest-chapter:
 
@@ -455,9 +459,10 @@ As the *root* user:
   chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
-Ensure that the user doing installs owns the install dir:
+Ensure that the user doing installs owns the install dir,
+as the *root* user:
 ::
-  su -c "chown $USER /data/socorro"
+  chown socorro /data/socorro
 
 Install socorro
 ---------------
@@ -479,9 +484,14 @@ Install configuration to system directory
 
 From inside the Socorro checkout, as the *root* user
 ::
-  cp config/*.ini-dist /etc/socorro
+  cp config/\*.ini-dist /etc/socorro
 
-Make sure the copy each *.ini-dist file to *.ini and configure it.
+Make sure the copy each .ini-dist file to .ini and configure it.
+
+In particular, you must change the web server in collector.ini
+and middlware.ini to support Apache mod_wsgi rather than the standalone
+server::
+  wsgi_server_class='socorro.webapi.servers.ApacheModWSGI'
 
 It is highly recommended that you customize the files
 to change default passwords, and include the common_*.ini files
@@ -549,9 +559,12 @@ edit /data/socorro/webapp-django/crashstats/settings/local.py:
   DEV = False
   COMPRESS_OFFLINE = True
   SECRET_KEY = '' # set this to something unique
+  # adjust this for your site!
+  ALLOWED_HOSTS = ['crash-stats.example.com']
 
 Allow Django to create the database tables it needs for managing sessions:
 ::
+  . /data/socorro/webapp-django/virtualenv/bin/activate
   /data/socorro/webapp-django/manage.py syncdb --noinput
 
 Copy the example Apache config into place from the Socorro checkout as the

@@ -41,10 +41,8 @@ test-socorro: bootstrap
 	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
-# makes thing semantically consistent (test-{component}) while avoiding
-# building the webapp twice to save a little time
-test-webapp: webapp-django
-	# alias to webapp-django
+test-webapp:
+	cd webapp-django; ./bin/jenkins.sh
 
 bootstrap:
 	git submodule update --init --recursive
@@ -54,7 +52,7 @@ bootstrap:
 	$(VIRTUALENV)/bin/pip install tools/peep-1.1.tar.gz
 	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
-install: bootstrap reinstall
+install: bootstrap bootstrap-webapp reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro
@@ -62,7 +60,7 @@ reinstall: install-socorro
 	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
 	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
-install-socorro: webapp-django
+install-socorro: bootstrap-webapp
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -112,8 +110,8 @@ json_enhancements_pg_extension: bootstrap
     # every time Socorro is built
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
-webapp-django: bootstrap
-	cd webapp-django; ./bin/jenkins.sh
+bootstrap-webapp:
+	cd webapp-django; ./bin/bootstrap.sh
 
 stackwalker:
 	# Build JSON stackwalker
