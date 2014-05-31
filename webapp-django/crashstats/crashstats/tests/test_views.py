@@ -2334,10 +2334,10 @@ class TestViews(BaseTestViews):
 
         # Test passed date
         response = self.client.get(url, {
-            'date': '11/27/2085 10:10:10'
+            'date': '11/27/2031 10:10:10'
         })
         eq_(response.status_code, 200)
-        ok_('11/27/2085 10:10:10' in response.content)
+        ok_('11/27/2031 10:10:10' in response.content)
 
         # Test value of build ids
         response = self.client.get(url, {
