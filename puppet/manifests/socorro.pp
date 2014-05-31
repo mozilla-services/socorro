@@ -34,10 +34,11 @@ class webapp::socorro {
       gpgcheck => 0;
 
     'EPEL':
-      baseurl  => 'http://download.fedoraproject.org/pub/epel/$releasever/$basearch',
+      baseurl  => 'http://dl.fedoraproject.org/pub/epel/$releasever/$basearch',
       descr    => 'EPEL',
       enabled  => 1,
-      gpgcheck => 0;
+      gpgcheck => 0,
+      timeout => 60;
 
     'devtools':
       baseurl  => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS',
