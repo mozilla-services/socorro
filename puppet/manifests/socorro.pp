@@ -2,6 +2,23 @@
 class webapp::socorro {
 
   service {
+    'iptables':
+      ensure => stopped,
+      enable => false;
+
+    'httpd':
+      ensure  => running,
+      enable  => true,
+      require => [
+        Package['httpd'],
+        File['socorro_apache.conf'],
+      ];
+
+    'memcached':
+      ensure  => running,
+      enable  => true,
+      require => Package['memcached'];
+
     'rabbitmq-server':
       ensure  => running,
       enable  => true,
@@ -13,6 +30,7 @@ class webapp::socorro {
       require => [
           Package['postgresql93-server'],
           Exec['postgres-initdb'],
+          File['pg_hba.conf'],
         ];
 
     'elasticsearch':
@@ -38,7 +56,7 @@ class webapp::socorro {
       descr    => 'EPEL',
       enabled  => 1,
       gpgcheck => 0,
-      timeout => 60;
+      timeout  => 60;
 
     'devtools':
       baseurl  => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS',
@@ -65,6 +83,10 @@ class webapp::socorro {
       'openldap-devel',
       'java-1.7.0-openjdk',
       'yum-plugin-fastestmirror',
+      'httpd',
+      'mod_wsgi',
+      'memcached',
+      'daemonize',
     ]:
     ensure => latest
   }
@@ -86,7 +108,7 @@ class webapp::socorro {
       'supervisor',
       'rabbitmq-server',
       'python-pip',
-      'npm',
+      'nodejs-less',
     ]:
     ensure  => latest,
     require => [ Yumrepo['EPEL'], Package['yum-plugin-fastestmirror']]
@@ -102,6 +124,67 @@ class webapp::socorro {
     'devtoolset-1.1-gcc-c++':
       ensure  => latest,
       require => [ Yumrepo['devtools'], Package['yum-plugin-fastestmirror']]
+  }
+
+  file {
+    '/etc/socorro':
+      ensure => directory;
+
+    'pg_hba.conf':
+      path    => '/var/lib/pgsql/9.3/data/pg_hba.conf',
+      source  => '/vagrant/puppet/files/var_lib_pgsql_9.3_data/pg_hba.conf',
+      owner   => 'postgres',
+      group   => 'postgres',
+      ensure  => file,
+      require => [
+        Package['postgresql93-server'],
+        Exec['postgres-initdb'],
+      ],
+      notify  => Service['postgresql-9.3'];
+
+    'alembic.ini':
+      path    => '/etc/socorro/alembic.ini',
+      source  => '/vagrant/puppet/files/config/alembic.ini',
+      require => File['/etc/socorro'],
+      ensure  => file;
+
+    'collector.ini':
+      path    => '/etc/socorro/collector.ini',
+      source  => '/vagrant/puppet/files/config/collector.ini',
+      require => File['/etc/socorro'],
+      ensure  => file;
+
+    'middleware.ini':
+      path    => '/etc/socorro/middleware.ini',
+      source  => '/vagrant/puppet/files/config/middleware.ini',
+      require => File['/etc/socorro'],
+      ensure  => file;
+
+    'processor.ini':
+      path    => '/etc/socorro/processor.ini',
+      source  => '/vagrant/puppet/files/config/processor.ini',
+      require => File['/etc/socorro'],
+      ensure  => file;
+
+    'socorro_apache.conf':
+      path    => '/etc/httpd/conf.d/socorro.conf',
+      source  => '/vagrant/puppet/files/etc_httpd_conf.d/socorro.conf',
+      owner   => 'apache',
+      ensure  => file,
+      require => Package['httpd'],
+      notify  => Service['httpd'];
+
+    'socorro_crontab':
+      path   => '/etc/cron.d/socorro',
+      source => '/vagrant/puppet/files/etc_cron.d/socorro',
+      owner  => 'root',
+      ensure => file;
+
+    'socorro_django_local.py':
+      path    => '/etc/socorro/local.py',
+      source  => '/vagrant/puppet/files/config/local.py',
+      require => File['/etc/socorro'],
+      ensure  => file;
   }
 
 }
