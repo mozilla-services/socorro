@@ -45,11 +45,20 @@ def web_upload(request):
     if request.method == 'POST':
         form = forms.UploadForm(request.POST, request.FILES)
         if form.is_valid():
+            name = form.cleaned_data['file'].name
+            if name.endswith('.tar.gz') or name.endswith('.tgz'):
+                # Django uses mimetypes to turn a filename into a
+                # mimetype. For .tar, .tar.gz and .tgz you get
+                # 'application/x-tar' which misses out that it's
+                # gzipped. So we override that here.
+                content_type = 'application/x-gzip'
+            else:
+                content_type = form.cleaned_data['file'].content_type
             symbols_upload = models.SymbolsUpload.objects.create(
                 user=request.user,
                 content=utils.preview_archive_content(
                     form.cleaned_data['file'].file,
-                    form.cleaned_data['file'].content_type
+                    content_type
                 ),
                 size=form.cleaned_data['file'].size,
                 filename=os.path.basename(form.cleaned_data['file'].name),
