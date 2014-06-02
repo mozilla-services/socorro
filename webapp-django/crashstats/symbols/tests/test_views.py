@@ -13,7 +13,7 @@ from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.symbols import models
 
 
-from .base import ZIP_FILE
+from .base import ZIP_FILE, TARGZ_FILE, TGZ_FILE, TAR_FILE
 
 
 class EmptyFile(object):
@@ -142,6 +142,69 @@ class TestViews(BaseTestViews):
 
             symbol_upload = models.SymbolsUpload.objects.get(user=user)
             eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
+            ok_(symbol_upload.size)
+            ok_(symbol_upload.file)
+            ok_(symbol_upload.file_exists)
+            ok_(symbol_upload.content)
+
+    def test_web_upload_tar_gz_file(self):
+        url = reverse('symbols:web_upload')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+
+        # now we can post
+        with self.settings(MEDIA_ROOT=self.tmp_dir):
+            with open(TARGZ_FILE) as file_object:
+                response = self.client.post(
+                    url,
+                    {'file': file_object}
+                )
+                eq_(response.status_code, 302)
+
+            symbol_upload = models.SymbolsUpload.objects.get(user=user)
+            eq_(symbol_upload.filename, os.path.basename(TARGZ_FILE))
+            ok_(symbol_upload.size)
+            ok_(symbol_upload.file)
+            ok_(symbol_upload.file_exists)
+            ok_(symbol_upload.content)
+
+    def test_web_upload_tgz_file(self):
+        url = reverse('symbols:web_upload')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+
+        # now we can post
+        with self.settings(MEDIA_ROOT=self.tmp_dir):
+            with open(TGZ_FILE) as file_object:
+                response = self.client.post(
+                    url,
+                    {'file': file_object}
+                )
+                eq_(response.status_code, 302)
+
+            symbol_upload = models.SymbolsUpload.objects.get(user=user)
+            eq_(symbol_upload.filename, os.path.basename(TGZ_FILE))
+            ok_(symbol_upload.size)
+            ok_(symbol_upload.file)
+            ok_(symbol_upload.file_exists)
+            ok_(symbol_upload.content)
+
+    def test_web_upload_tar_file(self):
+        url = reverse('symbols:web_upload')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+
+        # now we can post
+        with self.settings(MEDIA_ROOT=self.tmp_dir):
+            with open(TAR_FILE) as file_object:
+                response = self.client.post(
+                    url,
+                    {'file': file_object}
+                )
+                eq_(response.status_code, 302)
+
+            symbol_upload = models.SymbolsUpload.objects.get(user=user)
+            eq_(symbol_upload.filename, os.path.basename(TAR_FILE))
             ok_(symbol_upload.size)
             ok_(symbol_upload.file)
             ok_(symbol_upload.file_exists)
