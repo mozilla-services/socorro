@@ -1,6 +1,5 @@
 NameVirtualHost *:80
-WSGIPythonPath /data/socorro/application
-WSGIPythonHome /data/socorro/socorro-virtualenv:/data/socorro/webapp-django/virtualenv
+WSGIPythonPath /data/socorro/application:/data/socorro/socorro-virtualenv/lib/python2.6/site-packages/:/data/socorro/webapp-django/virtualenv/lib/python2.6/site-packages
 
 # Django app, public web UI
 <VirtualHost *:80>
