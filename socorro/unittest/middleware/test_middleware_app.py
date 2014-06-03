@@ -307,8 +307,6 @@ class IntegrationTestMiddlewareApp(TestCase):
     def test_crashes_comments_with_data(self):
         config_manager = self.get_config_manager()
 
-        config_manager.dump_conf(config_pathname='/home/lars/temp/fucked.ini')
-
         now = datetimeutil.utc_now()
         uuid = "%%s-%s" % now.strftime("%y%m%d")
         self.transaction(
