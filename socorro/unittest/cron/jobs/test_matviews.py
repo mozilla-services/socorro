@@ -183,7 +183,7 @@ class TestMatviews(IntegrationTestCaseBase):
             tab.run_all()
 
             information = self._load_structure()
-            assert information['reports-clean']
+            assert information['reports-clean'], information
             assert not information['reports-clean']['last_error']
             assert information['reports-clean']['last_success']
 

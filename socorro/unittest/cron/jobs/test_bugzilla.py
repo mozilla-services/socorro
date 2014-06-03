@@ -174,7 +174,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
             information = self._load_structure()
             assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
+            assert not information['bugzilla-associations']['last_error'], information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
         cursor.execute('select id, short_desc from bugs where id = 8')
