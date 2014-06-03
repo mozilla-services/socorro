@@ -7,11 +7,16 @@ import datetime
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
+from mock import Mock
+
 from socorro.external import (
     MissingArgumentError,
     BadArgumentError
 )
 from socorro.external.postgresql.crashes import Crashes
+from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.database.transaction_executor import TransactionExecutor
 from socorro.lib import datetimeutil, util
 from socorro.unittest.testbase import TestCase
 
@@ -25,13 +30,24 @@ class TestCrashes(TestCase):
     #--------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
+        # MOCKED CONFIG DONE HERE
         context = util.DotDict()
+        context.logger = util.SilentFakeLogger()
+        context.executor_identity = lambda: ''
         context.database = util.DotDict({
             'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',
             'database_username': 'someuser',
             'database_password': 'somepasswd',
+            'database_class': ConnectionContext,
+            'crashstorage_class': PostgreSQLCrashStorage,
+            'transaction_executor_class': TransactionExecutor,
+            'redactor_class': Mock(),
+            # normally config from configman uses "acquisition" and that's
+            # how the logger is found on a lower level.  Here we fake it by
+            # making sure that there is logger a the higher level.
+            'logger': util.SilentFakeLogger(),
         })
         context.webapi = util.DotDict()
         context.webapi.platforms = (
@@ -114,12 +130,24 @@ class TestCrashes(TestCase):
         # This can all be some fake crap because we're testing that
         # the implementation class throws out the request before
         # it gets to doing any queries.
-        config = {
-            'database_hostname': None,
-            'database_name': None,
-            'database_username': None,
-            'database_password': None,
-        }
+        # MOCKED CONFIG DONE HERE
+        config = util.DotDict(
+            {
+                'database': util.DotDict({
+                    'database_hostname': None,
+                    'database_name': None,
+                    'database_username': None,
+                    'database_password': None,
+                    'database_port': 5332,
+                    'database_class': ConnectionContext,
+                    'transaction_executor_class': TransactionExecutor,
+                    'crashstorage_class': PostgreSQLCrashStorage,
+                    'redactor_class': Mock(),
+                    'logger': util.SilentFakeLogger(),
+                }),
+                'logger': util.SilentFakeLogger(),
+            }
+        )
         crashes = Crashes(config=config)
         params = {}
         params['duration'] = 31 * 24  # 31 days

@@ -288,8 +288,8 @@ class ImplementationWrapperTestCase(TestCase):
         )
         eq_(response.status, 200)
         eq_(json.loads(response.body),
-                         {'foo': 'bar',
-                          'names': ['peter', 'anders']})
+            {'foo': 'bar',
+             'names': ['peter', 'anders']})
 
         logging_info.assert_called_with('Running AuxImplementation5')
 
@@ -432,6 +432,7 @@ class IntegrationTestMiddlewareApp(TestCase):
         mock_logging = mock.Mock()
         required_config = middleware_app.MiddlewareApp.get_required_config()
         required_config.add_option('logger', default=mock_logging)
+        required_config.add_option('executor_identity', default=mock.Mock())
         config_manager = ConfigurationManager(
             [required_config],
             app_name='middleware',
@@ -474,6 +475,7 @@ class IntegrationTestMiddlewareApp(TestCase):
         mock_logging = mock.Mock()
         required_config = middleware_app.MiddlewareApp.get_required_config()
         required_config.add_option('logger', default=mock_logging)
+        required_config.add_option('executor_identity', default=mock.Mock())
 
         config_manager = ConfigurationManager(
             [required_config,
@@ -1180,8 +1182,8 @@ class IntegrationTestMiddlewareApp(TestCase):
             hits = sorted(response.data['hits'], key=lambda k: k['id'])
             eq_(response.data['total'], 2)
             eq_(hits,
-                             [{u'id': 2, u'signature': u'sign2+'},
-                              {u'id': 3, u'signature': u'si/gn1'}])
+                [{u'id': 2, u'signature': u'sign2+'},
+                 {u'id': 3, u'signature': u'si/gn1'}])
 
             response = self.post(
                 server,
@@ -1489,4 +1491,4 @@ class IntegrationTestMiddlewareApp(TestCase):
                     'channel': 'aurora',
                 }
             )
-            eq_(response.data, {'hits': [], 'total':0})
+            eq_(response.data, {'hits': [], 'total': 0})

@@ -2,14 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-import psycopg2
-
-from socorro.external import DatabaseError, MissingArgumentError
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import external_common
-
-logger = logging.getLogger("webapi")
 
 
 class SkipList(PostgreSQLBase):
@@ -45,7 +40,6 @@ class SkipList(PostgreSQLBase):
         sql_results = self.query(sql, sql_params, error_message=error_message)
 
         results = [dict(zip(("category", "rule"), x)) for x in sql_results]
-
         return {'hits': results, 'total': len(results)}
 
     def post(self, **kwargs):
@@ -62,20 +56,8 @@ class SkipList(PostgreSQLBase):
         """
 
         sql_params = [params.category, params.rule]
-        connection = self.database.connection()
-        try:
-            cur = connection.cursor()
-            cur.execute(sql, sql_params)
-            connection.commit()
-        except psycopg2.Error:
-            connection.rollback()
-            error_message = "Failed updating skip list in PostgreSQL"
-            logger.error(error_message)
-            raise DatabaseError(error_message)
-        finally:
-            connection.close()
-
-        return True
+        total = self.execute_no_results(sql, sql_params)
+        return total > 0
 
     def delete(self, **kwargs):
         params = external_common.parse_arguments(self.filters, kwargs)
@@ -85,31 +67,16 @@ class SkipList(PostgreSQLBase):
             raise MissingArgumentError('rule')
 
         sql_params = [params.category, params.rule]
-        count_sql = """
-            /* socorro.external.postgresql.skiplist.SkipList.delete */
-            SELECT COUNT(*) FROM skiplist
-            WHERE category=%s AND rule=%s
-        """
+        #count_sql = """
+            #/* socorro.external.postgresql.skiplist.SkipList.delete */
+            #SELECT COUNT(*) FROM skiplist
+            #WHERE category=%s AND rule=%s
+        #"""
         sql = """
             /* socorro.external.postgresql.skiplist.SkipList.delete */
             DELETE FROM skiplist
             WHERE category=%s AND rule=%s
         """
 
-        connection = self.database.connection()
-        try:
-            cur = connection.cursor()
-            count = self.count(count_sql, sql_params, connection=connection)
-            if not count:
-                return False
-            cur.execute(sql, sql_params)
-            connection.commit()
-        except psycopg2.Error:
-            connection.rollback()
-            error_message = "Failed delete skip list in PostgreSQL"
-            logger.error(error_message)
-            raise DatabaseError(error_message)
-        finally:
-            connection.close()
-
-        return True
+        total = self.execute_no_results(sql, sql_params)
+        return total > 0

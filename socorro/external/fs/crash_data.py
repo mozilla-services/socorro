@@ -10,6 +10,4 @@ class CrashData(CrashDataBase):
     """
     Implement the /crash_data service with the file system.
     """
-
-    def get_storage(self):
-        return self.config.filesystem.filesystem_class(self.config.filesystem)
+    role = 'filesystem'

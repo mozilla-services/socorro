@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import socorro.database.database as db
-from configman import ConfigurationManager, Namespace
-from configman.converters import list_converter
+import socorro.lib.util
+from configman import ConfigurationManager, Namespace, environment
+from configman.converters import list_converter, class_converter
 from socorro.unittest.testbase import TestCase
 
 
@@ -18,46 +18,27 @@ class PostgreSQLTestCase(TestCase):
 
     required_config = Namespace()
     required_config.namespace('database')
-    required_config.add_option(
-        name='database_name',
-        default='socorro_integration_test',
-        doc='Name of database to manage',
+    # this class will bring in all the appropriate connection stuff required
+    # by postgres - including a transaction manager
+    required_config.database.add_option(
+        'crashstorage_class',
+        default=
+        'socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage',
+        doc='the class responsible for connecting to Postgres',
+        reference_value_from='resource.postgresql',
+        from_string_converter=class_converter
     )
 
-    required_config.add_option(
-        name='database_hostname',
-        default='localhost',
-        doc='Hostname to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_username',
-        default='breakpad_rw',
-        doc='Username to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_password',
-        default='aPassword',
-        doc='Password to connect to database',
-    )
-
-    required_config.add_option(
+    required_config.database.add_option(
         name='database_superusername',
         default='test',
         doc='Username to connect to database',
     )
 
-    required_config.add_option(
+    required_config.database.add_option(
         name='database_superuserpassword',
         default='aPassword',
         doc='Password to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_port',
-        default='',
-        doc='Port to connect to database',
     )
 
     required_config.add_option(
@@ -96,25 +77,36 @@ class PostgreSQLTestCase(TestCase):
         doc='List of channels to restrict based on build ids.',
         from_string_converter=list_converter
     )
+    required_config.add_option(
+        'logger',
+        default=socorro.lib.util.SilentFakeLogger(),
+        doc='a logger',
+    )
 
     def get_standard_config(self):
+        # MOCKED CONFIG DONE HERE
+        local_overrides_of_defaults = {
+            'database.database_name': 'socorro_integration_test',
+        }
 
         config_manager = ConfigurationManager(
             [self.required_config,
              ],
+            values_source_list=[local_overrides_of_defaults, environment],
             app_name='PostgreSQLTestCase',
             app_description=__doc__,
             argv_source=[]
         )
-
-        with config_manager.context() as config:
-            return config
+        return config_manager.get_config()
 
     def setUp(self):
         """Create a configuration context and a database connection. """
         self.config = self.get_standard_config()
 
-        self.database = db.Database(self.config)
+        self.database = self.config.database.database_class(
+            self.config.database
+        )
+
         self.connection = self.database.connection()
 
     def tearDown(self):

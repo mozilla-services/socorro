@@ -241,29 +241,25 @@ class Report(PostgreSQLBase):
         )
 
         # Querying the DB
-        with self.get_connection() as connection:
+        total = self.count(
+            sql_count_query,
+            sql_params,
+            error_message="Failed to count crashes from reports.",
+        )
 
-            total = self.count(
-                sql_count_query,
+        # No need to call Postgres if we know there will be no results
+        if total:
+
+            if include_raw_crash:
+                sql_query = wrapped_select % sql_query
+
+            results = self.query(
+                sql_query,
                 sql_params,
-                error_message="Failed to count crashes from reports.",
-                connection=connection
+                error_message="Failed to retrieve crashes from reports",
             )
-
-            # No need to call Postgres if we know there will be no results
-            if total:
-
-                if include_raw_crash:
-                    sql_query = wrapped_select % sql_query
-
-                results = self.query(
-                    sql_query,
-                    sql_params,
-                    error_message="Failed to retrieve crashes from reports",
-                    connection=connection
-                )
-            else:
-                results = []
+        else:
+            results = []
 
         # Transforming the results into what we want
         fields = (

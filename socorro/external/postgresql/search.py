@@ -128,28 +128,24 @@ class Search(PostgreSQLBase):
                 "SELECT count(DISTINCT r.signature)", sql_from, sql_where))
 
         # Querying the database
+        # editorial: why query twice?  use the second query only, and then get
+        #    the length of the relults to determine the value of "total"
         error_message = "Failed to retrieve crashes from PostgreSQL"
-        with self.get_connection() as connection:
-            try:
-                total = self.count(
-                    sql_count_query,
-                    sql_params,
-                    error_message="Failed to count crashes from PostgreSQL.",
-                    connection=connection
-                )
+        total = self.count(
+            sql_count_query,
+            sql_params,
+            error_message="Failed to count crashes from PostgreSQL.",
+        )
 
-                results = []
+        results = []
 
-                # No need to call Postgres if we know there will be no results
-                if total != 0:
-                    results = self.query(
-                        sql_query,
-                        sql_params,
-                        error_message=error_message,
-                        connection=connection
-                    )
-            except psycopg2.Error:
-                raise DatabaseError(error_message)
+        # No need to call Postgres if we know there will be no results
+        if total != 0:
+            results = self.query(
+                sql_query,
+                sql_params,
+                error_message=error_message,
+            )
 
         # Transforming the results into what we want
         crashes = []

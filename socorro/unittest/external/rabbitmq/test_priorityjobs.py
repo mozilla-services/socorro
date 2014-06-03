@@ -7,9 +7,13 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.rabbitmq import priorityjobs
+from socorro.external.rabbitmq.crashstorage import RabbitMQCrashStorage
+from socorro.external.rabbitmq.connection_context import ConnectionContext
+from socorro.database.transaction_executor import TransactionExecutor
 from socorro.unittest.testbase import TestCase
 
 from configman.dotdict import DotDictWithAcquisition
+
 
 #==============================================================================
 @attr(integration='rabbitmq')  # for nosetests
@@ -18,8 +22,13 @@ class IntegrationTestPriorityjobs(TestCase):
 
     def setUp(self):
         """Create a configuration context."""
+        # MOCKED CONFIG DONE HERE
         super(IntegrationTestPriorityjobs, self).setUp()
         rabbitmq = DotDictWithAcquisition()
+        rabbitmq.crashstorage_class = RabbitMQCrashStorage
+        rabbitmq.redactor_class = Mock()
+        rabbitmq.rabbitmq_class = ConnectionContext
+        rabbitmq.transaction_executor_class = TransactionExecutor
         rabbitmq.host='localhost'
         rabbitmq.port=5672
         rabbitmq.priority_queue_name='socorro.priority'
@@ -72,7 +81,7 @@ class IntegrationTestPriorityjobs(TestCase):
             assert_raises(priorityjobs.MissingArgumentError,
                               jobs.create)
             ok_(
-                mocked_connection.return_value.channel. \
+                mocked_connection.return_value.channel.
                     basic_publish.called_once_with(
                         '',
                         'socorro.priority',
