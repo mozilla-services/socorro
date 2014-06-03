@@ -274,7 +274,7 @@ reports_clean_done
 Purpose: supports other admin functions by checking if reports_clean is complete
 	to the end of the day.
 
-Called By: other udpate functions
+Called By: other update functions
 
 ::
 
