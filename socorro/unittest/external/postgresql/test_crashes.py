@@ -1289,7 +1289,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         assert_raises(
             BadArgumentError,
             crashes.get_adu_by_signature,
-            start_date=(yesterday_date - datetime.timedelta(days=61)),
+            start_date=(yesterday_date - datetime.timedelta(days=366)),
             end_date=yesterday,
             signature=signature,
             channel=channel
