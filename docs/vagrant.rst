@@ -2,10 +2,10 @@
 
 .. _vagrant-chapter:
 
-Set up a services VM with Vagrant
+Set up a VM with Vagrant
 =================================
 
-Vagrant can be used to build a VM that supplies the basic services stack
+Vagrant can be used to build a VM that supplies the basic dependency stack
 required by Socorro. This is an alternative to setting up these services
 manually in your local environment.
 
@@ -28,6 +28,7 @@ Instructions
 1. Clone the Socorro repository:
 ::
   git clone git://github.com/mozilla/socorro.git
+  cd socorro
 
 2. Provision the VM:
 ::
@@ -37,7 +38,7 @@ This step will:
 
 * Download the base image if it isn't already present.
 * Boot the VM.
-* Using Puppet, install and initialise the basic services that Socorro
+* Using Puppet, install and initialise the basic dependencies that Socorro
   needs.
 
 3. Add entries to ``/etc/hosts`` on the **HOST** machine:
@@ -47,17 +48,14 @@ This step will:
 That's it!
 ----------
 
-If everything works, you'll now have a VM running with all of Socorro's
-service dependencies installed and ready to go!
+You can get a shell in the VM as the user "vagrant" by running this
+in your Socorro source checkout:
+::
+  vagrant ssh
 
-Your git checkout will automatically be shared with the VM in
+Your git checkout on the host will automatically be shared with the VM in
 ``/home/vagrant/src/socorro`` .
-  
-You can either hack on the code from within the VM or on the host machine
-as normal. Note that, by default, none of the services are available outside
-of the VM; see the Vagrant_ documentation for more details on how to modify
-this behaviour.
 
-Now continue in the install docs, starting from: :ref:`settingupenv-chapter`
+Next you need to install Socorro itself: :ref:`settingupenv-chapter`
 
 .. _Vagrant: https://docs.vagrantup.com/v2/networking/forwarded_ports.html
