@@ -44,6 +44,7 @@ class TestViews(BaseTestViews):
         return user
 
     def test_home(self):
+        self._create_group_with_permission('upload_symbols')
         url = reverse('symbols:home')
         response = self.client.get(url)
         eq_(response.status_code, 302)
@@ -52,8 +53,20 @@ class TestViews(BaseTestViews):
             reverse('crashstats:login') + '?next=%s' % url
         )
         self._login()
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
+        with self.settings(SYMBOLS_PERMISSION_HINT_LINK=None):
+            response = self.client.get(url)
+            eq_(response.status_code, 200)
+
+        link = {
+            'url': 'https://bugzilla.mozilla.org',
+            'label': 'Bugzilla'
+        }
+        with self.settings(SYMBOLS_PERMISSION_HINT_LINK=link):
+            response = self.client.get(url)
+            eq_(response.status_code, 200)
+
+            ok_(link['url'] in response.content)
+            ok_(link['label'] in response.content)
 
     def test_home_with_previous_uploads(self):
         url = reverse('symbols:home')

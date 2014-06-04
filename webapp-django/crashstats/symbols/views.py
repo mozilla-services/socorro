@@ -2,6 +2,7 @@ import os
 from cStringIO import StringIO
 
 from django import http
+from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import Permission
 from django.contrib.auth.decorators import login_required, permission_required
@@ -25,6 +26,12 @@ def home(request):
         models.SymbolsUpload.objects
         .filter(user=request.user)
         .order_by('-created')
+    )
+    context['permission'] = Permission.objects.get(codename='upload_symbols')
+    context['symbols_request_link'] = getattr(
+        settings,
+        'SYMBOLS_PERMISSION_HINT_LINK',
+        None
     )
 
     return render(request, 'symbols/home.html', context)
