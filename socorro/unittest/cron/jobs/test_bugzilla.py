@@ -174,6 +174,7 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
             information = self._load_structure()
             assert information['bugzilla-associations']
+            assert 0, config
             assert not information['bugzilla-associations']['last_error'], information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
