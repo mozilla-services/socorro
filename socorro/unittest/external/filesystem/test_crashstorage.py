@@ -50,6 +50,7 @@ class TestFileSystemCrashStorage(TestCase):
         return found
 
     def _common_config_setup(self):
+        # MOCKED CONFIG DONE HERE
         mock_logging = Mock()
         required_config = FileSystemCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)

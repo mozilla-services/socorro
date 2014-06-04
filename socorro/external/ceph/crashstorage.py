@@ -252,6 +252,8 @@ class BotoS3CrashStorage(CrashStorageBase):
         return self.transaction(self.do_get_unredacted_processed, crash_id)
 
     #--------------------------------------------------------------------------
+    #TODO: create a system with bucket name prefixes - for special use
+    #      like testing
     @staticmethod
     def _create_bucket_name_for_crash_id(crash_id):
         """feel free to subclass and override this implementation for something

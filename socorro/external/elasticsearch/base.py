@@ -3,24 +3,78 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-#import logging
+import json
+
+from configman import Namespace, class_converter
 
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.httpclient as httpc
+from socorro.webapi.webapiService import MiddlewareWebServiceBase
 
-#logger = logging.getLogger("webapi")
+
+#------------------------------------------------------------------------------
+def string_to_list(input_str):
+    return [x.strip() for x in input_str.split(',') if x.strip()]
 
 
+#==============================================================================
 class UnexpectedElasticsearchError(Exception):
     pass
 
 
-class ElasticSearchBase(object):
+#==============================================================================
+class ElasticSearchBase(MiddlewareWebServiceBase):
 
     """
     Base class for ElasticSearch based service implementations.
     """
 
+    required_config = Namespace()
+    required_config.add_option(
+        'crashstorage_class',
+        doc='the source storage class',
+        default=
+            'socorro.external.elasticsearch.crashstorage'
+            '.ElasticSearchCrashStorage',
+        from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch'
+    )
+    required_config.add_option(
+        'restricted_channels',
+        default=['beta'],
+        doc='List of channels to restrict based on build ids.',
+        from_string_converter=string_to_list,
+        reference_value_from='webapi',
+    )
+    required_config.add_option(
+        'non_release_channels',
+        default=['beta', 'aurora', 'nightly'],
+        doc='List of channels, excluding the `release` one.',
+        from_string_converter=string_to_list,
+        reference_value_from='webapi',
+    )
+    required_config.add_option(
+        'platforms',
+        default=[
+            {
+                "id": "windows",
+                "name": "Windows NT"
+            },
+            {
+                "id": "mac",
+                "name": "Mac OS X"
+            },
+            {
+                "id": "linux",
+                "name": "Linux"
+            },
+        ],
+        doc='Array associating OS ids to full names.',
+        from_string_converter=lambda x: json.loads(x),
+        reference_value_from='webapi',
+    )
+
+    #--------------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
         """
         Store the config and create a connection to the database.
@@ -29,16 +83,13 @@ class ElasticSearchBase(object):
         config -- Configuration of the application.
 
         """
-        self.context = kwargs.get("config")
-        if 'webapi' in self.context:
-            context = self.context.webapi
-        else:
-            # old middleware
-            context = self.context
-        self.config = context
-        self.http = httpc.HttpClient(context.elasticSearchHostname,
-                                     context.elasticSearchPort)
+        super(ElasticSearchBase, self).__init__(*args, **kwargs)
+        self.http = httpc.HttpClient(
+            self.config.elasticSearchHostname,
+            self.config.elasticSearchPort
+        )
 
+    #--------------------------------------------------------------------------
     def generate_list_of_indexes(self, from_date, to_date, es_index=None):
         """Return the list of indexes to query to access all the crash reports
         that were processed between from_date and to_date.
@@ -66,6 +117,7 @@ class ElasticSearchBase(object):
 
         return indexes
 
+    #--------------------------------------------------------------------------
     def query(self, from_date, to_date, json_query):
         """
         Send a query directly to ElasticSearch and return the result.
@@ -116,6 +168,7 @@ class ElasticSearchBase(object):
 
         return (http_response, "text/json")
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def build_query_from_params(params, config):
         """
@@ -142,41 +195,62 @@ class ElasticSearchBase(object):
         # Creating the terms depending on the way we should search
         if params["terms"] and params["search_mode"] == "default":
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query(
-                                params["fields"],
-                                [x.lower() for x in params["terms"]]))
+                ElasticSearchBase.build_terms_query(
+                    params["fields"],
+                    [x.lower() for x in params["terms"]]
+                )
+            )
 
         elif (params["terms"] and params["search_mode"] == "is_exactly" and
               params["fields"] == ["signature"]):
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query(
-                                            "signature.full", params["terms"]))
+                ElasticSearchBase.build_terms_query(
+                    "signature.full",
+                    params["terms"]
+                )
+            )
 
         elif params["terms"]:
             params["terms"] = ElasticSearchBase.prepare_terms(
-                                                    params["terms"],
-                                                    params["search_mode"])
-            queries.append(ElasticSearchBase.build_wildcard_query(
-                                                params["fields"],
-                                                params["terms"]))
+                params["terms"],
+                params["search_mode"]
+            )
+            queries.append(
+                ElasticSearchBase.build_wildcard_query(
+                    params["fields"],
+                    params["terms"]
+                )
+            )
 
         # Generating the filters
         if params["products"]:
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query("product.full",
-                                                        params["products"]))
+                ElasticSearchBase.build_terms_query(
+                    "product.full",
+                    params["products"]
+                )
+            )
         if params["os"]:
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query("os_name",
-                                    [x.lower() for x in params["os"]]))
+                ElasticSearchBase.build_terms_query(
+                    "os_name",
+                    [x.lower() for x in params["os"]]
+                )
+            )
         if params["build_ids"]:
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query("build",
-                                                        params["build_ids"]))
+                ElasticSearchBase.build_terms_query(
+                    "build",
+                    params["build_ids"]
+                )
+            )
         if params["reasons"]:
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query("reason",
-                                    [x.lower() for x in params["reasons"]]))
+                ElasticSearchBase.build_terms_query(
+                    "reason",
+                    [x.lower() for x in params["reasons"]]
+                )
+            )
         if params["release_channels"]:
             filters["and"].append(
                 ElasticSearchBase.build_terms_query(
@@ -235,8 +309,9 @@ class ElasticSearchBase(object):
             filters["and"].append({"missing": {"field": "process_type"}})
         elif params["report_process"] in ("plugin", "content"):
             filters["and"].append(ElasticSearchBase.build_terms_query(
-                                                    "process_type",
-                                                    params["report_process"]))
+                "process_type",
+                params["report_process"]
+            ))
 
         if params["report_type"] == "crash":
             filters["and"].append({"missing": {"field": "hangid"}})
@@ -321,6 +396,7 @@ class ElasticSearchBase(object):
             }
         }
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def build_terms_query(fields, terms):
         """
@@ -349,6 +425,7 @@ class ElasticSearchBase(object):
 
         return query
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def build_wildcard_query(fields, terms):
         """
@@ -377,6 +454,7 @@ class ElasticSearchBase(object):
 
         return wildcard_query
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def format_versions(versions):
         """
@@ -415,6 +493,7 @@ class ElasticSearchBase(object):
 
         return versions_list
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def prepare_terms(terms, search_mode):
         """
@@ -429,6 +508,7 @@ class ElasticSearchBase(object):
             terms = " ".join(terms)
         return terms
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def build_version_filters(product, version, version_data, config):
         and_filter = []
@@ -441,7 +521,7 @@ class ElasticSearchBase(object):
             channel = version_data["release_channel"].lower()
 
         if channel and channel.startswith(
-            tuple(config.non_release_channels)
+            tuple(config.webapi.non_release_channels)
         ):
             # this version is not a release
             # first use the major version instead
@@ -455,7 +535,7 @@ class ElasticSearchBase(object):
                 )
             )
 
-            if channel.startswith(tuple(config.restricted_channels)):
+            if channel.startswith(tuple(config.webapi.restricted_channels)):
                 # if it's a beta, verify the build id
                 and_filter.append(
                     ElasticSearchBase.build_terms_query(
@@ -467,10 +547,10 @@ class ElasticSearchBase(object):
         elif channel:
             # this version is a release
             and_filter.append({
-                "not":
-                    ElasticSearchBase.build_terms_query(
-                            "release_channel",
-                            config.non_release_channels)
+                "not": ElasticSearchBase.build_terms_query(
+                    "release_channel",
+                    config.webapi.non_release_channels
+                )
             })
 
         and_filter.append(ElasticSearchBase.build_terms_query(

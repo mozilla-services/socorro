@@ -61,6 +61,8 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
     def test_basic_run_job_without_reports(self):
         config_manager = self._setup_config_manager(3)
 
+        config = config_manager.get_config()
+
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from reports')
         count, = cursor.fetchone()
@@ -172,7 +174,8 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
             information = self._load_structure()
             assert information['bugzilla-associations']
-            assert not information['bugzilla-associations']['last_error']
+            assert 0, config
+            assert not information['bugzilla-associations']['last_error'], information['bugzilla-associations']['last_error']
             assert information['bugzilla-associations']['last_success']
 
         cursor.execute('select id, short_desc from bugs where id = 8')

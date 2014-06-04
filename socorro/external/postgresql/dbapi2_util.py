@@ -60,3 +60,4 @@ def execute_query_fetchall(connection, sql, parameters=None):
 def execute_no_results(connection, sql, parameters=None):
     a_cursor = connection.cursor()
     a_cursor.execute(sql, parameters)
+    return a_cursor.rowcount
