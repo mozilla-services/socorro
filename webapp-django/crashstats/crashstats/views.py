@@ -889,7 +889,7 @@ def builds(request, product=None, versions=None, default_context=None):
     middleware_results = api.get(product=product, version=versions)
     builds = defaultdict(list)
     for build in middleware_results:
-        if build['build_type'] != 'Nightly':
+        if build['build_type'].lower() != 'nightly':
             continue
         key = '%s%s' % (build['date'], build['version'])
         build['date'] = datetime.datetime.strptime(
