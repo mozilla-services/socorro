@@ -87,3 +87,27 @@ crontabber==0.8
 # sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
 # sha256: wVmeZhdKbKtjPLa_XsJZDM4QTCPRY5XAK9pe2T6nlHw
 boto==2.28.0
+# sha256: cyu7F1hQihKEtT_Nzp2WqlPLY86T1Us40ob0KBoSrCQ
+pyquery==1.2.6
+# sha256: ZrvGLZUZ-dUxsfd-aH2fL15SHLkG8f1yMfQDmX4BEMQ
+python-memcached==1.48
+# sha256: aoy0QBER4BG1ecjFKlHNq5cAQcxUOBS72Vd6RSn-HNs
+BeautifulSoup==3.2.1
+# sha256: eMMXu8KuFpoT6MW9MarmEau3bCZKZMPf1xOR5nZ5Jd8
+django-ratelimit==0.3.0
+# sha256: nrxAU2-bxTW8IhTg8Kbxfm6ylrHh2OxNKOqeAyIPA0Q
+django-waffle==0.9.1
+# sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
+Jinja2==2.5.5
+# sha256: rxL5lFTolenkMMdXI8O5QZwLzNDqd4A2YtaprFb2Qls
+py-bcrypt==0.3
+# sha256: BTWn4nAUh0snrjpNM-h0njRb36YnZhlSCLeZa_EQBoI
+cssselect==0.9.1
+# sha256: 1ugIz8yalSg5O269fnT23pd4f22syV4o9cg2d7YAdRc
+https://github.com/jbalogh/check/archive/9c314d7c16408f876ee89f06a62e40dea4c98a02.zip#egg=check
+# sha256: l2sTklJ8dzg-uCfef9RNrK8Sl6Y6oN9Sb0evMC9HnVQ
+path.py==5.1
+# sha256: FbQhMbJfN2Fl0ZX-ThewooMRGCqvkzDV61dbvtpaaYk
+pep8>=1.4.5
+# sha256: P6gKELNtUWhr93RPXcmWIs1cmM6O1kAi5imGiq_Bd2k
+pyflakes==0.8.1
