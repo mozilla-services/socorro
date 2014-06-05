@@ -21,7 +21,14 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   installation
+   installation/index
+   installation/deps
+   installation/download
+   installation/postgres
+   installation/install-binary
+   installation/install-src
+   installation/systemtest
+   installation/troubleshoot
    middleware
    crashstorage
    crontabber
