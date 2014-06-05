@@ -1,5 +1,7 @@
 .. index:: installation
 
+.. _intro-chapter:
+
 Intro
 -----
 
