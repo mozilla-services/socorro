@@ -5,21 +5,10 @@
 # by WSGI.
 set -e
 
-VENV=./virtualenv
-
 if [ ! -f crashstats/settings/local.py ]
 then
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
 fi
-if [ ! -d "$VENV/bin" ]; then
-  echo "No virtualenv found.  Making one..."
-  virtualenv $VENV --python=python2.6
-  source $VENV/bin/activate
-  pip install --upgrade pip
-  pip install coverage
-fi
-
-source $VENV/bin/activate
 
 pip install -r requirements.txt
 
