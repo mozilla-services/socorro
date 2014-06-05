@@ -75,7 +75,7 @@ then
 fi
 echo "Downloading socorro.tar.gz"
 curl -s -z socorro.tar.gz $URL > socorro-new.tar.gz
-error $? "wget reported failure"
+error $? "curl reported failure"
 
 if [ ! -s socorro-new.tar.gz ]
 then
@@ -113,6 +113,7 @@ error $? "could not install new Socorro build"
 
 # move new socorro.tar.gz over old
 mv socorro-new.tar.gz socorro.tar.gz
+error $? "could not mv socorro-new.tar.gz -> socorro.tar.gz"
 
 # deploy system files
 cp /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
@@ -160,8 +161,7 @@ if [ $? != 0 ]; then
     echo "Creating new DB, may take a few minutes"
     pushd /data/socorro/application > /dev/null
     error $? "Could not pushd /data/socorro"
-    export PYTHONPATH=.
-    /data/socorro/socorro-virtualenv/bin/python \
+    PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
         ./socorro/external/postgresql/setupdb_app.py \
         --database_name=breakpad --fakedata \
         --database_superusername=postgres \
@@ -173,30 +173,27 @@ else
     echo "Running database migrations with alembic"
     pushd /data/socorro/application > /dev/null
     error $? "Could not pushd /data/socorro"
-    export PYTHONPATH=.
-    ../socorro-virtualenv/bin/python ../socorro-virtualenv/bin/alembic \
+    PYTHONPATH=. ../socorro-virtualenv/bin/python \
+        ../socorro-virtualenv/bin/alembic \
         -c config/alembic.ini upgrade head &> /var/log/socorro/alembic.log
-    error $? "Could not run migraions with alembic"
+    error $? "Could not run migrations with alembic"
     popd > /dev/null
     error $? "Could not popd"
 fi
 
 # ensure that partitions have been created
-export PYTHONPATH=.
 pushd /data/socorro/application > /dev/null
 error $? "could not pushd /data/socorro/application"
-/data/socorro/socorro-virtualenv/bin/python \
+su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
     socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force \
-    &> /var/log/socorro/crontabber.log
-error $? "could not pushd /data/socorro/application `cat /var/log/socorro/crontabber.log`"
+    &> /var/log/socorro/crontabber.log"
+error $? "could not run crontabber `cat /var/log/socorro/crontabber.log`"
 popd > /dev/null
 
 if [ ! -f /etc/cron.d/socorro ]; then
-    # FIXME not landed yet
-    #cp /data/socorro/application/config/crontab-dist \
-    #    /etc/cron.d/socorro
-    #error $? "could not copy socorro crontab"
-    echo "*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh" > /etc/cron.d/socorro
+    cp /data/socorro/application/config/crontab-dist \
+        /etc/cron.d/socorro
+    error $? "could not copy socorro crontab"
 fi
 
 # TODO optional support for crashmover
