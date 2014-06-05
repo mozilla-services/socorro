@@ -180,6 +180,23 @@ class OOMSignature(ProcessedTransformRule):
         return True
 
 
+#==============================================================================
+class SigTrunc(ProcessedTransformRule):
+    """ensure that the signature is never longer than 255 characters"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, processed_crash, processor):
+        return len(processed_crash.signature) > 255
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, processed_crash, processor):
+        processed_crash.signature = "%s..." % processed_crash.signature[:252]
+        return True
+
 
 #------------------------------------------------------------------------------
 # the following tuple of tuples is a structure for loading rules into the
@@ -193,6 +210,8 @@ class OOMSignature(ProcessedTransformRule):
 # When the predicate or action functions are invoked, these args and kwags
 # values will be passed into the function along with the raw_crash,
 # processed_crash and processor objects.
-default_support_classifier_rules = (
+
+default_rules = (
     (OOMSignature, (), {}, OOMSignature, (), {}),
+    (SigTrunc, (), {}, SigTrunc, (), {}),
 )
