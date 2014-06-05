@@ -5,18 +5,25 @@
 from nose.plugins.attrib import attr
 
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 
 #==============================================================================
 @attr(integration='postgres')
-class TestWeeklyReportsPartitions(IntegrationTestCaseBase):
+class TestWeeklyReportsPartitions(IntegrationTestBase):
+
+    def get_standard_config(self):
+        return get_config_manager_for_crontabber().get_config()
 
     def _setup_config_manager(self):
         _super = super(TestWeeklyReportsPartitions, self)._setup_config_manager
-        return _super(
-            'socorro.cron.jobs.weekly_reports_partitions.'
-            'WeeklyReportsPartitionsCronApp|1d',
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.weekly_reports_partitions.'
+                'WeeklyReportsPartitionsCronApp|1d',
         )
 
     def test_run_weekly_reports_partitions(self):

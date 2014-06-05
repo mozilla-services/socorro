@@ -9,13 +9,22 @@ from nose.tools import ok_
 from crontabber.app import CronTabber
 from crontabber import base
 from socorro.lib.datetimeutil import utc_now
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 from socorro.cron.jobs import matviews
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 
 @attr(integration='postgres')
-class TestMatviews(IntegrationTestCaseBase):
+class TestMatviews(IntegrationTestBase):
+
+    def _setup_config_manager(self, jobs):
+
+        return get_config_manager_for_crontabber(
+            jobs=jobs,
+        )
 
     def setUp(self):
         super(TestMatviews, self).setUp()

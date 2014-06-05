@@ -9,11 +9,17 @@ import mock
 from socorro.cron.jobs.laglog import LagLog
 from socorro.lib.util import SilentFakeLogger
 from socorro.unittest.testbase import TestCase
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 from configman.dotdict import DotDict
 
 
 class TestLagLog(TestCase):
+
+    def get_standard_config(self):
+        return get_config_manager_for_crontabber().get_config()
 
     def _get_mocked_config(self):
         config = DotDict()
