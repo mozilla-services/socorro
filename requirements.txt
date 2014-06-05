@@ -30,7 +30,8 @@ sqlalchemy-citext==1.0-2
 mercurial==2.7.1
 # sha256: Yj_jJZOSGfYbQathJMV_SWDOT0hlFoRqqvfUd10qLto
 honcho==0.5.0
-
+# sha256: th84eGr2uNZEtTBVIBLWacdBX89YUt4yDykIANuXmD0
+gunicorn==18.0
 
 # prod requirements
 
