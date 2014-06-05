@@ -19,8 +19,9 @@ Virtualenv warning
 ------------------
 
 Make sure that you don't already have a ``./socorro-virtualenv`` directory
-created with a different architecture, otherwise you'll get odd errors
-about pip not existing, binaries being the wrong architecture, and so on.
+created with a different architecture (e.g. running ``make bootstrap`` on a Mac),
+otherwise you'll get odd errors about pip not existing, binaries being the wrong
+architecture, and so on.
 
 Instructions
 ------------
@@ -56,6 +57,6 @@ in your Socorro source checkout:
 Your git checkout on the host will automatically be shared with the VM in
 ``/home/vagrant/src/socorro`` .
 
-Next you need to install Socorro itself: :ref:`settingupenv-chapter`
+Next you need to install Socorro itself: :ref:`install_binary_package-chapter`
 
 .. _Vagrant: https://docs.vagrantup.com/v2/networking/forwarded_ports.html
