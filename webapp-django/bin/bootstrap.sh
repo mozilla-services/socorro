@@ -10,8 +10,6 @@ then
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
 fi
 
-pip install -r requirements.txt
-
 export PATH=$PATH:./node_modules/.bin/
 
 if [ -n "$WORKSPACE" ]
