@@ -105,6 +105,19 @@ Copy default config files
 You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 
+In particular, for login to work you want to modify the following
+in webapp-django/crashstats/settings/local.py:
+::
+  SESSION_COOKIE_SECURE = False
+  # Make sure to comment out the CACHES section so the default (memcached)
+  # is used - NOTE login will not work until this is done
+  #CACHES = {
+  #    'default': {
+  #        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+  #        'LOCATION': 'crashstats'
+  #    }
+  #}
+
 By default they listen on localhost only, which should be fine for local
 development.
 
@@ -137,17 +150,6 @@ in your web server (we recommend Apache with mod_wsgi at this time).
 
 Install production dependencies
 -------------------------------
-
-As the *root* user:
-::
-  yum install httpd mod_wsgi memcached daemonize mod_ssl
-
-Automatically run Apache and Memcached on startup
-
-As the *root* user:
-::
-  chkconfig httpd on
-  chkconfig memcached on
 
 Set up directories and permissions
 
@@ -249,6 +251,8 @@ Ensure that crash-stats is pointing to the local socorro-api server, and
 also that dev/debug/etc. options are disabled.
 edit /data/socorro/webapp-django/crashstats/settings/local.py:
 ::
+  CACHE_MIDDLEWARE = True
+  CACHE_MIDDLEWARE_FILES = False
   MWARE_BASE_URL = 'http://localhost/bpapi'
   MWARE_HTTP_HOST = 'socorro-api'
   DATABASES = {
@@ -260,6 +264,18 @@ edit /data/socorro/webapp-django/crashstats/settings/local.py:
   SECRET_KEY = '' # set this to something unique
   # adjust this for your site!
   ALLOWED_HOSTS = ['crash-stats.example.com']
+  # If you are running HTTPS set to True, otherwise False
+  # NOTE this is needed for login to work
+  SESSION_COOKIE_SECURE = True
+  # Make sure to comment out the CACHES section so the default (memcached)
+  # is used - NOTE login will not work until this is done
+  #CACHES = {
+  #    'default': {
+  #        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+  #        'LOCATION': 'crashstats'
+  #    }
+  #}
+
 
 Allow Django to create the database tables it needs for managing sessions:
 ::
