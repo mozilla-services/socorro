@@ -14,7 +14,7 @@ Releases:
 https://github.com/mozilla/socorro/releases
 
 Installation instructions:
-http://socorro.readthedocs.org/en/latest/installation.html
+http://socorro.readthedocs.org/en/latest/installation
 
 Socorro mailing list:
 https://lists.mozilla.org/listinfo/tools-socorro

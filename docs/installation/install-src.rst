@@ -187,7 +187,7 @@ Install configuration to system directory
 
 From inside the Socorro checkout, as the *root* user
 ::
-  cp config/\*.ini-dist /etc/socorro
+  cp config/*.ini-dist /etc/socorro
 
 Make sure the copy each .ini-dist file to .ini and configure it.
 
