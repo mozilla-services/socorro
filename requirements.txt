@@ -30,7 +30,10 @@ sqlalchemy-citext==1.0-2
 mercurial==2.7.1
 # sha256: Yj_jJZOSGfYbQathJMV_SWDOT0hlFoRqqvfUd10qLto
 honcho==0.5.0
-
+# sha256: CYq3mRBnwIz6pHFt4gBm2Q9m28cVAhFOqMrZqf1clRI
+flake8
+# sha256: th84eGr2uNZEtTBVIBLWacdBX89YUt4yDykIANuXmD0
+gunicorn==18.0
 
 # prod requirements
 
@@ -84,3 +87,17 @@ happybase==0.7
 crontabber==0.8
 # sha256: wVmeZhdKbKtjPLa_XsJZDM4QTCPRY5XAK9pe2T6nlHw
 boto==2.28.0
+# sha256: cyu7F1hQihKEtT_Nzp2WqlPLY86T1Us40ob0KBoSrCQ
+pyquery==1.2.6
+# sha256: ZrvGLZUZ-dUxsfd-aH2fL15SHLkG8f1yMfQDmX4BEMQ
+python-memcached==1.48
+# sha256: aoy0QBER4BG1ecjFKlHNq5cAQcxUOBS72Vd6RSn-HNs
+BeautifulSoup==3.2.1
+# sha256: eMMXu8KuFpoT6MW9MarmEau3bCZKZMPf1xOR5nZ5Jd8
+django-ratelimit==0.3.0
+# sha256: nrxAU2-bxTW8IhTg8Kbxfm6ylrHh2OxNKOqeAyIPA0Q
+django-waffle==0.9.1
+# sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
+Jinja2==2.5.5
+# sha256: rxL5lFTolenkMMdXI8O5QZwLzNDqd4A2YtaprFb2Qls
+py-bcrypt==0.3
