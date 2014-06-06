@@ -29,6 +29,7 @@ class ElasticSearchTestCase(TestCase):
             'elasticsearch_index': 'socorro_integration_test',
             'backoff_delays': [1],
             'elasticsearch_timeout': 5,
+            'resource.postgresql.database_name': 'socorro_integration_test'
         }
         if es_index:
             values_source['elasticsearch_index'] = es_index
