@@ -111,3 +111,5 @@ path.py==5.1
 pep8>=1.4.5
 # sha256: P6gKELNtUWhr93RPXcmWIs1cmM6O1kAi5imGiq_Bd2k
 pyflakes==0.8.1
+# sha256: IBHATOBcLURttngxfeVP4PgNdykbnQ1G-sknzAV8ZXo
+https://github.com/BradRuderman/pyhs2/archive/870d5590a97d53855a4aa6da70be8439ce4d690c.zip#egg=pyhs2

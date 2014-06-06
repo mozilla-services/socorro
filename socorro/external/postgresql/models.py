@@ -349,6 +349,34 @@ class PluginsReport(DeclarativeBase):
     __mapper_args__ = {"primary_key": (report_id, plugin_id, date_processed, version)}
 
 
+class RawAdiLogs(DeclarativeBase):
+    __tablename__ = 'raw_adi_logs'
+
+    #column definitions
+    report_date = Column(u'report_date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    build_channel = Column(u'build_channel', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+    count = Column(u'count', INTEGER())
+
+    __mapper_args__ = {"primary_key": (
+            report_date,
+            product_name,
+            product_os_platform,
+            product_os_version,
+            product_version,
+            build,
+            build_channel,
+            product_guid,
+            count
+        )
+    }
+
+
 class RawAdu(DeclarativeBase):
     __tablename__ = 'raw_adu'
 
