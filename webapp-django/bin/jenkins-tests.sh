@@ -8,6 +8,8 @@ DB_USER="hudson"
 
 echo "Starting build on executor $EXECUTOR_NUMBER..."
 
+. ../socorro-virtualenv/bin/activate
+
 # Make sure there's no old pyc files around.
 find . -name '*.pyc' -exec rm {} \;
 

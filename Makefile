@@ -41,7 +41,7 @@ test-socorro: bootstrap
 	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
-test-webapp:
+test-webapp: bootstrap-webapp
 	cd webapp-django; ./bin/jenkins.sh
 
 bootstrap:
@@ -110,7 +110,7 @@ json_enhancements_pg_extension: bootstrap
     # every time Socorro is built
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
-bootstrap-webapp:
+bootstrap-webapp: bootstrap
 	cd webapp-django; ./bin/bootstrap.sh
 
 stackwalker:
