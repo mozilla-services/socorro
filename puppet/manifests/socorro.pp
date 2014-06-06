@@ -87,6 +87,7 @@ class webapp::socorro {
       'mod_wsgi',
       'memcached',
       'daemonize',
+      'unzip',
     ]:
     ensure => latest
   }

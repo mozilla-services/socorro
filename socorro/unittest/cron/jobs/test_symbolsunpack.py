@@ -147,7 +147,9 @@ class TestSymbolsUnpack(IntegrationTestCaseBase):
 
         information = self._load_structure()
         assert information['symbols-unpack']
-        assert not information['symbols-unpack']['last_error']
+        assert not information['symbols-unpack']['last_error'], (
+            information['symbols-unpack']['last_error']
+        )
         assert information['symbols-unpack']['last_success']
 
         ok_(os.listdir(self.temp_destination_directory), 'empty')
