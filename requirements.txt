@@ -101,3 +101,5 @@ django-waffle==0.9.1
 Jinja2==2.5.5
 # sha256: rxL5lFTolenkMMdXI8O5QZwLzNDqd4A2YtaprFb2Qls
 py-bcrypt==0.3
+# sha256: BTWn4nAUh0snrjpNM-h0njRb36YnZhlSCLeZa_EQBoI
+cssselect==0.9.1
