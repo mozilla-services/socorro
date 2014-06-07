@@ -82,5 +82,8 @@ ordereddict==1.1
 happybase==0.7
 # sha256: wPqgyw40YQP3y3gYu5kpxYrVfqgfN05n-n3OGyR4CsY
 crontabber==0.8
+
+# sometimes you get the tarball, sometimes you get the wheel
+# sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
 # sha256: wVmeZhdKbKtjPLa_XsJZDM4QTCPRY5XAK9pe2T6nlHw
 boto==2.28.0
