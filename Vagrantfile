@@ -59,11 +59,11 @@ Vagrant::Config.run do |config|
   MOUNT_POINT = '/home/vagrant/src/socorro'
 
   # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
-  if is_jenkins or CONF['nfs'] == false or RUBY_PLATFORM =~ /mswin(32|64)/
+  if is_jenkins or RUBY_PLATFORM =~ /mswin(32|64)/
     config.vm.share_folder("vagrant-root", MOUNT_POINT, ".",
                            :mount_options => ['dmode=777', 'fmode=777'])
   else
-    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => true)
+    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => CONF.fetch('nfs', true))
   end
 
   config.vm.provision :puppet do |puppet|
