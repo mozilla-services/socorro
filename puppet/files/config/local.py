@@ -7,10 +7,10 @@
 
 ALLOWED_HOSTS = ['crash-stats']
 
-CACHE_MIDDLEWARE = False
+CACHE_MIDDLEWARE = True
 # creates "./models-cache" dir
 # only applicable if CACHE_MIDDLEWARE is True
-CACHE_MIDDLEWARE_FILES = True
+CACHE_MIDDLEWARE_FILES = False
 
 # Socorro middleware instance to use
 MWARE_BASE_URL = 'http://localhost/bpapi'
@@ -38,12 +38,12 @@ STATSD_CLIENT = 'django_statsd.clients.null'
 # it will break work of anonymous CSRF if there is more than one
 # web server thread.
 # Comment out to use memcache from settings/base.py
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'crashstats'
-    }
-}
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'crashstats'
+#    }
+#}
 
 TIME_ZONE = 'UTC'
 
@@ -123,7 +123,7 @@ SECRET_KEY = 'you must change this'
 
 # If you intend to run without HTTPS such as local development,
 # then set this to False
-#SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
 
 # To get your Sentry key, go to https://errormill.mozilla.org/
 #RAVEN_CONFIG = {
@@ -136,7 +136,7 @@ SECRET_KEY = 'you must change this'
 
 # If you intend to run with DEBUG=False, this must match the URL
 # you're using
-#BROWSERID_AUDIENCES = ['http://localhost:8000']
+BROWSERID_AUDIENCES = ['http://crash-stats']
 
 # Optional Google Analytics ID
 #GOOGLE_ANALYTICS_ID = "UA-XXXXX-X"

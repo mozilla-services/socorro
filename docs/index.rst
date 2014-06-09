@@ -29,6 +29,7 @@ Contents:
    installation/install-src
    installation/systemtest
    installation/troubleshoot
+   webapp
    middleware
    crashstorage
    crontabber
@@ -37,7 +38,6 @@ Contents:
    database
    generic_app
    writingdocs
-   webapp
 
 
 Indices and tables

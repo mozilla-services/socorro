@@ -41,9 +41,20 @@ Now you can actually install the packages:
     postgresql93-contrib postgresql93-devel subversion make rsync \
     subversion gcc-c++ python-devel python-pip mercurial git \
     libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv \
-    npm devtoolset-1.1-gcc-c++ rabbitmq-server elasticsearch
+    npm devtoolset-1.1-gcc-c++ rabbitmq-server elasticsearch httpd \
+    mod_wsgi memcached daemonize
 
-Initialize and enable RabbitMQ on startup:
+Enable Apache on startup:
+::
+  chkconfig httpd on
+  sudo chkconfig httpd on
+
+Enable Memcached on startup:
+::
+  chkconfig memcached on
+  sudo chkconfig memcached on
+
+Enable RabbitMQ on startup:
 ::
   sudo service rabbitmq-server start
   sudo chkconfig rabbitmq-server on
