@@ -26,14 +26,21 @@ Create virtualenv and populate it
 Copy default config file and customize it
 -----------------------------------------
 
-    cp crashstats/settings/local.py-dist crashstats/settings/local.py
+This step depends on how you intend to run the webapp. If you're going
+to do development work then use:
+
+    cp crashstats/settings/dev.py-dist crashstats/settings/local.py
+
+If you're going to run it in production then use:
+
+    cp crashstats/settings/prod.py-dist crashstats/settings/local.py
 
 Run unit tests
 --------------
 
 Before running the tests, you will have to make sure your configuration has the
 CACHES key set to use LocMemCache as a backend. See
-``crashstats/settings/local.py-dist`` for a working example. Then you will need to compress static files, using the
+``crashstats/settings/dev.py-dist`` for a working example. Then you will need to compress static files, using the
 following:
 
     ./manage.py collectstatic --noinput && ./manage.py compress_jingo --force
@@ -111,4 +118,3 @@ Production notes
 Do not use locmem cache, as it will break work of an anonymous CSRF on servers
 with more than one web-server thread.
 [More details](https://github.com/mozilla/django-session-csrf#differences-from-django)
-

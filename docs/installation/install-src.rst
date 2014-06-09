@@ -14,7 +14,7 @@ To run and hack on Socorro apps, you will need:
 2) to have your PYTHONPATH set to the location of the socorro checkout
 3) The Django web service and its tests need the LESS preprocessor to be installed and on your $PATH
 
-You may need to run this as the *root* user depending on how node.js was 
+You may need to run this as the *root* user depending on how node.js was
 installed
 ::
   npm install -g less
@@ -26,7 +26,7 @@ You only need to run this once
   export PATH=$PATH:/usr/pgsql-9.3/bin/
   make bootstrap bootstrap-webapp
 
-Before running any Socorro components, always make sure that the virtualenv 
+Before running any Socorro components, always make sure that the virtualenv
 is activated and the PYTHONPATH is set
 ::
   . socorro-virtualenv/bin/activate
@@ -99,7 +99,7 @@ Copy default config files
   cp config/collector.ini-dist config/collector.ini
   cp config/processor.ini-dist config/processor.ini
   cp config/middleware.ini-dist config/middleware.ini
-  cp webapp-django/crashstats/settings/local.py-dist \
+  cp webapp-django/crashstats/settings/dev.py-dist \
     webapp-django/crashstats/settings/local.py
 
 You may need to edit these config files - for example collector (which is
