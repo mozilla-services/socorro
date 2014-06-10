@@ -24,7 +24,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateTable
 
-from socorro.app.generic_app import App, main
+from socorro.app.generic_app import App, main as configman_main
 from socorro.external.postgresql import fakedata
 from socorro.external.postgresql.models import *
 
@@ -618,5 +618,8 @@ class SocorroDB(App):
 
         return 0
 
+def main():
+    return configman_main(SocorroDB)
+
 if __name__ == "__main__":
-    sys.exit(main(SocorroDB))
+    sys.exit(main())
