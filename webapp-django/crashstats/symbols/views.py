@@ -18,6 +18,20 @@ from . import forms
 from . import utils
 
 
+def check_symbols_archive_content(content, header_length=2):
+    """return an error if there was something wrong"""
+    for i, line in enumerate(content.splitlines()):
+        # the first two lines of the `content` is just headers
+        if i <= (header_length - 1):
+            continue
+        for snippet in settings.DISALLOWED_SYMBOLS_SNIPPETS:
+            if snippet in line:
+                return (
+                    "Content of archive file contains the snippet "
+                    "'%s' which is not allowed\n" % snippet
+                )
+
+
 @login_required
 def home(request):
     context = {}
@@ -54,12 +68,18 @@ def web_upload(request):
                 content_type = 'application/x-gzip'
             else:
                 content_type = form.cleaned_data['file'].content_type
+            content = utils.preview_archive_content(
+                form.cleaned_data['file'].file,
+                content_type
+            )
+
+            error = check_symbols_archive_content(content)
+            if error:
+                return http.HttpResponseBadRequest(error)
+
             symbols_upload = models.SymbolsUpload.objects.create(
                 user=request.user,
-                content=utils.preview_archive_content(
-                    form.cleaned_data['file'].file,
-                    content_type
-                ),
+                content=content,
                 size=form.cleaned_data['file'].size,
                 filename=os.path.basename(form.cleaned_data['file'].name),
                 file=form.cleaned_data['file'],
@@ -122,6 +142,9 @@ def upload(request):
         upload,
         utils.filename_to_mimetype(name)
     )
+    error = check_symbols_archive_content(content)
+    if error:
+        return http.HttpResponseBadRequest(error)
 
     models.SymbolsUpload.objects.create(
         user=request.user,

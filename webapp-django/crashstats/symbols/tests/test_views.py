@@ -11,7 +11,7 @@ from django.core.files import File
 from crashstats.tokens.models import Token
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.symbols import models
-
+from crashstats.symbols.views import check_symbols_archive_content
 
 from .base import ZIP_FILE, TARGZ_FILE, TGZ_FILE, TAR_FILE
 
@@ -42,6 +42,34 @@ class TestViews(BaseTestViews):
         user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
         return user
+
+    def test_check_symbols_archive_content(self):
+        content = """
+        HEADER 1
+        HEADER 2
+        Line 1
+        Line Two
+        Line Three
+        """
+
+        # check that the header is not checked
+        disallowed = ('HEADER',)
+        with self.settings(DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
+            error = check_symbols_archive_content(content.strip())
+            ok_(not error)
+
+        # match something
+        disallowed = ('Two', '2')
+        with self.settings(DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
+            error = check_symbols_archive_content(content.strip())
+            ok_(error)
+            ok_('Two' in error)
+
+        # match nothing
+        disallowed = ('evil', 'Bad')
+        with self.settings(DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
+            error = check_symbols_archive_content(content.strip())
+            ok_(not error)
 
     def test_home(self):
         self._create_group_with_permission('upload_symbols')
@@ -146,6 +174,23 @@ class TestViews(BaseTestViews):
             ok_(symbol_upload.file)
             ok_(symbol_upload.file_exists)
             ok_(symbol_upload.content)
+
+    def test_web_upload_disallowed_content(self):
+        url = reverse('symbols:web_upload')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+        # because the file ZIP_FILE contains the word `south-africa-flag.jpeg`
+        # it should not be allowed to be uploaded
+        disallowed = ('flag',)
+        with self.settings(MEDIA_ROOT=self.tmp_dir,
+                           DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
+            with open(ZIP_FILE) as file_object:
+                response = self.client.post(
+                    url,
+                    {'file': file_object}
+                )
+                eq_(response.status_code, 400)
+                ok_('flag' in response.content)
 
     def test_web_upload_tar_gz_file(self):
         url = reverse('symbols:web_upload')
@@ -270,6 +315,31 @@ class TestViews(BaseTestViews):
             ok_(symbol_upload.file)
             ok_(symbol_upload.file_exists)
             ok_(symbol_upload.content)
+
+    def test_upload_disallowed_content(self):
+        user = User.objects.create(username='user')
+        self._add_permission(user, 'upload_symbols')
+        token = Token.objects.create(
+            user=user,
+        )
+        token.permissions.add(
+            Permission.objects.get(codename='upload_symbols')
+        )
+
+        url = reverse('symbols:upload')
+        # because the file ZIP_FILE contains the word `south-africa-flag.jpeg`
+        # it should not be allowed to be uploaded
+        disallowed = ('flag',)
+        with self.settings(MEDIA_ROOT=self.tmp_dir,
+                           DISALLOWED_SYMBOLS_SNIPPETS=disallowed):
+            with open(ZIP_FILE, 'rb') as file_object:
+                response = self.client.post(
+                    url,
+                    {'file.zip': file_object},
+                    HTTP_AUTH_TOKEN=token.key
+                )
+            eq_(response.status_code, 400)
+            ok_('flag' in response.content)
 
     def test_upload_empty_file(self):
         user = User.objects.create(username='user')
