@@ -327,9 +327,29 @@ class HybridCrashProcessor(RequiredConfig):
             crash_id = raw_crash.uuid
             started_timestamp = self._log_job_start(crash_id)
 
-            self.rule_system.raw_crash_transform.apply_all_rules(raw_crash,
-                                                                 self)
+            #..................................................................
+            # apply transformations
+            # in this section we apply the transformations that will take a
+            # raw crash and convert it into the processed crash.  Eventually,
+            # all the transform will be in the form of transform_rules.
+            # Once everything is a transform rule, take each of the
+            # descrete sections below and generalize them into a loop over
+            # rule sets.
 
+            #..................................................................
+            # apply raw_crash_transform rules
+            # these rules modify the raw_crash to adjust product/version names
+            # think of it as a preprocessing step before we start the actual
+            # transformation of raw_crash to processed_crash.
+            # Notice that these rules use a different signature that the other
+            # rule systems - it would be nice to unify them someday
+            self.rule_system.raw_crash_transform.apply_all_rules(
+                raw_crash,
+                self
+            )
+
+            #..................................................................
+            # apply raw to processed transform
             try:
                 submitted_timestamp = datetimeFromISOdateString(
                     raw_crash.submitted_timestamp
@@ -375,7 +395,25 @@ class HybridCrashProcessor(RequiredConfig):
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
             #..................................................................
-            # apply skunk classifiers
+            # apply processed_transform rules
+            try:
+                self.rule_system.processed_transform \
+                    .apply_all_rules(
+                        raw_crash,
+                        processed_crash,
+                        self
+                    )
+            except Exception, x:
+                # let's catch any unexpected error here and not let them
+                # derail the rest of the processing.
+                self.config.logger.error(
+                    'processed_transform rules have failed: %s',
+                    str(x),
+                    exc_info=True
+                )
+
+            #..................................................................
+            # apply skunk classifier rules
             try:
                 self.rule_system.skunk_classifier.apply_until_action_succeeds(
                     raw_crash,
@@ -392,7 +430,7 @@ class HybridCrashProcessor(RequiredConfig):
                 )
 
             #..................................................................
-            # apply support classifiers
+            # apply support classifier rules
             try:
                 self.rule_system.support_classifier \
                     .apply_until_action_succeeds(
@@ -410,23 +448,8 @@ class HybridCrashProcessor(RequiredConfig):
                 )
 
             #..................................................................
-            # apply processed_transform
-            try:
-                self.rule_system.processed_transform \
-                    .apply_all_rules(
-                        raw_crash,
-                        processed_crash,
-                        self
-                    )
-            except Exception, x:
-                # let's catch any unexpected error here and not let them
-                # derail the rest of the processing.
-                self.config.logger.error(
-                    'processed_transform rules have failed: %s',
-                    str(x),
-                    exc_info=True
-                )
-
+            # end of transforms
+            # the rest of this method is just clean up
 
         except Exception, x:
             self.config.logger.warning(
@@ -451,6 +474,7 @@ class HybridCrashProcessor(RequiredConfig):
         )
         return processed_crash
 
+    #--------------------------------------------------------------------------
     def _create_minimal_processed_crash(self):
         processed_crash = DotDict()
         processed_crash.addons = None

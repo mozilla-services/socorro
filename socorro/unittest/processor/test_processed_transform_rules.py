@@ -2,22 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
-
 from nose.tools import eq_, ok_
-
-from sys import maxint
 
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.processor.processed_transform_rules import (
     ProcessedTransformRule,
-    OOMSignature
+    OOMSignature,
+    SigTrunc,
 )
 
 from socorro.processor.signature_utilities import CSignatureTool
-from socorro.unittest.processor.test_breakpad_pipe_to_json import (
-    cannonical_json_dump,
-)
 from socorro.unittest.testbase import TestCase
 
 csig_config = DotDict()
@@ -63,7 +57,7 @@ class TestProcessedTransformRule(TestCase):
 
 class TestOOMSignature(TestCase):
 
-    def test_predicate_no_match(self):
+    def test_OOMAllocationSize_predicate_no_match(self):
         pc = DotDict()
         pc.signature = 'hello'
         rc = DotDict()
@@ -72,7 +66,7 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, pc, fake_processor)
         ok_(not predicate_result)
 
-    def test_predicate_OOMAllocationSize(self):
+    def test_OOMAllocationSize_predicate(self):
         pc = DotDict()
         pc.signature = 'hello'
         rc = DotDict()
@@ -82,7 +76,7 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, pc, fake_processor)
         ok_(predicate_result)
 
-    def test_predicate_signature_fragment_1(self):
+    def test_OOMAllocationSize_predicate_signature_fragment_1(self):
         pc = DotDict()
         pc.signature = 'this | is | a | NS_ABORT_OOM | signature'
         rc = DotDict()
@@ -91,7 +85,7 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, pc, fake_processor)
         ok_(predicate_result)
 
-    def test_predicate_signature_fragment_2(self):
+    def test_OOMAllocationSize_predicate_signature_fragment_2(self):
         pc = DotDict()
         pc.signature = 'mozalloc_handle_oom | this | is | bad'
         rc = DotDict()
@@ -100,7 +94,7 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, pc, fake_processor)
         ok_(predicate_result)
 
-    def test_predicate_signature_fragment_3(self):
+    def test_OOMAllocationSize_predicate_signature_fragment_3(self):
         pc = DotDict()
         pc.signature = 'CrashAtUnhandlableOOM'
         rc = DotDict()
@@ -109,7 +103,7 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, pc, fake_processor)
         ok_(predicate_result)
 
-    def test_action_success(self):
+    def test_OOMAllocationSize_action_success(self):
         pc = DotDict()
         pc.signature = 'hello'
 
@@ -124,7 +118,7 @@ class TestOOMSignature(TestCase):
         ok_(pc.original_signature, 'hello')
         ok_(pc.signature, 'OOM | unknown | hello')
 
-    def test_action_small(self):
+    def test_OOMAllocationSize_action_small(self):
         pc = DotDict()
         pc.signature = 'hello'
 
@@ -140,7 +134,7 @@ class TestOOMSignature(TestCase):
         ok_(pc.original_signature, 'hello')
         ok_(pc.signature, 'OOM | small')
 
-    def test_action_large(self):
+    def test_OOMAllocationSize_action_large(self):
         pc = DotDict()
         pc.signature = 'hello'
 
@@ -156,7 +150,31 @@ class TestOOMSignature(TestCase):
         ok_(pc.original_signature, 'hello')
         ok_(pc.signature, 'OOM | large | hello')
 
+    def test_SigTrunc_predicate_no_match(self):
+        pc = DotDict()
+        pc.signature = '0' * 100
+        rc = DotDict()
+        fake_processor = create_basic_fake_processor()
+        rule = SigTrunc()
+        predicate_result = rule.predicate(rc, pc, fake_processor)
+        ok_(not predicate_result)
 
+    def test_SigTrunc_predicate(self):
+        pc = DotDict()
+        pc.signature = '9' * 256
+        rc = DotDict()
+        fake_processor = create_basic_fake_processor()
+        rule = SigTrunc()
+        predicate_result = rule.predicate(rc, pc, fake_processor)
+        ok_(predicate_result)
 
-
-
+    def test_SigTrunc_action_success(self):
+        pc = DotDict()
+        pc.signature = '9' * 256
+        rc = DotDict()
+        fake_processor = create_basic_fake_processor()
+        rule = SigTrunc()
+        predicate_result = rule.action(rc, pc, fake_processor)
+        ok_(predicate_result)
+        eq_(len(pc.signature), 255)
+        ok_(pc.signature.endswith('9...'))
