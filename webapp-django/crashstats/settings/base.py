@@ -304,3 +304,10 @@ USE_TZ = True
 
 # Default for how many users to display in the Users Admin UI
 USERS_ADMIN_BATCH_SIZE = 10
+
+# Individual strings that can't be allowed in any of the lines in the
+# content of a symbols archive file.
+DISALLOWED_SYMBOLS_SNIPPETS = (
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1012672
+    'qcom/proprietary',
+)
