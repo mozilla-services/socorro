@@ -5,17 +5,18 @@ SELECT
 -- return true if either interval is null
 -- so we don't exclude crashes missing data
 CASE WHEN $3 IS NULL THEN
-	TRUE
+    TRUE
 WHEN $4 IS NULL THEN
-	TRUE
+    TRUE
+WHEN $3 < 0 or $4 < 0 THEN
+    FALSE
 -- otherwise check that the two timestamp deltas
 -- and the two interval deltas are within 60 sec
 -- of each other
 ELSE
-	(
-		extract ('epoch' from ( $2 - $1 ) ) -
-		( $4 - $3 ) 
-	) BETWEEN -60 AND 60
+    ( extract ('epoch' from ( $2 - $1 ) ) -
+        ( $4 - $3 )
+    ) BETWEEN -60 AND 60
 END;
 $_$;
 
