@@ -2,7 +2,7 @@ from django.conf.urls.defaults import patterns, url
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from . import views, feeds
+from . import views
 
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
@@ -111,17 +111,6 @@ urlpatterns = patterns(
     url('^daily$',
         views.daily,
         name='daily'),
-    # note the deliberate omission of the ';' despite calling the regex
-    # variable 'versionS'
-    url('^builds' + products + '/versions/(?P<versions>[\w\.()]+)' + '$',
-        views.builds,
-        name='builds'),
-    url('^builds' + products + '/rss$',
-        feeds.BuildsRss(),
-        name='buildsrss'),
-    url('^builds' + products + versions + '/rss$',
-        feeds.BuildsRss(),
-        name='buildsrss'),
     # handle old-style urls
     url('^topchangers' + products + '$',
         views.topchangers,
