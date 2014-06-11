@@ -146,8 +146,13 @@ popd > /dev/null
 # copy system files into install, to catch any overrides
 cp /etc/socorro/*.ini /data/socorro/application/config/
 error $? "could not copy /etc/socorro/*.ini into install"
-cp /etc/socorro/local.py /data/socorro/webapp-django/crashstats/settings/
-error $? "could not copy /etc/socorro/local.py into install"
+if [ -f /etc/socorro/local.py ]; then
+    cp /etc/socorro/local.py /data/socorro/webapp-django/crashstats/settings/
+    error $? "could not copy /etc/socorro/local.py into install"
+else
+    cp /data/socorro/webapp-django/crashstats/settings/local.py /etc/socorro
+    error $? "could not copy initial local.py to /etc/socorro"
+fi
 
 # TODO optional support for crashmover
 for service in processor
