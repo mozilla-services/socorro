@@ -117,10 +117,6 @@ echo "Installing new build to /data/socorro"
 mv ${TMP}/socorro/ /data/
 error $? "could not install new Socorro build"
 
-# move new socorro.tar.gz over old
-mv socorro-new.tar.gz socorro.tar.gz
-error $? "could not mv socorro-new.tar.gz -> socorro.tar.gz"
-
 # deploy system files
 cp /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
 error $? "could not copy socorrorc"
@@ -228,6 +224,11 @@ echo "Running Django syncdb"
     /data/socorro/webapp-django/manage.py syncdb --noinput \
     &> /var/log/socorro/django-syncdb.log
 error $? "django syncdb failed `cat /var/log/socorro/django-syncdb.log`"
+
+# move new socorro.tar.gz over old now that the installation was
+# succesful.
+mv socorro-new.tar.gz socorro.tar.gz
+error $? "could not mv socorro-new.tar.gz -> socorro.tar.gz"
 
 echo "Socorro build installed successfully!"
 echo "Downloaded from ${URL}"
