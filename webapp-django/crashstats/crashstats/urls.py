@@ -111,9 +111,6 @@ urlpatterns = patterns(
     url('^daily$',
         views.daily,
         name='daily'),
-    url('^builds' + products + '$',
-        views.builds,
-        name='builds'),
     # note the deliberate omission of the ';' despite calling the regex
     # variable 'versionS'
     url('^builds' + products + '/versions/(?P<versions>[\w\.()]+)' + '$',
@@ -234,12 +231,6 @@ urlpatterns = patterns(
             permanent=perm_legacy_redirect
         )),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
-        r'builds$',
-        RedirectView.as_view(
-            url='/builds/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
         r'topchangers$',
         RedirectView.as_view(
             url='/topchangers/products/%(product)s',
@@ -263,11 +254,6 @@ urlpatterns = patterns(
     url('^home' + products + '/versions/$',
         RedirectView.as_view(
             url='/home/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url('^products/(?P<product>\w+)/builds/?$',
-        RedirectView.as_view(
-            url='/builds/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
 )

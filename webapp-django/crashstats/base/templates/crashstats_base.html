@@ -99,7 +99,6 @@
                     </optgroup>
                     <optgroup label=" ">
                         <option value="{{ url('crashstats:daily') }}?p={{ product }}" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
-                        <option value="{{ url('crashstats:builds', product) }}" {% if report == 'builds' %}selected{% endif %}>Nightly Builds</option>
                     </optgroup>
                     <optgroup label=" ">
                         <option value="{{ url('crashstats:topchangers', product) }}" {% if report == 'topchangers' %}selected{% endif %}>Top Changers</option>
