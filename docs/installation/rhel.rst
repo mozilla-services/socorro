@@ -47,12 +47,12 @@ Now you can actually install the packages:
 
 Enable Apache on startup:
 ::
-  chkconfig httpd on
+  sudo service httpd start
   sudo chkconfig httpd on
 
 Enable Memcached on startup:
 ::
-  chkconfig memcached on
+  sudo service memcached start
   sudo chkconfig memcached on
 
 Enable RabbitMQ on startup:
