@@ -33,6 +33,12 @@ function error {
   fi
 }
 
+# Ensure we're executing in the directory we live in, so that we don't
+# have different socorro.tar.gz files based on your $PWD when you run
+# this script.
+cd "$(dirname "$0")"
+error $? "could not change working directory"
+
 # current date to the second, used for archiving old builds
 DATE=`date +%d-%m-%Y_%H_%M_%S`
 error $? "could not set date"
