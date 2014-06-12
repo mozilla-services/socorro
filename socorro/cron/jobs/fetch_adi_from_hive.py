@@ -5,9 +5,11 @@
 import datetime
 import urllib2
 import csv
-import pyhs2
 import getpass
 import os
+import tempfile
+
+import pyhs2
 
 from configman import Namespace
 from crontabber.base import BaseCronApp
@@ -60,6 +62,7 @@ _QUERY = """
         split(request_url,'/')[3]
 """
 
+
 @as_backfill_cron_app
 @with_postgres_transactions()
 @with_single_postgres_transaction()
@@ -76,43 +79,43 @@ class FetchADIFromHiveCronApp(BaseCronApp):
     required_config.add_option(
         'query',
         default=_QUERY,
-        doc='Explanation of the option')
+        doc='Hive query for fetching ADI data')
 
     required_config.add_option(
         'hive_host',
         default='localhost',
-        doc='Host to run Hive query on')
+        doc='Hostname to run Hive query on')
 
     required_config.add_option(
         'hive_port',
         default=10000,
-        doc='Host to run Hive query on')
+        doc='Port to run Hive query on')
 
     required_config.add_option(
         'hive_user',
         default='socorro',
-        doc='User to connect to hive with')
+        doc='User to connect to Hive with')
 
     required_config.add_option(
         'hive_password',
         default='ignored',
-        doc='Password to connect to hive with')
+        doc='Password to connect to Hive with')
 
     required_config.add_option(
         'hive_database',
         default='default',
-        doc='Database to connect to hive with')
+        doc='Database name to connect to Hive with')
 
     required_config.add_option(
-        'temporary_file_system_storage_path',
-        doc='a local filesystem path where dumps temporarily',
-        default='/var/tmp/')
+        'hive_auth_mechanism',
+        default='PLAIN',
+        doc='Auth mechanism for Hive')
 
     def run(self, connection, date):
         target_date = (date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
         raw_adi_logs_pathname = os.path.join(
-            self.config.temporary_file_system_storage_path,
+            tempfile.gettempdir(),
             "%s.raw_adi_logs.TEMPORARY%s" % (
                 target_date,
                 '.txt'
@@ -120,21 +123,21 @@ class FetchADIFromHiveCronApp(BaseCronApp):
         )
         try:
             with open(raw_adi_logs_pathname, 'w') as f:
-                hive = pyhs2.connect(host=self.config.hive_host,
+                hive = pyhs2.connect(
+                    host=self.config.hive_host,
                     port=self.config.hive_port,
-                    authMechanism='PLAIN',
+                    authMechanism=self.config.hive_auth_mechanism,
                     user=self.config.hive_user,
                     password=self.config.hive_password,
-                    database=self.config.hive_database)
+                    database=self.config.hive_database
+                )
 
                 cur = hive.cursor()
                 query = self.config.query % target_date
                 cur.execute(query)
                 for row in cur:
-                    f.write("\t".join(
-                            ['None' if v is None else str(v) for v in row]
-                        )
-                    )
+                    f.write("\t".join(str(v) for v in row))
+                    f.write("\n")
 
             with open(raw_adi_logs_pathname, 'r') as f:
                 pgcursor = connection.cursor()
@@ -155,4 +158,5 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                     ]
                 )
         finally:
-            os.remove(raw_adi_logs_pathname)
+            if os.path.isfile(raw_adi_logs_pathname):
+                os.remove(raw_adi_logs_pathname)
