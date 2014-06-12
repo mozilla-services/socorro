@@ -33,13 +33,9 @@ IF NOT reports_clean_done(updateday, check_period) THEN
     END IF;
 END IF;
 
---create correlations_module matview
-WITH crash AS (
-    SELECT json_array_elements(processed_crash->'json_dump'->'modules') AS modules,
-           product_version_id,
-           signature_id,
-           reports_clean.date_processed::date,
-           reports_clean.os_name
+INSERT INTO modules (name, version) (
+    SELECT (json_array_elements(processed_crash->'json_dump'->'modules')->'filename')::text as name
+           , (json_array_elements(processed_crash->'json_dump'->'modules')->'debug_file')::text as version
     FROM processed_crashes
     JOIN reports_clean ON (processed_crashes.uuid::text = reports_clean.uuid)
     JOIN product_versions USING (product_version_id)
@@ -47,30 +43,49 @@ WITH crash AS (
         BETWEEN updateday::timestamptz AND updateday::timestamptz + '1 day'::interval
     AND processed_crashes.date_processed -- also need to filter on date_processed
         BETWEEN updateday::timestamptz AND updateday::timestamptz + '1 day'::interval
+    AND sunset_date > now()
+    AND NOT EXISTS (SELECT name,version FROM modules WHERE name = name AND version = version)
+    GROUP BY name, version
+);
 
+--create correlations_module matview
+WITH crash AS (
+    SELECT json_array_elements(processed_crash->'json_dump'->'modules') AS module
+           , product_version_id
+           , signature_id
+           , reports_clean.date_processed::date
+           , reports_clean.os_name
+    FROM processed_crashes
+    JOIN reports_clean ON (processed_crashes.uuid::text = reports_clean.uuid)
+    JOIN product_versions USING (product_version_id)
+    WHERE reports_clean.date_processed
+        BETWEEN updateday::timestamptz AND updateday::timestamptz + '1 day'::interval
+    AND processed_crashes.date_processed -- also need to filter on date_processed
+        BETWEEN updateday::timestamptz AND updateday::timestamptz + '1 day'::interval
     AND sunset_date > now()
 )
 INSERT INTO correlations_module (
     product_version_id
-    , module_name
-    , module_version
+    , module_id
     , report_date
     , os_name
     , signature_id
     , total
 )
 SELECT product_version_id
-       , (modules->'filename')::text as module_name
-       , (modules->'debug_file')::text as module_version
+       , module_id
        , date_processed as report_date
        , os_name
        , signature_id
        , count(*) as total
 FROM crash
-WHERE (modules->'filename')::text IS NOT NULL
-AND (modules->'debug_file')::text IS NOT NULL
-GROUP BY module_name
-         , module_version
+    JOIN modules
+        ON (module->'filename')::text = modules.name
+        AND (module->'debug_file')::text = modules.version
+WHERE
+    (module->'filename')::text IS NOT NULL
+AND (module->'debug_file')::text IS NOT NULL
+GROUP BY module_id
          , product_version_id
          , report_date
          , os_name
