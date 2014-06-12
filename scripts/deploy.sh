@@ -142,13 +142,24 @@ popd > /dev/null
 # copy system files into install, to catch any overrides
 cp /etc/socorro/*.ini /data/socorro/application/config/
 error $? "could not copy /etc/socorro/*.ini into install"
-if [ -f /etc/socorro/local.py ]; then
-    ln -vsf /etc/socorro/local.py /data/socorro/webapp-django/crashstats/settings/local.py
-    error $? "could not symlink /etc/socorro/local.py into install"
-else
-    cp /data/socorro/webapp-django/crashstats/settings/local.py /etc/socorro
+system_localpy="/etc/socorro/local.py"
+socorro_localpy="/data/socorro/webapp-django/crashstats/settings/local.py"
+if [ ! -f "$system_localpy" ]; then
+    cp "$socorro_localpy" "$system_localpy"
     error $? "could not copy initial local.py to /etc/socorro"
+
+    echo
+    echo "NOTICE: Please edit the configuration files in /etc/socorro and re-run this script"
+    exit 0
 fi
+
+if [ -f "$socorro_localpy" ]; then
+    mv "$socorro_localpy" "${socorro_localpy}.dist"
+    error $? "could not move $socorro_localpy out of the way"
+fi
+
+ln -vsf "$system_localpy" "$socorro_localpy"
+error $? "could not symlink $system_localpy into install"
 
 # TODO optional support for crashmover
 for service in processor
