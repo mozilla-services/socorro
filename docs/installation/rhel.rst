@@ -23,17 +23,18 @@ First the key:
 
 Then the repository definition:
 ::
-  # /etc/yum.repos.d/elasticsearch.repo
+  sudo tee /etc/yum.repos.d/elasticsearch.repo >/dev/null <<EOF
   [elasticsearch-0.90]
   name=Elasticsearch repository for 0.90.x packages
   baseurl=http://packages.elasticsearch.org/elasticsearch/0.90/centos
   gpgcheck=1
   gpgkey=http://packages.elasticsearch.org/GPG-KEY-elasticsearch
   enabled=1
+  EOF
 
 Install `Devtools 1.1 repository <http://people.centos.org/tru/devtools-1.1/readme>`_, needed for stackwalker
 ::
-  sudo wget http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -O /etc/yum.repos.d/devtools-1.1.repo
+  sudo curl http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -o /etc/yum.repos.d/devtools-1.1.repo
 
 Now you can actually install the packages:
 ::
@@ -46,12 +47,12 @@ Now you can actually install the packages:
 
 Enable Apache on startup:
 ::
-  chkconfig httpd on
+  sudo service httpd start
   sudo chkconfig httpd on
 
 Enable Memcached on startup:
 ::
-  chkconfig memcached on
+  sudo service memcached start
   sudo chkconfig memcached on
 
 Enable RabbitMQ on startup:

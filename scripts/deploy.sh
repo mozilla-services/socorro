@@ -33,6 +33,12 @@ function error {
   fi
 }
 
+# Ensure we're executing in the directory we live in, so that we don't
+# have different socorro.tar.gz files based on your $PWD when you run
+# this script.
+cd "$(dirname "$0")"
+error $? "could not change working directory"
+
 # current date to the second, used for archiving old builds
 DATE=`date +%d-%m-%Y_%H_%M_%S`
 error $? "could not set date"
@@ -111,10 +117,6 @@ echo "Installing new build to /data/socorro"
 mv ${TMP}/socorro/ /data/
 error $? "could not install new Socorro build"
 
-# move new socorro.tar.gz over old
-mv socorro-new.tar.gz socorro.tar.gz
-error $? "could not mv socorro-new.tar.gz -> socorro.tar.gz"
-
 # deploy system files
 cp /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
 error $? "could not copy socorrorc"
@@ -140,8 +142,13 @@ popd > /dev/null
 # copy system files into install, to catch any overrides
 cp /etc/socorro/*.ini /data/socorro/application/config/
 error $? "could not copy /etc/socorro/*.ini into install"
-cp /etc/socorro/local.py /data/socorro/webapp-django/crashstats/settings/
-error $? "could not copy /etc/socorro/local.py into install"
+if [ -f /etc/socorro/local.py ]; then
+    cp /etc/socorro/local.py /data/socorro/webapp-django/crashstats/settings/
+    error $? "could not copy /etc/socorro/local.py into install"
+else
+    cp /data/socorro/webapp-django/crashstats/settings/local.py /etc/socorro
+    error $? "could not copy initial local.py to /etc/socorro"
+fi
 
 # TODO optional support for crashmover
 for service in processor
@@ -217,6 +224,11 @@ echo "Running Django syncdb"
     /data/socorro/webapp-django/manage.py syncdb --noinput \
     &> /var/log/socorro/django-syncdb.log
 error $? "django syncdb failed `cat /var/log/socorro/django-syncdb.log`"
+
+# move new socorro.tar.gz over old now that the installation was
+# succesful.
+mv socorro-new.tar.gz socorro.tar.gz
+error $? "could not mv socorro-new.tar.gz -> socorro.tar.gz"
 
 echo "Socorro build installed successfully!"
 echo "Downloaded from ${URL}"

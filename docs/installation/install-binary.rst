@@ -9,9 +9,13 @@ If you do not wish to install from source, and are using a RHEL-compatible
 64-bit Linux distribution (such as CentOS), then you can install from a package
 instead of from source.
 
-As *root* from inside the Socorro checkout:
+As *root*:
 ::
-  ./scripts/deploy.sh \
+  mkdir -p "$HOME/socorro-deploy"
+  curl https://raw.githubusercontent.com/mozilla/socorro/master/scripts/deploy.sh \
+    -o "$HOME/socorro-deploy/deploy.sh"
+  chmod +x "$HOME/socorro-deploy/deploy.sh"
+  "$HOME/socorro-deploy/deploy.sh" \
     https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro.tar.gz
 
 This will install the very latest development release of Socorro, if you wish
