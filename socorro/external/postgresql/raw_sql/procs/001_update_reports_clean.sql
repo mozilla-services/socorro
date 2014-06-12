@@ -79,6 +79,7 @@ LIMIT 1;
 IF NOT FOUND THEN
     IF checkdata THEN
         RAISE NOTICE 'no report data found for period %',fromtime;
+        DROP TABLE new_reports;
         RETURN FALSE;
     ELSE
         DROP TABLE new_reports;
