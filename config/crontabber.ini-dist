@@ -15,17 +15,6 @@
     #    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|02:00
     #'''
 
-    # name: database_file
-    # doc: Location of file where job execution logs are stored
-    # converter: str
-    # OPS - set once
-    #database_file='./crontabbers.json'
-
-    # name: json_database_class
-    # doc: Class to load and save the JSON database
-    # converter: configman.converters.class_converter
-    #json_database_class='JSONAndPostgresJobDatabase'
-
     # name: database_class
     # doc: the class responsible for connecting to Postgres
     # converter: configman.converters.class_converter
