@@ -29,6 +29,7 @@ Contents:
    installation/install-src
    installation/systemtest
    installation/troubleshoot
+   installation/add-product-release
    webapp
    middleware
    crashstorage
