@@ -377,6 +377,27 @@ class RawAdiLogs(DeclarativeBase):
     }
 
 
+class RawAdi(DeclarativeBase):
+    __tablename__ = 'raw_adi'
+
+    #column definitions
+    adi_count = Column(u'adi_count', INTEGER())
+    date = Column(u'date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+    update_channel = Column(u'update_channel', TEXT())
+    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
+
+    __mapper_args__ = {"primary_key": (adi_count, date, product_name, product_version, product_os_platform, product_os_version, build, product_guid, update_channel)}
+    __table_args__ = (
+        Index(u'raw_adi_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
+    )
+
+
 class RawAdu(DeclarativeBase):
     __tablename__ = 'raw_adu'
 
