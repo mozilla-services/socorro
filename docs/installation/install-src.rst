@@ -279,8 +279,8 @@ edit /data/socorro/webapp-django/crashstats/settings/local.py:
 
 Allow Django to create the database tables it needs for managing sessions:
 ::
-  . /data/socorro/webapp-django/virtualenv/bin/activate
-  /data/socorro/webapp-django/manage.py syncdb --noinput
+  /data/socorro/socorro-virtualenv/bin/python \
+    /data/socorro/webapp-django/manage.py syncdb --noinput
 
 Copy the example Apache config into place from the Socorro checkout as the
 *root* user:
