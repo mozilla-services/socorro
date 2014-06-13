@@ -62,6 +62,35 @@ _QUERY = """
         split(request_url,'/')[3]
 """
 
+_RAW_ADI_QUERY = """
+    INSERT INTO raw_adi (
+        adi_count,
+        date,
+        product_name,
+        product_os_platform,
+        product_os_version,
+        product_version,
+        build,
+        product_guid,
+        update_channel
+    )
+    SELECT
+        count,
+        report_date,
+        raw_adi_logs.product_name,
+        product_os_platform,
+        product_os_version,
+        product_version,
+        build,
+        product_guid,
+        build_channel
+    FROM raw_adi_logs
+        -- FILTER with product_productid_map
+        JOIN product_productid_map ON productid = product_guid
+    WHERE
+        report_date=%s
+"""
+
 
 @as_backfill_cron_app
 @with_postgres_transactions()
@@ -136,8 +165,15 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                 query = self.config.query % target_date
                 cur.execute(query)
                 for row in cur:
-                    f.write("\t".join(str(v) for v in row))
-                    f.write("\n")
+                    if None not in row:
+                        f.write(
+                            "\t"
+                            .join(
+                                urllib2.unquote(v).decode('utf8')
+                                for v in row
+                            )
+                        )
+                        f.write("\n")
 
             with open(raw_adi_logs_pathname, 'r') as f:
                 pgcursor = connection.cursor()
@@ -157,6 +193,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                         'count'
                     ]
                 )
+                pgcursor.execute(_RAW_ADI_QUERY, (target_date,))
         finally:
             if os.path.isfile(raw_adi_logs_pathname):
                 os.remove(raw_adi_logs_pathname)

@@ -18,10 +18,33 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
 
     def setUp(self):
         super(TestFetchADIFromHive, self).setUp()
+        # Add something to product_productid_map
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT into products (
+                product_name,
+                release_name
+            ) VALUES (
+                'WinterWolf', 'release'
+            ), (
+                'NothingMuch', 'release'
+            )
+        """)
+        cursor.execute("""
+            INSERT into product_productid_map (
+                product_name,
+                productid
+            ) VALUES (
+                'NothingMuch', '{a-guid}'
+            ), (
+                'WinterWolf', 'a-guid'
+            )
+        """)
+        self.conn.commit()
 
     def tearDown(self):
         cursor = self.conn.cursor()
-        cursor.execute("TRUNCATE raw_adi_logs")
+        cursor.execute("TRUNCATE raw_adi_logs, product_productid_map")
         super(TestFetchADIFromHive, self).tearDown()
 
     def _setup_config_manager(self):
@@ -49,9 +72,18 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
                  'Ginko',
                  '2.3.2',
                  '10.0.5a',
+                 'release',
+                 'release',
+                 '%7Ba-guid%7D',
+                 '2'],
+                ['2019-01-01',
+                 'Missing',
+                 'Ginko',
+                 '2.3.2',
+                 '',
                  None,
                  'release',
-                 'a-guid',
+                 '%7Ba-guid%7D',
                  '2']
             ]
             for item in test_data:
@@ -97,7 +129,6 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
         pgcursor.execute(
             """ select %s from raw_adi_logs """ % ','.join(columns)
         )
-
         adi = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
 
         eq_(adi, [
@@ -117,9 +148,9 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
                 'product_os_platform': 'Ginko',
                 'product_os_version': '2.3.2',
                 'product_version': '10.0.5a',
-                'build': None,
+                'build': 'release',
                 'build_channel': 'release',
-                'product_guid': 'a-guid',
+                'product_guid': '{a-guid}',
                 'count': 2
             }
         ])
