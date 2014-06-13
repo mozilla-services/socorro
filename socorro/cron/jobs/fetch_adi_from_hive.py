@@ -165,16 +165,15 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                 query = self.config.query % target_date
                 cur.execute(query)
                 for row in cur:
-                    f.write(
-                        "\t"
-                        .join(
-                            'None' if v is None
-                            # rewrite escapes as braces
-                            else str(urllib2.unquote(v).decode('utf8'))
-                            for v in row
+                    if None not in row:
+                        f.write(
+                            "\t"
+                            .join(
+                                urllib2.unquote(v).decode('utf8')
+                                for v in row
+                            )
                         )
-                    )
-                    f.write("\n")
+                        f.write("\n")
 
             with open(raw_adi_logs_pathname, 'r') as f:
                 pgcursor = connection.cursor()
