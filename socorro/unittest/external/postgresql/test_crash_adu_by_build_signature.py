@@ -7,6 +7,11 @@ import datetime
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
+from socorro.external.postgresql.dbapi2_util import (
+    execute_no_results,
+    single_value_sql,
+    single_row_sql,
+)
 from socorro.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
@@ -18,11 +23,10 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
     """Test of Crash ADU By Build Signature stored procedures"""
 
     #--------------------------------------------------------------------------
-    def setUp(self):
-        """ Populate product_info table with fake data """
-        super(IntegrationTestCrashAduByBuildSignature, self).setUp()
-
-        cursor = self.connection.cursor()
+    def _insert_test_data(self, connection):
+        # clear old data, just in case
+        self._delete_test_data(connection)
+        # Insert data for paireduuid test
 
         # Insert data
         self.now = datetimeutil.utc_now()
@@ -31,7 +35,9 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
         tomorrow = self.tomorrow.date()
         now = self.now.date()
 
-        cursor.execute("""
+        execute_no_results(
+            connection,
+            """
             INSERT INTO products
             (product_name, sort, rapid_release_version, release_name)
             VALUES
@@ -43,7 +49,9 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
             );
         """)
 
-        cursor.execute("""
+        execute_no_results(
+            connection,
+            """
             INSERT INTO release_channels
             (release_channel, sort)
             VALUES
@@ -55,7 +63,9 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
             );
         """)
 
-        cursor.execute("""
+        execute_no_results(
+            connection,
+            """
             INSERT INTO product_versions
             (product_version_id,
              product_name, major_version, release_version, version_string,
@@ -79,28 +89,34 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
             );
         """ % {'now': now})
 
-        cursor.execute("""
+        execute_no_results(
+            connection,
+            """
             INSERT INTO signatures
             (first_build, first_report, signature)
             VALUES
             ('20130701120000', '%(now)s', 'Fake Signature #1')
         """ % {'now': now})
 
-        cursor.execute("""
+        signature_id = single_value_sql(
+            connection,
+            """
             SELECT signature_id FROM signatures
             WHERE signature = 'Fake Signature #1'
         """)
 
-        signature_id = cursor.fetchone()[0]
 
-        cursor.execute("""
+        product_version_id = single_value_sql(
+            connection,
+            """
             SELECT product_version_id
             FROM product_versions
             WHERE product_name = 'Firefox' and version_string = '8.0'
         """)
-        product_version_id = cursor.fetchone()[0]
 
-        cursor.execute("""
+        execute_no_results(
+            connection,
+            """
             INSERT INTO reports_clean
             (address_id,
              build,
@@ -136,7 +152,9 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                         'signature_id': signature_id,
                         'product_version_id': product_version_id})
 
-        cursor.execute("""
+        execute_no_results(
+            connection,
+            """
              INSERT INTO build_adu
                 (product_version_id,
                 build_date,
@@ -159,10 +177,19 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                     'tomorrow': tomorrow
                     })
 
-    def tearDown(self):
-        """ Cleanup the database, delete tables and functions """
-        cursor = self.connection.cursor()
-        cursor.execute("""
+    #--------------------------------------------------------------------------
+    def setUp(self):
+        """ Populate product_info table with fake data """
+        super(IntegrationTestCrashAduByBuildSignature, self).setUp()
+        self.now = datetimeutil.utc_now()
+        self.tomorrow = self.now + datetime.timedelta(days=1)
+        self.transaction(self._insert_test_data)
+
+    #--------------------------------------------------------------------------
+    def _delete_test_data(self, connection):
+        execute_no_results(
+            connection,
+            """
             TRUNCATE products,
                 product_versions,
                 release_channels,
@@ -170,23 +197,31 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                 reports_clean,
                 build_adu,
                 crash_adu_by_build_signature
-            CASCADE
-        """)
-        self.connection.commit()
+            CASCADE"""
+        )
+
+    #--------------------------------------------------------------------------
+    def tearDown(self):
+        """ Cleanup the database, delete tables and functions """
+        self.transaction(self._delete_test_data)
         super(IntegrationTestCrashAduByBuildSignature, self).tearDown()
 
+    #--------------------------------------------------------------------------
     def test_stored_procedure(self):
-        cursor = self.connection.cursor()
         now = self.now.date()
         tomorrow = self.tomorrow.date()
 
-        cursor.execute("""
-            SELECT update_crash_adu_by_build_signature('%(now)s')
-        """ % {'now': now})
+        result = self.transaction(
+            single_value_sql,
+            "SELECT update_crash_adu_by_build_signature('%(now)s')" %
+            {'now': now}
+        )
 
-        ok_(cursor.fetchone()[0])
+        ok_(result)
 
-        cursor.execute("""
+        result = self.transaction(
+            single_row_sql,
+            """
             SELECT
                 signature,
                 adu_date,
@@ -207,7 +242,7 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                     123,
                     'windows',
                     'release')
-        eq_(cursor.fetchall()[0], expected)
+        eq_(result, expected)
 
         # ensure that we show builds with no crashes
 
@@ -220,13 +255,17 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
                     'windows',
                     'release')
 
-        cursor.execute("""
+        result = self.transaction(
+            single_value_sql,
+            """
             SELECT update_crash_adu_by_build_signature('%(tomorrow)s')
         """ % {'tomorrow': tomorrow})
 
-        ok_(cursor.fetchone()[0])
+        ok_(result)
 
-        cursor.execute("""
+        result = self.transaction(
+            single_row_sql,
+            """
             SELECT
                 signature,
                 adu_date,
@@ -240,4 +279,4 @@ class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
             crash_adu_by_build_signature
             WHERE build_date = '%(tomorrow)s'""" % {'tomorrow': tomorrow})
 
-        eq_(cursor.fetchall()[1], expected)
+        eq_(result, expected)

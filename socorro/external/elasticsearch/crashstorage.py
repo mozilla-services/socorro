@@ -161,7 +161,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
 
                 # Cache the list of existing indices to avoid HTTP requests
                 self.indices_cache.add(es_index)
-
             self.es.index(
                 es_index,
                 es_doctype,

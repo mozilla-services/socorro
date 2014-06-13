@@ -27,7 +27,6 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             'password=%(database_password)s' %
             dict(DSN, database_name=database_name)
         )
-        #print 'DEBUG', dsn
         return psycopg2.connect(dsn)
 
     def _drop_database(self):
@@ -44,6 +43,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
 
     def setUp(self):
         super(IntegrationTestSetupDB, self).setUp()
+        # MOCKED CONFIG DONE HERE
 
         config_manager = self._setup_config_manager({'dropdb': True})
         with config_manager.context() as config:
@@ -68,7 +68,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             extra_value_source = {}
         mock_logging = mock.Mock()
 
-        required_config = setupdb_app.SocorroDB.required_config
+        required_config = setupdb_app.SocorroDB.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         # We manually set the database_name to something deliberately
@@ -77,7 +77,8 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
         # the other tests.
         required_config.database_name = 'soccoro_integration_test_setupdb_only'
 
-        required_config.database_hostname = self.config.database_hostname
+        required_config.database_hostname = \
+            self.config.database.database_hostname
 
         config_manager = ConfigurationManager(
             [required_config,

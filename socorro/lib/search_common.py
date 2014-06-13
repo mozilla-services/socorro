@@ -12,6 +12,8 @@ import socorro.lib.external_common as extern
 from socorro.external import BadArgumentError, MissingArgumentError
 from socorro.lib import datetimeutil
 
+from configman import RequiredConfig, Namespace
+
 
 """Operators description:
      * '' -> 'has one of the terms'
@@ -68,7 +70,21 @@ class SearchFilter(object):
         self.mandatory = mandatory
 
 
-class SearchBase(object):
+class SearchBase(RequiredConfig):
+
+    required_config = Namespace()
+    required_config.add_option(
+        'search_default_date_range',
+        default=7,  # in days
+        doc='the default date range for searches, in days'
+    )
+    required_config.add_option(
+        'search_maximum_date_range',
+        default=365,  # in days
+        doc='the maximum date range for searches, in days'
+    )
+
+
     meta_filters = [
         SearchFilter('_facets', default='signature'),
         SearchFilter('_results_number', data_type='int', default=100),
@@ -78,11 +94,7 @@ class SearchBase(object):
 
     def __init__(self, *args, **kwargs):
         self.context = kwargs.get('config')
-        if 'webapi' in self.context:
-            context = self.context.webapi
-        else:
-            # old middleware
-            context = self.context
+        context = self.context.webapi
         self.config = context
 
         fields = kwargs.get('fields')

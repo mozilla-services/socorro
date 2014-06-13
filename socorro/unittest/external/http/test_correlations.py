@@ -14,29 +14,36 @@ from socorro.external.http import correlations
 from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
+from configman.dotdict import DotDictWithAcquisition
+
 SAMPLE_CORE_COUNTS = open(
     os.path.join(os.path.dirname(__file__),
                  'sample-core-counts.txt')
 ).read()
 
 
+#==============================================================================
 class Response(object):
     def __init__(self, content=None, status_code=200):
         self.content = content
         self.status_code = status_code
 
 
+#==============================================================================
 class TestCorrelations(TestCase):
 
+    #--------------------------------------------------------------------------
     def setUp(self):
         super(TestCorrelations, self).setUp()
         self.temp_dirs = []
 
+    #--------------------------------------------------------------------------
     def tearDown(self):
         super(TestCorrelations, self).tearDown()
         for temp_dir in self.temp_dirs:
             shutil.rmtree(temp_dir)
 
+    #--------------------------------------------------------------------------
     def _get_model(self, overrides):
         new_temp_dir = tempfile.mkdtemp()
         self.temp_dirs.append(new_temp_dir)
@@ -48,12 +55,14 @@ class TestCorrelations(TestCase):
         }
         config_values.update(overrides)
         cls = correlations.Correlations
-        config = DotDict()
+        config = DotDictWithAcquisition()
         config.logger = mock.Mock()
-        config.http = DotDict()
-        config.http.correlations = DotDict(config_values)
-        return cls(config=config)
+        config['services.Correlations'] = DotDictWithAcquisition(config_values)
+        self.config = config
+        model = cls(config=config)
+        return model
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_simple_download(self, rget):
 
@@ -83,6 +92,7 @@ class TestCorrelations(TestCase):
         eq_(result['reason'], 'EXCEPTION_ACCESS_VIOLATION_READ')
         eq_(len(result['load'].splitlines()), 17)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_failing_download_no_error(self, rget):
 
@@ -105,6 +115,7 @@ class TestCorrelations(TestCase):
         result = model.get(**dict(base_params, signature=signature))
         eq_(result, None)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_failing_download_should_not_cached(self, rget):
 
@@ -141,6 +152,7 @@ class TestCorrelations(TestCase):
         # See sample-core-counts.txt why I chose these tests
         eq_(result['count'], 2551)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_failing_download_raised_error(self, rget):
 
@@ -163,6 +175,7 @@ class TestCorrelations(TestCase):
         params = dict(base_params, signature=signature)
         assert_raises(correlations.DownloadError, model.get, **params)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_download_signature_last_in_platform(self, rget):
         """look for a signature that is last under that platform"""
@@ -194,6 +207,7 @@ class TestCorrelations(TestCase):
         eq_(result['reason'], 'EXC_BAD_ACCESS / 0x0000000d')
         eq_(len(result['load'].splitlines()), 5)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_download_signature_middle_in_platform(self, rget):
         """look for a signature that is last under that platform"""
@@ -229,6 +243,7 @@ class TestCorrelations(TestCase):
         )
         eq_(len(result['load'].splitlines()), 5)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_download_with_unrecognized_signature(self, rget):
 
@@ -256,6 +271,7 @@ class TestCorrelations(TestCase):
         ok_(not result['count'])
         ok_(not result['load'])
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_valid_signature_but_wrong_platform(self, rget):
 
@@ -287,6 +303,7 @@ class TestCorrelations(TestCase):
         ok_(not result['count'])
         ok_(not result['load'])
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_save_download(self, rget):
 
@@ -340,25 +357,32 @@ class TestCorrelations(TestCase):
             shutil.rmtree(tmp_directory)
 
 
+#==============================================================================
 class TestCorrelationsSignatures(TestCase):
 
-    @staticmethod
-    def _get_model(overrides=None):
+    def _get_model(self, overrides=None):
         config_values = {
             'base_url': 'http://crashanalysis.com',
             'save_root': '',
+            # the next parameter was originally true, but that always caused
+            # the last test to fail because it grabbed the file saved by a
+            # previous test rather than downloading.  Setting to False
+            # resolved that issue.
             'save_download': False,
             'save_seconds': 1000,
         }
         if overrides:
             config_values.update(overrides)
         cls = correlations.CorrelationsSignatures
-        config = DotDict()
+        config = DotDictWithAcquisition()
         config.logger = mock.Mock()
-        config.http = DotDict()
-        config.http.correlations = DotDict(config_values)
-        return cls(config=config)
+        config['services.CorrelationsSignatures'] = \
+            DotDictWithAcquisition(config_values)
+        self.config = config
+        model = cls(config=config)
+        return model
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_simple_download(self, rget):
 
@@ -389,6 +413,7 @@ class TestCorrelationsSignatures(TestCase):
         # belongs to Windows NT
         ok_('js::types::IdToTypeId(int)' not in result['hits'])
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_no_signatures(self, rget):
 
@@ -409,6 +434,7 @@ class TestCorrelationsSignatures(TestCase):
         result = model.get(**dict(params, platforms=['OS/2']))
         eq_(result['total'], 0)
 
+    #--------------------------------------------------------------------------
     @mock.patch('requests.get')
     def test_failing_download_no_error(self, rget):
 

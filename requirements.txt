@@ -34,8 +34,8 @@ honcho==0.5.0
 
 # prod requirements
 
-# sha256: tcXSiRub8NwK38JxT1UPdOVfLRyQ9X6wF6BNIV4QmCc
-configman==1.2.3
+# sha256: RtD-Wb1_GDGTSDR0kIfHfbrxXTOQKlvpvPjSPAoZ1O4
+configman==1.2.4
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY

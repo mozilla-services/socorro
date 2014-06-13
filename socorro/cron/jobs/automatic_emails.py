@@ -14,7 +14,7 @@ from crontabber.mixins import as_backfill_cron_app
 from crontabber.base import BaseCronApp
 from socorro.lib.transform_rules import TransformRuleSystem
 from socorro.external.elasticsearch.base import ElasticSearchBase
-from socorro.external.elasticsearch.supersearch import SuperS
+from socorro.external.elasticsearch.supersearch_service import SuperS
 from socorro.external.exacttarget import exacttarget
 
 

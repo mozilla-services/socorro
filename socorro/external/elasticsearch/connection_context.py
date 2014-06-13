@@ -36,3 +36,16 @@ class ConnectionContext(RequiredConfig):
         doc='the default doctype to use in elasticsearch',
         reference_value_from='resource.elasticsearch',
     )
+    required_config.add_option(
+        'elasticSearchHostname',
+        default='localhost',
+        doc='String containing the URI of the Elastic Search instance.',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'elasticSearchPort',
+        default='9200',
+        doc='String containing the port on which calling the Elastic '
+            'Search instance.',
+        reference_value_from='resource.elasticsearch',
+    )
