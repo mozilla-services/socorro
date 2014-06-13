@@ -24,7 +24,6 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.auth' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
-    'django_statsd',
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',
@@ -49,14 +48,9 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
         MIDDLEWARE_CLASSES.remove(app)
 
 MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
-    'django_statsd.middleware.GraphiteRequestTimingMiddleware',
-    'django_statsd.middleware.GraphiteMiddleware',
     'waffle.middleware.WaffleMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
 )
-
-
-STATSD_CLIENT = 'django_statsd.clients.normal'
 
 
 # BrowserID configuration
