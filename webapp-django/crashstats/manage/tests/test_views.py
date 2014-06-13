@@ -1058,7 +1058,6 @@ class TestViews(BaseTestViews):
                 'description': 'hello world',
             }
         )
-        print response
         eq_(response.status_code, 302)
 
         response = self.client.post(url)
