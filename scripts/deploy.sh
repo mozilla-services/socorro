@@ -198,7 +198,12 @@ error $? "could not run crontabber `cat /var/log/socorro/crontabber.log`"
 popd > /dev/null
 
 if [ ! -f /etc/cron.d/socorro ]; then
-    cp /data/socorro/application/config/crontab-dist \
+    # crond doesn't like files with executable bits, and doesn't load
+    # them.
+    chmod 644 /data/socorro/application/config/crontab-dist
+    error $? "could not modify socorro crontab permissions"
+
+    cp -a /data/socorro/application/config/crontab-dist \
         /etc/cron.d/socorro
     error $? "could not copy socorro crontab"
 fi
