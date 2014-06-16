@@ -160,6 +160,8 @@
                       <a href="{{ url('crashstats:your_crashes') }}">Your Crash Reports</a>
                       |
                       <a href="{{ url('crashstats:permissions') }}">Your Permissions</a>
+                      |
+                      <a href="{{ url('symbols:home') }}">Symbols</a>
                       {% if request.user.is_superuser %}
                       |
                       <a href="{{ url('manage:home') }}">Admin</a>
