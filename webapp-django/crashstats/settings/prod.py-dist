@@ -46,23 +46,23 @@ STATSD_PREFIX = None
 
 # By default, use sqlite but in production you probably want to
 # connect to a postgresql database for all things django needs.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'socorro',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
-        'OPTIONS': {
-        },
-        'TEST_CHARSET': 'utf8',
-        'TEST_COLLATION': 'utf8_general_ci',
-    },
-    # 'slave': {
-    #     ...
-    # },
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#        'NAME': 'socorro',
+#        'USER': '',
+#        'PASSWORD': '',
+#        'HOST': '',
+#        'PORT': '',
+#        'OPTIONS': {
+#        },
+#        'TEST_CHARSET': 'utf8',
+#        'TEST_COLLATION': 'utf8_general_ci',
+#    },
+#    # 'slave': {
+#    #     ...
+#    # },
+#}
 
 
 # Uncomment this and set to all slave DBs in use on the site.
