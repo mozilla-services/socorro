@@ -452,7 +452,7 @@ def supersearch_field_create(request):
         return http.HttpResponseBadRequest(field_data)
 
     api = SuperSearchField()
-    api.post(**field_data)
+    api.post(field_data)
 
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
@@ -469,7 +469,7 @@ def supersearch_field_update(request):
         return http.HttpResponseBadRequest(field_data)
 
     api = SuperSearchField()
-    api.put(**field_data)
+    api.put(field_data)
 
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)

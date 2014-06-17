@@ -204,13 +204,11 @@ class SuperSearchField(models.SocorroMiddleware):
     def get(self, **kwargs):
         raise NotImplemented()
 
-    def post(self, **kwargs):
-        params = self.kwargs_to_params(kwargs)
-        return super(SuperSearchField, self).post(self.URL_PREFIX, params)
+    def post(self, payload):
+        return super(SuperSearchField, self).post(self.URL_PREFIX, payload)
 
-    def put(self, **kwargs):
-        params = self.kwargs_to_params(kwargs)
-        return super(SuperSearchField, self).put(self.URL_PREFIX, params)
+    def put(self, payload):
+        return super(SuperSearchField, self).put(self.URL_PREFIX, payload)
 
 
 class Query(models.SocorroMiddleware):
