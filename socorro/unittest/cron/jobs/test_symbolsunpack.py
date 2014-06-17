@@ -9,7 +9,11 @@ import tempfile
 from nose.tools import ok_
 
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 _here = os.path.dirname(__file__)
 
@@ -25,7 +29,7 @@ assert os.path.isfile(TARGZ_FILE)
 
 
 #==============================================================================
-class TestSymbolsUnpack(IntegrationTestCaseBase):
+class TestSymbolsUnpack(IntegrationTestBase):
 
     def setUp(self):
         super(TestSymbolsUnpack, self).setUp()
@@ -40,11 +44,13 @@ class TestSymbolsUnpack(IntegrationTestCaseBase):
 
     def _setup_config_manager(self):
         _super = super(TestSymbolsUnpack, self)._setup_config_manager
-        return _super(
-            'socorro.cron.jobs.symbolsunpack.SymbolsUnpackCronApp|1h',
-            {
-                'source_directory': self.temp_source_directory,
-                'destination_directory': self.temp_destination_directory
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.symbolsunpack.SymbolsUnpackCronApp|1h',
+            overrides={
+                'crontabber.class-SymbolsUnpackCronApp.source_directory':
+                    self.temp_source_directory,
+                'crontabber.class-SymbolsUnpackCronApp.destination_directory':
+                    self.temp_destination_directory
             }
         )
 

@@ -8,12 +8,16 @@ from nose.tools import eq_
 
 from crontabber.app import CronTabber
 
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 
 #==============================================================================
 @attr(integration='postgres')
-class IntegrationTestServerStatus(IntegrationTestCaseBase):
+class IntegrationTestServerStatus(IntegrationTestBase):
 
     def _clear_tables(self):
         self.conn.cursor().execute("""
@@ -46,16 +50,14 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         super(IntegrationTestServerStatus, self).tearDown()
 
     def _setup_config_manager(self):
-        _super = super(IntegrationTestServerStatus, self)._setup_config_manager
-
         queue_mock = Mock()
         queue_mock.return_value.return_value = MagicMock()
         queue_mock.return_value.return_value.queue_status_standard \
             .method.message_count = 1
 
-        return _super(
-            'socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m',
-            extra_value_source={
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m',
+            overrides={
                 'crontabber.class-ServerStatusCronApp.queuing.queuing_class':
                 queue_mock
             }
@@ -124,3 +126,4 @@ class IntegrationTestServerStatus(IntegrationTestCaseBase):
         res_expected = (None, None, 0.0, 1, 1)
         res = cursor.fetchone()
         eq_(res, res_expected)
+

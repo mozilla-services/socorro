@@ -10,7 +10,11 @@ from nose.tools import eq_
 
 from crontabber.app import CronTabber
 from socorro.lib.datetimeutil import utc_now
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 SQL_INSERT = """
 INSERT INTO
@@ -25,7 +29,8 @@ VALUES
 
 
 @attr(integration='postgres')  # for nosetests
-class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
+class TestSuspiciousCrashAnalysisIntegration(IntegrationTestBase):
+
     def setUp(self):
         super(TestSuspiciousCrashAnalysisIntegration, self).setUp()
         cursor = self.conn.cursor()
@@ -93,12 +98,10 @@ class TestSuspiciousCrashAnalysisIntegration(IntegrationTestCaseBase):
         for k, v in kwargs.iteritems():
             evs['crontabber.class-SuspiciousCrashesApp.' + k] = v
 
-        return super(
-            TestSuspiciousCrashAnalysisIntegration,
-            self
-        )._setup_config_manager(
-            'socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d',
-            extra_value_source=evs
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.suspicious_crashes'
+                '.SuspiciousCrashesApp|1d',
+            overrides=evs
         )
 
     def test_run(self):

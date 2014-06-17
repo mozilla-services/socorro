@@ -12,7 +12,12 @@ from nose.tools import eq_, ok_, assert_raises
 from crontabber.app import CronTabber
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
-from crontabber.tests.base import TestCaseBase, IntegrationTestCaseBase
+from crontabber.tests.base import TestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 
 def stringioify(func):
@@ -24,6 +29,9 @@ def stringioify(func):
 
 #==============================================================================
 class TestFTPScraper(TestCaseBase):
+
+    def get_standard_config(self):
+        return get_config_manager_for_crontabber().get_config()
 
     def setUp(self):
         super(TestFTPScraper, self).setUp()
@@ -451,7 +459,7 @@ class TestFTPScraper(TestCaseBase):
 
 
 @attr(integration='postgres')  # for nosetests
-class TestIntegrationFTPScraper(IntegrationTestCaseBase):
+class TestIntegrationFTPScraper(IntegrationTestBase):
 
     def setUp(self):
         super(TestIntegrationFTPScraper, self).setUp()
@@ -556,19 +564,17 @@ class TestIntegrationFTPScraper(IntegrationTestCaseBase):
         super(TestIntegrationFTPScraper, self).tearDown()
 
     def _setup_config_manager_firefox(self):
-        _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
-        return _super(
-            'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
-            extra_value_source={
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
+            overrides={
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
             }
         )
 
     def _setup_config_manager(self):
-        _super = super(TestIntegrationFTPScraper, self)._setup_config_manager
-        return _super(
-            'socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
-            extra_value_source={
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
+            overrides={
                 'crontabber.class-FTPScraperCronApp.products': 'mobile',
             }
         )

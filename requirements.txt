@@ -34,8 +34,8 @@ honcho==0.5.0
 
 # prod requirements
 
-# sha256: tcXSiRub8NwK38JxT1UPdOVfLRyQ9X6wF6BNIV4QmCc
-configman==1.2.3
+# sha256: BZUlD7GUkBbcb9xzu2HBwvsrUiPjtmZxamnVXjnuGlU
+configman==1.2.6
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
@@ -80,8 +80,8 @@ python-dateutil==2.1
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
 happybase==0.7
-# sha256: wPqgyw40YQP3y3gYu5kpxYrVfqgfN05n-n3OGyR4CsY
-crontabber==0.8
+# sha256: 58Vwz2HzYCj5GrhPK8F-R_WysFm2G9gRuFtofr1ZZTo
+crontabber==0.10
 
 # sometimes you get the tarball, sometimes you get the wheel
 # sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
