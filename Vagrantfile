@@ -1,3 +1,5 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
 require "yaml"
 
 # Load up our vagrant config files -- vagrantconfig.yaml first
@@ -74,4 +76,7 @@ Vagrant::Config.run do |config|
       puppet.options = "--verbose --debug"
     end
   end
+
+  config.vm.provision "shell", inline: MOUNT_POINT + "/scripts/vagrant_bootstrap.sh"
+
 end
