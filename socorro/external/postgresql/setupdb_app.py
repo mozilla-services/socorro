@@ -53,6 +53,7 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA bixie')
+        self.session.execute('CREATE SCHEMA base')
         self.session.execute(
             'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
@@ -107,6 +108,7 @@ class PostgreSQLAlchemyManager(object):
     def bulk_load(self, data, table, columns, sep):
         connection = self.engine.raw_connection()
         cursor = connection.cursor()
+        cursor.execute("SET search_path TO base,public")
         cursor.copy_from(data, table, columns=columns, sep=sep)
         connection.commit()
 
@@ -332,6 +334,28 @@ class PostgreSQLAlchemyManager(object):
         # Need to close the outer transaction
         self.session.commit()
 
+    def setup_fdw(self, config):
+        session = self.session
+        session.execute("""
+            CREATE EXTENSION postgres_fdw
+        """)
+        session.execute("""
+            CREATE SERVER %s FOREIGN DATA WRAPPER postgres_fdw
+            OPTIONS (host '%s', dbname '%s', port '%s')
+        """ % (config.second_database_fdw_name,
+               config.second_database_hostname,
+               config.second_database_name,
+               config.second_database_port))
+
+        session.execute("""
+            CREATE USER MAPPING FOR %s SERVER %s
+            OPTIONS (user '%s', password '%s')
+        """ % (config.second_database_username,
+               config.second_database_fdw_name,
+               config.second_database_username,
+               config.second_database_password)
+        )
+
     def __enter__(self):
         return self
 
@@ -402,6 +426,12 @@ class SocorroDB(App):
     )
 
     required_config.add_option(
+        name='database_fdw_name',
+        default='sandbox1',
+        doc='Foreign Data Wrapper server name',
+    )
+
+    required_config.add_option(
         name='dropdb',
         default=False,
         doc='Whether or not to drop database_name',
@@ -466,6 +496,60 @@ class SocorroDB(App):
         doc='Create all tables with UNLOGGED for running tests',
     )
 
+    required_config.add_option(
+        name='splitschema',
+        default=False,
+        doc='Split the schema into two databases'
+    )
+
+    required_config.add_option(
+        name='second_database_name',
+        default='socorro_integration_test',
+        doc='Name of database to manage',
+    )
+
+    required_config.add_option(
+        name='second_database_hostname',
+        default='localhost',
+        doc='Hostname to connect to database',
+    )
+
+    required_config.add_option(
+        name='second_database_username',
+        default='breakpad_rw',
+        doc='Username to connect to database',
+    )
+
+    required_config.add_option(
+        name='second_database_password',
+        default='aPassword',
+        doc='Password to connect to database',
+    )
+
+    required_config.add_option(
+        name='second_database_superusername',
+        default='test',
+        doc='Username to connect to database',
+    )
+
+    required_config.add_option(
+        name='second_database_superuserpassword',
+        default='aPassword',
+        doc='Password to connect to database',
+    )
+
+    required_config.add_option(
+        name='second_database_port',
+        default='5432',
+        doc='Port to connect to database',
+    )
+
+    required_config.add_option(
+        name='second_database_fdw_name',
+        default='sandbox2',
+        doc='Foreign Data Wrapper server name',
+    )
+
     @staticmethod
     def generate_fakedata(db, fakedata_days):
 
@@ -503,6 +587,7 @@ class SocorroDB(App):
                 WHERE version_string IN (:one, :two, :three, :four)
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
+
 
     def main(self):
 
@@ -544,6 +629,18 @@ class SocorroDB(App):
                               lambda m: "CREATE UNLOGGED %s" %
                               m.group(1), text)
                 return text
+
+        if self.config.splitschema:
+            # Change our create table routine
+            @compiles(CreateTable)
+            def create_table(element, compiler, **kw):
+                text = compiler.visit_create_table(element, **kw)
+                if 'base.' not in text:
+                    text = re.sub("^\sCREATE(.*TABLE)",
+                                  lambda m: "CREATE FOREIGN %s" % m.group(1), text)
+                    text += "SERVER %s" % self.config.second_database_fdw_name
+                return text
+
 
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
@@ -604,8 +701,10 @@ class SocorroDB(App):
             db.create_procs()
             db.set_sequence_owner('breakpad_rw')
             db.commit()
+            if self.config.splitschema:
+                db.setup_fdw(self.config)
             db.create_tables()
-            db.set_table_owner('breakpad_rw')
+            #db.set_table_owner('breakpad_rw')
             db.create_views()
             db.commit()
             db.set_grants(self.config)  # config has user lists

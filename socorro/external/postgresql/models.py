@@ -202,6 +202,104 @@ ischema_names['build_type_enum'] = build_type_enum
 
 
 ###############################
+# Schema definition: base
+###############################
+
+
+class RawCrashes(DeclarativeBase):
+    __table_args__ = {'schema': 'base'}
+    __tablename__ = 'raw_crashes'
+
+    #column definitions
+    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
+    raw_crash = Column(u'raw_crash', JSON(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+
+    #relationship definitions
+    __mapper_args__ = {"primary_key": (uuid)}
+
+
+class ProcessedCrash(DeclarativeBase):
+    __table_args__ = {'schema': 'base'}
+    __tablename__ = 'processed_crashes'
+
+    #column definitions
+    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
+    processed_crash = Column(u'processed_crash', JSON(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+
+    #relationship definitions
+    __mapper_args__ = {"primary_key": (uuid)}
+
+
+class Report(DeclarativeBase):
+    __table_args__ = {'schema': 'base'}
+    __tablename__ = 'reports'
+
+    __table_args__ = {}
+
+    # Column definitions
+    id = Column(u'id', Integer(), primary_key=True)
+    client_crash_date = Column(u'client_crash_date', TIMESTAMP(timezone=True))
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+    uuid = Column(u'uuid', VARCHAR(length=50), nullable=False)
+    product = Column(u'product', VARCHAR(length=30))
+    version = Column(u'version', VARCHAR(length=16))
+    build = Column(u'build', VARCHAR(length=30))
+    signature = Column(u'signature', VARCHAR(length=255))
+    url = Column(u'url', VARCHAR(length=255))
+    install_age = Column(u'install_age', INTEGER())
+    last_crash = Column(u'last_crash', INTEGER())
+    uptime = Column(u'uptime', INTEGER())
+    cpu_name = Column(u'cpu_name', VARCHAR(length=100))
+    cpu_info = Column(u'cpu_info', VARCHAR(length=100))
+    reason = Column(u'reason', VARCHAR(length=255))
+    address = Column(u'address', VARCHAR(length=20))
+    os_name = Column(u'os_name', VARCHAR(length=100))
+    os_version = Column(u'os_version', VARCHAR(length=100))
+    email = Column(u'email', VARCHAR(length=100))
+    user_id = Column(u'user_id', VARCHAR(length=50))
+    started_datetime = Column(u'started_datetime', TIMESTAMP(timezone=True))
+    completed_datetime = Column(u'completed_datetime', TIMESTAMP(timezone=True))
+    success = Column(u'success', BOOLEAN())
+    truncated = Column(u'truncated', BOOLEAN())
+    processor_notes = Column(u'processor_notes', TEXT())
+    user_comments = Column(u'user_comments', VARCHAR(length=1024))
+    app_notes = Column(u'app_notes', VARCHAR(length=1024))
+    distributor = Column(u'distributor', VARCHAR(length=20))
+    distributor_version = Column(u'distributor_version', VARCHAR(length=20))
+    topmost_filenames = Column(u'topmost_filenames', TEXT())
+    addons_checked = Column(u'addons_checked', BOOLEAN())
+    flash_version = Column(u'flash_version', TEXT())
+    hangid = Column(u'hangid', TEXT())
+    process_type = Column(u'process_type', TEXT())
+    release_channel = Column(u'release_channel', TEXT())  # DEPRECATED
+    productid = Column(u'productid', TEXT())
+    exploitability = Column(u'exploitability', TEXT())
+    update_channel = Column(u'update_channel', TEXT())  # Replaces release_channel
+
+
+class ReportsDuplicate(DeclarativeBase):
+    __table_args__ = {'schema': 'base'}
+    __tablename__ = 'reports_duplicates'
+
+    #column definitions
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
+    duplicate_of = Column(u'duplicate_of', TEXT(), nullable=False, index=True)
+    uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
+
+    __table_args__ = (
+        Index('reports_duplicates_timestamp', date_processed, uuid),
+    )
+
+class Skiplist(DeclarativeBase):
+    __table_args__ = {'schema': 'base'}
+    __tablename__ = 'skiplist'
+
+    category = Column(u'category', TEXT(), primary_key=True, nullable=False)
+    rule = Column(u'rule', TEXT(), primary_key=True, nullable=False)
+
+###############################
 # Schema definition: Tables
 ###############################
 
@@ -448,52 +546,6 @@ class WindowsVersion(DeclarativeBase):
     __table_args__ = (
         Index('windows_version_key', major_version, minor_version, unique=True),
     )
-
-
-class Report(DeclarativeBase):
-    __tablename__ = 'reports'
-
-    __table_args__ = {}
-
-    # Column definitions
-    id = Column(u'id', Integer(), primary_key=True)
-    client_crash_date = Column(u'client_crash_date', TIMESTAMP(timezone=True))
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    uuid = Column(u'uuid', VARCHAR(length=50), nullable=False)
-    product = Column(u'product', VARCHAR(length=30))
-    version = Column(u'version', VARCHAR(length=16))
-    build = Column(u'build', VARCHAR(length=30))
-    signature = Column(u'signature', VARCHAR(length=255))
-    url = Column(u'url', VARCHAR(length=255))
-    install_age = Column(u'install_age', INTEGER())
-    last_crash = Column(u'last_crash', INTEGER())
-    uptime = Column(u'uptime', INTEGER())
-    cpu_name = Column(u'cpu_name', VARCHAR(length=100))
-    cpu_info = Column(u'cpu_info', VARCHAR(length=100))
-    reason = Column(u'reason', VARCHAR(length=255))
-    address = Column(u'address', VARCHAR(length=20))
-    os_name = Column(u'os_name', VARCHAR(length=100))
-    os_version = Column(u'os_version', VARCHAR(length=100))
-    email = Column(u'email', VARCHAR(length=100))
-    user_id = Column(u'user_id', VARCHAR(length=50))
-    started_datetime = Column(u'started_datetime', TIMESTAMP(timezone=True))
-    completed_datetime = Column(u'completed_datetime', TIMESTAMP(timezone=True))
-    success = Column(u'success', BOOLEAN())
-    truncated = Column(u'truncated', BOOLEAN())
-    processor_notes = Column(u'processor_notes', TEXT())
-    user_comments = Column(u'user_comments', VARCHAR(length=1024))
-    app_notes = Column(u'app_notes', VARCHAR(length=1024))
-    distributor = Column(u'distributor', VARCHAR(length=20))
-    distributor_version = Column(u'distributor_version', VARCHAR(length=20))
-    topmost_filenames = Column(u'topmost_filenames', TEXT())
-    addons_checked = Column(u'addons_checked', BOOLEAN())
-    flash_version = Column(u'flash_version', TEXT())
-    hangid = Column(u'hangid', TEXT())
-    process_type = Column(u'process_type', TEXT())
-    release_channel = Column(u'release_channel', TEXT())  # DEPRECATED
-    productid = Column(u'productid', TEXT())
-    exploitability = Column(u'exploitability', TEXT())
-    update_channel = Column(u'update_channel', TEXT())  # Replaces release_channel
 
 
 class SuspiciousCrashSignatures(DeclarativeBase):
@@ -834,18 +886,6 @@ class PriorityjobsLoggingSwitch(DeclarativeBase):
     log_jobs = Column(u'log_jobs', BOOLEAN(), primary_key=True, nullable=False)
 
 
-class ProcessedCrash(DeclarativeBase):
-    __tablename__ = 'processed_crashes'
-
-    #column definitions
-    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
-    processed_crash = Column(u'processed_crash', JSON(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-
-    #relationship definitions
-    __mapper_args__ = {"primary_key": (uuid)}
-
-
 class ProcessType(DeclarativeBase):
     __tablename__ = 'process_types'
 
@@ -1001,18 +1041,6 @@ class RankCompare(DeclarativeBase):
     )
 
 
-class RawCrashes(DeclarativeBase):
-    __tablename__ = 'raw_crashes'
-
-    #column definitions
-    uuid = Column(u'uuid', UUID(), nullable=False, index=True, unique=True)
-    raw_crash = Column(u'raw_crash', JSON(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-
-    #relationship definitions
-    __mapper_args__ = {"primary_key": (uuid)}
-
-
 class Reason(DeclarativeBase):
     __tablename__ = 'reasons'
 
@@ -1126,19 +1154,6 @@ class ReportsClean(DeclarativeBase):
     # Down the road, this column will be defined as:
     # build_type = Column(u'build_type'), primary_key=True, nullable=False)
     update_channel = Column(u'update_channel', TEXT())
-
-
-class ReportsDuplicate(DeclarativeBase):
-    __tablename__ = 'reports_duplicates'
-
-    #column definitions
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
-    duplicate_of = Column(u'duplicate_of', TEXT(), nullable=False, index=True)
-    uuid = Column(u'uuid', TEXT(), primary_key=True, nullable=False)
-
-    __table_args__ = (
-        Index('reports_duplicates_timestamp', date_processed, uuid),
-    )
 
 
 class ReportsUserInfo(DeclarativeBase):
@@ -1351,13 +1366,6 @@ class SignatureSummaryGraphics(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
-
-
-class Skiplist(DeclarativeBase):
-    __tablename__ = 'skiplist'
-
-    category = Column(u'category', TEXT(), primary_key=True, nullable=False)
-    rule = Column(u'rule', TEXT(), primary_key=True, nullable=False)
 
 
 class SocorroDbVersion(DeclarativeBase):
