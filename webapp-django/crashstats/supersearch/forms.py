@@ -2,7 +2,7 @@ import json
 
 from django import forms
 
-from crashstats.supersearch import form_fields
+from . import form_fields
 
 
 def make_restricted_choices(sequence, exclude=None):
@@ -25,13 +25,6 @@ class SearchForm(forms.Form):
         **kwargs
     ):
         super(self.__class__, self).__init__(*args, **kwargs)
-
-        # Default values
-        platforms = [(x['name'], x['name']) for x in current_platforms]
-        products = [(x, x) for x in current_products]
-        versions = [
-            (v['version'], v['version']) for v in current_versions
-        ]
 
         # Generate the list of fields.
         for field_data in all_fields.values():
@@ -70,9 +63,18 @@ class SearchForm(forms.Form):
 
             self.fields[field_data['name']] = field_obj
 
-        self.fields['product'].choices = products
-        self.fields['version'].choices = versions
-        self.fields['platform'].choices = platforms
+        # Default values loaded from a database.
+        if 'product' in self.fields:
+            products = [(x, x) for x in current_products]
+            self.fields['product'].choices = products
+        if 'version' in self.fields:
+            versions = [
+                (v['version'], v['version']) for v in current_versions
+            ]
+            self.fields['version'].choices = versions
+        if 'platform' in self.fields:
+            platforms = [(x['name'], x['name']) for x in current_platforms]
+            self.fields['platform'].choices = platforms
 
     def get_fields_list(self):
         '''Return a dictionary describing the fields, to pass to the
