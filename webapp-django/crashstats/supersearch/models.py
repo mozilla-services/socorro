@@ -167,7 +167,8 @@ class SuperSearchUnredacted(SuperSearch):
         permissions = {}
         for field_data in all_fields.values():
             for perm in field_data['permissions_needed']:
-                permissions[perm] = True
+                if perm:
+                    permissions[perm] = True
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
 
