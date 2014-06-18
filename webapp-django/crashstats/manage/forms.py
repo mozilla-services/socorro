@@ -88,3 +88,29 @@ class SuperSearchFieldForm(BaseForm):
     is_mandatory = forms.BooleanField(required=False)
     has_full_version = forms.BooleanField(required=False)
     storage_mapping = forms.CharField(required=False)
+
+    def clean_permissions_needed(self):
+        """Removes unknown permissions from the list of permissions.
+
+        This is needed because the html form will send an empty string by
+        default. We don't want that to cause an error, but don't want it to
+        be put in the database either.
+        """
+        values = self.cleaned_data['permissions_needed']
+
+        perms = Permission.objects.filter(content_type__model='')
+        all_permissions = [
+            'crashstats.' + x.codename for x in perms
+        ]
+
+        return [x for x in values if x in all_permissions]
+
+    def clean_form_field_choices(self):
+        """Removes empty values from the list of choices.
+
+        This is needed because the html form will send an empty string by
+        default. We don't want that to cause an error, but don't want it to
+        be put in the database either.
+        """
+        values = self.cleaned_data['form_field_choices']
+        return [x for x in values if x.strip()]

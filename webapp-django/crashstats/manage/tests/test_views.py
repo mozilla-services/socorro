@@ -1036,6 +1036,18 @@ class TestViews(BaseTestViews):
         self._login()
         url = reverse('manage:supersearch_field_update')
 
+        # Create a permission to test permission validation.
+
+        ct = ContentType.objects.create(
+            model='',
+            app_label='crashstats.crashstats',
+        )
+        Permission.objects.create(
+            name='I can haz permission!',
+            codename='i.can.haz.permission',
+            content_type=ct
+        )
+
         def mocked_get(url, **options):
             assert '/supersearch/fields/' in url
             return Response({})
@@ -1046,8 +1058,16 @@ class TestViews(BaseTestViews):
             ok_('name' in data)
             ok_('description' in data)
             ok_('is_returned' in data)
+            ok_('form_field_choices' in data)
+            ok_('permissions_needed' in data)
 
             ok_(not data['is_returned'])
+            ok_('' not in data['form_field_choices'])
+
+            eq_(
+                data['permissions_needed'],
+                ['crashstats.i.can.haz.permission']
+            )
 
             return Response(True)
 
@@ -1061,6 +1081,8 @@ class TestViews(BaseTestViews):
                 'in_database_name': 'something',
                 'description': 'hello world',
                 'is_returned': False,
+                'form_field_choices': ['', 'a choice', 'another choice'],
+                'permissions_needed': ['', 'crashstats.i.can.haz.permission'],
             }
         )
         eq_(response.status_code, 302)
