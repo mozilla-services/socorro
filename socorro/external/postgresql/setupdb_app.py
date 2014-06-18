@@ -54,6 +54,7 @@ class PostgreSQLAlchemyManager(object):
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA bixie')
         self.session.execute('CREATE SCHEMA base')
+        self.session.execute('CREATE SCHEMA normalized')
         self.session.execute(
             'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
@@ -74,8 +75,14 @@ class PostgreSQLAlchemyManager(object):
                 raise
         return True
 
-    def create_tables(self):
-        status = self.metadata.create_all()
+    def create_tables(self, schema='public'):
+        status = ''
+        if schema == 'public':
+            status = self.metadata.create_all()
+        else:
+            for t in self.metadata.sorted_tables:
+                if t.schema == schema:
+                    t.create(self.engine)
         return status
 
     def create_procs(self):
@@ -635,7 +642,7 @@ class SocorroDB(App):
             @compiles(CreateTable)
             def create_table(element, compiler, **kw):
                 text = compiler.visit_create_table(element, **kw)
-                if 'base.' not in text:
+                if 'normalized.' in text:
                     text = re.sub("^\sCREATE(.*TABLE)",
                                   lambda m: "CREATE FOREIGN %s" % m.group(1), text)
                     text += "SERVER %s" % self.config.second_database_fdw_name
@@ -701,13 +708,20 @@ class SocorroDB(App):
             db.create_procs()
             db.set_sequence_owner('breakpad_rw')
             db.commit()
+
             if self.config.splitschema:
                 db.setup_fdw(self.config)
-            db.create_tables()
-            #db.set_table_owner('breakpad_rw')
-            db.create_views()
+                db.commit()
+                db.create_tables('base')
+    #           db.set_table_owner('breakpad_rw')
+                db.create_tables('normalized')
+                db.commit()
+            else:
+                db.create_tables()
+                db.set_table_owner('breakpad_rw')
+                db.create_views()
+                db.set_grants(self.config)  # config has user lists
             db.commit()
-            db.set_grants(self.config)  # config has user lists
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
