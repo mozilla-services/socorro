@@ -20,6 +20,7 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
         super(TestFetchADIFromHive, self).setUp()
         # Add something to product_productid_map
         cursor = self.conn.cursor()
+        cursor.execute("TRUNCATE raw_adi_logs, product_productid_map, products CASCADE")
         cursor.execute("""
             INSERT into products (
                 product_name,
@@ -44,7 +45,7 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
 
     def tearDown(self):
         cursor = self.conn.cursor()
-        cursor.execute("TRUNCATE raw_adi_logs, product_productid_map")
+        cursor.execute("TRUNCATE raw_adi_logs, product_productid_map, products CASCADE")
         super(TestFetchADIFromHive, self).tearDown()
 
     def _setup_config_manager(self):
