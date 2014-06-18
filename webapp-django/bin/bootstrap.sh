@@ -20,6 +20,15 @@ then
     cp crashstats/settings/prod.py-dist crashstats/settings/local.py
     echo "# force jenkins.sh" >> crashstats/settings/local.py
     echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
+    # when running tests you have to have LocMemCache
+    cat >> crashstats/settings/local.py <<EOL
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake'
+    }
+}
+EOL
 fi
 
 ./manage.py collectstatic --noinput
