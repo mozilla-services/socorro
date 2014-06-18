@@ -78,10 +78,14 @@ using google_breakpad::ProcessState;
 using google_breakpad::SimpleSymbolSupplier;
 using google_breakpad::SourceLineResolverInterface;
 using google_breakpad::StackFrame;
+using google_breakpad::StackFrameAMD64;
+using google_breakpad::StackFrameARM;
+using google_breakpad::StackFrameARM64;
+using google_breakpad::StackFrameMIPS;
 using google_breakpad::StackFramePPC;
 using google_breakpad::StackFrameSPARC;
 using google_breakpad::StackFrameX86;
-using google_breakpad::StackFrameAMD64;
+
 using google_breakpad::StackFrameSymbolizer;
 using google_breakpad::Stackwalker;
 using google_breakpad::SymbolSupplier;
@@ -179,13 +183,295 @@ bool ContainsModule(
   return false;
 }
 
+void AddRegister(Json::Value& registers, const char* reg,
+                 uint32_t value) {
+  char buf[11];
+  snprintf(buf, sizeof(buf), "0x%08x", value);
+  registers[reg] = buf;
+}
+
+void AddRegister(Json::Value& registers, const char* reg,
+                 uint64_t value) {
+  char buf[19];
+  snprintf(buf, sizeof(buf), "0x%016lx", value);
+  registers[reg] = buf;
+}
+
+// Save all the registers from |frame| of CPU type |cpu|
+// into keys in |registers|.
+void RegistersToJSON(const StackFrame* frame,
+                     const string& cpu,
+                     Json::Value& registers) {
+  if (cpu == "x86") {
+    const StackFrameX86 *frame_x86 =
+      reinterpret_cast<const StackFrameX86*>(frame);
+
+    if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EIP)
+      AddRegister(registers, "eip", frame_x86->context.eip);
+    if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_ESP)
+      AddRegister(registers, "esp", frame_x86->context.esp);
+    if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EBP)
+      AddRegister(registers, "ebp", frame_x86->context.ebp);
+    if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EBX)
+      AddRegister(registers, "ebx", frame_x86->context.ebx);
+    if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_ESI)
+      AddRegister(registers, "esi", frame_x86->context.esi);
+    if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EDI)
+      AddRegister(registers, "edi", frame_x86->context.edi);
+    if (frame_x86->context_validity == StackFrameX86::CONTEXT_VALID_ALL) {
+      AddRegister(registers, "eax", frame_x86->context.eax);
+      AddRegister(registers, "ecx", frame_x86->context.ecx);
+      AddRegister(registers, "edx", frame_x86->context.edx);
+      AddRegister(registers, "efl", frame_x86->context.eflags);
+    }
+  } else if (cpu == "ppc") {
+    const StackFramePPC *frame_ppc =
+      reinterpret_cast<const StackFramePPC*>(frame);
+
+    if (frame_ppc->context_validity & StackFramePPC::CONTEXT_VALID_SRR0)
+      AddRegister(registers, "srr0", frame_ppc->context.srr0);
+    if (frame_ppc->context_validity & StackFramePPC::CONTEXT_VALID_GPR1)
+      AddRegister(registers, "r1", frame_ppc->context.gpr[1]);
+  } else if (cpu == "amd64") {
+    const StackFrameAMD64 *frame_amd64 =
+      reinterpret_cast<const StackFrameAMD64*>(frame);
+
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RAX)
+      AddRegister(registers, "rax", frame_amd64->context.rax);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RDX)
+      AddRegister(registers, "rdx", frame_amd64->context.rdx);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RCX)
+      AddRegister(registers, "rcx", frame_amd64->context.rcx);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RBX)
+      AddRegister(registers, "rbx", frame_amd64->context.rbx);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RSI)
+      AddRegister(registers, "rsi", frame_amd64->context.rsi);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RDI)
+      AddRegister(registers, "rdi", frame_amd64->context.rdi);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RBP)
+      AddRegister(registers, "rbp", frame_amd64->context.rbp);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RSP)
+      AddRegister(registers, "rsp", frame_amd64->context.rsp);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R8)
+      AddRegister(registers, "r8", frame_amd64->context.r8);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R9)
+      AddRegister(registers, "r9", frame_amd64->context.r9);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R10)
+      AddRegister(registers, "r10", frame_amd64->context.r10);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R11)
+      AddRegister(registers, "r11", frame_amd64->context.r11);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R12)
+      AddRegister(registers, "r12", frame_amd64->context.r12);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R13)
+      AddRegister(registers, "r13", frame_amd64->context.r13);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R14)
+      AddRegister(registers, "r14", frame_amd64->context.r14);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R15)
+      AddRegister(registers, "r15", frame_amd64->context.r15);
+    if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RIP)
+      AddRegister(registers, "rip", frame_amd64->context.rip);
+  } else if (cpu == "sparc") {
+    const StackFrameSPARC *frame_sparc =
+      reinterpret_cast<const StackFrameSPARC*>(frame);
+
+    if (frame_sparc->context_validity & StackFrameSPARC::CONTEXT_VALID_SP)
+      AddRegister(registers, "sp", frame_sparc->context.g_r[14]);
+    if (frame_sparc->context_validity & StackFrameSPARC::CONTEXT_VALID_FP)
+      AddRegister(registers, "fp", frame_sparc->context.g_r[30]);
+    if (frame_sparc->context_validity & StackFrameSPARC::CONTEXT_VALID_PC)
+      AddRegister(registers, "pc", frame_sparc->context.pc);
+  } else if (cpu == "arm") {
+    const StackFrameARM *frame_arm =
+      reinterpret_cast<const StackFrameARM*>(frame);
+
+    // Argument registers (caller-saves), which will likely only be valid
+    // for the youngest frame.
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R0)
+      AddRegister(registers, "r0", frame_arm->context.iregs[0]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R1)
+      AddRegister(registers, "r1", frame_arm->context.iregs[1]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R2)
+      AddRegister(registers, "r2", frame_arm->context.iregs[2]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R3)
+      AddRegister(registers, "r3", frame_arm->context.iregs[3]);
+
+    // General-purpose callee-saves registers.
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R4)
+      AddRegister(registers, "r4", frame_arm->context.iregs[4]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R5)
+      AddRegister(registers, "r5", frame_arm->context.iregs[5]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R6)
+      AddRegister(registers, "r6", frame_arm->context.iregs[6]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R7)
+      AddRegister(registers, "r7", frame_arm->context.iregs[7]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R8)
+      AddRegister(registers, "r8", frame_arm->context.iregs[8]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R9)
+      AddRegister(registers, "r9", frame_arm->context.iregs[9]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R10)
+      AddRegister(registers, "r10", frame_arm->context.iregs[10]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R12)
+      AddRegister(registers, "r12", frame_arm->context.iregs[12]);
+
+    // Registers with a dedicated or conventional purpose.
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_FP)
+      AddRegister(registers, "fp", frame_arm->context.iregs[11]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_SP)
+      AddRegister(registers, "sp", frame_arm->context.iregs[13]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_LR)
+      AddRegister(registers, "lr", frame_arm->context.iregs[14]);
+    if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_PC)
+      AddRegister(registers, "pc", frame_arm->context.iregs[15]);
+  } else if (cpu == "arm64") {
+    const StackFrameARM64 *frame_arm64 =
+      reinterpret_cast<const StackFrameARM64*>(frame);
+
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X0) {
+      AddRegister(registers, "x0", frame_arm64->context.iregs[0]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X1) {
+      AddRegister(registers, "x1", frame_arm64->context.iregs[1]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X2) {
+      AddRegister(registers, "x2", frame_arm64->context.iregs[2]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X3) {
+      AddRegister(registers, "x3", frame_arm64->context.iregs[3]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X4) {
+      AddRegister(registers, "x4", frame_arm64->context.iregs[4]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X5) {
+      AddRegister(registers, "x5", frame_arm64->context.iregs[5]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X6) {
+      AddRegister(registers, "x6", frame_arm64->context.iregs[6]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X7) {
+      AddRegister(registers, "x7", frame_arm64->context.iregs[7]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X8) {
+      AddRegister(registers, "x8", frame_arm64->context.iregs[8]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X9) {
+      AddRegister(registers, "x9", frame_arm64->context.iregs[9]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X10) {
+      AddRegister(registers, "x10", frame_arm64->context.iregs[10]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X11) {
+      AddRegister(registers, "x11", frame_arm64->context.iregs[11]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X12) {
+      AddRegister(registers, "x12", frame_arm64->context.iregs[12]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X13) {
+      AddRegister(registers, "x13", frame_arm64->context.iregs[13]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X14) {
+      AddRegister(registers, "x14", frame_arm64->context.iregs[14]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X15) {
+      AddRegister(registers, "x15", frame_arm64->context.iregs[15]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X16) {
+      AddRegister(registers, "x16", frame_arm64->context.iregs[16]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X17) {
+      AddRegister(registers, "x17", frame_arm64->context.iregs[17]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X18) {
+      AddRegister(registers, "x18", frame_arm64->context.iregs[18]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X19) {
+      AddRegister(registers, "x19", frame_arm64->context.iregs[19]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X20) {
+      AddRegister(registers, "x20", frame_arm64->context.iregs[20]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X21) {
+      AddRegister(registers, "x21", frame_arm64->context.iregs[21]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X22) {
+      AddRegister(registers, "x22", frame_arm64->context.iregs[22]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X23) {
+      AddRegister(registers, "x23", frame_arm64->context.iregs[23]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X24) {
+      AddRegister(registers, "x24", frame_arm64->context.iregs[24]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X25) {
+      AddRegister(registers, "x25", frame_arm64->context.iregs[25]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X26) {
+      AddRegister(registers, "x26", frame_arm64->context.iregs[26]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X27) {
+      AddRegister(registers, "x27", frame_arm64->context.iregs[27]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X28) {
+      AddRegister(registers, "x28", frame_arm64->context.iregs[28]);
+    }
+
+    // Registers with a dedicated or conventional purpose.
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_FP) {
+      AddRegister(registers, "fp", frame_arm64->context.iregs[29]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_LR) {
+      AddRegister(registers, "lr", frame_arm64->context.iregs[30]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_SP) {
+      AddRegister(registers, "sp", frame_arm64->context.iregs[31]);
+    }
+    if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_PC) {
+      AddRegister(registers, "pc", frame_arm64->context.iregs[32]);
+    }
+  } else if (cpu == "mips") {
+    const StackFrameMIPS* frame_mips =
+      reinterpret_cast<const StackFrameMIPS*>(frame);
+
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_GP)
+      AddRegister(registers, "gp", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_GP]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_SP)
+      AddRegister(registers, "sp", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_SP]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_FP)
+      AddRegister(registers, "fp", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_FP]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_RA)
+      AddRegister(registers, "ra", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_RA]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_PC)
+      AddRegister(registers, "pc", frame_mips->context.epc);
+
+    // Save registers s0-s7
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S0)
+      AddRegister(registers, "s0", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S0]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S1)
+      AddRegister(registers, "s1", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S1]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S2)
+      AddRegister(registers, "s2", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S2]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S3)
+      AddRegister(registers, "s3", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S3]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S4)
+      AddRegister(registers, "s4", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S4]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S5)
+      AddRegister(registers, "s5", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S5]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S6)
+      AddRegister(registers, "s6", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S6]);
+    if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S7)
+      AddRegister(registers, "s7", frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S7]);
+  }
+}
+
 // If frame_limit is zero, output all frames, otherwise only
 // output the first |frame_limit| frames.
+// If |save_initial_registers| is true, the first frame in the stack
+// will have its register state stored in a "registers" key.
 // Return true if the stack was truncated, false otherwise.
 bool ConvertStackToJSON(const ProcessState& process_state,
                         const CallStack *stack,
                         Json::Value& json_stack,
-                        int frame_limit) {
+                        int frame_limit,
+                        bool save_initial_registers) {
   const vector<const CodeModule*>* modules_without_symbols =
     process_state.modules_without_symbols();
   const vector<const CodeModule*>* modules_with_corrupt_symbols =
@@ -235,6 +521,11 @@ bool ConvertStackToJSON(const ProcessState& process_state,
       }
     }
     frame_data["offset"] = ToHex(frame->instruction);
+    if (frame_index == 0 && save_initial_registers) {
+      Json::Value registers;
+      RegistersToJSON(frame, process_state.system_info()->cpu, registers);
+      frame_data["registers"] = registers;
+    }
 
     json_stack.append(frame_data);
   }
@@ -363,7 +654,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     Json::Value thread;
     Json::Value stack(Json::arrayValue);
     const CallStack* raw_stack = process_state.threads()->at(thread_index);
-    if (ConvertStackToJSON(process_state, raw_stack, stack, 0)) {
+    if (ConvertStackToJSON(process_state, raw_stack, stack, 0, false)) {
       thread["frames_truncated"] = true;
       thread["total_frames"] =
         static_cast<Json::UInt>(raw_stack->frames()->size());
@@ -381,7 +672,7 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     Json::Value stack;
     const CallStack *crashing_stack =
       process_state.threads()->at(requesting_thread);
-    ConvertStackToJSON(process_state, crashing_stack, stack, 10);
+    ConvertStackToJSON(process_state, crashing_stack, stack, 10, true);
 
     crashing_thread["threads_index"] = requesting_thread;
     crashing_thread["frames"] = stack;
