@@ -349,18 +349,18 @@ class PostgreSQLAlchemyManager(object):
         session.execute("""
             CREATE SERVER %s FOREIGN DATA WRAPPER postgres_fdw
             OPTIONS (host '%s', dbname '%s', port '%s')
-        """ % (config.second_database_fdw_name,
-               config.second_database_hostname,
-               config.second_database_name,
-               config.second_database_port))
+        """ % (config.secondarydb.database_fdw_name,
+               config.secondarydb.database_hostname,
+               config.secondarydb.database_name,
+               config.secondarydb.database_port))
 
         session.execute("""
             CREATE USER MAPPING FOR %s SERVER %s
             OPTIONS (user '%s', password '%s')
-        """ % (config.second_database_username,
-               config.second_database_fdw_name,
-               config.second_database_username,
-               config.second_database_password)
+        """ % (config.secondarydb.database_username,
+               config.secondarydb.database_fdw_name,
+               config.secondarydb.database_username,
+               config.secondarydb.database_password)
         )
 
     def __enter__(self):
@@ -390,53 +390,6 @@ class SocorroDB(App):
 
     required_config = Namespace()
 
-    required_config.add_option(
-        name='database_name',
-        default='socorro_integration_test',
-        doc='Name of database to manage',
-    )
-
-    required_config.add_option(
-        name='database_hostname',
-        default='localhost',
-        doc='Hostname to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_username',
-        default='breakpad_rw',
-        doc='Username to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_password',
-        default='aPassword',
-        doc='Password to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_superusername',
-        default='test',
-        doc='Username to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_superuserpassword',
-        default='aPassword',
-        doc='Password to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_port',
-        default='',
-        doc='Port to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_fdw_name',
-        default='sandbox1',
-        doc='Foreign Data Wrapper server name',
-    )
 
     required_config.add_option(
         name='dropdb',
@@ -509,52 +462,114 @@ class SocorroDB(App):
         doc='Split the schema into two databases'
     )
 
-    required_config.add_option(
+    required_config = Namespace('primarydb')
+    required_config.primarydb.add_option(
+        name='database_name',
+        default='socorro_integration_test',
+        doc='Name of database to manage',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_hostname',
+        default='localhost',
+        doc='Hostname to connect to database',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_username',
+        default='breakpad_rw',
+        doc='Username to connect to database',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_password',
+        default='aPassword',
+        doc='Password to connect to database',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_superusername',
+        default='test',
+        doc='Username to connect to database',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_superuserpassword',
+        default='aPassword',
+        doc='Password to connect to database',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_port',
+        default='',
+        doc='Port to connect to database',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_fdw_name',
+        default='sandbox1',
+        doc='Foreign Data Wrapper server name',
+    )
+
+    required_config.primarydb.add_option(
+        name='database_type',
+        default='all',
+        doc='Type of tables to deploy [all, base]',
+    )
+
+    required_config = Namespace('secondarydb')
+    required_config.secondarydb.add_option(
         name='second_database_name',
         default='socorro_integration_test',
         doc='Name of database to manage',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_hostname',
         default='localhost',
         doc='Hostname to connect to database',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_username',
         default='breakpad_rw',
         doc='Username to connect to database',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_password',
         default='aPassword',
         doc='Password to connect to database',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_superusername',
         default='test',
         doc='Username to connect to database',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_superuserpassword',
         default='aPassword',
         doc='Password to connect to database',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_port',
         default='5432',
         doc='Port to connect to database',
     )
 
-    required_config.add_option(
+    required_config.secondarydb.add_option(
         name='second_database_fdw_name',
         default='sandbox2',
         doc='Foreign Data Wrapper server name',
+    )
+
+    required_config.secondarydb.add_option(
+        name='database_type',
+        default='none',
+        doc='Type of tables to deploy [none, reporting]',
     )
 
     @staticmethod
@@ -596,59 +611,7 @@ class SocorroDB(App):
                       list(fakedata.featured_versions))))
 
 
-    def main(self):
-
-        self.database_name = self.config['database_name']
-        if not self.database_name:
-            print "Syntax error: --database_name required"
-            return 1
-
-        self.no_schema = self.config.get('no_schema')
-
-        self.force = self.config.get('force')
-
-        def connection_url():
-            url_template = 'postgresql://'
-            if self.database_username:
-                url_template += '%s' % self.database_username
-            if self.database_password:
-                url_template += ':%s' % self.database_password
-            url_template += '@'
-            if self.database_hostname:
-                url_template += '%s' % self.database_hostname
-            if self.database_port:
-                url_template += ':%s' % self.database_port
-            return url_template
-
-        self.database_username = self.config.get('database_superusername')
-        self.database_password = self.config.get('database_superuserpassword')
-        self.database_hostname = self.config.get('database_hostname')
-        self.database_port = self.config.get('database_port')
-
-        url_template = connection_url()
-        sa_url = url_template + '/%s' % 'postgres'
-
-        if self.config.unlogged:
-            @compiles(CreateTable)
-            def create_table(element, compiler, **kw):
-                text = compiler.visit_create_table(element, **kw)
-                text = re.sub("^\sCREATE(.*TABLE)",
-                              lambda m: "CREATE UNLOGGED %s" %
-                              m.group(1), text)
-                return text
-
-        if self.config.splitschema:
-            # Change our create table routine
-            @compiles(CreateTable)
-            def create_table(element, compiler, **kw):
-                text = compiler.visit_create_table(element, **kw)
-                if 'normalized.' in text:
-                    text = re.sub("^\sCREATE(.*TABLE)",
-                                  lambda m: "CREATE FOREIGN %s" % m.group(1), text)
-                    text += "SERVER %s" % self.config.second_database_fdw_name
-                return text
-
-
+    def init_db(self, sa_url):
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
             if not db.min_ver_check("9.2.0"):
@@ -694,40 +657,117 @@ class SocorroDB(App):
             db.create_roles(self.config)
             connection.close()
 
-        # Reconnect to set up bixie schema, types and procs
-        sa_url = url_template + '/%s' % self.database_name
+    def connection_url(self, db_config):
+        url_template = 'postgresql://'
+        if db_config.database_username:
+            url_template += '%s' % db_config.database_username
+        if db_config.database_password:
+            url_template += ':%s' % db_config.database_password
+        url_template += '@'
+        if db_config.database_hostname:
+            url_template += '%s' % db_config.database_hostname
+        if db_config.database_port:
+            url_template += ':%s' % db_config.database_port
+        return url_template
+
+    def setup_global(self, db):
+        db.create_types()
+        db.create_procs()
+        db.set_sequence_owner('breakpad_rw')
+        db.commit()
+
+    def setup_schemas_for(self, db, database_type):
+        schemas = []
+        if database_type == 'base':
+            db.setup_fdw(self.config)
+            schemas = ['base', 'normalized']
+        elif database_type == 'reporting':
+            schemas = ['public', 'bixie']
+        else:
+            schemas = ['base', 'public', 'bixie']
+        for schema in schemas
+            db.create_tables(schema)
+        return schemas
+
+    def deploy_socorro(self, db_config):
+        """ Set up schemas, tables, types and procs """
+        url_template = self.connection_url(db_config)
+        sa_url = url_template + '/%s' % db_config.database_name
+
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
+
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
             connection = db.engine.connect()
             db.setup_admin()
             if self.no_schema:
                 db.commit()
                 return 0
-            db.create_types()
-            db.create_procs()
-            db.set_sequence_owner('breakpad_rw')
-            db.commit()
 
-            if self.config.splitschema:
-                db.setup_fdw(self.config)
-                db.commit()
-                db.create_tables('base')
-    #           db.set_table_owner('breakpad_rw')
-                db.create_tables('normalized')
-                db.commit()
-            else:
-                db.create_tables()
+            self.setup_global(db)
+            self.setup_schemas_for(db, self.db_config.database_type)
+
+            if self.db_config.database_type != 'base':
                 db.set_table_owner('breakpad_rw')
                 db.create_views()
                 db.set_grants(self.config)  # config has user lists
-            db.commit()
-            if self.config['fakedata']:
-                self.generate_fakedata(db, self.config['fakedata_days'])
-            db.commit()
+                db.commit()
+
+                # Needs to be modified to support split schema
+                #if self.config['fakedata']:
+                    #self.generate_fakedata(db, self.config['fakedata_days'])
+                db.commit()
+
+            # Same for all database types
             command.stamp(alembic_cfg, "head")
             db.set_default_owner(self.database_name)
             db.session.close()
+
+    def main(self):
+
+        if not self.primarydb.database_name:
+            print "Syntax error: --primarydb.database_name required"
+            return 1
+
+        self.no_schema = self.config.get('no_schema')
+        self.force = self.config.get('force')
+
+        # Override CreateTable in SQLAlchemy for special cases
+        # TODO: sort out conflict between unlogged and splitschema
+        if self.config.unlogged:
+            @compiles(CreateTable)
+            def create_table(element, compiler, **kw):
+                text = compiler.visit_create_table(element, **kw)
+                text = re.sub("^\sCREATE(.*TABLE)",
+                              lambda m: "CREATE UNLOGGED %s" %
+                              m.group(1), text)
+                return text
+
+        # Figure out which sets of database configs we're going to work with
+        db_configs = []
+        if self.config.splitschema:
+            # Change our create table routine
+            @compiles(CreateTable)
+            def create_table(element, compiler, **kw):
+                text = compiler.visit_create_table(element, **kw)
+                if 'normalized.' in text:
+                    text = re.sub("^\sCREATE(.*TABLE)",
+                                  lambda m: "CREATE FOREIGN %s" % m.group(1), text)
+                    text += "SERVER %s" % self.config.second_database_fdw_name
+                return text
+
+            db_configs = [self.config.primarydb, self.config.secondarydb]
+        else:
+            # Not splitting the schema, so only need primarydb config
+            db_configs = [self.config.primarydb]
+
+
+        # Set up core database using 'postgres' user
+        for db_config in db_configs:
+            url_template = self.connection_url(db_config)
+            sa_url = url_template + '/%s' % 'postgres'
+            self.init_db(sa_url)
+
 
         return 0
 
