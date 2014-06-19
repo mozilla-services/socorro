@@ -8,12 +8,6 @@ Installing from source
 Setting up environment
 ----------------------
 
-To run and hack on Socorro apps, you will need:
-
-1) all dependencies installed from requirements.txt
-2) to have your PYTHONPATH set to the location of the socorro checkout
-3) The Django web service and its tests need the LESS preprocessor to be installed and on your $PATH
-
 You may need to run this as the *root* user depending on how node.js was 
 installed
 ::
@@ -63,29 +57,13 @@ Then compile breakpad and the stackwalker binary:
 Populate PostgreSQL Database
 ----------------------------
 
-Load the Socorro schema
--------------------
-
-If you want to hack on Socorro, or just see what a functional system looks
-like, you also have the option to generate and populate the DB with synthetic
-test data
+Load Socorro schema plus test products:
 ::
   ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
     --fakedata --dropdb
 
-IMPORTANT NOTE - many reports use the reports_clean_done() stored
-procedure to check that reports exist for the last UTC hour of the
-day being processed, as a way to catch problems. If your crash
-volume does not guarantee one crash per hour, you may want to modify
-this function in
-socorro/external/postgresql/raw_sql/procs/reports_clean_done.sql
-and reload the schema
-
-
-Create partitioned reports_* tables
-------------------------------------------
-Socorro uses PostgreSQL partitions for the reports table, which must be created
-on a weekly basis.
+Create partitioned tables
+-------------------------
 
 Normally this is handled automatically by the cronjob scheduler
 :ref:`crontabber-chapter` but can be run as a one-off:
