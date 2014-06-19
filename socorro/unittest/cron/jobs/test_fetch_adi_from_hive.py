@@ -8,13 +8,16 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 from socorro.cron.jobs import fetch_adi_from_hive
 
 
 @attr(integration='postgres')
-class TestFetchADIFromHive(IntegrationTestCaseBase):
+class TestFetchADIFromHive(IntegrationTestBase):
 
     def setUp(self):
         super(TestFetchADIFromHive, self).setUp()
@@ -49,9 +52,9 @@ class TestFetchADIFromHive(IntegrationTestCaseBase):
         super(TestFetchADIFromHive, self).tearDown()
 
     def _setup_config_manager(self):
-        _super = super(TestFetchADIFromHive, self)._setup_config_manager
-        return _super(
-            'socorro.cron.jobs.fetch_adi_from_hive.FetchADIFromHiveCronApp|1d'
+        return get_config_manager_for_crontabber(
+            jobs=
+            'socorro.cron.jobs.fetch_adi_from_hive.FetchADIFromHiveCronApp|1d',
         )
 
     def test_mocked_fetch(self):
