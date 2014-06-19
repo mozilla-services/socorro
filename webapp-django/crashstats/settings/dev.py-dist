@@ -1,0 +1,107 @@
+# Hi there!
+#
+# The changes you probably want to focus on first are...
+#   * Setting up a valid MWARE_BASE_URL and credentials
+#
+
+# These settings overrides what's in settings/base.py
+# This file is geared towards running Socorro in development mode.
+
+# To extend any settings from settings/base.py here's an example:
+#from . import base
+#INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
+
+CACHE_MIDDLEWARE = True
+# creates "./models-cache" dir
+# only applicable if CACHE_MIDDLEWARE is True
+CACHE_MIDDLEWARE_FILES = True
+
+# Socorro middleware instance to use
+MWARE_BASE_URL = 'http://localhost:8883'
+MWARE_USERNAME = None
+MWARE_PASSWORD = None
+# HTTP/1.1 Host header to pass - in case this is a VHost
+MWARE_HTTP_HOST = None
+
+DEFAULT_PRODUCT = 'WaterWolf'
+
+# server to pull correlation data from
+# CORRELATION_SERVER = 'https://crash-stats-dev.allizom.org'
+
+# can be changed from null to log to test something locally
+# or if using the debug toolbar, you might give toolbar a try
+STATSD_CLIENT = 'django_statsd.clients.null'
+
+# for local development these don't matter
+STATSD_HOST = 'localhost'
+STATSD_PORT = 8125
+STATSD_PREFIX = None
+
+# Enable this to be able to run tests
+# Comment out to use memcache from settings/base.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'crashstats'
+    }
+}
+
+# Change if your database isn't using UTC
+#TIME_ZONE = 'UTC'
+
+# By default, a sqlite database is used.
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#        'NAME': 'playdoh_app',
+#        'USER': '',
+#        'PASSWORD': '',
+#        'HOST': '',
+#        'PORT': '',
+#        'OPTIONS': {
+#        },
+#        'TEST_CHARSET': 'utf8',
+#        'TEST_COLLATION': 'utf8_general_ci',
+#    },
+#    # 'slave': {
+#    #     ...
+#    # },
+#}
+
+
+
+# Recipients of traceback emails and other notifications.
+ADMINS = (
+    # ('Your Name', 'your_email@domain.com'),
+)
+MANAGERS = ADMINS
+
+# Debugging displays nice error messages, but leaks memory. Set this to False
+# on all server instances and True only for development.
+DEBUG = TEMPLATE_DEBUG = DEBUG_PROPAGATE_EXCEPTIONS = True
+
+# Is this a development instance? Set this to True on development/master
+# instances and False on stage/prod.
+DEV = True
+
+# By default compression is done in runtime, if you enable
+# offline compression, running the test suite will be 10 times faster
+# but you'll need to remember to first run:
+#     ./manage.py collectstatic --noinput
+#     ./manage.py compress_jingo --force
+# at least once every time any of the static files change.
+#COMPRESS_OFFLINE = True
+
+
+# Make this unique, and don't share it with anybody.  It cannot be blank.
+SECRET_KEY = 'somethingsomething'
+
+# If you intend to run without HTTPS such as local development,
+# then set this to False
+SESSION_COOKIE_SECURE = False
+
+# Specify the middleware implementation to use in the middleware
+#SEARCH_MIDDLEWARE_IMPL = 'elasticsearch'
+
+# Set to True enable analysis of all model fetches
+#ANALYZE_MODEL_FETCHES = True

@@ -111,6 +111,9 @@ CACHES = {
     }
 }
 
+# Timezone used by the ORM
+TIME_ZONE = 'UTC'
+
 # Middleware related stuff
 CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False  # store on filesystem instead of cache server

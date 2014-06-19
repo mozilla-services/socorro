@@ -9,7 +9,7 @@ set -e
 
 if [ ! -f crashstats/settings/local.py ]
 then
-    cp crashstats/settings/local.py-dist crashstats/settings/local.py
+    cp crashstats/settings/prod.py-dist crashstats/settings/local.py
 fi
 
 export PATH=$PATH:./node_modules/.bin/
@@ -17,9 +17,18 @@ export PATH=$PATH:./node_modules/.bin/
 if [ -n "$WORKSPACE" ]
 then
     # this means we're running jenkins
-    cp crashstats/settings/local.py-dist crashstats/settings/local.py
+    cp crashstats/settings/prod.py-dist crashstats/settings/local.py
     echo "# force jenkins.sh" >> crashstats/settings/local.py
     echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
+    # when running tests you have to have LocMemCache
+    cat >> crashstats/settings/local.py <<EOL
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake'
+    }
+}
+EOL
 fi
 
 ./manage.py collectstatic --noinput
