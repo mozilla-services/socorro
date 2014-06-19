@@ -874,47 +874,6 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
 
 
 @pass_default_context
-def builds(request, product=None, versions=None, default_context=None):
-    context = default_context or {}
-
-    # the model DailyBuilds only takes 1 version if possible.
-    # however, the way our default_context decorator works we have to call it
-    # versions (plural) even though we here don't support that
-    if versions is not None:
-        assert isinstance(versions, basestring)
-        context['version'] = versions
-
-    context['report'] = 'builds'
-    api = models.DailyBuilds()
-    middleware_results = api.get(product=product, version=versions)
-    builds = defaultdict(list)
-    for build in middleware_results:
-        if build['build_type'].lower() != 'nightly':
-            continue
-        key = '%s%s' % (build['date'], build['version'])
-        build['date'] = datetime.datetime.strptime(
-            build['date'],
-            '%Y-%m-%d'
-        )
-        builds[key].append(build)
-
-    # lastly convert it to a list of tuples
-    all_builds = []
-    # sort by the key but then ignore it...
-    for __, individual_builds in sorted(builds.items(), reverse=True):
-        # ...by using the first item to get the date and version
-        first_build = individual_builds[0]
-        all_builds.append((
-            first_build['date'],
-            first_build['version'],
-            individual_builds
-        ))
-
-    context['all_builds'] = all_builds
-    return render(request, 'crashstats/builds.html', context)
-
-
-@pass_default_context
 @check_days_parameter([3, 7, 14, 28], 7)
 def topchangers(request, product=None, versions=None,
                 days=None, possible_days=None,
