@@ -621,9 +621,9 @@ class SocorroDB(App):
 
             connection = db.engine.connect()
             if self.config.get('dropdb'):
-                if 'test' not in self.database_name and not self.force:
+                if 'test' not in db_config.database_name and not self.force:
                     confirm = raw_input(
-                        'drop database %s [y/N]: ' % self.database_name)
+                        'drop database %s [y/N]: ' % db_config.database_name)
                     if not confirm == "y":
                         logging.warn('NOT dropping table')
                         return 2
@@ -631,13 +631,13 @@ class SocorroDB(App):
                 try:
                     # work around for autocommit behavior
                     connection.execute('commit')
-                    connection.execute('DROP DATABASE %s' % self.database_name)
+                    connection.execute('DROP DATABASE %s' % db_config.database_name)
                 except exc.ProgrammingError, e:
                     if re.match(
-                        'database "%s" does not exist' % self.database_name,
+                        'database "%s" does not exist' % db_config.database_name,
                         e.orig.pgerror.strip()):
                         # already done, no need to rerun
-                        print "The DB %s doesn't exist" % self.database_name
+                        print "The DB %s doesn't exist" % db_config.database_name
 
             try:
                 # work around for autocommit behavior
@@ -656,12 +656,20 @@ class SocorroDB(App):
             db.create_roles(self.config)
             connection.close()
 
-    def connection_url(self, db_config):
+    def connection_url(self, db_config, usertype='nosuperuser'):
         url_template = 'postgresql://'
-        if db_config.database_username:
-            url_template += '%s' % db_config.database_username
-        if db_config.database_password:
-            url_template += ':%s' % db_config.database_password
+
+        if usertype == 'superuser':
+            if db_config.database_superusername:
+                url_template += '%s' % db_config.database_superusername
+            if db_config.database_password:
+                url_template += ':%s' % db_config.database_superuserpassword
+        else:
+            if db_config.database_username:
+                url_template += '%s' % db_config.database_username
+            if db_config.database_password:
+                url_template += ':%s' % db_config.database_password
+
         url_template += '@'
         if db_config.database_hostname:
             url_template += '%s' % db_config.database_hostname
@@ -762,11 +770,13 @@ class SocorroDB(App):
             db_configs = [self.config.primarydb]
 
 
-        # Set up core database using 'postgres' user
+        # Set up core database using superuser
         for db_config in db_configs:
-            url_template = self.connection_url(db_config)
+            url_template = self.connection_url(db_config, 'superuser')
             sa_url = url_template + '/%s' % 'postgres'
             self.init_db(sa_url, db_config)
+
+        # TODO Set up rest of schema
 
         return 0
 
