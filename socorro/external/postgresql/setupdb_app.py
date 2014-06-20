@@ -166,12 +166,12 @@ class PostgreSQLAlchemyManager(object):
                     ALTER TYPE %s OWNER to %s
                 """ % (types, owner))
 
-    def set_grants(self, config):
+    def set_grants(self, config, schema='public'):
         """
         Grant access to configurable roles to all database tables
         TODO add support for column-level permission setting
 
-        Everything is going to inherit from two base roles:
+        Everything inherits from two base roles:
             breakpad_ro
             breakpad_rw
 
@@ -201,21 +201,17 @@ class PostgreSQLAlchemyManager(object):
         """
 
         # REVOKE everything to start
-        self.session.execute("""
-                REVOKE ALL ON ALL TABLES IN SCHEMA bixie, public FROM %s
-            """ % "PUBLIC")
+        query = "REVOKE all ON all TABLES IN SCHEMA %s FROM %%s" % schema
+        self.session.execute(query % 'PUBLIC')
 
-        # set GRANTS for roles based on configuration
+        # set GRANTS on tables in schema
         roles = []
-        roles.append("""
-                GRANT ALL ON ALL TABLES IN SCHEMA bixie, public
-                TO breakpad_rw
-            """)
-        roles.append("""
-                GRANT SELECT ON ALL TABLES IN SCHEMA bixie, public
-                TO breakpad_ro
-            """)
+        query = "GRANT all ON all TABLES IN SCHEMA %s TO breakpad_rw" % schema
+        roles.append(query)
+        query = "GRANT all ON all TABLES IN SCHEMA %s TO breakpad_ro" % schema
+        roles.append(query)
 
+        # set GRANTS for ROLEs
         for rw in config.read_write_users.split(','):
             roles.append("GRANT breakpad_rw TO %s" % rw)
 
@@ -240,38 +236,37 @@ class PostgreSQLAlchemyManager(object):
                 else:
                     raise
 
+        # TODO: this seems redundant
         # Now, perform the GRANTs for configured roles
         ro = 'breakpad_ro'
         rw = 'breakpad_rw'
-
-        # Grants to tables
         for t in self.metadata.sorted_tables:
-            self.session.execute("GRANT ALL ON TABLE %s TO %s" % (t, rw))
-            self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (t, ro))
+            if t.schema == schema:
+                self.session.execute("GRANT ALL ON TABLE %s TO %s" % (t, rw))
+                self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (t, ro))
 
-        # Grants to sequences
+        # Set GRANTs on sequences
         sequences = self.session.execute("""
                 SELECT n.nspname || '.' || c.relname
                 FROM pg_catalog.pg_class c
                 LEFT JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
                 WHERE c.relkind IN ('S')
-                AND n.nspname IN ('public', 'bixie')
+                AND n.nspname IN (%s)
                 AND pg_catalog.pg_table_is_visible(c.oid);
-            """).fetchall()
-
+            """ % schema).fetchall()
         for s, in sequences:
             self.session.execute("GRANT ALL ON SEQUENCE %s TO %s" % (s, rw))
             self.session.execute("GRANT SELECT ON SEQUENCE %s TO %s" % (s, ro))
 
-        # Grants to views
+        # Set GRANTS on views
         views = self.session.execute("""
-                SELECT viewname FROM pg_views WHERE schemaname = 'public'
-            """).fetchall()
+                SELECT viewname FROM pg_views WHERE schemaname = %s
+            """ % schema).fetchall()
         for v, in views:
             self.session.execute("GRANT ALL ON TABLE %s TO %s" % (v, rw))
             self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (v, ro))
 
-        self.session.commit()
+        self.commit()
 
     def commit(self):
         self.session.commit()
@@ -462,7 +457,7 @@ class SocorroDB(App):
         doc='Split the schema into two databases'
     )
 
-    required_config = Namespace('primarydb')
+    required_config.namespace('primarydb')
     required_config.primarydb.add_option(
         name='database_name',
         default='socorro_integration_test',
@@ -517,7 +512,7 @@ class SocorroDB(App):
         doc='Type of tables to deploy [all, base]',
     )
 
-    required_config = Namespace('secondarydb')
+    required_config.namespace('secondarydb')
     required_config.secondarydb.add_option(
         name='second_database_name',
         default='socorro_integration_test',
@@ -685,7 +680,7 @@ class SocorroDB(App):
             schemas = ['public', 'bixie']
         else:
             schemas = ['base', 'public', 'bixie']
-        for schema in schemas
+        for schema in schemas:
             db.create_tables(schema)
         return schemas
 
@@ -710,6 +705,7 @@ class SocorroDB(App):
             if self.db_config.database_type != 'base':
                 db.set_table_owner('breakpad_rw')
                 db.create_views()
+                # TODO set up grants for base database
                 db.set_grants(self.config)  # config has user lists
                 db.commit()
 
