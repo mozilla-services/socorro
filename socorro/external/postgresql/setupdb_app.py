@@ -457,6 +457,9 @@ class SocorroDB(App):
         doc='Split the schema into two databases'
     )
 
+    # TODO make a transaction executor class that uses SQLAlchemy
+    # to make this config a bit less verbose and more like our other
+    # external database libraries
     required_config.namespace('primarydb')
     required_config.primarydb.add_option(
         name='database_name',
@@ -606,7 +609,7 @@ class SocorroDB(App):
                       list(fakedata.featured_versions))))
 
 
-    def init_db(self, sa_url):
+    def init_db(self, sa_url, db_config):
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
             if not db.min_ver_check("9.2.0"):
@@ -639,7 +642,7 @@ class SocorroDB(App):
                 # work around for autocommit behavior
                 connection.execute('commit')
                 connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
-                                   self.database_name)
+                                   db_config.database_name)
             except ProgrammingError, e:
                 if re.match(
                     'database "%s" already exists' % self.database_name,
@@ -721,7 +724,7 @@ class SocorroDB(App):
 
     def main(self):
 
-        if not self.primarydb.database_name:
+        if not self.config.primarydb.database_name:
             print "Syntax error: --primarydb.database_name required"
             return 1
 
@@ -762,7 +765,7 @@ class SocorroDB(App):
         for db_config in db_configs:
             url_template = self.connection_url(db_config)
             sa_url = url_template + '/%s' % 'postgres'
-            self.init_db(sa_url)
+            self.init_db(sa_url, db_config)
 
 
         return 0
