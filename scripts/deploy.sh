@@ -204,6 +204,7 @@ pushd /data/socorro/application > /dev/null
 error $? "could not pushd /data/socorro/application"
 su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
     socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force \
+    --admin.conf=/etc/socorro/crontabber.ini \
     &> /var/log/socorro/crontabber.log"
 error $? "could not run crontabber `cat /var/log/socorro/crontabber.log`"
 popd > /dev/null
