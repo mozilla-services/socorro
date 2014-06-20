@@ -718,7 +718,8 @@ class SocorroDB(App):
                 db.set_table_owner('breakpad_rw')
                 db.create_views()
                 # TODO set up grants for base database
-                db.set_grants(self.config)  # config has user lists
+                for schema in ['public', 'base', 'bixie']:
+                    db.set_grants(self.config)  # config has user lists
                 db.commit()
 
                 # Needs to be modified to support split schema
