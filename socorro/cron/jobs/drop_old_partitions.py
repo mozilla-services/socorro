@@ -2,15 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# crontabber
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
     with_postgres_transactions,
     with_single_postgres_transaction,
 )
-# this job
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+
 
 @with_postgres_transactions()
 @with_single_postgres_transaction()
@@ -25,7 +24,7 @@ class DropOldPartitionsCronApp(BaseCronApp):
 
     def run(self, connection):
         # Determine date from one year ago.
-        one_year_ago = datetime.now() - relativedelta(years=1)
+        one_year_ago = datetime.utcnow() - relativedelta(years=1)
 
         # Determine delta between previous Monday and year-old-date.
         delta_previous_monday = 0 - one_year_ago.weekday()
@@ -38,4 +37,8 @@ class DropOldPartitionsCronApp(BaseCronApp):
         cut_off_date = year_old_monday.strftime('%Y-%m-%d')
 
         cursor = connection.cursor()
-        cursor.execute('select drop_named_partitions(\'%s\'::date)' % cut_off_date)
+        # Casting to date because stored procs in psql are strongly typed.
+        cursor.execute(
+            "select drop_named_partitions('%s'::date)",
+            (cut_off_date,)
+        )
