@@ -30,6 +30,7 @@ from socorro.external.postgresql.models import *
 
 
 class PostgreSQLAlchemyManager(object):
+    # TODO refactor to take a real config object
     """
         Connection management for PostgreSQL using SQLAlchemy
     """
@@ -44,22 +45,59 @@ class PostgreSQLAlchemyManager(object):
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
 
-    def setup_admin(self):
+    def setup(self):
         self.session.execute('SET check_function_bodies = false')
+        self.commit()
+
+    def drop_database(self, db_config):
+        try:
+            # work around for autocommit behavior
+            self.session.execute('commit')
+            self.session.execute('DROP DATABASE %s' % db_config.database_name)
+        except exc.ProgrammingError, e:
+            if re.match(
+                'database "%s" does not exist' % db_config.database_name,
+                e.orig.pgerror.strip()):
+                # already done, no need to rerun
+                print "The DB %s doesn't exist" % db_config.database_name
+
+    def create_database(self, db_config):
+        self.session.execute('commit')
+        self.session.execute('CREATE DATABASE %s' % db_config.database_name)
+
+    def set_encoding(self, db_config):
+        try:
+            # work around for autocommit behavior
+            self.session.execute('commit')
+            self.session.execute("CREATE DATABASE %s ENCODING 'utf8'" %
+                               db_config.database_name)
+        # TODO is this the correct exception??
+        except ProgrammingError, e:
+            if re.match(
+                'database "%s" already exists' % self.database_name,
+                e.orig.pgerror.strip()):
+                # already done, no need to rerun
+                print "The DB %s already exists" % self.database_name
+                return 0
+            raise
+
+    def create_extensions(self):
+        print "creating extensions"
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         # we only need to create the json extension for pg9.2.*
-        if not self.min_ver_check("9.3.0"):
+        if not self.min_ver_check('9.3.0'):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
-        self.session.execute('CREATE SCHEMA bixie')
-        self.session.execute('CREATE SCHEMA base')
-        self.session.execute('CREATE SCHEMA normalized')
-        self.session.execute(
-            'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
+        self.commit()
 
-    def setup(self):
-        self.session.execute('SET check_function_bodies = false')
+    #def setup_schemas(self):
+        #self.session.execute('CREATE SCHEMA bixie')
+        #self.session.execute('CREATE SCHEMA base')
+        #self.session.execute('CREATE SCHEMA normalized')
+        #self.session.execute(
+            #'GRANT ALL ON SCHEMA bixie, base, normalized, public TO breakpad_rw')
+        #self.commit()
 
     def create_types(self):
         # read files from 'raw_sql' directory
@@ -75,13 +113,18 @@ class PostgreSQLAlchemyManager(object):
                 raise
         return True
 
-    def create_tables(self, schema='public'):
+    def create_tables(self, schema='all'):
         status = ''
-        if schema == 'public':
+        if schema == 'all':
+            for schema in ['bixie', 'base', 'normalized']:
+                self.session.execute('CREATE SCHEMA IF NOT EXISTS %s' % schema)
+                self.commit()
             status = self.metadata.create_all()
         else:
             for t in self.metadata.sorted_tables:
                 if t.schema == schema:
+                    self.session.execute('CREATE SCHEMA IF NOT EXISTS %s' % schema)
+                    self.commit()
                     t.create(self.engine)
         return status
 
@@ -123,12 +166,6 @@ class PostgreSQLAlchemyManager(object):
         self.session.execute("""
                 ALTER DATABASE %s OWNER TO breakpad_rw
             """ % database_name)
-
-    def set_table_owner(self, owner):
-        for table in self.metadata.sorted_tables:
-            self.session.execute("""
-                    ALTER TABLE %s OWNER TO %s
-                """ % (table, owner))
 
     def set_sequence_owner(self, owner):
         sequences = self.session.execute("""
@@ -206,9 +243,11 @@ class PostgreSQLAlchemyManager(object):
 
         # set GRANTS on tables in schema
         roles = []
-        query = "GRANT all ON all TABLES IN SCHEMA %s TO breakpad_rw" % schema
+        query = "GRANT ALL ON all TABLES IN SCHEMA %s TO breakpad_rw" % schema
         roles.append(query)
-        query = "GRANT all ON all TABLES IN SCHEMA %s TO breakpad_ro" % schema
+
+        # TODO make this grant appropriate for RO user
+        query = "GRANT SELECT ON all TABLES IN SCHEMA %s TO breakpad_ro" % schema
         roles.append(query)
 
         # set GRANTS for ROLEs
@@ -236,22 +275,13 @@ class PostgreSQLAlchemyManager(object):
                 else:
                     raise
 
-        # TODO: this seems redundant
-        # Now, perform the GRANTs for configured roles
-        ro = 'breakpad_ro'
-        rw = 'breakpad_rw'
-        for t in self.metadata.sorted_tables:
-            if t.schema == schema:
-                self.session.execute("GRANT ALL ON TABLE %s TO %s" % (t, rw))
-                self.session.execute("GRANT SELECT ON TABLE %s TO %s" % (t, ro))
-
         # Set GRANTs on sequences
         sequences = self.session.execute("""
                 SELECT n.nspname || '.' || c.relname
                 FROM pg_catalog.pg_class c
                 LEFT JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
                 WHERE c.relkind IN ('S')
-                AND n.nspname IN (%s)
+                AND n.nspname IN ('%s')
                 AND pg_catalog.pg_table_is_visible(c.oid);
             """ % schema).fetchall()
         for s, in sequences:
@@ -260,7 +290,7 @@ class PostgreSQLAlchemyManager(object):
 
         # Set GRANTS on views
         views = self.session.execute("""
-                SELECT viewname FROM pg_views WHERE schemaname = %s
+                SELECT viewname FROM pg_views WHERE schemaname = '%s'
             """ % schema).fetchall()
         for v, in views:
             self.session.execute("GRANT ALL ON TABLE %s TO %s" % (v, rw))
@@ -613,48 +643,34 @@ class SocorroDB(App):
         print sa_url
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
+            db.setup()
+
             if not db.min_ver_check("9.2.0"):
                 print 'ERROR - unrecognized PostgreSQL version: %s' % \
                     db.version()
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
-            connection = db.engine.connect()
             if self.config.get('dropdb'):
                 if 'test' not in db_config.database_name and not self.force:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % db_config.database_name)
                     if not confirm == "y":
-                        logging.warn('NOT dropping table')
+                        logging.warn('NOT dropping database')
                         return 2
+                    else:
+                        db.drop_database(db_config)
+                else:
+                    db.drop_database(db_config)
 
-                try:
-                    # work around for autocommit behavior
-                    connection.execute('commit')
-                    connection.execute('DROP DATABASE %s' % db_config.database_name)
-                except exc.ProgrammingError, e:
-                    if re.match(
-                        'database "%s" does not exist' % db_config.database_name,
-                        e.orig.pgerror.strip()):
-                        # already done, no need to rerun
-                        print "The DB %s doesn't exist" % db_config.database_name
+            print "creating database"
+            db.set_encoding(db_config)
 
-            try:
-                # work around for autocommit behavior
-                connection.execute('commit')
-                connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
-                                   db_config.database_name)
-            except ProgrammingError, e:
-                if re.match(
-                    'database "%s" already exists' % self.database_name,
-                    e.orig.pgerror.strip()):
-                    # already done, no need to rerun
-                    print "The DB %s already exists" % self.database_name
-                    return 0
-                raise
-
+            # Set up a nice environment for the database
+            db.commit()
             db.create_roles(self.config)
-            connection.close()
+            #db.setup_schemas()
+            db.commit()
 
     def connection_url(self, db_config, usertype='nosuperuser'):
         url_template = 'postgresql://'
@@ -692,34 +708,36 @@ class SocorroDB(App):
             schemas = ['public', 'bixie']
         else:
             schemas = ['base', 'public', 'bixie']
+
         for schema in schemas:
             db.create_tables(schema)
-        return schemas
 
     def deploy_socorro(self, db_config):
         """ Set up schemas, tables, types and procs """
-        url_template = self.connection_url(db_config)
+        url_template = self.connection_url(db_config, 'superuser')
         sa_url = url_template + '/%s' % db_config.database_name
 
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
 
+        print sa_url
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
-            connection = db.engine.connect()
-            db.setup_admin()
+            db.setup()
+            db.create_extensions()
+
             if self.no_schema:
                 db.commit()
                 return 0
 
             self.setup_global(db)
-            self.setup_schemas_for(db, self.db_config.database_type)
+            self.setup_schemas_for(db, db_config.database_type)
+            db.commit()
 
-            if self.db_config.database_type != 'base':
-                db.set_table_owner('breakpad_rw')
-                db.create_views()
+            if db_config.database_type != 'base':
+                #db.create_views()
                 # TODO set up grants for base database
                 for schema in ['public', 'base', 'bixie']:
-                    db.set_grants(self.config)  # config has user lists
+                    db.set_grants(self.config, schema)  # config has user lists
                 db.commit()
 
                 # Needs to be modified to support split schema
@@ -729,7 +747,7 @@ class SocorroDB(App):
 
             # Same for all database types
             command.stamp(alembic_cfg, "head")
-            db.set_default_owner(self.database_name)
+            db.set_default_owner(db_config.database_name)
             db.session.close()
 
     def main(self):
@@ -776,6 +794,7 @@ class SocorroDB(App):
             url_template = self.connection_url(db_config, 'superuser')
             sa_url = url_template + '/%s' % 'postgres'
             self.init_db(sa_url, db_config)
+            self.deploy_socorro(db_config)
 
         # TODO Set up rest of schema
 
