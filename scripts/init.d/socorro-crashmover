@@ -12,7 +12,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-progname=`basename $0`
+progname=socorro-crashmover
 
 # Source socorro overrides
 config=/etc/socorro/crashmover.ini
