@@ -610,6 +610,7 @@ class SocorroDB(App):
 
 
     def init_db(self, sa_url, db_config):
+        print sa_url
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
             if not db.min_ver_check("9.2.0"):
@@ -766,7 +767,6 @@ class SocorroDB(App):
             url_template = self.connection_url(db_config)
             sa_url = url_template + '/%s' % 'postgres'
             self.init_db(sa_url, db_config)
-
 
         return 0
 
