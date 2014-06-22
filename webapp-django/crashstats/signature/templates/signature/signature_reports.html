@@ -1,0 +1,42 @@
+{% from "macros/pagination.html" import pagination %}
+
+{% if query.total > 0 %}
+
+<div id="crash-reports">
+    {{ pagination(query, current_url, current_page) }}
+    <table id="reports-list" class="tablesorter data-table">
+        <thead>
+            <tr>
+                <th scope="col">Crash ID</th>
+                {% for column in columns %}
+                <th scope="col">{{ column | replace('_', ' ') | capitalize }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for crash in query.hits %}
+            <tr>
+                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
+                {% for column in columns %}
+                <td>
+                    {% if crash[column] %}
+                        {% if column == 'date' %}
+                            {{ crash[column] | human_readable_iso_date }}
+                        {% else %}
+                            {{ crash[column] }}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ pagination(query, current_url, current_page) }}
+</div>
+
+{% else %}
+
+<p>No results were found.</p>
+
+{% endif %}

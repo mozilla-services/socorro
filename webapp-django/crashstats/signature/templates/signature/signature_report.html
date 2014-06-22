@@ -1,0 +1,127 @@
+{% extends "crashstats_base.html" %}
+{% block page_title %}{{ signature }} - Signature report - Mozilla Crash Reports{% endblock %}
+
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>Signature report for <em>{{ signature }}</em></h2>
+    </div>
+
+    <section id="search-form">
+        <a href="#" class="toggle-filters show">Show</a>
+        <h4>Search filters</h4>
+
+        <form method="get" action="{{ url('signature:signature_report', signature=signature) }}"
+            data-fields-url="{{ url('supersearch.search_fields') }}"
+            data-action-url="{{ url('signature:signature_report', signature=signature) }}"
+        >
+            <button type="submit" id="search-button">Search</button>
+            <button class="new-line">new line</button>
+            <fieldset id="search-params-fieldset"></fieldset>
+
+            <div class="clear"></div>
+        </form>
+    </section>
+
+    <nav id="panels-nav">
+        <ul class="tabs">
+            <li><a href="#reports" class="reports" data-tab-name="reports">Reports</a></li>
+            <li><a href="#aggregations" class="aggregations" data-tab-name="aggregations">Aggregations</a></li>
+        </ul>
+    </nav>
+
+    <!-- Loading panel.
+        Shows a loading bar, is displayed by default when the page is
+        loading initial data.
+    -->
+    <section class="panel" id="loading-panel">
+        <header class="title">
+            <h2>Loading&hellip;</h2>
+        </header>
+
+        <div class="body">
+            <div class="loader"></div>
+        </div>
+    </section>
+
+    <!-- Reports panel.
+        Displays a list of crash reports that have the current signature.
+    -->
+    <section class="panel" id="reports-panel"
+        data-source-url="{{ url('signature:signature_reports', signature=signature) }}"
+    >
+        <header class="title">
+            <h2>Crash Reports</h2>
+        </header>
+
+        <div class="body">
+            <!-- TODO include a fields list input here -->
+            <div class="content">
+                <div class="loader"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Aggregations panel.
+        Displays tables with aggregations of one or several fields.
+    -->
+    <section class="panel" id="aggregations-panel"
+        data-source-url="{{ url('signature:signature_report', signature=signature) }}/aggregation/"
+    >
+        <header class="title">
+            <h2>Aggregations</h2>
+        </header>
+
+        <div class="body">
+            <!-- TODO include a fields list select here -->
+            <div class="content">
+                <p>Coming soon!</p>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+
+{% block site_css %}
+    {{ super() }}
+    {% compress css %}
+<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
+    {% endcompress %}
+    {% compress css %}
+<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
+<link href="{{ static('signature/css/signature_report.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+    {% compress css %}
+<link href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
+<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+    {% endcompress %}
+{% endblock %}
+
+
+{% block site_js %}
+    {{ super() }}
+
+<script>
+var BASE_URL = location.protocol + '//' + location.host;
+var SIGNATURE = '{{ signature }}';
+</script>
+
+    {% compress js %}
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.mouse.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.sortable.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
+<script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
+<script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+    {% endcompress %}
+
+    {% compress js %}
+<script src="{{ static('signature/js/signature_report.js') }}"></script>
+    {% endcompress %}
+
+{% endblock %}

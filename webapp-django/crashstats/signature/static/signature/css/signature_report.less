@@ -1,0 +1,48 @@
+.tabs {
+    margin: 0.3em 1em 1em 0;
+    padding: 0;
+    a:link,
+    a:visited {
+        display: inline-block;
+        background-color: #e0e0e0;
+        color: #333;
+        margin-right: .2em;
+        padding: .3em .8em;
+        text-decoration: none;
+        text-align: center;
+        border-radius: 6px;
+    }
+    a:hover {
+        background-color: #B6D3E2;
+    }
+    a.selected {
+        background-color: #2e5d74;
+        color: #fff;
+    }
+    li {
+        display: inline;
+    }
+}
+
+/* By default, hide all panels except the loading one. */
+.panel {
+    display: none;
+}
+#loading-panel {
+    display: block;
+}
+
+.toggle-filters {
+    float: right;
+}
+.toggle-filters:before {
+    content: url('../../img/3rdparty/silk/arrow_top.png');
+    display: inline-block;
+    height: 16px;
+    padding: 5px;
+    vertical-align: middle;
+    width: 16px;
+}
+.toggle-filters.show:before {
+    content: url('../../img/3rdparty/silk/arrow_bottom.png');
+}

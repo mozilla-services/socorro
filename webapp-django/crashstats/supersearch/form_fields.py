@@ -47,13 +47,15 @@ class PrefixedField(object):
         cleaned_value = super(PrefixedField, self).clean(*args, **kwargs)
 
         self.prefixed_value = self.value_to_string(cleaned_value)
-        if self.operator is not None:
+        if self.operator is not None and self.prefixed_value is not None:
             self.prefixed_value = self.operator + self.prefixed_value
 
         return cleaned_value
 
     def value_to_string(self, value):
         """Return the value as a string. """
+        if value is None:
+            return None
         return unicode(value)
 
 

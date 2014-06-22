@@ -18,47 +18,6 @@ $(function () {
     var columnsInput = $('input[name=_columns_fake]', form);
     var publicApiUrlInput = $('input[name=_public_api_url]', form);
 
-    // From http://stackoverflow.com/questions/5914020/
-    function padStr(i) {
-        return (i < 10) ? "0" + i : "" + i;
-    }
-
-    function parseQueryString(queryString) {
-        var params = {};
-        var queries;
-        var temp;
-        var i;
-        var len;
-
-        // Split into key/value pairs
-        queries = queryString.split("&");
-        len = queries.length;
-
-        if (len === 1 && queries[0] === '') {
-            return false;
-        }
-
-        // Convert the array of strings into an object
-        for (i = 0; i < len; i++) {
-            temp = queries[i].split('=');
-            var key = temp[0];
-            var value = decodeURIComponent(temp[1]);
-            value = value.replace(/\+/g, ' ');
-
-            if (params[key] && Array.isArray(params[key])) {
-                params[key].push(value);
-            }
-            else if (params[key]) {
-                params[key] = [params[key], value];
-            }
-            else {
-                params[key] = value;
-            }
-        }
-
-        return params;
-    }
-
     function showResults(url) {
         // show loader
         try {
@@ -119,21 +78,6 @@ $(function () {
         });
     }
 
-    function getFilteredParams(params) {
-        if ('page' in params) {
-            delete params.page;
-        }
-
-        // Remove all private parameters (beginning with a _).
-        for (var p in params) {
-            if (p.charAt(0) === '_') {
-                delete params[p];
-            }
-        }
-
-        return params;
-    }
-
     function prepareResultsQueryString(params) {
         var i;
         var len;
@@ -182,7 +126,7 @@ $(function () {
         if (params === null) {
             // No state was added, check if the URL contains parameters
             queryString = window.location.search.substring(1);
-            params = parseQueryString(queryString);
+            params = socorro.search.parseQueryString(queryString);
         }
 
         if (params) {
@@ -190,7 +134,7 @@ $(function () {
             // and run the search and show results
             queryString = $.param(params, true);
             showResults(resultsURL + '?' + queryString);
-            params = getFilteredParams(params);
+            params = socorro.search.getFilteredParams(params);
             updatePublicApiUrl(params);
             form.dynamicForm('setParams', params);
         }
@@ -249,7 +193,7 @@ $(function () {
     $('h4 + div', optionsElt).hide();
 
     var queryString = window.location.search.substring(1);
-    var initialParams = parseQueryString(queryString);
+    var initialParams = socorro.search.parseQueryString(queryString);
     if (initialParams) {
         // If there are initial params, that means we should run the
         // corresponding search right after the form has finished loading.
@@ -259,7 +203,7 @@ $(function () {
             page = initialParams.page;
         }
 
-        initialParams = getFilteredParams(initialParams);
+        initialParams = socorro.search.getFilteredParams(initialParams);
         form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset', function () {
             // When the form has finished loading, we get sanitized parameters
             // from it and show the results. This will avoid strange behaviors

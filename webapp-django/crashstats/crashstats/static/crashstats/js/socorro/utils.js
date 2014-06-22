@@ -182,6 +182,57 @@
                 return dates;
             }
         },
+        search: {
+            parseQueryString: function (queryString) {
+                var params = {};
+                var queries;
+                var temp;
+                var i;
+                var len;
+
+                // Split into key/value pairs
+                queries = queryString.split("&");
+                len = queries.length;
+
+                if (len === 1 && queries[0] === '') {
+                    return false;
+                }
+
+                // Convert the array of strings into an object
+                for (i = 0; i < len; i++) {
+                    temp = queries[i].split('=');
+                    var key = temp[0];
+                    var value = decodeURIComponent(temp[1]);
+                    value = value.replace(/\+/g, ' ');
+
+                    if (params[key] && Array.isArray(params[key])) {
+                        params[key].push(value);
+                    }
+                    else if (params[key]) {
+                        params[key] = [params[key], value];
+                    }
+                    else {
+                        params[key] = value;
+                    }
+                }
+
+                return params;
+            },
+            getFilteredParams: function (params) {
+                if ('page' in params) {
+                    delete params.page;
+                }
+
+                // Remove all private parameters (beginning with a _).
+                for (var p in params) {
+                    if (p.charAt(0) === '_') {
+                        delete params[p];
+                    }
+                }
+
+                return params;
+            }
+        },
         dateSupported: function() {
             var inputElem = document.createElement("input");
             inputElem.setAttribute("type", "date");

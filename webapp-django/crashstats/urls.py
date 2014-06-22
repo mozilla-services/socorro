@@ -33,6 +33,10 @@ urlpatterns = patterns(
     '',
     (r'', include(urls, namespace='crashstats')),
     (r'', include(supersearch_urls)),
+    (r'^signature/', include(
+        'crashstats.signature.urls',
+        namespace='signature'
+    )),
     (r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),
     (r'^symbols/', include('crashstats.symbols.urls', namespace='symbols')),

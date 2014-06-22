@@ -20,6 +20,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,
     '%s.supersearch' % PROJECT_MODULE,
+    '%s.signature' % PROJECT_MODULE,
     'jingo_offline_compressor',
     '%s.auth' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
