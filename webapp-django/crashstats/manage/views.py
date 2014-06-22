@@ -18,7 +18,11 @@ from crashstats.crashstats.models import (
     SkipList,
     GraphicsDevices
 )
-from crashstats.supersearch.models import SuperSearchFields, SuperSearchField
+from crashstats.supersearch.models import (
+    SuperSearchField,
+    SuperSearchFields,
+    SuperSearchMissingFields,
+)
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from . import forms
@@ -423,7 +427,20 @@ def supersearch_field(request):
                 'The field "%s" does not exist' % field_name
             )
     else:
-        field_data = {}
+        full_name = request.GET.get('full_name')
+
+        if full_name:
+            if '.' not in full_name:
+                name = full_name
+                namespace = None
+            else:
+                namespace, name = full_name.rsplit('.', 1)
+            field_data = {
+                'in_database_name': name,
+                'namespace': namespace,
+            }
+        else:
+            field_data = {}
 
     context['field'] = field_data
     perms = Permission.objects.filter(content_type__model='').order_by('name')
@@ -492,3 +509,14 @@ def supersearch_field_delete(request):
 
     url = reverse('manage:supersearch_fields')
     return redirect(url)
+
+
+@superuser_required
+def supersearch_fields_missing(request):
+    context = {}
+    missing_fields = SuperSearchMissingFields().get()
+
+    context['missing_fields'] = missing_fields['hits']
+    context['missing_fields_count'] = missing_fields['total']
+
+    return render(request, 'manage/supersearch_fields_missing.html', context)

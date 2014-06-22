@@ -176,6 +176,20 @@ class SuperSearchFields(models.SocorroMiddleware):
 
     URL_PREFIX = '/supersearch/fields/'
 
+    # The only reason this data will change is if a user changes it via the UI.
+    # If that happens, the cache will be reset automatically. We can thus
+    # increase the cache a lot here.
+    cache_seconds = 60 * 60 * 24
+
+
+class SuperSearchMissingFields(models.SocorroMiddleware):
+
+    URL_PREFIX = '/supersearch/missing_fields/'
+
+    # This service's data doesn't change a lot over time, it's fine to cache
+    # it for a long time.
+    cache_seconds = 60 * 60 * 12  # 12 hours
+
 
 class SuperSearchField(models.SocorroMiddleware):
 

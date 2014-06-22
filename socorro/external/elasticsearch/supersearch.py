@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import re
 
 from elasticutils import F, S
@@ -478,3 +479,69 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             id=params['name'],
             refresh=True,
         )
+
+    def get_missing_fields(self):
+        """Return a list of all missing fields in our database.
+
+        Take the list of all fields that were indexed in the last 3 weeks
+        and do a diff with the list of known fields.
+        """
+        now = datetimeutil.utc_now()
+        two_weeks_ago = now - datetime.timedelta(weeks=2)
+        indices = self.generate_list_of_indexes(two_weeks_ago, now)
+
+        es_connection = self.get_connection().get_es()
+        doctype = self.config.elasticsearch_doctype
+
+        def parse_mapping(mapping, namespace):
+            """Return a set of all fields in a mapping. Parse the mapping
+            recursively. """
+            fields = set()
+
+            for key in mapping:
+                field = mapping[key]
+                if namespace:
+                    field_full_name = '.'.join((namespace, key))
+                else:
+                    field_full_name = key
+
+                if 'properties' in field:
+                    fields.update(
+                        parse_mapping(
+                            field['properties'],
+                            field_full_name
+                        )
+                    )
+                else:
+                    fields.add(field_full_name)
+
+            return fields
+
+        all_existing_fields = set()
+        for index in indices:
+            try:
+                mapping = es_connection.get_mapping(
+                    index=index,
+                    doc_type=doctype,
+                )
+                properties = mapping[doctype]['properties']
+                all_existing_fields.update(parse_mapping(properties, None))
+            except ElasticHttpNotFoundError, e:
+                # If an index does not exist, this should not fail
+                self.config.logger.warning(
+                    'Missing index in elasticsearch while running '
+                    'SuperSearch.get_missing_fields, error is: %s',
+                    str(e)
+                )
+
+        all_known_fields = set(
+            '.'.join((x['namespace'], x['in_database_name']))
+            for x in self.get_fields().values()
+        )
+
+        missing_fields = sorted(all_existing_fields - all_known_fields)
+
+        return {
+            'hits': missing_fields,
+            'total': len(missing_fields),
+        }

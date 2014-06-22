@@ -937,6 +937,49 @@ class TestViews(BaseTestViews):
         ok_('MultipleValueField' in response.content)
 
     @mock.patch('requests.get')
+    def test_supersearch_fields_missing(self, rget):
+        self._login()
+        url = reverse('manage:supersearch_fields_missing')
+
+        def mocked_get(url, **options):
+            assert '/supersearch/' in url
+
+            if '/supersearch/fields/' in url:
+                return Response({
+                    'product': {
+                        'name': 'product',
+                        'namespace': 'processed_crash',
+                        'in_database_name': 'product',
+                        'query_type': 'enum',
+                        'form_field_type': 'MultipleValueField',
+                        'form_field_choices': None,
+                        'permissions_needed': [],
+                        'default_value': None,
+                        'is_exposed': True,
+                        'is_returned': True,
+                        'is_mandatory': False,
+                    }
+                })
+
+            if '/supersearch/missing_fields/' in url:
+                return Response({
+                    'hits': [
+                        'field_a',
+                        'namespace1.field_b',
+                        'namespace2.subspace1.field_c',
+                    ],
+                    'total': 3
+                })
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('field_a' in response.content)
+        ok_('namespace1.field_b' in response.content)
+        ok_('namespace2.subspace1.field_c' in response.content)
+
+    @mock.patch('requests.get')
     def test_supersearch_field(self, rget):
         self._login()
         url = reverse('manage:supersearch_field')
@@ -980,6 +1023,15 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('signature' not in response.content)
         ok_('platform' not in response.content)
+
+        # Test when creating a new field with some default values.
+        response = self.client.get(
+            url + '?full_name=namespace.subspace.field_z'
+        )
+        eq_(response.status_code, 200)
+        ok_('field_z' in response.content)
+        ok_('namespace.subspace' in response.content)
+        ok_('namespace.subspace.field_z' not in response.content)
 
         # Test when editing an existing field.
         response = self.client.get(url, {'name': 'signature'})

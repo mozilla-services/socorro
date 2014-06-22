@@ -48,7 +48,12 @@ var ALL_PERMISSIONS = {{ all_permissions | json_dumps }};
                     <tr>
                         <th scope="row">Name</th>
                         <td>
-                            <input type="text" name="name" value="{{ field.name }}"{% if field.name %} readonly="readonly"{% endif %}>
+                            <input
+                                type="text"
+                                name="name"
+                                value="{{ field.name or field.in_database_name | lower }}"
+                                {% if field.name %} readonly="readonly"{% endif %}
+                            >
                         </td>
                     </tr>
                     <tr>

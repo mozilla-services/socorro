@@ -1702,3 +1702,112 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             doc_type='supersearch_fields',
             id='product',
         )
+
+    def test_get_missing_fields(self):
+        config = self.get_config_context(
+            es_index='socorro_integration_test_%W'
+        )
+
+        fake_mappings = [
+            {
+                'mappings': {
+                    config.elasticsearch_doctype: {
+                        'properties': {
+                            # Add a bunch of unknown fields.
+                            'field_z': {
+                                'type': 'string'
+                            },
+                            'namespace1': {
+                                'type': 'object',
+                                'properties': {
+                                    'field_a': {
+                                        'type': 'string'
+                                    },
+                                    'field_b': {
+                                        'type': 'long'
+                                    }
+                                }
+                            },
+                            'namespace2': {
+                                'type': 'object',
+                                'properties': {
+                                    'subspace1': {
+                                        'type': 'object',
+                                        'properties': {
+                                            'field_b': {
+                                                'type': 'long'
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            # Add a few known fields that should not appear.
+                            'processed_crash': {
+                                'type': 'object',
+                                'properties': {
+                                    'signature': {
+                                        'type': 'string'
+                                    },
+                                    'product': {
+                                        'type': 'string'
+                                    },
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                'mappings': {
+                    config.elasticsearch_doctype: {
+                        'properties': {
+                            'namespace1': {
+                                'type': 'object',
+                                'properties': {
+                                    'subspace1': {
+                                        'type': 'object',
+                                        'properties': {
+                                            'field_d': {
+                                                'type': 'long'
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        ]
+
+        storage = crashstorage.ElasticSearchCrashStorage(config)
+        now = datetimeutil.utc_now()
+        indices = []
+
+        try:
+            # Using "2" here means that an index will be missing, hence testing
+            # that it swallows the subsequent error.
+            for i in range(2):
+                date = now - datetime.timedelta(weeks=i)
+                index = storage.get_index_for_crash(date)
+                mapping = fake_mappings[i % len(fake_mappings)]
+
+                storage.create_index(index, mapping)
+                indices.append(index)
+
+            api = SuperSearch(config=config)
+            missing_fields = api.get_missing_fields()
+            expected = [
+                'field_z',
+                'namespace1.field_a',
+                'namespace1.field_b',
+                'namespace1.subspace1.field_d',
+                'namespace2.subspace1.field_b',
+            ]
+
+            eq_(missing_fields['hits'], expected)
+            eq_(missing_fields['total'], 5)
+
+        finally:
+            for index in indices:
+                storage.es.delete_index(index=index)

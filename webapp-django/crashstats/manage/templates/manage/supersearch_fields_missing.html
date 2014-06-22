@@ -1,0 +1,48 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Super Search Missing Fields{% endblock %}
+
+{% block admin_title %}{{ super() }} - Super Search Missing Fields{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="title">
+        <h2>Missing Super Search Fields</h2>
+    </div>
+    <div class="body">
+        <p>
+            This is a list of fields that are missing from the master list
+            of Super Search fields. This is computed by taking a list of all
+            fields that exist in the mappings of the last 3 weeks, then
+            comparing that list to the list of known fields.
+        </p>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Options</th>
+                </tr>
+            </thead>
+        {% for field in missing_fields %}
+            <tr>
+                <td>{{ field }}</td>
+                <td>
+                    <a href="{{ url('manage:supersearch_field') }}?full_name={{ field | urlencode }}">
+                        Create this field
+                    </a>
+                </td>
+            </tr>
+        {% else %}
+            <tr colspan="2">No fields are missing at the moment.</tr>
+        {% endfor %}
+        </table>
+    </div>
+  </div>
+
+{% endblock %}
