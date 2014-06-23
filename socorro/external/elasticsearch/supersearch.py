@@ -2,22 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import re
+import os
 
 from elasticutils import F, S
-from pyelasticsearch.exceptions import (
-    ElasticHttpError,
-    ElasticHttpNotFoundError,
-)
+from pyelasticsearch.exceptions import ElasticHttpNotFoundError
 
-from socorro.external import (
-    BadArgumentError,
-    InsertionError,
-    MissingArgumentError,
-    ResourceNotFound,
-)
+from socorro.external import BadArgumentError
 from socorro.external.elasticsearch.base import ElasticSearchBase
-from socorro.lib import datetimeutil, external_common
+from socorro.lib import datetimeutil
 from socorro.lib.search_common import SearchBase
 
 
@@ -40,16 +34,8 @@ class SuperS(S):
 
 class SuperSearch(SearchBase, ElasticSearchBase):
 
-    # Defining some filters for the field service that need to be considered
-    # as lists.
-    filters = [
-        ('form_field_choices', None, ['list', 'str']),
-        ('permissions_needed', None, ['list', 'str']),
-    ]
-
     def __init__(self, *args, **kwargs):
         config = kwargs.get('config')
-        ElasticSearchBase.__init__(self, config=config)
 
         self.all_fields = self.get_fields()
 
@@ -62,18 +48,13 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         # init is mandatory.
         # See http://freshfoo.com/blog/object__init__takes_no_parameters
         SearchBase.__init__(self, config=config, fields=self.all_fields)
-
-    def get_connection(self):
-        return SuperS().es(
-            urls=self.config.elasticsearch_urls,
-            timeout=self.config.elasticsearch_timeout,
-        )
+        ElasticSearchBase.__init__(self, config=config)
 
     def get(self, **kwargs):
         """Return a list of results and facets based on parameters.
 
         The list of accepted parameters (with types and default values) is in
-        the database and can be accessed with the supersearch_fields service.
+        socorro.lib.search_common.SearchBase
         """
         # Filter parameters and raise potential errors.
         params = self.get_parameters(**kwargs)
@@ -82,7 +63,10 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         indexes = self.get_indexes(params['date'])
 
         # Create and configure the search object.
-        search = self.get_connection()
+        search = SuperS().es(
+            urls=self.config.elasticsearch_urls,
+            timeout=self.config.elasticsearch_timeout,
+        )
         search = search.indexes(*indexes)
         search = search.doctypes(self.config.elasticsearch_doctype)
 
@@ -320,161 +304,8 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         return new_hit
 
     def get_fields(self):
-        """ Return all the fields from our database, as a dict where field
-        names are the keys.
-
-        No parameters are accepted.
-        """
-        # Create and configure the search object.
-        search = self.get_connection()
-        search = search.indexes(
-            self.config.elasticsearch_default_index
+        file_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            'supersearch_fields.json'
         )
-        search = search.doctypes('supersearch_fields')
-
-        count = search.count()  # Total number of results.
-        search = search[:count]
-
-        # Get all fields from the database.
-        return dict((r['name'], r) for r in search.values_dict())
-
-    def create_field(self, **kwargs):
-        """Create a new field in the database, to be used by supersearch and
-        all elasticsearch related services.
-        """
-        filters = [
-            ('name', None, 'str'),
-            ('data_validation_type', 'enum', 'str'),
-            ('default_value', None, 'str'),
-            ('description', None, 'str'),
-            ('form_field_type', 'MultipleValueField', 'str'),
-            ('form_field_choices', None, ['list', 'str']),
-            ('has_full_version', False, 'bool'),
-            ('in_database_name', None, 'str'),
-            ('is_exposed', False, 'bool'),
-            ('is_returned', False, 'bool'),
-            ('is_mandatory', False, 'bool'),
-            ('query_type', 'enum', 'str'),
-            ('namespace', None, 'str'),
-            ('permissions_needed', None, ['list', 'str']),
-            ('storage_mapping', None, 'json'),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        mandatory_params = ('name', 'in_database_name')
-        for param in mandatory_params:
-            if not params[param]:
-                raise MissingArgumentError(param)
-
-        es_connection = self.get_connection().get_es()
-
-        try:
-            es_connection.index(
-                index=self.config.elasticsearch_default_index,
-                doc_type='supersearch_fields',
-                doc=params,
-                id=params['name'],
-                overwrite_existing=False,
-                refresh=True,
-            )
-        except ElasticHttpError, e:
-            if e.status_code == 409:
-                # This field exists in the database, it thus cannot be created!
-                raise InsertionError(
-                    'The field "%s" already exists in the database, '
-                    'impossible to create it. ' % params['name']
-                )
-
-            # Else this is an unexpected error and we want to know about it.
-            raise
-
-        return True
-
-    def update_field(self, **kwargs):
-        """Update an existing field in the database.
-
-        If the field does not exist yet, a ResourceNotFound error is raised.
-
-        If you want to update only some keys, just do not pass the ones you
-        don't want to change.
-        """
-        filters = [
-            ('name', None, 'str'),
-            ('data_validation_type', None, 'str'),
-            ('default_value', None, 'str'),
-            ('description', None, 'str'),
-            ('form_field_type', None, 'str'),
-            ('form_field_choices', None, ['list', 'str']),
-            ('has_full_version', None, 'bool'),
-            ('in_database_name', None, 'str'),
-            ('is_exposed', None, 'bool'),
-            ('is_returned', None, 'bool'),
-            ('is_mandatory', None, 'bool'),
-            ('query_type', None, 'str'),
-            ('namespace', None, 'str'),
-            ('permissions_needed', None, ['list', 'str']),
-            ('storage_mapping', None, 'json'),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        if not params['name']:
-            raise MissingArgumentError('name')
-
-        # Remove all the parameters that were not explicitely passed.
-        for key in params.keys():
-            if key not in kwargs:
-                del params[key]
-
-        es_connection = self.get_connection().get_es()
-
-        # First verify that the field does exist.
-        try:
-            es_connection.get(
-                index=self.config.elasticsearch_default_index,
-                doc_type='supersearch_fields',
-                id=params['name'],
-            )
-        except ElasticHttpNotFoundError:
-            # This field does not exist yet, it thus cannot be updated!
-            raise ResourceNotFound(
-                'The field "%s" does not exist in the database, it needs to '
-                'be created before it can be updated. ' % params['name']
-            )
-
-        # Then update the new field in the database. Note that pyelasticsearch
-        # takes care of merging the new document into the old one, so missing
-        # values won't be changed.
-        es_connection.update(
-            index=self.config.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            doc=params,
-            id=params['name'],
-            refresh=True,
-        )
-
-        return True
-
-    def delete_field(self, **kwargs):
-        """Remove a field from the database.
-
-        Removing a field means that it won't be indexed in elasticsearch
-        anymore, nor will it be exposed or accessible via supersearch. It
-        doesn't delete the data from crash reports though, so it would be
-        possible to re-create the field and reindex some indices to get that
-        data back.
-        """
-        filters = [
-            ('name', None, 'str'),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        if not params['name']:
-            raise MissingArgumentError('name')
-
-        es_connection = self.get_connection().get_es()
-        es_connection.delete(
-            index=self.config.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            id=params['name'],
-            refresh=True,
-        )
+        return json.loads(open(file_path, 'r').read())

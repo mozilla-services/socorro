@@ -10,9 +10,6 @@ from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib.datetimeutil import utc_now
 from .unittestbase import ElasticSearchTestCase
-from .test_supersearch import (
-    SUPERSEARCH_FIELDS
-)
 
 # Remove debugging noise during development
 # import logging
@@ -39,6 +36,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         config = self.get_config_context()
         self.storage = crashstorage.ElasticSearchCrashStorage(config)
+        self.api = SuperSearch(config=config)
 
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()
@@ -48,17 +46,6 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         # Create the index that will be used.
         es_index = self.storage.get_index_for_crash(self.now)
         self.storage.create_socorro_index(es_index)
-
-        # Create the supersearch fields.
-        self.storage.es.bulk_index(
-            index=config.webapi.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            docs=SUPERSEARCH_FIELDS.values(),
-            id_field='name',
-            refresh=True,
-        )
-
-        self.api = SuperSearch(config=config)
 
         # This an ugly hack to give elasticsearch some time to finish creating
         # the new index. It is needed for jenkins only, because we have a
