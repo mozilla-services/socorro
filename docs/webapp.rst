@@ -52,8 +52,12 @@ the top of
 ``webapp-django/crashstats/crashstats/management/__init__.py``. That
 file also defines some default groups.
 
-This file is executed when you run ``./manage.py syncdb``, something
-that is done automatically on every release. Because it's idempotent
+This file is executed when you run:
+::
+  cd webapp-django
+  ./manage.py syncdb --noinput
+
+This should be done automatically on every release. Because it's idempotent
 it can be run repeatedly without creating any duplicates.
 
 Note: Removing a permission for this file (assuming you know it's
@@ -116,6 +120,7 @@ above starts to make sense. To do that, you first need to **sign in at
 least once** using the email address you want to identify as a
 superuser. Once you've done that, run the following command::
 
+    cd webapp-django
     ./manage.py makesuperuser theemail@address.com
 
 Now the user with this email address should see a link to "Admin" in
