@@ -83,7 +83,9 @@ var BugLinks = (function() {
                 var combined = status + ' ' + resolution + ' ' + summary;
                 $link.attr('title', escapeHtml(combined));
                 if ($link.parents('.bug_ids_expanded_list').length) {
-                    $link.after(' ' + escapeHtml(combined));
+                    $link.after(
+                        $('<span class="bug-summary">').text(combined)
+                    );
                 }
                 if (status && $.inArray(status, NOT_DONE_STATUSES) === -1) {
                     $link.addClass("strike");

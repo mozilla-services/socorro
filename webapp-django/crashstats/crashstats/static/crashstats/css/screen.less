@@ -1219,7 +1219,8 @@ th.bugzilla_numbers {
     margin-top: 1em;
     padding: 1em;
     border: solid 1px #CCC;
-    max-width: 300px;
+    min-width: 300px;
+    width: 50%;
     .rounded-corners(3px);
     h3 {
         margin-bottom: 0.3em;
@@ -1227,6 +1228,10 @@ th.bugzilla_numbers {
         code {
             word-wrap: break-word;
         }
+    }
+    .bug-summary {
+        word-wrap: break-word;
+        margin-left: 3px;
     }
 }
 .sorted_bug_ids {
@@ -1236,7 +1241,7 @@ th.bugzilla_numbers {
 }
 .full_bug_ids.popup {
     li {
-        float: left;
+        word-break: break-all;
     }
 }
 .sorted_bug_ids.full {
@@ -1249,6 +1254,8 @@ th.bugzilla_numbers {
 }
 .full_bug_ids {
     margin-left: 1.5em;
+    width: 100%;
+    padding: 0 2rem 0 1.5rem;
     li {
         margin: auto 0.5em 0.5em auto;
         list-style-type: none;
