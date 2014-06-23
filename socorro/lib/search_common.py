@@ -7,7 +7,6 @@ Common functions for search-related external modules.
 """
 
 import datetime
-import json
 
 import socorro.lib.external_common as extern
 from socorro.external import BadArgumentError, MissingArgumentError
@@ -329,8 +328,6 @@ def convert_to_type(value, data_type):
         value = datetimeutil.string_to_datetime(value)
     elif data_type == 'date' and not isinstance(value, datetime.date):
         value = datetimeutil.string_to_datetime(value).date()
-    elif data_type == 'json' and isinstance(value, basestring):
-        value = json.loads(value)
     return value
 
 

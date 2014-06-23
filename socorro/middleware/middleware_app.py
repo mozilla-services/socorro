@@ -226,12 +226,6 @@ class MiddlewareApp(App):
         from_string_converter=string_to_list,
         reference_value_from='resource.elasticsearch',
     )
-    required_config.add_option(
-        'elasticsearch_default_index',
-        default='socorro',
-        doc='the default index used to store data',
-        reference_value_from='resource.elasticsearch',
-    )
     required_config.webapi.add_option(
         'elasticsearch_index',
         default='socorro%Y%W',
