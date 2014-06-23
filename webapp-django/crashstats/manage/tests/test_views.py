@@ -1042,12 +1042,8 @@ class TestViews(BaseTestViews):
 
         def mocked_put(url, data, **options):
             assert '/supersearch/field/' in url
-
-            ok_('name' in data)
-            ok_('description' in data)
-            ok_('is_returned' in data)
-
-            ok_(not data['is_returned'])
+            assert 'name' in data
+            assert 'description' in data
 
             return Response(True)
 
@@ -1060,7 +1056,6 @@ class TestViews(BaseTestViews):
                 'name': 'something',
                 'in_database_name': 'something',
                 'description': 'hello world',
-                'is_returned': False,
             }
         )
         eq_(response.status_code, 302)
