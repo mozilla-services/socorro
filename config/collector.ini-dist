@@ -190,7 +190,7 @@
     # name: ip_address
     # doc: the IP address from which to accept submissions
     # converter: str
-    ip_address='127.0.0.1'
+    ip_address='0.0.0.0'
 
     # name: port
     # doc: the port to listen to for submissions
