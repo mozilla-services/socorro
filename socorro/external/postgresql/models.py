@@ -269,7 +269,7 @@ class CorrelationsAddon(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
-    total = Column(u'total', BIGINT())
+    total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
 
 
@@ -283,7 +283,7 @@ class CorrelationsCore(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
-    total = Column(u'total', BIGINT())
+    total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
 
 
@@ -292,13 +292,21 @@ class CorrelationsModule(DeclarativeBase):
 
     #column definitions
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    module_name = Column(u'module_name', TEXT(), nullable=False)
-    module_version = Column(u'module_version', TEXT(), nullable=False)
+    module_id = Column(u'module_id', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
-    total = Column(u'total', BIGINT())
-    __mapper_args__ = {"primary_key": (product_version_id, module_name, module_version, report_date, os_name, signature_id)}
+    total = Column(u'total', INTEGER())
+    __mapper_args__ = {"primary_key": (product_version_id, module_id, report_date, os_name, signature_id)}
+
+
+class Module(DeclarativeBase):
+    __tablename__ = 'modules'
+
+    #column definitions
+    module_id = Column(u'module_id', INTEGER(), nullable=False, primary_key=True)
+    name = Column(u'name', TEXT(), nullable=False, primary_key=True)
+    version = Column(u'version', TEXT(), nullable=False, primary_key=True)
 
 
 class Extension(DeclarativeBase):
