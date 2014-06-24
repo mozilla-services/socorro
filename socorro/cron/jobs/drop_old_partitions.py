@@ -39,6 +39,6 @@ class DropOldPartitionsCronApp(BaseCronApp):
         cursor = connection.cursor()
         # Casting to date because stored procs in psql are strongly typed.
         cursor.execute(
-            "select drop_named_partitions('%s'::date)",
+            "select drop_named_partitions(%s::date)",
             (cut_off_date,)
         )
