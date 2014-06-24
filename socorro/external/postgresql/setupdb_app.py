@@ -62,10 +62,6 @@ class PostgreSQLAlchemyManager(object):
                 print "The DB %s doesn't exist" % db_config.database_name
 
     def create_database(self, db_config):
-        self.session.execute('commit')
-        self.session.execute('CREATE DATABASE %s' % db_config.database_name)
-
-    def set_encoding(self, db_config):
         try:
             # work around for autocommit behavior
             self.session.execute('commit')
@@ -82,7 +78,7 @@ class PostgreSQLAlchemyManager(object):
             raise
 
     def create_extensions(self):
-        print "creating extensions"
+        """ Create extensions in the current database """
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         # we only need to create the json extension for pg9.2.*
@@ -91,16 +87,8 @@ class PostgreSQLAlchemyManager(object):
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.commit()
 
-    #def setup_schemas(self):
-        #self.session.execute('CREATE SCHEMA bixie')
-        #self.session.execute('CREATE SCHEMA base')
-        #self.session.execute('CREATE SCHEMA normalized')
-        #self.session.execute(
-            #'GRANT ALL ON SCHEMA bixie, base, normalized, public TO breakpad_rw')
-        #self.commit()
-
     def create_types(self):
-        # read files from 'raw_sql' directory
+        """ Load types from files """
         app_path = os.getcwd()
         full_path = app_path + \
             '/socorro/external/postgresql/raw_sql/types/*.sql'
@@ -114,6 +102,7 @@ class PostgreSQLAlchemyManager(object):
         return True
 
     def create_tables(self, schema='all'):
+        """ Create tables based on defined schema """
         status = ''
         if schema == 'all':
             for schema in ['bixie', 'base', 'normalized']:
@@ -129,7 +118,7 @@ class PostgreSQLAlchemyManager(object):
         return status
 
     def create_procs(self):
-        # read files from 'raw_sql' directory
+        """ Load stored procedures from files """
         app_path = os.getcwd()
         full_path = app_path + \
             '/socorro/external/postgresql/raw_sql/procs/*.sql'
@@ -350,6 +339,7 @@ class PostgreSQLAlchemyManager(object):
             roles.append("ALTER ROLE %s WITH PASSWORD '%s'" %
                          (rw, config.default_password))
 
+        self.session.commit()
         for r in roles:
             try:
                 self.session.begin_nested()
@@ -638,9 +628,8 @@ class SocorroDB(App):
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
 
-
     def init_db(self, sa_url, db_config):
-        print sa_url
+        """ Create a brand new database and set base ROLEs """
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
             db.setup()
@@ -658,21 +647,15 @@ class SocorroDB(App):
                     if not confirm == "y":
                         logging.warn('NOT dropping database')
                         return 2
-                    else:
-                        db.drop_database(db_config)
-                else:
-                    db.drop_database(db_config)
+                db.drop_database(db_config)
 
-            print "creating database"
-            db.set_encoding(db_config)
+            db.create_database(db_config)
 
             # Set up a nice environment for the database
-            db.commit()
             db.create_roles(self.config)
-            #db.setup_schemas()
-            db.commit()
 
     def connection_url(self, db_config, usertype='nosuperuser'):
+        """ Create a SQLAlchemy connection URL based on config """
         url_template = 'postgresql://'
 
         if usertype == 'superuser':
@@ -694,12 +677,14 @@ class SocorroDB(App):
         return url_template
 
     def setup_global(self, db):
+        """ Add types, procs and set the sequence owner """
         db.create_types()
         db.create_procs()
         db.set_sequence_owner('breakpad_rw')
         db.commit()
 
     def setup_schemas_for(self, db, database_type):
+        """ Create a schema and tables for the database type """
         schemas = []
         if database_type == 'base':
             db.setup_fdw(self.config)
@@ -734,15 +719,17 @@ class SocorroDB(App):
             db.commit()
 
             if db_config.database_type != 'base':
+                # TODO deal with views across schemas...
                 #db.create_views()
                 # TODO set up grants for base database
                 for schema in ['public', 'base', 'bixie']:
                     db.set_grants(self.config, schema)  # config has user lists
                 db.commit()
 
-                # Needs to be modified to support split schema
-                #if self.config['fakedata']:
-                    #self.generate_fakedata(db, self.config['fakedata_days'])
+                # TODO Needs to be modified to support multiple schemas
+                # TODO Needs to be modified to support split schema
+                if self.config['fakedata']:
+                    self.generate_fakedata(db, self.config['fakedata_days'])
                 db.commit()
 
             # Same for all database types
@@ -795,8 +782,6 @@ class SocorroDB(App):
             sa_url = url_template + '/%s' % 'postgres'
             self.init_db(sa_url, db_config)
             self.deploy_socorro(db_config)
-
-        # TODO Set up rest of schema
 
         return 0
 

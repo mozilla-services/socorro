@@ -204,8 +204,6 @@ ischema_names['build_type_enum'] = build_type_enum
 ###############################
 # Schema definition: base
 ###############################
-
-
 class RawCrashes(DeclarativeBase):
     __table_args__ = {'schema': 'base'}
     __tablename__ = 'raw_crashes'
@@ -292,6 +290,7 @@ class ReportsDuplicate(DeclarativeBase):
         Index('reports_duplicates_timestamp', date_processed, uuid),
     )
 
+
 class Skiplist(DeclarativeBase):
     __table_args__ = {'schema': 'base'}
     __tablename__ = 'skiplist'
@@ -299,262 +298,10 @@ class Skiplist(DeclarativeBase):
     category = Column(u'category', TEXT(), primary_key=True, nullable=False)
     rule = Column(u'rule', TEXT(), primary_key=True, nullable=False)
 
+
 ###############################
-# Schema definition: Tables
+# Schema definition: fdw
 ###############################
-
-class CrashAduByBuildSignature(DeclarativeBase):
-    __tablename__ = 'crash_adu_by_build_signature'
-
-    #column definitions
-    adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(), primary_key=True, autoincrement=True)
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
-    signature = Column(u'signature', CITEXT(), primary_key=False, nullable=False)
-    adu_date = Column(u'adu_date', DATE(), primary_key=False, nullable=False, index=True)
-    build_date = Column(u'build_date', DATE(), primary_key=False, nullable=False, index=True)
-    build_id = Column(u'buildid', NUMERIC(), nullable=False, server_default=text('0'))
-    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
-    adu_count = Column(u'adu_count', INTEGER(), nullable=False, server_default=text('0'))
-    os_name = Column(u'os_name', CITEXT(), primary_key=False, nullable=False)
-    channel = Column(u'channel', CITEXT(), primary_key=False, nullable=False)
-    product_name = Column(u'product_name', CITEXT(), primary_key=False, nullable=False)
-
-
-class EmailCampaignsContact(DeclarativeBase):
-    __tablename__ = 'email_campaigns_contacts'
-
-    #column definitions
-    email_campaigns_id = Column(u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id'))
-    email_contacts_id = Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id'))
-    status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
-
-    __mapper_args__ = {"primary_key": (email_campaigns_id, email_contacts_id)}
-    __table_args__ = (
-        Index('email_campaigns_contacts_mapping_unique', email_campaigns_id, email_contacts_id, unique=True),
-    )
-
-
-class Tcbs(DeclarativeBase):
-    __tablename__ = 'tcbs'
-
-    #column definitions
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)  # DEPRECATED
-    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
-    win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
-    mac_count = Column(u'mac_count', INTEGER(), nullable=False, server_default=text('0'))
-    lin_count = Column(u'lin_count', INTEGER(), nullable=False, server_default=text('0'))
-    hang_count = Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0'))
-    startup_count = Column(u'startup_count', INTEGER())
-    is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
-    build_type = Column(u'build_type', build_type())
-
-    __table_args__ = (
-        Index('idx_tcbs_product_version', product_version_id, report_date),
-    )
-
-
-class CorrelationsAddon(DeclarativeBase):
-    __tablename__ = 'correlations_addon'
-
-    #column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    addon_id = Column(u'addon_id', TEXT(), nullable=False)
-    addon_version = Column(u'addon_version', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    os_name = Column(u'os_name', TEXT(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
-    total = Column(u'total', BIGINT())
-    __mapper_args__ = {"primary_key": (product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
-
-
-class CorrelationsCore(DeclarativeBase):
-    __tablename__ = 'correlations_core'
-
-    #column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    cpu_arch = Column(u'cpu_arch', TEXT(), nullable=False)
-    cpu_count = Column(u'cpu_count', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    os_name = Column(u'os_name', TEXT(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
-    total = Column(u'total', BIGINT())
-    __mapper_args__ = {"primary_key": (product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
-
-
-class CorrelationsModule(DeclarativeBase):
-    __tablename__ = 'correlations_module'
-
-    #column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    module_name = Column(u'module_name', TEXT(), nullable=False)
-    module_version = Column(u'module_version', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    os_name = Column(u'os_name', TEXT(), nullable=False)
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
-    total = Column(u'total', BIGINT())
-    __mapper_args__ = {"primary_key": (product_version_id, module_name, module_version, report_date, os_name, signature_id)}
-
-
-class Extension(DeclarativeBase):
-    __tablename__ = 'extensions'
-
-    #column definitions
-    report_id = Column(u'report_id', INTEGER(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    extension_key = Column(u'extension_key', INTEGER(), nullable=False)
-    extension_id = Column(u'extension_id', TEXT(), nullable=False)
-    extension_version = Column(u'extension_version', TEXT())
-    uuid = Column(u'uuid', UUID())
-
-    __mapper_args__ = {"primary_key": (report_id, date_processed, extension_key, extension_id, extension_version)}
-
-
-class ExploitabilityReport(DeclarativeBase):
-    __tablename__ = 'exploitability_reports'
-
-    #column definitions
-    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), nullable=False)
-    product_name = Column(u'product_name', TEXT())
-    version_string = Column(u'version_string', TEXT())
-    signature = Column(u'signature', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
-    null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
-    none_count = Column(u'none_count', INTEGER(), nullable=False, server_default=text('0'))
-    low_count = Column(u'low_count', INTEGER(), nullable=False, server_default=text('0'))
-    medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
-    high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
-
-    __mapper_args__ = {"primary_key": (signature_id, product_version_id, report_date)}
-    __table_args__ = (
-        Index('exploitable_signature_date_idx', signature_id, product_version_id, report_date, unique=True),
-    )
-
-
-class PluginsReport(DeclarativeBase):
-    __tablename__ = 'plugins_reports'
-
-    #column definitions
-    report_id = Column(u'report_id', INTEGER(), nullable=False)
-    plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
-    version = Column(u'version', TEXT(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (report_id, plugin_id, date_processed, version)}
-
-
-class RawAdiLogs(DeclarativeBase):
-    __tablename__ = 'raw_adi_logs'
-
-    #column definitions
-    report_date = Column(u'report_date', DATE())
-    product_name = Column(u'product_name', TEXT())
-    product_os_platform = Column(u'product_os_platform', TEXT())
-    product_os_version = Column(u'product_os_version', TEXT())
-    product_version = Column(u'product_version', TEXT())
-    build = Column(u'build', TEXT())
-    build_channel = Column(u'build_channel', TEXT())
-    product_guid = Column(u'product_guid', TEXT())
-    count = Column(u'count', INTEGER())
-
-    __mapper_args__ = {"primary_key": (
-            report_date,
-            product_name,
-            product_os_platform,
-            product_os_version,
-            product_version,
-            build,
-            build_channel,
-            product_guid,
-            count
-        )
-    }
-
-
-class RawAdi(DeclarativeBase):
-    __tablename__ = 'raw_adi'
-
-    #column definitions
-    adi_count = Column(u'adi_count', INTEGER())
-    date = Column(u'date', DATE())
-    product_name = Column(u'product_name', TEXT())
-    product_os_platform = Column(u'product_os_platform', TEXT())
-    product_os_version = Column(u'product_os_version', TEXT())
-    product_version = Column(u'product_version', TEXT())
-    build = Column(u'build', TEXT())
-    product_guid = Column(u'product_guid', TEXT())
-    update_channel = Column(u'update_channel', TEXT())
-    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
-
-    __mapper_args__ = {"primary_key": (adi_count, date, product_name, product_version, product_os_platform, product_os_version, build, product_guid, update_channel)}
-    __table_args__ = (
-        Index(u'raw_adi_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
-    )
-
-
-class RawAdu(DeclarativeBase):
-    __tablename__ = 'raw_adu'
-
-    #column definitions
-    adu_count = Column(u'adu_count', INTEGER())
-    date = Column(u'date', DATE())
-    product_name = Column(u'product_name', TEXT())
-    product_os_platform = Column(u'product_os_platform', TEXT())
-    product_os_version = Column(u'product_os_version', TEXT())
-    product_version = Column(u'product_version', TEXT())
-    build = Column(u'build', TEXT())
-    build_channel = Column(u'build_channel', TEXT())  # DEPRECATED
-    product_guid = Column(u'product_guid', TEXT())
-    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
-    update_channel = Column(u'update_channel', TEXT())
-
-    __mapper_args__ = {"primary_key": (adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid, update_channel)}
-    __table_args__ = (
-        Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
-    )
-
-
-class ReplicationTest(DeclarativeBase):
-    __tablename__ = 'replication_test'
-
-    #column definitions
-    id = Column(u'id', SMALLINT())
-    test = Column(u'test', BOOLEAN())
-
-    __mapper_args__ = {"primary_key": (id, test)}
-
-
-class ReportsBad(DeclarativeBase):
-    __tablename__ = 'reports_bad'
-    uuid = Column(u'uuid', TEXT(), nullable=False)
-    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
-
-    __mapper_args__ = {"primary_key": (uuid)}
-
-
-class WindowsVersion(DeclarativeBase):
-    __tablename__ = 'windows_versions'
-    windows_version_name = Column(u'windows_version_name', CITEXT(), nullable=False)
-    major_version = Column(u'major_version', INTEGER(), nullable=False)
-    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (major_version, minor_version)}
-    __table_args__ = (
-        Index('windows_version_key', major_version, minor_version, unique=True),
-    )
-
-
-class SuspiciousCrashSignatures(DeclarativeBase):
-    __tablename__ = 'suspicious_crash_signatures'
-
-    id = Column(u'suspicious_crash_signature_id', Integer(), primary_key=True)
-    signature = Column(u'signature_id', Integer())
-    date = Column(u'report_date', TIMESTAMP(timezone=True))
-
 class NormalizedAddress(DeclarativeBase):
     __table_args__ = {'schema': 'normalized'}
     __tablename__ = 'addresses'
@@ -565,129 +312,6 @@ class NormalizedAddress(DeclarativeBase):
 
     __mapper_args__ = {"primary_key": (address_id, address)}
 
-class Address(DeclarativeBase):
-    __tablename__ = 'addresses'
-
-    #column definitions
-    address_id = Column(u'address_id', INTEGER(), primary_key=True, nullable=False)
-    address = Column(u'address', CITEXT(), nullable=False, index=True, unique=True)
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-
-
-class AlembicVersion(DeclarativeBase):
-    __tablename__ = 'alembic_version'
-
-    #column definitions
-    version_num = Column(u'version_num', VARCHAR(length=32), nullable=False)
-
-    #relationship definitions
-    __mapper_args__ = {"primary_key": (version_num)}
-
-
-class Bug(DeclarativeBase):
-    __tablename__ = 'bugs'
-
-    #column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    status = Column(u'status', TEXT())
-    resolution = Column(u'resolution', TEXT())
-    short_desc = Column(u'short_desc', TEXT())
-
-
-class BugAssociation(DeclarativeBase):
-    __tablename__ = 'bug_associations'
-
-    #column definitions
-    bug_id = Column(u'bug_id', INTEGER(), ForeignKey('bugs.id'), primary_key=True, nullable=False, index=True)
-    signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
-
-    #relationship definitions
-    bugs = relationship('Bug', primaryjoin='BugAssociation.bug_id==Bug.id')
-
-
-class BuildAdu(DeclarativeBase):
-    __tablename__ = 'build_adu'
-
-    #column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    adu_count = Column(u'adu_count', INTEGER(), nullable=False)
-
-    __table_args__ = (
-        Index('build_adu_key', product_version_id, build_date, adu_date, os_name, unique=True),
-    )
-
-
-class CrashType(DeclarativeBase):
-    __tablename__ = 'crash_types'
-
-    #column definitions
-    crash_type = Column(u'crash_type', CITEXT(), nullable=False, index=True, unique=True)
-    crash_type_id = Column(u'crash_type_id', INTEGER(), primary_key=True, nullable=False)
-    crash_type_short = Column(u'crash_type_short', CITEXT(), nullable=False, index=True, unique=True)
-    has_hang_id = Column(u'has_hang_id', BOOLEAN())
-    include_agg = Column(u'include_agg', BOOLEAN(), nullable=False, server_default=text('True'))
-    old_code = Column(u'old_code', CHAR(length=1), nullable=False)
-    process_type = Column(u'process_type', CITEXT(), ForeignKey('process_types.process_type'), nullable=False)
-
-    #relationship definitions
-    process_types = relationship('ProcessType', primaryjoin='CrashType.process_type==ProcessType.process_type')
-
-
-class CrashesByUser(DeclarativeBase):
-    __tablename__ = 'crashes_by_user'
-
-    #column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False)
-    crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey('crash_types.crash_type_id'), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', CITEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
-
-    #relationship definitions
-    crash_types = relationship('CrashType', primaryjoin='CrashesByUser.crash_type_id==CrashType.crash_type_id')
-
-
-class CrashesByUserBuild(DeclarativeBase):
-    __tablename__ = 'crashes_by_user_build'
-
-    #column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False)
-    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey('crash_types.crash_type_id'), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', CITEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
-
-    #relationship definitions
-    crash_types = relationship('CrashType', primaryjoin='CrashesByUserBuild.crash_type_id==CrashType.crash_type_id')
-
-
-class CrontabberState(DeclarativeBase):
-    __tablename__ = 'crontabber_state'
-
-    #column definitions
-    last_updated = Column(u'last_updated', TIMESTAMP(timezone=True), primary_key=True, nullable=False)
-    state = Column(u'state', TEXT(), nullable=False)
-
-    #__table_args__ = (
-        #Index('crontabber_state_one_row', DDL('((state IS NOT NULL))'), unique=True),
-    #)
-
-    #relationship definitions
-
-
-class DataDictionary(DeclarativeBase):
-    __tablename__ = 'data_dictionary'
-
-    #column definitions
-    raw_field = Column(u'raw_field', TEXT(), nullable=False, primary_key=True)
-    transforms = Column(u'transforms', JSON())
-    product = Column(u'product', TEXT())
 
 
 class NormalizedDomain(DeclarativeBase):
@@ -702,76 +326,6 @@ class NormalizedDomain(DeclarativeBase):
     __mapper_args__ = {"primary_key": (domain_id)}
 
 
-class Domain(DeclarativeBase):
-    __tablename__ = 'domains'
-
-    #column definitions
-    domain = Column(u'domain', CITEXT(), nullable=False, index=True, unique=True)
-    domain_id = Column(u'domain_id', INTEGER(), primary_key=True, nullable=False)
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-
-
-class EmailCampaign(DeclarativeBase):
-    __tablename__ = 'email_campaigns'
-
-    #column definitions
-    author = Column(u'author', TEXT(), nullable=False)
-    body = Column(u'body', TEXT(), nullable=False)
-    date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False, server_default=text('NOW()'))
-    email_count = Column(u'email_count', INTEGER(), server_default=text('0'))
-    end_date = Column(u'end_date', TIMESTAMP(timezone=True), nullable=False)
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    product = Column(u'product', TEXT(), nullable=False)
-    signature = Column(u'signature', TEXT(), nullable=False)
-    start_date = Column(u'start_date', TIMESTAMP(timezone=True), nullable=False)
-    status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
-    subject = Column(u'subject', TEXT(), nullable=False)
-    versions = Column(u'versions', TEXT(), nullable=False)
-
-    __table_args__ = (
-        Index('email_campaigns_product_signature_key', product, signature),
-    )
-
-    #relationship definitions
-    email_contacts = relationship('EmailContact', primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_contacts_id==EmailContact.id')
-
-
-class EmailContact(DeclarativeBase):
-    __tablename__ = 'email_contacts'
-
-    #column definitions
-    crash_date = Column(u'crash_date', TIMESTAMP(timezone=True))
-    email = Column(u'email', TEXT(), nullable=False, index=True, unique=True)
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    ooid = Column(u'ooid', TEXT())
-    subscribe_status = Column(u'subscribe_status', BOOLEAN(), server_default=text('True'))
-    subscribe_token = Column(u'subscribe_token', TEXT(), nullable=False, index=True, unique=True)
-
-    #relationship definitions
-    email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
-
-
-class Explosiveness(DeclarativeBase):
-    __tablename__ = 'explosiveness'
-
-    #column definitions
-    day0 = Column(u'day0', NUMERIC())
-    day1 = Column(u'day1', NUMERIC())
-    day2 = Column(u'day2', NUMERIC())
-    day3 = Column(u'day3', NUMERIC())
-    day4 = Column(u'day4', NUMERIC())
-    day5 = Column(u'day5', NUMERIC())
-    day6 = Column(u'day6', NUMERIC())
-    day7 = Column(u'day7', NUMERIC())
-    day8 = Column(u'day8', NUMERIC())
-    day9 = Column(u'day9', NUMERIC())
-    last_date = Column(u'last_date', DATE(), primary_key=True, nullable=False)
-    oneday = Column(u'oneday', NUMERIC())
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False, index=True)
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
-    threeday = Column(u'threeday', NUMERIC())
-
-
 class NormalizedFlashVersion(DeclarativeBase):
     __table_args__ = {'schema': 'normalized'}
     __tablename__ = 'flash_versions'
@@ -784,85 +338,6 @@ class NormalizedFlashVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (flash_version_id)}
 
 
-class FlashVersion(DeclarativeBase):
-    __tablename__ = 'flash_versions'
-
-    #column definitions
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-    flash_version = Column(u'flash_version', CITEXT(), nullable=False, index=True)
-    flash_version_id = Column(u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
-
-
-class HomePageGraph(DeclarativeBase):
-    __tablename__ = 'home_page_graph'
-
-    #column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
-    crash_hadu = Column(u'crash_hadu', NUMERIC(), nullable=False, server_default=text('0.0'))
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
-
-
-class HomePageGraphBuild(DeclarativeBase):
-    __tablename__ = 'home_page_graph_build'
-
-    #column definitions
-    adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
-    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
-
-
-class Job(DeclarativeBase):
-    __tablename__ = 'jobs'
-
-    #column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    message = Column(u'message', TEXT())
-    owner = Column(u'owner', INTEGER(), ForeignKey('processors.id'))
-    pathname = Column(u'pathname', VARCHAR(length=1024), nullable=False)
-    priority = Column(u'priority', INTEGER(), server_default=text('0'))
-    queueddatetime = Column(u'queueddatetime', TIMESTAMP(timezone=True))
-    starteddatetime = Column(u'starteddatetime', TIMESTAMP(timezone=True))
-    completeddatetime = Column(u'completeddatetime', TIMESTAMP(timezone=True))
-    success = Column(u'success', BOOLEAN())
-    uuid = Column(u'uuid', VARCHAR(length=50), nullable=False, index=True, unique=True)
-
-    __table_args__ = (
-        Index('jobs_completeddatetime_queueddatetime_key', completeddatetime, queueddatetime),
-        Index('jobs_owner_starteddatetime_key', owner, starteddatetime)
-    )
-
-    #relationship definitions
-    processors = relationship('Processor', primaryjoin='Job.owner==Processor.id')
-
-
-class NightlyBuild(DeclarativeBase):
-    __tablename__ = 'nightly_builds'
-
-    #column definitions
-    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    days_out = Column(u'days_out', INTEGER(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(), nullable=False)
-
-    __table_args__ = (
-        Index('nightly_builds_product_version_id_report_date', product_version_id, report_date),
-        Index('nightly_builds_key', product_version_id, build_date, days_out, unique=True)
-    )
-
-
-class OsName(DeclarativeBase):
-    __tablename__ = 'os_names'
-
-    #column definitions
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    os_short_name = Column(u'os_short_name', CITEXT(), nullable=False)
-
-
 class NormalizedOsNameMatch(DeclarativeBase):
     __table_args__ = {'schema': 'normalized'}
     __tablename__ = 'os_name_matches'
@@ -872,21 +347,6 @@ class NormalizedOsNameMatch(DeclarativeBase):
     os_name = Column(u'os_name', CITEXT(), nullable=False)
 
     __mapper_args__ = {"primary_key": (match_string, os_name)}
-
-
-class OsNameMatch(DeclarativeBase):
-    __tablename__ = 'os_name_matches'
-
-    #column definitions
-    match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), primary_key=True, nullable=False)
-
-    __table_args__ = (
-        Index('os_name_matches_key', os_name, match_string, unique=True),
-    )
-
-    #relationship definitions
-    os_names = relationship('OsName', primaryjoin='OsNameMatch.os_name==OsName.os_name')
 
 
 class NormalizedOsVersion(DeclarativeBase):
@@ -903,90 +363,6 @@ class NormalizedOsVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (os_version_id)}
 
 
-class OsVersion(DeclarativeBase):
-    __tablename__ = 'os_versions'
-
-    #column definitions
-    major_version = Column(u'major_version', INTEGER(), nullable=False)
-    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
-    os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), nullable=False)
-    os_version_id = Column(u'os_version_id', INTEGER(), primary_key=True, nullable=False)
-    os_version_string = Column(u'os_version_string', CITEXT())
-
-    #relationship definitions
-    os_names = relationship('OsName', primaryjoin='OsVersion.os_name==OsName.os_name')
-
-
-class Plugin(DeclarativeBase):
-    __tablename__ = 'plugins'
-
-    #column definitions
-    filename = Column(u'filename', TEXT(), nullable=False)
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    name = Column(u'name', TEXT(), nullable=False)
-
-    __table_args__ = (
-        Index('filename_name_key', filename, name, unique=True),
-    )
-
-
-class Priorityjob(DeclarativeBase):
-    __tablename__ = 'priorityjobs'
-
-    #column definitions
-    uuid = Column(u'uuid', VARCHAR(length=255), primary_key=True, nullable=False)
-
-
-class PriorityjobsLoggingSwitch(DeclarativeBase):
-    __tablename__ = 'priorityjobs_logging_switch'
-
-    #column definitions
-    log_jobs = Column(u'log_jobs', BOOLEAN(), primary_key=True, nullable=False)
-
-
-class ProcessType(DeclarativeBase):
-    __tablename__ = 'process_types'
-
-    #column definitions
-    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
-
-
-class Processor(DeclarativeBase):
-    __tablename__ = 'processors'
-
-    #column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    lastseendatetime = Column(u'lastseendatetime', TIMESTAMP(timezone=True))
-    name = Column(u'name', VARCHAR(length=255), nullable=False)
-    startdatetime = Column(u'startdatetime', TIMESTAMP(timezone=True), nullable=False)
-
-
-class Product(DeclarativeBase):
-    __tablename__ = 'products'
-
-    #column definitions
-    product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
-    rapid_beta_version = Column(u'rapid_beta_version', MAJOR_VERSION())
-    rapid_release_version = Column(u'rapid_release_version', MAJOR_VERSION())
-    release_name = Column(u'release_name', CITEXT(), nullable=False)
-    sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
-
-    #relationship definitions
-    release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')  # DEPRECATED
-    product_versions = relationship('Product', primaryjoin='Product.product_name==ProductVersion.product_name', secondary='ProductVersion', secondaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
-    signatures = relationship('Signature', primaryjoin='Product.product_name==SignatureProductsRollup.product_name', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
-
-
-class ProductAdu(DeclarativeBase):
-    __tablename__ = 'product_adu'
-
-    #column definitions
-    adu_count = Column(u'adu_count', BIGINT(), nullable=False, server_default=text('0'))
-    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
-    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-
-
 class NormalizedProductProductidMap(DeclarativeBase):
     __table_args__ = {'schema': 'normalized'}
     __tablename__ = 'product_productid_map'
@@ -999,51 +375,6 @@ class NormalizedProductProductidMap(DeclarativeBase):
     version_ended = Column(u'version_ended', MAJOR_VERSION())
 
     __mapper_args__ = {"primary_key": (productid)}
-
-
-class ProductProductidMap(DeclarativeBase):
-    __tablename__ = 'product_productid_map'
-
-    #column definitions
-    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False)
-    productid = Column(u'productid', TEXT(), primary_key=True, nullable=False)
-    rewrite = Column(u'rewrite', BOOLEAN(), nullable=False, server_default=text('False'))
-    version_began = Column(u'version_began', MAJOR_VERSION())
-    version_ended = Column(u'version_ended', MAJOR_VERSION())
-
-    __table_args__ = (
-        Index('productid_map_key2', product_name, version_began, unique=True),
-    )
-
-    #relationship definitions
-    products = relationship('Product', primaryjoin='ProductProductidMap.product_name==Product.product_name')
-
-
-# DEPRECATED -> ProductBuildType
-class ProductReleaseChannel(DeclarativeBase):
-    __tablename__ = 'product_release_channels'
-
-    #column definitions
-    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
-    throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
-
-    #relationship definitions
-    release_channels = relationship('ReleaseChannel', primaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
-    products = relationship('Product', primaryjoin='ProductReleaseChannel.product_name==Product.product_name')
-
-
-class ProductBuildType(DeclarativeBase):
-    """ Human-defined list of build_types, mapped to product names; includes processing throttle setting """
-    __tablename__ = 'product_build_types'
-
-    #column definitions
-    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
-    build_type = Column(build_type(), primary_key=True, nullable=False)
-    throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
-
-    #relationship definitions
-    products = relationship('Product', primaryjoin='ProductBuildType.product_name==Product.product_name')
 
 
 class NormalizedProductVersion(DeclarativeBase):
@@ -1076,42 +407,6 @@ class NormalizedProductVersion(DeclarativeBase):
     __mapper_args__ = {"primary_key": (product_version_id)}
 
 
-class ProductVersion(DeclarativeBase):
-    __tablename__ = 'product_versions'
-
-    #column definitions
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False, index=True)
-    major_version = Column(u'major_version', MAJOR_VERSION(), index=True)
-    release_version = Column(u'release_version', CITEXT(), nullable=False)
-    version_string = Column(u'version_string', CITEXT(), nullable=False)
-    beta_number = Column(u'beta_number', INTEGER())
-    version_sort = Column(u'version_sort', TEXT(), nullable=False, server_default="0", index=True)
-    build_date = Column(u'build_date', DATE(), nullable=False)
-    sunset_date = Column(u'sunset_date', DATE(), nullable=False)
-    featured_version = Column(u'featured_version', BOOLEAN(), nullable=False, server_default=text('False'))
-    build_type = Column(u'build_type', CITEXT(), nullable=False, server_default='release')  # DEPRECATED
-    has_builds = Column(u'has_builds', BOOLEAN())
-    is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
-    rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
-    build_type_enum = Column(u'build_type_enum', build_type_enum())
-    # Above is a transition definition.
-    # We will rename build_type_enum to build_type once old CITEXT column
-    # is fully deprecated, also make this part of the primary key later. It
-    # will look like this:
-    # build_type = Column(u'build_type_enum', build_type_enum(), nullable=False, server_default='release')
-    version_build = Column(u'version_build', TEXT())  # Replaces 'beta_number'
-
-    __table_args__ = (
-        Index('product_version_version_key', product_name, version_string, unique=True),
-        #Index('product_version_unique_beta', text('(product_versions product_name, release_version, beta_number) WHERE (beta_number IS NOT NULL)'), unique=True)
-    )
-
-    #relationship definitions
-    products = relationship('Product', primaryjoin='ProductVersion.product_version_id==ProductVersion.rapid_beta_id', secondary='ProductVersion', secondaryjoin='ProductVersion.product_name==Product.product_name')
-    product_versions = relationship('ProductVersion', primaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
-
-
 class NormalizedProductVersionBuild(DeclarativeBase):
     __table_args__ = {'schema': 'normalized'}
     __tablename__ = 'product_version_builds'
@@ -1125,37 +420,6 @@ class NormalizedProductVersionBuild(DeclarativeBase):
     __mapper_args__ = {"primary_key": (build_id, platform, product_version_id)}
 
 
-class ProductVersionBuild(DeclarativeBase):
-    __tablename__ = 'product_version_builds'
-
-    #column definitions
-    build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
-    platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
-    repository = Column(u'repository', CITEXT())
-
-    #relationship definitions
-    product_versions = relationship('ProductVersion', primaryjoin='ProductVersionBuild.product_version_id==ProductVersion.product_version_id')
-
-
-class RankCompare(DeclarativeBase):
-    __tablename__ = 'rank_compare'
-
-    #column definitions
-    percent_of_total = Column(u'percent_of_total', NUMERIC())
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    rank_days = Column(u'rank_days', INTEGER(), primary_key=True, nullable=False)
-    rank_report_count = Column(u'rank_report_count', INTEGER())
-    report_count = Column(u'report_count', INTEGER())
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
-    total_reports = Column(u'total_reports', BIGINT())
-
-    # Indexes
-    __table_args__ = (
-        Index('rank_compare_product_version_id_rank_report_count', product_version_id, rank_report_count),
-    )
-
-
 class NormalizedReason(DeclarativeBase):
     __table_args__ = {'schema': 'normalized'}
     __tablename__ = 'reasons'
@@ -1166,85 +430,6 @@ class NormalizedReason(DeclarativeBase):
     reason_id = Column(u'reason_id', INTEGER(), nullable=False)
 
     __mapper_args__ = {"primary_key": (reason_id)}
-
-
-class Reason(DeclarativeBase):
-    __tablename__ = 'reasons'
-
-    #column definitions
-    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
-    reason = Column(u'reason', CITEXT(), nullable=False, index=True, unique=True)
-    reason_id = Column(u'reason_id', INTEGER(), primary_key=True, nullable=False)
-
-
-# DEPRECATED -> build_type ENUM
-class ReleaseChannel(DeclarativeBase):
-    __tablename__ = 'release_channels'
-
-    #column definitions
-    release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
-    sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
-
-    #relationship definitions
-    products = relationship('Product', primaryjoin='ReleaseChannel.release_channel==ProductReleaseChannel.release_channel', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.product_name==Product.product_name')
-    signatures = relationship('Signature', primaryjoin='ReleaseChannel.release_channel==Tcbs.release_channel', secondary='Tcbs', secondaryjoin='Tcbs.signature_id==Signature.signature_id')
-
-
-# DEPRECATED -> enum that's translated to a table for 001_update_reports_clean.sql
-class ReleaseChannelMatch(DeclarativeBase):
-    __tablename__ = 'release_channel_matches'
-
-    #column definitions
-    match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
-    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
-
-    #relationship definitions
-    release_channels = relationship('ReleaseChannel', primaryjoin='ReleaseChannelMatch.release_channel==ReleaseChannel.release_channel')
-
-
-class ReleaseRepository(DeclarativeBase):
-    __tablename__ = 'release_repositories'
-
-    #column definitions
-    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
-
-
-class ReleasesRaw(DeclarativeBase):
-    __tablename__ = 'releases_raw'
-
-    #column definitions
-    beta_number = Column(u'beta_number', INTEGER())
-    build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
-    build_type = Column(u'build_type', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED COLUMN -- vendor supplied data, so this is a channel, not a type, use 'update_channel' instead
-    platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
-    product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
-    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False, server_default='mozilla-release')
-    version = Column(u'version', TEXT(), primary_key=True, nullable=False)
-    update_channel = Column(u'update_channel', TEXT())
-    # Above is a transition definition.
-    # Ultimately we will define build_type as follows:
-    # update_channel = Column(u'update_channel', TEXT(), primary_key=True, nullable=False)
-    version_build = Column(u'version_build', TEXT())
-
-    #relationship definitions
-
-    __table_args__ = {}
-    # TODO function-based index
-    # from sqlalchemy import func
-    # Index('releases_raw_date', func.build_date(build_id));
-
-
-class ReportPartitionInfo(DeclarativeBase):
-    __tablename__ = 'report_partition_info'
-
-    #column definitions
-    build_order = Column(u'build_order', INTEGER(), nullable=False, server_default=text('1'))
-    fkeys = Column(u'fkeys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
-    indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
-    keys = Column(u'keys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
-    table_name = Column(u'table_name', CITEXT(), primary_key=True, nullable=False)
-    partition_column = Column(u'partition_column', TEXT(), nullable=False)
-    timetype = Column(u'timetype', TEXT(), nullable=False)
 
 
 class NormalizedReportsClean(DeclarativeBase):
@@ -1284,7 +469,897 @@ class NormalizedReportsClean(DeclarativeBase):
     __mapper_args__ = {"primary_key": (uuid)}
 
 
+class NormalizedUpdateChannelMap(DeclarativeBase):
+    """ Human-defined mapping from raw_update_channel to new update_channel name for reports_clean """
+    __table_args__ = {'schema': 'normalized'}
+    __tablename__ = 'update_channel_map'
+
+    update_channel = Column(u'update_channel', CITEXT(), nullable=False)
+    productid = Column(u'productid', TEXT(), nullable=False)
+    version_field = Column(u'version_field', TEXT(), nullable=False)
+    rewrite = Column(u'rewrite', JSON(), nullable=False)
+
+    __mapper_args__ = {"primary_key": (update_channel, productid, version_field)}
+
+
+###############################
+# Schema definition: Tables
+###############################
+class CrashAduByBuildSignature(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'crash_adu_by_build_signature'
+
+    #column definitions
+    adu_by_build_id = Column(u'crash_adu_by_build_signature_id', INTEGER(), primary_key=True, autoincrement=True)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
+    signature = Column(u'signature', CITEXT(), primary_key=False, nullable=False)
+    adu_date = Column(u'adu_date', DATE(), primary_key=False, nullable=False, index=True)
+    build_date = Column(u'build_date', DATE(), primary_key=False, nullable=False, index=True)
+    build_id = Column(u'buildid', NUMERIC(), nullable=False, server_default=text('0'))
+    crash_count = Column(u'crash_count', INTEGER(), nullable=False, server_default=text('0'))
+    adu_count = Column(u'adu_count', INTEGER(), nullable=False, server_default=text('0'))
+    os_name = Column(u'os_name', CITEXT(), primary_key=False, nullable=False)
+    channel = Column(u'channel', CITEXT(), primary_key=False, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), primary_key=False, nullable=False)
+
+
+class EmailCampaignsContact(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'email_campaigns_contacts'
+
+    #column definitions
+    email_campaigns_id = Column(u'email_campaigns_id', INTEGER(), ForeignKey('email_campaigns.id'))
+    email_contacts_id = Column(u'email_contacts_id', INTEGER(), ForeignKey('email_contacts.id'))
+    status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
+
+    __mapper_args__ = {"primary_key": (email_campaigns_id, email_contacts_id)}
+    __table_args__ = (
+        Index('email_campaigns_contacts_mapping_unique', email_campaigns_id, email_contacts_id, unique=True),
+    )
+
+
+class Tcbs(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'tcbs'
+
+    #column definitions
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)  # DEPRECATED
+    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
+    win_count = Column(u'win_count', INTEGER(), nullable=False, server_default=text('0'))
+    mac_count = Column(u'mac_count', INTEGER(), nullable=False, server_default=text('0'))
+    lin_count = Column(u'lin_count', INTEGER(), nullable=False, server_default=text('0'))
+    hang_count = Column(u'hang_count', INTEGER(), nullable=False, server_default=text('0'))
+    startup_count = Column(u'startup_count', INTEGER())
+    is_gc_count = Column(u'is_gc_count', INTEGER(), server_default=text('0'))
+    build_type = Column(u'build_type', build_type())
+
+    __table_args__ = (
+        Index('idx_tcbs_product_version', product_version_id, report_date),
+    )
+
+
+class CorrelationsAddon(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'correlations_addon'
+
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
+    addon_id = Column(u'addon_id', TEXT(), nullable=False)
+    addon_version = Column(u'addon_version', TEXT(), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    os_name = Column(u'os_name', TEXT(), nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
+    total = Column(u'total', BIGINT())
+    __mapper_args__ = {"primary_key": (product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
+
+
+class CorrelationsCore(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'correlations_core'
+
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
+    cpu_arch = Column(u'cpu_arch', TEXT(), nullable=False)
+    cpu_count = Column(u'cpu_count', TEXT(), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    os_name = Column(u'os_name', TEXT(), nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
+    total = Column(u'total', BIGINT())
+    __mapper_args__ = {"primary_key": (product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
+
+
+class CorrelationsModule(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'correlations_module'
+
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
+    module_name = Column(u'module_name', TEXT(), nullable=False)
+    module_version = Column(u'module_version', TEXT(), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    os_name = Column(u'os_name', TEXT(), nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
+    total = Column(u'total', BIGINT())
+    __mapper_args__ = {"primary_key": (product_version_id, module_name, module_version, report_date, os_name, signature_id)}
+
+
+class Extension(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'extensions'
+
+    #column definitions
+    report_id = Column(u'report_id', INTEGER(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+    extension_key = Column(u'extension_key', INTEGER(), nullable=False)
+    extension_id = Column(u'extension_id', TEXT(), nullable=False)
+    extension_version = Column(u'extension_version', TEXT())
+    uuid = Column(u'uuid', UUID())
+
+    __mapper_args__ = {"primary_key": (report_id, date_processed, extension_key, extension_id, extension_version)}
+
+
+class ExploitabilityReport(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'exploitability_reports'
+
+    #column definitions
+    signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), nullable=False)
+    product_name = Column(u'product_name', TEXT())
+    version_string = Column(u'version_string', TEXT())
+    signature = Column(u'signature', TEXT(), nullable=False)
+    report_date = Column(u'report_date', DATE(), nullable=False, index=True)
+    null_count = Column(u'null_count', INTEGER(), nullable=False, server_default=text('0'))
+    none_count = Column(u'none_count', INTEGER(), nullable=False, server_default=text('0'))
+    low_count = Column(u'low_count', INTEGER(), nullable=False, server_default=text('0'))
+    medium_count = Column(u'medium_count', INTEGER(), nullable=False, server_default=text('0'))
+    high_count = Column(u'high_count', INTEGER(), nullable=False, server_default=text('0'))
+
+    __mapper_args__ = {"primary_key": (signature_id, product_version_id, report_date)}
+    __table_args__ = (
+        Index('exploitable_signature_date_idx', signature_id, product_version_id, report_date, unique=True),
+    )
+
+
+class PluginsReport(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'plugins_reports'
+
+    #column definitions
+    report_id = Column(u'report_id', INTEGER(), nullable=False)
+    plugin_id = Column(u'plugin_id', INTEGER(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True))
+    version = Column(u'version', TEXT(), nullable=False)
+
+    __mapper_args__ = {"primary_key": (report_id, plugin_id, date_processed, version)}
+
+
+class RawAdiLogs(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'raw_adi_logs'
+
+    #column definitions
+    report_date = Column(u'report_date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    build_channel = Column(u'build_channel', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+    count = Column(u'count', INTEGER())
+
+    __mapper_args__ = {"primary_key": (
+            report_date,
+            product_name,
+            product_os_platform,
+            product_os_version,
+            product_version,
+            build,
+            build_channel,
+            product_guid,
+            count
+        )
+    }
+
+
+class RawAdi(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'raw_adi'
+
+    #column definitions
+    adi_count = Column(u'adi_count', INTEGER())
+    date = Column(u'date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+    update_channel = Column(u'update_channel', TEXT())
+    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
+
+    __mapper_args__ = {"primary_key": (adi_count, date, product_name, product_version, product_os_platform, product_os_version, build, product_guid, update_channel)}
+    __table_args__ = (
+        Index(u'raw_adi_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
+    )
+
+
+class RawAdu(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'raw_adu'
+
+    #column definitions
+    adu_count = Column(u'adu_count', INTEGER())
+    date = Column(u'date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    build_channel = Column(u'build_channel', TEXT())  # DEPRECATED
+    product_guid = Column(u'product_guid', TEXT())
+    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
+    update_channel = Column(u'update_channel', TEXT())
+
+    __mapper_args__ = {"primary_key": (adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid, update_channel)}
+    __table_args__ = (
+        Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
+    )
+
+
+class ReplicationTest(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'replication_test'
+
+    #column definitions
+    id = Column(u'id', SMALLINT())
+    test = Column(u'test', BOOLEAN())
+
+    __mapper_args__ = {"primary_key": (id, test)}
+
+
+class ReportsBad(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'reports_bad'
+    uuid = Column(u'uuid', TEXT(), nullable=False)
+    date_processed = Column(u'date_processed', TIMESTAMP(timezone=True), nullable=False)
+
+    __mapper_args__ = {"primary_key": (uuid)}
+
+
+class WindowsVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'windows_versions'
+    windows_version_name = Column(u'windows_version_name', CITEXT(), nullable=False)
+    major_version = Column(u'major_version', INTEGER(), nullable=False)
+    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
+
+    __mapper_args__ = {"primary_key": (major_version, minor_version)}
+    __table_args__ = (
+        Index('windows_version_key', major_version, minor_version, unique=True),
+    )
+
+
+class SuspiciousCrashSignatures(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'suspicious_crash_signatures'
+
+    id = Column(u'suspicious_crash_signature_id', Integer(), primary_key=True)
+    signature = Column(u'signature_id', Integer())
+    date = Column(u'report_date', TIMESTAMP(timezone=True))
+
+class Address(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'addresses'
+
+    #column definitions
+    address_id = Column(u'address_id', INTEGER(), primary_key=True, nullable=False)
+    address = Column(u'address', CITEXT(), nullable=False, index=True, unique=True)
+    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
+
+
+class AlembicVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'alembic_version'
+
+    #column definitions
+    version_num = Column(u'version_num', VARCHAR(length=32), nullable=False)
+
+    #relationship definitions
+    __mapper_args__ = {"primary_key": (version_num)}
+
+
+class Bug(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'bugs'
+
+    #column definitions
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    status = Column(u'status', TEXT())
+    resolution = Column(u'resolution', TEXT())
+    short_desc = Column(u'short_desc', TEXT())
+
+
+class BugAssociation(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'bug_associations'
+
+    #column definitions
+    bug_id = Column(u'bug_id', INTEGER(), ForeignKey('bugs.id'), primary_key=True, nullable=False, index=True)
+    signature = Column(u'signature', TEXT(), primary_key=True, nullable=False)
+
+    #relationship definitions
+    bugs = relationship('Bug', primaryjoin='BugAssociation.bug_id==Bug.id')
+
+
+class BuildAdu(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'build_adu'
+
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
+    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
+    adu_count = Column(u'adu_count', INTEGER(), nullable=False)
+
+    __table_args__ = (
+        Index('build_adu_key', product_version_id, build_date, adu_date, os_name, unique=True),
+    )
+
+
+class CrashType(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'crash_types'
+
+    #column definitions
+    crash_type = Column(u'crash_type', CITEXT(), nullable=False, index=True, unique=True)
+    crash_type_id = Column(u'crash_type_id', INTEGER(), primary_key=True, nullable=False)
+    crash_type_short = Column(u'crash_type_short', CITEXT(), nullable=False, index=True, unique=True)
+    has_hang_id = Column(u'has_hang_id', BOOLEAN())
+    include_agg = Column(u'include_agg', BOOLEAN(), nullable=False, server_default=text('True'))
+    old_code = Column(u'old_code', CHAR(length=1), nullable=False)
+    process_type = Column(u'process_type', CITEXT(), ForeignKey('process_types.process_type'), nullable=False)
+
+    #relationship definitions
+    process_types = relationship('ProcessType', primaryjoin='CrashType.process_type==ProcessType.process_type')
+
+
+class CrashesByUser(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'crashes_by_user'
+
+    #column definitions
+    adu = Column(u'adu', INTEGER(), nullable=False)
+    crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey('crash_types.crash_type_id'), primary_key=True, nullable=False)
+    os_short_name = Column(u'os_short_name', CITEXT(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+
+    #relationship definitions
+    crash_types = relationship('CrashType', primaryjoin='CrashesByUser.crash_type_id==CrashType.crash_type_id')
+
+
+class CrashesByUserBuild(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'crashes_by_user_build'
+
+    #column definitions
+    adu = Column(u'adu', INTEGER(), nullable=False)
+    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
+    crash_type_id = Column(u'crash_type_id', INTEGER(), ForeignKey('crash_types.crash_type_id'), primary_key=True, nullable=False)
+    os_short_name = Column(u'os_short_name', CITEXT(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+
+    #relationship definitions
+    crash_types = relationship('CrashType', primaryjoin='CrashesByUserBuild.crash_type_id==CrashType.crash_type_id')
+
+
+class CrontabberState(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'crontabber_state'
+
+    #column definitions
+    last_updated = Column(u'last_updated', TIMESTAMP(timezone=True), primary_key=True, nullable=False)
+    state = Column(u'state', TEXT(), nullable=False)
+
+    #__table_args__ = (
+        #Index('crontabber_state_one_row', DDL('((state IS NOT NULL))'), unique=True),
+    #)
+
+    #relationship definitions
+
+
+class DataDictionary(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'data_dictionary'
+
+    #column definitions
+    raw_field = Column(u'raw_field', TEXT(), nullable=False, primary_key=True)
+    transforms = Column(u'transforms', JSON())
+    product = Column(u'product', TEXT())
+
+
+class Domain(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'domains'
+
+    #column definitions
+    domain = Column(u'domain', CITEXT(), nullable=False, index=True, unique=True)
+    domain_id = Column(u'domain_id', INTEGER(), primary_key=True, nullable=False)
+    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
+
+
+class EmailCampaign(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'email_campaigns'
+
+    #column definitions
+    author = Column(u'author', TEXT(), nullable=False)
+    body = Column(u'body', TEXT(), nullable=False)
+    date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False, server_default=text('NOW()'))
+    email_count = Column(u'email_count', INTEGER(), server_default=text('0'))
+    end_date = Column(u'end_date', TIMESTAMP(timezone=True), nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    product = Column(u'product', TEXT(), nullable=False)
+    signature = Column(u'signature', TEXT(), nullable=False)
+    start_date = Column(u'start_date', TIMESTAMP(timezone=True), nullable=False)
+    status = Column(u'status', TEXT(), nullable=False, server_default='stopped')
+    subject = Column(u'subject', TEXT(), nullable=False)
+    versions = Column(u'versions', TEXT(), nullable=False)
+
+    __table_args__ = (
+        Index('email_campaigns_product_signature_key', product, signature),
+    )
+
+    #relationship definitions
+    email_contacts = relationship('EmailContact', primaryjoin='EmailCampaign.id==email_campaigns_contacts.c.email_campaigns_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_contacts_id==EmailContact.id')
+
+
+class EmailContact(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'email_contacts'
+
+    #column definitions
+    crash_date = Column(u'crash_date', TIMESTAMP(timezone=True))
+    email = Column(u'email', TEXT(), nullable=False, index=True, unique=True)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    ooid = Column(u'ooid', TEXT())
+    subscribe_status = Column(u'subscribe_status', BOOLEAN(), server_default=text('True'))
+    subscribe_token = Column(u'subscribe_token', TEXT(), nullable=False, index=True, unique=True)
+
+    #relationship definitions
+    email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
+
+
+class Explosiveness(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'explosiveness'
+
+    #column definitions
+    day0 = Column(u'day0', NUMERIC())
+    day1 = Column(u'day1', NUMERIC())
+    day2 = Column(u'day2', NUMERIC())
+    day3 = Column(u'day3', NUMERIC())
+    day4 = Column(u'day4', NUMERIC())
+    day5 = Column(u'day5', NUMERIC())
+    day6 = Column(u'day6', NUMERIC())
+    day7 = Column(u'day7', NUMERIC())
+    day8 = Column(u'day8', NUMERIC())
+    day9 = Column(u'day9', NUMERIC())
+    last_date = Column(u'last_date', DATE(), primary_key=True, nullable=False)
+    oneday = Column(u'oneday', NUMERIC())
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False, index=True)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
+    threeday = Column(u'threeday', NUMERIC())
+
+
+class FlashVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'flash_versions'
+
+    #column definitions
+    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
+    flash_version = Column(u'flash_version', CITEXT(), nullable=False, index=True)
+    flash_version_id = Column(u'flash_version_id', INTEGER(), primary_key=True, nullable=False)
+
+
+class HomePageGraph(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'home_page_graph'
+
+    #column definitions
+    adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
+    crash_hadu = Column(u'crash_hadu', NUMERIC(), nullable=False, server_default=text('0.0'))
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+
+
+class HomePageGraphBuild(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'home_page_graph_build'
+
+    #column definitions
+    adu = Column(u'adu', INTEGER(), nullable=False, server_default=text('0'))
+    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+
+
+class Job(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'jobs'
+
+    #column definitions
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    message = Column(u'message', TEXT())
+    owner = Column(u'owner', INTEGER(), ForeignKey('processors.id'))
+    pathname = Column(u'pathname', VARCHAR(length=1024), nullable=False)
+    priority = Column(u'priority', INTEGER(), server_default=text('0'))
+    queueddatetime = Column(u'queueddatetime', TIMESTAMP(timezone=True))
+    starteddatetime = Column(u'starteddatetime', TIMESTAMP(timezone=True))
+    completeddatetime = Column(u'completeddatetime', TIMESTAMP(timezone=True))
+    success = Column(u'success', BOOLEAN())
+    uuid = Column(u'uuid', VARCHAR(length=50), nullable=False, index=True, unique=True)
+
+    __table_args__ = (
+        Index('jobs_completeddatetime_queueddatetime_key', completeddatetime, queueddatetime),
+        Index('jobs_owner_starteddatetime_key', owner, starteddatetime)
+    )
+
+    #relationship definitions
+    processors = relationship('Processor', primaryjoin='Job.owner==Processor.id')
+
+
+class NightlyBuild(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'nightly_builds'
+
+    #column definitions
+    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
+    days_out = Column(u'days_out', INTEGER(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
+    report_date = Column(u'report_date', DATE(), nullable=False)
+
+    __table_args__ = (
+        Index('nightly_builds_product_version_id_report_date', product_version_id, report_date),
+        Index('nightly_builds_key', product_version_id, build_date, days_out, unique=True)
+    )
+
+
+class OsName(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'os_names'
+
+    #column definitions
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
+    os_short_name = Column(u'os_short_name', CITEXT(), nullable=False)
+
+
+class OsNameMatch(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'os_name_matches'
+
+    #column definitions
+    match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), primary_key=True, nullable=False)
+
+    __table_args__ = (
+        Index('os_name_matches_key', os_name, match_string, unique=True),
+    )
+
+    #relationship definitions
+    os_names = relationship('OsName', primaryjoin='OsNameMatch.os_name==OsName.os_name')
+
+
+class OsVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'os_versions'
+
+    #column definitions
+    major_version = Column(u'major_version', INTEGER(), nullable=False)
+    minor_version = Column(u'minor_version', INTEGER(), nullable=False)
+    os_name = Column(u'os_name', CITEXT(), ForeignKey('os_names.os_name'), nullable=False)
+    os_version_id = Column(u'os_version_id', INTEGER(), primary_key=True, nullable=False)
+    os_version_string = Column(u'os_version_string', CITEXT())
+
+    #relationship definitions
+    os_names = relationship('OsName', primaryjoin='OsVersion.os_name==OsName.os_name')
+
+
+class Plugin(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'plugins'
+
+    #column definitions
+    filename = Column(u'filename', TEXT(), nullable=False)
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    name = Column(u'name', TEXT(), nullable=False)
+
+    __table_args__ = (
+        Index('filename_name_key', filename, name, unique=True),
+    )
+
+
+class Priorityjob(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'priorityjobs'
+
+    #column definitions
+    uuid = Column(u'uuid', VARCHAR(length=255), primary_key=True, nullable=False)
+
+
+class PriorityjobsLoggingSwitch(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'priorityjobs_logging_switch'
+
+    #column definitions
+    log_jobs = Column(u'log_jobs', BOOLEAN(), primary_key=True, nullable=False)
+
+
+class ProcessType(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'process_types'
+
+    #column definitions
+    process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
+
+
+class Processor(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'processors'
+
+    #column definitions
+    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
+    lastseendatetime = Column(u'lastseendatetime', TIMESTAMP(timezone=True))
+    name = Column(u'name', VARCHAR(length=255), nullable=False)
+    startdatetime = Column(u'startdatetime', TIMESTAMP(timezone=True), nullable=False)
+
+
+class Product(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'products'
+
+    #column definitions
+    product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
+    rapid_beta_version = Column(u'rapid_beta_version', MAJOR_VERSION())
+    rapid_release_version = Column(u'rapid_release_version', MAJOR_VERSION())
+    release_name = Column(u'release_name', CITEXT(), nullable=False)
+    sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
+
+    #relationship definitions
+    release_channels = relationship('ReleaseChannel', primaryjoin='Product.product_name==ProductReleaseChannel.product_name', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')  # DEPRECATED
+    product_versions = relationship('Product', primaryjoin='Product.product_name==ProductVersion.product_name', secondary='ProductVersion', secondaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
+    signatures = relationship('Signature', primaryjoin='Product.product_name==SignatureProductsRollup.product_name', secondary='SignatureProductsRollup', secondaryjoin='SignatureProductsRollup.signature_id==Signature.signature_id')
+
+
+class ProductAdu(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'product_adu'
+
+    #column definitions
+    adu_count = Column(u'adu_count', BIGINT(), nullable=False, server_default=text('0'))
+    adu_date = Column(u'adu_date', DATE(), primary_key=True, nullable=False)
+    os_name = Column(u'os_name', CITEXT(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+
+
+class ProductProductidMap(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'product_productid_map'
+
+    #column definitions
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False)
+    productid = Column(u'productid', TEXT(), primary_key=True, nullable=False)
+    rewrite = Column(u'rewrite', BOOLEAN(), nullable=False, server_default=text('False'))
+    version_began = Column(u'version_began', MAJOR_VERSION())
+    version_ended = Column(u'version_ended', MAJOR_VERSION())
+
+    __table_args__ = (
+        Index('productid_map_key2', product_name, version_began, unique=True),
+    )
+
+    #relationship definitions
+    products = relationship('Product', primaryjoin='ProductProductidMap.product_name==Product.product_name')
+
+
+# DEPRECATED -> ProductBuildType
+class ProductReleaseChannel(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'product_release_channels'
+
+    #column definitions
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
+    throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
+
+    #relationship definitions
+    release_channels = relationship('ReleaseChannel', primaryjoin='ProductReleaseChannel.release_channel==ReleaseChannel.release_channel')
+    products = relationship('Product', primaryjoin='ProductReleaseChannel.product_name==Product.product_name')
+
+
+class ProductBuildType(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    """ Human-defined list of build_types, mapped to product names; includes processing throttle setting """
+    __tablename__ = 'product_build_types'
+
+    #column definitions
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), primary_key=True, nullable=False)
+    build_type = Column(build_type(), primary_key=True, nullable=False)
+    throttle = Column(u'throttle', NUMERIC(), nullable=False, server_default=text('1.0'))
+
+    #relationship definitions
+    products = relationship('Product', primaryjoin='ProductBuildType.product_name==Product.product_name')
+
+
+class ProductVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'product_versions'
+
+    #column definitions
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), ForeignKey('products.product_name'), nullable=False, index=True)
+    major_version = Column(u'major_version', MAJOR_VERSION(), index=True)
+    release_version = Column(u'release_version', CITEXT(), nullable=False)
+    version_string = Column(u'version_string', CITEXT(), nullable=False)
+    beta_number = Column(u'beta_number', INTEGER())
+    version_sort = Column(u'version_sort', TEXT(), nullable=False, server_default="0", index=True)
+    build_date = Column(u'build_date', DATE(), nullable=False)
+    sunset_date = Column(u'sunset_date', DATE(), nullable=False)
+    featured_version = Column(u'featured_version', BOOLEAN(), nullable=False, server_default=text('False'))
+    build_type = Column(u'build_type', CITEXT(), nullable=False, server_default='release')  # DEPRECATED
+    has_builds = Column(u'has_builds', BOOLEAN())
+    is_rapid_beta = Column(u'is_rapid_beta', BOOLEAN(), server_default=text('False'))
+    rapid_beta_id = Column(u'rapid_beta_id', INTEGER(), ForeignKey('product_versions.product_version_id'))
+    build_type_enum = Column(u'build_type_enum', build_type_enum())
+    # Above is a transition definition.
+    # We will rename build_type_enum to build_type once old CITEXT column
+    # is fully deprecated, also make this part of the primary key later. It
+    # will look like this:
+    # build_type = Column(u'build_type_enum', build_type_enum(), nullable=False, server_default='release')
+    version_build = Column(u'version_build', TEXT())  # Replaces 'beta_number'
+
+    __table_args__ = (
+        Index('product_version_version_key', product_name, version_string, unique=True),
+        #Index('product_version_unique_beta', text('(product_versions product_name, release_version, beta_number) WHERE (beta_number IS NOT NULL)'), unique=True)
+    )
+
+    #relationship definitions
+    products = relationship('Product', primaryjoin='ProductVersion.product_version_id==ProductVersion.rapid_beta_id', secondary='ProductVersion', secondaryjoin='ProductVersion.product_name==Product.product_name')
+    product_versions = relationship('ProductVersion', primaryjoin='ProductVersion.rapid_beta_id==ProductVersion.product_version_id')
+
+
+class ProductVersionBuild(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'product_version_builds'
+
+    #column definitions
+    build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
+    platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), ForeignKey('product_versions.product_version_id'), primary_key=True, nullable=False)
+    repository = Column(u'repository', CITEXT())
+
+    #relationship definitions
+    product_versions = relationship('ProductVersion', primaryjoin='ProductVersionBuild.product_version_id==ProductVersion.product_version_id')
+
+
+class RankCompare(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'rank_compare'
+
+    #column definitions
+    percent_of_total = Column(u'percent_of_total', NUMERIC())
+    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
+    rank_days = Column(u'rank_days', INTEGER(), primary_key=True, nullable=False)
+    rank_report_count = Column(u'rank_report_count', INTEGER())
+    report_count = Column(u'report_count', INTEGER())
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
+    total_reports = Column(u'total_reports', BIGINT())
+
+    # Indexes
+    __table_args__ = (
+        Index('rank_compare_product_version_id_rank_report_count', product_version_id, rank_report_count),
+    )
+
+
+class Reason(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'reasons'
+
+    #column definitions
+    first_seen = Column(u'first_seen', TIMESTAMP(timezone=True))
+    reason = Column(u'reason', CITEXT(), nullable=False, index=True, unique=True)
+    reason_id = Column(u'reason_id', INTEGER(), primary_key=True, nullable=False)
+
+
+# DEPRECATED -> build_type ENUM
+class ReleaseChannel(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'release_channels'
+
+    #column definitions
+    release_channel = Column(u'release_channel', CITEXT(), primary_key=True, nullable=False)
+    sort = Column(u'sort', SMALLINT(), nullable=False, server_default=text('0'))
+
+    #relationship definitions
+    products = relationship('Product', primaryjoin='ReleaseChannel.release_channel==ProductReleaseChannel.release_channel', secondary='ProductReleaseChannel', secondaryjoin='ProductReleaseChannel.product_name==Product.product_name')
+    signatures = relationship('Signature', primaryjoin='ReleaseChannel.release_channel==Tcbs.release_channel', secondary='Tcbs', secondaryjoin='Tcbs.signature_id==Signature.signature_id')
+
+
+# DEPRECATED -> enum that's translated to a table for 001_update_reports_clean.sql
+class ReleaseChannelMatch(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'release_channel_matches'
+
+    #column definitions
+    match_string = Column(u'match_string', TEXT(), primary_key=True, nullable=False)
+    release_channel = Column(u'release_channel', CITEXT(), ForeignKey('release_channels.release_channel'), primary_key=True, nullable=False)
+
+    #relationship definitions
+    release_channels = relationship('ReleaseChannel', primaryjoin='ReleaseChannelMatch.release_channel==ReleaseChannel.release_channel')
+
+
+class ReleaseRepository(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'release_repositories'
+
+    #column definitions
+    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False)
+
+
+class ReleasesRaw(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'releases_raw'
+
+    #column definitions
+    beta_number = Column(u'beta_number', INTEGER())
+    build_id = Column(u'build_id', NUMERIC(), primary_key=True, nullable=False)
+    build_type = Column(u'build_type', CITEXT(), primary_key=True, nullable=False)  # DEPRECATED COLUMN -- vendor supplied data, so this is a channel, not a type, use 'update_channel' instead
+    platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
+    product_name = Column(u'product_name', CITEXT(), primary_key=True, nullable=False)
+    repository = Column(u'repository', CITEXT(), primary_key=True, nullable=False, server_default='mozilla-release')
+    version = Column(u'version', TEXT(), primary_key=True, nullable=False)
+    update_channel = Column(u'update_channel', TEXT())
+    # Above is a transition definition.
+    # Ultimately we will define build_type as follows:
+    # update_channel = Column(u'update_channel', TEXT(), primary_key=True, nullable=False)
+    version_build = Column(u'version_build', TEXT())
+
+    #relationship definitions
+
+    __table_args__ = {}
+    # TODO function-based index
+    # from sqlalchemy import func
+    # Index('releases_raw_date', func.build_date(build_id));
+
+
+class ReportPartitionInfo(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
+    __tablename__ = 'report_partition_info'
+
+    #column definitions
+    build_order = Column(u'build_order', INTEGER(), nullable=False, server_default=text('1'))
+    fkeys = Column(u'fkeys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
+    indexes = Column(u'indexes', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
+    keys = Column(u'keys', ARRAY(TEXT()), nullable=False, server_default=text("'{}'::text[]"))
+    table_name = Column(u'table_name', CITEXT(), primary_key=True, nullable=False)
+    partition_column = Column(u'partition_column', TEXT(), nullable=False)
+    timetype = Column(u'timetype', TEXT(), nullable=False)
+
+
 class ReportsClean(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'reports_clean'
 
     #column definitions
@@ -1319,6 +1394,7 @@ class ReportsClean(DeclarativeBase):
 
 
 class ReportsUserInfo(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'reports_user_info'
 
     #column definitions
@@ -1331,6 +1407,7 @@ class ReportsUserInfo(DeclarativeBase):
 
 
 class ReprocessingJob(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'reprocessing_jobs'
 
     #column definitions
@@ -1339,6 +1416,7 @@ class ReprocessingJob(DeclarativeBase):
 
 
 class ServerStatu(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'server_status'
 
     #column definitions
@@ -1357,6 +1435,7 @@ class ServerStatu(DeclarativeBase):
 
 
 class Session(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'sessions'
 
     #column definitions
@@ -1366,6 +1445,7 @@ class Session(DeclarativeBase):
 
 
 class Signature(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signatures'
 
     #column definitions
@@ -1379,6 +1459,7 @@ class Signature(DeclarativeBase):
 
 
 class SignatureProduct(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_products'
 
     #column definitions
@@ -1391,6 +1472,7 @@ class SignatureProduct(DeclarativeBase):
 
 
 class SignatureProductsRollup(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_products_rollup'
 
     signature_id = Column(u'signature_id', INTEGER(), ForeignKey('signatures.signature_id'), primary_key=True, nullable=False)
@@ -1404,6 +1486,7 @@ class SignatureProductsRollup(DeclarativeBase):
 
 
 class AndroidDevice(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'android_devices'
 
     android_device_id = Column(u'android_device_id', INTEGER(), primary_key=True, nullable=False)
@@ -1414,6 +1497,7 @@ class AndroidDevice(DeclarativeBase):
 
 
 class GraphicsDevice(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'graphics_device'
 
     graphics_device_id = Column(u'graphics_device_id', INTEGER(), primary_key=True, nullable=False)
@@ -1424,6 +1508,7 @@ class GraphicsDevice(DeclarativeBase):
 
 
 class SignatureSummaryArchitecture(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_architecture'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1436,6 +1521,7 @@ class SignatureSummaryArchitecture(DeclarativeBase):
 
 
 class SignatureSummaryDevice(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_device'
 
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
@@ -1448,6 +1534,7 @@ class SignatureSummaryDevice(DeclarativeBase):
 
 
 class SignatureSummaryFlashVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_flash_version'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1460,6 +1547,7 @@ class SignatureSummaryFlashVersion(DeclarativeBase):
 
 
 class SignatureSummaryInstallations(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_installations'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1471,6 +1559,7 @@ class SignatureSummaryInstallations(DeclarativeBase):
 
 
 class SignatureSummaryOS(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_os'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1483,6 +1572,7 @@ class SignatureSummaryOS(DeclarativeBase):
 
 
 class SignatureSummaryProcessType(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_process_type'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1495,6 +1585,7 @@ class SignatureSummaryProcessType(DeclarativeBase):
 
 
 class SignatureSummaryProducts(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_products'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1506,6 +1597,7 @@ class SignatureSummaryProducts(DeclarativeBase):
 
 
 class SignatureSummaryUptime(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_uptime'
 
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
@@ -1518,6 +1610,7 @@ class SignatureSummaryUptime(DeclarativeBase):
 
 
 class SignatureSummaryGraphics(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'signature_summary_graphics'
 
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
@@ -1530,6 +1623,7 @@ class SignatureSummaryGraphics(DeclarativeBase):
 
 
 class SocorroDbVersion(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'socorro_db_version'
 
     #column definitions
@@ -1538,6 +1632,7 @@ class SocorroDbVersion(DeclarativeBase):
 
 
 class SocorroDbVersionHistory(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'socorro_db_version_history'
 
     #column definitions
@@ -1547,6 +1642,7 @@ class SocorroDbVersionHistory(DeclarativeBase):
 
 
 class SpecialProductPlatform(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     """ Currently used for android platform. Uses platform, product name, repo, build_type
         to rename a product_name """
     __tablename__ = 'special_product_platforms'
@@ -1565,6 +1661,7 @@ class SpecialProductPlatform(DeclarativeBase):
 
 
 class TcbsBuild(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'tcbs_build'
 
     #column definitions
@@ -1588,6 +1685,7 @@ class TcbsBuild(DeclarativeBase):
 
 
 class TransformRule(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'transform_rules'
 
     #column definitions
@@ -1607,6 +1705,7 @@ class TransformRule(DeclarativeBase):
 
 
 class UptimeLevel(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'uptime_levels'
 
     #column definitions
@@ -1617,6 +1716,7 @@ class UptimeLevel(DeclarativeBase):
 
 
 class Crontabber(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'crontabber'
 
     #column definitions
@@ -1635,6 +1735,7 @@ class Crontabber(DeclarativeBase):
 
 
 class CrontabberLog(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'crontabber_log'
 
     #column definitions
@@ -1655,6 +1756,7 @@ class CrontabberLog(DeclarativeBase):
 
 
 class LagLog(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'lag_log'
 
     replica_name = Column(u'replica_name', TEXT(), nullable=False)
@@ -1666,6 +1768,7 @@ class LagLog(DeclarativeBase):
 
 
 class GCCrashes(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     __tablename__ = 'gccrashes'
 
     report_date = Column(u'report_date', TIMESTAMP(timezone=True), nullable=False)
@@ -1677,6 +1780,7 @@ class GCCrashes(DeclarativeBase):
                                        gc_count_madu)}
 
 class RawUpdateChannel(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     """ Scraped information from reports table for release_channel/update_channel """
     __tablename__ = 'raw_update_channels'
 
@@ -1687,20 +1791,8 @@ class RawUpdateChannel(DeclarativeBase):
     first_report = Column(u'first_report', TIMESTAMP(timezone=True), nullable=False)
 
 
-class NormalizedUpdateChannelMap(DeclarativeBase):
-    """ Human-defined mapping from raw_update_channel to new update_channel name for reports_clean """
-    __table_args__ = {'schema': 'normalized'}
-    __tablename__ = 'update_channel_map'
-
-    update_channel = Column(u'update_channel', CITEXT(), nullable=False)
-    productid = Column(u'productid', TEXT(), nullable=False)
-    version_field = Column(u'version_field', TEXT(), nullable=False)
-    rewrite = Column(u'rewrite', JSON(), nullable=False)
-
-    __mapper_args__ = {"primary_key": (update_channel, productid, version_field)}
-
-
 class UpdateChannelMap(DeclarativeBase):
+    __table_args__ = {'schema': 'public'}
     """ Human-defined mapping from raw_update_channel to new update_channel name for reports_clean """
     __tablename__ = 'update_channel_map'
 
