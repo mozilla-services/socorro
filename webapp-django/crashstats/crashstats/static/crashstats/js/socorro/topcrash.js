@@ -12,8 +12,6 @@ var Correlations = (function() {
     // the different types of correlation reports
     var correlations = ['core-counts', 'interesting-addons',
                         'interesting-modules'];
-    // a hash table where we keep all unique signatures that have correlations
-    var all_signatures = {};
 
     function loadCorrelations(type, callback) {
         var url = SocReport.sig_base + '?correlation_report_type=' + type +
@@ -28,12 +26,7 @@ var Correlations = (function() {
             return osname;
         }).join(',');
 
-        $.getJSON(SocReport.sig_base, data, function (json) {
-            $.each(json.hits, function(i, sig) {
-                all_signatures[sig] = 1;
-            });
-            if (callback) callback();
-        });
+        if (callback) callback();
     }
 
     function expandCorrelation($element) {
@@ -119,11 +112,9 @@ var Correlations = (function() {
                    // let's finish up things
                    $('.signature').each(function() {
                        var signature = $(this).attr('title');
-                       if (all_signatures[signature] || false ) {
-                           $(this).parents('tr')
-                             .find('.correlation-toggler')
-                               .show();
-                       }
+                       $(this).parents('tr')
+                         .find('.correlation-toggler')
+                           .show();
                    });
 
                    $('.correlation-cell .top span').html('');

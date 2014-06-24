@@ -264,9 +264,9 @@ ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
 CORRELATION_REPORT_TYPES = (
     'core-counts',
     'interesting-addons',
-    'interesting-addons-with-versions',
+    'interesting-addons-with-version',
     'interesting-modules',
-    'interesting-modules-with-versions'
+    'interesting-modules-with-version'
 )
 
 # Default number of crashes to show on the Exploitable Crashes report

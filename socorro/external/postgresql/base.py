@@ -83,7 +83,7 @@ class PostgreSQLBase(object):
             if not connection:
                 connection = self.database.connection()
                 fresh_connection = True
-            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
+            #self.context.logger.debug(connection.cursor().mogrify(sql, params))
             results = execute_query_fetchall(connection, sql, params)
         except psycopg2.Error, e:
             if error_message is None:
@@ -116,7 +116,7 @@ class PostgreSQLBase(object):
             if not connection:
                 connection = self.database.connection()
                 fresh_connection = True
-            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
+            #self.context.logger.debug(connection.cursor().mogrify(sql, params))
             result = single_value_sql(connection, sql, params)
         except psycopg2.Error, e:
             if error_message is None:

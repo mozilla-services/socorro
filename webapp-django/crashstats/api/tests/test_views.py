@@ -1627,45 +1627,13 @@ class TestViews(BaseTestViews):
             'version': '1.0',
             'report_type': 'core-counts',
             'signature': 'one & two',
+            'report_date': '2014-01-01',
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
         eq_(dump['count'], 13)
         eq_(dump['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
         ok_(dump['load'])
-
-    @mock.patch('requests.get')
-    def test_CorrelationsSignatures(self, rget):
-
-        def mocked_get(url, params, **options):
-            assert '/correlations/signatures' in url
-            return Response("""
-                {
-                    "hits": ["FakeSignature1",
-                             "FakeSignature2"],
-                    "total": 2
-                }
-            """)
-
-        rget.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('CorrelationsSignatures',))
-        response = self.client.get(url)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['product'])
-        ok_(dump['errors']['version'])
-        ok_(dump['errors']['report_type'])
-
-        response = self.client.get(url, {
-            'platforms': 'Windows NT+Mac OS OX',
-            'product': 'WaterWolf',
-            'version': '1.0',
-            'report_type': 'core-counts',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        eq_(dump['hits'], [u'FakeSignature1', u'FakeSignature2'])
-        eq_(dump['total'], 2)
 
     def test_Field(self):
         url = reverse('api:model_wrapper', args=('Field',))
@@ -1692,6 +1660,7 @@ class TestViews(BaseTestViews):
             'version': '1.0',
             'report_type': 'core-counts',
             'signature': 'one & two',
+            'report_date': '2014-01-01',
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)

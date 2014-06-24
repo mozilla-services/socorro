@@ -1121,28 +1121,6 @@ def report_index(request, crash_id, default_context=None):
         reverse('crashstats:raw_data', args=(crash_id, 'json'))
     ]
 
-    correlations_api = models.CorrelationsSignatures()
-    total_correlations = 0
-    if 'os_name' in context['report']:
-        platform = context['report']['os_name']
-        for report_type in settings.CORRELATION_REPORT_TYPES:
-            try:
-                correlations = correlations_api.get(
-                    report_type=report_type,
-                    product=context['report']['product'],
-                    version=context['report']['version'],
-                    platforms=platform)
-                hits = correlations['hits'] if correlations else []
-                if context['report']['signature'] in hits:
-                    total_correlations += 1
-            except models.BadStatusCodeError:
-                # correlations failure should not block view
-                # bug 1005224 will move this to an asynchronous client
-                # request instead.
-                pass
-
-    context['total_correlations'] = total_correlations
-
     return render(request, 'crashstats/report_index.html', context)
 
 
@@ -1446,21 +1424,6 @@ def report_list(request, partial=None, default_context=None):
         if correlation_version is None:
             correlation_version = ''
         context['correlation_version'] = correlation_version
-
-        correlations_api = models.CorrelationsSignatures()
-        total_correlations = 0
-        if correlation_version and correlation_os:
-            for report_type in settings.CORRELATION_REPORT_TYPES:
-                correlations = correlations_api.get(
-                    report_type=report_type,
-                    product=context['product'],
-                    version=correlation_version,
-                    platforms=correlation_os
-                )
-                hits = correlations['hits'] if correlations else []
-                if context['signature'] in hits:
-                    total_correlations += 1
-        context['total_correlations'] = total_correlations
 
     versions = []
     for product_version in context['product_versions']:
@@ -2380,45 +2343,104 @@ def correlations_json(request):
         return http.HttpResponseBadRequest(str(form.errors))
 
     report_type = form.cleaned_data['correlation_report_type']
+    yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=2)
+    report_date = yesterday.date()
     product = form.cleaned_data['product']
     version = form.cleaned_data['version']
     # correlations does not differentiate betas since it works on raw data
     if version.endswith('b'):
         version = version.split('b')[0]
     platform = form.cleaned_data['platform']
+    # correlations UI is very old and expects this
+    if platform == 'Windows NT':
+        platform = 'Windows'
     signature = form.cleaned_data['signature']
 
     api = models.Correlations()
-    return api.get(report_type=report_type, product=product, version=version,
-                   platform=platform, signature=signature)
-
-
-@utils.json_view
-def correlations_signatures_json(request):
-
-    form = forms.CorrelationsSignaturesJSONForm(
-        models.ProductsVersions().get(),
-        models.CurrentVersions().get(),
-        models.Platforms().get(),
-        request.GET
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    report_type = form.cleaned_data['correlation_report_type']
-    product = form.cleaned_data['product']
-    version = form.cleaned_data['version']
-    platforms = form.cleaned_data['platforms']
-
-    api = models.CorrelationsSignatures()
-    result = api.get(
+    correlations = api.get(
         report_type=report_type,
+        report_date=report_date,
         product=product,
         version=version,
-        platforms=platforms
+        platform=platform,
+        signature=signature,
     )
-    # if the product and/or version is completely unrecognized, you
-    # don't get an error or an empty list, you get NULL
-    if result is None:
-        result = {'hits': [], 'total': 0}
-    return result
+    hits = []
+    if 'hits' in correlations:
+        hits = correlations['hits']
+    result = []
+    if report_type == 'interesting-addons':
+        for hit in hits:
+            result.append(
+                "{0:.2f}% ({1}/{2}) vs. {3:.2f}% ({4}/{5}) {6}".format(
+                    hit['in_sig_ratio'],
+                    hit['crashes_for_sig'],
+                    hit['total_for_sig'],
+                    hit['in_os_ratio'],
+                    hit['crashes_for_os'],
+                    hit['total_for_os'],
+                    hit['addon_id'].strip("\\\"")
+                )
+            )
+    elif report_type == 'interesting-addons-with-version':
+        for hit in hits:
+            result.append(
+                "{0:.2f}% ({1}/{2}) vs. {3:.2f}% ({4}/{5}) {6} ({7})".format(
+                    hit['in_sig_ratio'],
+                    hit['crashes_for_sig'],
+                    hit['total_for_sig'],
+                    hit['in_os_ratio'],
+                    hit['crashes_for_os'],
+                    hit['total_for_os'],
+                    hit['addon_id'].strip("\\\""),
+                    hit['addon_version'].strip("\\\"")
+                )
+            )
+    elif report_type == 'interesting-modules':
+        for hit in hits:
+            result.append(
+                "{0:.2f}% ({1}/{2}) vs. {3:.2f}% ({4}/{5}) {6}".format(
+                    hit['in_sig_ratio'],
+                    hit['crashes_for_sig'],
+                    hit['total_for_sig'],
+                    hit['in_os_ratio'],
+                    hit['crashes_for_os'],
+                    hit['total_for_os'],
+                    hit['module_name'].strip("\\\"")
+                )
+            )
+    elif report_type == 'interesting-modules-with-version':
+        for hit in hits:
+            result.append(
+                "{0:.2f}% ({1}/{2}) vs. {3:.2f}% ({4}/{5}) {6} ({7})".format(
+                    hit['in_sig_ratio'],
+                    hit['crashes_for_sig'],
+                    hit['total_for_sig'],
+                    hit['in_os_ratio'],
+                    hit['crashes_for_os'],
+                    hit['total_for_os'],
+                    hit['module_name'].strip("\\\""),
+                    hit['module_version'].strip("\\\"")
+                )
+            )
+    elif report_type == 'core-counts':
+        for hit in hits:
+            result.append(
+                "{0:.2f}% ({1}/{2}) vs. {3:.2f}% ({4}/{5}) {6} with {7} cores"
+                .format(
+                    hit['in_sig_ratio'],
+                    hit['crashes_for_sig'],
+                    hit['total_for_sig'],
+                    hit['in_os_ratio'],
+                    hit['crashes_for_os'],
+                    hit['total_for_os'],
+                    hit['cpu_arch'].strip("\\\""),
+                    hit['cpu_count']
+                )
+            )
+    return {
+        'load': '\n'.join(result),
+        'hits': len(result),
+        # FIXME reason is per-result, need to remove this
+        'reason': ''
+    }
