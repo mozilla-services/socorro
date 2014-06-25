@@ -452,7 +452,7 @@
           </div><!-- /modules -->
 
           <div id="rawdump" class="ui-tabs-hide">
-            <div class="code">{{ report.dump }}</div>
+            <div class="code">{{ raw_processor_output }}</div>
 
 	    {% if request.user.has_perm('crashstats.view_rawdump') %}
             <h3>Download the Raw Dump</h3>
