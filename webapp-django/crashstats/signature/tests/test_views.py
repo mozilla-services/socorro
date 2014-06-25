@@ -32,18 +32,15 @@ class TestViews(BaseTestViews):
         TestViews.switch.active = False
         TestViews.switch.save()
 
-        url = reverse('signature:signature_report', args=(DUMB_SIGNATURE,))
+        url = reverse('signature:signature_report')
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        url = reverse('signature:signature_reports', args=(DUMB_SIGNATURE,))
+        url = reverse('signature:signature_reports')
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        url = reverse(
-            'signature:signature_aggregation',
-            args=(DUMB_SIGNATURE, 'some_agg')
-        )
+        url = reverse('signature:signature_aggregation', args=('some_agg',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
@@ -61,9 +58,8 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        self._login()
-        url = reverse('signature:signature_report', args=(DUMB_SIGNATURE,))
-        response = self.client.get(url)
+        url = reverse('signature:signature_report')
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         eq_(response.status_code, 200)
         ok_(DUMB_SIGNATURE in response.content)
         ok_('Loading' in response.content)
@@ -122,21 +118,22 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('signature:signature_reports', args=(DUMB_SIGNATURE,))
+        url = reverse('signature:signature_reports')
 
         # Test with no results.
         response = self.client.get(url, {
-            'date': '2012-01-01'
+            'signature': DUMB_SIGNATURE,
+            'date': '2012-01-01',
         })
         eq_(response.status_code, 200)
         ok_('table id="reports-list"' not in response.content)
         ok_('No results were found' in response.content)
 
         # Test with results.
-        response = self.client.get(
-            url,
-            {'product': 'WaterWolf'}
-        )
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'product': 'WaterWolf'
+        })
         eq_(response.status_code, 200)
         ok_('table id="reports-list"' in response.content)
         ok_('aaaaaaaaaaaaa1' in response.content)
@@ -145,10 +142,11 @@ class TestViews(BaseTestViews):
         ok_('2017-01-31 23:12:57' in response.content)
 
         # Test with a different columns list.
-        response = self.client.get(
-            url,
-            {'_columns': ['build_id', 'platform'], 'product': 'WaterWolf'}
-        )
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'product': 'WaterWolf',
+            '_columns': ['build_id', 'platform'],
+        })
         eq_(response.status_code, 200)
         ok_('table id="reports-list"' in response.content)
         # The build and platform appear
@@ -192,10 +190,11 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('signature:signature_reports', args=(DUMB_SIGNATURE,))
+        url = reverse('signature:signature_reports')
 
         response = self.client.get(
             url, {
+                'signature': DUMB_SIGNATURE,
                 'product': ['WaterWolf', 'NightTrain'],
                 'address': ['0x0', '0xa'],
                 'reason': ['^hello', '$thanks'],
@@ -237,11 +236,12 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        url = reverse('signature:signature_reports', args=(DUMB_SIGNATURE,))
+        url = reverse('signature:signature_reports')
 
         response = self.client.get(
             url,
             {
+                'signature': DUMB_SIGNATURE,
                 'product': ['WaterWolf'],
                 '_columns': ['platform']
             }
@@ -258,5 +258,79 @@ class TestViews(BaseTestViews):
         ok_('page=2' in next_page_url)
 
         # Test that a negative page value does not break it.
-        response = self.client.get(url, {'page': '-1'})
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'page': '-1',
+        })
         eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_signature_aggregation(self, rget):
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            ok_('signature' in params)
+            eq_(params['signature'], '=' + DUMB_SIGNATURE)
+
+            ok_('_facets' in params)
+
+            if 'product' in params['_facets']:
+                return Response({
+                    "hits": [],
+                    "facets": {
+                        "product": [
+                            {
+                                "term": "windows",
+                                "count": 42,
+                            },
+                            {
+                                "term": "linux",
+                                "count": 1337,
+                            },
+                            {
+                                "term": "mac",
+                                "count": 3,
+                            },
+                        ]
+                    },
+                    "total": 1382
+                })
+
+            return Response({
+                "hits": [],
+                "facets": {
+                    "platform": []
+                },
+                "total": 0
+            })
+
+        rget.side_effect = mocked_get
+
+        # Test with no results.
+        url = reverse(
+            'signature:signature_aggregation',
+            args=('platform',)
+        )
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+        ok_('Product' not in response.content)
+        ok_('No results were found' in response.content)
+
+        # Test with results.
+        url = reverse(
+            'signature:signature_aggregation',
+            args=('product',)
+        )
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+        ok_('Product' in response.content)
+        ok_('1337' in response.content)
+        ok_('linux' in response.content)
+        ok_(str(1337 / 1382 * 100) in response.content)
+        ok_('windows' in response.content)
+        ok_('mac' in response.content)

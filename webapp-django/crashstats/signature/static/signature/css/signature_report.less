@@ -24,10 +24,11 @@
     }
 }
 
-/* By default, hide all panels except the loading one. */
+/* By default, hide all panels except the loading one and panels inside a panel. */
 .panel {
     display: none;
 }
+.panel .panel,
 #loading-panel {
     display: block;
 }
@@ -45,4 +46,54 @@
 }
 .toggle-filters.show:before {
     content: url('../../img/3rdparty/silk/arrow_bottom.png');
+}
+
+#aggregations-panel {
+    .panel {
+        float: left;
+        width: 45%;
+
+        .options {
+            background-image: url('../../img/3rdparty/silk/cross.png');
+            display: inline-block;
+            float: right;
+            height: 16px;
+            margin-top: 10px;
+            padding: 4px;
+            text-indent: -9999px;
+            width: 16px;
+        }
+    }
+
+    .controls {
+        text-align: center;
+        position: relative;
+
+        .loader {
+            background-image: url('../../img/ajax-loader16x16.gif');
+            display: inline-block;
+            height: 16px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 16px;
+        }
+
+        .fields-list {
+            width: 30%;
+        }
+
+        button {
+            padding: 2px 6px;
+            vertical-align: middle;
+        }
+
+        hr {
+            background-color: #ccc;
+            border-color: #ccc;
+            color: #ccc;
+            margin-top: 15px;
+            width: 60%;
+        }
+    }
 }

@@ -1,0 +1,35 @@
+<div class="panel">
+    <header class="title">
+        <a href="#" class="options delete">x</a>
+        <h2>{{ aggregation | replace('_', ' ') | capitalize }}</h2>
+    </header>
+
+    <div class="body">
+
+    {% if aggregates %}
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Rank</th>
+                    <th scope="col">{{ aggregation | replace('_', ' ') | capitalize }}</th>
+                    <th scope="col">Count</th>
+                    <th scope="col">%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hit in aggregates %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ hit.term }}</td>
+                    <td>{{ hit.count }}</td>
+                    <td>{{ '%.2f' | format(100.0 * hit.count / total_count) }} %</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No results were found.</p>
+    {% endif %}
+
+    </div>
+</div>

@@ -76,12 +76,18 @@ class SearchForm(forms.Form):
             platforms = [(x['name'], x['name']) for x in current_platforms]
             self.fields['platform'].choices = platforms
 
-    def get_fields_list(self):
+    def get_fields_list(self, exclude=None):
         '''Return a dictionary describing the fields, to pass to the
         dynamic_form.js library. '''
         fields_list = {}
 
+        if exclude is None:
+            exclude = []
+
         for field_name in self.fields:
+            if field_name in exclude:
+                continue
+
             field = self.fields[field_name]
             try:
                 values = [x[0] for x in field.choices]

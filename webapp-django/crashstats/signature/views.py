@@ -6,9 +6,13 @@ from django.shortcuts import render
 
 from waffle.decorators import waffle_switch
 
+from crashstats.api.views import has_permissions
 from crashstats.crashstats import models
 from crashstats.crashstats.views import pass_default_context
-from crashstats.supersearch.models import SuperSearchUnredacted
+from crashstats.supersearch.models import (
+    SuperSearchUnredacted,
+    SuperSearchFields
+)
 from crashstats.supersearch.views import (
     get_allowed_fields,
     get_params
@@ -28,20 +32,51 @@ DEFAULT_COLUMNS = (
 
 @waffle_switch('signature-report')
 @pass_default_context
-def signature_report(request, signature, default_context=None):
+def signature_report(request, default_context=None):
     context = default_context
+
+    signature = request.GET.get('signature')
+    if not signature:
+        return http.HttpResponseBadRequest(
+            '"signature" parameter is mandatory'
+        )
+
     context['signature'] = signature
+
+    fields = sorted(
+        x['name']
+        for x in SuperSearchFields().get().values()
+        if x['is_exposed']
+        and x['is_returned']
+        and has_permissions(request.user, x['permissions_needed'])
+        and x['name'] != 'signature'  # exclude the signature field
+    )
+    context['fields'] = [
+        {'id': field, 'text': field.replace('_', ' ')} for field in fields
+    ]
 
     return render(request, 'signature/signature_report.html', context)
 
 
 @waffle_switch('signature-report')
-def signature_reports(request, signature):
+def signature_reports(request):
     '''Return the results of a search. '''
     params = get_params(request)
     if isinstance(params, http.HttpResponseBadRequest):
         # There was an error in the form, let's return it.
         return params
+
+    if len(params['signature']) > 1:
+        return http.HttpResponseBadRequest(
+            'Invalid value for "signature" parameter, '
+            'only one value is accepted'
+        )
+    signature = params['signature'][0]
+
+    if not signature:
+        return http.HttpResponseBadRequest(
+            '"signature" parameter is mandatory'
+        )
 
     data = {}
     data['query'] = {
@@ -86,7 +121,7 @@ def signature_reports(request, signature):
     params['_facets'] = []  # We don't need no facets.
 
     data['current_url'] = '%s?%s' % (
-        reverse('signature:signature_report', args=(signature,)),
+        reverse('signature:signature_report'),
         current_query.urlencode()
     )
 
@@ -111,5 +146,63 @@ def signature_reports(request, signature):
 
 
 @waffle_switch('signature-report')
-def signature_aggregation(request, signature, aggregation):
-    pass
+def signature_aggregation(request, aggregation):
+    '''Return the aggregation of a field. '''
+    params = get_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
+
+    if len(params['signature']) > 1:
+        return http.HttpResponseBadRequest(
+            'Invalid value for "signature" parameter, '
+            'only one value is accepted'
+        )
+    signature = params['signature'][0]
+
+    if not signature:
+        return http.HttpResponseBadRequest(
+            '"signature" parameter is mandatory'
+        )
+
+    data = {}
+    data['aggregation'] = aggregation
+
+    allowed_fields = get_allowed_fields(request.user)
+
+    # Make sure the field we want to aggregate on is allowed.
+    if aggregation not in allowed_fields:
+        return http.HttpResponseBadRequest(
+            '<ul><li>'
+            'You are not allowed to aggregate on the "%s" field'
+            '</li></ul>' % aggregation
+        )
+
+    current_query = request.GET.copy()
+    data['params'] = current_query.copy()
+
+    params['signature'] = '=' + signature
+    params['_results_number'] = 0
+    params['_results_offset'] = 0
+    params['_facets'] = [aggregation]
+
+    data['current_url'] = '%s?%s' % (
+        reverse('signature:signature_report'),
+        current_query.urlencode()
+    )
+
+    api = SuperSearchUnredacted()
+    try:
+        search_results = api.get(**params)
+    except models.BadStatusCodeError, e:
+        # We need to return the error message in some HTML form for jQuery to
+        # pick it up.
+        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+
+    data['aggregates'] = []
+    if aggregation in search_results['facets']:
+        data['aggregates'] = search_results['facets'][aggregation]
+
+    data['total_count'] = search_results['total']
+
+    return render(request, 'signature/signature_aggregation.html', data)

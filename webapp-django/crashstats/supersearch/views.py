@@ -221,7 +221,9 @@ def search_fields(request):
     '''Return the JSON document describing the fields used by the JavaScript
     dynamic_form library. '''
     form = get_supersearch_form(request)
-    return form.get_fields_list()
+
+    exclude = request.GET.getlist('exclude')
+    return form.get_fields_list(exclude=exclude)
 
 
 def get_report_list_parameters(source):

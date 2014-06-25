@@ -13,6 +13,12 @@ $(function () {
     var initializedTabs = {};
     var tabsLoadFunctions = {};
 
+    function getParamsWithSignature() {
+        var params = form.dynamicForm('getParams');
+        params.signature = SIGNATURE;
+        return params;
+    }
+
     function loadTab(tabName) {
         if (!initializedTabs[tabName]) {
             initializedTabs[tabName] = true;
@@ -26,8 +32,8 @@ $(function () {
 
         loadTab(tabName);
 
-        // Hide all panels.
-        $('.panel').hide();
+        // Hide all main panels.
+        $('#mainbody > .panel').hide();
         // Then show the one for our tab.
         $('#' + tabName + '-panel').show();
     }
@@ -48,6 +54,9 @@ $(function () {
         if (initialParams) {
             if (initialParams.page) {
                 pageNum = initialParams.page;
+            }
+            if (initialParams.signature) {
+                delete initialParams.signature;
             }
 
             initialParams = socorro.search.getFilteredParams(initialParams);
@@ -107,7 +116,7 @@ $(function () {
 
         $('button[type=submit]', form).click(function (e) {
             e.preventDefault();
-            var params = form.dynamicForm('getParams');
+            var params = getParamsWithSignature();
             var queryString = '?' + $.param(params, true);
             window.location.search = queryString;
         });
@@ -166,7 +175,7 @@ $(function () {
             contentElt.empty();
             addLoaderToElt(contentElt);
 
-            var params = form.dynamicForm('getParams');
+            var params = getParamsWithSignature();
             var url = dataUrl + prepareResultsQueryString(params);
 
             $.ajax({
@@ -192,7 +201,67 @@ $(function () {
 
     tabsLoadFunctions.aggregations = function () {
         var aggregationsPanel = $('#aggregations-panel');
+        var statusElt = $('.status', aggregationsPanel);
         var contentElt = $('.content', aggregationsPanel);
+        var selectElt = $('.fields-list', aggregationsPanel);
+        var loaderElt = $('.loader', aggregationsPanel);
+
+        var dataUrl = aggregationsPanel.data('source-url');
+
+        function disableOption(field) {
+            $('option[value=' + field + ']', selectElt).prop('disabled', true);
+        }
+
+        function enableOption(field) {
+            $('option[value=' + field + ']', selectElt).prop('disabled', false);
+        }
+
+        function showAggregation(field) {
+            // Remove previous results and show loader.
+            statusElt.empty();
+            loaderElt.show();
+            disableOption(field);
+
+            var params = getParamsWithSignature();
+            var url = dataUrl + field + '/?' + $.param(params, true);
+
+            $.ajax({
+                url: url,
+                success: function(data) {
+                    statusElt.empty();
+                    loaderElt.hide();
+                    var dataElt = $(data);
+                    contentElt.append(dataElt);
+                    $('.tablesorter').tablesorter();
+
+                    $('.delete', dataElt).click(function (e) {
+                        e.preventDefault();
+                        dataElt.remove();
+                        enableOption(field);
+                    });
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    loaderElt.hide();
+                    handleError(statusElt, jqXHR, textStatus, errorThrown);
+                },
+                dataType: 'HTML'
+            });
+        }
+
+        // Prepare the list of fields.
+        selectElt.select2({
+            'placeholder': 'Add a field',
+            'allowClear': true
+        });
+
+        selectElt.on('change', function (e) {
+            selectElt.select2('val', '');
+            showAggregation(e.val);
+        });
+
+        showAggregation('product');
+        showAggregation('platform');
+        showAggregation('build_id');
     };
 
     // Finally start the damn thing.
