@@ -269,6 +269,7 @@ class CorrelationsAddon(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
+    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
     total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
 
@@ -283,6 +284,7 @@ class CorrelationsCore(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
+    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
     total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
 
@@ -296,6 +298,7 @@ class CorrelationsModule(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
+    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
     total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, module_id, report_date, os_name, signature_id)}
 

@@ -38,6 +38,7 @@ WITH crash AS (
     SELECT processed_crash->'json_dump'->'system_info' AS system_info
            , product_version_id
            , signature_id
+           , reason_id
            , reports_clean.date_processed::date
            , reports_clean.os_name
     FROM processed_crashes
@@ -56,6 +57,7 @@ INSERT INTO correlations_core (
     , report_date
     , os_name
     , signature_id
+    , reason_id
     , total
 )
 SELECT product_version_id
@@ -64,6 +66,7 @@ SELECT product_version_id
        , date_processed as report_date
        , os_name
        , signature_id
+       , reason_id
        , count(*) as total
 FROM crash
 WHERE (system_info->'cpu_arch')::text IS NOT null
@@ -73,7 +76,8 @@ GROUP BY cpu_arch
          , product_version_id
          , report_date
          , os_name
-         , signature_id;
+         , signature_id
+         , reason_id;
 RETURN TRUE;
 END;
 $$;
