@@ -111,7 +111,13 @@ SAMPLE_UNREDACTED = """ {
     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     "address": "0x8",
     "completeddatetime": "2012-06-11T06:08:57",
-    "success": true
+    "success": true,
+    "json_dump": {
+      "status": "OK",
+      "sensitive": {
+        "exploitability": "high"
+      }
+    }
 } """
 
 BUG_STATUS = """ {
@@ -3314,6 +3320,9 @@ class TestViews(BaseTestViews):
             'You need to be signed in to be able to download raw dumps.'
             in response.content
         )
+        # Should not be able to see sensitive key from stackwalker JSON
+        ok_('&#34;sensitive&#34;' not in response.content)
+        ok_('&#34;exploitability&#34;' not in response.content)
 
         # the email address will appear if we log in
         user = self._login()
@@ -3325,6 +3334,8 @@ class TestViews(BaseTestViews):
         ok_('peterbe@mozilla.com' in response.content)
         ok_(email0 in response.content)
         ok_(url0 in response.content)
+        ok_('&#34;sensitive&#34;' in response.content)
+        ok_('&#34;exploitability&#34;' in response.content)
         eq_(response.status_code, 200)
 
     @mock.patch('requests.post')
