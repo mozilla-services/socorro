@@ -1025,6 +1025,20 @@ def report_index(request, crash_id, default_context=None):
         else:
             raise
 
+    if 'json_dump' in context['report']:
+        json_dump = context['report']['json_dump']
+        if 'sensitive' in json_dump and \
+           not request.user.has_perm('crashstats.view_pii'):
+            del json_dump['sensitive']
+        context['raw_stackwalker_output'] = json.dumps(
+            json_dump,
+            sort_keys=True,
+            indent=4,
+            separators=(',', ': ')
+        )
+    else:
+        context['raw_stackwalker_output'] = context['report']['dump']
+
     context['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
     process_type = 'unknown'
