@@ -88,34 +88,45 @@ def _json_clean(value):
 def parse_dump(dump, vcs_mappings):
 
     parsed_dump = {
+        'status': 'OK',
         'modules': [],
-        'threads': {},
-        'crashed_thread': None,
+        'threads': [],
+        'crash_info': {
+            'crashing_thread': None,
+        },
+        'system_info': {}
     }
 
     for line in dump.split('\n'):
         entry = line.split('|')
         if entry[0] == 'OS':
-            parsed_dump['os_name'] = entry[1]
-            parsed_dump['os_version'] = entry[2]
+            parsed_dump['system_info']['os'] = entry[1]
+            parsed_dump['system_info']['os_ver'] = entry[2]
         elif entry[0] == 'CPU':
-            parsed_dump['cpu_name'] = entry[1]
-            parsed_dump['cpu_version'] = entry[2]
+            parsed_dump['system_info']['cpu_arch'] = entry[1]
+            parsed_dump['system_info']['cpu_info'] = entry[2]
+            parsed_dump['system_info']['cpu_count'] = int(entry[3])
         elif entry[0] == 'Crash':
-            parsed_dump['reason'] = entry[1]
-            parsed_dump['address'] = entry[2]
+            parsed_dump['crash_info']['type'] = entry[1]
+            parsed_dump['crash_info']['crash_address'] = entry[2]
+            parsed_dump['crash_info']['crashing_thread'] = int(entry[3])
         elif entry[0] == 'Module':
+            if entry[7] == '1':
+                parsed_dump['main_module'] = len(parsed_dump['modules'])
             parsed_dump['modules'].append({
                 'filename': entry[1],
                 'version': entry[2],
-                'debug_filename': entry[3],
-                'debug_identifier': entry[4]
+                'debug_file': entry[3],
+                'debug_id': entry[4],
+                'base_addr': entry[5],
+                'end_addr': entry[6]
             })
         elif entry[0].isdigit():
             thread_num, frame_num, module_name, function, \
-                source, source_line, instruction = entry
+                source_file, source_line, instruction = entry
 
             thread_num = int(thread_num)
+            frame_num = int(frame_num)
 
             signature = None
             if function:
@@ -124,60 +135,70 @@ def parse_dump(dump, vcs_mappings):
                 # Ensure a space after commas
                 function = re.sub('/(?<=,)(?! )/', '', function)
                 signature = function
-            elif source and source_line:
-                signature = '%s#%s' % (source, source_line)
+            elif source_file and source_line:
+                signature = '%s#%s' % (source_file, source_line)
             elif module_name:
                 signature = '%s@%s' % (module_name, instruction)
             else:
                 signature = '@%s' % instruction
 
             frame = {
-                'module_name': module_name,
-                'frame_num': frame_num,
-                'function': function,
-                'instruction': instruction,
+                'frame': frame_num,
                 'signature': signature,
-                'source': source,
-                'source_line': source_line,
                 'short_signature': re.sub('/\(.*\)/', '', signature),
-                'source_filename': '',
-                'source_link': '',
-                'source_info': ''
             }
+            if module_name:
+                frame['module'] = module_name
+                if not function:
+                    frame['module_offset'] = instruction
+            else:
+                frame['offset'] = instruction
+            if function:
+                frame['function'] = function
+                if not source_line:
+                    frame['function_offset'] = instruction
+            if source_file:
+                frame['file'] = source_file
+            if source_line:
+                frame['line'] = int(source_line)
 
-            if source:
-                vcsinfo = source.split(':')
+            if source_file:
+                vcsinfo = source_file.split(':')
                 if len(vcsinfo) == 4:
-                    vcstype, root, source_file, revision = vcsinfo
+                    vcstype, root, vcs_source_file, revision = vcsinfo
 
                     server, repo = root.split('/', 1)
 
-                    frame['source_filename'] = source_file
+                    frame['source_filename'] = vcs_source_file
 
                     if vcstype in vcs_mappings:
                         if server in vcs_mappings[vcstype]:
                             link = vcs_mappings[vcstype][server]
                             frame['source_link'] = link % {
                                 'repo': repo,
-                                'file': source_file,
+                                'file': vcs_source_file,
                                 'revision': revision,
-                                'line': frame['source_line']}
+                                'line': frame['line']}
                     else:
-                        path_parts = source.split('/')
+                        path_parts = source_file.split('/')
                         frame['source_filename'] = path_parts.pop()
 
-                if frame['source_filename'] and frame['source_line']:
+                if 'source_filename' in frame and 'line' in frame:
                     frame['source_info'] = '%s:%s' % (frame['source_filename'],
-                                                      frame['source_line'])
+                                                      frame['line'])
 
-            if parsed_dump['crashed_thread'] is None:
-                parsed_dump['crashed_thread'] = thread_num
+            if parsed_dump['crash_info']['crashing_thread'] is None:
+                parsed_dump['crash_info']['crashing_thread'] = thread_num
 
-            if thread_num in parsed_dump['threads']:
-                parsed_dump['threads'][thread_num].append(frame)
+            if thread_num < len(parsed_dump['threads']):
+                parsed_dump['threads'][thread_num]['frames'].append(frame)
             else:
-                parsed_dump['threads'][thread_num] = [frame]
+                parsed_dump['threads'].append({'thread': thread_num,
+                                               'frames': [frame]})
 
+    parsed_dump['thread_count'] = len(parsed_dump['threads'])
+    for thread in parsed_dump['threads']:
+        thread['frame_count'] = len(thread['frames'])
     return parsed_dump
 
 

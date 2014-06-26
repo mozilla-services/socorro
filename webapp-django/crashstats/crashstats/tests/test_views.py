@@ -3149,7 +3149,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
         # using \\n because it goes into the JSON string
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment\\nOn multiple lines"
         comment0 += "\\npeterbe@mozilla.com"
         comment0 += "\\nwww.p0rn.com"
@@ -3232,7 +3232,7 @@ class TestViews(BaseTestViews):
         version it should not use that to make links in the nav to
         reports for that unfamiliar product and version."""
         # using \\n because it goes into the JSON string
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment\\nOn multiple lines"
         comment0 += "\\npeterbe@mozilla.com"
         comment0 += "\\nwww.p0rn.com"
@@ -3297,7 +3297,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_report_index_correlations_failed(self, rget, rpost):
         # using \\n because it goes into the JSON string
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
@@ -3372,7 +3372,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index_with_hangid_in_raw_data(self, rget, rpost):
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
@@ -3481,7 +3481,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index_with_invalid_InstallTime(self, rget, rpost):
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
@@ -3588,7 +3588,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_report_index_with_crash_exploitability(self, rget, rpost):
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
@@ -4825,7 +4825,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_report_index_redirect_by_prefix(self, rget, rpost):
 
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"

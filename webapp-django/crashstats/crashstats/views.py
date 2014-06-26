@@ -1063,15 +1063,6 @@ def report_index(request, crash_id, default_context=None):
         context['report']['dump'],
         settings.VCS_MAPPINGS
     )
-    # parsed_dump['threads'] is all threads.
-    # We're going to show
-    # `parsed_dump['threads'][parsed_dump['crashed_thread']]`
-    # first and then all other threads
-    parsed_dump['remaining_threads'] = dict(
-        (k, v) for (k, v) in
-        parsed_dump['threads'].items()
-        if k != parsed_dump['crashed_thread']
-    )
     context['parsed_dump'] = parsed_dump
 
     bugs_api = models.Bugs()

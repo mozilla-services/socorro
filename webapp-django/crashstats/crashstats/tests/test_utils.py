@@ -49,6 +49,8 @@ class TestUtils(TestCase):
             '0|1|bad.dll|signature|hg:hg.m.org/repo/name:fname:rev|576|0x0\n'
             '1|0|ntdll.dll|KiFastSystemCallRet|||0x0\n'
             '1|1|ntdll.dll|ZwClose|||0xb\n'
+            '1|2|ntdll.dll||||0xabc\n'
+            '1|3|||||0x1234\n'
         )
 
         vcs_mappings = {
@@ -66,73 +68,80 @@ class TestUtils(TestCase):
 
         actual = utils.parse_dump(dump, vcs_mappings)
 
-        expected = {'os_name': 'Windows NT',
-                    'crashed_thread': 0,
-                    'modules': [
-                        {'debug_filename': 'debug.pdb',
-                         'version': '1.0.0.1234',
-                         'debug_identifier': 'debugver',
-                         'filename': 'bad.exe'}
-                    ],
-                    'cpu_name': 'x86',
-                    'cpu_version': ('GenuineIntel family '
-                                    '15 model 4 stepping 9'),
-                    'os_version': '6.1.7601 Service Pack 1',
-                    'reason': 'EXCEPTION_ACCESS_VIOLATION_READ',
-                    'threads': {
-                        1: [
-                            {'function': 'KiFastSystemCallRet',
-                             'short_signature': 'KiFastSystemCallRet',
-                             'source_line': '',
-                             'source_link': '',
-                             'source_filename': '',
-                             'source_info': '',
-                             'instruction': '0x0',
-                             'source': '',
-                             'frame_num': '0',
-                             'signature': 'KiFastSystemCallRet',
-                             'module_name': 'ntdll.dll'},
-                            {'function': 'ZwClose',
-                             'short_signature': 'ZwClose',
-                             'source_line': '',
-                             'source_link': '',
-                             'source_filename': '',
-                             'source_info': '',
-                             'instruction': '0xb',
-                             'source': '',
-                             'frame_num': '1',
-                             'signature': 'ZwClose',
-                             'module_name': 'ntdll.dll'}
-                        ],
-                        0: [
-                            {'function': 'signature',
-                             'short_signature': 'signature',
-                             'source_line': '576',
-                             'source_link': ('http://bonsai.m.org/'
-                                             'cvsblame.cgi?file=fname&'
-                                             'rev=rev&mark=576#576'),
-                             'source_filename': 'fname',
-                             'source_info': 'fname:576',
-                             'instruction': '0x0',
-                             'source': 'cvs:cvs.m.org/repo:fname:rev',
-                             'frame_num': '0',
-                             'signature': 'signature',
-                             'module_name': 'bad.dll'},
-                            {'function': 'signature',
-                             'short_signature': 'signature',
-                             'source_line': '576',
-                             'source_link': ('http://hg.m.org/repo/name/'
-                                             'annotate/rev/fname#l576'),
-                             'source_filename': 'fname',
-                             'source_info': 'fname:576',
-                             'instruction': '0x0',
-                             'source': 'hg:hg.m.org/repo/name:fname:rev',
-                             'frame_num': '1',
-                             'signature': 'signature',
-                             'module_name': 'bad.dll'}
-                        ]
-                    },
-                    'address': '0x290'}
+        expected = {
+            'status': 'OK',
+            'system_info': {
+                'os': 'Windows NT',
+                'os_ver': '6.1.7601 Service Pack 1',
+                'cpu_arch': 'x86',
+                'cpu_info': 'GenuineIntel family 15 model 4 stepping 9',
+                'cpu_count': 2},
+            'crash_info': {
+                'crashing_thread': 0,
+                'crash_address': '0x290',
+                'type': 'EXCEPTION_ACCESS_VIOLATION_READ'},
+            'main_module': 0,
+            'modules': [
+                {'debug_file': 'debug.pdb',
+                 'version': '1.0.0.1234',
+                 'debug_id': 'debugver',
+                 'filename': 'bad.exe',
+                 'base_addr': 'saddr',
+                 'end_addr': 'eaddr'}],
+            'thread_count': 2,
+            'threads': [
+                {'thread': 0,
+                 'frame_count': 2,
+                 'frames': [
+                     {'function': 'signature',
+                      'short_signature': 'signature',
+                      'line': 576,
+                      'source_link': ('http://bonsai.m.org/'
+                                      'cvsblame.cgi?file=fname&'
+                                      'rev=rev&mark=576#576'),
+                      'source_filename': 'fname',
+                      'source_info': 'fname:576',
+                      'file': 'cvs:cvs.m.org/repo:fname:rev',
+                      'frame': 0,
+                      'signature': 'signature',
+                      'module': 'bad.dll'},
+                     {'function': 'signature',
+                      'short_signature': 'signature',
+                      'line': 576,
+                      'source_link': ('http://hg.m.org/repo/name/'
+                                      'annotate/rev/fname#l576'),
+                      'source_filename': 'fname',
+                      'source_info': 'fname:576',
+                      'file': 'hg:hg.m.org/repo/name:fname:rev',
+                      'frame': 1,
+                      'signature': 'signature',
+                      'module': 'bad.dll'}
+                 ]},
+                {'thread': 1,
+                 'frame_count': 4,
+                 'frames': [
+                     {'function': 'KiFastSystemCallRet',
+                      'short_signature': 'KiFastSystemCallRet',
+                      'function_offset': '0x0',
+                      'frame': 0,
+                      'signature': 'KiFastSystemCallRet',
+                      'module': 'ntdll.dll'},
+                     {'function': 'ZwClose',
+                      'short_signature': 'ZwClose',
+                      'function_offset': '0xb',
+                      'frame': 1,
+                      'signature': 'ZwClose',
+                      'module': 'ntdll.dll'},
+                     {'signature': 'ntdll.dll@0xabc',
+                      'short_signature': 'ntdll.dll@0xabc',
+                      'module_offset': '0xabc',
+                      'frame': 2,
+                      'module': 'ntdll.dll'},
+                     {'offset': '0x1234',
+                      'frame': 3,
+                      'signature': '@0x1234',
+                      'short_signature': '@0x1234'}]}]
+        }
 
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
