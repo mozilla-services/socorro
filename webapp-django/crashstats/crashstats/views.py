@@ -1036,9 +1036,6 @@ def report_index(request, crash_id, default_context=None):
         process_type = 'content'
     context['process_type'] = process_type
 
-    context['product'] = context['report']['product']
-    context['version'] = context['report']['version']
-
     parsed_dump = utils.parse_dump(
         context['report']['dump'],
         settings.VCS_MAPPINGS
@@ -1118,8 +1115,8 @@ def report_index(request, crash_id, default_context=None):
             try:
                 correlations = correlations_api.get(
                     report_type=report_type,
-                    product=context['product'],
-                    version=context['version'],
+                    product=context['report']['product'],
+                    version=context['report']['version'],
                     platforms=platform)
                 hits = correlations['hits'] if correlations else []
                 if context['report']['signature'] in hits:

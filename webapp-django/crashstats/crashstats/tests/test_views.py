@@ -3227,6 +3227,74 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
+    def test_report_index_odd_product_and_version(self, rget, rpost):
+        """If the processed JSON references an unfamiliar product and
+        version it should not use that to make links in the nav to
+        reports for that unfamiliar product and version."""
+        # using \\n because it goes into the JSON string
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
+        comment0 = "This is a comment\\nOn multiple lines"
+        comment0 += "\\npeterbe@mozilla.com"
+        comment0 += "\\nwww.p0rn.com"
+        email0 = "some@emailaddress.com"
+        url0 = "someaddress.com"
+
+        def mocked_get(url, params, **options):
+            if '/crash_data' in url:
+                assert 'datatype' in params
+
+                if params['datatype'] == 'meta':
+                    return Response(SAMPLE_META % (email0, url0))
+                if params['datatype'] == 'unredacted':
+                    processed_json = SAMPLE_UNREDACTED % (dump, comment0)
+                    assert '"WaterWolf"' in processed_json
+                    assert '"5.0a1"' in processed_json
+                    processed_json = processed_json.replace(
+                        '"WaterWolf"', '"SummerWolf"'
+                    )
+                    processed_json = processed_json.replace(
+                        '"5.0a1"', '"99.9"'
+                    )
+                    return Response(processed_json)
+
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
+                }
+                """)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response(BUG_STATUS)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+
+        url = reverse('crashstats:report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # the title should have the "SummerWolf 99.9" in it
+        doc = pyquery.PyQuery(response.content)
+        title = doc('title').text()
+        ok_('SummerWolf' in title)
+        ok_('99.9' in title)
+
+        # there shouldn't be any links to reports for the product
+        # mentioned in the processed JSON
+        bad_url = reverse('crashstats:home', args=('SummerWolf',))
+        ok_(bad_url not in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
     def test_report_index_correlations_failed(self, rget, rpost):
         # using \\n because it goes into the JSON string
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod"
