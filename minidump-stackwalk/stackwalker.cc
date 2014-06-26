@@ -95,6 +95,10 @@ using std::string;
 using std::vector;
 using std::ifstream;
 
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ < 6)
+#define nullptr __null
+#endif
+
 namespace {
 
 // If a thread contains more frames than this, frames will
