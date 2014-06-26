@@ -47,6 +47,7 @@ class PostgreSQLAlchemyManager(object):
 
     def setup(self):
         self.session.execute('SET check_function_bodies = false')
+        self.session.execute('SET search_path = base, public, normalized, public')
         self.commit()
 
     def drop_database(self, db_config):
