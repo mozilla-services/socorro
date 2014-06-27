@@ -1608,6 +1608,7 @@ def report_list(request, partial=None, default_context=None):
 
     return render(request, tmpl, context)
 
+
 @utils.json_view
 @pass_default_context
 def adu_by_signature_json(request, default_context=None):

@@ -454,7 +454,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
-        ok_(form.is_valid()) # all is good
+        ok_(form.is_valid())  # all is good
 
         form = get_new_form({
             'product_name': '',
@@ -462,7 +462,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
-        ok_(not form.is_valid()) # no product provided
+        ok_(not form.is_valid())  # no product provided
 
         form = get_new_form({
             'product_name': 'SuckerFish',
@@ -470,7 +470,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
-        ok_(not form.is_valid()) # invalid product
+        ok_(not form.is_valid())  # invalid product
 
         form = get_new_form({
             'product_name': 'WaterWolf',
@@ -478,7 +478,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
-        ok_(not form.is_valid()) # empty days parameter
+        ok_(not form.is_valid())  # empty days parameter
 
         form = get_new_form({
             'product_name': 'WaterWolf',
@@ -486,7 +486,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
-        ok_(not form.is_valid()) # days value less than 3
+        ok_(not form.is_valid())  # days value less than 3
 
         form = get_new_form({
             'product_name': 'WaterWolf',
@@ -494,7 +494,7 @@ class TestForms(DjangoTestCase):
             'signature': '',
             'channel': 'nightly'
         })
-        ok_(not form.is_valid()) # empty signature
+        ok_(not form.is_valid())  # empty signature
 
         form = get_new_form({
             'product_name': 'WaterWolf',
@@ -502,7 +502,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': 'dooky'
         })
-        ok_(not form.is_valid()) # invalid channel
+        ok_(not form.is_valid())  # invalid channel
 
         form = get_new_form({
             'product_name': 'WaterWolf',
@@ -510,7 +510,7 @@ class TestForms(DjangoTestCase):
             'signature': 'the-signatu(re)',
             'channel': ''
         })
-        ok_(not form.is_valid()) # no channel provided
+        ok_(not form.is_valid())  # no channel provided
 
     def test_gcrashes_form(self):
 
