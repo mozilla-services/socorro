@@ -1057,5 +1057,5 @@ int main(int argc, char** argv)
   printf("%s\n", writer->write(root).c_str());
 
   delete writer;
-  return 0;
+  exit(0);
 }
