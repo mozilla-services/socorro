@@ -43,7 +43,7 @@ a_processed_crash = {
     "dump": "...",
     "email": "bogus@bogus.com",
     "exploitability": "high",
-    #"flash_process_dump": "flash dump",  # future
+    # "flash_process_dump": "flash dump",  # future
     "flash_version": "[blank]",
     "hangid": None,
     "id": 361399767,
@@ -79,7 +79,7 @@ def remove_whitespace(string):
     return string.replace('\n', '').replace(' ', '')
 
 
-#class TestIntegrationPostgresSQLCrashStorage(TestCase):
+# class TestIntegrationPostgresSQLCrashStorage(TestCase):
 class DontTestIntegrationPostgresSQLCrashStorage(object):
 
     def _setup_config_manager(self, extra_value_source=None):
@@ -272,18 +272,45 @@ class TestPostgresCrashStorage(TestCase):
                 '',
                 "936ce666-ff3b-4c7a-9674-367fe2120408"
             )
-            eq_(m.cursor.call_count, 3)
-            eq_(m.cursor().execute.call_count, 3)
+            eq_(m.cursor.call_count, 1)
+            eq_(m.cursor().execute.call_count, 1)
 
-            expected_execute_args = (
-                (('savepoint MainThread', None),),
-                (('insert into raw_crashes_20120402 (uuid, raw_crash, date_processed) values (%s, %s, %s)', (
-                    '936ce666-ff3b-4c7a-9674-367fe2120408',
-                    '{"submitted_timestamp": "2012-04-08 10:52:42.0", "Version": "6.02E23", "ProductName": "Fennicky"}',
-                    "2012-04-08 10:52:42.0"
-                )),),
-                (('release savepoint MainThread', None),),
-            )
+            expected_execute_args = ((("""
+                WITH
+                update_raw_crash AS (
+                    UPDATE raw_crashes_20120402 SET
+                        raw_crash = %(raw_crash)s,
+                        date_processed = %(date_processed)s
+                    WHERE uuid = %(crash_id)s
+                    RETURNING 1
+                ),
+                insert_raw_crash AS (
+                    INSERT into raw_crashes_20120402
+                    (uuid, raw_crash, date_processed)
+                    ( SELECT
+                        %(crash_id)s as uuid,
+                        %(raw_crash)s as raw_crash,
+                        %(date_processed)s as date_processed
+                        WHERE NOT EXISTS (
+                            SELECT uuid from raw_crashes_20120402
+                            WHERE
+                                uuid = %(crash_id)s
+                            LIMIT 1
+                        )
+                    )
+                    RETURNING 2
+                )
+                SELECT * from update_raw_crash
+                UNION ALL
+                SELECT * from insert_raw_crash
+                """,
+                {
+                    'crash_id': '936ce666-ff3b-4c7a-9674-367fe2120408',
+                    'raw_crash':
+                        '{"submitted_timestamp": "2012-04-08 10:52:42.0", "Version": "6.02E23", "ProductName": "Fennicky"}',
+                    'date_processed': "2012-04-08 10:52:42.0"
+                }
+            ),),)
 
             actual_execute_args = m.cursor().execute.call_args_list
             for expected, actual in zip(expected_execute_args,
@@ -327,8 +354,8 @@ class TestPostgresCrashStorage(TestCase):
                 "unknown_field": 'whatever'
             }
             assert_raises(KeyError,
-                              crashstorage.save_processed,
-                              broken_processed_crash)
+                          crashstorage.save_processed,
+                          broken_processed_crash)
 
     def test_basic_postgres_save_processed_success(self):
 
@@ -374,8 +401,7 @@ class TestPostgresCrashStorage(TestCase):
             expected_execute_args = (
                 (('savepoint MainThread', None),),
                 (('insert into reports_20120402 (addons_checked, address, app_notes, build, client_crash_date, completed_datetime, cpu_info, cpu_name, date_processed, distributor, distributor_version, email, exploitability, flash_version, hangid, install_age, last_crash, os_name, os_version, processor_notes, process_type, product, productid, reason, release_channel, signature, started_datetime, success, topmost_filenames, truncated, uptime, user_comments, user_id, url, uuid, version) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id',
-                    [None, '0x1c', '...', '20120309050057', '2012-04-08 10:52:42.0', '2012-04-08 10:56:50.902884', 'None | 0', 'arm', '2012-04-08 10:56:41.558922', None, None, 'bogus@bogus.com', 'high', '[blank]', None, 22385, None, 'Linux', '0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ', 'SignatureTool: signature truncated due to length', 'plugin', 'FennecAndroid', 'FA-888888', 'SIGSEGV', 'default', 'libxul.so@0x117441c', '2012-04-08 10:56:50.440752', True, [], False, 170, None, None, 'http://embarrassing.porn.com', '936ce666-ff3b-4c7a-9674-367fe2120408', '13.0a1'],),
-                ),
+                    [None, '0x1c', '...', '20120309050057', '2012-04-08 10:52:42.0', '2012-04-08 10:56:50.902884', 'None | 0', 'arm', '2012-04-08 10:56:41.558922', None, None, 'bogus@bogus.com', 'high', '[blank]', None, 22385, None, 'Linux', '0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ', 'SignatureTool: signature truncated due to length', 'plugin', 'FennecAndroid', 'FA-888888', 'SIGSEGV', 'default', 'libxul.so@0x117441c', '2012-04-08 10:56:50.440752', True, [], False, 170, None, None, 'http://embarrassing.porn.com', '936ce666-ff3b-4c7a-9674-367fe2120408', '13.0a1'],),),
                 (('release savepoint MainThread', None),),
                 (('select id from plugins where filename = %s and name = %s',
                     ('dwight.txt', 'wilma')),),
@@ -384,8 +410,7 @@ class TestPostgresCrashStorage(TestCase):
                 (('insert into extensions_20120402     (report_id, date_processed, extension_key, extension_id,      extension_version)values (%s, %s, %s, %s, %s)',
                     (666, '2012-04-08 10:56:41.558922', 0, '{1a5dabbd-0e74-41da-b532-a364bb552cab}', '1.0.4.1')),),
                 (("""WITH update_processed_crash AS ( UPDATE processed_crashes_20120402 SET processed_crash = %(processed_json)s, date_processed = %(date_processed)s WHERE uuid = %(uuid)s RETURNING 1), insert_processed_crash AS ( INSERT INTO processed_crashes_20120402 (uuid, processed_crash, date_processed) ( SELECT %(uuid)s as uuid, %(processed_json)s as processed_crash, %(date_processed)s as date_processed WHERE NOT EXISTS ( SELECT uuid from processed_crashes_20120402 WHERE uuid = %(uuid)s LIMIT 1)) RETURNING 2) SELECT * from update_processed_crash UNION ALL SELECT * from insert_processed_crash """,
-                    {'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408', 'processed_json': '{"startedDateTime": "2012-04-08 10:56:50.440752", "crashedThread": 8, "cpu_info": "None | 0", "PluginName": "wilma", "install_age": 22385, "topmost_filenames": [], "user_comments": null, "user_id": null, "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408", "flash_version": "[blank]", "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ", "PluginVersion": "69", "addons_checked": null, "completeddatetime": "2012-04-08 10:56:50.902884", "productid": "FA-888888", "success": true, "exploitability": "high", "client_crash_date": "2012-04-08 10:52:42.0", "PluginFilename": "dwight.txt", "dump": "...", "truncated": false, "product": "FennecAndroid", "distributor": null, "processor_notes": "SignatureTool: signature truncated due to length", "uptime": 170, "release_channel": "default", "distributor_version": null, "process_type": "plugin", "id": 361399767, "hangid": null, "version": "13.0a1", "build": "20120309050057", "ReleaseChannel": "default", "email": "bogus@bogus.com", "app_notes": "...", "os_name": "Linux", "last_crash": null, "date_processed": "2012-04-08 10:56:41.558922", "cpu_name": "arm", "reason": "SIGSEGV", "address": "0x1c", "url": "http://embarrassing.porn.com", "signature": "libxul.so@0x117441c", "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]]}', 'date_processed': '2012-04-08 10:56:41.558922'}
-                ),),
+                    {'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408', 'processed_json': '{"startedDateTime": "2012-04-08 10:56:50.440752", "crashedThread": 8, "cpu_info": "None | 0", "PluginName": "wilma", "install_age": 22385, "topmost_filenames": [], "user_comments": null, "user_id": null, "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408", "flash_version": "[blank]", "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ", "PluginVersion": "69", "addons_checked": null, "completeddatetime": "2012-04-08 10:56:50.902884", "productid": "FA-888888", "success": true, "exploitability": "high", "client_crash_date": "2012-04-08 10:52:42.0", "PluginFilename": "dwight.txt", "dump": "...", "truncated": false, "product": "FennecAndroid", "distributor": null, "processor_notes": "SignatureTool: signature truncated due to length", "uptime": 170, "release_channel": "default", "distributor_version": null, "process_type": "plugin", "id": 361399767, "hangid": null, "version": "13.0a1", "build": "20120309050057", "ReleaseChannel": "default", "email": "bogus@bogus.com", "app_notes": "...", "os_name": "Linux", "last_crash": null, "date_processed": "2012-04-08 10:56:41.558922", "cpu_name": "arm", "reason": "SIGSEGV", "address": "0x1c", "url": "http://embarrassing.porn.com", "signature": "libxul.so@0x117441c", "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]]}', 'date_processed': '2012-04-08 10:56:41.558922'}),),
             )
 
             actual_execute_args = m.cursor().execute.call_args_list
@@ -451,8 +476,7 @@ class TestPostgresCrashStorage(TestCase):
                 (('insert into extensions_20120402     (report_id, date_processed, extension_key, extension_id,      extension_version)values (%s, %s, %s, %s, %s)',
                     (666, '2012-04-08 10:56:41.558922', 0, '{1a5dabbd-0e74-41da-b532-a364bb552cab}', '1.0.4.1')),),
                 (("""WITH update_processed_crash AS ( UPDATE processed_crashes_20120402 SET processed_crash = %(processed_json)s, date_processed = %(date_processed)s WHERE uuid = %(uuid)s RETURNING 1), insert_processed_crash AS ( INSERT INTO processed_crashes_20120402 (uuid, processed_crash, date_processed) ( SELECT %(uuid)s as uuid, %(processed_json)s as processed_crash, %(date_processed)s as date_processed WHERE NOT EXISTS ( SELECT uuid from processed_crashes_20120402 WHERE uuid = %(uuid)s LIMIT 1)) RETURNING 2) SELECT * from update_processed_crash UNION ALL SELECT * from insert_processed_crash """,
-                    {'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408', 'processed_json': '{"startedDateTime": "2012-04-08 10:56:50.440752", "crashedThread": 8, "cpu_info": "None | 0", "PluginName": "wilma", "install_age": 22385, "topmost_filenames": [], "user_comments": null, "user_id": null, "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408", "flash_version": "[blank]", "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ", "PluginVersion": "69", "addons_checked": null, "completeddatetime": "2012-04-08 10:56:50.902884", "productid": "FA-888888", "success": true, "exploitability": "high", "client_crash_date": "2012-04-08 10:52:42.0", "PluginFilename": "dwight.txt", "dump": "...", "truncated": false, "product": "FennecAndroid", "distributor": null, "processor_notes": "SignatureTool: signature truncated due to length", "uptime": 170, "release_channel": "default", "distributor_version": null, "process_type": "plugin", "id": 361399767, "hangid": null, "version": "13.0a1", "build": "20120309050057", "ReleaseChannel": "default", "email": "bogus@bogus.com", "app_notes": "...", "os_name": "Linux", "last_crash": null, "date_processed": "2012-04-08 10:56:41.558922", "cpu_name": "arm", "reason": "SIGSEGV", "address": "0x1c", "url": "http://embarrassing.porn.com", "signature": "libxul.so@0x117441c", "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]]}', 'date_processed': '2012-04-08 10:56:41.558922'}
-                ),),
+                    {'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408', 'processed_json': '{"startedDateTime": "2012-04-08 10:56:50.440752", "crashedThread": 8, "cpu_info": "None | 0", "PluginName": "wilma", "install_age": 22385, "topmost_filenames": [], "user_comments": null, "user_id": null, "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408", "flash_version": "[blank]", "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ", "PluginVersion": "69", "addons_checked": null, "completeddatetime": "2012-04-08 10:56:50.902884", "productid": "FA-888888", "success": true, "exploitability": "high", "client_crash_date": "2012-04-08 10:52:42.0", "PluginFilename": "dwight.txt", "dump": "...", "truncated": false, "product": "FennecAndroid", "distributor": null, "processor_notes": "SignatureTool: signature truncated due to length", "uptime": 170, "release_channel": "default", "distributor_version": null, "process_type": "plugin", "id": 361399767, "hangid": null, "version": "13.0a1", "build": "20120309050057", "ReleaseChannel": "default", "email": "bogus@bogus.com", "app_notes": "...", "os_name": "Linux", "last_crash": null, "date_processed": "2012-04-08 10:56:41.558922", "cpu_name": "arm", "reason": "SIGSEGV", "address": "0x1c", "url": "http://embarrassing.porn.com", "signature": "libxul.so@0x117441c", "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]]}', 'date_processed': '2012-04-08 10:56:41.558922'}),),
             )
 
             actual_execute_args = m.cursor().execute.call_args_list
@@ -471,7 +495,9 @@ class TestPostgresCrashStorage(TestCase):
         mock_postgres = mock.Mock()
 
         required_config = PostgreSQLCrashStorage.get_required_config()
-        required_config.add_option('logger', default=mock_logging)
+        required_config.add_option(
+            'logger',
+            default=mock_logging)
 
         config_manager = ConfigurationManager(
             [required_config],
@@ -500,8 +526,8 @@ class TestPostgresCrashStorage(TestCase):
             database = crashstorage.database.return_value = m
             m.cursor.side_effect = OperationalError('bad')
             assert_raises(OperationalError,
-                              crashstorage.save_processed,
-                              a_processed_crash)
+                          crashstorage.save_processed,
+                          a_processed_crash)
             eq_(m.cursor.call_count, 3)
 
     def test_basic_postgres_save_processed_succeed_after_failures(self):
@@ -576,8 +602,7 @@ class TestPostgresCrashStorage(TestCase):
                 (('insert into extensions_20120402     (report_id, date_processed, extension_key, extension_id,      extension_version)values (%s, %s, %s, %s, %s)',
                     (666, '2012-04-08 10:56:41.558922', 0, '{1a5dabbd-0e74-41da-b532-a364bb552cab}', '1.0.4.1')),),
                 (("""WITH update_processed_crash AS ( UPDATE processed_crashes_20120402 SET processed_crash = %(processed_json)s, date_processed = %(date_processed)s WHERE uuid = %(uuid)s RETURNING 1), insert_processed_crash AS ( INSERT INTO processed_crashes_20120402 (uuid, processed_crash, date_processed) ( SELECT %(uuid)s as uuid, %(processed_json)s as processed_crash, %(date_processed)s as date_processed WHERE NOT EXISTS ( SELECT uuid from processed_crashes_20120402 WHERE uuid = %(uuid)s LIMIT 1)) RETURNING 2) SELECT * from update_processed_crash UNION ALL SELECT * from insert_processed_crash """,
-                    {'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408', 'processed_json': '{"startedDateTime": "2012-04-08 10:56:50.440752", "crashedThread": 8, "cpu_info": "None | 0", "PluginName": "wilma", "install_age": 22385, "topmost_filenames": [], "user_comments": null, "user_id": null, "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408", "flash_version": "[blank]", "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ", "PluginVersion": "69", "addons_checked": null, "completeddatetime": "2012-04-08 10:56:50.902884", "productid": "FA-888888", "success": true, "exploitability": "high", "client_crash_date": "2012-04-08 10:52:42.0", "PluginFilename": "dwight.txt", "dump": "...", "truncated": false, "product": "FennecAndroid", "distributor": null, "processor_notes": "SignatureTool: signature truncated due to length", "uptime": 170, "release_channel": "default", "distributor_version": null, "process_type": "plugin", "id": 361399767, "hangid": null, "version": "13.0a1", "build": "20120309050057", "ReleaseChannel": "default", "email": "bogus@bogus.com", "app_notes": "...", "os_name": "Linux", "last_crash": null, "date_processed": "2012-04-08 10:56:41.558922", "cpu_name": "arm", "reason": "SIGSEGV", "address": "0x1c", "url": "http://embarrassing.porn.com", "signature": "libxul.so@0x117441c", "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]]}', 'date_processed': '2012-04-08 10:56:41.558922'}
-                ),),
+                    {'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408', 'processed_json': '{"startedDateTime": "2012-04-08 10:56:50.440752", "crashedThread": 8, "cpu_info": "None | 0", "PluginName": "wilma", "install_age": 22385, "topmost_filenames": [], "user_comments": null, "user_id": null, "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408", "flash_version": "[blank]", "os_version": "0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ", "PluginVersion": "69", "addons_checked": null, "completeddatetime": "2012-04-08 10:56:50.902884", "productid": "FA-888888", "success": true, "exploitability": "high", "client_crash_date": "2012-04-08 10:52:42.0", "PluginFilename": "dwight.txt", "dump": "...", "truncated": false, "product": "FennecAndroid", "distributor": null, "processor_notes": "SignatureTool: signature truncated due to length", "uptime": 170, "release_channel": "default", "distributor_version": null, "process_type": "plugin", "id": 361399767, "hangid": null, "version": "13.0a1", "build": "20120309050057", "ReleaseChannel": "default", "email": "bogus@bogus.com", "app_notes": "...", "os_name": "Linux", "last_crash": null, "date_processed": "2012-04-08 10:56:41.558922", "cpu_name": "arm", "reason": "SIGSEGV", "address": "0x1c", "url": "http://embarrassing.porn.com", "signature": "libxul.so@0x117441c", "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]]}', 'date_processed': '2012-04-08 10:56:41.558922'}),),
             )
 
             actual_execute_args = m.cursor().execute.call_args_list
@@ -630,4 +655,4 @@ class TestPostgresCrashStorage(TestCase):
                 assert_called_with(
                     'select raw_crash from raw_crash_20120402 where uuid = %s',
                     ('936ce666-ff3b-4c7a-9674-367fe2120408',)
-            )
+                )
