@@ -54,6 +54,13 @@ class TestForms(DjangoTestCase):
                 'name': 'Linux'
             }
         ]
+        self.current_channels = (
+            'release',
+            'beta',
+            'aurora',
+            'nightly',
+            'esr'
+        )
 
     def test_report_list(self):
 
@@ -431,6 +438,79 @@ class TestForms(DjangoTestCase):
         ok_(form.is_valid())
         eq_(form.cleaned_data['bug_ids'], ['123', '345', '100'])
         eq_(form.cleaned_data['include_fields'], ['foo_1', 'bar_2'])
+
+    def test_adubysignature_form(self):
+
+        def get_new_form(data):
+            return forms.ADUBySignatureJSONForm(
+                self.current_channels,
+                self.current_products,
+                data
+            )
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'days': '7',
+            'signature': 'the-signatu(re)',
+            'channel': 'nightly'
+        })
+        ok_(form.is_valid()) # all is good
+
+        form = get_new_form({
+            'product_name': '',
+            'days': '7',
+            'signature': 'the-signatu(re)',
+            'channel': 'nightly'
+        })
+        ok_(not form.is_valid()) # no product provided
+
+        form = get_new_form({
+            'product_name': 'SuckerFish',
+            'days': '7',
+            'signature': 'the-signatu(re)',
+            'channel': 'nightly'
+        })
+        ok_(not form.is_valid()) # invalid product
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'days': '',
+            'signature': 'the-signatu(re)',
+            'channel': 'nightly'
+        })
+        ok_(not form.is_valid()) # empty days parameter
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'days': '1',
+            'signature': 'the-signatu(re)',
+            'channel': 'nightly'
+        })
+        ok_(not form.is_valid()) # days value less than 3
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'days': '7',
+            'signature': '',
+            'channel': 'nightly'
+        })
+        ok_(not form.is_valid()) # empty signature
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'days': '7',
+            'signature': 'the-signatu(re)',
+            'channel': 'dooky'
+        })
+        ok_(not form.is_valid()) # invalid channel
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'days': '7',
+            'signature': 'the-signatu(re)',
+            'channel': ''
+        })
+        ok_(not form.is_valid()) # no channel provided
 
     def test_gcrashes_form(self):
 

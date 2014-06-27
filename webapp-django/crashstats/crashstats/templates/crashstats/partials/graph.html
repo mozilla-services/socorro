@@ -1,18 +1,10 @@
 <div class="wrapper">
-      <div class="crashes-by-platform hide">
-        <h3 id="by_platform_graph">Crashes By Build Date</h3>
-        <div id="graph-legend" class="crash-plot-label"></div>
-        <div id="buildid-graph"></div>
-        <p>Hover over a point above to see the crash build date.</p>
+      <div class="adubysig hide">
+        <h3 id="adubysig-heading"
+            data-heading="ADU By Signature For {channel} Channel">ADU By Signature For {{ channel|capitalize }} Channel</h3>
+        <div class="adubysig-graph">
+            <p class="no-data hide">No graph data returned for signature {{ signature }}</p>
+            <svg></svg>
+        </div>
       </div>
-      <p class="no-data hide">No graph data returned for signature {{ signature }}.</p>
 </div>
-
-<script type="text/javascript">
-/* All these datum are used by report_list_graph.js */
-var DATA = {};
-DATA.Win = {{ counts['Win'] | json_dumps }};
-DATA.Mac = {{ counts['Mac'] | json_dumps }};
-DATA.Lin = {{ counts['Lin'] | json_dumps }};
-DATA.xaxis_ticks = {{ counts['XAXIS_TICKS'] | json_dumps }};
-</script>

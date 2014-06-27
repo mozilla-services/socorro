@@ -298,6 +298,28 @@ class CrashTrendsForm(BaseForm):
         return value
 
 
+class ADUBySignatureJSONForm(BaseForm):
+
+    product_name = forms.ChoiceField(required=True)
+    days = forms.IntegerField(required=True, min_value=3)
+    signature = form_fields.SignatureField(required=True)
+    channel = forms.ChoiceField(required=True)
+
+    def __init__(self, current_channels,
+                 current_products,
+                 *args, **kwargs):
+        super(ADUBySignatureJSONForm, self).__init__(*args, **kwargs)
+        self.current_channels = current_channels
+
+        # ensure we have a valid product
+        products = [(x, x) for x in current_products]
+        self.fields['product_name'].choices = products
+
+        # ensure we have a valid channel
+        channels = [(x, x) for x in current_channels]
+        self.fields['channel'].choices = channels
+
+
 class FrontpageJSONForm(forms.Form):
     product = forms.ChoiceField(required=False)
     versions = forms.MultipleChoiceField(required=False)

@@ -1,4 +1,4 @@
-@import "base.less";
+@import "mixins.less";
 
 #buildid-outer {
     display: none;
@@ -46,5 +46,51 @@
     thead th a {
         color: black;
         text-decoration: none;
+    }
+}
+.adubysig {
+    position: relative;
+    padding-left: 1rem;
+    h3 {
+        margin: 0;
+    }
+    label {
+        margin-right: 1rem;
+        font-size: 1.1rem;
+    }
+    .no-data {
+        font-size: 1.3rem;
+    }
+}
+.adubysig-graph {
+    margin: .5rem 1.5rem;
+}
+.tooltip {
+    display: none;
+    position: absolute;
+    background-color: #7d8d96;
+    color: white;
+    padding: .3rem .7rem;
+    border: 3px solid white;
+    width: 14rem;
+    height: 6rem;
+    box-shadow: 2px 2px 5px #1a1818;
+    opacity: 0;
+}
+.axis {
+    path,
+    line {
+        fill: none;
+        stroke: #aaa;
+    }
+}
+.grid,
+.grid {
+    .tick {
+        stroke: #aaa;
+        opacity: 0.5;
+    }
+    path {
+      stroke-width: 0;
     }
 }

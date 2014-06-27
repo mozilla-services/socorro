@@ -168,6 +168,15 @@ def get_latest_nightly(context, product):
     return version
 
 
+def get_channel_for_release(version):
+    api = models.CurrentProducts()
+    version_info = api.get(
+        versions=version
+    )
+
+    return version_info['hits'][0]['build_type']
+
+
 def get_timedelta_from_value_and_unit(value, unit):
     if unit == 'weeks':
         date_delta = datetime.timedelta(weeks=value)
@@ -1248,6 +1257,18 @@ def report_list(request, partial=None, default_context=None):
         context['selected_products'] = None
         context['product'] = settings.DEFAULT_PRODUCT
 
+    # if we have a version, expose the channel for the current
+    # release for use in the adu graph
+    if context['product_versions']:
+        context['channel'] = get_channel_for_release(
+            context['product_versions']
+        )
+    else:
+        # if no version was provided fallback to nightly
+        context['channel'] = 'nightly'
+        # the ui is going to need access to all channels
+        context['channels'] = ','.join(settings.CHANNELS)
+
     results_per_page = 250
     result_offset = results_per_page * (page - 1)
 
@@ -1455,15 +1476,9 @@ def report_list(request, partial=None, default_context=None):
     for product_version in context['product_versions']:
         versions.append(product_version.split(':')[1])
 
-    if partial == 'table' or partial == 'graph':
+    if partial == 'table':
         context['table'] = {}
-        if partial == 'graph':
-            context['counts'] = {
-                'Win': [],
-                'Mac': [],
-                'Lin': [],
-                'XAXIS_TICKS': [],
-            }
+
         crashes_frequency_api = models.CrashesFrequency()
         params = {
             'signature': context['signature'],
@@ -1487,11 +1502,6 @@ def report_list(request, partial=None, default_context=None):
                 # TypeError happens when build['build_date'] is None
                 buildid = "(no build ID found)"
             context['table'][buildid] = build
-            if partial == 'graph':
-                context['counts']['Win'].append([i, build['count_windows']])
-                context['counts']['Mac'].append([i, build['count_mac']])
-                context['counts']['Lin'].append([i, build['count_linux']])
-                context['counts']['XAXIS_TICKS'].append([i, buildid])
 
     # signature URLs only if you're logged in
     if partial == 'sigurls':
@@ -1597,6 +1607,38 @@ def report_list(request, partial=None, default_context=None):
         tmpl = 'crashstats/report_list.html'
 
     return render(request, tmpl, context)
+
+@utils.json_view
+@pass_default_context
+def adu_by_signature_json(request, default_context=None):
+
+    form = forms.ADUBySignatureJSONForm(
+        settings.CHANNELS,
+        models.ProductsVersions().get(),
+        data=request.GET,
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    product = form.cleaned_data['product_name']
+    days = form.cleaned_data['days']
+    signature = form.cleaned_data['signature']
+    channel = form.cleaned_data['channel']
+
+    start_date = (
+        datetime.datetime.utcnow() -
+        datetime.timedelta(days=days)
+    )
+
+    api = models.AduBySignature()
+    adu_by_sig_data = api.get(
+        product_name=product,
+        start_date=start_date,
+        signature=signature,
+        channel=channel
+    )
+
+    return adu_by_sig_data
 
 
 @pass_default_context
