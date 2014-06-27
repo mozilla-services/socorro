@@ -47,7 +47,13 @@
     </div>
 
     <div id="graph" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}">
+         data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}"
+         data-jsonurl="{{ url('crashstats:adu_by_signature_json') }}"
+         data-signature="{{ signature }}"
+         data-days="{{ current_day }}"
+         data-product="{{ product }}"
+         data-channel="{{ channel }}"
+         data-fallback="{{ channels }}">
 
        <p class="loading-placeholder">
          <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -159,6 +165,9 @@
 
 {% block site_js %}
 {{ super() }}
+
+<script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+
 {% compress js %}
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
@@ -166,7 +175,6 @@
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/lib/awty.js') }}"></script>
