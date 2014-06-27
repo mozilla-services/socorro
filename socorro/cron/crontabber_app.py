@@ -50,6 +50,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.CorrelationsAddonCronApp|1d|07:00
   socorro.cron.jobs.matviews.CorrelationsCoreCronApp|1d|07:30
   socorro.cron.jobs.matviews.CorrelationsModuleCronApp|1d|08:00
+  socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d
 '''
 
 
