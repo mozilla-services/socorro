@@ -98,12 +98,12 @@ in webapp-django/crashstats/settings/local.py:
   #    }
   #}
 
-By default they listen on localhost only, which should be fine for local
-development.
-
 Run Socorro services using Honcho (configured in Procfile)
 ::
   honcho start
+
+The port numbers will be printed near the start of the output.
+The web UI will be on port 5000, collector on 5100, middleware on 5200.
 
 Alternatively you can also start individual services:
 ::
@@ -111,6 +111,9 @@ Alternatively you can also start individual services:
   honcho start collector
   honcho start middleware
   honcho start processor
+
+Note the port number when they start up, it will be different than if
+you start all services together (starts at port 5000)
 
 If you want to modify something that is common across config files like
 PostgreSQL username/hostname/etc, refer to config/common_database.ini-dist and

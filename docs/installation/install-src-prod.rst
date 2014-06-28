@@ -56,11 +56,6 @@ From inside the Socorro checkout, as the *root* user
 
 Make sure the copy each .ini-dist file to .ini and configure it.
 
-In particular, you must change the web server in collector.ini
-and middlware.ini to support Apache mod_wsgi rather than the standalone
-server::
-  wsgi_server_class='socorro.webapi.servers.ApacheModWSGI'
-
 It is highly recommended that you customize the files
 to change default passwords, and include the common_*.ini files
 rather than specifying the default password in each config file.
