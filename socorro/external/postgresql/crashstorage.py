@@ -63,7 +63,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         ("distributor_version", "distributor_version"),
         ("email", "email"),
         ("exploitability", "exploitability"),
-        #("flash_process_dump", "flash_process_dump"),  # future
+        # ("flash_process_dump", "flash_process_dump"),  # future
         ("flash_version", "flash_version"),
         ("hangid", "hangid"),
         ("install_age", "install_age"),
@@ -108,42 +108,47 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         the raw crash json is saved."""
         self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
 
-    #--------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     def _save_raw_crash_transaction(self, connection, raw_crash, crash_id):
         raw_crash_table_name = (
             'raw_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
         )
-        insert_sql = """insert into %s (uuid, raw_crash, date_processed) values
-                        (%%s, %%s, %%s)""" % raw_crash_table_name
-        savepoint_name = threading.currentThread().getName().replace('-', '')
-        value_list = (
-            crash_id,
-            json.dumps(raw_crash),
-            raw_crash["submitted_timestamp"]
+
+        upsert_sql = """
+        WITH
+        update_raw_crash AS (
+            UPDATE %(table)s SET
+                raw_crash = %%(raw_crash)s,
+                date_processed = %%(date_processed)s
+            WHERE uuid = %%(crash_id)s
+            RETURNING 1
+        ),
+        insert_raw_crash AS (
+            INSERT into %(table)s (uuid, raw_crash, date_processed)
+            ( SELECT
+                %%(crash_id)s as uuid,
+                %%(raw_crash)s as raw_crash,
+                %%(date_processed)s as date_processed
+                WHERE NOT EXISTS (
+                    SELECT uuid from %(table)s
+                    WHERE
+                        uuid = %%(crash_id)s
+                    LIMIT 1
+                )
+            )
+            RETURNING 2
         )
-        execute_no_results(connection, "savepoint %s" % savepoint_name)
-        try:
-            execute_no_results(connection, insert_sql, value_list)
-            execute_no_results(
-                connection,
-                "release savepoint %s" % savepoint_name
-            )
-        except self.config.database_class.IntegrityError:
-            # report already exists
-            execute_no_results(
-                connection,
-                "rollback to savepoint %s" % savepoint_name
-            )
-            execute_no_results(
-                connection,
-                "release savepoint %s" % savepoint_name
-            )
-            execute_no_results(
-                connection,
-                "delete from %s where uuid = %%s" % raw_crash_table_name,
-                (crash_id,)
-            )
-            execute_no_results(connection, insert_sql, value_list)
+        SELECT * from update_raw_crash
+        UNION ALL
+        SELECT * from insert_raw_crash
+        """ % {'table': raw_crash_table_name}
+
+        values = {
+            'crash_id': crash_id,
+            'raw_crash': json.dumps(raw_crash),
+            'date_processed': raw_crash["submitted_timestamp"]
+        }
+        execute_no_results(connection, upsert_sql, values)
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
