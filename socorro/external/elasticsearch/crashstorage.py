@@ -35,6 +35,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         "TransactionExecutorWithLimitedBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
         'elasticsearch_class',

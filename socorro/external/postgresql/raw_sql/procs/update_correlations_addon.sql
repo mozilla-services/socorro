@@ -38,6 +38,7 @@ WITH crash AS (
     SELECT json_array_elements(processed_crash->'addons') AS addons
            , product_version_id
            , signature_id
+           , reason_id
            , reports_clean.date_processed::date
            , reports_clean.os_name
     FROM processed_crashes
@@ -56,6 +57,7 @@ INSERT INTO correlations_addon (
     , report_date
     , os_name
     , signature_id
+    , reason_id
     , total
 )
 SELECT product_version_id
@@ -64,6 +66,7 @@ SELECT product_version_id
        , date_processed as report_date
        , os_name
        , signature_id
+       , reason_id
        , count(*) as total
 FROM crash
 WHERE (addons->0)::text IS NOT null
@@ -73,7 +76,8 @@ GROUP BY addon_id
          , product_version_id
          , date_processed
          , os_name
-         , signature_id;
+         , signature_id
+         , reason_id;
 
 RETURN TRUE;
 END;

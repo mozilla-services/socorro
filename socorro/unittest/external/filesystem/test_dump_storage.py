@@ -378,7 +378,7 @@ class TestDumpStorage:
     d = dumpStorage.DumpStorage
     assert_raises(OSError,d.readableOrThrow,self.testDir)
     os.mkdir(self.testDir)
-    tname = 'someUselessFile_'
+    tname = '/tmp/someUselessFile_'
     d.readableOrThrow(self.testDir)
     f = open(tname,'w')
     f.write('something')

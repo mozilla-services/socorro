@@ -18,8 +18,8 @@ from socorro.lib.datetimeutil import UTC
 
 class TestJsonDumpStoragePermissions(TestCase):
   def setUp(self):
-    self.testDir = os.path.join('.','TESTPERM')
-    self.testMoveFrom = os.path.join('.','TESTPERM-MOVEFROM')
+    self.testDir = os.path.join('/tmp', 'TESTPERM')
+    self.testMoveFrom = os.path.join('/tmp', 'TESTPERM-MOVEFROM')
   def tearDown(self):
     try:
       shutil.rmtree(self.testDir)

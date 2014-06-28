@@ -16,7 +16,14 @@ from socorro.external.elasticsearch.crashstorage import \
     ElasticSearchCrashStorage
 from socorro.external.elasticsearch.supersearch import SuperS
 from socorro.lib.datetimeutil import string_to_datetime, utc_now
-from crontabber.tests.base import IntegrationTestCaseBase, TestCaseBase
+from crontabber.tests.base import TestCaseBase
+
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+    get_standard_config_manager
+)
 
 # Remove debugging noise during development
 # import logging
@@ -30,19 +37,16 @@ from crontabber.tests.base import IntegrationTestCaseBase, TestCaseBase
 class TestAutomaticEmails(TestCaseBase):
 
     def _setup_simple_config(self, domains=None):
-        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
-        conf.add_option('logger', default=mock.Mock())
-
-        return ConfigurationManager(
-            [conf],
-            values_source_list=[
-                os.environ,
-                {
-                    'common_email_domains': domains,
-                },
+        overrides = {
+            'common_email_domains': domains,
+        }
+        config_manager = get_standard_config_manager(
+            more_definitions=[
+                automatic_emails.AutomaticEmailsCronApp.get_required_config()
             ],
-            argv_source=[]
+            overrides=overrides
         )
+        return config_manager
 
     def test_correct_email(self):
         domains = ('gmail.com', 'yahoo.com')
@@ -125,7 +129,7 @@ class TestAutomaticEmails(TestCaseBase):
 
 #==============================================================================
 @attr(integration='elasticsearch')
-class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
+class IntegrationTestAutomaticEmails(IntegrationTestBase):
 
     def setUp(self):
         super(IntegrationTestAutomaticEmails, self).setUp()
@@ -358,7 +362,7 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         restrict_products=['WaterWolf'],
         email_template='socorro_dev_test'
     ):
-        extra_value_source = {
+        overrides = {
             'crontabber.class-AutomaticEmailsCronApp.delay_between_emails':
                 delay_between_emails,
             'crontabber.class-AutomaticEmailsCronApp.exacttarget_user':
@@ -379,14 +383,19 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'elasticsearch_timeout': 5,
             'backoff_delays': [1],
         }
-
-        return super(
-            IntegrationTestAutomaticEmails,
-            self
-        )._setup_config_manager(
-            'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h',
-            extra_value_source=extra_value_source
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.automatic_emails'
+                '.AutomaticEmailsCronApp|1h',
+            overrides=overrides
         )
+
+        #return super(
+            #IntegrationTestAutomaticEmails,
+            #self
+        #)._setup_config_manager(
+            #'socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h',
+            #extra_value_source=extra_value_source
+        #)
 
     def _setup_simple_config(
         self,
@@ -394,10 +403,10 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
         restrict_products=['WaterWolf'],
         email_template='socorro_dev_test'
     ):
-        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
-        conf.add_option('logger', default=mock.Mock())
+        required_config = automatic_emails.AutomaticEmailsCronApp \
+            .get_required_config()
 
-        values_source_list = {
+        overrides = {
             'delay_between_emails': 7,
             'exacttarget_user': '',
             'exacttarget_password': '',
@@ -410,19 +419,23 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'backoff_delays': [1],
         }
         if common_email_domains:
-            values_source_list['common_email_domains'] = common_email_domains
+            overrides['common_email_domains'] = common_email_domains
 
-        return ConfigurationManager(
-            [conf],
-            values_source_list=[os.environ, values_source_list],
-            argv_source=[]
+        return get_config_manager_for_crontabber(
+            more_definitions=required_config,
+            overrides=overrides
         )
+        #return ConfigurationManager(
+            #[required_config],
+            #values_source_list=[os.environ, values_source_list],
+            #argv_source=[]
+        #)
 
     def _setup_test_mode_config(self):
-        conf = automatic_emails.AutomaticEmailsCronApp.get_required_config()
-        conf.add_option('logger', default=mock.Mock())
+        required_config = automatic_emails.AutomaticEmailsCronApp \
+            .get_required_config()
 
-        values_source_list = {
+        overrides = {
             'delay_between_emails': 7,
             'exacttarget_user': '',
             'exacttarget_password': '',
@@ -437,28 +450,35 @@ class IntegrationTestAutomaticEmails(IntegrationTestCaseBase):
             'backoff_delays': [1],
         }
 
-        return ConfigurationManager(
-            [conf],
-            values_source_list=[os.environ, values_source_list],
-            argv_source=[]
+        return get_config_manager_for_crontabber(
+            more_definitions=required_config,
+            overrides=overrides
         )
+        #return ConfigurationManager(
+            #[conf],
+            #values_source_list=[os.environ, values_source_list],
+            #argv_source=[]
+        #)
 
     def _setup_storage_config(self):
-        storage_conf = ElasticSearchCrashStorage.get_required_config()
-        storage_conf.add_option('logger', default=mock.Mock())
+        required_config = ElasticSearchCrashStorage.get_required_config()
 
-        values_source_list = {
+        overrides = {
             'elasticsearch_index': 'socorro_integration_test',
             'elasticsearch_emails_index': 'socorro_integration_test_emails',
             'elasticsearch_timeout': 5,
             'backoff_delays': [1],
         }
 
-        return ConfigurationManager(
-            [storage_conf],
-            values_source_list=[os.environ, values_source_list],
-            argv_source=[]
+        return get_config_manager_for_crontabber(
+            more_definitions=required_config,
+            overrides=overrides
         )
+        #return ConfigurationManager(
+            #[required_config],
+            #values_source_list=[os.environ, values_source_list],
+            #argv_source=[]
+        #)
 
     @mock.patch('socorro.external.exacttarget.exacttarget.ExactTarget')
     def test_cron_job(self, exacttarget_mock):

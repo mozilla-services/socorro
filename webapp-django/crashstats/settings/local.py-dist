@@ -160,3 +160,12 @@ SECRET_KEY = 'you must change this'
 # https://docs.djangoproject.com/en/dev/topics/http/\
 #  file-uploads/#changing-upload-handler-behavior
 #FILE_UPLOAD_PERMISSIONS = 0664
+
+# When you don't have permission to upload Symbols you might be confused
+# what to do next. On the page that explains that you don't have permission
+# there's a chance to put a link
+#SYMBOLS_PERMISSION_HINT_LINK = {
+#    'url': 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&'
+#           'component=General&groups=client-services-security',
+#    'label': 'File a bug in bugzilla'
+#}

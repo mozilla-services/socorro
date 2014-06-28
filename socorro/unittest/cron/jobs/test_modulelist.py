@@ -9,10 +9,14 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
 import datetime
 
 from socorro.lib.datetimeutil import utc_now
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 
 #==============================================================================
@@ -50,7 +54,7 @@ def mocked_Popen(command, **kwargs):
 
 #==============================================================================
 @attr(integration='postgres')
-class TestModulelist(IntegrationTestCaseBase):
+class TestModulelist(IntegrationTestBase):
 
     def setUp(self):
         super(TestModulelist, self).setUp()
@@ -62,17 +66,14 @@ class TestModulelist(IntegrationTestCaseBase):
         self.Popen_patcher.stop()
 
     def _setup_config_manager(self):
-        _super = super(TestModulelist, self)._setup_config_manager
-        _source = {}
-        _source['crontabber.class-ModulelistCronApp.pig_classpath'] = (
-            '/some/place'
-        )
-        _source['crontabber.class-ModulelistCronApp.output_file'] = (
-            '/some/other/place/%(date)s-modulelist.txt'
-        )
-        return _super(
-            'socorro.cron.jobs.modulelist.ModulelistCronApp|1d',
-            extra_value_source=_source
+        overrides = {
+            'crontabber.class-ModulelistCronApp.pig_classpath': '/some/place',
+            'crontabber.class-ModulelistCronApp.output_file':
+                '/some/other/place/%(date)s-modulelist.txt'
+        }
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.modulelist.ModulelistCronApp|1d',
+            overrides=overrides
         )
 
     def test_basic_run_no_errors(self):

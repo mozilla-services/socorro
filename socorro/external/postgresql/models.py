@@ -269,7 +269,8 @@ class CorrelationsAddon(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
-    total = Column(u'total', BIGINT())
+    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
+    total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, addon_id, addon_version, report_date, os_name, signature_id)}
 
 
@@ -283,7 +284,8 @@ class CorrelationsCore(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), nullable=False, index=True)
-    total = Column(u'total', BIGINT())
+    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
+    total = Column(u'total', INTEGER())
     __mapper_args__ = {"primary_key": (product_version_id, cpu_arch, cpu_count, report_date, os_name, signature_id)}
 
 
@@ -292,13 +294,22 @@ class CorrelationsModule(DeclarativeBase):
 
     #column definitions
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False)
-    module_name = Column(u'module_name', TEXT(), nullable=False)
-    module_version = Column(u'module_version', TEXT(), nullable=False)
+    module_id = Column(u'module_id', INTEGER(), nullable=False)
     report_date = Column(u'report_date', DATE(), nullable=False, index=True)
     os_name = Column(u'os_name', TEXT(), nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
-    total = Column(u'total', BIGINT())
-    __mapper_args__ = {"primary_key": (product_version_id, module_name, module_version, report_date, os_name, signature_id)}
+    reason_id = Column(u'reason_id', INTEGER(), nullable=False, index=False)
+    total = Column(u'total', INTEGER())
+    __mapper_args__ = {"primary_key": (product_version_id, module_id, report_date, os_name, signature_id)}
+
+
+class Module(DeclarativeBase):
+    __tablename__ = 'modules'
+
+    #column definitions
+    module_id = Column(u'module_id', INTEGER(), nullable=False, primary_key=True)
+    name = Column(u'name', TEXT(), nullable=False, primary_key=True)
+    version = Column(u'version', TEXT(), nullable=False, primary_key=True)
 
 
 class Extension(DeclarativeBase):
@@ -347,6 +358,55 @@ class PluginsReport(DeclarativeBase):
     version = Column(u'version', TEXT(), nullable=False)
 
     __mapper_args__ = {"primary_key": (report_id, plugin_id, date_processed, version)}
+
+
+class RawAdiLogs(DeclarativeBase):
+    __tablename__ = 'raw_adi_logs'
+
+    #column definitions
+    report_date = Column(u'report_date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    build_channel = Column(u'build_channel', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+    count = Column(u'count', INTEGER())
+
+    __mapper_args__ = {"primary_key": (
+            report_date,
+            product_name,
+            product_os_platform,
+            product_os_version,
+            product_version,
+            build,
+            build_channel,
+            product_guid,
+            count
+        )
+    }
+
+
+class RawAdi(DeclarativeBase):
+    __tablename__ = 'raw_adi'
+
+    #column definitions
+    adi_count = Column(u'adi_count', INTEGER())
+    date = Column(u'date', DATE())
+    product_name = Column(u'product_name', TEXT())
+    product_os_platform = Column(u'product_os_platform', TEXT())
+    product_os_version = Column(u'product_os_version', TEXT())
+    product_version = Column(u'product_version', TEXT())
+    build = Column(u'build', TEXT())
+    product_guid = Column(u'product_guid', TEXT())
+    update_channel = Column(u'update_channel', TEXT())
+    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
+
+    __mapper_args__ = {"primary_key": (adi_count, date, product_name, product_version, product_os_platform, product_os_version, build, product_guid, update_channel)}
+    __table_args__ = (
+        Index(u'raw_adi_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
+    )
 
 
 class RawAdu(DeclarativeBase):

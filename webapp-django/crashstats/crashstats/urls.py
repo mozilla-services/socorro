@@ -2,7 +2,7 @@ from django.conf.urls.defaults import patterns, url
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from . import views, feeds
+from . import views
 
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
@@ -53,6 +53,9 @@ urlpatterns = patterns(
     url(r'^crontabber-state/data.json$',
         views.crontabber_state_json,
         name='crontabber_state_json'),
+    url(r'^your-crashes/$',
+        views.your_crashes,
+        name='your_crashes'),
     url(r'^products/$',
         views.products_list,
         name='products_list'),
@@ -108,20 +111,6 @@ urlpatterns = patterns(
     url('^daily$',
         views.daily,
         name='daily'),
-    url('^builds' + products + '$',
-        views.builds,
-        name='builds'),
-    # note the deliberate omission of the ';' despite calling the regex
-    # variable 'versionS'
-    url('^builds' + products + '/versions/(?P<versions>[\w\.()]+)' + '$',
-        views.builds,
-        name='builds'),
-    url('^builds' + products + '/rss$',
-        feeds.BuildsRss(),
-        name='buildsrss'),
-    url('^builds' + products + versions + '/rss$',
-        feeds.BuildsRss(),
-        name='buildsrss'),
     # handle old-style urls
     url('^topchangers' + products + '$',
         views.topchangers,
@@ -231,12 +220,6 @@ urlpatterns = patterns(
             permanent=perm_legacy_redirect
         )),
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
-        r'builds$',
-        RedirectView.as_view(
-            url='/builds/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
         r'topchangers$',
         RedirectView.as_view(
             url='/topchangers/products/%(product)s',
@@ -260,11 +243,6 @@ urlpatterns = patterns(
     url('^home' + products + '/versions/$',
         RedirectView.as_view(
             url='/home/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url('^products/(?P<product>\w+)/builds/?$',
-        RedirectView.as_view(
-            url='/builds/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
 )

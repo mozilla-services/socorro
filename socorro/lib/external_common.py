@@ -6,6 +6,8 @@
 Common functions for external modules.
 """
 
+import json
+
 from datetime import datetime, timedelta, date
 from socorro.lib.util import DotDict
 
@@ -114,6 +116,12 @@ def check_type(param, datatype):
     elif datatype == "timedelta" and not isinstance(param, timedelta):
         try:
             param = dtutil.strHoursToTimeDelta(param)
+        except ValueError:
+            param = None
+
+    elif datatype == "json" and isinstance(param, basestring):
+        try:
+            param = json.loads(param)
         except ValueError:
             param = None
 

@@ -16,8 +16,8 @@ CONF = _config
 
 
 Vagrant::Config.run do |config|
-  config.vm.box = "CentOS-6.4-i386-v20130427"
-  config.vm.box_url = "http://developer.nrel.gov/downloads/vagrant-boxes/CentOS-6.4-i386-v20130427.box"
+  config.vm.box = "CentOS 6.4 x86_64 Minimal"
+  config.vm.box_url = "http://developer.nrel.gov/downloads/vagrant-boxes/CentOS-6.4-x86_64-v20131103.box"
 
   Vagrant.configure("1") do |config|
     config.vm.customize ["modifyvm", :id, "--memory", CONF['memory']]
@@ -59,11 +59,11 @@ Vagrant::Config.run do |config|
   MOUNT_POINT = '/home/vagrant/src/socorro'
 
   # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
-  if is_jenkins or CONF['nfs'] == false or RUBY_PLATFORM =~ /mswin(32|64)/
+  if is_jenkins or RUBY_PLATFORM =~ /mswin(32|64)/
     config.vm.share_folder("vagrant-root", MOUNT_POINT, ".",
-                           :extra => 'dmode=777,fmode=777')
+                           :mount_options => ['dmode=777', 'fmode=777'])
   else
-    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => true)
+    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => CONF.fetch('nfs', true))
   end
 
   config.vm.provision :puppet do |puppet|

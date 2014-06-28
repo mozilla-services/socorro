@@ -12,11 +12,15 @@ from nose.tools import assert_raises
 
 from configman import ConfigurationManager
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
 
 from socorro.external.elasticsearch.crashstorage import \
     ElasticSearchCrashStorage
 from socorro.lib.datetimeutil import utc_now
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 # Remove debugging noise during development
 import logging
@@ -27,7 +31,13 @@ logging.getLogger('requests.packages.urllib3.connectionpool')\
 
 
 @attr(integration='elasticsearch')
-class IntegrationTestElasticsearchCleanup(IntegrationTestCaseBase):
+class IntegrationTestElasticsearchCleanup(IntegrationTestBase):
+
+    def _setup_config_manager(self):
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.elasticsearch_cleanup.'
+                'ElasticsearchCleanupCronApp|30d',
+        )
 
     def __init__(self, *args, **kwargs):
         super(
@@ -57,10 +67,7 @@ class IntegrationTestElasticsearchCleanup(IntegrationTestCaseBase):
         )
 
     def test_right_indices_are_deleted(self):
-        config_manager = self._setup_config_manager(
-            'socorro.cron.jobs.elasticsearch_cleanup.'
-            'ElasticsearchCleanupCronApp|30d'
-        )
+        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
             # clear the indices cache so the index is created on every test
             self.storage.indices_cache = set()
@@ -142,10 +149,7 @@ class IntegrationTestElasticsearchCleanup(IntegrationTestCaseBase):
         """Verify that non-week-based indices are not removed. For example,
         the socorro_email index should not be deleted by the cron job.
         """
-        config_manager = self._setup_config_manager(
-            'socorro.cron.jobs.elasticsearch_cleanup.'
-            'ElasticsearchCleanupCronApp|30d'
-        )
+        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
             # clear the indices cache so the index is created on every test
             self.storage.indices_cache = set()

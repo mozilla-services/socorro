@@ -21,7 +21,17 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   installation
+   installation/index
+   installation/deps
+   installation/download
+   installation/postgres
+   installation/install-binary
+   installation/install-src-dev
+   installation/install-src-prod
+   installation/systemtest
+   installation/troubleshoot
+   installation/add-product-release
+   webapp
    middleware
    crashstorage
    crontabber
@@ -30,7 +40,6 @@ Contents:
    database
    generic_app
    writingdocs
-   webapp
 
 
 Indices and tables

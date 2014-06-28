@@ -8,12 +8,16 @@ from nose.tools import eq_
 
 from crontabber.app import CronTabber
 
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
+
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
 
 
 #==============================================================================
 @attr(integration='postgres')
-class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
+class IntegrationTestReprocessingJobs(IntegrationTestBase):
 
     def _clear_tables(self):
         self.conn.cursor().execute("""
@@ -39,19 +43,20 @@ class IntegrationTestReprocessingJobs(IntegrationTestCaseBase):
         super(IntegrationTestReprocessingJobs, self).tearDown()
 
     def _setup_config_manager(self):
-        _super = super(IntegrationTestReprocessingJobs,
-                       self)._setup_config_manager
-
         self.rabbit_queue_mocked = Mock()
 
-        return _super(
-            'socorro.cron.jobs.reprocessingjobs.ReprocessingJobsApp|5m',
-            extra_value_source={'queuing_class': self.rabbit_queue_mocked}
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.reprocessingjobs.ReprocessingJobsApp|5m',
+            overrides={
+                'crontabber.class-ReprocessingJobsApp.queuing.queuing_class':
+                    self.rabbit_queue_mocked
+            }
         )
 
     def test_reprocessing(self):
         """ Simple test of reprocessing"""
         config_manager = self._setup_config_manager()
+        c = config_manager.get_config()
 
         cursor = self.conn.cursor()
 

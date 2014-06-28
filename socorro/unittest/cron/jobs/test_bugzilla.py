@@ -8,7 +8,11 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 from dateutil import tz
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
+
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
 SAMPLE_CSV = [
@@ -26,7 +30,7 @@ SAMPLE_CSV = [
 
 #==============================================================================
 @attr(integration='postgres')
-class IntegrationTestBugzilla(IntegrationTestCaseBase):
+class IntegrationTestBugzilla(IntegrationTestBase):
 
     def tearDown(self):
         self.conn.cursor().execute("""
@@ -49,13 +53,12 @@ class IntegrationTestBugzilla(IntegrationTestCaseBase):
 
         query = 'file://' + filename.replace(datestring, '%s')
 
-        _super = super(IntegrationTestBugzilla, self)._setup_config_manager
-        return _super(
-          'socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
-          extra_value_source={
-            'crontabber.class-BugzillaCronApp.query': query,
-            'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
-          }
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
+            overrides={
+              'crontabber.class-BugzillaCronApp.query': query,
+              'crontabber.class-BugzillaCronApp.days_into_past': days_into_past,
+            }
         )
 
     def test_basic_run_job_without_reports(self):

@@ -118,11 +118,19 @@ class SocorroCommon(object):
     cache_seconds = 60 * 60
 
     @measure_fetches
-    def fetch(self, url, headers=None, method='get', params=None, data=None,
-              expect_json=True, dont_cache=False,
-              retries=None,
-              retry_sleeptime=None):
-
+    def fetch(
+        self,
+        url,
+        headers=None,
+        method='get',
+        params=None,
+        data=None,
+        expect_json=True,
+        dont_cache=False,
+        refresh_cache=False,
+        retries=None,
+        retry_sleeptime=None
+    ):
         if retries is None:
             retries = settings.MIDDLEWARE_RETRIES
         if retry_sleeptime is None:
@@ -156,47 +164,58 @@ class SocorroCommon(object):
                 data=data,
                 params=params,
             ).prepare()
-
             cache_key = md5_constructor(iri_to_uri(req.url)).hexdigest()
-            result = cache.get(cache_key)
-            if result is not None:
-                logger.debug("CACHE HIT %s" % url)
-                return result, True
 
-            # not in the memcache/locmem but is it in cache files?
+            if not refresh_cache:
+                result = cache.get(cache_key)
+                if result is not None:
+                    logger.debug("CACHE HIT %s" % url)
+                    return result, True
 
-            if settings.CACHE_MIDDLEWARE_FILES:
-                root = settings.CACHE_MIDDLEWARE_FILES
-                if isinstance(root, bool):
-                    cache_file = os.path.join(settings.ROOT, 'models-cache')
-                else:
-                    cache_file = root
-                split = urlparse.urlparse(url)
-                cache_file = os.path.join(cache_file,
-                                          split.netloc,
-                                          _clean_path(split.path))
-                if split.query:
-                    cache_file = os.path.join(cache_file,
-                                              _clean_query(split.query))
-                if expect_json:
-                    cache_file = os.path.join(cache_file,
-                                              '%s.json' % cache_key)
-                else:
-                    cache_file = os.path.join(cache_file,
-                                              '%s.dump' % cache_key)
-
-                if os.path.isfile(cache_file):
-                    # but is it fresh enough?
-                    age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
-                    if age > self.cache_seconds:
-                        logger.debug("CACHE FILE TOO OLD")
-                        os.remove(cache_file)
+                # not in the memcache/locmem but is it in cache files?
+                if settings.CACHE_MIDDLEWARE_FILES:
+                    root = settings.CACHE_MIDDLEWARE_FILES
+                    if isinstance(root, bool):
+                        cache_file = os.path.join(
+                            settings.ROOT,
+                            'models-cache'
+                        )
                     else:
-                        logger.debug("CACHE FILE HIT %s" % url)
-                        if expect_json:
-                            return json.load(open(cache_file)), True
+                        cache_file = root
+                    split = urlparse.urlparse(url)
+                    cache_file = os.path.join(
+                        cache_file,
+                        split.netloc,
+                        _clean_path(split.path)
+                    )
+                    if split.query:
+                        cache_file = os.path.join(
+                            cache_file,
+                            _clean_query(split.query)
+                        )
+                    if expect_json:
+                        cache_file = os.path.join(
+                            cache_file,
+                            '%s.json' % cache_key
+                        )
+                    else:
+                        cache_file = os.path.join(
+                            cache_file,
+                            '%s.dump' % cache_key
+                        )
+
+                    if os.path.isfile(cache_file):
+                        # but is it fresh enough?
+                        age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
+                        if age > self.cache_seconds:
+                            logger.debug("CACHE FILE TOO OLD")
+                            os.remove(cache_file)
                         else:
-                            return open(cache_file).read(), True
+                            logger.debug("CACHE FILE HIT %s" % url)
+                            if expect_json:
+                                return json.load(open(cache_file)), True
+                            else:
+                                return open(cache_file).read(), True
 
         if method == 'post':
             request_method = requests.post
@@ -306,7 +325,14 @@ class SocorroMiddleware(SocorroCommon):
             dont_cache=True,
         )
 
-    def _get(self, method='get', dont_cache=False, expect_json=True, **kwargs):
+    def _get(
+        self,
+        method='get',
+        dont_cache=False,
+        refresh_cache=False,
+        expect_json=True,
+        **kwargs
+    ):
         """
         This is the generic `get` method that will take
         `self.required_params` and `self.possible_params` and construct
@@ -336,6 +362,7 @@ class SocorroMiddleware(SocorroCommon):
             params=params,
             method=method,
             dont_cache=dont_cache,
+            refresh_cache=refresh_cache,
             expect_json=expect_json,
         )
 

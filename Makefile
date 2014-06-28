@@ -14,9 +14,9 @@ PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 ENV = env
 
-PG_RESOURCES = crontabber.database_name=socorro_integration_test $(if $(database_hostname), resource.postgresql.database_hostname=$(database_hostname)) $(if $(database_username), secrets.postgresql.database_username=$(database_username)) $(if $(database_password), secrets.postgresql.database_password=$(database_password)) $(if $(database_port), resource.postgresql.database_port=$(database_port))
+PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=$(database_hostname)) $(if $(database_username), secrets.postgresql.database_username=$(database_username)) $(if $(database_password), secrets.postgresql.database_password=$(database_password)) $(if $(database_port), resource.postgresql.database_port=$(database_port)) $(if $(database_name), resource.postgresql.database_name=$(database_name))
 RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
-ES_RESOURCES = $(if $(elasticsearch_urls), elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), elasticSearchHostname=$(elasticSearchHostname))
+ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), resource.elasticsearch.elasticSearchHostname=$(elasticSearchHostname)) $(if $(elasticsearch_index), resource.elasticsearch.elasticsearch_index=$(elasticsearch_index))
 
 .PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django
 
@@ -41,20 +41,18 @@ test-socorro: bootstrap
 	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
-# makes thing semantically consistent (test-{component}) while avoiding
-# building the webapp twice to save a little time
-test-webapp: webapp-django
-	# alias to webapp-django
+test-webapp: bootstrap-webapp
+	cd webapp-django; ./bin/jenkins.sh
 
 bootstrap:
 	git submodule update --init --recursive
 	if [[ ! "$$(type -p lessc)" ]]; then printf "\e[0;32mlessc not found! less must be installed and lessc on your path to build socorro.\e[0m\n" && exit 1; fi;
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
-	$(VIRTUALENV)/bin/pip install tools/peep-1.1.tar.gz
+	$(VIRTUALENV)/bin/pip install tools/peep-1.2.tar.gz
 	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
-install: bootstrap reinstall
+install: bootstrap bootstrap-webapp reinstall
 
 # this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
 reinstall: install-socorro
@@ -62,7 +60,7 @@ reinstall: install-socorro
 	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
 	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
-install-socorro: webapp-django
+install-socorro: bootstrap-webapp
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -78,8 +76,6 @@ install-socorro: webapp-django
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis $(PREFIX)/
 	rsync -a alembic $(PREFIX)/application
-	# purge the virtualenv
-	[ -d webapp-django/virtualenv ] || rm -rf webapp-django/virtualenv
 	rsync -a webapp-django $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
@@ -89,7 +85,7 @@ lint:
 	$(PYLINT) -f parseable --rcfile=pylintrc socorro > pylint.txt
 
 clean:
-	find ./socorro/ ./alembic/versions -type f -name "*.pyc" -exec rm {} \;
+	find ./ -type f -name "*.pyc" -exec rm {} \;
 	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
 	cd minidump-stackwalk; make clean
@@ -112,8 +108,8 @@ json_enhancements_pg_extension: bootstrap
     # every time Socorro is built
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
 
-webapp-django: bootstrap
-	cd webapp-django; ./bin/jenkins.sh
+bootstrap-webapp: bootstrap
+	cd webapp-django; ./bin/bootstrap.sh
 
 stackwalker:
 	# Build JSON stackwalker

@@ -25,12 +25,14 @@ class ElasticSearchTestCase(TestCase):
 
         values_source = {
             'logger': mock_logging,
-            'elasticsearch_index': 'socorro_integration_test',
-            'backoff_delays': [1],
-            'elasticsearch_timeout': 5,
+            'resource.elasticsearch.elasticsearch_default_index': 'socorro_integration_test',
+            'resource.elasticsearch.elasticsearch_index': 'socorro_integration_test',
+            'resource.elasticsearch.backoff_delays': [1],
+            'resource.elasticsearch.elasticsearch_timeout': 5,
+            'resource.postgresql.database_name': 'socorro_integration_test'
         }
         if es_index:
-            values_source['elasticsearch_index'] = es_index
+            values_source['resource.elasticsearch.elasticsearch_index'] = es_index
 
         config_manager = ConfigurationManager(
             [storage_config, middleware_config],
@@ -41,8 +43,4 @@ class ElasticSearchTestCase(TestCase):
             argv_source=[],
         )
 
-        with config_manager.context() as config:
-            # This is an ugly hack to compensate for a bug in configman.
-            # See https://github.com/mozilla/configman/issues/103
-            config.backoff_delays = [1]
-            return config
+        return config_manager.get_config()

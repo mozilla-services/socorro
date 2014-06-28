@@ -27,6 +27,8 @@
                  {% if url('manage:graphics_devices') in request.path_info  %}class="selected"{% endif %}>Graphics Devices</a></li>
             <li><a href="{{ url('manage:symbols_uploads') }}"
                  {% if url('manage:symbols_uploads') in request.path_info  %}class="selected"{% endif %}>Symbols Uploads</a></li>
+            <li><a href="{{ url('manage:supersearch_fields') }}"
+                 {% if url('manage:supersearch_fields') in request.path_info  %}class="selected"{% endif %}>Super Search Fields</a></li>
         </ul>
     </div>
     {% block mainbody %}

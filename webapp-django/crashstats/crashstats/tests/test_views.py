@@ -1983,108 +1983,6 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.get')
-    def test_builds(self, rget):
-        url = reverse('crashstats:builds', args=('WaterWolf',))
-        rss_url = reverse('crashstats:buildsrss', args=('WaterWolf',))
-
-        def mocked_get(url, params, **options):
-            if '/products/builds' in url:
-                # Note that the last one isn't build_type==Nightly
-                return Response("""
-                    [
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000001,
-                        "beta_number": null,
-                        "platform": "Mac OS X",
-                        "version": "19.0",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      },
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000002,
-                        "beta_number": null,
-                        "platform": "Windows",
-                        "version": "19.0",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      },
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000003,
-                        "beta_number": null,
-                        "platform": "BeOS",
-                        "version": "5.0a1",
-                        "date": "2012-06-25",
-                        "build_type": "Beta"
-                      }
-                    ]
-                """)
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('20120625000001' in response.content)
-        ok_('20120625000002' in response.content)
-        # the not, build_type==Nightly
-        ok_('20120625000003' not in response.content)
-
-        rss_response = self.client.get(rss_url)
-        self.assertEquals(rss_response.status_code, 200)
-        self.assertEquals(rss_response['Content-Type'],
-                          'application/rss+xml; charset=utf-8')
-        ok_('20120625000001' in rss_response.content)
-        ok_('20120625000002' in rss_response.content)
-        # the not, build_type==Nightly
-        ok_('20120625000003' not in rss_response.content)
-
-    @mock.patch('requests.get')
-    def test_builds_by_old_version(self, rget):
-        url = reverse('crashstats:builds', args=('WaterWolf', '18.0'))
-
-        def mocked_get(url, params, **options):
-            if '/products/builds' in url:
-                ok_('version' in params)
-                eq_('18.0', params['version'])
-
-                return Response("""
-                    [
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000007,
-                        "beta_number": null,
-                        "platform": "Mac OS X",
-                        "version": "5.0a1",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      },
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000007,
-                        "beta_number": null,
-                        "platform": "Windows",
-                        "version": "5.0a1",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      }
-                    ]
-                """)
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        header = response.content.split('<h2')[1].split('</h2>')[0]
-        ok_('18.0' in header)
-
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_query(self, rget, rpost):
@@ -2334,10 +2232,10 @@ class TestViews(BaseTestViews):
 
         # Test passed date
         response = self.client.get(url, {
-            'date': '11/27/2085 10:10:10'
+            'date': '11/27/2031 10:10:10'
         })
         eq_(response.status_code, 200)
-        ok_('11/27/2085 10:10:10' in response.content)
+        ok_('11/27/2031 10:10:10' in response.content)
 
         # Test value of build ids
         response = self.client.get(url, {
@@ -3142,6 +3040,104 @@ class TestViews(BaseTestViews):
         ok_('application/json' in response['Content-Type'])
         eq_(response.status_code, 200)
         eq_(sample_data, json.loads(response.content))
+
+    @mock.patch('requests.get')
+    def test_your_crashes(self, rget):
+        url = reverse('crashstats:your_crashes')
+
+        def mocked_get(url, params, **options):
+            assert '/supersearch/' in url
+
+            if '/supersearch/fields/' in url:
+                return Response({
+                    'email': {
+                        'name': 'email',
+                        'query_type': 'str',
+                        'namespace': 'processed_crash',
+                        'form_field_type': 'StringField',
+                        'form_field_choices': None,
+                        'permissions_needed': ['crashstats.view_pii'],
+                        'default_value': None,
+                        'is_exposed': True,
+                        'is_returned': True,
+                        'is_mandatory': False,
+                    }
+                })
+
+            assert 'email' in params
+            assert params['email'] == 'test@mozilla.com'
+
+            return Response({
+                'hits': [
+                    {
+                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
+                        'date': '2000-01-01T00:00:00'
+                    },
+                    {
+                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
+                        'date': '2000-01-02T00:00:00'
+                    }
+                ],
+                'total': 2
+            })
+
+        rget.side_effect = mocked_get
+
+        # A user needs to be signed in to see this page.
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse('crashstats:login') + '?next=%s' % url
+        )
+
+        self._login()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('1234abcd-ef56-7890-ab12-abcdef130801' in response.content)
+        ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
+        ok_('test@mozilla.com' in response.content)
+
+    @mock.patch('requests.get')
+    def test_your_crashes_no_data(self, rget):
+        url = reverse('crashstats:your_crashes')
+
+        def mocked_get(url, params, **options):
+            assert '/supersearch/' in url
+
+            if '/supersearch/fields/' in url:
+                return Response({
+                    'email': {
+                        'name': 'email',
+                        'query_type': 'str',
+                        'namespace': 'processed_crash',
+                        'form_field_type': 'StringField',
+                        'form_field_choices': None,
+                        'permissions_needed': ['crashstats.view_pii'],
+                        'default_value': None,
+                        'is_exposed': True,
+                        'is_returned': True,
+                        'is_mandatory': False,
+                    }
+                })
+
+            assert 'email' in params
+            assert params['email'] == 'test@mozilla.com'
+
+            return Response({
+                'hits': [],
+                'total': 0
+            })
+
+        rget.side_effect = mocked_get
+
+        self._login()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('test@mozilla.com' in response.content)
+        ok_('no crash report' in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
@@ -5141,64 +5137,6 @@ class TestViews(BaseTestViews):
         response = self.client.get(dump_url)
         eq_(response.status_code, 200)
         ok_('bla bla bla' in response.content)  # still. good.
-
-    @mock.patch('requests.get')
-    def test_links_to_builds_rss(self, rget):
-
-        def mocked_get(url, params, **options):
-            if 'products/builds' in url:
-                # Note that the last one isn't build_type==Nightly
-                return Response("""
-                    [
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000001,
-                        "beta_number": null,
-                        "platform": "Mac OS X",
-                        "version": "19.0",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      },
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000002,
-                        "beta_number": null,
-                        "platform": "Windows",
-                        "version": "19.0",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      },
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000003,
-                        "beta_number": null,
-                        "platform": "BeOS",
-                        "version": "5.0a1",
-                        "date": "2012-06-25",
-                        "build_type": "Beta"
-                      }
-                    ]
-                """)
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        rss_product_url = reverse('crashstats:buildsrss', args=('WaterWolf',))
-        rss_version_url = reverse('crashstats:buildsrss',
-                                  args=('WaterWolf', '19.0'))
-
-        url = reverse('crashstats:builds', args=('WaterWolf',))
-        response = self.client.get(url)
-        ok_('href="%s"' % rss_product_url in response.content)
-        ok_('href="%s"' % rss_version_url not in response.content)
-
-        url = reverse('crashstats:builds', args=('WaterWolf', '19.0'))
-        response = self.client.get(url)
-        ok_('href="%s"' % rss_product_url not in response.content)
-        ok_('href="%s"' % rss_version_url in response.content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

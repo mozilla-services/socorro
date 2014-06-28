@@ -10,12 +10,15 @@ import mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 from crontabber.app import CronTabber
-from crontabber.tests.base import IntegrationTestCaseBase
+from socorro.unittest.cron.setup_configman import (
+    get_config_manager_for_crontabber,
+)
+from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
 #==============================================================================
 @attr(integration='postgres')
-class IntegrationTestDailyURL(IntegrationTestCaseBase):
+class IntegrationTestDailyURL(IntegrationTestBase):
 
     def setUp(self):
         super(IntegrationTestDailyURL, self).setUp()
@@ -44,7 +47,6 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
                               #public_server='ftp.mozilla.org',
                               #public_location='/tmp/%Y%m%d/',
                               ):
-        _super = super(IntegrationTestDailyURL, self)._setup_config_manager
         if output_path is None:
             output_path = self.tempdir
         if public_output_path is None:
@@ -57,9 +59,9 @@ class IntegrationTestDailyURL(IntegrationTestCaseBase):
         for key, value in kwargs.items():
             extra_value_source['crontabber.class-DailyURLCronApp.%s' % key] = value
 
-        return _super(
-          'socorro.cron.jobs.daily_url.DailyURLCronApp|1d',
-          extra_value_source=extra_value_source
+        return get_config_manager_for_crontabber(
+            jobs='socorro.cron.jobs.daily_url.DailyURLCronApp|1d',
+            overrides=extra_value_source
         )
 
     def test_basic_run_job_no_data(self):
