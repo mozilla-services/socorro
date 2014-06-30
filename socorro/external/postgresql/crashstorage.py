@@ -226,6 +226,31 @@ class PostgreSQLCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _save_processed_report(self, connection, processed_crash):
+        """ Here we INSERT or UPDATE a row in the reports table.
+        This is the first stop before imported data gets into our normalized
+        batch reporting (next table: reports_clean).
+
+        At some point in the future, we will switch to using the raw_crash
+        table and JSON transforms instead. This work will require an overhaul
+        and optimization of the update_reports_clean() and
+        update_reports_duplicates() stored procedures.
+
+        We perform an UPSERT using a PostgreSQL CTE (aka WITH clause) that
+        first tests whether a row exists and performs an UPDATE if it can, or
+        it performs an INSERT. Because we're using raw SQL in this function,
+        we've got a substantial parameterized query that requires two sets of
+        parameters to be passed in via value_list. The value_list ends up
+        having an extra crash_id added to the list, and being doubled before
+        being passed to single_value_sql().
+
+        The SQL produced isn't beautiful, but a side effect of the CTE style of
+        UPSERT-ing. We look forward to SQL UPSERT being adopted as a
+        first-class citizen in PostgreSQL.
+
+        Similar code is present for _save_raw_crash() and
+        _save_processed_crash(), but is much simpler seeming because there are
+        far fewer columns being passed into the parameterized query.
+        """
         column_list = []
         placeholder_list = []
         value_list = []
@@ -235,9 +260,11 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             value_list.append(processed_crash[pro_crash_name])
 
         def print_eq(a, b):
+            # Helper for UPDATE SQL clause
             return a + ' = ' + b
 
         def print_as(a, b):
+            # Helper for INSERT SQL clause
             return b + ' as ' + a
 
         crash_id = processed_crash['uuid']
