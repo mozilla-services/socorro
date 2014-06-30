@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import threading
 import json
 
 from socorro.external.crashstorage_base import (
@@ -234,46 +233,54 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             column_list.append(report_name)
             placeholder_list.append('%s')
             value_list.append(processed_crash[pro_crash_name])
+
+        def print_eq(a, b):
+            return a + ' = ' + b
+
+        def print_as(a, b):
+            return b + ' as ' + a
+
         crash_id = processed_crash['uuid']
         reports_table_name = (
             'reports_%s' % self._table_suffix_for_crash_id(crash_id)
         )
-        insert_sql = "insert into %s (%s) values (%s) returning id" % (
-            reports_table_name,
-            ', '.join(column_list),
-            ', '.join(placeholder_list)
+        upsert_sql = """
+        WITH
+        update_report AS (
+            UPDATE %(table)s SET
+                %(joined_update_clause)s
+            WHERE uuid = %%s
+            RETURNING id
+        ),
+        insert_report AS (
+            INSERT INTO %(table)s (%(column_list)s)
+            ( SELECT
+                %(joined_select_clause)s
+                WHERE NOT EXISTS (
+                    SELECT uuid from %(table)s
+                    WHERE
+                        uuid = %%s
+                    LIMIT 1
+                )
+            )
+            RETURNING id
         )
-        # we want to insert directly into the report table.  There is a
-        # chance however that the record already exists.  If it does, then
-        # the insert would fail and the connection fall into a "broken" state.
-        # To avoid this, we set a savepoint to which we can roll back if the
-        # record already exists - essentially a nested transaction.
-        # We use the name of the executing thread as the savepoint name.
-        # alternatively we could get a uuid.
-        savepoint_name = threading.currentThread().getName().replace('-', '')
-        execute_no_results(connection, "savepoint %s" % savepoint_name)
-        try:
-            report_id = single_value_sql(connection, insert_sql, value_list)
-            execute_no_results(
-                connection,
-                "release savepoint %s" % savepoint_name
-            )
-        except self.config.database_class.IntegrityError:
-            # report already exists
-            execute_no_results(
-                connection,
-                "rollback to savepoint %s" % savepoint_name
-            )
-            execute_no_results(
-                connection,
-                "release savepoint %s" % savepoint_name
-            )
-            execute_no_results(
-                connection,
-                "delete from %s where uuid = %%s" % reports_table_name,
-                (processed_crash.uuid,)
-            )
-            report_id = single_value_sql(connection, insert_sql, value_list)
+        SELECT * from update_report
+        UNION ALL
+        SELECT * from insert_report
+        """ % {
+            'joined_update_clause':
+            ", ".join(map(print_eq, column_list, placeholder_list)),
+            'table': reports_table_name,
+            'column_list': ', '. join(column_list),
+            'joined_select_clause':
+            ", ".join(map(print_as, column_list, placeholder_list)),
+        }
+
+        value_list.append(crash_id)
+        value_list.extend(value_list)
+
+        report_id = single_value_sql(connection, upsert_sql, value_list)
         return report_id
 
     #--------------------------------------------------------------------------
