@@ -5,6 +5,10 @@
 Middleware API
 ==============
 
+
+If you would like to add a new middleware service,
+:ref:`addaservice-chapter` provides an introduction on how to do that.
+
 API map
 -------
 
@@ -2811,10 +2815,3 @@ For example, if you want to force search to be executed with ElasticSearch,
 you can add to the middleware call `force\_api\_impl/elasticsearch/`. If
 `socorro.external.elasticsearch` exists and contains a `search` module, it
 will get loaded and used.
-
-
-Adding new Middleware Services
-==============================
-
-See :ref:`addaservice-chapter` for an introduction to
-how to add a new middleware service.
