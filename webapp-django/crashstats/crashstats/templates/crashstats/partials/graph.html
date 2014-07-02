@@ -1,9 +1,14 @@
 <div class="wrapper">
-      <div class="adubysig hide">
+      <div class="adubysig">
         <h3 id="adubysig-heading"
             data-heading="ADU By Signature For {channel} Channel">ADU By Signature For {{ channel|capitalize }} Channel</h3>
-        <div class="adubysig-graph">
-            <p class="no-data hide">No graph data returned for signature {{ signature }}</p>
+        <p class="loading-placeholder">
+          <img src="{{ static('img/loading.png') }}" alt="Loading">
+          Loading graph...
+        </p>
+        <p class="no-data hide">No graph data returned for signature {{ signature }}</p>
+
+        <div class="adubysig-graph hide">
             <svg></svg>
         </div>
       </div>

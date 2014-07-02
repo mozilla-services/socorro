@@ -351,7 +351,7 @@ var Plot = (function() {
 
             if (data.total) {
 
-                $('.adubysig').removeClass('hide');
+                container.removeClass('hide');
 
                 if (dataSet['fallback']) {
                     // if there was no version passed to report/list
@@ -409,7 +409,6 @@ var Graph = (function() {
                deferred.resolve();
            });
            req.fail(function(data, textStatus, errorThrown) {
-               $('.loading-placeholder', $panel).hide();
                $('.loading-failed', $panel).show();
                deferred.reject(data, textStatus, errorThrown);
            });
