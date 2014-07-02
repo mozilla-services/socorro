@@ -117,7 +117,7 @@ var Plot = (function() {
             height: 250,
             marginTop: 25,
             marginLeft: 95,
-            marginRight: 5,
+            marginRight: 10,
             marginBottom: 50
         });
 
@@ -212,10 +212,7 @@ var Plot = (function() {
             .attr('cy', function(d) {
                 return y(d.values.ratio);
             })
-            .attr('r', function(d) {
-                var size = Math.ceil(d.values.crash_count / 100);
-                return size < 10 ? size + 2 : size;
-            })
+            .attr('r', 6)
             .style('opacity', 0)
             .on('mouseenter', function(d) {
                 var pos = d3.mouse(this);
