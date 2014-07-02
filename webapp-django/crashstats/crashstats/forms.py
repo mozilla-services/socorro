@@ -411,23 +411,6 @@ class CorrelationsJSONForm(CorrelationsJSONFormBase):
         self.fields['platform'].choices = self.platforms
 
 
-class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
-    platforms = forms.CharField(required=True)
-
-    def __init__(self, *args, **kwargs):
-        super(CorrelationsSignaturesJSONForm, self).__init__(*args, **kwargs)
-
-        self.fields['platforms'].choices = self.platforms
-
-    def clean_platforms(self):
-        value = set(self.cleaned_data['platforms'].split(','))
-        platforms = set([x[0] for x in self.platforms])
-        if not value.issubset(platforms):
-            raise forms.ValidationError('Invalid platform(s)')
-        else:
-            return '+'.join(value)
-
-
 class GCCrashesForm(BaseForm):
 
     start_date = forms.DateField(

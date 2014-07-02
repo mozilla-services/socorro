@@ -201,7 +201,6 @@ Top Crashers for {{ product }} {{ version }}
         SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/',
         SocImg = '/static/img/',
         SocReport = {
-            sig_base: '{{ url('crashstats:correlations_signatures_json') }}',
             base: '{{ url('crashstats:correlations_json') }}',
             path: 'product={{ product }}&version={{ version }}',
             loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />',

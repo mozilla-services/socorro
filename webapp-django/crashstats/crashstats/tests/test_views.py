@@ -3168,17 +3168,6 @@ class TestViews(BaseTestViews):
                         comment0
                     ))
 
-            if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
-
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -3325,9 +3314,6 @@ class TestViews(BaseTestViews):
                         comment0
                     ))
 
-            if 'correlations/signatures' in url:
-                raise models.BadStatusCodeError(500)
-
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -3433,16 +3419,6 @@ class TestViews(BaseTestViews):
                   "total": 1
                 }
               """ % (comment0, email1))
-            if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
 
             if (
                 '/crash_data' in url and
@@ -3552,16 +3528,6 @@ class TestViews(BaseTestViews):
                   "total": 1
                 }
               """ % (comment0, email1))
-            if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
 
             if (
                 '/crash_data' in url and
@@ -3671,16 +3637,6 @@ class TestViews(BaseTestViews):
                   "total": 1
                 }
               """ % (comment0, email1))
-            if '/correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
 
             if (
                 '/crash_data' in url and
@@ -3938,62 +3894,6 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "release_channel": "Release",
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "release_channel": "Release",
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
-            if 'correlations/signatures' in url:
                 return Response("""
                 {
                   "hits": [
@@ -5001,17 +4901,6 @@ class TestViews(BaseTestViews):
                 }
                 """ % dump)
 
-            if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -5311,7 +5200,6 @@ class TestViews(BaseTestViews):
 
             return Response("""
                 {
-                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                     "count": 13,
                     "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
                 }
@@ -5332,38 +5220,6 @@ class TestViews(BaseTestViews):
 
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        eq_(struct['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
-
-    @mock.patch('requests.get')
-    def test_correlations_signatures_json(self, rget):
-        url = reverse('crashstats:correlations_signatures_json')
-
-        def mocked_get(url, params, **options):
-            assert '/correlations/signatures' in url
-            return Response("""
-                {
-                    "hits": ["FakeSignature1",
-                             "FakeSignature2"],
-                    "total": 2
-                }
-            """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(
-            url,
-            {'correlation_report_type': 'core-counts',
-             'product': 'WaterWolf',
-             'version': '19.0',
-             'platforms': 'Windows NT,Linux'}
-        )
-        ok_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        eq_(struct['total'], 2)
 
     def test_unauthenticated_user_redirected_from_protected_page(self):
         url = reverse(

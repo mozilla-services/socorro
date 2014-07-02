@@ -1334,6 +1334,7 @@ class Correlations(SocorroMiddleware):
 
     required_params = (
         'report_type',
+        'report_date',
         'product',
         'version',
         'signature',
@@ -1344,25 +1345,6 @@ class Correlations(SocorroMiddleware):
         'count',
         'load',
         'reason',
-    )
-
-
-class CorrelationsSignatures(SocorroMiddleware):
-
-    URL_PREFIX = '/correlations/signatures/'
-
-    required_params = (
-        'report_type',
-        'product',
-        'version',
-    )
-    possible_params = (
-        ('platforms', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
     )
 
 
