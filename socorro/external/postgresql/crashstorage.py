@@ -147,7 +147,12 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             'raw_crash': json.dumps(raw_crash),
             'date_processed': raw_crash["submitted_timestamp"]
         }
-        execute_no_results(connection, upsert_sql, values)
+        try:
+            execute_no_results(connection, upsert_sql, values)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            execute_no_results(connection, upsert_sql, values)
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
@@ -222,7 +227,12 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             'date_processed': processed_crash["date_processed"],
             'uuid': crash_id
         }
-        execute_no_results(connection, upsert_sql, values)
+        try:
+            execute_no_results(connection, upsert_sql, values)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            execute_no_results(connection, upsert_sql, values)
 
     #--------------------------------------------------------------------------
     def _save_processed_report(self, connection, processed_crash):
@@ -307,7 +317,13 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         value_list.append(crash_id)
         value_list.extend(value_list)
 
-        report_id = single_value_sql(connection, upsert_sql, value_list)
+        try:
+            report_id = single_value_sql(connection, upsert_sql, value_list)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            report_id = single_value_sql(connection, upsert_sql, value_list)
+
         return report_id
 
     #--------------------------------------------------------------------------
