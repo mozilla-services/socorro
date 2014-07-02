@@ -1,0 +1,480 @@
+
+None
+  EMPTY: no crashing thread identified; corrupt dump (109 crashes)
+
+
+
+Linux
+  js::types::IdToTypeId(long)|SIGSEGV (11 crashes)
+      0% (0/11) vs.   4% (2/48) amd64 with 1 cores
+     73% (8/11) vs.  40% (19/48) amd64 with 2 cores
+      0% (0/11) vs.   2% (1/48) amd64 with 3 cores
+     27% (3/11) vs.  25% (12/48) amd64 with 4 cores
+      0% (0/11) vs.  13% (6/48) amd64 with 8 cores
+      0% (0/11) vs.   4% (2/48) x86 with 1 cores
+      0% (0/11) vs.  10% (5/48) x86 with 2 cores
+      0% (0/11) vs.   2% (1/48) x86 with 4 cores
+
+  js::CloneScript(JSContext*, JS::Handle<JSObject*>, JS::Handle<JSFunction*>, JS::Handle<JSScript*>, js::NewObjectKind)|SIGSEGV (10 crashes)
+      0% (0/10) vs.   4% (2/48) amd64 with 1 cores
+     70% (7/10) vs.  40% (19/48) amd64 with 2 cores
+      0% (0/10) vs.   2% (1/48) amd64 with 3 cores
+     10% (1/10) vs.  25% (12/48) amd64 with 4 cores
+     10% (1/10) vs.  13% (6/48) amd64 with 8 cores
+      0% (0/10) vs.   4% (2/48) x86 with 1 cores
+     10% (1/10) vs.  10% (5/48) x86 with 2 cores
+      0% (0/10) vs.   2% (1/48) x86 with 4 cores
+
+
+
+Mac OS X
+  js::CloneScript(JSContext*, JS::Handle<JSObject*>, JS::Handle<JSFunction*>, JS::Handle<JSScript*>, js::NewObjectKind)|EXC_BAD_ACCESS / 0x0000000d (45 crashes)
+     31% (14/45) vs.  26% (47/180) amd64 with 2 cores
+     29% (13/45) vs.  31% (55/180) amd64 with 4 cores
+     40% (18/45) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/45) vs.   2% (4/180) x86 with 4 cores
+      0% (0/45) vs.   1% (2/180) x86 with 8 cores
+
+  js::types::AddTypePropertyId(JSContext*, JSObject*, long, JS::Value const&)|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS (34 crashes)
+     35% (12/34) vs.  26% (47/180) amd64 with 2 cores
+     29% (10/34) vs.  31% (55/180) amd64 with 4 cores
+     35% (12/34) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/34) vs.   2% (4/180) x86 with 4 cores
+      0% (0/34) vs.   1% (2/180) x86 with 8 cores
+
+  js::types::AddTypePropertyId(JSContext*, JSObject*, long, JS::Value const&)|EXC_BAD_ACCESS / 0x0000000d (20 crashes)
+     25% (5/20) vs.  26% (47/180) amd64 with 2 cores
+     45% (9/20) vs.  31% (55/180) amd64 with 4 cores
+     30% (6/20) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/20) vs.   2% (4/180) x86 with 4 cores
+      0% (0/20) vs.   1% (2/180) x86 with 8 cores
+
+  nsNativeTheme::IsDarkBackground(nsIFrame*)|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS (14 crashes)
+     43% (6/14) vs.  26% (47/180) amd64 with 2 cores
+      0% (0/14) vs.  31% (55/180) amd64 with 4 cores
+     57% (8/14) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/14) vs.   2% (4/180) x86 with 4 cores
+      0% (0/14) vs.   1% (2/180) x86 with 8 cores
+
+  nsNativeThemeCocoa::GetMinimumWidgetSize(nsRenderingContext*, nsIFrame*, unsigned char, nsIntSize*, bool*)|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS (12 crashes)
+     25% (3/12) vs.  26% (47/180) amd64 with 2 cores
+     50% (6/12) vs.  31% (55/180) amd64 with 4 cores
+     25% (3/12) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/12) vs.   2% (4/180) x86 with 4 cores
+      0% (0/12) vs.   1% (2/180) x86 with 8 cores
+
+  js::CompartmentChecker::fail(JSCompartment*, JSCompartment*)|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS (11 crashes)
+     36% (4/11) vs.  26% (47/180) amd64 with 2 cores
+     18% (2/11) vs.  31% (55/180) amd64 with 4 cores
+     45% (5/11) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/11) vs.   2% (4/180) x86 with 4 cores
+      0% (0/11) vs.   1% (2/180) x86 with 8 cores
+
+  JS_HasPropertyById(JSContext*, JSObject*, long, int*)|EXC_BAD_ACCESS / 0x0000000d (10 crashes)
+     10% (1/10) vs.  26% (47/180) amd64 with 2 cores
+     60% (6/10) vs.  31% (55/180) amd64 with 4 cores
+     30% (3/10) vs.  40% (72/180) amd64 with 8 cores
+      0% (0/10) vs.   2% (4/180) x86 with 4 cores
+      0% (0/10) vs.   1% (2/180) x86 with 8 cores
+
+
+
+Windows NT
+  js::types::IdToTypeId(int)|EXCEPTION_ACCESS_VIOLATION_READ (2551 crashes)
+      0% (0/2551) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/2551) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/2551) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/2551) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/2551) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/2551) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/2551) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/2551) vs.   0% (6/5930) amd64 with 16 cores
+      9% (220/2551) vs.   5% (270/5930) x86 with 1 cores
+     46% (1168/2551) vs.  26% (1562/5930) x86 with 2 cores
+      1% (27/2551) vs.   1% (35/5930) x86 with 3 cores
+     36% (926/2551) vs.  22% (1329/5930) x86 with 4 cores
+      1% (27/2551) vs.   1% (44/5930) x86 with 6 cores
+      7% (180/2551) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/2551) vs.   0% (7/5930) x86 with 12 cores
+      0% (2/2551) vs.   0% (2/5930) x86 with 16 cores
+      0% (1/2551) vs.   0% (1/5930) x86 with 24 cores
+
+  js::CloneScript(JSContext*, JS::Handle<JSObject*>, JS::Handle<JSFunction*>, JS::Handle<JSScript*>, js::NewObjectKind)|EXCEPTION_ACCESS_VIOLATION_READ (1742 crashes)
+      1% (24/1742) vs.   1% (32/5930) amd64 with 1 cores
+     25% (431/1742) vs.  11% (629/5930) amd64 with 2 cores
+      1% (9/1742) vs.   0% (11/5930) amd64 with 3 cores
+     48% (832/1742) vs.  20% (1160/5930) amd64 with 4 cores
+      2% (29/1742) vs.   1% (58/5930) amd64 with 6 cores
+     19% (330/1742) vs.   7% (442/5930) amd64 with 8 cores
+      1% (17/1742) vs.   0% (22/5930) amd64 with 12 cores
+      0% (5/1742) vs.   0% (6/5930) amd64 with 16 cores
+      0% (1/1742) vs.   5% (270/5930) x86 with 1 cores
+      1% (26/1742) vs.  26% (1562/5930) x86 with 2 cores
+      0% (1/1742) vs.   1% (35/5930) x86 with 3 cores
+      1% (25/1742) vs.  22% (1329/5930) x86 with 4 cores
+      0% (1/1742) vs.   1% (44/5930) x86 with 6 cores
+      1% (11/1742) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/1742) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/1742) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/1742) vs.   0% (1/5930) x86 with 24 cores
+
+  gfxSVGGlyphs::~gfxSVGGlyphs()|EXCEPTION_ACCESS_VIOLATION_READ (149 crashes)
+      3% (4/149) vs.   1% (32/5930) amd64 with 1 cores
+     21% (31/149) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/149) vs.   0% (11/5930) amd64 with 3 cores
+     44% (65/149) vs.  20% (1160/5930) amd64 with 4 cores
+      3% (5/149) vs.   1% (58/5930) amd64 with 6 cores
+     22% (33/149) vs.   7% (442/5930) amd64 with 8 cores
+      1% (1/149) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/149) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/149) vs.   5% (270/5930) x86 with 1 cores
+      3% (5/149) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/149) vs.   1% (35/5930) x86 with 3 cores
+      3% (5/149) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/149) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/149) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/149) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/149) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/149) vs.   0% (1/5930) x86 with 24 cores
+
+  nsLocalFile::CopySingleFile(nsIFile*, nsIFile*, nsAString_internal const&, bool, bool, bool)|EXCEPTION_ACCESS_VIOLATION_EXEC (104 crashes)
+      0% (0/104) vs.   1% (32/5930) amd64 with 1 cores
+     44% (46/104) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/104) vs.   0% (11/5930) amd64 with 3 cores
+     38% (39/104) vs.  20% (1160/5930) amd64 with 4 cores
+      8% (8/104) vs.   1% (58/5930) amd64 with 6 cores
+     11% (11/104) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/104) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/104) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/104) vs.   5% (270/5930) x86 with 1 cores
+      0% (0/104) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/104) vs.   1% (35/5930) x86 with 3 cores
+      0% (0/104) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/104) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/104) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/104) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/104) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/104) vs.   0% (1/5930) x86 with 24 cores
+
+  JS_HasPropertyById(JSContext*, JSObject*, int, int*)|EXCEPTION_ACCESS_VIOLATION_READ (88 crashes)
+      0% (0/88) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/88) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/88) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/88) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/88) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/88) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/88) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/88) vs.   0% (6/5930) amd64 with 16 cores
+      5% (4/88) vs.   5% (270/5930) x86 with 1 cores
+     34% (30/88) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/88) vs.   1% (35/5930) x86 with 3 cores
+     55% (48/88) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/88) vs.   1% (44/5930) x86 with 6 cores
+      7% (6/88) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/88) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/88) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/88) vs.   0% (1/5930) x86 with 24 cores
+
+  js::CompartmentChecker::fail(JSCompartment*, JSCompartment*)|EXCEPTION_BREAKPOINT (81 crashes)
+      0% (0/81) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/81) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/81) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/81) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/81) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/81) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/81) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/81) vs.   0% (6/5930) amd64 with 16 cores
+      1% (1/81) vs.   5% (270/5930) x86 with 1 cores
+     41% (33/81) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/81) vs.   1% (35/5930) x86 with 3 cores
+     49% (40/81) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/81) vs.   1% (44/5930) x86 with 6 cores
+      7% (6/81) vs.   5% (320/5930) x86 with 8 cores
+      1% (1/81) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/81) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/81) vs.   0% (1/5930) x86 with 24 cores
+
+  gfxContext::PushClipsToDT(mozilla::gfx::DrawTarget*)|EXCEPTION_ACCESS_VIOLATION_READ (75 crashes)
+      0% (0/75) vs.   1% (32/5930) amd64 with 1 cores
+      9% (7/75) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/75) vs.   0% (11/5930) amd64 with 3 cores
+     29% (22/75) vs.  20% (1160/5930) amd64 with 4 cores
+      1% (1/75) vs.   1% (58/5930) amd64 with 6 cores
+      7% (5/75) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/75) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/75) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/75) vs.   5% (270/5930) x86 with 1 cores
+      7% (5/75) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/75) vs.   1% (35/5930) x86 with 3 cores
+     27% (20/75) vs.  22% (1329/5930) x86 with 4 cores
+      1% (1/75) vs.   1% (44/5930) x86 with 6 cores
+     16% (12/75) vs.   5% (320/5930) x86 with 8 cores
+      3% (2/75) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/75) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/75) vs.   0% (1/5930) x86 with 24 cores
+
+  rlnx.dll@0x61f4|EXCEPTION_ACCESS_VIOLATION_READ (62 crashes)
+      0% (0/62) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/62) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/62) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/62) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/62) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/62) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/62) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/62) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/62) vs.   5% (270/5930) x86 with 1 cores
+     37% (23/62) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/62) vs.   1% (35/5930) x86 with 3 cores
+     50% (31/62) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/62) vs.   1% (44/5930) x86 with 6 cores
+      8% (5/62) vs.   5% (320/5930) x86 with 8 cores
+      5% (3/62) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/62) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/62) vs.   0% (1/5930) x86 with 24 cores
+
+  F1398665248_____________________________|EXCEPTION_BREAKPOINT (60 crashes)
+      0% (0/60) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/60) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/60) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/60) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/60) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/60) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/60) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/60) vs.   0% (6/5930) amd64 with 16 cores
+      2% (1/60) vs.   5% (270/5930) x86 with 1 cores
+     38% (23/60) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/60) vs.   1% (35/5930) x86 with 3 cores
+     50% (30/60) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/60) vs.   1% (44/5930) x86 with 6 cores
+     10% (6/60) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/60) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/60) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/60) vs.   0% (1/5930) x86 with 24 cores
+
+  gfxFontEntry::DisconnectSVG()|EXCEPTION_ACCESS_VIOLATION_READ (22 crashes)
+      0% (0/22) vs.   1% (32/5930) amd64 with 1 cores
+     14% (3/22) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/22) vs.   0% (11/5930) amd64 with 3 cores
+     59% (13/22) vs.  20% (1160/5930) amd64 with 4 cores
+      9% (2/22) vs.   1% (58/5930) amd64 with 6 cores
+      9% (2/22) vs.   7% (442/5930) amd64 with 8 cores
+      5% (1/22) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/22) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/22) vs.   5% (270/5930) x86 with 1 cores
+      5% (1/22) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/22) vs.   1% (35/5930) x86 with 3 cores
+      0% (0/22) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/22) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/22) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/22) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/22) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/22) vs.   0% (1/5930) x86 with 24 cores
+
+  JSScript::getName(unsigned char*)|EXCEPTION_ACCESS_VIOLATION_READ (19 crashes)
+      0% (0/19) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/19) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/19) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/19) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/19) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/19) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/19) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/19) vs.   0% (6/5930) amd64 with 16 cores
+     11% (2/19) vs.   5% (270/5930) x86 with 1 cores
+     37% (7/19) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/19) vs.   1% (35/5930) x86 with 3 cores
+     42% (8/19) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/19) vs.   1% (44/5930) x86 with 6 cores
+     11% (2/19) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/19) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/19) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/19) vs.   0% (1/5930) x86 with 24 cores
+
+  js::GCMarker::processMarkStackTop(js::SliceBudget&)|EXCEPTION_ACCESS_VIOLATION_READ (17 crashes)
+      0% (0/17) vs.   1% (32/5930) amd64 with 1 cores
+      6% (1/17) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/17) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/17) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/17) vs.   1% (58/5930) amd64 with 6 cores
+      6% (1/17) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/17) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/17) vs.   0% (6/5930) amd64 with 16 cores
+      6% (1/17) vs.   5% (270/5930) x86 with 1 cores
+     47% (8/17) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/17) vs.   1% (35/5930) x86 with 3 cores
+     18% (3/17) vs.  22% (1329/5930) x86 with 4 cores
+     12% (2/17) vs.   1% (44/5930) x86 with 6 cores
+      6% (1/17) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/17) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/17) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/17) vs.   0% (1/5930) x86 with 24 cores
+
+  F561011053________________|EXCEPTION_ACCESS_VIOLATION_READ (16 crashes)
+      0% (0/16) vs.   1% (32/5930) amd64 with 1 cores
+     13% (2/16) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/16) vs.   0% (11/5930) amd64 with 3 cores
+     50% (8/16) vs.  20% (1160/5930) amd64 with 4 cores
+      6% (1/16) vs.   1% (58/5930) amd64 with 6 cores
+     31% (5/16) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/16) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/16) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/16) vs.   5% (270/5930) x86 with 1 cores
+      0% (0/16) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/16) vs.   1% (35/5930) x86 with 3 cores
+      0% (0/16) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/16) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/16) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/16) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/16) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/16) vs.   0% (1/5930) x86 with 24 cores
+
+  __RtlUserThreadStart | _RtlUserThreadStart|EXCEPTION_ACCESS_VIOLATION_WRITE (12 crashes)
+      0% (0/12) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/12) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/12) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/12) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/12) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/12) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/12) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/12) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/12) vs.   5% (270/5930) x86 with 1 cores
+      0% (0/12) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/12) vs.   1% (35/5930) x86 with 3 cores
+     67% (8/12) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/12) vs.   1% (44/5930) x86 with 6 cores
+     33% (4/12) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/12) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/12) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/12) vs.   0% (1/5930) x86 with 24 cores
+
+  hb_blob_destroy|EXCEPTION_ACCESS_VIOLATION_READ (12 crashes)
+      0% (0/12) vs.   1% (32/5930) amd64 with 1 cores
+     25% (3/12) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/12) vs.   0% (11/5930) amd64 with 3 cores
+     42% (5/12) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/12) vs.   1% (58/5930) amd64 with 6 cores
+     25% (3/12) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/12) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/12) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/12) vs.   5% (270/5930) x86 with 1 cores
+      8% (1/12) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/12) vs.   1% (35/5930) x86 with 3 cores
+      0% (0/12) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/12) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/12) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/12) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/12) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/12) vs.   0% (1/5930) x86 with 24 cores
+
+  pmnx.dll@0x61f4|EXCEPTION_ACCESS_VIOLATION_READ (12 crashes)
+      0% (0/12) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/12) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/12) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/12) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/12) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/12) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/12) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/12) vs.   0% (6/5930) amd64 with 16 cores
+     17% (2/12) vs.   5% (270/5930) x86 with 1 cores
+     33% (4/12) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/12) vs.   1% (35/5930) x86 with 3 cores
+     50% (6/12) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/12) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/12) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/12) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/12) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/12) vs.   0% (1/5930) x86 with 24 cores
+
+  StrChrIA|EXCEPTION_ACCESS_VIOLATION_READ (11 crashes)
+      0% (0/11) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/11) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/11) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/11) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/11) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/11) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/11) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/11) vs.   0% (6/5930) amd64 with 16 cores
+      9% (1/11) vs.   5% (270/5930) x86 with 1 cores
+     45% (5/11) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/11) vs.   1% (35/5930) x86 with 3 cores
+     45% (5/11) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/11) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/11) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/11) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/11) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/11) vs.   0% (1/5930) x86 with 24 cores
+
+  ComputeImmediateDominators|EXCEPTION_ACCESS_VIOLATION_READ (11 crashes)
+      0% (0/11) vs.   1% (32/5930) amd64 with 1 cores
+     27% (3/11) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/11) vs.   0% (11/5930) amd64 with 3 cores
+     36% (4/11) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/11) vs.   1% (58/5930) amd64 with 6 cores
+      9% (1/11) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/11) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/11) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/11) vs.   5% (270/5930) x86 with 1 cores
+     27% (3/11) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/11) vs.   1% (35/5930) x86 with 3 cores
+      0% (0/11) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/11) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/11) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/11) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/11) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/11) vs.   0% (1/5930) x86 with 24 cores
+
+  RtlpAllocateHeap | CContext::RestorePipelineStateImpl<int>(SAPIPipelineState*)|EXCEPTION_ACCESS_VIOLATION_EXEC (10 crashes)
+      0% (0/10) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/10) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/10) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/10) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/10) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/10) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/10) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/10) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/10) vs.   5% (270/5930) x86 with 1 cores
+      0% (0/10) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/10) vs.   1% (35/5930) x86 with 3 cores
+     70% (7/10) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/10) vs.   1% (44/5930) x86 with 6 cores
+     30% (3/10) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/10) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/10) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/10) vs.   0% (1/5930) x86 with 24 cores
+
+  F1814639261_______________________________|EXCEPTION_ACCESS_VIOLATION_READ (10 crashes)
+      0% (0/10) vs.   1% (32/5930) amd64 with 1 cores
+      0% (0/10) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/10) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/10) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/10) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/10) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/10) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/10) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/10) vs.   5% (270/5930) x86 with 1 cores
+     60% (6/10) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/10) vs.   1% (35/5930) x86 with 3 cores
+     10% (1/10) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/10) vs.   1% (44/5930) x86 with 6 cores
+     30% (3/10) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/10) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/10) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/10) vs.   0% (1/5930) x86 with 24 cores
+
+  PR_CreateIOLayerStub | PR_NewPollableEvent | arena_malloc | je_malloc | NS_IsMainThread()|EXCEPTION_ACCESS_VIOLATION_WRITE (10 crashes)
+      0% (0/10) vs.   1% (32/5930) amd64 with 1 cores
+    100% (10/10) vs.  11% (629/5930) amd64 with 2 cores
+      0% (0/10) vs.   0% (11/5930) amd64 with 3 cores
+      0% (0/10) vs.  20% (1160/5930) amd64 with 4 cores
+      0% (0/10) vs.   1% (58/5930) amd64 with 6 cores
+      0% (0/10) vs.   7% (442/5930) amd64 with 8 cores
+      0% (0/10) vs.   0% (22/5930) amd64 with 12 cores
+      0% (0/10) vs.   0% (6/5930) amd64 with 16 cores
+      0% (0/10) vs.   5% (270/5930) x86 with 1 cores
+      0% (0/10) vs.  26% (1562/5930) x86 with 2 cores
+      0% (0/10) vs.   1% (35/5930) x86 with 3 cores
+      0% (0/10) vs.  22% (1329/5930) x86 with 4 cores
+      0% (0/10) vs.   1% (44/5930) x86 with 6 cores
+      0% (0/10) vs.   5% (320/5930) x86 with 8 cores
+      0% (0/10) vs.   0% (7/5930) x86 with 12 cores
+      0% (0/10) vs.   0% (2/5930) x86 with 16 cores
+      0% (0/10) vs.   0% (1/5930) x86 with 24 cores
