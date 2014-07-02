@@ -125,3 +125,18 @@ superuser. Once you've done that, run the following command::
 
 Now the user with this email address should see a link to "Admin" in
 the footer.
+
+
+Trouble logging in with Persona?
+--------------------------------
+
+If you have set up your webapp but you can't sign in, it could very well
+be because some configuration is wrong compared to how you're running
+the webapp.
+
+If this is the problem go to ``http://localhost:8000/_debug_login``.
+
+This works for both production and development. If you're running in
+production you might not be using ``localhost:8000`` so all you need
+to remember is to go to ``/_debug_login`` on whichever domain you
+will use in production.

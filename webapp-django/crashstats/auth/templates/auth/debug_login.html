@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Login</title>
+  <style>
+  * { font-family: Arial, Helvetica, sans-serif; }
+  .test { padding: 7px 15px; border: 1px solid #ccc; margin-bottom: 30px; }
+  .verdict.good { color: green; }
+  .verdict.bad { color: red; }
+  .conclusion {
+    display: none;
+    text-align: center;
+    margin: 0 auto;
+    font-size: 20px;
+  }
+  .conclusion.good { color: green; }
+  .conclusion.bad { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Debug Login</h1>
+
+  <h3>
+    Trying to figure out why Persona login isn't working?<br>
+    Let's see what clues we might be able to find...
+  </h3>
+
+  <div class="conclusion good">
+    <h1>&#128077;</h1>
+    <h3>Everything looks good!</h3>
+  </div>
+  <div class="conclusion bad">
+    <h1>&#128078;</h1>
+    <h3>There appears to be some trouble in the configuration</h3>
+  </div>
+
+  <div style="display:none;color:red" id="check-console">
+    <p>Something went wrong during the rendering of this page. Open the
+      web console and look for warnings and errors.</p>
+  </div>
+
+  <div class="test" id="session-cookie-secure"
+       data-session-cookie-secure="{{ SESSION_COOKIE_SECURE }}"
+       data-cookie-value="{{ cookie_value }}">
+    <h4><code>SESSION_COOKIE_SECURE</code></h4>
+    <p class="loading">Loading...</p>
+  </div>
+
+  <div class="test" id="caching"
+       data-cache-value="{{ cache_value }}"
+       data-cache-setting="{{ cache_setting }}">
+    <h4>Caching</h4>
+    <p>You are currently using <code>{{ cache_setting }}</code></p>
+    <p class="loading">Loading...</p>
+  </div>
+
+  <div class="test" id="browserid-audiences"
+       data-debug="{{ DEBUG }}"
+       data-audiences="{{ BROWSERID_AUDIENCES }}">
+    {% if DEBUG %}
+      You're currently in <b>DEBUG</b> mode which means that if
+      <code>BROWSERID_AUDIENCES</code> does not have to be set.
+      {% if BROWSERID_AUDIENCES %}
+      Which it is.
+      {% else %}
+      Which it is not.
+      {% endif %}
+    {% else %}
+      You are <b>not</b> in <b>DEBUG</b> mode which means that the
+      <code>BROWSERID_AUDIENCES</code> needs to match the URL
+      you're using.
+    {% endif %}
+  </div>
+
+  <div class="test" id="browserid-js">
+    <h4>BrowserID JS files</h4>
+  </div>
+
+  <div class="test" id="browserid-dom">
+    <h4>BrowserID DOM elements</h4>
+    <p class="loading">Loading...</p>
+  </div>
+
+  <script src="{{ static('crashstats/js/jquery/jquery-2.0.3.min.js') }}"></script>
+  <script src="{{ static('auth/js/debug_login.js') }}"></script>
+  {{ browserid_js() }}
+</body>
+</html>
