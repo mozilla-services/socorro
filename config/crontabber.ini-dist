@@ -1,219 +1,1990 @@
-# name: application
-# doc: the fully qualified module or class of the application
-# converter: configman.converters.class_converter
-# application='CronTabber'
+# the fully qualified module or class of the application
+#application='crontabber.app.CronTabber'
+
+[resource]
+
+    [[elasticsearch]]
+
+        #+include ./common_elasticsearch.ini
+
+        # delays in seconds between retries
+        #backoff_delays='10, 30, 60, 120, 300'
+
+        # the file containing the mapping of the indexes receiving crash reports
+        #elasticsearch_base_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_index_settings.json
+
+        # None
+        #elasticsearch_class='socorro.external.elasticsearch.connection_context.ConnectionContext'
+
+        # the default index used to store data
+        # see "resource.elasticsearch.elasticsearch_default_index" for the default or override it here
+        #elasticsearch_default_index=socorro
+
+        # the default doctype to use in elasticsearch
+        # see "resource.elasticsearch.elasticsearch_doctype" for the default or override it here
+        #elasticsearch_doctype=crash_reports
+
+        # the index that handles data about email addresses for the automatic-emails cron job
+        #elasticsearch_emails_index=socorro_emails
+
+        # the file containing the mapping of the indexes receiving email addresses for the automatic-emails cron job
+        #elasticsearch_emails_index_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_emails_index_settings.json
+
+        # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+        # see "resource.elasticsearch.elasticsearch_index" for the default or override it here
+        #elasticsearch_index=socorro%Y%W
+
+        # None
+        #elasticsearch_index_regex=socorro[0-9]{6}$
+
+        # the time in seconds before a query to elasticsearch fails
+        # see "resource.elasticsearch.elasticsearch_timeout" for the default or override it here
+        #elasticsearch_timeout=30
+
+        # the urls to the elasticsearch instances
+        # see "resource.elasticsearch.elasticsearch_urls" for the default or override it here
+        #elasticsearch_urls='http://localhost:9200'
+
+        # a class that will manage transactions
+        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+        # seconds between log during retries
+        #wait_log_interval=10
+
+    [[logging]]
+
+        #+include ./common_logging.ini
+
+        # logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+        #stderr_error_logging_level=10
+
+        # python logging system format for logging to stderr
+        #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
+
+        # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+        #syslog_error_logging_level=40
+
+        # syslog facility string ("user", "local0", etc)
+        #syslog_facility_string=user
+
+        # syslog hostname
+        #syslog_host=localhost
+
+        # python logging system format for syslog entries
+        #syslog_line_format_string=crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}
+
+        # syslog port
+        #syslog_port=514
+
+    [[postgresql]]
+
+        #+include ./common_postgresql.ini
+
+        # None
+        #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+        # the hostname of the database
+        # see "resource.postgresql.database_hostname" for the default or override it here
+        #database_hostname=localhost
+
+        # the name of the database
+        # see "resource.postgresql.database_name" for the default or override it here
+        #database_name=breakpad
+
+        # the user's database password
+        # see "secrets.postgresql.database_password" for the default or override it here
+        #database_password=aPassword
+
+        # the port for the database
+        # see "resource.postgresql.database_port" for the default or override it here
+        #database_port=5432
+
+        # the name of the user within the database
+        # see "secrets.postgresql.database_username" for the default or override it here
+        #database_username=breakpad_rw
+
+        # a class that will execute transactions
+        #transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+    [[rabbitmq]]
+
+        #+include ./common_rabbitmq.ini
+
+        # delays in seconds between retries
+        #backoff_delays='10, 30, 60, 120, 300'
+
+        # toggle for using or ignoring the throttling flag
+        #filter_on_legacy_processing='False'
+
+        # the hostname of the RabbitMQ server
+        #host=localhost
+
+        # the port for the RabbitMQ server
+        #port=5672
+
+        # the name of priority crash queue name within RabbitMQ
+        #priority_queue_name=socorro.priority
+
+        # the class responsible for connecting to RabbitMQ
+        #rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+        # a classname for the type of wrapper for RabbitMQ connections
+        #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+        # the user's RabbitMQ password
+        # see "secrets.rabbitmq.rabbitmq_password" for the default or override it here
+        #rabbitmq_password=guest
+
+        # the name of the user within the RabbitMQ instance
+        # see "secrets.rabbitmq.rabbitmq_user" for the default or override it here
+        #rabbitmq_user=guest
+
+        # the name of reprocessing crash queue name within RabbitMQ
+        #reprocessing_queue_name=socorro.reprocessing
+
+        # the name of the queue to recieve crashes
+        #routing_key=socorro.reprocessing
+
+        # the name of standard crash queue name within RabbitMQ
+        #standard_queue_name=socorro.normal
+
+        # a class that will manage transactions
+        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+        # the name of the RabbitMQ virtual host
+        #virtual_host=/
+
+        # seconds between log during retries
+        #wait_log_interval=10
+
+    [[redactor]]
+
+        #+include ./common_redactor.ini
+
+        # a list of keys not allowed in a redacted processed crash
+        # see "resource.redactor.forbidden_keys" for the default or override it here
+        #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+        # the name of the class that implements a 'redact' method
+        #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+[secrets]
+
+    #+include ./common_secrets.ini
+
+    [[exacttarget]]
+
+        #+include ./common_exacttarget.ini
+
+        # ExactTarget API password.
+        #exacttarget_password=
+
+        # ExactTarget API user.
+        #exacttarget_user=
+
+    [[postgresql]]
+
+        #+include ./common_postgresql.ini
+
+        # the user's database password
+        #database_password=aPassword
+
+        # the name of the user within the database
+        #database_username=breakpad_rw
+
+    [[rabbitmq]]
+
+        #+include ./common_rabbitmq.ini
+
+        # the user's RabbitMQ password
+        #rabbitmq_password=guest
+
+        # the name of the user within the RabbitMQ instance
+        #rabbitmq_user=guest
+
+    [[sentry]]
+
+        #+include ./common_sentry.ini
+
+        # DSN for Sentry via raven
+        #dsn=
 
 [crontabber]
 
-    # name: jobs
-    # converter: class_list_converter
-    # All jobs are configured inside crontabber.py
-    # To override any you have to override them all
-    #jobs='''
-    #    examples:
-    #    socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
-    #    socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|02:00
-    #'''
+    # None
+    # see "resource.postgresql.database_class" for the default or override it here
+    #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
 
-    # name: database_file
-    # doc: Location of file where job execution logs are stored
-    # converter: str
-    # OPS - set once
-    #database_file='./crontabbers.json'
+    # the hostname of the database
+    # see "resource.postgresql.database_hostname" for the default or override it here
+    #database_hostname=localhost
 
-    # name: json_database_class
-    # doc: Class to load and save the JSON database
-    # converter: configman.converters.class_converter
-    #json_database_class='JSONAndPostgresJobDatabase'
+    # the name of the database
+    # see "resource.postgresql.database_name" for the default or override it here
+    #database_name=breakpad
+
+    # the user's database password
+    # see "secrets.postgresql.database_password" for the default or override it here
+    #database_password=aPassword
+
+    # the port for the database
+    # see "resource.postgresql.database_port" for the default or override it here
+    #database_port=5432
+
+    # the name of the user within the database
+    # see "secrets.postgresql.database_username" for the default or override it here
+    #database_username=breakpad_rw
+
+    # number of seconds to re-attempt a job that failed
+    #error_retry_time=300
+
+    # Class to load and save the state and runs
+    #job_state_db_class='crontabber.app.JobStateDatabase'
+
+    # None
+    #jobs='''socorro.cron.jobs.laglog.LagLog|5m
+#socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d#socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00#socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00#socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|05:00#socorro.cron.jobs.matviews.TCBSCronApp|1d|05:00#socorro.cron.jobs.matviews.ADUCronApp|1d|05:00#socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|05:00#socorro.cron.jobs.matviews.DuplicatesCronApp|1h#socorro.cron.jobs.matviews.ReportsCleanCronApp|1h#socorro.cron.jobs.bugzilla.BugzillaCronApp|1h#socorro.cron.jobs.matviews.BuildADUCronApp|1d|05:00#socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|05:00#socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|05:00#socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|05:00#socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|05:00#socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|05:00#socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|05:00#socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|05:00#socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00#socorro.cron.jobs.matviews.ExploitabilityCronApp|1d|05:00#socorro.cron.jobs.matviews.CrashAduByBuildSignatureCronApp|1d|05:00#socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h#socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h#socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d#socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m#socorro.cron.jobs.reprocessingjobs.ReprocessingJobsApp|5m#socorro.cron.jobs.matviews.SignatureSummaryProductsCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryInstallationsCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryUptimeCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryOsCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryProcessTypeCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryArchitectureCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryFlashVersionCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryDeviceCronApp|1d|05:00#socorro.cron.jobs.matviews.SignatureSummaryGraphicsCronApp|1d|05:00#socorro.cron.jobs.matviews.GCCrashes|1d|05:00#socorro.cron.jobs.symbolsunpack.SymbolsUnpackCronApp|10m#socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|30d#socorro.cron.jobs.matviews.CorrelationsAddonCronApp|1d|07:00#socorro.cron.jobs.matviews.CorrelationsCoreCronApp|1d|07:30#socorro.cron.jobs.matviews.CorrelationsModuleCronApp|1d|08:00
+#'''
+
+    # a class that will execute transactions
+    # see "resource.postgresql.transaction_executor_class" for the default or override it here
+    #transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+    [[class-ADUCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-AndroidDevicesCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
 
     [[class-AutomaticEmailsCronApp]]
 
-        # name: delay_between_emails
-        # doc: Delay between two emails sent to the same user, in days.
-        # converter: int
+        # List of known/established email domains to use when trying to correct possible simple typos
+        #common_email_domains='gmail.com, yahoo.com, hotmail.com, comcast.net, mail.ru, aol.com, outlook.com, facebook.com, mail.com'
+
+        # Delay between two emails sent to the same user, in days.
         #delay_between_emails=7
 
-        # name: email_template
-        # doc: Name of the email template to use in ExactTarget.
-        # converter: str
-        #email_template=''
+        # Name of the generic email template to use in ExactTarget. If empty, no email will be sent for generic crashes (but emails will still be sent for those with a recognized classification).
+        #email_template=
 
-        # name: exacttarget_user
-        # doc: ExactTarget API user.
-        # converter: str
-        #exacttarget_user=''
+        # ExactTarget API password.
+        # see "secrets.exacttarget.exacttarget_password" for the default or override it here
+        #exacttarget_password=
 
-        # name: exacttarget_password
-        # doc: ExactTarget API password.
-        # converter: str
-        #exacttarget_password=''
+        # ExactTarget API user.
+        # see "secrets.exacttarget.exacttarget_user" for the default or override it here
+        #exacttarget_user=
 
-        # name: restrict_products
-        # doc: List of products for which to send an email.
-        # converter: socorro.cron.jobs.automatic_emails.string_to_list
+        # frequency
+        #frequency=1h
+
+        # List of products for which to send an email.
         #restrict_products='Firefox'
 
-        # name: test_email_address
-        # doc: In test mode, send all emails to this email address.
-        # converter: str
-        #test_email_address='test@example.org'
+        # In test mode, send all emails to this email address.
+        #test_email_address=test@example.org
 
-        # name: test_mode
-        # doc: Activate the test mode, in which all email addresses are replaced by the one in test_email_address. Use it to avoid sending unexpected emails to your users.
-        # converter: configman.converters.boolean_converter
+        # Activate the test mode, in which all email addresses are replaced by the one in test_email_address. Use it to avoid sending unexpected emails to your users.
         #test_mode='False'
 
-        # name: common_email_domains
-        # doc: List of known/established email domains to use when trying to correct possible simple typos
-        # converter: socorro.cron.jobs.automatic_emails.string_to_list
-        #common_email_domains='gmail.com, yahoo.com, hotmail.com, comcast.net, mail.ru, aol.com, outlook.com, facebook.com, mail.com'
+        # time
+        #time=
+
+        [[[elasticsearch]]]
+
+            # delays in seconds between retries
+            # see "resource.elasticsearch.backoff_delays" for the default or override it here
+            #backoff_delays='10, 30, 60, 120, 300'
+
+            # the file containing the mapping of the indexes receiving crash reports
+            # see "resource.elasticsearch.elasticsearch_base_settings" for the default or override it here
+            #elasticsearch_base_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_index_settings.json
+
+            # None
+            #elasticsearch_class='socorro.external.elasticsearch.connection_context.ConnectionContext'
+
+            # the default index used to store data
+            # see "resource.elasticsearch.elasticsearch_default_index" for the default or override it here
+            #elasticsearch_default_index=socorro
+
+            # the default doctype to use in elasticsearch
+            # see "resource.elasticsearch.elasticsearch_doctype" for the default or override it here
+            #elasticsearch_doctype=crash_reports
+
+            # the index that handles data about email addresses for the automatic-emails cron job
+            # see "resource.elasticsearch.elasticsearch_emails_index" for the default or override it here
+            #elasticsearch_emails_index=socorro_emails
+
+            # the file containing the mapping of the indexes receiving email addresses for the automatic-emails cron job
+            # see "resource.elasticsearch.elasticsearch_emails_index_settings" for the default or override it here
+            #elasticsearch_emails_index_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_emails_index_settings.json
+
+            # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+            # see "resource.elasticsearch.elasticsearch_index" for the default or override it here
+            #elasticsearch_index=socorro%Y%W
+
+            # the time in seconds before a query to elasticsearch fails
+            # see "resource.elasticsearch.elasticsearch_timeout" for the default or override it here
+            #elasticsearch_timeout=30
+
+            # the urls to the elasticsearch instances
+            # see "resource.elasticsearch.elasticsearch_urls" for the default or override it here
+            #elasticsearch_urls='http://localhost:9200'
+
+            # a list of keys not allowed in a redacted processed crash
+            # see "resource.redactor.forbidden_keys" for the default or override it here
+            #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+            # None
+            #index_creator_class='socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage'
+
+            # the name of the class that implements a 'redact' method
+            # see "resource.redactor.redactor_class" for the default or override it here
+            #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+            # a class that will manage transactions
+            # see "resource.elasticsearch.transaction_executor_class" for the default or override it here
+            #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+            # seconds between log during retries
+            # see "resource.elasticsearch.wait_log_interval" for the default or override it here
+            #wait_log_interval=10
 
     [[class-BugzillaCronApp]]
 
-        # name: days_into_past
-        # doc: number of days to look into the past for bugs (0 - use last run time)
-        # converter: int
-        # OPS - set once
-        #days_into_past='0'
+        # number of days to look into the past for bugs (0 - use last run time)
+        #days_into_past=0
 
-        # name: query
-        # doc: Explanation of the option
-        # converter: str
-        # OPS - set once
+        # frequency
+        #frequency=1h
+
+        # Explanation of the option
         #query='https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteboard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&keywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=substring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&votes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=resolution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signature&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_desc,cf_crash_signature&ctype=csv'
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-BuildADUCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-CorrelationsAddonCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=07:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-CorrelationsCoreCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=07:30
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-CorrelationsModuleCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=08:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-CrashAduByBuildSignatureCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-CrashesByUserBuildCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-CrashesByUserCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-DuplicatesCronApp]]
+
+        # frequency
+        #frequency=1h
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-ElasticsearchCleanupCronApp]]
+
+        # frequency
+        #frequency=30d
+
+        # Number of weeks to keep an index alive.
+        #retention_policy=26
+
+        # time
+        #time=
+
+        [[[elasticsearch]]]
+
+            # None
+            # see "resource.elasticsearch.elasticsearch_class" for the default or override it here
+            #elasticsearch_class='socorro.external.elasticsearch.connection_context.ConnectionContext'
+
+            # the default index used to store data
+            # see "resource.elasticsearch.elasticsearch_default_index" for the default or override it here
+            #elasticsearch_default_index=socorro
+
+            # the default doctype to use in elasticsearch
+            # see "resource.elasticsearch.elasticsearch_doctype" for the default or override it here
+            #elasticsearch_doctype=crash_reports
+
+            # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+            # see "resource.elasticsearch.elasticsearch_index" for the default or override it here
+            #elasticsearch_index=socorro%Y%W
+
+            # None
+            # see "resource.elasticsearch.elasticsearch_index_regex" for the default or override it here
+            #elasticsearch_index_regex=socorro[0-9]{6}$
+
+            # the time in seconds before a query to elasticsearch fails
+            # see "resource.elasticsearch.elasticsearch_timeout" for the default or override it here
+            #elasticsearch_timeout=30
+
+            # the urls to the elasticsearch instances
+            # see "resource.elasticsearch.elasticsearch_urls" for the default or override it here
+            #elasticsearch_urls='http://localhost:9200'
+
+    [[class-ExploitabilityCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-ExplosivenessCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-FTPScraperCronApp]]
+
+        # The base url to use for fetching builds
+        #base_url=http://ftp.mozilla.org/pub/mozilla.org
+
+        # Print instead of storing builds
+        #dry_run='False'
+
+        # frequency
+        #frequency=1h
+
+        # a comma-delimited list of URIs for each product
+        #products='firefox, mobile, thunderbird, seamonkey, b2g'
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-GCCrashes]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-GraphicsDeviceCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-HomePageGraphBuildCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-HomePageGraphCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-LagLog]]
+
+        # frequency
+        #frequency=5m
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-NightlyBuildsCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-ProductVersionsCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-RawUpdateChannelCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-ReportsCleanCronApp]]
+
+        # frequency
+        #frequency=1h
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-ReprocessingJobsApp]]
+
+        # frequency
+        #frequency=5m
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+        [[[queuing]]]
+
+            # delays in seconds between retries
+            # see "resource.rabbitmq.backoff_delays" for the default or override it here
+            #backoff_delays='10, 30, 60, 120, 300'
+
+            # toggle for using or ignoring the throttling flag
+            # see "resource.rabbitmq.filter_on_legacy_processing" for the default or override it here
+            #filter_on_legacy_processing='False'
+
+            # a list of keys not allowed in a redacted processed crash
+            # see "resource.redactor.forbidden_keys" for the default or override it here
+            #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+            # the hostname of the RabbitMQ server
+            # see "resource.rabbitmq.host" for the default or override it here
+            #host=localhost
+
+            # the port for the RabbitMQ server
+            # see "resource.rabbitmq.port" for the default or override it here
+            #port=5672
+
+            # the name of priority crash queue name within RabbitMQ
+            # see "resource.rabbitmq.priority_queue_name" for the default or override it here
+            #priority_queue_name=socorro.priority
+
+            # None
+            #queuing_class='socorro.external.rabbitmq.crashstorage.ReprocessingRabbitMQCrashStore'
+
+            # a class that will execute transactions
+            #queuing_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the class responsible for connecting to RabbitMQ
+            # see "resource.rabbitmq.rabbitmq_class" for the default or override it here
+            #rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+            # a classname for the type of wrapper for RabbitMQ connections
+            # see "resource.rabbitmq.rabbitmq_connection_wrapper_class" for the default or override it here
+            #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+            # the user's RabbitMQ password
+            # see "secrets.rabbitmq.rabbitmq_password" for the default or override it here
+            #rabbitmq_password=guest
+
+            # the name of the user within the RabbitMQ instance
+            # see "secrets.rabbitmq.rabbitmq_user" for the default or override it here
+            #rabbitmq_user=guest
+
+            # the name of the class that implements a 'redact' method
+            # see "resource.redactor.redactor_class" for the default or override it here
+            #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+            # the name of reprocessing crash queue name within RabbitMQ
+            # see "resource.rabbitmq.reprocessing_queue_name" for the default or override it here
+            #reprocessing_queue_name=socorro.reprocessing
+
+            # the name of the queue to recieve crashes
+            # see "resource.rabbitmq.routing_key" for the default or override it here
+            #routing_key=socorro.reprocessing
+
+            # the name of standard crash queue name within RabbitMQ
+            # see "resource.rabbitmq.standard_queue_name" for the default or override it here
+            #standard_queue_name=socorro.normal
+
+            # a class that will manage transactions
+            # see "resource.rabbitmq.transaction_executor_class" for the default or override it here
+            #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+            # the name of the RabbitMQ virtual host
+            # see "resource.rabbitmq.virtual_host" for the default or override it here
+            #virtual_host=/
+
+            # seconds between log during retries
+            # see "resource.rabbitmq.wait_log_interval" for the default or override it here
+            #wait_log_interval=10
+
+    [[class-ServerStatusCronApp]]
+
+        # frequency
+        #frequency=5m
+
+        # How often we process reports (in seconds)
+        #processing_interval_seconds=300
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+        [[[queuing]]]
+
+            # the hostname of the RabbitMQ server
+            # see "resource.rabbitmq.host" for the default or override it here
+            #host=localhost
+
+            # the port for the RabbitMQ server
+            # see "resource.rabbitmq.port" for the default or override it here
+            #port=5672
+
+            # the name of priority crash queue name within RabbitMQ
+            # see "resource.rabbitmq.priority_queue_name" for the default or override it here
+            #priority_queue_name=socorro.priority
+
+            # None
+            #queuing_class='socorro.external.rabbitmq.connection_context.ConnectionContext'
+
+            # a class that will execute transactions
+            #queuing_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # a classname for the type of wrapper for RabbitMQ connections
+            # see "resource.rabbitmq.rabbitmq_connection_wrapper_class" for the default or override it here
+            #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+            # the user's RabbitMQ password
+            # see "secrets.rabbitmq.rabbitmq_password" for the default or override it here
+            #rabbitmq_password=guest
+
+            # the name of the user within the RabbitMQ instance
+            # see "secrets.rabbitmq.rabbitmq_user" for the default or override it here
+            #rabbitmq_user=guest
+
+            # the name of reprocessing crash queue name within RabbitMQ
+            #reprocessing_queue_name=socorro.reprocessing
+
+            # the name of standard crash queue name within RabbitMQ
+            # see "resource.rabbitmq.standard_queue_name" for the default or override it here
+            #standard_queue_name=socorro.normal
+
+            # the name of the RabbitMQ virtual host
+            # see "resource.rabbitmq.virtual_host" for the default or override it here
+            #virtual_host=/
+
+    [[class-SignatureSummaryArchitectureCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryDeviceCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryFlashVersionCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryGraphicsCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryInstallationsCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryOsCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryProcessTypeCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryProductsCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignatureSummaryUptimeCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-SignaturesCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
 
     [[class-SuspiciousCrashesApp]]
 
-        # name: data_bin_length
-        # doc: The number of hours for each bin to aggregate for crash counts.
-        # converter: int
+        # The number of hours for each bin to aggregate for crash counts.
         #data_bin_length=24
 
-        # name: min_count
-        # doc: Minimum number of logged crashes today to trigger analysis.
-        # converter: int
+        # frequency
+        #frequency=1d
+
+        # Minimum number of logged crashes today to trigger analysis.
         #min_count=1000
 
-        # name: model
-        # doc: Model used for analysis. :Available: SlopeBased
-        # converter: str
-        #model='SlopeBased'
+        # Model used for analysis. :Available: SlopeBased
+        #model=SlopeBased
 
-        # name: training_data_length
-        # doc: the number of days of training data to feed to the models.
-        # converter: int
+        # time
+        #time=
+
+        # the number of days of training data to feed to the models.
         #training_data_length=10
 
-[database]
+        [[[database]]]
 
-    # if you'd like to have one common database configuration for the
-    # all or a subset of the apps, uncomment the +include line below
-    # and edit the 'common_database.ini' file instead of using the individual
-    # values below.
-    #+include common_database.ini
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
 
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    # OPS - set once
-    #database_host='localhost'
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
 
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    # OPS - set once
-    #database_name='breakpad'
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
 
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    # OPS - set once
-    #database_password='aPassword'
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
 
-    # name: database_port
-    # doc: the port for the database
-    # converter: int
-    # OPS - set once
-    #database_port='5432'
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
 
-    # name: database_user
-    # doc: the name of the user within the database
-    # converter: str
-    # OPS - set once
-    #database_user='breakpad_rw'
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
 
-    # name: database_class
-    # doc: None
-    # converter: configman.converters.class_converter
-    #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
 
-    # name: backoff_delays
-    # doc: delays in seconds between retries
-    # converter: eval
-    # OPS - volatile
-    #backoff_delays="10, 30, 60, 120, 300"
+    [[class-SymbolsUnpackCronApp]]
 
-    # name: wait_log_interval
-    # doc: seconds between log during retries
-    # converter: int
-    # OPS - set once
-    #wait_log_interval='1'
+        # Directory where the archive files are unpacked to
+        #destination_directory=
 
-    # name: transaction_executor_class
-    # doc: a class that will execute transactions
-    # converter: configman.converters.class_converter
-    #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+        # frequency
+        #frequency=10m
+
+        # Directory where the archive files are located
+        #source_directory=
+
+        # time
+        #time=
+
+    [[class-TCBSBuildCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-TCBSCronApp]]
+
+        # frequency
+        #frequency=1d
+
+        # time
+        #time=05:00
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
+
+    [[class-WeeklyReportsPartitionsCronApp]]
+
+        # frequency
+        #frequency=7d
+
+        # time
+        #time=
+
+        [[[database]]]
+
+            # None
+            #database_class='crontabber.connection_factory.ConnectionFactory'
+
+            # the hostname of the database
+            # see "resource.postgresql.database_hostname" for the default or override it here
+            #database_hostname=localhost
+
+            # the name of the database
+            # see "resource.postgresql.database_name" for the default or override it here
+            #database_name=breakpad
+
+            # the user's database password
+            # see "secrets.postgresql.database_password" for the default or override it here
+            #database_password=aPassword
+
+            # the port for the database
+            # see "resource.postgresql.database_port" for the default or override it here
+            #database_port=5432
+
+            # a class that will execute transactions
+            #database_transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+            # the name of the user within the database
+            # see "secrets.postgresql.database_username" for the default or override it here
+            #database_username=breakpad_rw
 
 [logging]
 
-    # if you'd like to have one common logging configuration for the
-    # all or a subset of the apps, uncomment the +include line below
-    # and edit the 'common_logging.ini' file instead of using the individual
-    # values below.
-    #+include common_logging.ini
+    # logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # see "resource.logging.stderr_error_logging_level" for the default or override it here
+    #stderr_error_logging_level=10
 
-    # name: stderr_error_logging_level
-    # doc: logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    #stderr_error_logging_level='10'
+    # python logging system format for logging to stderr
+    # see "resource.logging.stderr_line_format_string" for the default or override it here
+    #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
 
-    # name: syslog_error_logging_level
-    # doc: logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
-    # converter: int
-    #syslog_error_logging_level='40'
+    # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # see "resource.logging.syslog_error_logging_level" for the default or override it here
+    #syslog_error_logging_level=40
 
-    # name: stderr_line_format_string
-    # doc: python logging system format for logging to stderr
-    # converter: str
-    #stderr_line_format_string='{asctime} {levelname} - {threadName} - {message}'
+    # syslog facility string ("user", "local0", etc)
+    # see "resource.logging.syslog_facility_string" for the default or override it here
+    #syslog_facility_string=user
 
-    # name: syslog_facility_string
-    # doc: syslog facility string ("user", "local0", etc)
-    # converter: str
-    # OPS - set once
-    #syslog_facility_string='user'
+    # syslog hostname
+    # see "resource.logging.syslog_host" for the default or override it here
+    #syslog_host=localhost
 
-    # name: syslog_host
-    # doc: syslog hostname
-    # converter: str
-    # OPS - set once
-    #syslog_host='localhost'
+    # python logging system format for syslog entries
+    # see "resource.logging.syslog_line_format_string" for the default or override it here
+    #syslog_line_format_string=crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}
 
-    # name: syslog_line_format_string
-    # doc: python logging system format for syslog entries
-    # converter: str
-    #syslog_line_format_string='crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}'
-
-    # name: syslog_port
-    # doc: syslog port
-    # converter: int
-    # OPS - set once
-    #syslog_port='514'
-
+    # syslog port
+    # see "resource.logging.syslog_port" for the default or override it here
+    #syslog_port=514
 
 [sentry]
 
-    # name: dsn
-    # doc: DSN for Sentry via raven
-    # converter: str
+    # DSN for Sentry via raven
+    # see "secrets.sentry.dsn" for the default or override it here
     #dsn=
+
