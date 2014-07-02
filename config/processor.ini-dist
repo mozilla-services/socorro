@@ -69,35 +69,7 @@ application='ProcessorApp'
         # converter: configman.converters.class_converter
         crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
 
-        # name: database_class
-        # doc: the class responsible for connecting toPostgres
-        # converter: configman.converters.class_converter
-        database_class='socorro.external.postgresql.connection_context.ConnectionContext'
-
-        # name: database_host
-        # doc: the hostname of the database
-        # converter: str
-        database_host='localhost'
-
-        # name: database_name
-        # doc: the name of the database
-        # converter: str
-        database_name='breakpad'
-
-        # name: database_password
-        # doc: the user's database password
-        # converter: str
-        database_password='aPassword'
-
-        # name: database_port
-        # doc: the port for the database
-        # converter: int
-        database_port='5432'
-
-        # name: database_user
-        # doc: the name of the user within the database
-        # converter: str
-        database_user='breakpad_rw'
+        +include common_database.ini
 
         # name: transaction_executor_class
         # doc: a class that will manage transactions
@@ -220,35 +192,12 @@ application='ProcessorApp'
     # converter: int
     crashing_thread_tail_frame_threshold='10'
 
-    # name: database_class
-    # doc: the class of the database
+    +include common_database.ini
+
+    # name: transaction_executor_class
+    # doc: a class that will manage transactions
     # converter: configman.converters.class_converter
-    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
-
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    database_host='localhost'
-
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    database_name='breakpad'
-
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    database_password='aPassword'
-
-    # name: database_port
-    # doc: the port for the database
-    # converter: int
-    database_port='5432'
-
-    # name: database_user
-    # doc: the name of the user within the database
-    # converter: str
-    database_user='breakpad_rw'
+    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
     # name: dump_field
     # doc: the default name of a dump
@@ -294,11 +243,6 @@ application='ProcessorApp'
     # doc: the path where the symbol cache is found (quote path with embedded spaces)
     # converter: str
     symbol_cache_path='/mnt/socorro/symbols'
-
-    # name: transaction_executor_class
-    # doc: a class that will manage transactions
-    # converter: configman.converters.class_converter
-    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
     [[c_signature]]
 
@@ -390,35 +334,12 @@ application='ProcessorApp'
     # converter: configman.converters.timedelta_converter
     check_in_frequency='0:0:1:0'
 
-    # name: database_class
-    # doc: the class of the registrar's database
+    +include common_database.ini
+
+    # name: transaction_executor_class
+    # doc: a class that will manage transactions
     # converter: configman.converters.class_converter
-    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
-
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    database_host='localhost'
-
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    database_name='breakpad'
-
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    database_password='aPassword'
-
-    # name: database_port
-    # doc: the port for the database
-    # converter: int
-    database_port='5432'
-
-    # name: database_user
-    # doc: the name of the user within the database
-    # converter: str
-    database_user='breakpad_rw'
+    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
     # name: processor_id
     # doc: the id number for the processor (must already exist) (0 for create new Id, "auto" for autodetection, "host" for same host, "forcehost" for hostile take over)
@@ -429,11 +350,6 @@ application='ProcessorApp'
     # doc: the class that registers and tracks processors
     # converter: configman.converters.class_converter
     registrar_class='socorro.processor.registration_client.ProcessorAppRegistrationClient'
-
-    # name: transaction_executor_class
-    # doc: a class that will manage transactions
-    # converter: configman.converters.class_converter
-    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
 [source]
 

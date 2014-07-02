@@ -5,35 +5,7 @@
 
 [job_manager]
 
-    # name: database_class
-    # doc: the class of the job_manager's database
-    # converter: configman.converters.class_converter
-    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
-
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    database_host='localhost'
-
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    database_name='breakpad'
-
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    database_password='aPassword'
-
-    # name: database_port
-    # doc: the port for the database
-    # converter: int
-    database_port='5432'
-
-    # name: database_user
-    # doc: the name of the user within the database
-    # converter: str
-    database_user='breakpad_rw'
+    +include common_database.ini
 
     # name: job_cleanup_frequency
     # doc: the frequency to check for new jobs (hh:mm:ss)
@@ -146,35 +118,12 @@
     # converter: configman.converters.timedelta_converter
     check_in_frequency='0:0:1:0'
 
-    # name: database_class
-    # doc: the class of the registrar's database
+    +include common_database.ini
+
+    # name: transaction_executor_class
+    # doc: a class that will manage the registrar's transactions
     # converter: configman.converters.class_converter
-    database_class='socorro.external.postgresql.connection_context.ConnectionContext'
-
-    # name: database_host
-    # doc: the hostname of the database
-    # converter: str
-    database_host='localhost'
-
-    # name: database_name
-    # doc: the name of the database
-    # converter: str
-    database_name='breakpad'
-
-    # name: database_password
-    # doc: the user's database password
-    # converter: str
-    database_password='aPassword'
-
-    # name: database_port
-    # doc: the port for the database
-    # converter: int
-    database_port='5432'
-
-    # name: database_user
-    # doc: the name of the user within the database
-    # converter: str
-    database_user='breakpad_rw'
+    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
     # name: processor_grace_period
     # doc: a processor is dead if it is this late to renew registration
@@ -190,9 +139,4 @@
     # doc: frequency for cleaning up dead processors
     # converter: timedelta_to_seconds_coverter
     sweep_frequency='120'
-
-    # name: transaction_executor_class
-    # doc: a class that will manage the registrar's transactions
-    # converter: configman.converters.class_converter
-    transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
 
