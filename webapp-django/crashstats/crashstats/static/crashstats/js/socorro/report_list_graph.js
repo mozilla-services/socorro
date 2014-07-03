@@ -331,6 +331,10 @@ var Plot = (function() {
         var container = $('.adubysig-graph');
         var noDataContainer = $('.no-data', panel);
 
+        // show the loading graph spinner
+        var loader = $('#loading-graph');
+        loader.removeClass('hide');
+
         var params = {
             product_name: dataSet['product'],
             days: dataSet['days'],
@@ -341,7 +345,7 @@ var Plot = (function() {
 
         $.getJSON(url, function(data) {
 
-            $('.loading-placeholder', panel).hide();
+            loader.addClass('hide');
             $('svg', container).empty().attr({
                 width: 0,
                 height: 0
@@ -403,6 +407,7 @@ var Graph = (function() {
            });
            req.done(function(response) {
                $('.inner', $panel).html(response);
+               $('.loading-placeholder', $panel).hide();
 
                Plot.draw($panel);
 
