@@ -1,4 +1,4 @@
-/* global DATA, $ */
+/* global $ */
 
 // Base D3 code by @bsmedberg
 // With additional code, tweaks and UI
@@ -78,7 +78,7 @@ var Plot = (function() {
 
         var finalData = d3.nest()
             .key(function(d) {
-                return d.buildid
+                return d.buildid;
             })
             .rollup(function(dlist) {
                 var r = {
@@ -275,7 +275,7 @@ var Plot = (function() {
         var label = $('<label />', {
             for: 'channel-select',
             text: 'Release Channel'
-        })
+        });
         var select = $('<select />', {
             id: 'channel-select'
         });
@@ -307,9 +307,9 @@ var Plot = (function() {
 
             // Empty the fallback property so that the Ajax
             // requests will not incorrectly follow the fallback path.
-            dataSet['fallback'] = '';
+            dataSet.fallback = '';
 
-            dataSet['channel'] = channel;
+            dataSet.channel = channel;
 
             // update the heading text to reflect the new channel
             headingTxt = heading.data('heading').replace('{channel}', titleCasedChannel);
@@ -327,7 +327,7 @@ var Plot = (function() {
     function aduBySignature(panel, dataSet) {
 
         // if the panel is null, use the provided dataSet
-        var dataSet = panel ? panel[0].dataset : dataSet;
+        dataSet = panel ? panel[0].dataset : dataSet;
         var container = $('.adubysig-graph');
         var noDataContainer = $('.no-data', panel);
 
@@ -336,12 +336,12 @@ var Plot = (function() {
         loader.removeClass('hide');
 
         var params = {
-            product_name: dataSet['product'],
-            days: dataSet['days'],
-            signature: dataSet['signature'],
-            channel: dataSet['channel']
+            product_name: dataSet.product,
+            days: dataSet.days,
+            signature: dataSet.signature,
+            channel: dataSet.channel
         };
-        var url = dataSet['jsonurl'] + '?' + $.param(params);
+        var url = dataSet.jsonurl + '?' + $.param(params);
 
         $.getJSON(url, function(data) {
 
@@ -357,7 +357,7 @@ var Plot = (function() {
 
                 container.removeClass('hide');
 
-                if (dataSet['fallback']) {
+                if (dataSet.fallback) {
                     // if there was no version passed to report/list
                     // we fallback to nightly and need to provide the
                     // user with a way to switch between release channels.
