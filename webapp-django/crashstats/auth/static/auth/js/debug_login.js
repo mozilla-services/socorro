@@ -10,7 +10,6 @@ $(function() {
     }
     var soon;
     function drawConclusionSoon() {
-        console.log('Callign drawConclusionSoon()', soon);
         if (soon) {
             clearTimeout(soon);
         }
@@ -163,8 +162,6 @@ $(function() {
                 'bad'
             );
         }
-        // console.log('this_audience', this_audience);
-        // console.log(audiences);
     } else if (!debug) {
         addVerdict(
             browserid_audiences,
