@@ -54,7 +54,7 @@ group by signature, product, version, build;
 PERFORM 1 FROM new_signatures;
 IF NOT FOUND THEN
     IF checkdata THEN
-        RAISE NOTICE 'No signature data found in reports for date %',updateday;
+        RAISE NOTICE 'No signature data found in reports for the range  % to %',fromtime,fromtime + fortime;
         RETURN FALSE;
     END IF;
 END IF;
