@@ -274,6 +274,7 @@ def _do_main(
     config_manager = config_manager_cls(
       definitions,
       app_name=app_name,
+      argv_source=[],
       app_version=app_version,
       app_description=app_description,
       values_source_list=values_source_list,
