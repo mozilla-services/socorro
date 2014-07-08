@@ -116,3 +116,5 @@ pyflakes==0.8.1
 https://github.com/BradRuderman/pyhs2/archive/870d5590a97d53855a4aa6da70be8439ce4d690c.zip#egg=pyhs2
 # sha256: Tg3rRP5GuOADbGx7MBJV1RikfCQL6zZWn7Ua6aAwDpM
 django-jingo-offline-compressor==0.0.7
+# sha256: TzJCJuHuhaxBUgV5up3nAylAEmAuU2IX_Q50VuFH2IY
+sasl==0.1.3
