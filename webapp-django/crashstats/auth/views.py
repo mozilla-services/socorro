@@ -1,7 +1,15 @@
+import datetime
+import json
+import random
+
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.shortcuts import render
+from django.core.cache import cache
 
 from django_browserid.views import Verify
+
+from crashstats.crashstats.utils import json_view
 
 
 class CustomBrowserIDVerify(Verify):
@@ -17,3 +25,30 @@ class CustomBrowserIDVerify(Verify):
     @property
     def success_url(self):
         return reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))
+
+
+@json_view
+def debug_login(request):
+    if request.GET.get('test-caching'):
+        return {'cache_value': cache.get('cache_value')}
+
+    if request.GET.get('test-cookie'):
+        return {'cookie_value': int(request.COOKIES.get('cookie_value', 0))}
+
+    cache_value = random.randint(10, 100)
+    cache.set('cache_value', cache_value, 10)
+    cookie_value = random.randint(10, 100)
+    context = {
+        'SESSION_COOKIE_SECURE': json.dumps(settings.SESSION_COOKIE_SECURE),
+        'cache_setting': settings.CACHES['default']['BACKEND'].split('.')[-1],
+        'cache_value': cache_value,
+        'cookie_value': cookie_value,
+        'DEBUG': json.dumps(settings.DEBUG),
+        'BROWSERID_AUDIENCES': json.dumps(
+            getattr(settings, 'BROWSERID_AUDIENCES', None)
+        ),
+    }
+    response = render(request, 'auth/debug_login.html', context)
+    future = datetime.datetime.utcnow() + datetime.timedelta(seconds=10)
+    response.set_cookie('cookie_value', cookie_value, expires=future)
+    return response

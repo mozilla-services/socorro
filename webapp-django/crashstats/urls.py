@@ -4,6 +4,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
+from .auth import urls as auth_urls
 
 from funfactory.monkeypatches import patch
 patch()
@@ -37,6 +38,7 @@ urlpatterns = patterns(
         'crashstats.signature.urls',
         namespace='signature'
     )),
+    (r'', include(auth_urls, namespace='auth')),
     (r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),
     (r'^symbols/', include('crashstats.symbols.urls', namespace='symbols')),
