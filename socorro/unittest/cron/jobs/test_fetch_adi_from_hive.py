@@ -78,7 +78,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  '10.0.5a',
                  'release',
                  'release',
-                 '%7Ba-guid%7D',
+                 '{a-guid}',
                  '2'],
                 ['2019-01-01',
                  'Missing',
@@ -87,7 +87,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  '',
                  None,
                  'release',
-                 '%7Ba-guid%7D',
+                 '{a-guid}',
                  '2']
             ]
             for item in test_data:
