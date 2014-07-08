@@ -50,7 +50,7 @@ bootstrap:
 	[ -d $(VIRTUALENV) ] || virtualenv -p python2.6 $(VIRTUALENV)
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install tools/peep-1.2.tar.gz
-	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
+	$(VIRTUALENV)/bin/peep install --download-cache=/tmp/pip-cache -r requirements.txt
 
 install: bootstrap bootstrap-webapp reinstall
 
@@ -86,7 +86,7 @@ lint:
 
 clean:
 	find ./ -type f -name "*.pyc" -exec rm {} \;
-	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
+	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk /tmp/pip-cache
 	rm -rf ./breakpad.tar.gz
 	cd minidump-stackwalk; make clean
 
@@ -111,8 +111,7 @@ json_enhancements_pg_extension: bootstrap
 bootstrap-webapp: bootstrap
 	cd webapp-django; ./bin/bootstrap.sh
 
-stackwalker:
+stackwalker: breakpad
 	# Build JSON stackwalker
-	# Depends on breakpad, run "make breakpad" if you don't have it yet
 	cd minidump-stackwalk; make
 	cp minidump-stackwalk/stackwalker stackwalk/bin
