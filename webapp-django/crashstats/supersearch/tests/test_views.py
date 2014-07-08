@@ -184,6 +184,18 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_returned': True,
         'is_mandatory': False,
     },
+    'user_comments': {
+        'name': 'user_comments',
+        'query_type': 'str',
+        'namespace': 'processed_crash',
+        'form_field_type': 'MultipleValueField',
+        'form_field_choices': [],
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+    },
 }
 
 

@@ -1,0 +1,32 @@
+{% from "macros/pagination.html" import pagination %}
+
+{% if query.total > 0 %}
+
+<div>
+    {{ pagination(query, current_url, current_page) }}
+    <table class="tablesorter data-table">
+        <thead>
+            <tr>
+                <th scope="col">Crash ID</th>
+                <th scope="col">Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for crash in query.hits %}
+            <tr>
+                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
+                <td>
+                    {{ crash.user_comments }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ pagination(query, current_url, current_page) }}
+</div>
+
+{% else %}
+
+<p>No comments were found.</p>
+
+{% endif %}

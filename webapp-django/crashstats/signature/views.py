@@ -30,6 +30,26 @@ DEFAULT_COLUMNS = (
 )
 
 
+def get_validated_params(request):
+    params = get_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
+
+    if len(params['signature']) > 1:
+        return http.HttpResponseBadRequest(
+            'Invalid value for "signature" parameter, '
+            'only one value is accepted'
+        )
+
+    if not params['signature'][0]:
+        return http.HttpResponseBadRequest(
+            '"signature" parameter is mandatory'
+        )
+
+    return params
+
+
 @waffle_switch('signature-report')
 @pass_default_context
 def signature_report(request, default_context=None):
@@ -61,22 +81,12 @@ def signature_report(request, default_context=None):
 @waffle_switch('signature-report')
 def signature_reports(request):
     '''Return the results of a search. '''
-    params = get_params(request)
+    params = get_validated_params(request)
     if isinstance(params, http.HttpResponseBadRequest):
         # There was an error in the form, let's return it.
         return params
 
-    if len(params['signature']) > 1:
-        return http.HttpResponseBadRequest(
-            'Invalid value for "signature" parameter, '
-            'only one value is accepted'
-        )
     signature = params['signature'][0]
-
-    if not signature:
-        return http.HttpResponseBadRequest(
-            '"signature" parameter is mandatory'
-        )
 
     data = {}
     data['query'] = {
@@ -148,22 +158,12 @@ def signature_reports(request):
 @waffle_switch('signature-report')
 def signature_aggregation(request, aggregation):
     '''Return the aggregation of a field. '''
-    params = get_params(request)
+    params = get_validated_params(request)
     if isinstance(params, http.HttpResponseBadRequest):
         # There was an error in the form, let's return it.
         return params
 
-    if len(params['signature']) > 1:
-        return http.HttpResponseBadRequest(
-            'Invalid value for "signature" parameter, '
-            'only one value is accepted'
-        )
     signature = params['signature'][0]
-
-    if not signature:
-        return http.HttpResponseBadRequest(
-            '"signature" parameter is mandatory'
-        )
 
     data = {}
     data['aggregation'] = aggregation
@@ -206,3 +206,69 @@ def signature_aggregation(request, aggregation):
     data['total_count'] = search_results['total']
 
     return render(request, 'signature/signature_aggregation.html', data)
+
+
+@waffle_switch('signature-report')
+def signature_comments(request):
+    '''Return a list of non-empty comments. '''
+    params = get_validated_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
+
+    signature = params['signature'][0]
+
+    data = {}
+    data['query'] = {
+        'total': 0,
+        'total_count': 0,
+        'total_pages': 0
+    }
+
+    current_query = request.GET.copy()
+    if 'page' in current_query:
+        del current_query['page']
+
+    data['params'] = current_query.copy()
+
+    try:
+        current_page = int(request.GET.get('page', 1))
+    except ValueError:
+        return http.HttpResponseBadRequest('Invalid page')
+
+    if current_page <= 0:
+        current_page = 1
+
+    results_per_page = 50
+    data['current_page'] = current_page
+    data['results_offset'] = results_per_page * (current_page - 1)
+
+    params['signature'] = '=' + signature
+    params['user_comments'] = '!__null__'
+    params['_results_number'] = results_per_page
+    params['_results_offset'] = data['results_offset']
+    params['_facets'] = []  # We don't need no facets.
+
+    data['current_url'] = '%s?%s' % (
+        reverse('signature:signature_report'),
+        current_query.urlencode()
+    )
+
+    api = SuperSearchUnredacted()
+    try:
+        search_results = api.get(**params)
+    except models.BadStatusCodeError, e:
+        # We need to return the error message in some HTML form for jQuery to
+        # pick it up.
+        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+
+    search_results['total_pages'] = int(
+        math.ceil(
+            search_results['total'] / float(results_per_page)
+        )
+    )
+    search_results['total_count'] = search_results['total']
+
+    data['query'] = search_results
+
+    return render(request, 'signature/signature_comments.html', data)
