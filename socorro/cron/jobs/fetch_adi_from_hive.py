@@ -50,7 +50,7 @@ _QUERY = """
     WHERE
         domain='addons.mozilla.org'
         and request_url like '/blocklist/3/%%'
-        and ds=%s
+        and ds='%s'
     GROUP BY
         ds,
         split(request_url,'/')[5],
