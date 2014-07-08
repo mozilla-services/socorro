@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import urllib2
 import csv
 import getpass
 import os
@@ -169,7 +168,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                         f.write(
                             "\t"
                             .join(
-                                urllib2.unquote(v).decode('utf8')
+                                str(v).encode('utf8')
                                 for v in row
                             )
                         )
