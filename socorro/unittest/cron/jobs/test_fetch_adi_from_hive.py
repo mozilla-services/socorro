@@ -70,16 +70,16 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  'nightly-ww3v20',
                  'nightly',
                  'a-guid',
-                 '1'],
+                 1],
                 ['2019-01-01',
                  'NothingMuch',
                  'Ginko',
                  '2.3.2',
                  '10.0.5a',
                  'release',
-                 'release',
+                 'release-cck-\\',
                  '%7Ba-guid%7D',
-                 '2'],
+                 2],
                 ['2019-01-01',
                  'Missing',
                  'Ginko',
@@ -88,7 +88,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  None,
                  'release',
                  '%7Ba-guid%7D',
-                 '2']
+                 2]
             ]
             for item in test_data:
                 yield item
@@ -153,7 +153,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 'product_os_version': '2.3.2',
                 'product_version': '10.0.5a',
                 'build': 'release',
-                'build_channel': 'release',
+                'build_channel': 'release-cck-\\',
                 'product_guid': '{a-guid}',
                 'count': 2
             }
