@@ -38,6 +38,125 @@ class TestUtils(TestCase):
         for i, d in enumerate(utils.daterange(start_date, end_date, format)):
             eq_(d, expected[i])
 
+    def test_enhance_frame(self):
+        vcs_mappings = {
+            'hg': {
+                'hg.m.org': ('http://hg.m.org/'
+                             '%(repo)s/annotate/%(revision)s'
+                             '/%(file)s#l%(line)s')
+            }
+        }
+
+        # Test with a file that uses a vcs_mapping.
+        # Also test function sanitizing.
+        actual = {
+            'frame': 0,
+            'module': 'bad.dll',
+            'function': 'Func(A * a,B b)',
+            'file': 'hg:hg.m.org/repo/name:dname/fname:rev',
+            'line': 576,
+        }
+        utils.enhance_frame(actual, vcs_mappings)
+        expected = {
+            # TODO: function sanitizing is broken
+            'function': 'Func(A * a,B b)',
+            'short_signature': 'Func(A * a,B b)',
+            'line': 576,
+            'source_link': ('http://hg.m.org/repo/name/'
+                            'annotate/rev/dname/fname#l576'),
+            'file': 'dname/fname',
+            'frame': 0,
+            'signature': 'Func(A * a,B b)',
+            'module': 'bad.dll',
+        }
+        eq_(actual, expected)
+
+        # Now with a file that has VCS info but isn't in vcs_mappings.
+        actual = {
+            'frame': 0,
+            'module': 'bad.dll',
+            'function': 'Func',
+            'file': 'git:git.m.org/repo/name:dname/fname:rev',
+            'line': 576,
+        }
+        utils.enhance_frame(actual, vcs_mappings)
+        expected = {
+            'function': 'Func',
+            'short_signature': 'Func',
+            'line': 576,
+            'file': 'fname',
+            'frame': 0,
+            'signature': 'Func',
+            'module': 'bad.dll',
+        }
+        eq_(actual, expected)
+
+        # Test with no VCS info at all.
+        actual = {
+            'frame': 0,
+            'module': 'bad.dll',
+            'function': 'Func',
+            'file': '/foo/bar/file.c',
+            'line': 576,
+        }
+        utils.enhance_frame(actual, vcs_mappings)
+        expected = {
+            'function': 'Func',
+            'short_signature': 'Func',
+            'line': 576,
+            'file': '/foo/bar/file.c',
+            'frame': 0,
+            'signature': 'Func',
+            'module': 'bad.dll',
+        }
+        eq_(actual, expected)
+
+        # Test with no source info at all.
+        actual = {
+            'frame': 0,
+            'module': 'bad.dll',
+            'function': 'Func',
+        }
+        utils.enhance_frame(actual, vcs_mappings)
+        expected = {
+            'function': 'Func',
+            'short_signature': 'Func',
+            'frame': 0,
+            'signature': 'Func',
+            'module': 'bad.dll',
+        }
+        eq_(actual, expected)
+
+        # Test with no function info.
+        actual = {
+            'frame': 0,
+            'module': 'bad.dll',
+            'module_offset': '0x123',
+        }
+        utils.enhance_frame(actual, vcs_mappings)
+        expected = {
+            'short_signature': 'bad.dll@0x123',
+            'frame': 0,
+            'signature': 'bad.dll@0x123',
+            'module': 'bad.dll',
+            'module_offset': '0x123',
+        }
+        eq_(actual, expected)
+
+        # Test with no module info.
+        actual = {
+            'frame': 0,
+            'offset': '0x1234',
+        }
+        utils.enhance_frame(actual, vcs_mappings)
+        expected = {
+            'short_signature': '@0x1234',
+            'frame': 0,
+            'signature': '@0x1234',
+            'offset': '0x1234',
+        }
+        eq_(actual, expected)
+
     def test_parse_dump(self):
         dump = (
             'OS|Windows NT|6.1.7601 Service Pack 1\n'
@@ -99,9 +218,7 @@ class TestUtils(TestCase):
                       'source_link': ('http://bonsai.m.org/'
                                       'cvsblame.cgi?file=fname&'
                                       'rev=rev&mark=576#576'),
-                      'source_filename': 'fname',
-                      'source_info': 'fname:576',
-                      'file': 'cvs:cvs.m.org/repo:fname:rev',
+                      'file': 'fname',
                       'frame': 0,
                       'signature': 'signature',
                       'module': 'bad.dll'},
@@ -110,9 +227,7 @@ class TestUtils(TestCase):
                       'line': 576,
                       'source_link': ('http://hg.m.org/repo/name/'
                                       'annotate/rev/fname#l576'),
-                      'source_filename': 'fname',
-                      'source_info': 'fname:576',
-                      'file': 'hg:hg.m.org/repo/name:fname:rev',
+                      'file': 'fname',
                       'frame': 1,
                       'signature': 'signature',
                       'module': 'bad.dll'}

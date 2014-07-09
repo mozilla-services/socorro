@@ -358,7 +358,7 @@
                   <td title="{{ frame.signature }}">{{ frame.signature }}</td>
                   {% if frame.source_link %}
                   <td>
-                    <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                    <a href="{{ frame.source_link }}">{{ frame.file }}</a>
                   </td>
                   {% else %}
                   <td>
@@ -394,7 +394,7 @@
                     <td title="{{ frame.signature }}">{{ frame.signature }}</td>
                     {% if frame.source_link %}
                     <td>
-                      <a href="{{ frame.source_link }}">{{ frame.source_filename }}</a>
+                      <a href="{{ frame.source_link }}">{{ frame.file }}</a>
                     </td>
                     {% else %}
                     <td>{{ frame.file }}</td>

@@ -85,6 +85,47 @@ def _json_clean(value):
     return value.replace("</", "<\\/")
 
 
+def enhance_frame(frame, vcs_mappings):
+    """
+    Add some additional info to a stack frame--signature
+    and source links from vcs_mappings.
+    """
+    if 'function' in frame:
+        # Remove spaces before all stars, ampersands, and commas
+        function = re.sub('/ (?=[\*&,])/', '', frame['function'])
+        # Ensure a space after commas
+        function = re.sub('/(?<=,)(?! )/', '', function)
+        frame['function'] = function
+        signature = function
+    elif 'file' in frame and 'line' in frame:
+        signature = '%s#%d' % (frame['file'], frame['line'])
+    elif 'module' in frame and 'module_offset' in frame:
+        signature = '%s@%s' % (frame['module'], frame['module_offset'])
+    else:
+        signature = '@%s' % frame['offset']
+    frame['signature'] = signature
+    frame['short_signature'] = re.sub('/\(.*\)/', '', signature)
+
+    if 'file' in frame:
+        vcsinfo = frame['file'].split(':')
+        if len(vcsinfo) == 4:
+            vcstype, root, vcs_source_file, revision = vcsinfo
+            server, repo = root.split('/', 1)
+
+            if vcstype in vcs_mappings:
+                if server in vcs_mappings[vcstype]:
+                    link = vcs_mappings[vcstype][server]
+                    frame['file'] = vcs_source_file
+                    frame['source_link'] = link % {
+                        'repo': repo,
+                        'file': vcs_source_file,
+                        'revision': revision,
+                        'line': frame['line']}
+            else:
+                path_parts = vcs_source_file.split('/')
+                frame['file'] = path_parts.pop()
+
+
 def parse_dump(dump, vcs_mappings):
 
     parsed_dump = {
@@ -128,24 +169,8 @@ def parse_dump(dump, vcs_mappings):
             thread_num = int(thread_num)
             frame_num = int(frame_num)
 
-            signature = None
-            if function:
-                # Remove spaces before all stars, ampersands, and commas
-                function = re.sub('/ (?=[\*&,])/', '', function)
-                # Ensure a space after commas
-                function = re.sub('/(?<=,)(?! )/', '', function)
-                signature = function
-            elif source_file and source_line:
-                signature = '%s#%s' % (source_file, source_line)
-            elif module_name:
-                signature = '%s@%s' % (module_name, instruction)
-            else:
-                signature = '@%s' % instruction
-
             frame = {
                 'frame': frame_num,
-                'signature': signature,
-                'short_signature': re.sub('/\(.*\)/', '', signature),
             }
             if module_name:
                 frame['module'] = module_name
@@ -162,30 +187,7 @@ def parse_dump(dump, vcs_mappings):
             if source_line:
                 frame['line'] = int(source_line)
 
-            if source_file:
-                vcsinfo = source_file.split(':')
-                if len(vcsinfo) == 4:
-                    vcstype, root, vcs_source_file, revision = vcsinfo
-
-                    server, repo = root.split('/', 1)
-
-                    frame['source_filename'] = vcs_source_file
-
-                    if vcstype in vcs_mappings:
-                        if server in vcs_mappings[vcstype]:
-                            link = vcs_mappings[vcstype][server]
-                            frame['source_link'] = link % {
-                                'repo': repo,
-                                'file': vcs_source_file,
-                                'revision': revision,
-                                'line': frame['line']}
-                    else:
-                        path_parts = source_file.split('/')
-                        frame['source_filename'] = path_parts.pop()
-
-                if 'source_filename' in frame and 'line' in frame:
-                    frame['source_info'] = '%s:%s' % (frame['source_filename'],
-                                                      frame['line'])
+            enhance_frame(frame, vcs_mappings)
 
             if parsed_dump['crash_info']['crashing_thread'] is None:
                 parsed_dump['crash_info']['crashing_thread'] = thread_num
