@@ -755,8 +755,8 @@ class Crashes(PostgreSQLBase):
             if not params[param]:
                 raise MissingArgumentError(param)
 
-        if (params.end_date - params.start_date) > datetime.timedelta(days=60):
-            raise BadArgumentError('Duration too long. Max 60 days.')
+        if (params.end_date - params.start_date) > datetime.timedelta(days=365):
+            raise BadArgumentError('Duration too long. Max 365 days.')
 
         sql_query = """
             SELECT
