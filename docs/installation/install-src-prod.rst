@@ -24,7 +24,7 @@ As the *root* user:
   useradd socorro
   chown socorro:socorro /var/log/socorro
   mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
-  chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
+  chown apache:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 Ensure that the user doing installs owns the install dir,
