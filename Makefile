@@ -6,7 +6,7 @@ PREFIX=/data/socorro
 ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = "."
-NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
+NOSE = $(VIRTUALENV)/bin/nosetests socorro -s
 SETUPDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
@@ -36,9 +36,13 @@ test-socorro: bootstrap
 	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=socorro_migration_test --database_username=$(database_username) --database_hostname=$(database_hostname) --database_password=$(database_password) --database_port=$(DB_PORT) --database_superusername=$(database_superusername) --database_superuserpassword=$(database_superuserpassword) --dropdb --logging.stderr_error_logging_level=40 --unlogged
 	PYTHONPATH=$(PYTHONPATH) $(VIRTUALENV)/bin/alembic -c config/alembic.ini downgrade -1
 	PYTHONPATH=$(PYTHONPATH) $(VIRTUALENV)/bin/alembic -c config/alembic.ini upgrade +1
+	# run tests
+	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(NOSE)
+
+test-coverage:
 	# run tests with coverage
 	rm -f coverage.xml
-	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
+	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE) --with-xunit
 	$(COVERAGE) xml
 
 test-webapp: bootstrap-webapp

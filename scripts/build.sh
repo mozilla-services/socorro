@@ -54,6 +54,8 @@ make test database_username=test database_hostname=$DB_HOST database_password=aP
 
 if [ "$1" != "leeroy" ]
 then
+  # Compile test coverage report
+  make test-coverage database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST elasticsearch_urls=$ES_URLS rmq_host=$RABBITMQ_HOST rmq_virtual_host=$RABBITMQ_VHOST rmq_user=$RABBITMQ_USERNAME rmq_password=$RABBITMQ_PASSWORD
   # pull pre-built, known version of breakpad
   make clean
   wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
