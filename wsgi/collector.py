@@ -4,7 +4,10 @@ from socorro.collector.collector_app import CollectorApp
 from socorro.webapi.servers import ApacheModWSGI
 import socorro.collector.collector_app
 
-from configman import ConfigFileFutureProxy
+from configman import (
+    ConfigFileFutureProxy,
+    environment
+)
 
 if os.path.isfile('/etc/socorro/collector.ini'):
     config_path = '/etc/socorro'
@@ -15,8 +18,11 @@ else:
 # will then create the wsgi app object.
 main(
     CollectorApp,  # the socorro app class
-    config_path=config_path
+    config_path=config_path,
+    values_source_list=[
+        ConfigFileFutureProxy,
+        environment
+    ]
 )
 
 application = socorro.collector.collector_app.application
-
