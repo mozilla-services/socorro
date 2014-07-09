@@ -169,7 +169,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                         f.write(
                             "\t"
                             .join(
-                                urllib2.unquote(v).decode('utf8')
+                                urllib2.unquote(str(v)).replace('\\', '\\\\')
                                 for v in row
                             )
                         )
