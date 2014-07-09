@@ -14,6 +14,7 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|05:00
   socorro.cron.jobs.matviews.TCBSCronApp|1d|05:00
   socorro.cron.jobs.matviews.ADUCronApp|1d|05:00
+  socorro.cron.jobs.fetch_adi_from_hive.FetchADIFromHiveCronApp|1d|07:00
   socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|05:00
   socorro.cron.jobs.matviews.DuplicatesCronApp|1h
   socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
