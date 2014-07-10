@@ -1,0 +1,17 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+
+cache:
+  directories:
+    - $HOME/pip-cache
+
+addons:
+  postgresql: "9.3"
+
+install:
+  - python setup.py install
+
+script:
+  - python setup.py test
