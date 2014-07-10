@@ -1,5 +1,3 @@
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
 require "yaml"
 
 # Load up our vagrant config files -- vagrantconfig.yaml first
