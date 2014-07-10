@@ -41,7 +41,7 @@ test-socorro: bootstrap
 	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
 
-test-webapp: bootstrap-webapp
+test-webapp:
 	cd webapp-django; ./bin/jenkins.sh
 
 bootstrap:
