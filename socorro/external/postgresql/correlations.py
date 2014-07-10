@@ -20,7 +20,7 @@ class Correlations(PostgreSQLBase):
             ("signature", None, "str"),
             ("platform", None, "str"),
             ("min_crashes", 10, "int"),
-            ("min_baseline_diff", 0.005, "float"),
+            ("min_baseline_diff", 0.05, "float"),
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
