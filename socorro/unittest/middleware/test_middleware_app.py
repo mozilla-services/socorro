@@ -1225,9 +1225,9 @@ class IntegrationTestMiddlewareApp(TestCase):
 
         cursor = self.conn.cursor()
         cursor.execute("""
-        INSERT INTO raw_adu
-        (adu_count, date, product_name, product_os_platform,
-        product_os_version, product_version, build, build_channel,
+        INSERT INTO raw_adi
+        (adi_count, date, product_name, product_os_platform,
+        product_os_version, product_version, build, update_channel,
         product_guid, received_at)
         VALUES
         (10, '2013-08-22', 'NightTrain', 'Linux', 'Linux', '3.0a2',

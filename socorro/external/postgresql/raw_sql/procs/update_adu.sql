@@ -8,16 +8,16 @@ AS $$
 BEGIN
 -- daily batch update procedure to update the
 -- adu-product matview, used to power graphs
--- gets its data from raw_adu, which is populated
--- daily by metrics
+-- gets its data from raw_adi, which is populated
+-- daily by the fetch-adi-from-hive crontabber job
 
--- check if raw_adu has been updated.  otherwise, abort.
-PERFORM 1 FROM raw_adu
+-- check if raw_adi has been updated.  otherwise, abort.
+PERFORM 1 FROM raw_adi
 WHERE "date" = updateday
 LIMIT 1;
 
 IF NOT FOUND THEN
-    RAISE EXCEPTION 'raw_adu not updated for %', updateday;
+    RAISE EXCEPTION 'raw_adi not updated for %', updateday;
 END IF;
 
 -- check if ADU has already been run for the date
@@ -38,21 +38,21 @@ INSERT INTO product_adu ( product_version_id, os_name,
         adu_date, adu_count )
 SELECT product_version_id, coalesce(os_name,'Unknown') as os,
     updateday,
-    coalesce(sum(adu_count), 0)
+    coalesce(sum(adi_count), 0)
 FROM product_versions
     LEFT OUTER JOIN (
-        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+        SELECT COALESCE(prodmap.product_name, raw_adi.product_name)::citext
                 as product_name,
-            raw_adu.product_version::citext as product_version,
-            raw_adu.update_channel as update_channel,
-            raw_adu.adu_count,
+            raw_adi.product_version::citext as product_version,
+            raw_adi.update_channel as update_channel,
+            raw_adi.adi_count,
             os_name_matches.os_name
-        FROM raw_adu
+        FROM raw_adi
         LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+            ON raw_adi.product_guid = btrim(prodmap.productid, '{}')
         LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-        WHERE raw_adu.date = updateday
+            ON raw_adi.product_os_platform ILIKE os_name_matches.match_string
+        WHERE raw_adi.date = updateday
         ) as prod_adu
         ON product_versions.product_name = prod_adu.product_name
         AND product_versions.version_string = prod_adu.product_version
@@ -68,21 +68,21 @@ INSERT INTO product_adu ( product_version_id, os_name,
         adu_date, adu_count )
 SELECT product_version_id, coalesce(os_name,'Unknown') as os,
     updateday,
-    coalesce(sum(adu_count), 0)
+    coalesce(sum(adi_count), 0)
 FROM product_versions
     LEFT OUTER JOIN (
-        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
-            as product_name, raw_adu.product_version::citext as product_version,
-            raw_adu.update_channel as update_channel,
-            raw_adu.adu_count,
+        SELECT COALESCE(prodmap.product_name, raw_adi.product_name)::citext
+            as product_name, raw_adi.product_version::citext as product_version,
+            raw_adi.update_channel as update_channel,
+            raw_adi.adi_count,
             os_name_matches.os_name
-        FROM raw_adu
+        FROM raw_adi
         LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+            ON raw_adi.product_guid = btrim(prodmap.productid, '{}')
         LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-        WHERE raw_adu.date = updateday
-            and raw_adu.update_channel ILIKE 'esr'
+            ON raw_adi.product_os_platform ILIKE os_name_matches.match_string
+        WHERE raw_adi.date = updateday
+            and raw_adi.update_channel ILIKE 'esr'
         ) as prod_adu
         ON product_versions.product_name = prod_adu.product_name
         AND product_versions.version_string
@@ -98,24 +98,24 @@ INSERT INTO product_adu ( product_version_id, os_name,
         adu_date, adu_count )
 SELECT product_version_id, coalesce(os_name,'Unknown') as os,
     updateday,
-    coalesce(sum(adu_count), 0)
+    coalesce(sum(adi_count), 0)
 FROM product_versions
     JOIN products USING ( product_name )
     LEFT OUTER JOIN (
-        SELECT COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+        SELECT COALESCE(prodmap.product_name, raw_adi.product_name)::citext
                 as product_name,
-            raw_adu.product_version::citext as product_version,
-            raw_adu.update_channel as update_channel,
-            raw_adu.adu_count,
+            raw_adi.product_version::citext as product_version,
+            raw_adi.update_channel as update_channel,
+            raw_adi.adi_count,
             os_name_matches.os_name,
-            build_numeric(raw_adu.build) as build_id
-        FROM raw_adu
+            build_numeric(raw_adi.build) as build_id
+        FROM raw_adi
         LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+            ON raw_adi.product_guid = btrim(prodmap.productid, '{}')
         LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-        WHERE raw_adu.date = updateday
-            AND raw_adu.update_channel = 'beta'
+            ON raw_adi.product_os_platform ILIKE os_name_matches.match_string
+        WHERE raw_adi.date = updateday
+            AND raw_adi.update_channel = 'beta'
         ) as prod_adu
         ON product_versions.product_name = prod_adu.product_name
         AND product_versions.release_version = prod_adu.product_version
