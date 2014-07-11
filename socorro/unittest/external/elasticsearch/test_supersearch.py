@@ -1777,3 +1777,16 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         finally:
             for index in indices:
                 storage.es.delete_index(index=index)
+
+    def test_get_mapping(self):
+        res = self.api.get_mapping()
+
+        mapping = res['mappings']
+        ok_(self.config.elasticsearch_doctype in mapping)
+        properties = mapping[self.config.elasticsearch_doctype]['properties']
+
+        ok_('processed_crash' in properties)
+        ok_('raw_crash' in properties)
+
+        # Those fields have no `storage_mapping`.
+        ok_('signature' not in properties['processed_crash']['properties'])

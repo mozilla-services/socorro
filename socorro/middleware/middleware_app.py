@@ -61,7 +61,7 @@ SERVICES_LIST = (
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/search/(signatures|crashes)/(.*)', 'search.Search'),
     (r'/supersearch/'
-     r'(field|fields|missing_fields)/(.*)',
+     r'(field|fields|missing_fields|mapping)/(.*)',
      'supersearch.SuperSearch'),
     (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/server_status/(.*)', 'server_status.ServerStatus'),

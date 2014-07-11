@@ -543,3 +543,57 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             'hits': missing_fields,
             'total': len(missing_fields),
         }
+
+    def get_mapping(self):
+        """Return the mapping to be used in elasticsearch, generated from the
+        current list of fields in the database.
+        """
+        all_fields = self.get_fields()
+        properties = {}
+
+        def add_field_to_properties(properties, namespaces, field):
+            if not namespaces:
+                properties[field['in_database_name']] = field['storage_mapping']
+                return
+
+            namespace = namespaces.pop(0)
+
+            if namespace not in properties:
+                properties[namespace] = {
+                    'type': 'object',
+                    'dynamic': 'true',
+                    'properties': {}
+                }
+
+            add_field_to_properties(
+                properties[namespace]['properties'],
+                namespaces,
+                field,
+            )
+
+        for field in all_fields.values():
+            if not field['storage_mapping']:
+                continue
+
+            namespaces = field['namespace'].split('.')
+
+            add_field_to_properties(properties, namespaces, field)
+
+        return {
+            'index': {
+                'query': {
+                    'default_field': 'signature'
+                }
+            },
+            'mappings': {
+                self.config.elasticsearch_doctype: {
+                    '_all': {
+                        'enabled': False
+                    },
+                    '_source': {
+                        'compress': True
+                    },
+                    'properties': properties
+                }
+            }
+        }
