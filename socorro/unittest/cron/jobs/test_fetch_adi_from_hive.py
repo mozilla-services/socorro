@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -73,7 +74,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  1],
                 ['2019-01-01',
                  'NothingMuch',
-                 'Ginko',
+                 u'Ginko☢\0',
                  '2.3.2',
                  '10.0.5a',
                  'release',
@@ -149,7 +150,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             }, {
                 'report_date': datetime.date(2019, 1, 1),
                 'product_name': 'NothingMuch',
-                'product_os_platform': 'Ginko',
+                'product_os_platform': 'Ginko\xe2\x98\xa2',
                 'product_os_version': '2.3.2',
                 'product_version': '10.0.5a',
                 'build': 'release',
