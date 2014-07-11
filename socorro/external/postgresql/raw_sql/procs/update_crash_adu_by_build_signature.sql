@@ -46,6 +46,7 @@ AS
             JOIN signatures ON reports_clean.signature_id = signatures.signature_id
         WHERE
             date_processed BETWEEN updateday and updateday + 1
+            AND length(reports_clean.build::text) >= 8
         GROUP BY
             product_version_id,
             build,
