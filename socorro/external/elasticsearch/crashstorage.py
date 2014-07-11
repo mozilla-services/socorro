@@ -12,6 +12,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound
 )
+from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib import datetimeutil
 
 from configman import Namespace
@@ -46,16 +47,16 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'elasticsearch_base_settings',
+        default='%s/mappings/socorro_index_settings.json' % DIRECTORY,
         doc='the file containing the mapping of the indexes receiving '
             'crash reports',
-        default='%s/mappings/socorro_index_settings.json' % DIRECTORY,
         reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
         'elasticsearch_emails_index_settings',
+        default='%s/mappings/socorro_emails_index_settings.json' % DIRECTORY,
         doc='the file containing the mapping of the indexes receiving '
             'email addresses for the automatic-emails cron job',
-        default='%s/mappings/socorro_emails_index_settings.json' % DIRECTORY,
         reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
@@ -63,6 +64,13 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         default='socorro_emails',
         doc='the index that handles data about email addresses for '
             'the automatic-emails cron job',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
+        'use_mapping_file',
+        default=True,
+        doc='load the mapping from a file if true, load it from the database '
+            'otherwise',
         reference_value_from='resource.elasticsearch',
     )
 
@@ -240,12 +248,15 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def create_socorro_index(self, es_index):
         """Create an index that will receive crash reports. """
-        settings_json = open(
-            self.config.elasticsearch_base_settings
-        ).read()
-        es_settings = json.loads(
-            settings_json % self.config.elasticsearch_doctype
-        )
+        if self.config.use_mapping_file:
+            # Load the mapping from a file.
+            with open(self.config.elasticsearch_base_settings) as f:
+                es_settings = json.loads(
+                    f.read() % self.config.elasticsearch_doctype
+                )
+        else:
+            # Load the mapping from a database.
+            es_settings = SuperSearch(config=self.config).get_mapping()
 
         self.create_index(es_index, es_settings)
 

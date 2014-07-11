@@ -13,6 +13,9 @@ from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.search import Search
 from socorro.lib import util, datetimeutil
 from socorro.unittest.testbase import TestCase
+from .test_supersearch import (
+    SUPERSEARCH_FIELDS
+)
 
 # Remove debugging noise during development
 # import logging
@@ -177,6 +180,15 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()
 
+        # Create the supersearch fields.
+        self.storage.es.bulk_index(
+            index=config.webapi.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            docs=SUPERSEARCH_FIELDS.values(),
+            id_field='name',
+            refresh=True,
+        )
+
         now = datetimeutil.utc_now()
 
         yesterday = now - datetime.timedelta(days=1)
@@ -300,6 +312,7 @@ class IntegrationElasticsearchSearch(ElasticSearchTestCase):
         # clear the test index
         config = self.get_config_context()
         self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        self.storage.es.delete_index(config.webapi.elasticsearch_default_index)
 
     @mock.patch('socorro.external.elasticsearch.search.Util')
     def test_search_single_filters(self, mock_psql_util):

@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import time
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
@@ -45,10 +44,6 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         self.now = utc_now()
 
-        # Create the index that will be used.
-        es_index = self.storage.get_index_for_crash(self.now)
-        self.storage.create_socorro_index(es_index)
-
         connection_context = config.elasticsearch_class(
             config
         )
@@ -62,19 +57,17 @@ class IntegrationTestSettings(ElasticSearchTestCase):
             refresh=True,
         )
 
-        self.api = SuperSearch(config=config)
+        # Create the index that will be used.
+        es_index = self.storage.get_index_for_crash(self.now)
+        self.storage.create_socorro_index(es_index)
 
-        # This an ugly hack to give elasticsearch some time to finish creating
-        # the new index. It is needed for jenkins only, because we have a
-        # special case here where we index only one or two documents before
-        # querying. Other tests are not affected.
-        # TODO: try to remove it, or at least understand why it is needed.
-        time.sleep(1)
+        self.api = SuperSearch(config=config)
 
     def tearDown(self):
         # clear the test index
         config = self.get_config_context()
         self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        self.storage.es.delete_index(config.webapi.elasticsearch_default_index)
 
         super(IntegrationTestSettings, self).tearDown()
 

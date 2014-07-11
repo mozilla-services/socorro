@@ -42,6 +42,18 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'multi_field',
+            'fields': {
+                'signature': {
+                    'type': 'string'
+                },
+                'full': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
+            }
+        },
     },
     'product': {
         'name': 'product',
@@ -56,6 +68,18 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'multi_field',
+            'fields': {
+                'product': {
+                    'type': 'string'
+                },
+                'full': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
+            }
+        },
     },
     'version': {
         'name': 'version',
@@ -70,6 +94,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'keyword'
+        },
     },
     'platform': {
         'name': 'platform',
@@ -84,6 +112,18 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'multi_field',
+            'fields': {
+                'os_name': {
+                    'type': 'string'
+                },
+                'full': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
+            }
+        },
     },
     'release_channel': {
         'name': 'release_channel',
@@ -98,6 +138,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string'
+        },
     },
     'date': {
         'name': 'date',
@@ -112,6 +155,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'date',
+            'format': 'yyyy-MM-dd\'T\'HH:mm:ssZZ||yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSZZ'
+        },
     },
     'address': {
         'name': 'address',
@@ -126,6 +173,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string'
+        },
     },
     'build_id': {
         'name': 'build_id',
@@ -140,6 +190,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'long'
+        },
     },
     'reason': {
         'name': 'reason',
@@ -154,6 +207,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string'
+        },
     },
     'email': {
         'name': 'email',
@@ -168,6 +224,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'keyword'
+        },
     },
     'url': {
         'name': 'url',
@@ -182,6 +242,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'keyword'
+        },
     },
     'uuid': {
         'data_validation_type': 'enum',
@@ -552,7 +616,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'bool',
         'storage_mapping': {
-            'None_value': False,
+            'null_value': False,
             'type': 'boolean'
         }
     },
@@ -630,6 +694,20 @@ SUPERSEARCH_FIELDS = {
             'type': 'string'
         }
     },
+    'fake_field': {
+        'data_validation_type': 'enum',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'fake_field',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'fake_field',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'enum',
+    },
 }
 
 
@@ -664,7 +742,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        eq_(res, ['socorro_integration_test'])
+        eq_(res, ['socorro_integration_test_reports'])
 
         config = self.get_config_context(es_index='socorro_%Y%W')
         api = SuperSearch(config=config)
@@ -705,6 +783,19 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()
+
+        connection_context = config.resource.elasticsearch.elasticsearch_class(
+            config.resource.elasticsearch
+        )
+
+        # Create the supersearch fields.
+        connection_context.bulk_index(
+            index=config.webapi.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            docs=SUPERSEARCH_FIELDS.values(),
+            id_field='name',
+            refresh=True,
+        )
 
         now = datetimeutil.utc_now()
 
@@ -888,19 +979,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             dict(default_crash_report, uuid=21, address='0xa2e4509ca0')
         )
 
-        connection_context = config.resource.elasticsearch.elasticsearch_class(
-            config.resource.elasticsearch
-        )
-
-        # Create the supersearch fields.
-        connection_context.bulk_index(
-            index=config.webapi.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            docs=SUPERSEARCH_FIELDS.values(),
-            id_field='name',
-            refresh=True,
-        )
-
         # As indexing is asynchronous, we need to force elasticsearch to
         # make the newly created content searchable before we run the tests
         self.storage.es.refresh()
@@ -911,6 +989,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # clear the test index
         config = self.get_config_context()
         self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        self.storage.es.delete_index(config.webapi.elasticsearch_default_index)
 
         super(IntegrationTestSuperSearch, self).tearDown()
 
@@ -1508,7 +1587,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res, res_expected)
 
         mocked_get_indexes.return_value = [
-            'socorro_integration_test',
+            'socorro_integration_test_reports',
             'something_that_does_not_exist',
             'another_one'
         ]
@@ -1605,6 +1684,21 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             namespace='processed_crash',
         )
 
+        # Test logging.
+        res = self.api.create_field(
+            name='what_a_field',
+            in_database_name='what_a_field',
+            namespace='processed_crash',
+            storage_mapping='{"type": "long"}',
+        )
+        ok_(res)
+        self.api.config.logger.info.assert_called_with(
+            'elasticsearch mapping changed for field "%s", '
+            'added new mapping "%s"',
+            'what_a_field',
+            {u'type': u'long'},
+        )
+
     def test_update_field(self):
         es = self.storage.es
         config = self.get_config_context()
@@ -1616,16 +1710,25 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             namespace='superspace',
             description='inaccurate description',
             permissions_needed=['view_nothing'],
-            storage_mapping='{"type": "boolean"}'
+            storage_mapping={"type": "boolean"}
         )
 
         # Now let's update that field a little.
         res = self.api.update_field(
             name='super_field',
             description='very accurate description',
-            storage_mapping={'type': 'long', 'analyzer': 'custom'},
+            storage_mapping={'type': 'long', 'analyzer': 'keyword'},
         )
         ok_(res)
+
+        # Test logging.
+        self.api.config.logger.info.assert_called_with(
+            'elasticsearch mapping changed for field "%s", '
+            'was "%s", now "%s"',
+            'super_field',
+            {'type': 'boolean'},
+            {'type': 'long', 'analyzer': 'keyword'},
+        )
 
         field = es.get(
             index=config.webapi.elasticsearch_default_index,
@@ -1636,7 +1739,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # Verify the changes were taken into account.
         eq_(field['description'], 'very accurate description')
-        eq_(field['storage_mapping'], {'type': 'long', 'analyzer': 'custom'})
+        eq_(field['storage_mapping'], {'type': 'long', 'analyzer': 'keyword'})
 
         # Verify other values did not change.
         eq_(field['permissions_needed'], ['view_nothing'])
@@ -1784,3 +1887,72 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         finally:
             for index in indices:
                 storage.es.delete_index(index=index)
+
+    def test_get_mapping(self):
+        mapping = self.api.get_mapping()['mappings']
+        doctype = self.api.config.elasticsearch_doctype
+
+        ok_(doctype in mapping)
+        properties = mapping[doctype]['properties']
+
+        ok_('processed_crash' in properties)
+        ok_('raw_crash' in properties)
+
+        # Check in_database_name is used.
+        ok_('os_name' in properties['processed_crash']['properties'])
+        ok_('platform' not in properties['processed_crash']['properties'])
+
+        # Those fields have no `storage_mapping`.
+        ok_('fake_field' not in properties['raw_crash']['properties'])
+
+        # Test overwriting a field.
+        mapping = self.api.get_mapping(overwrite_mapping={
+            'name': 'fake_field',
+            'storage_mapping': {
+                'type': 'long'
+            }
+        })['mappings']
+        properties = mapping[doctype]['properties']
+
+        ok_('fake_field' in properties['raw_crash']['properties'])
+        eq_(
+            properties['raw_crash']['properties']['fake_field']['type'],
+            'long'
+        )
+
+    def test_test_mapping(self):
+        """Much test. So meta. Wow test_test_. """
+        # First test a valid mapping.
+        mapping = self.api.get_mapping()
+        ok_(self.api.test_mapping(mapping) is None)
+
+        # Insert an invalid storage mapping.
+        mapping = self.api.get_mapping({
+            'name': 'fake_field',
+            'storage_mapping': {
+                'type': 'unkwown'
+            }
+        })
+        assert_raises(
+            pyelasticsearch.exceptions.ElasticHttpError,
+            self.api.test_mapping,
+            mapping,
+        )
+
+        # Test with a correct mapping but with data that cannot be indexed.
+        self.storage.save_processed({
+            'uuid': '1234567890',
+            'date_processed': datetimeutil.utc_now(),
+            'product': 'WaterWolf',
+        })
+        mapping = self.api.get_mapping({
+            'name': 'product',
+            'storage_mapping': {
+                'type': 'long'
+            }
+        })
+        assert_raises(
+            pyelasticsearch.exceptions.ElasticHttpError,
+            self.api.test_mapping,
+            mapping,
+        )

@@ -17,17 +17,32 @@
   <div class="panel">
     <div class="body notitle">
 
-        <a href="{{ url('manage:supersearch_field') }}" class="create-field">Create a new field</a>
-
         <p>
             Here are all the known fields in our indexed documents.
             This list is used by the Super Search application to determine
             which field can be queried by the user and what data can be
             returned. It is also used to generate the elasticsearch mapping
             that will be used to index the crash reports we receive.
+            Check the
+            <a href="http://socorro.readthedocs.org/en/latest/elasticsearch.html#master-list-of-fields">documentation</a>.
+            Note that it is mandatory that any change you make here is applied
+            to our staging environment first. This ensures that your change
+            does not obviously break anything and that our data about fields
+            stays consistent across our different environments.
         </p>
 
-        <p><a href="{{ url('manage:supersearch_fields_missing') }}">See the list of missing fields</a>.</p>
+        <p>
+            <strong>WARNING</strong>: This is a very sensitive page. Changing
+            or creating incorrect data here might lead to data loss in our
+            elasticsearch database, or can break all Super Search based
+            applications. Be extremely careful when you change the
+            <code>storage_mapping</code> data especially.
+        </p>
+
+        <p>
+            <a href="{{ url('manage:supersearch_field') }}" class="create-field">Create a new field</a>
+            <a href="{{ url('manage:supersearch_fields_missing') }}">See the list of missing fields</a>
+        </p>
 
         <table class="data-table tablesorter">
             <thead>

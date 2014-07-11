@@ -274,6 +274,12 @@ class MiddlewareApp(App):
         doc='the maximum number of results a facet will return in search'
     )
     required_config.webapi.add_option(
+        'mapping_test_crash_number',
+        default=100,
+        doc='the number of crash reports to test against when attempting to '
+            'validate a new Elasticsearch mapping. ',
+    )
+    required_config.webapi.add_option(
         'searchMaxNumberOfDistinctSignatures',
         default=1000,
         doc='Integer containing the maximum allowed number of distinct '

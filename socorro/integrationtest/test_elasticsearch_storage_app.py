@@ -13,14 +13,18 @@ and verifies that it was correctly inserted. """
 # set both socorro and configman in your PYTHONPATH
 
 import json
+import os
 
-from configman import Namespace
+from configman import ConfigurationManager, Namespace
 
 from socorro.app import generic_app
 from socorro.external.elasticsearch.crashstorage import (
     ElasticSearchCrashStorage
 )
 from socorro.lib.datetimeutil import string_to_datetime
+from socorro.unittest.external.elasticsearch.test_supersearch import (
+    SUPERSEARCH_FIELDS
+)
 
 
 class IntegrationTestElasticsearchStorageApp(generic_app.App):
@@ -40,15 +44,46 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         default='./testcrash/processed_crash.json',
         doc='The file containing the processed crash.'
     )
-
     required_config.add_option(
         'raw_crash_file',
         default='./testcrash/raw_crash.json',
         doc='The file containing the raw crash.'
     )
 
+    def get_config_context(self):
+        storage_config = ElasticSearchCrashStorage.get_required_config()
+        storage_config.add_option('logger', default=self.config.logger)
+        values_source = {
+            'resource.elasticsearch.elasticsearch_default_index': 'socorro_integration_test',
+            'resource.elasticsearch.elasticsearch_index': 'socorro_integration_test_reports',
+            'resource.elasticsearch.backoff_delays': [1],
+            'resource.elasticsearch.elasticsearch_timeout': 5,
+            'resource.elasticsearch.use_mapping_file': False,
+        }
+
+        config_manager = ConfigurationManager(
+            [storage_config],
+            app_name='test_elasticsearch_indexing',
+            app_version='1.0',
+            app_description=__doc__,
+            values_source_list=[os.environ, values_source],
+            argv_source=[],
+        )
+
+        return config_manager.get_config()
+
     def main(self):
-        storage = self.config.elasticsearch_storage_class(self.config)
+        storage_config = self.get_config_context()
+        storage = self.config.elasticsearch_storage_class(storage_config)
+
+        # Create the supersearch fields.
+        storage.es.bulk_index(
+            index=storage_config.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            docs=SUPERSEARCH_FIELDS.values(),
+            id_field='name',
+            refresh=True,
+        )
 
         crash_file = open(self.config.processed_crash_file)
         processed_crash = json.load(crash_file)
@@ -58,7 +93,7 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
 
         crash_date = string_to_datetime(processed_crash['date_processed'])
         es_index = storage.get_index_for_crash(crash_date)
-        es_doctype = self.config.elasticsearch_doctype
+        es_doctype = storage_config.elasticsearch_doctype
         crash_id = processed_crash['uuid']
 
         storage.save_raw_and_processed(
@@ -80,8 +115,8 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         finally:
             # Clean up created index.
             storage.es.delete_index(es_index)
+            storage.es.delete_index(storage_config.elasticsearch_default_index)
 
 
 if __name__ == '__main__':
     generic_app.main(IntegrationTestElasticsearchStorageApp)
-    print 'done'

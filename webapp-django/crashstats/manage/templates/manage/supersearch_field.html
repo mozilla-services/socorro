@@ -141,7 +141,19 @@ var ALL_PERMISSIONS = {{ all_permissions | json_dumps }};
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row">Storage mapping</th>
+                        <th scope="row">
+                            Storage mapping
+                            <p class="note">
+                                Very sensitive! Make sure that this value is
+                                valid JSON, that it is valid elasticsearch
+                                schema data, and that it is compatible with
+                                the data that will be inserted in that field.
+                            </p>
+                            <p>
+                                Leave empty to let elasticsearch decide the
+                                mapping to use.
+                            </p>
+                        </th>
                         <td>
                             <textarea name="storage_mapping">{% if field.storage_mapping %}{{ field.storage_mapping | json_dumps }}{% endif %}</textarea>
                         </td>
