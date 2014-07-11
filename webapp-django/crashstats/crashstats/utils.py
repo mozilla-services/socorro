@@ -204,6 +204,19 @@ def parse_dump(dump, vcs_mappings):
     return parsed_dump
 
 
+def enhance_json_dump(dump, vcs_mappings):
+    """
+    Add some information to the stackwalker's json_dump output
+    for display. Mostly applying vcs_mappings to stack frames.
+    """
+    for i, thread in enumerate(dump['threads']):
+        if 'thread' not in thread:
+            thread['thread'] = i
+        for frame in thread['frames']:
+            enhance_frame(frame, vcs_mappings)
+    return dump
+
+
 def build_releases(currentversions):
     """
     currentversions service returns a very unwieldy data structure.

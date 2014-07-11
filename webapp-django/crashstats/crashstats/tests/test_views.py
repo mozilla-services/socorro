@@ -116,7 +116,8 @@ SAMPLE_UNREDACTED = """ {
       "status": "OK",
       "sensitive": {
         "exploitability": "high"
-      }
+      },
+      "threads": []
     }
 } """
 

@@ -1045,9 +1045,16 @@ def report_index(request, crash_id, default_context=None):
             indent=4,
             separators=(',', ': ')
         )
+        utils.enhance_json_dump(json_dump, settings.VCS_MAPPINGS)
+        parsed_dump = json_dump
     else:
         context['raw_stackwalker_output'] = context['report']['dump']
+        parsed_dump = utils.parse_dump(
+            context['report']['dump'],
+            settings.VCS_MAPPINGS
+        )
 
+    context['parsed_dump'] = parsed_dump
     context['bug_product_map'] = settings.BUG_PRODUCT_MAP
 
     process_type = 'unknown'
@@ -1058,12 +1065,6 @@ def report_index(request, crash_id, default_context=None):
     elif context['report']['process_type'] == 'content':
         process_type = 'content'
     context['process_type'] = process_type
-
-    parsed_dump = utils.parse_dump(
-        context['report']['dump'],
-        settings.VCS_MAPPINGS
-    )
-    context['parsed_dump'] = parsed_dump
 
     bugs_api = models.Bugs()
     hits = bugs_api.get(signatures=[context['report']['signature']])['hits']

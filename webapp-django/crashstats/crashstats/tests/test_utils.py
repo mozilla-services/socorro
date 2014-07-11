@@ -157,6 +157,86 @@ class TestUtils(TestCase):
         }
         eq_(actual, expected)
 
+    def test_enhance_json_dump(self):
+        vcs_mappings = {
+            'hg': {
+                'hg.m.org': ('http://hg.m.org/'
+                             '%(repo)s/annotate/%(revision)s'
+                             '/%(file)s#l%(line)s')
+            }
+        }
+
+        actual = {'threads':
+                  [{'frames':
+                    [
+                        {'frame': 0,
+                         'module': 'bad.dll',
+                         'function': 'Func',
+                         'file': 'hg:hg.m.org/repo/name:dname/fname:rev',
+                         'line': 576},
+                        {'frame': 1,
+                         'module': 'another.dll',
+                         'function': 'Func2',
+                         'file': 'hg:hg.m.org/repo/name:dname/fname:rev',
+                         'line': 576}
+                    ]},
+                   {'frames':
+                    [
+                        {'frame': 0,
+                         'module': 'bad.dll',
+                         'function': 'Func',
+                         'file': 'hg:hg.m.org/repo/name:dname/fname:rev',
+                         'line': 576},
+                        {'frame': 1,
+                         'module': 'another.dll',
+                         'function': 'Func2',
+                         'file': 'hg:hg.m.org/repo/name:dname/fname:rev',
+                         'line': 576}
+                    ]}]}
+        utils.enhance_json_dump(actual, vcs_mappings)
+        expected = {'threads':
+                    [{'thread': 0,
+                      'frames':
+                      [{'frame': 0,
+                        'function': 'Func',
+                        'short_signature': 'Func',
+                        'line': 576,
+                        'source_link': ('http://hg.m.org/repo/name/'
+                                        'annotate/rev/dname/fname#l576'),
+                        'file': 'dname/fname',
+                        'signature': 'Func',
+                        'module': 'bad.dll'},
+                       {'frame': 1,
+                        'module': 'another.dll',
+                        'function': 'Func2',
+                        'signature': 'Func2',
+                        'short_signature': 'Func2',
+                        'source_link': ('http://hg.m.org/repo/name/'
+                                        'annotate/rev/dname/fname#l576'),
+                        'file': 'dname/fname',
+                        'line': 576}]},
+                     {'thread': 1,
+                      'frames':
+                      [{'frame': 0,
+                        'function': 'Func',
+                        'short_signature': 'Func',
+                        'line': 576,
+                        'source_link': ('http://hg.m.org/repo/name/'
+                                        'annotate/rev/dname/fname#l576'),
+                        'file': 'dname/fname',
+                        'signature': 'Func',
+                        'module': 'bad.dll'},
+                       {'frame': 1,
+                        'module': 'another.dll',
+                        'function': 'Func2',
+                        'signature': 'Func2',
+                        'short_signature': 'Func2',
+                        'source_link': ('http://hg.m.org/repo/name/'
+                                        'annotate/rev/dname/fname#l576'),
+                        'file': 'dname/fname',
+                        'line': 576}]}]}
+        eq_(actual, expected)
+
     def test_parse_dump(self):
         dump = (
             'OS|Windows NT|6.1.7601 Service Pack 1\n'
