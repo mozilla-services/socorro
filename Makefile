@@ -93,15 +93,6 @@ clean:
 breakpad:
 	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
-analysis: bootstrap
-	git submodule update --init socorro-toolbox akela
-	cd akela && mvn package
-	cd socorro-toolbox && mvn package
-	mkdir -p analysis
-	rsync socorro-toolbox/target/*.jar analysis/
-	rsync akela/target/*.jar analysis/
-	rsync -a socorro-toolbox/src/main/pig/ analysis/
-
 json_enhancements_pg_extension: bootstrap
     # This is only run manually, as it is a one-time operation
     # to be performed at system installation time, rather than
