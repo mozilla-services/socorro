@@ -74,4 +74,7 @@ Vagrant::Config.run do |config|
       puppet.options = "--verbose --debug"
     end
   end
+
+  config.vm.provision "shell", inline: MOUNT_POINT + "/scripts/vagrant_bootstrap.sh"
+
 end

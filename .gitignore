@@ -34,3 +34,4 @@ build
 primaryCrashStore/
 processedCrashStore/
 minidump-stackwalk/*.o
+minidump-stackwalk/stackwalker
