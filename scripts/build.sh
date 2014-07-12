@@ -71,7 +71,15 @@ if [ "$1" != "leeroy" ]
 then
   # package socorro.tar.gz for distribution
   mkdir builds/
-  make analysis
+  # make the analysis
+  git submodule update --init socorro-toolbox akela
+  cd akela && mvn package
+  cd socorro-toolbox && mvn package
+  mkdir -p analysis
+  rsync socorro-toolbox/target/*.jar analysis/
+  rsync akela/target/*.jar analysis/
+  rsync -a socorro-toolbox/src/main/pig/ analysis/
+  # create the tarball
   make install PREFIX=builds/socorro
   tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
 fi
