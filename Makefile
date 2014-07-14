@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-PREFIX=/data/socorro
 ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = "."
@@ -40,27 +39,7 @@ bootstrap:
 	bash ./scripts/bootstrap.sh
 
 install: bootstrap
-	# package up the tarball in $(PREFIX)
-	# create base directories
-	mkdir -p $(PREFIX)/application
-	# copy to install directory
-	rsync -a config $(PREFIX)/application
-	rsync -a $(VIRTUALENV) $(PREFIX)
-	rsync -a socorro $(PREFIX)/application
-	rsync -a scripts $(PREFIX)/application
-	rsync -a tools $(PREFIX)/application
-	rsync -a sql $(PREFIX)/application
-	rsync -a wsgi $(PREFIX)/application
-	rsync -a stackwalk $(PREFIX)/
-	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
-	rsync -a analysis $(PREFIX)/
-	rsync -a alembic $(PREFIX)/application
-	rsync -a webapp-django $(PREFIX)/
-	# copy default config files
-	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
-	# record current git revision in install dir
-	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
-	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
+	bash ./scripts/install.sh
 
 lint:
 	bash ./scripts/lint.sh
