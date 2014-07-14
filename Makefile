@@ -18,7 +18,7 @@ PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=
 RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
 ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), resource.elasticsearch.elasticSearchHostname=$(elasticSearchHostname)) $(if $(elasticsearch_index), resource.elasticsearch.elasticsearch_index=$(elasticsearch_index))
 
-.PHONY: all test bootstrap install lint clean stackwalker json_enhancements_pg_extension
+.PHONY: all test bootstrap install lint clean breakpad stackwalker json_enhancements_pg_extension
 
 all: test
 
@@ -85,6 +85,9 @@ clean:
 	rm -rf ./breakpad.tar.gz
 	cd minidump-stackwalk; make clean
 
+breakpad:
+	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
+
 json_enhancements_pg_extension: bootstrap
     # This is only run manually, as it is a one-time operation
     # to be performed at system installation time, rather than
@@ -93,6 +96,6 @@ json_enhancements_pg_extension: bootstrap
 
 stackwalker:
 	# Build JSON stackwalker
-	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
+	# Depends on breakpad, run "make breakpad" if you don't have it yet
 	cd minidump-stackwalk; make
 	cp minidump-stackwalk/stackwalker stackwalk/bin
