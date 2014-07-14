@@ -52,7 +52,7 @@ If you are using RHEL/CentOS and installed GCC from the devtoolset repo
 
 Then compile breakpad and the stackwalker binary:
 ::
-  make stackwalker
+  make breakpad stackwalker
 
 Populate PostgreSQL Database
 ----------------------------
