@@ -10,6 +10,9 @@
   #details th, #metadata th {
       width: 15%;
   }
+  .missingsymbols {
+    border: 2px solid darksalmon;
+  }
   </style>
   {% endcompress %}
 
@@ -352,7 +355,7 @@
               </thead>
               <tbody>
                 {% for frame in parsed_dump.threads[parsed_dump.crash_info.crashing_thread].frames %}
-                <tr>
+                <tr class="{%if frame.missing_symbols %}missingsymbols{% endif %}">
                   <td>{{ frame.frame }}</td>
                   <td>{{ frame.module }}</td>
                   <td title="{{ frame.signature }}">{{ frame.signature }}</td>
@@ -388,7 +391,7 @@
                 </thead>
                 <tbody>
                   {% for frame in thread.frames %}
-                  <tr >
+                  <tr class="{%if frame.missing_symbols %}missingsymbols{% endif %}">
                     <td>{{ frame.frame }}</td>
                     <td>{{ frame.module }}</td>
                     <td title="{{ frame.signature }}">{{ frame.signature }}</td>
@@ -441,7 +444,7 @@
               </thead>
               <tbody>
                 {% for module in parsed_dump.modules %}
-                <tr>
+                <tr class="{%if module.missing_symbols %}missingsymbols{% endif %}">
                   <td>{{ module.filename }}</td>
                   <td>{{ module.version }}</td>
                   <td>{{ module.debug_id }}</td>
