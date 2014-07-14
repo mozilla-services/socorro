@@ -18,7 +18,7 @@ PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=
 RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
 ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), resource.elasticsearch.elasticSearchHostname=$(elasticSearchHostname)) $(if $(elasticsearch_index), resource.elasticsearch.elasticsearch_index=$(elasticsearch_index))
 
-.PHONY: all test bootstrap install lint clean stackwalker json_enhancements_pg_extension webapp-django
+.PHONY: all test bootstrap install lint clean stackwalker json_enhancements_pg_extension
 
 all: test
 
