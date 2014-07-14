@@ -10,7 +10,6 @@ NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
 SETUPDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
-PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
 ENV = env
 
@@ -68,8 +67,7 @@ install: bootstrap
 	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
 lint:
-	rm -f pylint.txt
-	$(PYLINT) -f parseable --rcfile=pylintrc socorro > pylint.txt
+	bash ./scripts/lint.sh
 
 clean:
 	find ./ -type f -name "*.pyc" -exec rm {} \;
