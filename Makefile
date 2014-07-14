@@ -48,8 +48,11 @@ bootstrap:
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install tools/peep-1.2.tar.gz
 	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
+	# bootstrap webapp
+	cd webapp-django; ./bin/bootstrap.sh
 
-install: bootstrap bootstrap-webapp
+
+install: bootstrap
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -87,9 +90,6 @@ json_enhancements_pg_extension: bootstrap
     # to be performed at system installation time, rather than
     # every time Socorro is built
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
-
-bootstrap-webapp: bootstrap
-	cd webapp-django; ./bin/bootstrap.sh
 
 stackwalker:
 	# Build JSON stackwalker
