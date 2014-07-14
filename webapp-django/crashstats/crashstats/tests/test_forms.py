@@ -448,9 +448,12 @@ class TestForms(DjangoTestCase):
                 data
             )
 
+        start_date = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+        end_date = datetime.datetime.utcnow()
         form = get_new_form({
             'product_name': 'WaterWolf',
-            'days': '7',
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
@@ -458,7 +461,8 @@ class TestForms(DjangoTestCase):
 
         form = get_new_form({
             'product_name': '',
-            'days': '7',
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
@@ -466,7 +470,8 @@ class TestForms(DjangoTestCase):
 
         form = get_new_form({
             'product_name': 'SuckerFish',
-            'days': '7',
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'signature': 'the-signatu(re)',
             'channel': 'nightly'
         })
@@ -474,23 +479,8 @@ class TestForms(DjangoTestCase):
 
         form = get_new_form({
             'product_name': 'WaterWolf',
-            'days': '',
-            'signature': 'the-signatu(re)',
-            'channel': 'nightly'
-        })
-        ok_(not form.is_valid())  # empty days parameter
-
-        form = get_new_form({
-            'product_name': 'WaterWolf',
-            'days': '1',
-            'signature': 'the-signatu(re)',
-            'channel': 'nightly'
-        })
-        ok_(not form.is_valid())  # days value less than 3
-
-        form = get_new_form({
-            'product_name': 'WaterWolf',
-            'days': '7',
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'signature': '',
             'channel': 'nightly'
         })
@@ -498,7 +488,8 @@ class TestForms(DjangoTestCase):
 
         form = get_new_form({
             'product_name': 'WaterWolf',
-            'days': '7',
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'signature': 'the-signatu(re)',
             'channel': 'dooky'
         })
@@ -506,11 +497,58 @@ class TestForms(DjangoTestCase):
 
         form = get_new_form({
             'product_name': 'WaterWolf',
-            'days': '7',
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
             'signature': 'the-signatu(re)',
             'channel': ''
         })
         ok_(not form.is_valid())  # no channel provided
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'channel': 'nightly',
+            'signature': 'the-signatu(re)',
+            'start_date': '2013-02-33',
+            'end_date': '2013-01-02'
+        })
+        ok_(not form.is_valid())  # not a valid date
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'channel': 'nightly',
+            'signature': 'the-signatu(re)',
+            'start_date': '2013-02-13',
+            'end_date': '2013-01-44'
+        })
+        ok_(not form.is_valid())  # not a valid date
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'channel': 'nightly',
+            'signature': 'the-signatu(re)',
+            'start_date': '2013-02-02',
+            'end_date': '2013-01-01'
+        })
+        ok_(not form.is_valid())  # start_date > end_date
+
+        future_date = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'channel': 'nightly',
+            'signature': 'the-signatu(re)',
+            'start_date': future_date.strftime('%Y-%m-%d'),
+            'end_date': '2013-01-01'
+        })
+        ok_(not form.is_valid())  # start_date in the future
+
+        form = get_new_form({
+            'product_name': 'WaterWolf',
+            'channel': 'nightly',
+            'signature': 'the-signatu(re)',
+            'start_date': '2013-02-02',
+            'end_date': future_date.strftime('%Y-%m-%d')
+        })
+        ok_(not form.is_valid())  # end_date in the future
 
     def test_gcrashes_form(self):
 

@@ -50,10 +50,7 @@
          data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}"
          data-jsonurl="{{ url('crashstats:adu_by_signature_json') }}"
          data-signature="{{ signature }}"
-         data-days="{{ current_day }}"
-         data-product="{{ product }}"
-         data-channel="{{ channel }}"
-         data-fallback="{{ channels }}">
+         data-product="{{ product }}">
 
       <p class="loading-placeholder">
         <img src="{{ static('img/loading.png') }}" alt="Loading">
@@ -178,6 +175,7 @@
 <script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/lib/awty.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_graph.js') }}"></script>
