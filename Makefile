@@ -18,13 +18,11 @@ PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=
 RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
 ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), resource.elasticsearch.elasticSearchHostname=$(elasticSearchHostname)) $(if $(elasticsearch_index), resource.elasticsearch.elasticsearch_index=$(elasticsearch_index))
 
-.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean stackwalker analysis json_enhancements_pg_extension webapp-django
+.PHONY: all test bootstrap install reinstall install-socorro lint clean stackwalker analysis json_enhancements_pg_extension webapp-django
 
 all: test
 
-test: test-socorro test-webapp
-
-test-socorro: bootstrap
+test: bootstrap
 	# jenkins only settings for the pre-configman components
 	# can be removed when all tests are updated to use configman
 	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
@@ -40,8 +38,7 @@ test-socorro: bootstrap
 	rm -f coverage.xml
 	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
-
-test-webapp:
+	# test webapp
 	cd webapp-django; ./bin/jenkins.sh
 
 bootstrap:
