@@ -18,7 +18,7 @@ PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=
 RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
 ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), resource.elasticsearch.elasticSearchHostname=$(elasticSearchHostname)) $(if $(elasticsearch_index), resource.elasticsearch.elasticsearch_index=$(elasticsearch_index))
 
-.PHONY: all test bootstrap install reinstall install-socorro lint clean stackwalker analysis json_enhancements_pg_extension webapp-django
+.PHONY: all test bootstrap install lint clean stackwalker analysis json_enhancements_pg_extension webapp-django
 
 all: test
 
@@ -49,15 +49,7 @@ bootstrap:
 	$(VIRTUALENV)/bin/pip install tools/peep-1.2.tar.gz
 	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
-install: bootstrap bootstrap-webapp reinstall
-
-# this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
-reinstall: install-socorro
-	# record current git revision in install dir
-	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
-	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
-
-install-socorro: bootstrap-webapp
+install: bootstrap bootstrap-webapp
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -76,6 +68,9 @@ install-socorro: bootstrap-webapp
 	rsync -a webapp-django $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
+	# record current git revision in install dir
+	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
+	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
 lint:
 	rm -f pylint.txt
