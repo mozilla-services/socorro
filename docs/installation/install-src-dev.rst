@@ -36,7 +36,7 @@ Run unit/functional tests
 
 From inside the Socorro checkout
 ::
-  make test test-webapp database_username=test database_password=aPassword
+  make test database_username=test database_password=aPassword
 
 
 Install stackwalker
