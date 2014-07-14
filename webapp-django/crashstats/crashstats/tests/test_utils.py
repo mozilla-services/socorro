@@ -58,15 +58,14 @@ class TestUtils(TestCase):
         }
         utils.enhance_frame(actual, vcs_mappings)
         expected = {
-            # TODO: function sanitizing is broken
-            'function': 'Func(A * a,B b)',
-            'short_signature': 'Func(A * a,B b)',
+            'function': 'Func(A* a, B b)',
+            'short_signature': 'Func',
             'line': 576,
             'source_link': ('http://hg.m.org/repo/name/'
                             'annotate/rev/dname/fname#l576'),
             'file': 'dname/fname',
             'frame': 0,
-            'signature': 'Func(A * a,B b)',
+            'signature': 'Func(A* a, B b)',
             'module': 'bad.dll',
         }
         eq_(actual, expected)
