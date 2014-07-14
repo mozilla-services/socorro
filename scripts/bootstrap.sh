@@ -1,6 +1,6 @@
 #! /bin/bash
 
-VIRTUALENV=$CURDIR/socorro-virtualenv
+VIRTUALENV=$PWD/socorro-virtualenv
 
 git submodule update --init --recursive
 
