@@ -20,7 +20,7 @@ ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_
 
 .PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean stackwalker analysis json_enhancements_pg_extension webapp-django
 
-all:	test
+all: test
 
 test: test-socorro test-webapp
 
