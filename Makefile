@@ -18,13 +18,11 @@ PG_RESOURCES = $(if $(database_hostname), resource.postgresql.database_hostname=
 RMQ_RESOURCES = $(if $(rmq_host), resource.rabbitmq.host=$(rmq_host)) $(if $(rmq_virtual_host), resource.rabbitmq.virtual_host=$(rmq_virtual_host)) $(if $(rmq_user), secrets.rabbitmq.rabbitmq_user=$(rmq_user)) $(if $(rmq_password), secrets.rabbitmq.rabbitmq_password=$(rmq_password))
 ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_urls=$(elasticsearch_urls)) $(if $(elasticSearchHostname), resource.elasticsearch.elasticSearchHostname=$(elasticSearchHostname)) $(if $(elasticsearch_index), resource.elasticsearch.elasticsearch_index=$(elasticsearch_index))
 
-.PHONY: all test test-socorro test-webapp bootstrap install reinstall install-socorro lint clean breakpad stackwalker analysis json_enhancements_pg_extension webapp-django
+.PHONY: all test bootstrap install lint clean breakpad stackwalker json_enhancements_pg_extension
 
-all:	test
+all: test
 
-test: test-socorro test-webapp
-
-test-socorro: bootstrap
+test: bootstrap
 	# jenkins only settings for the pre-configman components
 	# can be removed when all tests are updated to use configman
 	if [ $(WORKSPACE) ]; then cd socorro/unittest/config; cp $(JENKINS_CONF) commonconfig.py; fi;
@@ -40,8 +38,7 @@ test-socorro: bootstrap
 	rm -f coverage.xml
 	$(ENV) $(PG_RESOURCES) $(RMQ_RESOURCES) $(ES_RESOURCES) PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE)
 	$(COVERAGE) xml
-
-test-webapp:
+	# test webapp
 	cd webapp-django; ./bin/jenkins.sh
 
 bootstrap:
@@ -51,16 +48,11 @@ bootstrap:
 	# install dev + prod dependencies
 	$(VIRTUALENV)/bin/pip install tools/peep-1.2.tar.gz
 	$(VIRTUALENV)/bin/peep install --download-cache=./pip-cache -r requirements.txt
+	# bootstrap webapp
+	cd webapp-django; ./bin/bootstrap.sh
 
-install: bootstrap bootstrap-webapp reinstall
 
-# this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
-reinstall: install-socorro
-	# record current git revision in install dir
-	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
-	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
-
-install-socorro: bootstrap-webapp
+install: bootstrap
 	# package up the tarball in $(PREFIX)
 	# create base directories
 	mkdir -p $(PREFIX)/application
@@ -79,6 +71,9 @@ install-socorro: bootstrap-webapp
 	rsync -a webapp-django $(PREFIX)/
 	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
+	# record current git revision in install dir
+	git rev-parse HEAD > $(PREFIX)/application/socorro/external/postgresql/socorro_revision.txt
+	cp $(PREFIX)/stackwalk/revision.txt $(PREFIX)/application/socorro/external/postgresql/breakpad_revision.txt
 
 lint:
 	rm -f pylint.txt
@@ -98,9 +93,6 @@ json_enhancements_pg_extension: bootstrap
     # to be performed at system installation time, rather than
     # every time Socorro is built
 	if [ ! -f `pg_config --pkglibdir`/json_enhancements.so ]; then sudo env PATH=$$PATH $(VIRTUALENV)/bin/python -c "from pgxnclient import cli; cli.main(['install', 'json_enhancements'])"; fi
-
-bootstrap-webapp: bootstrap
-	cd webapp-django; ./bin/bootstrap.sh
 
 stackwalker:
 	# Build JSON stackwalker

@@ -60,7 +60,7 @@ Testing
 
 All Socorro tests through Makefile::
 
-  make test-socorro
+  make test
 
 All Socorro unit tests::
 
