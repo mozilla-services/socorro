@@ -266,7 +266,9 @@ class BotoS3CrashStorage(CrashStorageBase):
             now = datetime.datetime.now()
             self._bucket_cache[bucket_name] = conn.create_bucket(bucket_name)
             delta = datetime.datetime.now() - now
-            self.config.logger.debug('conn.create_bucket %s: %s', bucket_name, delta)
+            self.config.logger.debug(
+                'conn.create_bucket %s: %s', bucket_name, delta
+            )
             return self._bucket_cache[bucket_name]
 
     #--------------------------------------------------------------------------
@@ -323,8 +325,9 @@ class BotoS3CrashStorage(CrashStorageBase):
             )
             raise
 
-        key = "%s.%s" % (crash_id, name_of_thing)
-        thing_as_string = bucket.get_contents_as_string(key)
+        key_as_string = "%s.%s" % (crash_id, name_of_thing)
+        key = bucket.get_key(key_as_string)
+        thing_as_string = key.get_contents_as_string()
         return thing_as_string
 
     #--------------------------------------------------------------------------
