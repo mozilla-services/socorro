@@ -173,7 +173,7 @@ function retry() {
   }
 
 # wait for collector to startup
-retry 'collector' 'running standalone at 127.0.0.1:8882'
+retry 'collector' 'running standalone at 0.0.0.0:8882'
 
 echo -n 'INFO: submitting test crash...'
 # submit test crash
