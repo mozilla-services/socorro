@@ -125,10 +125,4 @@ def check_type(param, datatype):
         except ValueError:
             param = None
 
-    elif datatype == "float" and not isinstance(param, float):
-        try:
-            param = float(param)
-        except ValueError:
-            param = float()
-
     return param

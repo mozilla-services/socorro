@@ -261,8 +261,6 @@ Mandatory parameters
 +================+==================+===================+======================+
 | report\_type   | String           | None              | Eg. ``core-counts``  |
 +----------------+------------------+-------------------+----------------------+
-| report\_date   | Date             | None              | Eg. ``2014-01-01``   |
-+----------------+------------------+-------------------+----------------------+
 | product        | String           | None              | Eg. ``Firefox``      |
 +----------------+------------------+-------------------+----------------------+
 | version        | String           | None              | Eg. ``24.0a1``       |
@@ -304,6 +302,62 @@ on a remote server to pull down the data. If this file (filename is
 based on the parameters you pass) is not found, the response is just::
 
    null
+
+
+.. ############################################################################
+   Correlation Signatures API
+   ############################################################################
+
+Correlation Signatures service
+------------------------------
+
+Return all signatures that have correlations about specific search
+parameters
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+---------------------------+
+| HTTP method    | GET                       |
++----------------+---------------------------+
+| URL            | /correlations/signatures/ |
++----------------+---------------------------+
+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+--------------------------------+
+| Name           | Type of value    | Default value     | Description                    |
++================+==================+===================+================================+
+| report\_type   | String           | None              | Eg. ``core-counts``            |
++----------------+------------------+-------------------+--------------------------------+
+| product        | String           | None              | Eg. ``Firefox``                |
++----------------+------------------+-------------------+--------------------------------+
+| version        | String           | None              | Eg. ``24.0a1``                 |
++----------------+------------------+-------------------+--------------------------------+
+| platforms      | List of strings  | None              | Eg. ``Mac%20OS%20X+Linux``     |
++----------------+------------------+-------------------+--------------------------------+
+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Returns a structure with the keys ``hits`` and ``total``::
+
+    {
+        "hits": [
+            "js::GCMarker::processMarkStackTop(js::SliceBudget&)",
+            "gfxSVGGlyphs::~gfxSVGGlyphs()",
+            "mozilla::layers::ImageContainer::GetCurrentSize()"
+        ],
+        "total": 3
+    }
 
 
 .. ############################################################################

@@ -64,7 +64,6 @@ class TestModels(TestCase):
             'version': 'XXX',
             'signature': 'XXX',
             'platform': 'XXX',
-            'report_date': 'XXX',
         }
         result = api.kwargs_to_params(inp)
         # no interesting conversion or checks here
@@ -1300,9 +1299,38 @@ class TestModels(TestCase):
                     product='WaterWolf',
                     version='1.0a1',
                     platform='Windows NT',
-                    signature='FakeSignature',
-                    report_date='2014-01-01')
+                    signature='FakeSignature')
         eq_(r['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
+
+    @mock.patch('requests.get')
+    def test_correlations_signatures(self, rget):
+        model = models.CorrelationsSignatures
+        api = model()
+
+        def mocked_get(url, params, **options):
+            assert '/correlations/signatures' in url
+
+            ok_('report_type' in params)
+            eq_(params['report_type'], 'core-counts')
+
+            return Response("""
+            {
+                "hits": ["FakeSignature1",
+                         "FakeSignature2"],
+                "total": 2
+            }
+        """)
+
+        rget.side_effect = mocked_get
+        r = api.get(report_type='core-counts',
+                    product='WaterWolf',
+                    version='1.0a1',
+                    platforms=['Windows NT', 'Linux'])
+        eq_(r['total'], 2)
+        r = api.get(report_type='core-counts',
+                    product='WaterWolf',
+                    version='1.0a1')
+        eq_(r['total'], 2)
 
     @mock.patch('requests.get')
     def test_fields(self, rget):
