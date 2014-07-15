@@ -34,7 +34,7 @@ Install dependencies
   sudo apt-get install build-essential subversion libpq-dev python-virtualenv \
     python-dev postgresql-9.3 postgresql-plperl-9.3 postgresql-contrib-9.3 \
     postgresql-server-dev-9.3 rsync python2.6 python2.6-dev libxslt1-dev \
-    git-core mercurial rabbitmq-server elasticsearch memcached apache2
+    git-core mercurial node-less rabbitmq-server elasticsearch memcached apache2
 
 Modify postgresql config
 ::
