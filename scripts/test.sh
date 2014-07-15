@@ -14,8 +14,9 @@ PYTHONPATH="."
 # jenkins only settings for the pre-configman components
 # can be removed when all tests are updated to use configman
 if [ $WORKSPACE ]; then
-    cd socorro/unittest/config
+    pushd socorro/unittest/config
     cp $JENKINS_CONF commonconfig.py
+    popd
 fi
 
 # setup any unset test configs and databases without overwriting existing files
