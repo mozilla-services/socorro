@@ -61,9 +61,7 @@ Before you can run the script, you will have to stop supervisord::
 
     sudo /etc/init.d/supervisor force-stop
 
-The script is called ``movecrashes.py`` and is in ``.../scripts/``. It has a
-few dependencies over Socorro and thus needs to be ran from the root of a
-Socorro directory with ``$PYTHONPATH = .``. Use it as follow::
+The script is called ``movecrashes.py`` and is in ``scripts/``. Use it as follow::
 
     python scripts/movecrashes.py import /path/to/dump.tar /path/to/mapping.json
 
