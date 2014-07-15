@@ -12,7 +12,7 @@ First you need to install ElasticSearch. The procedure is well described in
 this tutorial: `Setting up elasticsearch`_. Don't bother configuring ES if
 you don't know you will need it, it generally works just fine out of the box.
 
-.. _`Setting up elasticsearch`: http://www.elasticsearch.org/tutorials/2010/07/01/setting-up-elasticsearch.html
+.. _`Setting up elasticsearch`: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup.html#setup-installation
 
 Increase open files limit
 -------------------------
