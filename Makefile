@@ -11,16 +11,16 @@ ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_
 all: test
 
 test: bootstrap
-	bash ./scripts/test.sh
+	bash -e ./scripts/test.sh
 
 bootstrap:
-	bash ./scripts/bootstrap.sh
+	bash -e ./scripts/bootstrap.sh
 
 install: bootstrap
-	bash ./scripts/install.sh
+	bash -e ./scripts/install.sh
 
 lint:
-	bash ./scripts/lint.sh
+	bash -e ./scripts/lint.sh
 
 clean:
 	bash ./scripts/clean.sh
@@ -29,7 +29,7 @@ breakpad:
 	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
 json_enhancements_pg_extension: bootstrap
-	bash ./scripts/json-enhancements.sh
+	bash -e ./scripts/json-enhancements.sh
 
 stackwalker:
 	# Build JSON stackwalker
