@@ -186,6 +186,12 @@ class webapp::socorro {
       source  => '/vagrant/puppet/files/config/local.py',
       require => File['/etc/socorro'],
       ensure  => file;
+
+    'pgsql.sh':
+      path   => '/etc/profile.d/pgsql.sh',
+      source => '/vagrant/puppet/files/etc_profile.d/pgsql.sh',
+      owner  => 'root',
+      ensure => file;
   }
 
 }
