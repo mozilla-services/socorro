@@ -80,6 +80,15 @@ $(function () {
         elt.append($('<div>', {class: 'loader'}));
     }
 
+    function bindPaginationLinks(panel, callback) {
+        $('.pagination a', panel).click(function (e) {
+            e.preventDefault();
+
+            var page = $(this).data('page');
+            callback(page);
+        });
+    }
+
     function handleError(contentElt, jqXHR, textStatus, errorThrown) {
         var errorContent = $('<div>', {class: 'error'});
 
@@ -151,7 +160,7 @@ $(function () {
 
         var dataUrl = reportsPanel.data('source-url');
 
-        function prepareResultsQueryString(params) {
+        function prepareResultsQueryString(params, page) {
             var i;
             var len;
 
@@ -164,25 +173,26 @@ $(function () {
             }
 
             // Add the page number.
-            params.page = pageNum;
+            params.page = page || pageNum;
 
             var queryString = $.param(params, true);
             return '?' + queryString;
         }
 
-        function showReports() {
+        function showReports(page) {
             // Remove previous results and show loader.
             contentElt.empty();
             addLoaderToElt(contentElt);
 
             var params = getParamsWithSignature();
-            var url = dataUrl + prepareResultsQueryString(params);
+            var url = dataUrl + prepareResultsQueryString(params, page);
 
             $.ajax({
                 url: url,
                 success: function(data) {
                     contentElt.empty().append($(data));
                     $('.tablesorter').tablesorter();
+                    bindPaginationLinks(reportsPanel, showReports);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     handleError(contentElt, jqXHR, textStatus, errorThrown);
@@ -262,6 +272,42 @@ $(function () {
         showAggregation('product');
         showAggregation('platform');
         showAggregation('build_id');
+    };
+
+    tabsLoadFunctions.comments = function () {
+        // Initialize the comments tab, bind all events and start loading
+        // default data.
+        var commentsPanel = $('#comments-panel');
+        var contentElt = $('.content', commentsPanel);
+
+        var dataUrl = commentsPanel.data('source-url');
+
+        function showComments(page) {
+            // Remove previous results and show loader.
+            contentElt.empty();
+            addLoaderToElt(contentElt);
+
+            var params = getParamsWithSignature();
+            params.page = page || pageNum;
+
+            var queryString = $.param(params, true);
+            var url = dataUrl + '?' + queryString;
+
+            $.ajax({
+                url: url,
+                success: function(data) {
+                    contentElt.empty().append($(data));
+                    $('.tablesorter').tablesorter();
+                    bindPaginationLinks(commentsPanel, showComments);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    handleError(contentElt, jqXHR, textStatus, errorThrown);
+                },
+                dataType: 'HTML'
+            });
+        }
+
+        showComments();
     };
 
     // Finally start the damn thing.

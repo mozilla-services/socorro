@@ -10,6 +10,11 @@ urlpatterns = patterns(
         name='signature_reports',
     ),
     url(
+        r'^comments/$',
+        views.signature_comments,
+        name='signature_comments',
+    ),
+    url(
         r'^aggregation/(?P<aggregation>\w+)/$',
         views.signature_aggregation,
         name='signature_aggregation',

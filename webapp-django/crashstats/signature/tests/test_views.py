@@ -334,3 +334,141 @@ class TestViews(BaseTestViews):
         ok_(str(1337 / 1382 * 100) in response.content)
         ok_('windows' in response.content)
         ok_('mac' in response.content)
+
+    @mock.patch('requests.get')
+    def test_signature_comments(self, rget):
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            ok_('signature' in params)
+            eq_(params['signature'], '=' + DUMB_SIGNATURE)
+
+            ok_('user_comments' in params)
+            eq_(params['user_comments'], '!__null__')
+
+            if 'product' in params:
+                return Response({
+                    "hits": [
+                        {
+                            "date": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa1",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "user_comments": "hello there people!"
+                        },
+                        {
+                            "date": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa2",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "user_comments": "I love Mozilla"
+                        },
+                        {
+                            "date": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa3",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "user_comments": "this product is awesome"
+                        },
+                        {
+                            "date": "2017-01-31T23:12:57",
+                            "uuid": "aaaaaaaaaaaaa4",
+                            "product": "WaterWolf",
+                            "version": "1.0",
+                            "platform": "Linux",
+                            "user_comments": "WaterWolf Y U SO GOOD?"
+                        }
+                    ],
+                    "total": 4
+                })
+
+            return Response({"hits": [], "total": 0})
+
+        rget.side_effect = mocked_get
+
+        url = reverse('signature:signature_comments')
+
+        # Test with no results.
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+        })
+        eq_(response.status_code, 200)
+        ok_('Crash ID' not in response.content)
+        ok_('No comments were found' in response.content)
+
+        # Test with results.
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'product': 'WaterWolf'
+        })
+        eq_(response.status_code, 200)
+        ok_('aaaaaaaaaaaaa1' in response.content)
+        ok_('Crash ID' in response.content)
+        ok_('hello there' in response.content)
+        ok_('WaterWolf Y U SO GOOD' in response.content)
+
+    @mock.patch('requests.get')
+    def test_signature_comments_pagination(self, rget):
+        """Test that the pagination of comments works as expected. """
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if '_results_offset' in params:
+                hits_range = range(100, 140)
+            else:
+                hits_range = range(100)
+
+            hits = []
+            for i in hits_range:
+                hits.append({
+                    "date": "2017-01-31T23:12:57",
+                    "uuid": i,
+                    "user_comments": "hi",
+                })
+
+            return Response({
+                "hits": hits,
+                "total": 140
+            })
+
+        rget.side_effect = mocked_get
+
+        url = reverse('signature:signature_comments')
+
+        response = self.client.get(
+            url,
+            {
+                'signature': DUMB_SIGNATURE,
+                'product': ['WaterWolf'],
+            }
+        )
+
+        eq_(response.status_code, 200)
+        ok_('140' in response.content)
+        ok_('99' in response.content)
+        ok_('139' not in response.content)
+
+        # Check that the pagination URL contains all expected parameters.
+        doc = pyquery.PyQuery(response.content)
+        next_page_url = str(doc('.pagination a').eq(0))
+        ok_('product=WaterWolf' in next_page_url)
+        ok_('page=2' in next_page_url)
+
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'page': '2',
+        })
+        eq_(response.status_code, 200)
+        ok_('140' in response.content)
+        ok_('99' not in response.content)
+        ok_('139' in response.content)

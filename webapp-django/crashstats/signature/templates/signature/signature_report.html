@@ -27,6 +27,7 @@
         <ul class="tabs">
             <li><a href="#reports" class="reports" data-tab-name="reports">Reports</a></li>
             <li><a href="#aggregations" class="aggregations" data-tab-name="aggregations">Aggregations</a></li>
+            <li><a href="#comments" class="comments" data-tab-name="comments">Comments</a></li>
         </ul>
     </nav>
 
@@ -88,6 +89,24 @@
 
             <div class="content"></div>
             <div class="clear"></div>
+        </div>
+    </section>
+
+    <!-- Comments panel.
+        Displays a list of user comments from crash reports that have the
+        current signature.
+    -->
+    <section class="panel" id="comments-panel"
+        data-source-url="{{ url('signature:signature_comments') }}"
+    >
+        <header class="title">
+            <h2>User Comments</h2>
+        </header>
+
+        <div class="body">
+            <div class="content">
+                <div class="loader"></div>
+            </div>
         </div>
     </section>
 
