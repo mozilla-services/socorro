@@ -283,7 +283,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             any_order=True,
         )
 
-    def test_get_craw_crash(self):
+    def test_get_raw_crash(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
@@ -299,6 +299,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
         result = boto_s3_store.get_raw_crash(
             "936ce666-ff3b-4c7a-9674-367fe2120408"
         )
+
+        self.assertTrue(isinstance(result, DotDict))
 
         # what should have happened internally
         self.assertEqual(boto_s3_store._calling_format.call_count, 1)

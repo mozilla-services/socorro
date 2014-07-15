@@ -143,7 +143,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 crash_id,
                 "raw_crash"
             )
-            return json.loads(raw_crash_as_string)
+            return json.loads(raw_crash_as_string, object_hook=DotDict)
         except boto.exception.StorageResponseError, x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
