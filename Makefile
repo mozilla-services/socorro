@@ -11,16 +11,16 @@ ES_RESOURCES = $(if $(elasticsearch_urls), resource.elasticsearch.elasticsearch_
 all: test
 
 test: bootstrap
-	bash -e ./scripts/test.sh
+	bash -ex ./scripts/test.sh
 
 bootstrap:
-	bash -e ./scripts/bootstrap.sh
+	bash -ex ./scripts/bootstrap.sh
 
 install: bootstrap
-	bash -e ./scripts/install.sh
+	bash -ex ./scripts/install.sh
 
 lint:
-	bash -e ./scripts/lint.sh
+	bash -ex ./scripts/lint.sh
 
 clean:
 	bash ./scripts/clean.sh
