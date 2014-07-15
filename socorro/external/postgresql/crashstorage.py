@@ -105,7 +105,12 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """nota bene: this function does not save the dumps in PG, only
         the raw crash json is saved."""
-        self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
+        try:
+            self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
 
     #-------------------------------------------------------------------------
     def _save_raw_crash_transaction(self, connection, raw_crash, crash_id):
@@ -147,12 +152,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             'raw_crash': json.dumps(raw_crash),
             'date_processed': raw_crash["submitted_timestamp"]
         }
-        try:
-            execute_no_results(connection, upsert_sql, values)
-        except self.config.database_class.IntegrityError:
-            # Transaction failed due to rare UPDATE race condition,
-            # so just retry
-            execute_no_results(connection, upsert_sql, values)
+        execute_no_results(connection, upsert_sql, values)
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
