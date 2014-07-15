@@ -92,9 +92,9 @@ def enhance_frame(frame, vcs_mappings):
     """
     if 'function' in frame:
         # Remove spaces before all stars, ampersands, and commas
-        function = re.sub('/ (?=[\*&,])/', '', frame['function'])
+        function = re.sub(' (?=[\*&,])', '', frame['function'])
         # Ensure a space after commas
-        function = re.sub('/(?<=,)(?! )/', '', function)
+        function = re.sub(',(?! )', ', ', function)
         frame['function'] = function
         signature = function
     elif 'file' in frame and 'line' in frame:
@@ -104,7 +104,7 @@ def enhance_frame(frame, vcs_mappings):
     else:
         signature = '@%s' % frame['offset']
     frame['signature'] = signature
-    frame['short_signature'] = re.sub('/\(.*\)/', '', signature)
+    frame['short_signature'] = re.sub('\(.*\)', '', signature)
 
     if 'file' in frame:
         vcsinfo = frame['file'].split(':')
