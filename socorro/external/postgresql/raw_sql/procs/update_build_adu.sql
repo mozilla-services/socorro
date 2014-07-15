@@ -21,30 +21,32 @@ IF checkdata THEN
     END IF;
 END IF;
 
--- check if raw_adu is available
-PERFORM 1 FROM raw_adu
+-- check if raw_adi is available
+PERFORM 1 FROM raw_adi
 WHERE "date" = updateday
 LIMIT 1;
 IF NOT FOUND THEN
-    RAISE EXCEPTION 'raw_adu has not been updated for %',updateday;
+    RAISE EXCEPTION 'raw_adi has not been updated for %',updateday;
 END IF;
 
 -- insert nightly, aurora
 -- only 7 days of data after each build
 WITH prod_adu AS (
     SELECT
-        COALESCE(prodmap.product_name, raw_adu.product_name)::citext as product_name
-        , raw_adu.product_version::citext as product_version
-        , raw_adu.update_channel as update_channel
-        , raw_adu.adu_count
-        , build_date(build_numeric(raw_adu.build)) as bdate
+        COALESCE(prodmap.product_name, raw_adi.product_name)::citext as product_name
+        , raw_adi.product_version::citext as product_version
+        , raw_adi.update_channel as update_channel
+        , raw_adi.adi_count
+        , build_date(build_numeric(raw_adi.build)) as bdate
         , os_name_matches.os_name
-    FROM raw_adu
+    FROM raw_adi
         LEFT OUTER JOIN product_productid_map as prodmap
-            ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+            ON raw_adi.product_guid = btrim(prodmap.productid, '{}')
         LEFT OUTER JOIN os_name_matches
-            ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-    WHERE raw_adu.date = updateday
+            ON raw_adi.product_os_platform ILIKE os_name_matches.match_string
+    WHERE raw_adi.date = updateday
+        AND raw_adi.build ~ E'^\\d+$'
+        AND length(raw_adi.build) >= 10
 )
 INSERT INTO build_adu (
     product_version_id
@@ -58,7 +60,7 @@ SELECT
     , coalesce(os_name,'Unknown') as os
     , updateday
     , bdate
-    , coalesce(sum(adu_count), 0)
+    , coalesce(sum(adi_count), 0)
 FROM product_versions
     JOIN prod_adu ON
         product_versions.product_name = prod_adu.product_name
@@ -84,21 +86,23 @@ INSERT INTO build_adu (
 )
 WITH prod_adu AS (
     SELECT
-        COALESCE(prodmap.product_name, raw_adu.product_name)::citext
+        COALESCE(prodmap.product_name, raw_adi.product_name)::citext
             as product_name
-        , raw_adu.product_version::citext as product_version
-        , raw_adu.update_channel as update_channel
-        , raw_adu.adu_count
+        , raw_adi.product_version::citext as product_version
+        , raw_adi.update_channel as update_channel
+        , raw_adi.adi_count
         , os_name_matches.os_name
-        , build_numeric(raw_adu.build) as build_id
-        , build_date(build_numeric(raw_adu.build)) as bdate
-    FROM raw_adu
+        , build_numeric(raw_adi.build) as build_id
+        , build_date(build_numeric(raw_adi.build)) as bdate
+    FROM raw_adi
         LEFT OUTER JOIN product_productid_map as prodmap
-        ON raw_adu.product_guid = btrim(prodmap.productid, '{}')
+        ON raw_adi.product_guid = btrim(prodmap.productid, '{}')
         LEFT OUTER JOIN os_name_matches
-        ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
-    WHERE raw_adu.date = updateday
-        AND raw_adu.update_channel = 'beta'
+        ON raw_adi.product_os_platform ILIKE os_name_matches.match_string
+    WHERE raw_adi.date = updateday
+        AND raw_adi.update_channel = 'beta'
+        AND raw_adi.build ~ E'^\\d+$'
+        AND length(raw_adi.build) >= 10
 )
 SELECT
 -- Return the rapid_beta_id, rather than the product_version_id
@@ -107,7 +111,7 @@ SELECT
     , coalesce(os_name,'Unknown') as os
     , updateday
     , bdate
-    , coalesce(sum(adu_count), 0)
+    , coalesce(sum(adi_count), 0)
 FROM product_versions
     JOIN products USING ( product_name )
     JOIN prod_adu
