@@ -34,31 +34,37 @@ class BotoS3CrashStorage(CrashStorageBase):
         "TransactionExecutorWithLimitedBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
+        reference_value_from='resource.ceph',
     )
     required_config.add_option(
         'host',
         doc="The hostname of the S3 crash storage to submit to",
-        default="ceph.dev.phx1.mozilla.com"
+        default="ceph.dev.phx1.mozilla.com",
+        reference_value_from='resource.ceph',
     )
     required_config.add_option(
         'port',
         doc="The network port of the S3 crash storage to submit to",
-        default=80
+        default=80,
+        reference_value_from='resource.ceph',
     )
     required_config.add_option(
         'access_key',
         doc="access key",
         default="",
+        reference_value_from='resource.ceph',
     )
     required_config.add_option(
         'secret_access_key',
         doc="secret access key",
         default="",
+        reference_value_from='secrets.ceph',
     )
     #required_config.add_option(
         #'buckets',
         #doc="How to organize the buckets (default: daily)",
-        #default="daily"
+        #default="daily",
+        #reference_value_from='resource.ceph',
     #)
 
     operational_exceptions = (
