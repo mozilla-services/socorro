@@ -103,6 +103,18 @@ class webapp::socorro {
     require => [ Yumrepo['PGDG'], Package['yum-plugin-fastestmirror']]
   }
 
+  exec {
+    'postgres-test-role':
+      path => '/usr/bin:/bin',
+      cwd => '/var/lib/pgsql',
+      command => 'sudo -u postgres psql template1 -c "create user test with encrypted password \'aPassword\' superuser"',
+      unless => 'sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'test\'" | grep -q 1',
+      require => [
+        Package['postgresql93-server'],
+        Exec['postgres-initdb'],
+      ];
+  }
+
   package {
     [
       'python-virtualenv',
