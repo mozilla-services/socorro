@@ -2,13 +2,49 @@
       <div class="adubysig">
         <h3 id="adubysig-heading"
             data-heading="ADU By Signature For {channel} Channel">ADU By Signature For {{ channel|capitalize }} Channel</h3>
-        <p id="loading-graph" class="hide">
+        <p class="loading-graph hide">
           <img src="{{ static('img/loading.png') }}" alt="Loading">
           Loading graph...
         </p>
-        <p class="no-data hide">No graph data returned for signature {{ signature }}</p>
 
         <div class="adubysig-graph hide">
+            <form name="adubysig" method="get" class="standard_form">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                {% if form.errors %}
+                    <ul class="user-msg error django-form-error">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>
+                              {% if field != '__all__' %}
+                                <b>{{ field.label }}:</b>
+                              {% endif %}
+                              {{ error }}
+                            <li>
+                        {% endfor %}
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <fieldset>
+                    <legend class="visually-hidden">Select Graph Criteria</legend>
+                    <div class="field_elem_container">
+                        <label for="channel">Channel</label>
+                        {{ form.channel }}
+                    </div>
+
+                    <div class="field_elem_container">
+                        <label for="start_date">Start Date</label>
+                        {{ form.start_date }}
+                    </div>
+
+                    <div class="field_elem_container">
+                        <label for="end_date">End Date</label>
+                        {{ form.end_date }}
+                    </div>
+
+                    <input type="submit" value="Generate Graph" />
+                </fieldset>
+            </form>
             <svg></svg>
         </div>
       </div>

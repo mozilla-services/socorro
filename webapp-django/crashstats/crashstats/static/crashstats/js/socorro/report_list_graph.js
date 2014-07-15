@@ -1,4 +1,4 @@
-/* global $ */
+/* global $, socorro */
 
 // Base D3 code by @bsmedberg
 // With additional code, tweaks and UI
@@ -69,6 +69,8 @@ var Plot = (function() {
             .ticks(4);
     }
 
+    var container;
+
     /**
      * Draws the ADU graph
      * @param {object} data - The JSON data (data.hits)
@@ -112,259 +114,259 @@ var Plot = (function() {
             return d.values.adu_count > cutoff;
         });
 
-        var dims = new Dimensions({
-            width: 800,
-            height: 250,
-            marginTop: 25,
-            marginLeft: 95,
-            marginRight: 10,
-            marginBottom: 50
-        });
-
-        // setup the x and y axis scales
-        var minx = buildIDToDate(finalData[0].key);
-        var maxx = buildIDToDate(finalData[finalData.length -1].key);
-        var x = d3.time.scale()
-            .range([0, dims.width])
-            .domain([minx, maxx]);
-        var xaxis = d3.svg.axis()
-            .scale(x)
-            .orient('bottom');
-
-        var maxy = d3.max(finalData, function(d) {
-            return d.values.ratio;
-        });
-        var y = d3.scale.linear()
-            .rangeRound([10, dims.height])
-            .domain([maxy, 0]);
-        var yaxis = d3.svg.axis()
-            .scale(y)
-            .ticks(4)
-            .orient('left');
-
-        var svg = d3.select('svg', container)
-            .call(function(d) {
-                dims.setupSVG(d);
-            })
-            .append('g')
-            .call(function(d) {
-                dims.transformUpperLeft(d);
+        // Even though there was some data returned from the Ajax call
+        // the above filter function might filter this out of the result
+        // set. Ensure we still have data before proceeding to draw the graph.
+        if (finalData.length) {
+            var dims = new Dimensions({
+                width: 800,
+                height: 250,
+                marginTop: 25,
+                marginLeft: 65,
+                marginRight: 10,
+                marginBottom: 50
             });
 
-        svg.append('text')
-            .text('Hover over a point below to see the details for each data point.')
-            .attr('x', 0)
-            .attr('y', -5);
+            // setup the x and y axis scales
+            var minx = buildIDToDate(finalData[0].key);
+            var maxx = buildIDToDate(finalData[finalData.length -1].key);
+            var x = d3.time.scale()
+                .range([0, dims.width])
+                .domain([minx, maxx]);
+            var xaxis = d3.svg.axis()
+                .scale(x)
+                .orient('bottom');
 
-        svg.append('g')
-           .attr('class', 'grid')
-           .attr('transform', 'translate(0,' + dims.height + ')')
-           .call(make_x_axis(x)
-                .tickSize(-dims.height + 10, 0, 0)
-                .tickFormat('')
-            );
-
-        svg.append('g')
-           .attr('class', 'grid')
-           .call(make_y_axis(y)
-                .tickSize(-dims.width, 0, 0)
-                .tickFormat('')
-            );
-
-        svg.append('g')
-           .attr('class', 'x axis')
-           .attr('transform', 'translate(0,' + dims.height + ')')
-           .call(xaxis);
-
-        svg.append('text')
-           .text('Build Date')
-           .attr('x', dims.width / 2)
-           .attr('y', dims.height + 32)
-           .attr('dominant-baseline', 'hanging');
-
-        svg.append('g')
-           .attr('class', 'y axis')
-           .call(yaxis);
-
-        svg.append('text')
-           .text('Crashes/ADU')
-           .attr('transform', 'translate(' + (-dims.marginLeft + 5) + ',' + (dims.height / 2) + ') rotate(-90)')
-           .attr('text-anchor', 'middle')
-           .attr('dominant-baseline', 'hanging');
-
-
-        var tooltip = d3.select('.adubysig').append('div')
-            .attr('class', 'tooltip')
-            .style('top', 0)
-            .style('left', 0);
-
-        var points = svg.selectAll('.point')
-            .data(finalData);
-
-
-        var entered = points.enter()
-            .append('circle')
-            .attr('class', 'point main')
-            .attr('fill', '#406a80')
-            .attr('cx', function(d) {
-                return x(buildIDToDate(d.key));
-            })
-            .attr('cy', function(d) {
-                return y(d.values.ratio);
-            })
-            .attr('r', 6)
-            .style('opacity', 0)
-            .on('mouseenter', function(d) {
-                var pos = d3.mouse(this);
-
-                var tooltipContentContainer = $('<ul />', {
-                    class: 'tooltip-content'
-                });
-
-                var buildId = $('<li />', {
-                    text: 'BuildID: ' + d.key
-                });
-
-                var aduCount = $('<li />', {
-                    text: 'ADU Count: ' + d.values.adu_count
-                });
-
-                var crashCount = $('<li />', {
-                    text: 'Crash Count: ' + d.values.crash_count
-                });
-
-                tooltipContentContainer.append([buildId, aduCount, crashCount]);
-
-                var calcTop = pos[1] + 60;
-                var calcLeft = pos[0] - 60;
-
-                tooltip.style('display', 'block')
-                    .style('top', calcTop + 'px')
-                    .style('left', calcLeft > 100 ?
-                            calcLeft + 'px' :
-                            (calcLeft + 200) + 'px')
-                    .html(tooltipContentContainer.html())
-                    .transition()
-                    .delay(300)
-                    .duration(500)
-                    .style('opacity', 1);
-            })
-            .on('mouseout', function(d) {
-                tooltip.transition()
-                    .style('opacity', 0);
+            var maxy = d3.max(finalData, function(d) {
+                return d.values.ratio;
             });
+            var y = d3.scale.linear()
+                .rangeRound([10, dims.height])
+                .domain([maxy, 0]);
+            var yaxis = d3.svg.axis()
+                .scale(y)
+                .ticks(4)
+                .orient('left');
 
-        entered.transition()
-            .delay(400)
-            .duration(600)
-            .style('opacity', 1);
+            var svg = d3.select('svg', container)
+                .call(function(d) {
+                    dims.setupSVG(d);
+                })
+                .append('g')
+                .call(function(d) {
+                    dims.transformUpperLeft(d);
+                });
+
+            svg.append('text')
+                .text('Hover over a point below to see the details for each data point.')
+                .attr('x', 0)
+                .attr('y', -5);
+
+            svg.append('g')
+               .attr('class', 'grid')
+               .attr('transform', 'translate(0,' + dims.height + ')')
+               .call(make_x_axis(x)
+                    .tickSize(-dims.height + 10, 0, 0)
+                    .tickFormat('')
+                );
+
+            svg.append('g')
+               .attr('class', 'grid')
+               .call(make_y_axis(y)
+                    .tickSize(-dims.width, 0, 0)
+                    .tickFormat('')
+                );
+
+            svg.append('g')
+               .attr('class', 'x axis')
+               .attr('transform', 'translate(0,' + dims.height + ')')
+               .call(xaxis);
+
+            svg.append('text')
+               .text('Build Date')
+               .attr('x', dims.width / 2)
+               .attr('y', dims.height + 32)
+               .attr('dominant-baseline', 'hanging');
+
+            svg.append('g')
+               .attr('class', 'y axis')
+               .call(yaxis);
+
+            svg.append('text')
+               .text('Crashes/ADU')
+               .attr('transform', 'translate(' + (-dims.marginLeft + 5) + ',' + (dims.height / 2) + ') rotate(-90)')
+               .attr('text-anchor', 'middle')
+               .attr('dominant-baseline', 'hanging');
+
+            var tooltip = d3.select('.adubysig').append('div')
+                .attr('class', 'tooltip')
+                .style('top', 0)
+                .style('left', 0);
+
+            var points = svg.selectAll('.point')
+                .data(finalData);
+
+
+            var entered = points.enter()
+                .append('circle')
+                .attr('class', 'point main')
+                .attr('fill', '#406a80')
+                .attr('cx', function(d) {
+                    return x(buildIDToDate(d.key));
+                })
+                .attr('cy', function(d) {
+                    return y(d.values.ratio);
+                })
+                .attr('r', 6)
+                .style('opacity', 0)
+                .on('mouseenter', function(d) {
+                    var pos = d3.mouse(this);
+
+                    var tooltipContentContainer = $('<ul />', {
+                        class: 'tooltip-content'
+                    });
+
+                    var buildId = $('<li />', {
+                        text: 'BuildID: ' + d.key
+                    });
+
+                    var aduCount = $('<li />', {
+                        text: 'ADU Count: ' + d.values.adu_count
+                    });
+
+                    var crashCount = $('<li />', {
+                        text: 'Crash Count: ' + d.values.crash_count
+                    });
+
+                    tooltipContentContainer.append([buildId, aduCount, crashCount]);
+
+                    // using event.pageX as apposed to pos[0] gives a more accurate
+                    // positioning for the x coordinate.
+                    var calcX = parseInt(d3.event.pageX, 16) - 55;
+                    tooltip.style('display', 'block')
+                        .style('top', pos[1] + 'px')
+                        .style('left', calcX + 'px')
+                        .style('opacity', 1)
+                        .html(tooltipContentContainer.html());
+                })
+                .on('mouseout', function(d) {
+                    tooltip.transition().style('opacity', 0);
+                });
+
+            entered.transition()
+                .duration(600)
+                .style('opacity', 1);
+        } else {
+            container.before($('<p />', {
+                class: 'user-feedback info',
+                text: 'Insufficient data to draw graph.'
+            }));
+        }
     }
 
     /**
-     * Adds a select drop-down to the graph tab, so users
-     * can toggle between different channels.
-     * param {object} dataSet - Object containing all data attribute values
+     * Removes a user feedback message
+     * @param {object} container - The message container to remove.
      */
-    function addChannelSelector(dataSet) {
-        var channels = dataSet.fallback.split(',');
-        var channelsLength = channels.length;
-
-        var label = $('<label />', {
-            for: 'channel-select',
-            text: 'Release Channel'
+    function removeMessage(container) {
+        container.animate({ opacity: 0 }, 500, function() {
+            $(this).remove();
         });
-        var select = $('<select />', {
-            id: 'channel-select'
-        });
+    }
 
-        $(channels).each(function(i, channel) {
-            var option = $('<option />', {
-                value: channel,
-                text: channel,
-            });
+    /**
+     * Displays a list of error messages.
+     * @param {object} form - The form to prepend the messages to as a jQuery object.
+     * @param {array} errors - The array of error messages to prepend.
+     */
+    function showFormErrors(form, errors) {
+        var errorsLength = errors.length;
 
-            // set nightly release channel as the default selected
-            if (channel === 'nightly') {
-                option.attr('selected', 'selected');
-            }
+        var errorsContainer = $('<ul />', { class: 'user-msg error' });
 
-            select.append(option);
-        });
+        for (var i = 0; i < errorsLength; i++) {
+            errorsContainer.append($('<li />', {
+                text: errors[i]
+            }));
+        }
+        form.prepend(errorsContainer);
+    }
 
-        var heading = $('#adubysig-heading');
-        // strick the select and it's label just after the heading
-        heading.after(label, select);
+    /**
+     * Validates the form fields
+     * @param {object} form - The form as jQuery object
+     * @return False or the valid form object
+     */
+    function isValid(form) {
 
-        select.on('change', function() {
+        var errors = [];
 
-            var channel = $(this).val();
-            var titleCasedChannel = channel.replace(
-                channel.charAt(0),
-                channel.charAt(0).toUpperCase());
+        // Clear any previous messages
+        $('.user-msg').remove();
 
-            // Empty the fallback property so that the Ajax
-            // requests will not incorrectly follow the fallback path.
-            dataSet.fallback = '';
+        var endDate = $('#end_date', form).val();
+        var startDate = $('#start_date', form).val();
 
-            dataSet.channel = channel;
+        if (socorro.date.isFutureDate(endDate) || socorro.date.isFutureDate(startDate)) {
+            errors.push('Dates cannot be in the future.');
+        }
 
-            // update the heading text to reflect the new channel
-            headingTxt = heading.data('heading').replace('{channel}', titleCasedChannel);
-            heading.text(headingTxt);
+        if (!socorro.date.isValidDuration(startDate, endDate, 'less')) {
+            errors.push('The start date should be after the end date.');
+        }
 
-            aduBySignature(null, dataSet);
-        });
+        if (errors.length > 0) {
+            showFormErrors(form, errors);
+            return false;
+        }
+
+        return form;
     }
 
     /**
      * Sets up the data for the graph
      * @param {object} panel - The graph panel container.
-     * @param {object} [dataSet] - Object containing all data attribute values
      */
-    function aduBySignature(panel, dataSet) {
+    function aduBySignature(panel) {
 
-        // if the panel is null, use the provided dataSet
-        dataSet = panel ? panel[0].dataset : dataSet;
-        var container = $('.adubysig-graph');
-        var noDataContainer = $('.no-data', panel);
+        container = $('.adubysig-graph');
 
-        // show the loading graph spinner
-        var loader = $('#loading-graph');
+        var loader = $('.loading-graph', panel);
+        var msgContainer = $('.user-feedback', container);
+
+        dataSet = panel[0].dataset;
+
+        container.removeClass('hide');
         loader.removeClass('hide');
 
+        var formParams = $(':input:not(:hidden)', panel).serialize();
         var params = {
             product_name: dataSet.product,
-            days: dataSet.days,
-            signature: dataSet.signature,
-            channel: dataSet.channel
+            signature: dataSet.signature
         };
-        var url = dataSet.jsonurl + '?' + $.param(params);
+
+        var url = dataSet.jsonurl + '?' + $.param(params) + '&' + formParams;
 
         $.getJSON(url, function(data) {
 
             loader.addClass('hide');
-            $('svg', container).empty().attr({
-                width: 0,
-                height: 0
-            });
-
-            noDataContainer.addClass('hide');
+            removeMessage(msgContainer);
 
             if (data.total) {
-
-                container.removeClass('hide');
-
-                if (dataSet.fallback) {
-                    // if there was no version passed to report/list
-                    // we fallback to nightly and need to provide the
-                    // user with a way to switch between release channels.
-                    addChannelSelector(dataSet);
-                    drawGraph(data.hits, container);
-                } else {
-                    drawGraph(data.hits, container);
-                }
+                $('svg', container).empty();
+                drawGraph(data.hits, container);
             } else {
-                noDataContainer.removeClass('hide');
+                // collapse the svg container so that it does not take up
+                // any space when there is no data returned.
+                $('svg', container).empty().attr({
+                    width: 0,
+                    height: 0
+                });
+
+                container.before($('<p />', {
+                    class: 'user-feedback info',
+                    text: 'No data returned for signature '  + dataSet.signature
+                }));
             }
         })
         .fail(function(jQXhr, textStatus, errorThrown) {
@@ -374,15 +376,43 @@ var Plot = (function() {
                 error += ' error: ' + errorThrown;
             }
 
-            noDataContainer.empty()
-                .text('Error while loadng data: ' + error)
-                .removeClass('hide');
+            loader.addClass('hide');
+            removeMessage(msgContainer);
+
+            container.before($('<p />', {
+                class: 'user-feedback error',
+                text: 'Error while loading data ' + error
+            }));
         });
     }
 
     return {
        draw: function(panel) {
             aduBySignature(panel);
+       },
+       /**
+        * Registers the form submit handler and calls aduBySignature
+        * if the form is valid.
+        * @param {object} panel - The tab container as jQuery object
+        */
+       registerForm: function(panel) {
+
+           var form = $('form', panel);
+
+           form.on('submit', function(event) {
+               event.preventDefault();
+
+               // remove any currently displayed error or
+               // no data messages.
+               removeMessage($('.user-feedback', panel));
+
+               // if the form is valid, pass values to the
+               // ajax call. If invalid, the function will
+               // handle the errors.
+               if (isValid(form)) {
+                   aduBySignature(panel);
+               }
+           });
        }
     };
 
@@ -406,6 +436,9 @@ var Graph = (function() {
                $('.inner', $panel).html(response);
                $('.loading-placeholder', $panel).hide();
 
+               // handle submit events from the form.
+               Plot.registerForm($panel);
+               // draw the graph using initial data
                Plot.draw($panel);
 
                deferred.resolve();

@@ -1260,18 +1260,6 @@ def report_list(request, partial=None, default_context=None):
         context['selected_products'] = None
         context['product'] = settings.DEFAULT_PRODUCT
 
-    # if we have a version, expose the channel for the current
-    # release for use in the adu graph
-    if context['product_versions']:
-        context['channel'] = get_channel_for_release(
-            context['product_versions']
-        )
-    else:
-        # if no version was provided fallback to nightly
-        context['channel'] = 'nightly'
-        # the ui is going to need access to all channels
-        context['channels'] = ','.join(settings.CHANNELS)
-
     results_per_page = 250
     result_offset = results_per_page * (page - 1)
 
@@ -1583,6 +1571,36 @@ def report_list(request, partial=None, default_context=None):
 
         context['bugsig_match_total'] = match_total
 
+    if partial == 'graph':
+        # if we have a version, expose the channel for the current
+        # release for use in the adu graph
+        if context['product_versions']:
+            context['channel'] = get_channel_for_release(
+                context['product_versions']
+            )
+        else:
+            # if no version was provided fallback to nightly
+            context['channel'] = 'nightly'
+
+        # the ui is going to need access to all channels
+        context['channels'] = ','.join(settings.CHANNELS)
+
+        # set initial form data
+        data = {
+            'product_name': context['product'],
+            'signature': context['signature'],
+            'channel': context['channel'],
+            'start_date': context['start_date'],
+            'end_date': context['end_date']
+        }
+
+        context['form'] = forms.ADUBySignatureJSONForm(
+            settings.CHANNELS,
+            models.ProductsVersions().get(),
+            data,
+            auto_id=True
+        )
+
     if not partial:
         # prep it so it's nicer to work with in the template
         context['all_reports_columns'] = [
@@ -1625,19 +1643,16 @@ def adu_by_signature_json(request, default_context=None):
         return http.HttpResponseBadRequest(str(form.errors))
 
     product = form.cleaned_data['product_name']
-    days = form.cleaned_data['days']
     signature = form.cleaned_data['signature']
     channel = form.cleaned_data['channel']
-
-    start_date = (
-        datetime.datetime.utcnow() -
-        datetime.timedelta(days=days)
-    )
+    start_date = form.cleaned_data['start_date']
+    end_date = form.cleaned_data['end_date']
 
     api = models.AduBySignature()
     adu_by_sig_data = api.get(
         product_name=product,
         start_date=start_date,
+        end_date=end_date,
         signature=signature,
         channel=channel
     )

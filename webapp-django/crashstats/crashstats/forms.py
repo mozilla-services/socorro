@@ -301,9 +301,10 @@ class CrashTrendsForm(BaseForm):
 class ADUBySignatureJSONForm(BaseForm):
 
     product_name = forms.ChoiceField(required=True)
-    days = forms.IntegerField(required=True, min_value=3)
     signature = form_fields.SignatureField(required=True)
     channel = forms.ChoiceField(required=True)
+    start_date = forms.DateField(required=True, label='From')
+    end_date = forms.DateField(required=True, label='To')
 
     def __init__(self, current_channels,
                  current_products,
@@ -318,6 +319,40 @@ class ADUBySignatureJSONForm(BaseForm):
         # ensure we have a valid channel
         channels = [(x, x) for x in current_channels]
         self.fields['channel'].choices = channels
+
+    def clean_start_date(self):
+        value = self.cleaned_data['start_date']
+
+        if isinstance(value, datetime.datetime):
+            value = value.date()
+
+        if value > datetime.datetime.utcnow().date():
+            raise forms.ValidationError(
+                'From date cannot be in the future.'
+            )
+
+        return value
+
+    def clean_end_date(self):
+        cleaned = self.cleaned_data
+        if 'start_date' in cleaned:
+            cleaned_start_date = cleaned['start_date']
+            cleaned_end_date = cleaned['end_date']
+
+            if isinstance(cleaned_end_date, datetime.datetime):
+                cleaned_end_date = cleaned_end_date.date()
+
+            if cleaned_start_date > cleaned_end_date:
+                raise forms.ValidationError(
+                    'From date should not be greater than To date.'
+                )
+
+            if cleaned_end_date > datetime.datetime.utcnow().date():
+                raise forms.ValidationError(
+                    'To date cannot be in the future.'
+                )
+
+            return cleaned_end_date
 
 
 class FrontpageJSONForm(forms.Form):

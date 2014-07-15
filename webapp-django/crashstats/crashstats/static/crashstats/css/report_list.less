@@ -59,11 +59,40 @@
         font-size: 1.1rem;
     }
     .no-data {
+        position: absolute;
+        top: 27%;
+        left: 24%;
+        width: 60%;
         font-size: 1.3rem;
+    }
+    .loading-graph {
+        position: absolute;
+        top: 48%;
+        left: 43%;
+    }
+    input[type="submit"] {
+        float: right;
+        margin-right: 3rem;
     }
 }
 .adubysig-graph {
     margin: .5rem 1.5rem;
+    min-height: 325px;
+    form {
+        display: inline-block;
+        width: 17%;
+        vertical-align: top;
+    }
+    svg {
+        display: inline-block;
+        width: 75%;
+    }
+    .error {
+        background-color: #ffbaba;
+        color: #333;
+        padding: .5em 1em .5em 1em;
+        border: 1px solid #d8000c;
+    }
 }
 .tooltip {
     display: none;
@@ -93,4 +122,31 @@
     path {
       stroke-width: 0;
     }
+}
+.user-feedback {
+    position: absolute;
+    top: -10px;
+    left: 30%;
+    color: white;
+    margin: 0;
+    padding: .3rem 1.5rem;
+    border-radius: 0em 0em 0.25em 0.25em;
+    max-width: 45%;
+    font-size: 1.2rem;
+    text-align: center;
+}
+.user-feedback.info {
+    background-color: #339BB9;
+    background-image: -moz-linear-gradient(center top , #5BC0DE, #339BB9);
+    background-image: linear-gradient(#5BC0DE, #339BB9);
+}
+.user-feedback.error {
+    background-color: #C43C35;
+    background-image: -moz-linear-gradient(center top , #EE5F5B, #C43C35);
+    background-image: linear-gradient(#EE5F5B, #C43C35);
+}
+.user-feedback.success {
+    background-color: #57A957;
+    background-image: -moz-linear-gradient(center top , #62C462, #57A957);
+    background-image: linear-gradient(#62C462, #57A957);
 }
