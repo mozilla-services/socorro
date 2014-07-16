@@ -112,6 +112,8 @@ class webapp::socorro {
       require => [
         Package['postgresql93-server'],
         Exec['postgres-initdb'],
+        File['pg_hba.conf'],
+        Service['postgresql-9.3']
       ];
   }
 
