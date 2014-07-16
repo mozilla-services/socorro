@@ -12,10 +12,7 @@ First you need to install ElasticSearch. The procedure is well described in
 this tutorial: `Setting up elasticsearch`_. Don't bother configuring ES if
 you don't know you will need it, it generally works just fine out of the box.
 
-.. _`Setting up elasticsearch`: http://www.elasticsearch.org/tutorials/2010/07/01/setting-up-elasticsearch.html
-
-`Note: ElasticSearch is not yet included in our Vagrant dev VMs but should
-be sometime soon.`
+.. _`Setting up elasticsearch`: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup.html#setup-installation
 
 Increase open files limit
 -------------------------
@@ -60,25 +57,13 @@ http://people.mozilla.org/~agaudebert/socorro/es-dumps/mapping.json
 Run the script
 --------------
 
-The script to import crashes into ElasticSearch is not yet merged into our
-official repository. To get it, you will need to fetch
-``github.com/AdrianGaudebert/socorro`` and checkout branch
-``696722-script-import-es``::
-
-    git remote add AdrianGaudebert https://github.com/AdrianGaudebert/socorro.git
-    git fetch AdrianGaudebert
-    git branch --track 696722-script-import-es AdrianGaudebert/696722-script-import-es
-    git checkout 696722-script-import-es
-
 Before you can run the script, you will have to stop supervisord::
 
     sudo /etc/init.d/supervisor force-stop
 
-The script is called ``movecrashes.py`` and is in ``.../scripts/``. It has a
-few dependencies over Socorro and thus needs to be ran from the root of a
-Socorro directory with ``$PYTHONPATH = .``. Use it as follow::
+The script is called ``movecrashes.py`` and is in ``scripts/``. Use it as follow::
 
-    python scripts/movecrashers.py import /path/to/dump.tar /path/to/mapping.json
+    python scripts/movecrashes.py import /path/to/dump.tar /path/to/mapping.json
 
 This will simply import all crash reports contained in the dump into
 ElasticSearch, without cleaning anything before. If you want to have more data
