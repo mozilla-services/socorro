@@ -40,10 +40,10 @@ Now you can actually install the packages:
 ::
   sudo yum install postgresql93-server postgresql93-plperl \
     postgresql93-contrib postgresql93-devel subversion make rsync \
-    subversion gcc-c++ python-devel python-pip mercurial git \
-    libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv \
-    npm devtoolset-1.1-gcc-c++ rabbitmq-server elasticsearch httpd \
-    mod_wsgi memcached daemonize
+    subversion gcc-c++ python-devel python-pip mercurial nodejs-less \
+    git libxml2-devel libxslt-devel java-1.7.0-openjdk \
+    python-virtualenv npm devtoolset-1.1-gcc-c++ rabbitmq-server \
+    elasticsearch httpd mod_wsgi memcached daemonize
 
 Enable Apache on startup:
 ::

@@ -22,6 +22,7 @@ Requirements
 * Subversion
 * Git
 * PostrgreSQL and Python dev libraries (for psycopg2)
+* Less
 
 Virtual Machine using Vagrant
 -----------------------------
