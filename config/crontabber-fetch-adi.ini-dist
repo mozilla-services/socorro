@@ -1,0 +1,288 @@
+# the fully qualified module or class of the application
+#application='crontabber.app.CronTabber'
+
+[resource]
+
+    [[elasticsearch]]
+
+        #+include ./common_elasticsearch.ini
+
+        # delays in seconds between retries
+        #backoff_delays='10, 30, 60, 120, 300'
+
+        # the file containing the mapping of the indexes receiving crash reports
+        #elasticsearch_base_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_index_settings.json
+
+        # None
+        #elasticsearch_class='socorro.external.elasticsearch.connection_context.ConnectionContext'
+
+        # the default index used to store data
+        # see "resource.elasticsearch.elasticsearch_default_index" for the default or override it here
+        #elasticsearch_default_index=socorro
+
+        # the default doctype to use in elasticsearch
+        # see "resource.elasticsearch.elasticsearch_doctype" for the default or override it here
+        #elasticsearch_doctype=crash_reports
+
+        # the index that handles data about email addresses for the automatic-emails cron job
+        #elasticsearch_emails_index=socorro_emails
+
+        # the file containing the mapping of the indexes receiving email addresses for the automatic-emails cron job
+        #elasticsearch_emails_index_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_emails_index_settings.json
+
+        # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
+        # see "resource.elasticsearch.elasticsearch_index" for the default or override it here
+        #elasticsearch_index=socorro%Y%W
+
+        # None
+        #elasticsearch_index_regex=socorro[0-9]{6}$
+
+        # the time in seconds before a query to elasticsearch fails
+        # see "resource.elasticsearch.elasticsearch_timeout" for the default or override it here
+        #elasticsearch_timeout=30
+
+        # the urls to the elasticsearch instances
+        # see "resource.elasticsearch.elasticsearch_urls" for the default or override it here
+        #elasticsearch_urls='http://localhost:9200'
+
+        # a class that will manage transactions
+        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithLimitedBackoff'
+
+        # seconds between log during retries
+        #wait_log_interval=10
+
+    [[logging]]
+
+        #+include ./common_logging.ini
+
+        # logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+        #stderr_error_logging_level=10
+
+        # python logging system format for logging to stderr
+        #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
+
+        # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+        #syslog_error_logging_level=40
+
+        # syslog facility string ("user", "local0", etc)
+        #syslog_facility_string=user
+
+        # syslog hostname
+        #syslog_host=localhost
+
+        # python logging system format for syslog entries
+        #syslog_line_format_string=crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}
+
+        # syslog port
+        #syslog_port=514
+
+    [[postgresql]]
+
+        #+include ./common_postgresql.ini
+
+        # None
+        #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+        # the hostname of the database
+        # see "resource.postgresql.database_hostname" for the default or override it here
+        #database_hostname=localhost
+
+        # the name of the database
+        # see "resource.postgresql.database_name" for the default or override it here
+        #database_name=breakpad
+
+        # the user's database password
+        # see "secrets.postgresql.database_password" for the default or override it here
+        #database_password=aPassword
+
+        # the port for the database
+        # see "resource.postgresql.database_port" for the default or override it here
+        #database_port=5432
+
+        # the name of the user within the database
+        # see "secrets.postgresql.database_username" for the default or override it here
+        #database_username=breakpad_rw
+
+        # a class that will execute transactions
+        #transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+    [[rabbitmq]]
+
+        #+include ./common_rabbitmq.ini
+
+        # delays in seconds between retries
+        #backoff_delays='10, 30, 60, 120, 300'
+
+        # toggle for using or ignoring the throttling flag
+        #filter_on_legacy_processing='False'
+
+        # the hostname of the RabbitMQ server
+        #host=localhost
+
+        # the port for the RabbitMQ server
+        #port=5672
+
+        # the name of priority crash queue name within RabbitMQ
+        #priority_queue_name=socorro.priority
+
+        # the class responsible for connecting to RabbitMQ
+        #rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
+
+        # a classname for the type of wrapper for RabbitMQ connections
+        #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
+
+        # the user's RabbitMQ password
+        # see "secrets.rabbitmq.rabbitmq_password" for the default or override it here
+        #rabbitmq_password=guest
+
+        # the name of the user within the RabbitMQ instance
+        # see "secrets.rabbitmq.rabbitmq_user" for the default or override it here
+        #rabbitmq_user=guest
+
+        # the name of reprocessing crash queue name within RabbitMQ
+        #reprocessing_queue_name=socorro.reprocessing
+
+        # the name of the queue to recieve crashes
+        #routing_key=socorro.reprocessing
+
+        # the name of standard crash queue name within RabbitMQ
+        #standard_queue_name=socorro.normal
+
+        # a class that will manage transactions
+        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff'
+
+        # the name of the RabbitMQ virtual host
+        #virtual_host=/
+
+        # seconds between log during retries
+        #wait_log_interval=10
+
+    [[redactor]]
+
+        #+include ./common_redactor.ini
+
+        # a list of keys not allowed in a redacted processed crash
+        # see "resource.redactor.forbidden_keys" for the default or override it here
+        #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+
+        # the name of the class that implements a 'redact' method
+        #redactor_class='socorro.external.crashstorage_base.Redactor'
+
+[secrets]
+
+    #+include ./common_secrets.ini
+
+    [[exacttarget]]
+
+        #+include ./common_exacttarget.ini
+
+        # ExactTarget API password.
+        #exacttarget_password=
+
+        # ExactTarget API user.
+        #exacttarget_user=
+
+    [[postgresql]]
+
+        #+include ./common_postgresql.ini
+
+        # the user's database password
+        #database_password=aPassword
+
+        # the name of the user within the database
+        #database_username=breakpad_rw
+
+    [[rabbitmq]]
+
+        #+include ./common_rabbitmq.ini
+
+        # the user's RabbitMQ password
+        #rabbitmq_password=guest
+
+        # the name of the user within the RabbitMQ instance
+        #rabbitmq_user=guest
+
+    [[sentry]]
+
+        #+include ./common_sentry.ini
+
+        # DSN for Sentry via raven
+        #dsn=
+
+[crontabber]
+
+    # None
+    # see "resource.postgresql.database_class" for the default or override it here
+    #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+
+    # the hostname of the database
+    # see "resource.postgresql.database_hostname" for the default or override it here
+    #database_hostname=localhost
+
+    # the name of the database
+    # see "resource.postgresql.database_name" for the default or override it here
+    #database_name=breakpad
+
+    # the user's database password
+    # see "secrets.postgresql.database_password" for the default or override it here
+    #database_password=aPassword
+
+    # the port for the database
+    # see "resource.postgresql.database_port" for the default or override it here
+    #database_port=5432
+
+    # the name of the user within the database
+    # see "secrets.postgresql.database_username" for the default or override it here
+    #database_username=breakpad_rw
+
+    # number of seconds to re-attempt a job that failed
+    #error_retry_time=300
+
+    # Class to load and save the state and runs
+    #job_state_db_class='crontabber.app.JobStateDatabase'
+
+    # None
+    jobs='''
+  socorro.cron.jobs.fetch_adi_from_hive.FetchADIFromHiveCronApp|1d|07:00
+'''
+
+    # a class that will execute transactions
+    # see "resource.postgresql.transaction_executor_class" for the default or override it here
+    #transaction_executor_class='crontabber.transaction_executor.TransactionExecutor'
+
+[logging]
+
+    # logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # see "resource.logging.stderr_error_logging_level" for the default or override it here
+    #stderr_error_logging_level=10
+
+    # python logging system format for logging to stderr
+    # see "resource.logging.stderr_line_format_string" for the default or override it here
+    #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
+
+    # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
+    # see "resource.logging.syslog_error_logging_level" for the default or override it here
+    #syslog_error_logging_level=40
+
+    # syslog facility string ("user", "local0", etc)
+    # see "resource.logging.syslog_facility_string" for the default or override it here
+    #syslog_facility_string=user
+
+    # syslog hostname
+    # see "resource.logging.syslog_host" for the default or override it here
+    #syslog_host=localhost
+
+    # python logging system format for syslog entries
+    # see "resource.logging.syslog_line_format_string" for the default or override it here
+    #syslog_line_format_string=crontabber (pid {process}): {asctime} {levelname} - {threadName} - {message}
+
+    # syslog port
+    # see "resource.logging.syslog_port" for the default or override it here
+    #syslog_port=514
+
+[sentry]
+
+    # DSN for Sentry via raven
+    # see "secrets.sentry.dsn" for the default or override it here
+    #dsn=
+
