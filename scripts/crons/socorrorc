@@ -33,9 +33,9 @@ function lock {
     shift
   fi
   JOB=$1
-  if [ -f "/tmp/${JOB}.lock" ]
+  if [ -f "/var/lock/socorro/${JOB}.lock" ]
   then
-    PID=`cat /tmp/${JOB}.lock`
+    PID=`cat /var/lock/socorro/${JOB}.lock`
     ps -p $PID > /dev/null
     if [ $? == 0 ]
     then
@@ -52,7 +52,7 @@ function lock {
       return 1
     fi
   fi
-  echo $$ > /tmp/${JOB}.lock
+  echo $$ > /var/lock/socorro/${JOB}.lock
 }
 
 function unlock {
@@ -62,12 +62,12 @@ function unlock {
     return 1
   fi
   JOB=$1
-  if [ ! -f "/tmp/${JOB}.lock" ]
+  if [ ! -f "/var/lock/socorro/${JOB}.lock" ]
   then
     echo "warning (unlock): no lock exists for ${JOB}"
     return 1
   fi
-  rm -f "/tmp/${JOB}.lock"
+  rm -f "/var/lock/socorro/${JOB}.lock"
 }
 
 function fatal {
