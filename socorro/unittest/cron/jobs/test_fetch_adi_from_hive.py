@@ -116,7 +116,8 @@ class TestFetchADIFromHive(IntegrationTestBase):
             host='localhost',
             user='socorro',
             password='ignored',
-            port=10000
+            port=10000,
+            timeout=120,
         )
 
         pgcursor = self.conn.cursor()
