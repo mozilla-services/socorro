@@ -341,14 +341,19 @@ class BotoS3CrashStorage(CrashStorageBase):
         try:
             return self.connection
         except AttributeError:
-            self.connection = self._connect_to_endpoint(
-                aws_access_key_id=self.config.access_key,
-                aws_secret_access_key=self.config.secret_access_key,
-                host=self.config.host,
-                port=self.config.port,
-                is_secure=False,
-                calling_format=self._calling_format(),
-            )
+
+            kwargs = {
+                'aws_access_key_id': self.config.access_key,
+                'aws_secret_access_key': self.config.secret_access_key,
+                'is_secure': False,
+                'calling_format': self._calling_format(),
+            }
+            # for AWS S3, host and port are omitted
+            if self.config.host and self.config.port:
+                kwargs['host'] = self.config.host
+                kwargs['port'] = self.config.port
+
+            self.connection = self._connect_to_endpoint(**kwargs)
             return self.connection
 
     #--------------------------------------------------------------------------
