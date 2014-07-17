@@ -110,6 +110,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         s3._calling_format = mock.Mock()
         s3._calling_format.return_value = mock.Mock()
         s3._CreateError = mock.Mock()
+        s3._S3ResponseError = mock.Mock()
         s3._open = mock.MagicMock()
         return s3
 
@@ -141,14 +142,14 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             1
         )
-        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '071027'
         )
 
-        bucket_mock = boto_s3_store._mocked_connection.create_bucket \
+        bucket_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value
         self.assertEqual(bucket_mock.new_key.call_count, 2)
         bucket_mock.new_key.assert_has_calls(
@@ -193,8 +194,76 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
+            boto_s3_store._mocked_connection.get_bucket.call_count,
+            1
+        )
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
+            '071027'
+        )
+
+        bucket_mock = boto_s3_store._mocked_connection.get_bucket \
+            .return_value
+        self.assertEqual(bucket_mock.new_key.call_count, 4)
+        bucket_mock.new_key.assert_has_calls(
+            [
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump_names'),
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump'),
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
+            ],
+            any_order=True,
+        )
+
+        storage_key_mock = bucket_mock.new_key.return_value
+        self.assertEqual(
+            storage_key_mock.set_contents_from_string.call_count,
+            4
+        )
+        storage_key_mock.set_contents_from_string.assert_has_calls(
+            [
+                mock.call(
+                    '{"submitted_timestamp": '
+                    '"2013-01-09T22:21:18.646733+00:00"}'
+                ),
+                mock.call('["flash_dump", "dump"]'),
+                mock.call('fake dump'),
+                mock.call('fake flash dump'),
+            ],
+            any_order=True,
+        )
+
+    def test_save_raw_crash_3_failing_get_bucket(self):
+        boto_s3_store = self.setup_mocked_s3_storage()
+        boto_s3_store._S3ResponseError = ABadDeal
+
+        boto_s3_store._mocked_connection.get_bucket.side_effect = (
+            boto_s3_store._S3ResponseError
+        )
+
+        # the tested call
+        boto_s3_store.save_raw_crash(
+            {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            {'dump': 'fake dump', 'flash_dump': 'fake flash dump'},
+            "0bba929f-8721-460c-dead-a43c20071027"
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
+        boto_s3_store._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
+        self.assert_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store._mocked_connection.get_bucket.call_count,
+            1
+        )
+        self.assertEqual(
             boto_s3_store._mocked_connection.create_bucket.call_count,
             1
+        )
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
+            '071027'
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
             '071027'
@@ -249,14 +318,14 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             1
         )
-        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '071027'
         )
 
-        bucket_mock = boto_s3_store._mocked_connection.create_bucket \
+        bucket_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value
         self.assertEqual(bucket_mock.new_key.call_count, 1)
         bucket_mock.new_key.assert_has_calls(
@@ -288,7 +357,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .create_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.new_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -310,10 +379,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             1
         )
-        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '120408'
         )
 
@@ -331,7 +400,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .create_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.new_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -351,14 +420,14 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             1
         )
-        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '120408'
         )
 
-        key_mock = boto_s3_store._mocked_connection.create_bucket \
+        key_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value.new_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
         key_mock.get_contents_as_string.assert_has_calls(
@@ -374,7 +443,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .create_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.new_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -397,10 +466,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             1
         )
-        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '120408'
         )
 
@@ -430,7 +499,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .create_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.new_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -487,7 +556,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .create_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.new_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -507,14 +576,14 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             1
         )
-        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '120408'
         )
 
-        key_mock = boto_s3_store._mocked_connection.create_bucket \
+        key_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value.new_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
         key_mock.get_contents_as_string.assert_has_calls([mock.call(), ])
@@ -527,7 +596,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             TransactionExecutorWithLimitedBackoff
         )
         mocked_bucket = boto_s3_store._connect_to_endpoint.return_value \
-            .create_bucket.return_value
+            .get_bucket.return_value
         mocked_key = mocked_bucket.new_key.return_value
         mocked_key.get_contents_as_string \
             .side_effect = [
@@ -546,7 +615,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
                 raise action
             return action
 
-        boto_s3_store._connect_to_endpoint.return_value.create_bucket \
+        boto_s3_store._connect_to_endpoint.return_value.get_bucket \
             .side_effect = (
                 temp_failure_fn
             )
@@ -563,10 +632,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_s3_connection_parameters(boto_s3_store)
 
         self.assertEqual(
-            boto_s3_store._mocked_connection.create_bucket.call_count,
+            boto_s3_store._mocked_connection.get_bucket.call_count,
             3
         )
-        boto_s3_store._mocked_connection.create_bucket \
+        boto_s3_store._mocked_connection.get_bucket \
             .assert_has_calls(
                 [
                     mock.call('120408'),
@@ -601,7 +670,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
     def test_not_found(self):
         boto_s3_store = self.setup_mocked_s3_storage()
         get_contents_as_string_mocked = (
-            boto_s3_store._mocked_connection.create_bucket
+            boto_s3_store._mocked_connection.get_bucket
             .return_value.new_key.return_value.get_contents_as_string
         )
         get_contents_as_string_mocked.side_effect = \
