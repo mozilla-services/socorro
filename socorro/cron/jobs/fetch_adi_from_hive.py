@@ -140,6 +140,12 @@ class FetchADIFromHiveCronApp(BaseCronApp):
         default='PLAIN',
         doc='Auth mechanism for Hive')
 
+    required_config.add_option(
+        'timeout',
+        default=120,
+        doc='number of seconds to wait before timing out')
+
+
     def run(self, connection, date):
         target_date = (date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
@@ -158,7 +164,8 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                     authMechanism=self.config.hive_auth_mechanism,
                     user=self.config.hive_user,
                     password=self.config.hive_password,
-                    database=self.config.hive_database
+                    database=self.config.hive_database,
+                    timeout=self.config.timeout
                 )
 
                 cur = hive.cursor()
