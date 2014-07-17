@@ -55,6 +55,19 @@ class BotoS3CrashStorage(CrashStorageBase):
         reference_value_from='resource.ceph',
     )
     required_config.add_option(
+        'temporary_file_system_storage_path',
+        doc='a local filesystem path where dumps temporarily '
+            'during processing',
+        default='/home/socorro/temp',
+        reference_value_from='resource.ceph',
+    )
+    required_config.add_option(
+        'dump_file_suffix',
+        doc='the suffix used to identify a dump file (for use in temp files)',
+        default='.dump',
+        reference_value_from='resource.ceph',
+    )
+    required_config.add_option(
         'secret_access_key',
         doc="secret access key",
         default="",
