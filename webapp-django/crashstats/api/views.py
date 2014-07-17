@@ -229,6 +229,9 @@ def model_wrapper(request, model_name):
     else:
         function = instance.get
 
+    # assume first that it won't need a binary response
+    binary_response = False
+
     form = FormWrapper(model, request.REQUEST)
     if form.is_valid():
         try:
@@ -271,7 +274,46 @@ def model_wrapper(request, model_name):
                 )
             raise
 
-        if not request.user.has_perm('crashstats.view_pii'):
+        # Some models allows to return a binary reponse. It does so based on
+        # the models `BINARY_RESPONSE` dict in which all keys and values
+        # need to be in the valid query. For example, if the query is
+        # `?foo=bar&other=thing&bar=baz` and the `BINARY_RESPONSE` dict is
+        # exactly: {'foo': 'bar', 'bar': 'baz'} it will return a binary
+        # response with content type `application/octet-stream`.
+        for key, value in model.API_BINARY_RESPONSE.items():
+            if form.cleaned_data.get(key) == value:
+                binary_response = True
+            else:
+                binary_response = False
+                break
+
+        if binary_response:
+            # if you don't have all required permissions, you'll get a 403
+            required_permissions = model.API_BINARY_PERMISSIONS
+            if isinstance(required_permissions, basestring):
+                required_permissions = [required_permissions]
+            if (
+                required_permissions and
+                not has_permissions(request.user, required_permissions)
+            ):
+                permission_names = []
+                for permission in required_permissions:
+                    codename = permission.split('.', 1)[1]
+                    try:
+                        permission_names.append(
+                            Permission.objects.get(
+                                codename=codename
+                            ).name
+                        )
+                    except Permission.DoesNotExist:
+                        permission_names.append(codename)
+                # you're not allowed to get the binary response
+                return http.HttpResponseForbidden(
+                    "Binary response requires the '%s' permission\n" %
+                    (', '.join(permission_names))
+                )
+
+        elif not request.user.has_perm('crashstats.view_pii'):
             clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
             if result and model.API_WHITELIST:
                 cleaner = Cleaner(
@@ -286,6 +328,18 @@ def model_wrapper(request, model_name):
     else:
         # custom override of the status code
         return {'errors': dict(form.errors)}, 400
+
+    if binary_response:
+        assert model.API_BINARY_FILENAME, 'No API_BINARY_FILENAME set on model'
+        response = http.HttpResponse(
+            result,
+            content_type='application/octet-stream'
+        )
+        filename = model.API_BINARY_FILENAME % form.cleaned_data
+        response['Content-Disposition'] = (
+            'attachment; filename="%s"' % filename
+        )
+        return response
 
     return result
 

@@ -941,9 +941,38 @@ class TestViews(BaseTestViews):
 
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url, {
-            'crash_id': 'abc'
+            'crash_id': 'abc',
+            'format': 'raw'
         })
+        # because we don't have permission
+        eq_(response.status_code, 403)
+
+        url = reverse('api:model_wrapper', args=('RawCrash',))
+        response = self.client.get(url, {
+            'crash_id': 'abc',
+            'format': 'wrong'  # note
+        })
+        # invalid format
         eq_(response.status_code, 400)
+
+        user = self._login()
+        self._add_permission(user, 'view_pii')
+        response = self.client.get(url, {
+            'crash_id': 'abc',
+            'format': 'raw'
+        })
+        # still don't have the right permission
+        eq_(response.status_code, 403)
+
+        self._add_permission(user, 'view_rawdump')
+        response = self.client.get(url, {
+            'crash_id': 'abc',
+            'format': 'raw'
+        })
+        # finally!
+        eq_(response.status_code, 200)
+        eq_(response['Content-Disposition'], 'attachment; filename="abc.dmp"')
+        eq_(response['Content-Type'], 'application/octet-stream')
 
     @mock.patch('requests.get')
     def test_CommentsBySignature(self, rget):
