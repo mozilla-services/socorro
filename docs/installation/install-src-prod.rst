@@ -18,11 +18,10 @@ Set up directories and permissions
 
 As the *root* user:
 ::
-  mkdir /etc/socorro
-  mkdir /var/log/socorro
+  mkdir /etc/socorro /var/log/socorro /var/lock/socorro
   mkdir -p /data/socorro
   useradd socorro
-  chown socorro:socorro /var/log/socorro
+  chown socorro:socorro /var/log/socorro /var/lock/socorro
   mkdir /home/socorro/primaryCrashStore /home/socorro/fallback /home/socorro/persistent
   chown apache:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
