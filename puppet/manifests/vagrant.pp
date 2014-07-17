@@ -1,3 +1,11 @@
+Exec {
+  logoutput => 'on_failure'
+}
+
+node default {
+  include webapp::socorro
+}
+
 # Set up basic Socorro requirements.
 class webapp::socorro {
 
