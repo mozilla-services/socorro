@@ -94,6 +94,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         self._connect_to_endpoint = boto.connect_s3
         self._calling_format = boto.s3.connection.OrdinaryCallingFormat
         self._CreateError = boto.exception.S3CreateError
+        self._S3ResponseError = boto.exception.S3ResponseError
         self._open = open
 
     #--------------------------------------------------------------------------
@@ -270,12 +271,28 @@ class BotoS3CrashStorage(CrashStorageBase):
             return self._bucket_cache[bucket_name]
         except KeyError:
             now = datetime.datetime.now()
-            self._bucket_cache[bucket_name] = conn.create_bucket(bucket_name)
+            self._bucket_cache[bucket_name] = conn.get_bucket(bucket_name)
+            delta = datetime.datetime.now() - now
+            return self._bucket_cache[bucket_name]
+
+    #--------------------------------------------------------------------------
+    def _get_or_create_bucket(self, conn, bucket_name):
+        try:
+            return self._bucket_cache[bucket_name]
+        except KeyError:
+            now = datetime.datetime.now()
+            try:
+                self._bucket_cache[bucket_name] = conn.get_bucket(bucket_name)
+            except self._S3ResponseError:
+                self._bucket_cache[bucket_name] = conn.create_bucket(
+                    bucket_name
+                )
             delta = datetime.datetime.now() - now
             self.config.logger.debug(
                 'conn.create_bucket %s: %s', bucket_name, delta
             )
             return self._bucket_cache[bucket_name]
+
 
     #--------------------------------------------------------------------------
     def _submit_to_boto_s3(self, crash_id, name_of_thing, thing):
@@ -292,12 +309,10 @@ class BotoS3CrashStorage(CrashStorageBase):
             the_day_bucket_name = self._create_bucket_name_for_crash_id(
                 crash_id
             )
-            bucket = self._get_bucket(conn, the_day_bucket_name)
+            bucket = self._get_or_create_bucket(conn, the_day_bucket_name)
         except self._CreateError:
-            # TODO: oops, bucket already taken
-            # shouldn't ever happen, but let's handle this
             self.config.logger.error(
-                'Ceph bucket creation/connection has failed for %s'
+                'bucket creating has failed for %s'
                 % the_day_bucket_name,
                 exc_info=True
             )
@@ -321,11 +336,9 @@ class BotoS3CrashStorage(CrashStorageBase):
                 crash_id
             )
             bucket = self._get_bucket(conn, the_day_bucket_name)
-        except self._CreateError:
-            # TODO: oops, bucket already taken
-            # shouldn't ever happen, but let's handle this
+        except self._S3ResponseError:
             self.config.logger.error(
-                'Ceph bucket creation/connection has failed for %s'
+                'Ceph bucket fetching has failed for %s'
                 % the_day_bucket_name,
                 exc_info=True
             )
