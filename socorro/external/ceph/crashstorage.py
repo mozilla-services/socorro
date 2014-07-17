@@ -331,10 +331,10 @@ class BotoS3CrashStorage(CrashStorageBase):
             )
             raise
 
-        key_as_string = "%s.%s" % (crash_id, name_of_thing)
-        key = bucket.get_key(key_as_string)
-        thing_as_string = key.get_contents_as_string()
-        return thing_as_string
+        key = "%s.%s" % (crash_id, name_of_thing)
+
+        storage_key = bucket.new_key(key)
+        return storage_key.get_contents_as_string()
 
     #--------------------------------------------------------------------------
     def _connect(self):
