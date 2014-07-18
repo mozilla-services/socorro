@@ -66,6 +66,8 @@ Vagrant::Config.run do |config|
     config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => CONF.fetch('nfs', true))
   end
 
+  config.vm.provision :shell, inline: "if [ ! $(grep single-request-reopen /etc/sysconfig/network) ]; then echo RES_OPTIONS=single-request-reopen >> /etc/sysconfig/network && service network restart; fi"
+
   config.vm.provision :puppet do |puppet|
     puppet.manifests_path = "puppet/manifests"
     puppet.manifest_file = "vagrant.pp"
