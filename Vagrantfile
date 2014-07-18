@@ -1,3 +1,4 @@
+is_jenkins = ENV['USER'] == 'jenkins'
 
 Vagrant::Config.run do |config|
   config.vm.box = "CentOS 6.4 x86_64 Minimal"
@@ -13,8 +14,6 @@ Vagrant::Config.run do |config|
       v.customize ["modifyvm", :id, "--memory", CONF['memory']]
     end
   end
-
-  is_jenkins = ENV['USER'] == 'jenkins'
 
   if not is_jenkins
     # Don't share these resources when on Jenkins. We want to be able to
