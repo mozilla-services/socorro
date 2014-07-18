@@ -23,10 +23,6 @@ Vagrant::Config.run do |config|
     config.vm.network :hostonly, "10.11.12.13"
   end
 
-  if CONF['boot_mode'] == 'gui'
-    config.vm.boot_mode = :gui
-  end
-
   config.vm.synced_folder ".", "/home/vagrant/socorro"
 
   config.vm.provision :shell, inline: "if [ ! $(grep single-request-reopen /etc/sysconfig/network) ]; then echo RES_OPTIONS=single-request-reopen >> /etc/sysconfig/network && service network restart; fi"
