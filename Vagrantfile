@@ -43,15 +43,7 @@ Vagrant::Config.run do |config|
     config.vm.boot_mode = :gui
   end
 
-  MOUNT_POINT = '/home/vagrant/src/socorro'
-
-  # Don't mount shared folder over NFS on Jenkins; NFS doesn't work there yet.
-  if is_jenkins or RUBY_PLATFORM =~ /mswin(32|64)/
-    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".",
-                           :mount_options => ['dmode=777', 'fmode=777'])
-  else
-    config.vm.share_folder("vagrant-root", MOUNT_POINT, ".", :nfs => CONF.fetch('nfs', true))
-  end
+  config.vm.synced_folder ".", "/home/vagrant/socorro"
 
   config.vm.provision :shell, inline: "if [ ! $(grep single-request-reopen /etc/sysconfig/network) ]; then echo RES_OPTIONS=single-request-reopen >> /etc/sysconfig/network && service network restart; fi"
 
