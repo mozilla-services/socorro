@@ -9,7 +9,9 @@ os.environ['FORCE_DB'] = 'true'
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
-BZAPI_BASE_URL = 'https://api-dev.bugzilla.muzilla.org/1.3'
+# here we deliberately "destroy" the BZAPI URL so running tests that are
+# badly mocked never accidentally actually use a real working network address
+BZAPI_BASE_URL = 'https://bugzilla.testrunner/rest'
 
 # by scrubbing this to something unreal, we can be certain the tests never
 # actually go out on the internet when `request.get` should always be mocked
