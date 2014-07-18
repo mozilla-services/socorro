@@ -15,7 +15,7 @@ Development Discussions
    crashreprofilteringreport
    diskperformancetests
    dumpingdumptables
-   jsondumpstorage
+   glossary/jsondumpstorage
    processeddumpstorage
    fs
    database
