@@ -1,19 +1,3 @@
-require "yaml"
-
-# Load up our vagrant config files -- vagrantconfig.yaml first
-_config = YAML.load(File.open(File.join(File.dirname(__FILE__),
-                    "vagrantconfig.yaml"), File::RDONLY).read)
-
-# Local-specific/not-git-managed config -- vagrantconfig_local.yaml
-begin
-    _config.merge!(YAML.load(File.open(File.join(File.dirname(__FILE__),
-                   "vagrantconfig_local.yaml"), File::RDONLY).read))
-rescue Errno::ENOENT # No vagrantconfig_local.yaml found -- that's OK; just
-                     # use the defaults.
-end
-
-CONF = _config
-
 
 Vagrant::Config.run do |config|
   config.vm.box = "CentOS 6.4 x86_64 Minimal"
