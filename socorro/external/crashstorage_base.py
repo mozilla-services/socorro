@@ -8,7 +8,7 @@ saving, fetching and iterating over raw crashes, dumps and processed crashes.
 
 import sys
 import collections
-import datetime
+import time
 
 from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
@@ -865,8 +865,8 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             config,
             quit_check_callback)
         self.tag = config.benchmark_tag
-        self.start_timer = datetime.datetime.now
-        self.end_timer = datetime.datetime.now
+        self.start_timer = time.time
+        self.end_timer = time.time
 
     #--------------------------------------------------------------------------
     def close(self):
