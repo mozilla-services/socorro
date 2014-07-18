@@ -177,7 +177,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     @staticmethod
     def do_get_raw_dump(boto_s3_store, crash_id, name=None):
         try:
-            if name is None:
+            if name in (None, '', 'upload_file_minidump'):
                 name = 'dump'
             a_dump = boto_s3_store._fetch_from_boto_s3(crash_id, name)
             return a_dump
@@ -203,6 +203,8 @@ class BotoS3CrashStorage(CrashStorageBase):
             )
             dumps = {}
             for dump_name in dump_names:
+                if dump_name in (None, '', 'upload_file_minidump'):
+                    dump_name = 'dump'
                 dumps[dump_name] = boto_s3_store._fetch_from_boto_s3(
                     crash_id,
                     dump_name
@@ -229,6 +231,8 @@ class BotoS3CrashStorage(CrashStorageBase):
             dumps_mapping = boto_s3_store.get_raw_dumps(crash_id)
             name_to_pathname_mapping = {}
             for a_dump_name, a_dump in dumps_mapping.iteritems():
+                if a_dump_name in (None, '', 'upload_file_minidump'):
+                    a_dump_name = 'dump'
                 dump_pathname = os.path.join(
                     boto_s3_store.config.temporary_file_system_storage_path,
                     "%s.%s.TEMPORARY%s" % (

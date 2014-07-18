@@ -396,6 +396,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(result, a_raw_crash)
 
     def test_get_raw_dump(self):
+        """test fetching the raw dump without naming it"""
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
@@ -427,6 +428,109 @@ class TestCase(socorro.unittest.testbase.TestCase):
             '120408'
         )
 
+        boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
+            .assert_called_with(
+                '936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+            )
+        key_mock = boto_s3_store._mocked_connection.get_bucket \
+            .return_value.new_key.return_value
+        self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
+        key_mock.get_contents_as_string.assert_has_calls(
+            [
+                mock.call(),
+            ],
+        )
+
+        self.assertEqual(result, 'this is a raw dump')
+
+    def test_get_raw_dump_upload_file_minidump(self):
+        """test fetching the raw dump, naming it 'upload_file_minidump'"""
+        # setup some internal behaviors and fake outs
+        boto_s3_store = self.setup_mocked_s3_storage()
+        mocked_get_contents_as_string = (
+            boto_s3_store._connect_to_endpoint.return_value
+            .get_bucket.return_value.new_key.return_value
+            .get_contents_as_string
+        )
+        mocked_get_contents_as_string.side_effect = [
+            'this is a raw dump'
+        ]
+
+        # the tested call
+        result = boto_s3_store.get_raw_dump(
+            "936ce666-ff3b-4c7a-9674-367fe2120408",
+            name='upload_file_minidump'
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
+        boto_s3_store._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
+        self.assert_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store._mocked_connection.get_bucket.call_count,
+            1
+        )
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
+            '120408'
+        )
+
+        boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
+            .assert_called_with(
+                '936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+            )
+        key_mock = boto_s3_store._mocked_connection.get_bucket \
+            .return_value.new_key.return_value
+        self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
+        key_mock.get_contents_as_string.assert_has_calls(
+            [
+                mock.call(),
+            ],
+        )
+
+        self.assertEqual(result, 'this is a raw dump')
+
+
+    def test_get_raw_dump_empty_string(self):
+        """test fetching the raw dump, naming it with empty string"""
+        # setup some internal behaviors and fake outs
+        boto_s3_store = self.setup_mocked_s3_storage()
+        mocked_get_contents_as_string = (
+            boto_s3_store._connect_to_endpoint.return_value
+            .get_bucket.return_value.new_key.return_value
+            .get_contents_as_string
+        )
+        mocked_get_contents_as_string.side_effect = [
+            'this is a raw dump'
+        ]
+
+        # the tested call
+        result = boto_s3_store.get_raw_dump(
+            "936ce666-ff3b-4c7a-9674-367fe2120408",
+            name=''
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
+        boto_s3_store._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
+        self.assert_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store._mocked_connection.get_bucket.call_count,
+            1
+        )
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
+            '120408'
+        )
+
+        boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
+            .assert_called_with(
+                '936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+            )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value.new_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
