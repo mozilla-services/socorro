@@ -39,19 +39,6 @@ Vagrant::Config.run do |config|
     config.vm.network :hostonly, "10.11.12.13"
   end
 
-   # Enable symlinks, which google-breakpad uses during build:
-  Vagrant.configure("1") do |config|
-    config.vm.customize ["setextradata", :id,
-                         "VBoxInternal2/SharedFoldersEnableSymlinksCreate/vagrant-root",
-                         "1"]
-  end
-
-  Vagrant.configure("2") do |config|
-    v.customize ["setextradata", :id,
-                 "VBoxInternal2/SharedFoldersEnableSymlinksCreate/vagrant-root",
-                 "1"]
-  end
-
   if CONF['boot_mode'] == 'gui'
     config.vm.boot_mode = :gui
   end
