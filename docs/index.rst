@@ -36,7 +36,7 @@ Contents:
    crashstorage
    crontabber
    throttling
-   development
+   contributing
    database
    generic_app
    writingdocs
