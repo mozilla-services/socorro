@@ -1,9 +1,9 @@
-.. index:: development
+.. index:: contributing
 
-.. _development-chapter:
+.. _contributing-chapter:
 
-Development Discussions
-=======================
+Contributing
+============
 
 .. toctree::
    :maxdepth: 2
