@@ -40,6 +40,7 @@ Contents:
    database
    generic_app
    writingdocs
+   glossary
 
 
 Indices and tables

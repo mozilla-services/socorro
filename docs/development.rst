@@ -10,7 +10,6 @@ Development Discussions
 
    codingconventions
    newdeveloperguide
-   glossary
    unittesting
    seleniumtesting
    crashreprofilteringreport
