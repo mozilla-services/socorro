@@ -3,6 +3,7 @@
 
 from funfactory.settings_base import *
 
+
 # Name of the top-level module where you put all your apps.
 # If you did not install Playdoh with the funfactory installer script
 # you may need to edit this value. See the docs about installing from a
@@ -12,7 +13,18 @@ PROJECT_MODULE = 'crashstats'
 # Defines the views served for root URLs.
 ROOT_URLCONF = '%s.urls' % PROJECT_MODULE
 
-INSTALLED_APPS = list(INSTALLED_APPS) + [
+INSTALLED_APPS = (
+    'funfactory',
+    'compressor',
+    'django_browserid',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
+    'commonware.response.cookies',
+    'django_nose',
+    'session_csrf',
+
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
@@ -28,39 +40,51 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',
-]
+)
+
+
+funfactory_JINJA_CONFIG = JINJA_CONFIG  # that from funfactory
+
+
+def JINJA_CONFIG():
+    # different from that in funfactory in that we don't want to
+    # load the `tower` extension
+    config = funfactory_JINJA_CONFIG()
+    config['extensions'].remove('tower.template.i18n')
+    return config
 
 # Because Jinja2 is the default template loader, add any non-Jinja templated
 # apps here:
-JINGO_EXCLUDE_APPS = [
-    'admin',
-    'registration',
+JINGO_EXCLUDE_APPS = (
     'browserid',
-]
+)
 
-MIDDLEWARE_EXCLUDE_CLASSES = [
-    'funfactory.middleware.LocaleURLMiddleware',
-]
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'session_csrf.CsrfMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'commonware.middleware.FrameOptionsHeader',
 
-MIDDLEWARE_CLASSES = list(MIDDLEWARE_CLASSES)
-
-for app in MIDDLEWARE_EXCLUDE_CLASSES:
-    if app in MIDDLEWARE_CLASSES:
-        MIDDLEWARE_CLASSES.remove(app)
-
-MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES) + (
     'waffle.middleware.WaffleMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
 )
 
 
 # BrowserID configuration
-AUTHENTICATION_BACKENDS = [
+AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'django_browserid.auth.BrowserIDBackend',
-]
+)
 
-TEMPLATE_CONTEXT_PROCESSORS += (
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.media',
+    'django.core.context_processors.request',
+    'session_csrf.context_processor',
+    'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     'crashstats.base.context_processors.google_analytics',
     'crashstats.base.context_processors.browserid',
@@ -75,30 +99,6 @@ DATABASES = {
         'NAME': 'sqlite.crashstats.db',
     }
 }
-
-# Tells the extract script what files to look for L10n in and what function
-# handles the extraction. The Tower library expects this.
-DOMAIN_METHODS['messages'] = [
-    ('%s/**.py' % PROJECT_MODULE,
-        'tower.management.commands.extract.extract_tower_python'),
-    ('%s/**/templates/**.html' % PROJECT_MODULE,
-        'tower.management.commands.extract.extract_tower_template'),
-    ('templates/**.html',
-        'tower.management.commands.extract.extract_tower_template'),
-],
-
-# # Use this if you have localizable HTML files:
-# DOMAIN_METHODS['lhtml'] = [
-#    ('**/templates/**.lhtml',
-#        'tower.management.commands.extract.extract_tower_template'),
-# ]
-
-# # Use this if you have localizable JS files:
-# DOMAIN_METHODS['javascript'] = [
-#    # Make sure that this won't pull in strings from external libraries you
-#    # may use.
-#    ('media/js/**.js', 'javascript'),
-# ]
 
 LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
 
@@ -154,6 +154,9 @@ NIGHTLY_RELEASE_TYPES = (
     'Nightly',
 )
 
+
+# No need to load it because we don't do i18n in this project
+USE_I18N = False
 
 # by default, compression is done in runtime.
 COMPRESS_OFFLINE = False

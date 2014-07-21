@@ -118,3 +118,33 @@ https://github.com/BradRuderman/pyhs2/archive/48d22aff9d23db1221ad913670aaad90a7
 django-jingo-offline-compressor==0.0.7
 # sha256: TzJCJuHuhaxBUgV5up3nAylAEmAuU2IX_Q50VuFH2IY
 sasl==0.1.3
+
+# things needed specifically for the webapp
+# sha256: m3_LmdICiRiewPHgbR0r7TtHcuOjk_3b-wBup8P5v68
+Django==1.5.6
+# sha256: 1BuH0etCTRi6Lb5zMTHp2HPnCcwR63PaJIw07sHV7W4
+django-browserid==0.10.1
+# sha256: akF58qKszaKyc7_Ybeb3AkzuIDBDzJp8BA_nswa74SA
+fancy-tag==0.2.0
+# sha256: uDA8a2lQGB1uEg_sdygAueYurQsQAD6-utf81kFmE9g
+https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
+# sha256: ezt0vf24BIR-7Lxcap02St7FFYx-HlyK-dgjh88iYMg
+https://github.com/mozilla/funfactory/archive/6b797bb.zip#egg=funfactory
+# sha256: B-lA57jFsdXYf3h9luYXt_gbsep2FZ4ZIvPHvzt0Y4Y
+https://github.com/jbalogh/test-utils/archive/4ae9327.zip#egg=test-utils
+# sha256: UXatpPjasXm5Y7Ty6MDkUEbcSXP3n5itRb66J3usPjY
+https://github.com/jbalogh/jingo/archive/5e985a5.zip#egg=jingo
+# sha256: nc6AOA28EXa-GdHOg2C5QC4d5SpHNG_3WeV-3zgxHRw
+https://github.com/django-nose/django-nose/archive/10475f1.zip#egg=django-nose
+# sha256: vOWl5zvacyobs3P8ofRyh7uZ7MoYS7kPJh5VymTCBh4
+https://github.com/jezdez/django_compressor/archive/90966ed.zip#egg=django-compressor
+# sha256: W_sDzKCODJmJWOLJs1MOyFoCyY0cqkhJZ-GwpsCICEM
+https://github.com/jezdez/django-appconf/archive/d7ff3bb.zip#egg=django-appconf
+# sha256: 0p07MkSEjnM0DFU_lgrFzRSlNmEa7tbcC7rj0bZJvZg
+https://github.com/fwenzel/django-sha2/archive/3ba2b47.zip#egg=django-sha2
+# sha256: A1gwhyCNozcxug18_9RjJTmJQa1rctOt-AnP7_yR0PM
+https://github.com/jsocol/commonware/archive/b554418.zip#egg=commonware
+# sha256: LRy1WDkWc99RCaP-XoT95hYO3IskGz6xmrPTq-m43zE
+cef==0.5
+# sha256: -fUE8yboUH-tNZdMGuX5HUpzX7M-VWtu2PXsEGBUpHM
+https://github.com/mozilla/nuggets/archive/ce50688.zip#egg=nuggets
