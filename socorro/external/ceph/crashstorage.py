@@ -156,6 +156,19 @@ class BotoS3CrashStorage(CrashStorageBase):
         self.transaction(self._do_save_processed, processed_crash)
 
     #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+        """ bug 866973 - do not put raw_crash back into permanent storage again
+            We are doing this in lieu of a queuing solution that could allow
+            us to operate an independent crashmover. When the queuing system
+            is implemented, we could remove this, and have the raw crash
+            saved by a crashmover that's consuming crash_ids the same way
+            that the processor consumes them.
+
+            See further comments in the ProcesorApp class.
+        """
+        self.save_processed(processed_crash)
+
+    #--------------------------------------------------------------------------
     @staticmethod
     def do_get_raw_crash(boto_s3_store, crash_id):
         try:

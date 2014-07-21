@@ -352,6 +352,65 @@ class TestCase(socorro.unittest.testbase.TestCase):
             any_order=True,
         )
 
+    def test_save_raw_and_processed(self):
+        boto_s3_store = self.setup_mocked_s3_storage()
+
+        # the tested call
+        boto_s3_store.save_raw_and_processed(
+            {
+                "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
+            },
+            None,
+            {
+                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+                "completeddatetime": "2012-04-08 10:56:50.902884",
+                "signature": 'now_this_is_a_signature'
+            },
+            "0bba929f-8721-460c-dead-a43c20071027"
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
+        boto_s3_store._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
+        self.assert_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store._mocked_connection.get_bucket.call_count,
+            1
+        )
+        boto_s3_store._mocked_connection.get_bucket.assert_called_with(
+            '071027'
+        )
+
+        bucket_mock = boto_s3_store._mocked_connection.get_bucket \
+            .return_value
+        self.assertEqual(bucket_mock.new_key.call_count, 1)
+        bucket_mock.new_key.assert_has_calls(
+            [
+                mock.call(
+                    '0bba929f-8721-460c-dead-a43c20071027.processed_crash'
+                ),
+            ],
+        )
+
+        storage_key_mock = bucket_mock.new_key.return_value
+        self.assertEqual(
+            storage_key_mock.set_contents_from_string.call_count,
+            1
+        )
+        storage_key_mock.set_contents_from_string.assert_has_calls(
+            [
+                mock.call(
+                    '{"signature": "now_this_is_a_signature", "uuid": '
+                    '"0bba929f-8721-460c-dead-a43c20071027", "completed'
+                    'datetime": "2012-04-08 10:56:50.902884"}'
+                ),
+            ],
+            any_order=True,
+        )
+
     def test_get_raw_crash(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage()
