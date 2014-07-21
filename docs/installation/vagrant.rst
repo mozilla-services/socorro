@@ -55,7 +55,7 @@ in your Socorro source checkout:
   vagrant ssh
 
 Your git checkout on the host will automatically be shared with the VM in
-``/home/vagrant/src/socorro`` .
+``/home/vagrant/socorro`` .
 
 Next you need to install Socorro itself: :ref:`install_binary_package-chapter`
 
