@@ -1,22 +1,21 @@
-.. index:: development
+.. index:: contributing
 
-.. _development-chapter:
+.. _contributing-chapter:
 
-Development Discussions
-=======================
+Contributing
+============
 
 .. toctree::
    :maxdepth: 2
 
    codingconventions
    newdeveloperguide
-   glossary
    unittesting
    seleniumtesting
    crashreprofilteringreport
    diskperformancetests
    dumpingdumptables
-   jsondumpstorage
+   glossary/jsondumpstorage
    processeddumpstorage
    fs
    database
