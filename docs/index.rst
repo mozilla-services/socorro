@@ -32,7 +32,7 @@ Contents:
    installation/troubleshoot
    installation/add-product-release
    webapp
-   apis/index
+   api/index
    crontabber
    throttling
    development
