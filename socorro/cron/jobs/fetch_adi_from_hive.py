@@ -142,7 +142,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
 
     required_config.add_option(
         'timeout',
-        default=120,
+        default=30 * 60, # 30 minutes
         doc='number of seconds to wait before timing out')
 
 
@@ -165,7 +165,8 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                     user=self.config.hive_user,
                     password=self.config.hive_password,
                     database=self.config.hive_database,
-                    timeout=self.config.timeout
+                    # the underlying TSocket setTimeout() wants milliseconds
+                    timeout=self.config.timeout * 1000
                 )
 
                 cur = hive.cursor()
