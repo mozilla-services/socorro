@@ -299,6 +299,14 @@ class SocorroMiddleware(SocorroCommon):
     # by default, no particular permission is needed to use a model
     API_REQUIRED_PERMISSIONS = None
 
+    # by default, no binary response
+    API_BINARY_RESPONSE = {}
+    # and thus no needed binary filename
+    API_BINARY_FILENAME = None
+
+    # by default no special permissions are needed for binary response
+    API_BINARY_PERMISSIONS = ()
+
     def get(self, expect_json=True, **kwargs):
         return self._get(expect_json=expect_json, **kwargs)
 
@@ -954,6 +962,17 @@ class RawCrash(SocorroMiddleware):
     API_CLEAN_SCRUB = (
         ('Comments', scrubber.EMAIL),
         ('Comments', scrubber.URL),
+    )
+
+    # If this is matched in the query string parameters, then
+    # we will return the response in binary format in the API
+    API_BINARY_RESPONSE = {
+        'format': 'raw',
+    }
+    API_BINARY_FILENAME = '%(crash_id)s.dmp'
+    # permissions needed to download it as a binary response
+    API_BINARY_PERMISSIONS = (
+        'crashstats.view_rawdump',
     )
 
     def get(self, **kwargs):
