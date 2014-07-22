@@ -659,7 +659,6 @@ class TestBench(TestCase):
             )
             mock_logging.debug.reset_mock()
 
-
             crashstorage.get_raw_crash('uuid')
             crashstorage.wrapped_crashstore.get_raw_crash.assert_called_with(
                 'uuid'
