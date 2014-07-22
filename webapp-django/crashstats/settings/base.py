@@ -3,6 +3,9 @@
 
 from funfactory.settings_base import *
 
+# This unset DATABASE_ROUTERS from funfactory because we're not
+# interested in using multiple database for the webapp part.
+DATABASE_ROUTERS = ()
 
 # Name of the top-level module where you put all your apps.
 # If you did not install Playdoh with the funfactory installer script
