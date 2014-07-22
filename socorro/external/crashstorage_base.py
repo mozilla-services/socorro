@@ -896,6 +896,23 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
 
     #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
+                               crash_id):
+        start_time = self.start_timer()
+        self.wrapped_crashstore.save_raw_and_processed(
+            raw_crash,
+            dumps,
+            processed_crash,
+            crash_id
+        )
+        end_time = self.end_timer()
+        self.config.logger.debug(
+            '%s save_raw_and_processed %s',
+            self.tag,
+            end_time - start_time
+        )
+
+    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_crash(crash_id)

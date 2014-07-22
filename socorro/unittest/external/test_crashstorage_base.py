@@ -644,6 +644,21 @@ class TestBench(TestCase):
             )
             mock_logging.debug.reset_mock()
 
+            crashstorage.save_raw_and_processed({}, 'payload', {}, 'ooid' )
+            crashstorage.wrapped_crashstore.save_raw_and_processed \
+                .assert_called_with(
+                    {},
+                    'payload',
+                    {},
+                    'ooid'
+                )
+            mock_logging.debug.assert_called_with(
+                '%s save_raw_and_processed %s',
+                'test',
+                1
+            )
+            mock_logging.debug.reset_mock()
+
             crashstorage.get_raw_crash('uuid')
             crashstorage.wrapped_crashstore.get_raw_crash.assert_called_with(
                 'uuid'
