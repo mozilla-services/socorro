@@ -32,8 +32,7 @@ Contents:
    installation/troubleshoot
    installation/add-product-release
    webapp
-   middleware
-   crashstorage
+   api/index
    crontabber
    throttling
    contributing
