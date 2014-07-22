@@ -38,22 +38,37 @@ http://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
 At minimum, you'll want to allow md5 passwords to be used over the
 local network connections.
 
-As the *root* user, edit /var/lib/pgsql/9.3/data/pg_hba.conf:
+As the *root* user, edit pg_hba.conf.
+
+RHEL/CentOS:
 ::
- # IPv4 local connections:
- host    all             all             127.0.0.1/32            md5
- # IPv6 local connections:
- host    all             all             ::1/128                 md5
+    /var/lib/pgsql/9.3/data/pg_hba.conf
+
+Ubuntu:
+::
+    /etc/postgresql/9.3/main/pg_hba.conf
+
+And change the local connections from *trust* to *md5*.
+
+::
+
+  # IPv4 local connections:
+  host    all             all             127.0.0.1/32            md5
+  # IPv6 local connections:
+  host    all             all             ::1/128                 md5
 
 NOTE Make sure to read and understand the pg_hba.conf documentation before
 running a production server.
 
-Restart PostgreSQL for the changes to take effect
+As the *root* user, restart PostgreSQL for the changes to take effect.
 
-On Linux (Debian/Redhat):
-As the *root* user:
+On RHEL/CentOS:
 ::
   service postgresql-9.3 restart
+
+On Ubuntu:
+::
+  service postgresql restart
 
 Or on Mac OS X:
 ::
