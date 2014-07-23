@@ -114,12 +114,48 @@ class TestCase(socorro.unittest.testbase.TestCase):
         s3._open = mock.MagicMock()
         return s3
 
+    def setup_mocked_aws_s3_storage(self, executor=TransactionExecutor):
+        config = DotDict({
+            'source': {
+                'dump_field': 'dump'
+            },
+            'transaction_executor_class': executor,
+            'backoff_delays': [0, 0, 0],
+            'redactor_class': Redactor,
+            'forbidden_keys': Redactor.required_config.forbidden_keys.default,
+            'logger': mock.Mock(),
+            'host': None,
+            'port': None,
+            'access_key': 'this is the access key',
+            'secret_access_key': 'secrets',
+            'buckets': 'daily',
+            'temporary_file_system_storage_path':
+            '/i/am/hiding/junk/files/here',
+            'dump_file_suffix': '.dump',
+        })
+        s3 = BotoS3CrashStorage(config)
+        s3._connect_to_endpoint = mock.Mock()
+        s3._mocked_connection = s3._connect_to_endpoint.return_value
+        s3._calling_format = mock.Mock()
+        s3._calling_format.return_value = mock.Mock()
+        s3._CreateError = mock.Mock()
+        s3._open = mock.MagicMock()
+        return s3
+
     def assert_s3_connection_parameters(self, boto_s3_store):
         boto_s3_store._connect_to_endpoint.assert_called_with(
             aws_access_key_id=boto_s3_store.config.access_key,
             aws_secret_access_key=boto_s3_store.config.secret_access_key,
             host=boto_s3_store.config.host,
             port=38080,
+            is_secure=False,
+            calling_format=boto_s3_store._calling_format.return_value
+        )
+
+    def assert_aws_s3_connection_parameters(self, boto_s3_store):
+        boto_s3_store._connect_to_endpoint.assert_called_with(
+            aws_access_key_id=boto_s3_store.config.access_key,
+            aws_secret_access_key=boto_s3_store.config.secret_access_key,
             is_secure=False,
             calling_format=boto_s3_store._calling_format.return_value
         )
@@ -264,6 +300,62 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
             '071027'
+        )
+        boto_s3_store._mocked_connection.create_bucket.assert_called_with(
+            '071027'
+        )
+
+        bucket_mock = boto_s3_store._mocked_connection.create_bucket \
+            .return_value
+        self.assertEqual(bucket_mock.new_key.call_count, 4)
+        bucket_mock.new_key.assert_has_calls(
+            [
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump_names'),
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump'),
+                mock.call('0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
+            ],
+            any_order=True,
+        )
+
+        storage_key_mock = bucket_mock.new_key.return_value
+        self.assertEqual(
+            storage_key_mock.set_contents_from_string.call_count,
+            4
+        )
+        storage_key_mock.set_contents_from_string.assert_has_calls(
+            [
+                mock.call(
+                    '{"submitted_timestamp": '
+                    '"2013-01-09T22:21:18.646733+00:00"}'
+                ),
+                mock.call('["flash_dump", "dump"]'),
+                mock.call('fake dump'),
+                mock.call('fake flash dump'),
+            ],
+            any_order=True,
+        )
+
+    def test_save_raw_crash_aws(self):
+        boto_s3_store = self.setup_mocked_aws_s3_storage()
+
+        # the tested call
+        boto_s3_store.save_raw_crash(
+            {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            {'dump': 'fake dump', 'flash_dump': 'fake flash dump'},
+            "0bba929f-8721-460c-dead-a43c20071027"
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._calling_format.call_count, 1)
+        boto_s3_store._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 1)
+        self.assert_aws_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store._mocked_connection.create_bucket.call_count,
+            1
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
             '071027'
