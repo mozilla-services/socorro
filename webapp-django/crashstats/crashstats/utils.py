@@ -209,7 +209,7 @@ def enhance_json_dump(dump, vcs_mappings):
     Add some information to the stackwalker's json_dump output
     for display. Mostly applying vcs_mappings to stack frames.
     """
-    for i, thread in enumerate(dump['threads']):
+    for i, thread in enumerate(dump.get('threads', [])):
         if 'thread' not in thread:
             thread['thread'] = i
         for frame in thread['frames']:
