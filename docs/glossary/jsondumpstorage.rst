@@ -48,7 +48,7 @@ different purposes: standard storage and deferred storage.
 ---------------------------------
 
 This is where json/dump pairs are stored for further processing. The
-:ref:`monitor-chapter` finds new dumps and queues them for processing. It does
+monitor finds new dumps and queues them for processing. It does
 this by walking the date branch of the file system using the API
 function destructiveDateWalk. As it moves through the date branch, it
 notes every uuid (in the form of a symbolic link) that it encounters.
@@ -61,12 +61,12 @@ In the case of priority processing, the target uuid is looked up
 directly on the name branch. Then the link to the date branch is used
 to locate and delete the link on the date branch. This insures that a
 priority job is not found a second time as a new job by the
-:ref:`monitor-chapter`.
+monitor.
 
 :ref:`deferredjobstorage-chapter`
 ---------------------------------
 
-This is where jobs go that are deferred by :ref:`monitor-chapter`'s throttling
+This is where jobs go that are deferred by the monitor's throttling
 mechanism. If a json/dump pair is needed for priority processing, it
 can be looked up directly on the name branch. In such a case, just as
 with priority jobs in standard storage, we destroy the links between

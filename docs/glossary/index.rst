@@ -37,9 +37,6 @@ takes a raw dump file, marries it with symbols and produces output
 usable by developers. This application is invoked by
 :ref:`processor-chapter`.
 
-**Monitor**: the Socorro application in charge of queuing jobs. See
-:ref:`monitor-chapter`
-
 **OOID**: A crash report ID. Originally a 32bit value, the original legacy
 system stored it in the database as a hexidecimal text form. Each
 crash is assigned an OOID by the :ref:`collector-chapter` when the crash is
@@ -107,6 +104,5 @@ of OOID.
    crashmover
    collector
    reporter
-   monitor
    filesystem
    deferredcleanup

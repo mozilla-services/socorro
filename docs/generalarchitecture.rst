@@ -68,8 +68,6 @@ Here are descriptions of every submodule in there:
 +-------------------+---------------------------------------------------------------+
 | middleware        | New-style middleware services place.                          |
 +-------------------+---------------------------------------------------------------+
-| monitor           | All code related to monitors.                                 |
-+-------------------+---------------------------------------------------------------+
 | othertests        | Some other tests?                                             |
 +-------------------+---------------------------------------------------------------+
 | services          | Old-style middleware services place.                          |

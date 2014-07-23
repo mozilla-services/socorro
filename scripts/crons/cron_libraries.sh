@@ -10,7 +10,6 @@ function techo(){
 }
 
 . /etc/socorro/socorrorc
-. /etc/socorro/socorro-monitor.conf
 
 techo "lock cron_libraries"
 NAME=`basename $0 .sh`

@@ -186,11 +186,6 @@ class LegacyCrashProcessor(RequiredConfig):
         default=True,
     )
     required_config.add_option(
-        'with_old_monitor',
-        doc='boolean indictating if we are using the old monitor_app.py',
-        default=True,
-    )
-    required_config.add_option(
         'save_mdsw_json',
         doc='boolean if the json version of the MDSW pipe dump should be saved'
             'with the pipedump',
@@ -1219,12 +1214,6 @@ class LegacyCrashProcessor(RequiredConfig):
     def _log_job_start(self, crash_id):
         self.config.logger.info("starting job: %s", crash_id)
         started_datetime = utc_now()
-        if self.config.with_old_monitor:
-            self.transaction(
-                execute_no_results,
-                "update jobs set starteddatetime = %s where uuid = %s",
-                (started_datetime, crash_id)
-            )
         return started_datetime
 
     #--------------------------------------------------------------------------
@@ -1234,15 +1223,6 @@ class LegacyCrashProcessor(RequiredConfig):
             'successful' if success else 'failed',
             crash_id
         )
-
-        # the processors delete completed jobs from the monitor queue
-        if self.config.with_old_monitor:
-            self.transaction(
-                execute_no_results,
-                "delete from jobs "
-                "where uuid = %s",
-                (crash_id,)
-            )
 
     #--------------------------------------------------------------------------
     @staticmethod

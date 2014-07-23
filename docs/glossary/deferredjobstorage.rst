@@ -16,7 +16,7 @@ ever be processed further. They are held for a configurable number of
 days until deleted by :ref:`deferredcleanup-chapter`.
 
 Occasionally, a developer will request a report via :ref:`reporter-chapter` on
-a job that was saved in deferred storage. :ref:`monitor-chapter` will look for
+a job that was saved in deferred storage. The monitor will look for
 the job in deferred storage if it cannot find it in standard storage.
 
 For more information on the storage technique, see :ref:`filesystem-chapter`
