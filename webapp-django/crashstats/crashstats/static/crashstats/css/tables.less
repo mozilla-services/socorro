@@ -16,6 +16,12 @@ table.data-table {
         tr:hover {
             background-color: #D9D9D9;
         }
+        tr.missingsymbols,
+        tr.missingsymbols:hover {
+            background-color: #8f0222;
+            color: white;
+            border-top: 2px solid white;
+        }
     }
 }
 table.captioned-data-table {
@@ -78,4 +84,23 @@ table.vertical {
         border: 1px solid #000;
         font-weight: bold;
     }
+}
+/**
+ * Adds a little flyout to the left of a row in
+ * order to draw attention or display a notice.
+ */
+.row-notice {
+    display: inline-block;
+    position: absolute;
+    left: 15px;
+    background-color: #D33419;
+    color: white;
+    margin-top: -6px;
+    padding: .5rem .5rem .2rem;
+    border-radius: 6px 0 0 6px;
+    width: 26px;
+    font-size: 1.6rem;
+    line-height: 125%;
+    font-weight: bold;
+    text-align: center;
 }
