@@ -339,7 +339,7 @@ var Plot = (function() {
         container.removeClass('hide');
         loader.removeClass('hide');
 
-        var formParams = $(':input:not(:hidden)', panel).serialize();
+        var formParams = $(':input:not([name="csrfmiddlewaretoken"])', panel).serialize();
         var params = {
             product_name: dataSet.product,
             signature: dataSet.signature
