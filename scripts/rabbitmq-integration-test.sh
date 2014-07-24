@@ -18,38 +18,19 @@ fi
 
 database_hostname=${database_hostname:-"localhost"}
 database_username=${database_username:-"breakpad_rw"}
+database_password=${database_password:-"aPassword"}
 
-if [ -z "$DB_PASSWORD" ]
-then
-  DB_PASSWORD="aPassword"
-fi
-
-if [ -z "$RABBITMQ_HOST" ]
-then
-  RABBITMQ_HOST="localhost"
-fi
-
-if [ -z "$RABBITMQ_USERNAME" ]
-then
-  RABBITMQ_USERNAME="guest"
-fi
-
-if [ -z "$RABBITMQ_PASSWORD" ]
-then
-  RABBITMQ_PASSWORD="guest"
-fi
-
-if [ -z "$RABBITMQ_VHOST" ]
-then
-  RABBITMQ_VHOST="/"
-fi
+rabbitmq_host=${rmq_host:-"localhost"}
+rabbitmq_user=${rmq_user:-"guest"}
+rabbitmq_password=${rmq_password:-"guest"}
+rabbitmq_vhost=${rmq_virtual_host:-"/"}
 
 function cleanup_rabbitmq() {
   echo -n "INFO: Purging rabbitmq queue 'socorro.normal'..."
-  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > /dev/null 2>&1
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' > /dev/null 2>&1
   echo " Done."
   echo -n "INFO: Purging rabbitmq queue 'socorro.priority'..."
-  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.priority' --test_rabbitmq.rabbitmq_host=$RABBITMQ_HOST --test_rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --test_rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --test_rabbitmq.rabbitmq_vhost=$RABBITMQ_VHOST > /dev/null 2>&1
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.priority' > /dev/null 2>&1
   echo " Done."
 }
 
@@ -96,7 +77,7 @@ export PYTHONPATH=.
 echo " Done."
 
 echo -n "INFO: setting up database..."
-python socorro/external/postgresql/setupdb_app.py --database_password=$DB_PASSWORD --database_name=breakpad --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
+python socorro/external/postgresql/setupdb_app.py --database_name=breakpad --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "setupdb_app.py failed, check setupdb.log"
@@ -129,10 +110,10 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST --storage.storage1.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST > processor.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --storage.storage1.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > collector.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/processor.ini  > processor.log 2>&1 &
 sleep 1
-python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_password=$DB_PASSWORD --rabbitmq.host=$RABBITMQ_HOST --rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --rabbitmq.virtual_host=$RABBITMQ_VHOST --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > middleware.log 2>&1 &
+python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > middleware.log 2>&1 &
 echo " Done."
 
 function retry() {
