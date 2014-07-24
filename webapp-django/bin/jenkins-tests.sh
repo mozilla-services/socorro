@@ -16,11 +16,6 @@ find . -name '*.pyc' -exec rm {} \;
 # RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
 export PATH=$PATH:/usr/pgsql-9.2/bin/
 
-if [ ! -d "vendor" ]; then
-    echo "No /vendor... crap."
-    exit 1
-fi
-
 echo "Linting..."
 git ls-files crashstats | xargs check.py | bin/linting.py
 
