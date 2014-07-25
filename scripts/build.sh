@@ -49,7 +49,7 @@ elasticSearchHostname=$elasticSearchHostname \
 elasticsearch_urls=$elasticsearch_urls \
 rmq_host=$rmq_host \
 rmq_virtual_host=$rmq_virtual_host \
-rmq_user=$rmq_host \
+rmq_user=$rmq_user \
 rmq_password=$rmq_password
 
 if [ "$1" != "leeroy" ]
