@@ -53,7 +53,7 @@ echo "My path is $PATH"
 # Set flag to generate coverage report
 if [ "$1" != "leeroy" ]
 then
-    RUN_COVERAGE=True
+    export RUN_COVERAGE="True"
 fi
 
 # run unit tests
