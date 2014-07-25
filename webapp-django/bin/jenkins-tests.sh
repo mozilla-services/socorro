@@ -3,7 +3,6 @@
 # codebase.
 set -e
 
-DB_HOST="localhost"
 DB_USER="hudson"
 
 echo "Starting build on executor $EXECUTOR_NUMBER..."
