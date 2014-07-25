@@ -81,6 +81,5 @@ then
   rsync -a socorro-toolbox/src/main/pig/ analysis/
   # create the tarball
   make install PREFIX=builds/socorro
-  echo "$BUILD_NUMBER" > buids/socorro/JENKINS_BUILD_NUMBER
   tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
 fi
