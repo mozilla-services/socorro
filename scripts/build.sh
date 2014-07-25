@@ -51,7 +51,6 @@ then
 fi
 
 # run unit tests
-make test \
 database_username=$database_username \
 database_hostname=$database_hostname \
 database_password=$database_password \
@@ -63,7 +62,8 @@ elasticsearch_urls=$elasticsearch_urls \
 rmq_host=$rmq_host \
 rmq_virtual_host=$rmq_virtual_host \
 rmq_user=$rmq_user \
-rmq_password=$rmq_password
+rmq_password=$rmq_password \
+make test
 
 if [ "$1" != "leeroy" ]
 then
@@ -93,6 +93,7 @@ then
   rsync akela/target/*.jar analysis/
   rsync -a socorro-toolbox/src/main/pig/ analysis/
   # create the tarball
+  PREFIX=builds/socorro make install 
   make install PREFIX=builds/socorro
   if [ -z $BUILD_NUMBER ]
   then
