@@ -3,8 +3,6 @@
 # codebase.
 set -e
 
-DB_USER="hudson"
-
 echo "Starting build on executor $EXECUTOR_NUMBER..."
 
 . ../socorro-virtualenv/bin/activate
