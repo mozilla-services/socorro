@@ -8,7 +8,6 @@ VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = "."
 NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
 SETUPDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
-COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 JENKINS_CONF = jenkins.py.dist
