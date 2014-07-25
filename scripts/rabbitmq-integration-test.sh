@@ -21,9 +21,9 @@ then
   database_hostname="localhost"
 fi
 
-if [ -z "$DB_USER" ]
+if [ -z "$database_username" ]
 then
-  DB_USER="breakpad_rw"
+  database_username="breakpad_rw"
 fi
 
 if [ -z "$DB_PASSWORD" ]
@@ -103,7 +103,7 @@ export PYTHONPATH=.
 echo " Done."
 
 echo -n "INFO: setting up database..."
-python socorro/external/postgresql/setupdb_app.py --database_username=$DB_USER --database_password=$DB_PASSWORD --database_name=breakpad --database_hostname=$database_hostname --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
+python socorro/external/postgresql/setupdb_app.py --database_usernamename=$database_username --database_password=$DB_PASSWORD --database_name=breakpad --database_hostname=$database_hostname --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "setupdb_app.py failed, check setupdb.log"
@@ -115,7 +115,7 @@ popd >> setupdb.log 2>&1
 cleanup_rabbitmq
 
 echo -n "INFO: setting up 'weekly-reports-partitions' via crontabber..."
-python socorro/cron/crontabber_app.py --resource.postgresql.database_hostname=$database_hostname --secrets.postgresql.database_username=$DB_USER --secrets.postgresql.database_password=$DB_PASSWORD --job=weekly-reports-partitions --force >> setupdb.log 2>&1
+python socorro/cron/crontabber_app.py --resource.postgresql.database_hostname=$database_hostname --secrets.postgresql.database_usernamename=$database_username --secrets.postgresql.database_password=$DB_PASSWORD --job=weekly-reports-partitions --force >> setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "crontabber weekly-reports-partitions failed, check setupdb.log"
@@ -139,7 +139,7 @@ echo -n "INFO: starting up collector, processor and middleware..."
 python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --storage.storage1.host=$RABBITMQ_HOST --storage.storage1.rabbitmq_user=$RABBITMQ_USERNAME --storage.storage1.rabbitmq_password=$RABBITMQ_PASSWORD --storage.storage1.virtual_host=$RABBITMQ_VHOST --storage.storage1.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > collector.log 2>&1 &
 python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --processor.database_hostname=$database_hostname --new_crash_source.host=$RABBITMQ_HOST --new_crash_source.rabbitmq_user=$RABBITMQ_USERNAME --new_crash_source.rabbitmq_password=$RABBITMQ_PASSWORD --new_crash_source.virtual_host=$RABBITMQ_VHOST --destination.storage1.database_hostname=$database_hostname --registrar.database_hostname=$database_hostname > processor.log 2>&1 &
 sleep 1
-python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_hostname=$database_hostname --database.database_username=$DB_USER --database.database_password=$DB_PASSWORD --rabbitmq.host=$RABBITMQ_HOST --rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --rabbitmq.virtual_host=$RABBITMQ_VHOST --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > middleware.log 2>&1 &
+python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_hostname=$database_hostname --database.database_usernamename=$database_username --database.database_password=$DB_PASSWORD --rabbitmq.host=$RABBITMQ_HOST --rabbitmq.rabbitmq_user=$RABBITMQ_USERNAME --rabbitmq.rabbitmq_password=$RABBITMQ_PASSWORD --rabbitmq.virtual_host=$RABBITMQ_VHOST --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > middleware.log 2>&1 &
 echo " Done."
 
 function retry() {
