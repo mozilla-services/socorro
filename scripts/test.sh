@@ -11,6 +11,48 @@ ENV=env
 
 PYTHONPATH="."
 
+PG_RESOURCES=""
+if [ -n "$database_hostname" ]; then
+    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_hostname=$database_hostname"
+fi
+if [ -n "$database_username" ]; then
+    PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_username=$database_username"
+fi
+if [ -n "$database_password" ]; then
+    PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_password=$database_password"
+fi
+if [ -n "$database_port" ]; then
+    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_port=$database_port"
+fi
+if [ -n "$database_name" ]; then
+    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_name=$database_name"
+fi
+
+RMQ_RESOURCES=""
+if [ -n "$rmq_host" ]; then
+    RMQ_RESOURCES="$RMQ_RESOURCES resource.rabbitmq.host=$rmq_host"
+fi
+if [ -n "$rmq_virtual_host" ]; then
+    RMQ_RESOURCES="$RMQ_RESOURCES resource.rabbitmq.virtual_host=$rmq_virtual_host"
+fi
+if [ -n "$rmq_user" ]; then
+    RMQ_RESOURCES="$RMQ_RESOURCES secrets.rabbitmq.rabbitmq_user=$rmq_user"
+fi
+if [ -n "$rmq_password" ]; then
+    RMQ_RESOURCES="$RMQ_RESOURCES secrets.rabbitmq.rabbitmq_password=$rmq_password"
+fi
+
+ES_RESOURCES=""
+if [ -n "$elasticsearch_urls" ]; then
+    ES_RESOURCES="$ES_RESOURCES resource.elasticsearch.elasticsearch_urls=$elasticsearch_urls"
+fi
+if [ -n "$elasticSearchHostname" ]; then
+    ES_RESOURCES="$ES_RESOURCES resource.elasticsearch.elasticSearchHostname=$elasticSearchHostname"
+fi
+if [ -n "$elasticsearch_index" ]; then
+    ES_RESOURCES="$ES_RESOURCES resource.elasticsearch.elasticsearch_index=$elasticsearch_index"
+fi
+
 # jenkins only settings for the pre-configman components
 # can be removed when all tests are updated to use configman
 if [ $WORKSPACE ]; then
