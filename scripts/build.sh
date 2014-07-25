@@ -9,6 +9,19 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
+database_hostname=${database_hostname:-"localhost"}
+database_username=${database_username:-"test"}
+database_port=${database_port:-"5432"}
+database_password=${database_password:-"aPassword"}
+
+rmq_host=${rmq_host:-"localhost"}
+rmq_user=${rmq_user:-"guest"}
+rmq_password=${rmq_password:-"guest"}
+rmq_virtual_host=${rmq_virtual_host:-"/"}
+
+elasticSearchHostname=${elasticSearchHostname:-"localhost"}
+elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
+
 # any failures in this script should cause the build to fail
 set -e
 
@@ -39,12 +52,12 @@ fi
 
 # run unit tests
 make test \
-database_username=test \
+database_username=$database_username \
 database_hostname=$database_hostname \
-database_password=aPassword \
-database_port=5432 \
-database_superusername=test \
-database_superuserpassword=aPassword \
+database_password=$database_password \
+database_port=$database_port \
+database_superusername=$database_username \
+database_superuserpassword=$database_password \
 elasticSearchHostname=$elasticSearchHostname \
 elasticsearch_urls=$elasticsearch_urls \
 rmq_host=$rmq_host \
