@@ -13,6 +13,8 @@ export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
 export database_port=${database_port:-"5432"}
 export database_password=${database_password:-"aPassword"}
+export database_superusername=${database_superusername:-"test"}
+export database_superuserpassword=${database_superuserpassword:-"aPassword"}
 
 export rmq_host=${rmq_host:-"localhost"}
 export rmq_user=${rmq_user:-"guest"}
@@ -51,8 +53,6 @@ then
 fi
 
 # run unit tests
-database_superusername=$database_username \
-database_superuserpassword=$database_password \
 make test
 
 if [ "$1" != "leeroy" ]
