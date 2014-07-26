@@ -9,19 +9,6 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
-database_hostname=${database_hostname:-"localhost"}
-database_username=${database_username:-"test"}
-database_port=${database_port:-"5432"}
-database_password=${database_password:-"aPassword"}
-
-rmq_host=${rmq_host:-"localhost"}
-rmq_user=${rmq_user:-"guest"}
-rmq_password=${rmq_password:-"guest"}
-rmq_virtual_host=${rmq_virtual_host:-"/"}
-
-elasticSearchHostname=${elasticSearchHostname:-"localhost"}
-elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
-
 # any failures in this script should cause the build to fail
 set -e
 
@@ -50,20 +37,20 @@ then
   exit 1
 fi
 
+# Override hostnames for jenkins
+export DB_HOST="jenkins-pg92"
+export RABBITMQ_HOST="rabbitmq-zlb.webapp.phx1.mozilla.com"
+export RABBITMQ_USERNAME="socorro-jenkins"
+export RABBITMQ_PASSWORD="aPassword"
+export RABBITMQ_VHOST="socorro-jenkins"
+export ES_HOST="jenkins-es20"
+export ES_URLS="http://jenkins-es20:9200"
+
+# RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
+export PATH=/usr/pgsql-9.2/bin:$PATH
+echo "My path is $PATH"
 # run unit tests
-make test \
-database_username=$database_username \
-database_hostname=$database_hostname \
-database_password=$database_password \
-database_port=$database_port \
-database_superusername=$database_username \
-database_superuserpassword=$database_password \
-elasticSearchHostname=$elasticSearchHostname \
-elasticsearch_urls=$elasticsearch_urls \
-rmq_host=$rmq_host \
-rmq_virtual_host=$rmq_virtual_host \
-rmq_user=$rmq_user \
-rmq_password=$rmq_password
+make test database_username=test database_hostname=$DB_HOST database_password=aPassword database_port=5432 database_superusername=test database_superuserpassword=aPassword elasticSearchHostname=$ES_HOST elasticsearch_urls=$ES_URLS rmq_host=$RABBITMQ_HOST rmq_virtual_host=$RABBITMQ_VHOST rmq_user=$RABBITMQ_USERNAME rmq_password=$RABBITMQ_PASSWORD
 
 if [ "$1" != "leeroy" ]
 then
