@@ -62,7 +62,7 @@
               <th scope="row">Signature</th>
               <td>
                 {{ report.signature }}
-                <a href="{{ url('crashstats:report_list') }}?product={{ product }}&amp;signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
+                <a href="{{ url('crashstats:report_list') }}?product={{ report.product }}&amp;signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
                 <a href="{{ url('crashstats:query') }}?signature={{ report.signature|urlencode }}#advanced" class="sig-search" title="Search for more reports of this type">Search</a>
               </td>
             </tr>
@@ -320,11 +320,11 @@
 
         <div id="bugzilla" class="bugreporter">
           <p><strong>Bugzilla</strong> - Report this bug in
-          {% for bug_product in [product, 'Core', 'Plugins', 'Toolkit'] %}
+          {% for bug_product in [report.product, 'Core', 'Plugins', 'Toolkit'] %}
             {% if bug_product in bug_product_map %}
-              {% set bug_product = settings.BUG_PRODUCT_MAP[bug_product] %}
+              {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
             {% endif %}
-            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?bug_severity=critical&amp;keywords=crash&amp;product={{ bug_product }}&amp;op_sys={{ report.os_name }}&amp;rep_platform={{ report.cpu_name }}&amp;cf_crash_signature={{ '[@' | urlencode }} {{ report.signature|urlencode }}{{ ']' | urlencode }}&amp;short_desc=crash in {{ report.signature|urlencode }}&amp;comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }}.%0A=============================================================%0A" target="_blank">{{ bug_product }}</a>
+            <a href="https://bugzilla.mozilla.org/enter_bug.cgi?bug_severity=critical&amp;keywords=crash&amp;product={{ bug_product | urlencode }}&amp;op_sys={{ report.os_name }}&amp;rep_platform={{ report.cpu_name }}&amp;cf_crash_signature={{ '[@' | urlencode }} {{ report.signature|urlencode }}{{ ']' | urlencode }}&amp;short_desc=crash in {{ report.signature|urlencode }}&amp;comment=This bug was filed from the Socorro interface and is %0Areport bp-{{ report.uuid }}.%0A=============================================================%0A" target="_blank">{{ bug_product }}</a>
           {% endfor %}
           </p>
 

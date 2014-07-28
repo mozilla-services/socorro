@@ -3239,6 +3239,73 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')
+    def test_report_index_fennecandroid_report(self, rget, rpost):
+        # using \\n because it goes into the JSON string
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
+        comment0 = "This is a comment\\nOn multiple lines"
+        comment0 += "\\npeterbe@mozilla.com"
+        comment0 += "\\nwww.p0rn.com"
+        email0 = "some@emailaddress.com"
+        url0 = "someaddress.com"
+
+        def mocked_get(url, params, **options):
+            if '/crash_data' in url:
+                assert 'datatype' in params
+
+                if params['datatype'] == 'meta':
+                    return Response(SAMPLE_META % (email0, url0))
+                if params['datatype'] == 'unredacted':
+                    raw_crash_json = SAMPLE_UNREDACTED % (
+                        dump,
+                        comment0
+                    )
+                    raw_crash_json = json.loads(raw_crash_json)
+                    raw_crash_json['product'] = 'WinterSun'
+
+                    return Response(raw_crash_json)
+
+            if 'correlations/signatures' in url:
+                return Response("""
+                {
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ],
+                    "total": 2
+                }
+                """)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response(BUG_STATUS)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+
+        url = reverse('crashstats:report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+
+        bug_product_map = {
+            'WinterSun': 'Winter Is Coming'
+        }
+        with self.settings(BUG_PRODUCT_MAP=bug_product_map):
+            response = self.client.get(url)
+            eq_(response.status_code, 200)
+            doc = pyquery.PyQuery(response.content)
+
+            link = doc('#bugzilla a[target="_blank"]').eq(0)
+            eq_(link.text(), 'Winter Is Coming')
+            ok_('product=Winter+Is+Coming' in link.attr('href'))
+
+            # also, the "More Reports" link should have WinterSun in it
+            link = doc('a.sig-overview').eq(0)
+            ok_('product=WinterSun' in link.attr('href'))
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
     def test_report_index_odd_product_and_version(self, rget, rpost):
         """If the processed JSON references an unfamiliar product and
         version it should not use that to make links in the nav to
