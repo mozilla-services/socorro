@@ -83,7 +83,7 @@ then
   rsync akela/target/*.jar analysis/
   rsync -a socorro-toolbox/src/main/pig/ analysis/
   # create the tarball
-  PREFIX=builds/socorro make install 
+  PREFIX=builds/socorro make install
   make install PREFIX=builds/socorro
   if [ -z $BUILD_NUMBER ]
   then
