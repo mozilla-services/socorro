@@ -2,7 +2,6 @@
 
 VIRTUALENV=$PWD/socorro-virtualenv
 
-COVERAGE=$VIRTUALENV/bin/coverage
 NOSE="${VIRTUALENV}/bin/nosetests socorro -s --with-xunit"
 SETUPDB="${VIRTUALENV}/bin/python ./socorro/external/postgresql/setupdb_app.py"
 JENKINS_CONF=jenkins.py.dist
@@ -87,10 +86,8 @@ PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --databas
 PYTHONPATH=$PYTHONPATH $VIRTUALENV/bin/alembic -c config/alembic.ini downgrade -1
 PYTHONPATH=$PYTHONPATH $VIRTUALENV/bin/alembic -c config/alembic.ini upgrade +1
 
-# run tests with coverage
-rm -f coverage.xml
-$ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $COVERAGE run $NOSE
-$COVERAGE xml
+# run tests
+$ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
 
 # test webapp
 cd webapp-django; ./bin/jenkins.sh
