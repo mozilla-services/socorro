@@ -6,7 +6,10 @@ if [[ ! "$(type -p lessc)" ]]; then
     printf "\e[0;32mlessc not found! less must be installed and lessc on your path to build socorro.\e[0m\n" && exit 1
 fi
 
-[ -d "$VIRTUAL_ENV" ] || virtualenv -p python2.6 $PWD/socorro-virtualenv
+if [ ! -d "$VIRTUAL_ENV" ]; then
+    virtualenv -p python2.6 ${PWD}/socorro-virtualenv
+    source ${PWD}/socorro-virtualenv/bin/activate
+fi
 
 # install dev + prod dependencies
 ${VIRTUAL_ENV}/bin/pip install tools/peep-1.2.tar.gz
