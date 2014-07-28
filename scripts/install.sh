@@ -1,7 +1,6 @@
 #! /bin/bash
 
 export PREFIX=${PREFIX:-/data/socorro}
-VIRTUALENV=$PWD/socorro-virtualenv
 
 # package up the tarball in $PREFIX
 # create base directories
@@ -9,7 +8,7 @@ mkdir -p $PREFIX/application
 
 # copy to install directory
 rsync -a config $PREFIX/application
-rsync -a $VIRTUALENV $PREFIX
+rsync -a ${VIRTUAL_ENV} $PREFIX
 rsync -a socorro $PREFIX/application
 rsync -a scripts $PREFIX/application
 rsync -a tools $PREFIX/application

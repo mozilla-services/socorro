@@ -1,9 +1,7 @@
 #! /bin/bash
 
-VIRTUALENV=$PWD/socorro-virtualenv
-
-NOSE="${VIRTUALENV}/bin/nosetests socorro -s --with-xunit"
-SETUPDB="${VIRTUALENV}/bin/python ./socorro/external/postgresql/setupdb_app.py"
+NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s --with-xunit"
+SETUPDB="$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py"
 JENKINS_CONF=jenkins.py.dist
 
 ENV=env
@@ -83,8 +81,8 @@ popd
 
 PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --logging.stderr_error_logging_level=40 --unlogged
 
-PYTHONPATH=$PYTHONPATH $VIRTUALENV/bin/alembic -c config/alembic.ini downgrade -1
-PYTHONPATH=$PYTHONPATH $VIRTUALENV/bin/alembic -c config/alembic.ini upgrade +1
+PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrade -1
+PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade +1
 
 # run tests
 $ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
