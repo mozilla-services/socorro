@@ -14,6 +14,5 @@ echo "Linting..."
 git ls-files crashstats | xargs check.py | bin/linting.py
 
 echo "Starting tests..."
-FORCE_DB=true coverage run manage.py test --noinput --with-xunit
-coverage xml $(find crashstats lib -name '*.py')
+FORCE_DB=true python manage.py test --noinput
 echo "Tests finished."

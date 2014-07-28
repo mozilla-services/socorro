@@ -94,43 +94,12 @@ example::
 
   [nosetests]
   verbosity=2
-  with-coverage=1
-  cover-package=socorro
 
 Verbosity [NOSE_VERBOSE]
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 This command will set verbosity level: 4=all, 3=no script, 2=no info,
 1=no warnings, 0=none. Default is verbosity=1.
-
-Coverage [NOSE_WITH_COVERAGE]
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The coverage plugin allows us to know what percentage of source code
-has been tested. It is also useful to describe which specific lines
-of source code were not tested yet. It is a `Ned Batchelder’s coverage
-module <http://nose.readthedocs.org/en/latest/plugins/cover.html>`_
-which reports covers all Python source module imported after the test
-start.
-
-All socorro unit tests coverage::
-
-  nosetests socorro --with-coverage --cover-package=socorro
-
-Specific package coverage::
-
-  nosetests socorro/unittest/module --with-coverage --cover-package=socorro.module
-
-To produce HTML coverage report::
-
-  nosetests --with-coverage
-  coverage html
-  open htmlcov/index.html
-
-Plugin Xunit [NOSE_WITH_XUNIT]
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Provides test results in XUnit XML format, designed specially for Jenkins.
 
 Output [NOSE_NOCAPTURE]
 ^^^^^^^^^^^^^^^^^^^^^^^
