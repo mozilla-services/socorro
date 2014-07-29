@@ -1,5 +1,7 @@
 #! /bin/bash
 
+export VIRTUAL_ENV=${VIRTUAL_ENV:-"$PWD/socorro-virtualenv"}
+
 git submodule update --init --recursive
 
 if [[ ! "$(type -p lessc)" ]]; then
@@ -7,10 +9,9 @@ if [[ ! "$(type -p lessc)" ]]; then
 fi
 
 if [ ! -d "$VIRTUAL_ENV" ]; then
-    virtualenv -p python2.6 ${PWD}/socorro-virtualenv
-    source ${PWD}/socorro-virtualenv/bin/activate
-    export VIRTUAL_ENV
+    virtualenv -p python2.6 ${VIRTUAL_ENV}
 fi
+source "$VIRTUAL_ENV/bin/activate"
 
 # install dev + prod dependencies
 ${VIRTUAL_ENV}/bin/pip install tools/peep-1.2.tar.gz
