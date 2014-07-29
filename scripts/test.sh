@@ -1,6 +1,6 @@
 #! /bin/bash
 
-NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s --with-xunit"
+NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s"
 SETUPDB="$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py"
 JENKINS_CONF=jenkins.py.dist
 
