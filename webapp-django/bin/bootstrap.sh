@@ -5,7 +5,7 @@
 # by WSGI.
 set -e
 
-. ../socorro-virtualenv/bin/activate
+source ${VIRTUAL_ENV:-"../socorro-virtualenv"}/bin/activate
 
 if [ ! -f crashstats/settings/local.py ]
 then

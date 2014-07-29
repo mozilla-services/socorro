@@ -9,18 +9,20 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
-database_hostname=${database_hostname:-"localhost"}
-database_username=${database_username:-"test"}
-database_port=${database_port:-"5432"}
-database_password=${database_password:-"aPassword"}
+export database_hostname=${database_hostname:-"localhost"}
+export database_username=${database_username:-"test"}
+export database_port=${database_port:-"5432"}
+export database_password=${database_password:-"aPassword"}
+export database_superusername=${database_superusername:-"test"}
+export database_superuserpassword=${database_superuserpassword:-"aPassword"}
 
-rmq_host=${rmq_host:-"localhost"}
-rmq_user=${rmq_user:-"guest"}
-rmq_password=${rmq_password:-"guest"}
-rmq_virtual_host=${rmq_virtual_host:-"/"}
+export rmq_host=${rmq_host:-"localhost"}
+export rmq_user=${rmq_user:-"guest"}
+export rmq_password=${rmq_password:-"guest"}
+export rmq_virtual_host=${rmq_virtual_host:-"/"}
 
-elasticSearchHostname=${elasticSearchHostname:-"localhost"}
-elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
+export elasticSearchHostname=${elasticSearchHostname:-"localhost"}
+export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
 
 # any failures in this script should cause the build to fail
 set -e
@@ -50,20 +52,9 @@ then
   exit 1
 fi
 
+source scripts/bootstrap.sh
 # run unit tests
-make test \
-database_username=$database_username \
-database_hostname=$database_hostname \
-database_password=$database_password \
-database_port=$database_port \
-database_superusername=$database_username \
-database_superuserpassword=$database_password \
-elasticSearchHostname=$elasticSearchHostname \
-elasticsearch_urls=$elasticsearch_urls \
-rmq_host=$rmq_host \
-rmq_virtual_host=$rmq_virtual_host \
-rmq_user=$rmq_user \
-rmq_password=$rmq_password
+source scripts/test.sh
 
 if [ "$1" != "leeroy" ]
 then
@@ -93,8 +84,9 @@ then
   rsync akela/target/*.jar analysis/
   rsync -a socorro-toolbox/src/main/pig/ analysis/
   # create the tarball
-  make install PREFIX=builds/socorro
-  if [ -n "$BUILD_NUMBER" ]
+
+  PREFIX=builds/socorro source ./scripts/install.sh
+  if [ -n $BUILD_NUMBER ]
   then
     echo "$BUILD_NUMBER" > builds/socorro/JENKINS_BUILD_NUMBER
   fi
