@@ -88,4 +88,6 @@ PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade 
 $ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
 
 # test webapp
-cd webapp-django; ./bin/jenkins.sh
+pushd webapp-django
+./bin/jenkins.sh
+popd

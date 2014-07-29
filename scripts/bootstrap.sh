@@ -18,4 +18,6 @@ ${VIRTUAL_ENV}/bin/pip install tools/peep-1.2.tar.gz
 ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
 # bootstrap webapp
-cd webapp-django; ./bin/bootstrap.sh
+pushd webapp-django
+./bin/bootstrap.sh
+popd
