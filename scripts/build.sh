@@ -52,8 +52,9 @@ then
   exit 1
 fi
 
+source scripts/bootstrap.sh
 # run unit tests
-make test
+source scripts/test.sh
 
 if [ "$1" != "leeroy" ]
 then
@@ -83,8 +84,9 @@ then
   rsync akela/target/*.jar analysis/
   rsync -a socorro-toolbox/src/main/pig/ analysis/
   # create the tarball
-  PREFIX=builds/socorro make install
-  if [ -n "$BUILD_NUMBER" ]
+
+  PREFIX=builds/socorro source ./scripts/install.sh
+  if [ -n $BUILD_NUMBER ]
   then
     echo "$BUILD_NUMBER" > builds/socorro/JENKINS_BUILD_NUMBER
   fi
