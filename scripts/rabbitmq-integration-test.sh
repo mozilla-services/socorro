@@ -94,7 +94,7 @@ function fatal() {
 }
 
 echo -n "INFO: setting up environment..."
-. socorro-virtualenv/bin/activate >> setup.log 2>&1
+source ${VIRTUAL_ENV:-"socorro-virtualenv"}/bin/activate >> setup.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "could activate virtualenv"
