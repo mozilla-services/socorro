@@ -9,6 +9,7 @@ fi
 if [ ! -d "$VIRTUAL_ENV" ]; then
     virtualenv -p python2.6 ${PWD}/socorro-virtualenv
     source ${PWD}/socorro-virtualenv/bin/activate
+    export VIRTUAL_ENV
 fi
 
 # install dev + prod dependencies
