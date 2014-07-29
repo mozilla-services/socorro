@@ -1,6 +1,6 @@
 #! /bin/bash
 
-PREFIX=/data/socorro
+export PREFIX=${PREFIX:-/data/socorro}
 VIRTUALENV=$PWD/socorro-virtualenv
 
 # package up the tarball in $PREFIX
