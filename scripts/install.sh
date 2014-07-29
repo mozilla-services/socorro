@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -ex
 
 export PREFIX=${PREFIX:-/data/socorro}
 

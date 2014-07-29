@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -ex
 
 NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s"
 SETUPDB="$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py"

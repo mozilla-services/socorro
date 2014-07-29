@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -ex
 
 export VIRTUAL_ENV=${VIRTUAL_ENV:-"$PWD/socorro-virtualenv"}
 

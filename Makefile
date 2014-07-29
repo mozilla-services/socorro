@@ -7,16 +7,16 @@
 all: test
 
 test: bootstrap
-	bash -ex ./scripts/test.sh
+	bash ./scripts/test.sh
 
 bootstrap:
-	bash -ex ./scripts/bootstrap.sh
+	bash ./scripts/bootstrap.sh
 
 install: bootstrap
-	bash -ex ./scripts/install.sh
+	bash ./scripts/install.sh
 
 lint:
-	bash -ex ./scripts/lint.sh
+	bash ./scripts/lint.sh
 
 clean:
 	bash ./scripts/clean.sh
@@ -25,7 +25,7 @@ breakpad:
 	PREFIX=`pwd`/stackwalk/ SKIP_TAR=1 ./scripts/build-breakpad.sh
 
 json_enhancements_pg_extension: bootstrap
-	bash -e ./scripts/json-enhancements.sh
+	bash ./scripts/json-enhancements.sh
 
 stackwalker:
 	# Build JSON stackwalker

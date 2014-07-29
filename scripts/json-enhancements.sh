@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -e
 
 # This is only run manually, as it is a one-time operation
 # to be performed at system installation time, rather than
