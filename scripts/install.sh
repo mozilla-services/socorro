@@ -22,7 +22,7 @@ rsync -a alembic $PREFIX/application
 rsync -a webapp-django $PREFIX/
 
 # copy default config files
-cd $PREFIX/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
+cd $PREFIX/application/scripts/config; for file in *.py.dist; do cp $file `basename $file .dist`; done
 
 # record current git revision in install dir
 git rev-parse HEAD > $PREFIX/application/socorro/external/postgresql/socorro_revision.txt
