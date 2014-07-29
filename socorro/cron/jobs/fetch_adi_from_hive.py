@@ -2,12 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import codecs
 import datetime
 import urllib2
 import csv
 import getpass
 import os
 import tempfile
+import unicodedata
 
 import pyhs2
 
@@ -142,9 +144,14 @@ class FetchADIFromHiveCronApp(BaseCronApp):
 
     required_config.add_option(
         'timeout',
-        default=30 * 60, # 30 minutes
+        default=30 * 60,  # 30 minutes
         doc='number of seconds to wait before timing out')
 
+    @staticmethod
+    def remove_control_characters(s):
+        if isinstance(s, str):
+            s = unicode(s, 'utf-8', errors='replace')
+        return ''.join(c for c in s if unicodedata.category(c)[0] != "C")
 
     def run(self, connection, date):
         target_date = (date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
@@ -157,7 +164,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
             )
         )
         try:
-            with open(raw_adi_logs_pathname, 'w') as f:
+            with codecs.open(raw_adi_logs_pathname, 'w', 'utf-8') as f:
                 hive = pyhs2.connect(
                     host=self.config.hive_host,
                     port=self.config.hive_port,
@@ -173,20 +180,21 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                 query = self.config.query % target_date
                 cur.execute(query)
                 for row in cur:
-                    if None not in row:
-                        f.write(
-                            "\t"
-                            .join(
-                                urllib2.unquote(v.encode('utf-8', 'ignore'))
-                                    .replace('\\', '\\\\')
-                                    .replace('\0', '')
-                                if isinstance(v, basestring) else str(v)
-                                for v in row
-                            )
+                    if None in row:
+                        continue
+                    f.write(
+                        "\t"
+                        .join(
+                            self.remove_control_characters(
+                                urllib2.unquote(v)
+                            ).replace('\\', '\\\\')
+                            if isinstance(v, basestring) else str(v)
+                            for v in row
                         )
-                        f.write("\n")
+                    )
+                    f.write("\n")
 
-            with open(raw_adi_logs_pathname, 'r') as f:
+            with codecs.open(raw_adi_logs_pathname, 'r', 'utf-8') as f:
                 pgcursor = connection.cursor()
                 pgcursor.copy_from(
                     f,
