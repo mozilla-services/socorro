@@ -10,6 +10,10 @@ services:
   - elasticsearch
   - memcached
 
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y node-less libxml2-dev libxslt1-dev
+
 install:
   - make bootstrap
 
