@@ -19,5 +19,10 @@ before_install:
 install:
   - make bootstrap
 
+before_script:
+    - psql -c 'create database socorro_test;' -U postgres
+    - psql -c 'create database socorro_integration_test;' -U postgres
+    - psql -c 'create database socorro_migration_test;' -U postgres
+
 script:
   - ./scripts/build.sh
