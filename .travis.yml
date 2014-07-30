@@ -11,7 +11,7 @@ services:
   - elasticsearch
 
 install:
-  - python setup.py install
+  - make bootstrap
 
 script:
-  - python setup.py test
+  - ./scripts/build.sh
