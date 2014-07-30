@@ -14,7 +14,8 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y npm libxml2-dev libxslt1-dev
   - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.9.deb
-  - sudo dpkg -i elasticsearch-0.90.9.deb
+  - sudo dpkg -i elasticsearch-0.90.13.deb
+  - sudo service elasticsearch restart
   - npm install -g less
   - sudo ln -s /usr/local/lib/node_modules/less/bin/lessc /usr/local/bin
 
