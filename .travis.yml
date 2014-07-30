@@ -20,6 +20,7 @@ install:
   - make bootstrap
 
 before_script:
+    - psql template1 -c 'create user test with encrypted password "aPassword" superuser'
     - psql -c 'create database socorro_test;' -U postgres
     - psql -c 'create database socorro_integration_test;' -U postgres
     - psql -c 'create database socorro_migration_test;' -U postgres
