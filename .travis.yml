@@ -12,7 +12,9 @@ services:
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y node-less libxml2-dev libxslt1-dev
+  - sudo apt-get install -y npm libxml2-dev libxslt1-dev
+  - sudo npm install --global less
+  - sudo ln -s /usr/local/lib/node_modules/less/bin/lessc /usr/local/bin
 
 install:
   - make bootstrap
