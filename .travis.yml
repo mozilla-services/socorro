@@ -6,6 +6,10 @@ python:
 addons:
   postgresql: "9.3"
 
+services:
+  - rabbitmq
+  - elasticsearch
+
 install:
   - python setup.py install
 
