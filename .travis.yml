@@ -8,6 +8,7 @@ addons:
 services:
   - rabbitmq
   - elasticsearch
+  - memcached
 
 install:
   - make bootstrap
