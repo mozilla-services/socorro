@@ -56,39 +56,31 @@ source scripts/bootstrap.sh
 # run unit tests
 source scripts/test.sh
 
-if [ "$1" != "leeroy" ]
-then
-  # pull pre-built, known version of breakpad
-  make clean
-  wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
-  tar -zxf breakpad.tar.gz
-  mv breakpad stackwalk
-  make stackwalker
-fi
+# pull pre-built, known version of breakpad
+make clean
+wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
+tar -zxf breakpad.tar.gz
+mv breakpad stackwalk
+make stackwalker
 
 # run socorro integration test
 echo "Running integration test..."
 ./scripts/rabbitmq-integration-test.sh --destroy
 ./scripts/elasticsearch-integration-test.sh
 
-if [ "$1" != "leeroy" ]
+# package socorro.tar.gz for distribution
+mkdir builds/
+# make the analysis
+git submodule update --init socorro-toolbox akela
+cd akela && mvn package; cd ../
+cd socorro-toolbox && mvn package; cd ../
+mkdir -p analysis
+rsync socorro-toolbox/target/*.jar analysis/
+rsync akela/target/*.jar analysis/
+rsync -a socorro-toolbox/src/main/pig/ analysis/
+PREFIX=builds/socorro source ./scripts/install.sh
+if [ -n $BUILD_NUMBER ]
 then
-  # package socorro.tar.gz for distribution
-  mkdir builds/
-  # make the analysis
-  git submodule update --init socorro-toolbox akela
-  cd akela && mvn package; cd ../
-  cd socorro-toolbox && mvn package; cd ../
-  mkdir -p analysis
-  rsync socorro-toolbox/target/*.jar analysis/
-  rsync akela/target/*.jar analysis/
-  rsync -a socorro-toolbox/src/main/pig/ analysis/
-  # create the tarball
-
-  PREFIX=builds/socorro source ./scripts/install.sh
-  if [ -n $BUILD_NUMBER ]
-  then
-    echo "$BUILD_NUMBER" > builds/socorro/JENKINS_BUILD_NUMBER
-  fi
-  tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
+  echo "$BUILD_NUMBER" > builds/socorro/JENKINS_BUILD_NUMBER
 fi
+tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
