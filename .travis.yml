@@ -16,9 +16,6 @@ before_install:
   - npm install -g less
   - sudo ln -s /usr/local/lib/node_modules/less/bin/lessc /usr/local/bin
 
-install:
-  - make bootstrap
-
 before_script:
     - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
     - psql -c 'create database socorro_test;' -U postgres
