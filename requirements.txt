@@ -106,9 +106,9 @@ cssselect==0.9.1
 https://github.com/jbalogh/check/archive/9c314d7c16408f876ee89f06a62e40dea4c98a02.zip#egg=check
 # sha256: l2sTklJ8dzg-uCfef9RNrK8Sl6Y6oN9Sb0evMC9HnVQ
 path.py==5.1
-# sha256: Yuh_1UU1-5MrSk2Uho21IyV6EDHIvGvTWMIBVDPmRts
+# sha256: FbQhMbJfN2Fl0ZX-ThewooMRGCqvkzDV61dbvtpaaYk
 pep8>=1.4.5
-# sha256: rEVxaVwQzhU2vNuhopS58tPmzJ0OoXG2fVCghkzj4EI
+# sha256: P6gKELNtUWhr93RPXcmWIs1cmM6O1kAi5imGiq_Bd2k
 pyflakes==0.8.1
 # sha256: LvU9cTRTDj8ZMnNSIRpz3us9QQa1uFewOwMfonIteEU
 https://github.com/BradRuderman/pyhs2/archive/48d22aff9d23db1221ad913670aaad90a73bcbc7.zip#egg=pyhs2
