@@ -3,10 +3,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
+import psycopg2
 
 from socorro.external import BadArgumentError
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
+from .dbapi2_util import single_row_sql
+
 
 logger = logging.getLogger("webapi")
 
@@ -207,3 +210,24 @@ class Products(PostgreSQLBase):
         return {
             "hits": products
         }
+
+    def post(self, **kwargs):
+        """adding a new product"""
+        filters = [
+            ("product", None, "str"),
+            ("version", None, "str"),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+        with self.get_connection() as connection:
+            try:
+                result, = single_row_sql(
+                    connection,
+                    "SELECT add_new_product(%s, %s)",
+                    (params['product'], params['version']),
+                )
+            except psycopg2.Error:
+                connection.rollback()
+                return False
+            else:
+                connection.commit()
+            return result
