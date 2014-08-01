@@ -1470,6 +1470,7 @@ class Crontabber(DeclarativeBase):
     error_count = Column(u'error_count', INTEGER(), server_default=text('0'))
     depends_on = Column(u'depends_on', ARRAY(TEXT()))
     last_error = Column(u'last_error', JSON())
+    ongoing = Column(u'ongoing', TIMESTAMP(timezone=True))
 
     __table_args__ = (
         Index('crontabber_app_name_idx', app_name, unique=True),
