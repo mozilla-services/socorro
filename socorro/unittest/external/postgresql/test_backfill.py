@@ -29,6 +29,43 @@ class TestBackfill(PostgreSQLTestCase):
 
         for table in fakedata.tables:
             table = table(days=1)
+            table.releases = {
+                'WaterWolf': {
+                    'channels': {
+                        'Nightly': {
+                            'versions': [{
+                                'number': '18.0',
+                                'probability': 0.5,
+                                'buildid': '%s000020'
+                            }],
+                            'adu': '10',
+                            'repository': 'nightly',
+                            'throttle': '1',
+                            'update_channel': 'nightly',
+                        },
+                    },
+                    'crashes_per_hour': '5',
+                    'guid': '{waterwolf@example.com}'
+                },
+                'B2G': {
+                    'channels': {
+                        'Nightly': {
+                            'versions': [{
+                                'number': '18.0',
+                                'probability': 0.5,
+                                'buildid': '%s000020'
+                            }],
+                            'adu': '10',
+                            'repository': 'nightly',
+                            'throttle': '1',
+                            'update_channel': 'nightly',
+                        },
+                    },
+                    'crashes_per_hour': '5',
+                    'guid': '{waterwolf@example.com}'
+                }
+            }
+
 
             table_name = table.table
             table_columns = table.columns
