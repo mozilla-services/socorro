@@ -9,6 +9,11 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
+export MAVEN_HOME=${MAVEN_HOME:-"/opt/maven"}
+export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/java"}
+
+export PATH=$MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
+
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
 export database_port=${database_port:-"5432"}
@@ -26,6 +31,10 @@ export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
 
 # any failures in this script should cause the build to fail
 set -e
+
+# Install Maven
+wget http://apache.arvixe.com/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
+sudo su -c "tar -zxvf apache-maven-3.2.2-bin.tar.gz -C /opt/ && cd /opt && mv apache-maven-3.2.2 maven" 
 
 make clean
 
