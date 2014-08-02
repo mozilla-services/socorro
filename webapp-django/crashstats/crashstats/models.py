@@ -957,6 +957,8 @@ class RawCrash(SocorroMiddleware):
         'BIOS_Manufacturer',
         'upload_file_minidump_*',
         'useragent_locale',
+        'AdapterSubsysID',
+        'AdapterDriverVersion',
     )
 
     API_CLEAN_SCRUB = (
