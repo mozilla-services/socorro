@@ -10,7 +10,7 @@
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
 export MAVEN_HOME=${MAVEN_HOME:-"/opt/maven"}
-export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/java"}
+export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/jre-openjdk/"}
 
 export PATH=$MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
 

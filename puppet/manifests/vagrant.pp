@@ -90,6 +90,7 @@ class webapp::socorro {
       'libxslt-devel',
       'openldap-devel',
       'java-1.7.0-openjdk',
+      'java-1.7.0-openjdk-devel',
       'yum-plugin-fastestmirror',
       'httpd',
       'mod_wsgi',
