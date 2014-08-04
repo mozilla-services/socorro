@@ -452,7 +452,12 @@
               <tbody>
                 {% for module in parsed_dump.modules %}
                 <tr class="{%if module.missing_symbols %}missingsymbols{% endif %}">
-                  <td>{{ module.filename }}</td>
+                  <td>
+                      {%if module.missing_symbols %}
+                        <span class="row-notice" title="missing symbol">&Oslash;</span>
+                      {% endif %}
+                      {{ module.filename }}
+                  </td>
                   <td>{{ module.version }}</td>
                   <td>{{ module.debug_id }}</td>
                   <td>{{ module.debug_file }}</td>
