@@ -132,8 +132,8 @@ https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-se
 https://github.com/mozilla/funfactory/archive/6b797bb.zip#egg=funfactory
 # sha256: B-lA57jFsdXYf3h9luYXt_gbsep2FZ4ZIvPHvzt0Y4Y
 https://github.com/jbalogh/test-utils/archive/4ae9327.zip#egg=test-utils
-# sha256: UXatpPjasXm5Y7Ty6MDkUEbcSXP3n5itRb66J3usPjY
-https://github.com/jbalogh/jingo/archive/5e985a5.zip#egg=jingo
+# sha256: o71QUd0X6dUOip8tNiUI6C1wYwEP3AbV4HzjYI54D-Y
+jingo==0.7
 # sha256: nc6AOA28EXa-GdHOg2C5QC4d5SpHNG_3WeV-3zgxHRw
 https://github.com/django-nose/django-nose/archive/10475f1.zip#egg=django-nose
 # sha256: vOWl5zvacyobs3P8ofRyh7uZ7MoYS7kPJh5VymTCBh4
