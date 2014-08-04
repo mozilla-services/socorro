@@ -85,7 +85,7 @@ DEV = True
 # offline compression, running the test suite will be 10 times faster
 # but you'll need to remember to first run:
 #     ./manage.py collectstatic --noinput
-#     ./manage.py compress_jingo --force
+#     ./manage.py compress --force --engine=jinja2
 # at least once every time any of the static files change.
 #COMPRESS_OFFLINE = True
 
