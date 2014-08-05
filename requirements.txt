@@ -98,8 +98,6 @@ django-ratelimit==0.3.0
 django-waffle==0.9.1
 # sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
 Jinja2==2.5.5
-# sha256: rxL5lFTolenkMMdXI8O5QZwLzNDqd4A2YtaprFb2Qls
-py-bcrypt==0.3
 # sha256: BTWn4nAUh0snrjpNM-h0njRb36YnZhlSCLeZa_EQBoI
 cssselect==0.9.1
 # sha256: 1ugIz8yalSg5O269fnT23pd4f22syV4o9cg2d7YAdRc
