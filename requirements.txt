@@ -60,6 +60,7 @@ requests==1.2.3
 # sha256: K89b7bUyilYzBFp9RnhNM5POlAyUnAkMr111ttMWNGY
 simplejson==2.5.0
 # sha256: M4j8GiynpdQmG00ePYtzQsv0vxz7NwIxHGCTIUMs7Xg
+# sha256: eoQsn4gsCyqxBk1We7n_9qIcnvvD2Zkgg61hk3h-05M
 six==1.7.3
 # sha256: RdsWgxKmgg_XhpfHtv0BlvOvkiyOvIhUDt0Nb6_tVU0
 statsd==2.1.2
@@ -143,6 +144,8 @@ cef==0.5
 # sha256: -fUE8yboUH-tNZdMGuX5HUpzX7M-VWtu2PXsEGBUpHM
 https://github.com/mozilla/nuggets/archive/ce50688.zip#egg=nuggets
 # sha256: 53T3tTehlADKaH9I01KrdGFzKsQThd2I_a1Hie-tKcU
+# sha256: qI7Y-5I6U8cMLEb75FCLX4Fka0sBQB8VaKghZxszIVw
 django-appconf==0.6
 # sha256: UE5EGWeseGBKs18DABj8mm-icOam6YRx0jEf139wZ0s
+# sha256: smA0Iw78731g5SZ4kO2mVt_EnFZ_JxJdkH7uT-f5puw
 django-compressor==1.4
