@@ -36,7 +36,6 @@ INSTALLED_APPS = (
     '%s.manage' % PROJECT_MODULE,
     '%s.supersearch' % PROJECT_MODULE,
     '%s.signature' % PROJECT_MODULE,
-    'jingo_offline_compressor',
     '%s.auth' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
@@ -55,6 +54,14 @@ def JINJA_CONFIG():
     config = funfactory_JINJA_CONFIG()
     config['extensions'].remove('tower.template.i18n')
     return config
+
+
+def COMPRESS_JINJA2_GET_ENVIRONMENT():
+    from jingo import env
+    from compressor.contrib.jinja2ext import CompressorExtension
+    env.add_extension(CompressorExtension)
+
+    return env
 
 # Because Jinja2 is the default template loader, add any non-Jinja templated
 # apps here:
