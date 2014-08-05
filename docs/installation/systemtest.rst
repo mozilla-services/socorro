@@ -18,10 +18,10 @@ http://crash-reports:5100/submit
 See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
 
 If you already have a crash available and wish to submit it, you can
-use the standalone submitter tool (assuming the JSON and dump files for your
-crash are in the "./crashes" directory)
+use the standalone submitter tool (there is an example JSON and dump
+file for your crash are in the "./testcrash" directory you can use)
 ::
-  python socorro/collector/submitter_app.py -u http://crash-reports/submit -s ./crashes/
+  python socorro/collector/submitter_app.py -u http://crash-reports/submit -s ./testcrash/raw/
 
 You should get a "CrashID" returned.
 
