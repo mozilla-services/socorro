@@ -27,7 +27,8 @@ class CrontabberState(PostgreSQLBase):
                 last_success,
                 error_count,
                 depends_on,
-                last_error
+                last_error,
+                ongoing
             FROM crontabber
             ORDER BY app_name
         """
@@ -46,9 +47,17 @@ class CrontabberState(PostgreSQLBase):
                 'last_success',
                 'error_count',
                 'depends_on',
-                'last_error'
+                'last_error',
+                'ongoing'
             ), row[1:]))
-            for key in ('next_run', 'first_run', 'last_run', 'last_success'):
+            possible_datetimes = (
+                'next_run',
+                'first_run',
+                'last_run',
+                'last_success',
+                'ongoing'
+            )
+            for key in possible_datetimes:
                 value = state[app_name][key]
                 if value is None:
                     continue
