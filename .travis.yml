@@ -1,0 +1,30 @@
+language: python
+python:
+  - "2.6"
+
+addons:
+  postgresql: "9.3"
+
+services:
+  - rabbitmq
+  - memcached
+  - elasticsearch
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y npm libxml2-dev libxslt1-dev
+  - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.13.deb
+  - sudo dpkg -i elasticsearch-0.90.13.deb
+  - sudo service elasticsearch restart
+  - npm install -g less
+  - sudo ln -s /usr/local/lib/node_modules/less/bin/lessc /usr/local/bin
+  - sed -i 's:jenkins-pg92:localhost:' config/alembic.ini-dist
+
+before_script:
+    - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
+    - psql -c 'create database socorro_test;' -U postgres
+    - psql -c 'create database socorro_integration_test;' -U postgres
+    - psql -c 'create database socorro_migration_test;' -U postgres
+
+script:
+  - ./scripts/build.sh
