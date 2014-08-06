@@ -131,6 +131,12 @@ $(function() {
     var browserid_audiences = $('#browserid-audiences');
     var debug = browserid_audiences.data('debug');
     var audiences = browserid_audiences.data('audiences');
+    if (audiences.length) {
+        // necessary because `"".split(',')` becomes `[""]`
+        audiences = audiences.split(',');
+    } else {
+        audiences = [];
+    }
 
     function matchesCurrentOrigin(url) {
         var a = document.createElement('a');
@@ -158,7 +164,7 @@ $(function() {
             addVerdict(
                 browserid_audiences,
                 'No value in your <code>BROWSERID_AUDIENCES</code> setting appears ' +
-                "to match the current URL you're using.",
+                "to match the current URL you're using. ",
                 'bad'
             );
         }

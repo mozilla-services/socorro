@@ -1,5 +1,4 @@
 import datetime
-import json
 import random
 
 from django.conf import settings
@@ -39,14 +38,12 @@ def debug_login(request):
     cache.set('cache_value', cache_value, 10)
     cookie_value = random.randint(10, 100)
     context = {
-        'SESSION_COOKIE_SECURE': json.dumps(settings.SESSION_COOKIE_SECURE),
+        'SESSION_COOKIE_SECURE': settings.SESSION_COOKIE_SECURE,
         'cache_setting': settings.CACHES['default']['BACKEND'].split('.')[-1],
         'cache_value': cache_value,
         'cookie_value': cookie_value,
-        'DEBUG': json.dumps(settings.DEBUG),
-        'BROWSERID_AUDIENCES': json.dumps(
-            getattr(settings, 'BROWSERID_AUDIENCES', None)
-        ),
+        'DEBUG': settings.DEBUG,
+        'BROWSERID_AUDIENCES': getattr(settings, 'BROWSERID_AUDIENCES', []),
     }
     response = render(request, 'auth/debug_login.html', context)
     future = datetime.datetime.utcnow() + datetime.timedelta(seconds=10)

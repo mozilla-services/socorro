@@ -65,7 +65,10 @@ class TestDebugLogin(DjangoTestCase):
             SESSION_COOKIE_SECURE=True,
             CACHES=_caches,
             DEBUG=True,
-            BROWSERID_AUDIENCES=['http://socorro']
+            BROWSERID_AUDIENCES=[
+                'http://socorro',
+                'http://crashstats.com'
+            ]
         ):
             response = self.client.get(url)
             eq_(response.status_code, 200)
@@ -73,7 +76,7 @@ class TestDebugLogin(DjangoTestCase):
             ok_('data-cache-setting="SomeCache"' in response.content)
             ok_('data-debug="true"' in response.content)
             ok_(
-                'data-audiences="[&#34;http://socorro&#34;]"'
+                'data-audiences="http://socorro,http://crashstats.com"'
                 in response.content
             )
 

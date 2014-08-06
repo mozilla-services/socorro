@@ -41,7 +41,7 @@
   </div>
 
   <div class="test" id="session-cookie-secure"
-       data-session-cookie-secure="{{ SESSION_COOKIE_SECURE }}"
+       data-session-cookie-secure="{{ SESSION_COOKIE_SECURE | json_dumps }}"
        data-cookie-value="{{ cookie_value }}">
     <h4><code>SESSION_COOKIE_SECURE</code></h4>
     <p class="loading">Loading...</p>
@@ -56,8 +56,8 @@
   </div>
 
   <div class="test" id="browserid-audiences"
-       data-debug="{{ DEBUG }}"
-       data-audiences="{{ BROWSERID_AUDIENCES }}">
+       data-debug="{{ DEBUG | json_dumps }}"
+       data-audiences="{{ ','.join(BROWSERID_AUDIENCES) }}">
     {% if DEBUG %}
       You're currently in <b>DEBUG</b> mode which means that if
       <code>BROWSERID_AUDIENCES</code> does not have to be set.
