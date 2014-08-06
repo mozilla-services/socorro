@@ -119,7 +119,7 @@ SECRET_KEY = 'you must change this'
 #CEF_PRODUCT = 'Playdoh'
 #CEF_VENDOR = 'Mozilla'
 
-# If you intend to run without HTTPS such as local development,
+# If you intend to run WITHOUT HTTPS, such as local development,
 # then set this to False
 #SESSION_COOKIE_SECURE = False
 

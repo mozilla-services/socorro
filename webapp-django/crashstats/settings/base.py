@@ -181,6 +181,11 @@ LOGIN_URL = '/login/'
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
+# The default, is to be secure. This requires that you run your socorro
+# instance over HTTPS. If you don't (e.g. local development) override
+# this in settings/local.py to False.
+SESSION_COOKIE_SECURE = True
+
 # we don't need bcrypt since we don't store real passwords
 PWD_ALGORITHM = 'sha512'
 
