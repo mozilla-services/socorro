@@ -30,7 +30,8 @@ class Redactor(RequiredConfig):
                 "json_dump.sensitive,"
                 "upload_file_minidump_flash1.json_dump.sensitive,"
                 "upload_file_minidump_flash2.json_dump.sensitive,"
-                "upload_file_minidump_browser.json_dump.sensitive",
+                "upload_file_minidump_browser.json_dump.sensitive,"
+                "memory_info",
         reference_value_from='resource.redactor',
     )
 

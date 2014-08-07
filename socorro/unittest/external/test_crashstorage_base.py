@@ -558,6 +558,7 @@ class TestRedactor(TestCase):
         d['upload_file_minidump_flash2.json_dump.sensitive'] = 44
         d['upload_file_minidump_browser.json_dump.sensitive.exploitable'] = 55
         d['upload_file_minidump_browser.json_dump.sensitive.secret'] = 66
+        d['memory_info'] = {'incriminating_memory': 'call the FBI'}
 
         ok_('json_dump' in d)
 
