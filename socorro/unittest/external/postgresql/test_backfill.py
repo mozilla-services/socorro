@@ -8,7 +8,7 @@ from nose.tools import eq_, assert_raises
 import datetime
 
 from socorro.external.postgresql.backfill import Backfill
-from socorro.external.postgresql import fakedata
+from socorro.external.postgresql import staticdata, fakedata
 from socorro.external import MissingArgumentError
 from socorro.lib import datetimeutil
 
@@ -27,8 +27,12 @@ class TestBackfill(PostgreSQLTestCase):
 
         self.tables = []
 
-        for table in fakedata.tables:
-            table = table(days=1)
+        for table in staticdata.tables + fakedata.tables:
+            # staticdata has no concept of duration
+            if table.__module__ == 'socorro.external.postgresql.staticdata':
+                table = table()
+            else:
+                table = table(days=1)
             table.releases = {
                 'WaterWolf': {
                     'channels': {

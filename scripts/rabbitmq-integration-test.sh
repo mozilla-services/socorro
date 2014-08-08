@@ -103,7 +103,7 @@ export PYTHONPATH=.
 echo " Done."
 
 echo -n "INFO: setting up database..."
-python socorro/external/postgresql/setupdb_app.py --database_username=$database_username --database_password=$database_password --database_name=breakpad --database_hostname=$database_hostname --dropdb --force --fakedata --fakedata_days=1 > setupdb.log 2>&1
+python socorro/external/postgresql/setupdb_app.py --database_username=$database_username --database_password=$database_password --database_name=breakpad --database_hostname=$database_hostname --dropdb --force > setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "setupdb_app.py failed, check setupdb.log"

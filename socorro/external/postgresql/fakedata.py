@@ -393,30 +393,6 @@ class BaseTable(object):
         return buildids
 
 
-class OSNames(BaseTable):
-    table = 'os_names'
-    columns = ['os_name', 'os_short_name']
-    rows = [['Windows', 'win'],
-            ['Mac OS X', 'mac'],
-            ['Linux', 'lin']]
-
-
-class OSNameMatches(BaseTable):
-    table = 'os_name_matches'
-    columns = ['os_name', 'match_string']
-    rows = [['Windows', 'Windows%'],
-            ['Mac OS X', 'Mac%'],
-            ['Linux', 'Linux%']]
-
-
-class ProcessTypes(BaseTable):
-    table = 'process_types'
-    columns = ['process_type']
-    rows = [['browser'],
-            ['plugin'],
-            ['content']]
-
-
 class Products(BaseTable):
     table = 'products'
     columns = ['product_name', 'sort', 'rapid_release_version',
@@ -426,16 +402,6 @@ class Products(BaseTable):
         for i, product in enumerate(self.releases):
             row = [product, str(i), 1.0, product.lower(), 3.0]
             yield row
-
-
-class ReleaseChannels(BaseTable):
-    table = 'release_channels'
-    columns = ['release_channel', 'sort']
-    rows = [['Nightly', '1'],
-            ['Aurora', '2'],
-            ['Beta', '3'],
-            ['Release', '4'],
-            ['ESR', '5']]
 
 
 class ProductBuildTypes(BaseTable):
@@ -506,16 +472,6 @@ class RawADU(BaseTable):
                                 yield row
 
 
-class ReleaseChannelMatches(BaseTable):
-    table = 'release_channel_matches'
-    columns = ['release_channel', 'match_string']
-    rows = [['Release', 'release'],
-            ['Release', 'default'],
-            ['Beta', 'beta'],
-            ['Aurora', 'aurora'],
-            ['Nightly', 'nightly%']]
-
-
 class ReleasesRaw(BaseTable):
     table = 'releases_raw'
     columns = ['product_name', 'version', 'platform', 'build_id',
@@ -554,29 +510,6 @@ class ReleasesRaw(BaseTable):
                                    update_channel.lower(),
                                    version_build]
                             yield row
-
-
-class UptimeLevels(BaseTable):
-    table = 'uptime_levels'
-    columns = ['uptime_level', 'uptime_string', 'min_uptime', 'max_uptime']
-    rows = [['1', '< 1 min', '00:00:00', '00:01:00'],
-            ['2', '1-5 min', '00:01:00', '00:05:00'],
-            ['3', '5-15 min', '00:05:00', '00:15:00'],
-            ['4', '15-60 min', '00:15:00', '01:00:00'],
-            ['5', '> 1 hour', '01:00:00', '1 year']]
-
-
-class WindowsVersions(BaseTable):
-    table = 'windows_versions'
-    columns = ['windows_version_name', 'major_version', 'minor_version']
-    rows = [['Windows NT', '3', '5'],
-            ['Windows NT', '4', '0'],
-            ['Windows 98', '4', '1'],
-            ['Windows Me', '4', '9'],
-            ['Windows 2000', '5', '0'],
-            ['Windows XP', '5', '1'],
-            ['Windows Vista', '6', '0'],
-            ['Windows 7', '6', '1']]
 
 
 class Reports(BaseTable):
@@ -715,93 +648,12 @@ class Reports(BaseTable):
                             count += 1
 
 
-class OSVersions(BaseTable):
-    table = 'os_versions'
-    columns = ['os_version_id', 'os_name', 'major_version',
-               'minor_version', 'os_version_string']
-    rows = [['66', 'Windows', '6', '135', 'Windows Unknown'],
-            ['67', 'Windows', '5', '3', 'Windows Unknown'],
-            ['68', 'Mac OS X', '10', '8', 'OS X 10.8'],
-            ['69', 'Linux', '2', '6', 'Linux'],
-            ['70', 'Windows', '5', '11', 'Windows Unknown'],
-            ['71', 'Windows', '6', '0', 'Windows Vista'],
-            ['72', 'Windows', '6', '50', 'Windows Unknown'],
-            ['73', 'Mac OS X', '10', '4', 'OS X 10.4'],
-            ['74', 'Mac OS X', '300', '5', 'OS X Unknown'],
-            ['75', 'Windows', '5', '0', 'Windows 2000']]
-
-
 class ProductProductidMap(BaseTable):
     table = 'product_productid_map'
     columns = ['product_name', 'productid', 'rewrite', 'version_began',
                'version_ended']
     rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '1.0'],
             ['B2G', '{3c2e2abc-06d4-11e1-ac3b-374f68613e61}', 'f', '1.0', '1.0']]
-
-
-class ReleaseRepositories(BaseTable):
-    table = 'release_repositories'
-    columns = ['repository']
-    rows = [['dev'],
-            ['beta'],
-            ['release'],
-            ['esr'],
-            ['other-dev'],
-            ['other-beta'],
-            ['other-release'],
-            ['other-esr']]
-
-
-class CrontabberState(BaseTable):
-    table = 'crontabber_state'
-    columns = ['last_updated', 'state']
-    rows = [['2012-05-16 00:00:00', '{}']]
-
-
-class CrashTypes(BaseTable):
-    table = 'crash_types'
-    columns = [
-        'crash_type_id', 'crash_type', 'crash_type_short', 'process_type',
-        'has_hang_id', 'old_code', 'include_agg']
-    rows = [['1', 'Browser', 'crash', 'browser', False, 'C', True],
-            ['2', 'OOP Plugin', 'oop', 'plugin', False, 'P', True],
-            ['3', 'Hang Browser', 'hang-b', 'plugin', True, 'c', False],
-            ['4', 'Hang Plugin', 'hang-p', 'browser', True, 'p', True],
-            ['5', 'Content', 'content', 'content', False, 'T', True]]
-
-
-class ReportPartitionInfo(BaseTable):
-    table = 'report_partition_info'
-    columns = ['table_name', 'build_order', 'keys', 'indexes',
-               'fkeys', 'partition_column', 'timetype']
-    rows = [['reports', '1', '{id,uuid}',
-             '{date_processed,hangid,"product,version",reason,signature,url}',
-             '{}', 'date_processed', 'TIMESTAMPTZ'],
-            ['plugins_reports', '2', '{"report_id,plugin_id"}',
-             '{"report_id,date_processed"}',
-             ('{"(plugin_id) REFERENCES plugins(id)","(report_id)'
-              ' REFERENCES reports_WEEKNUM(id)"}'),
-             'date_processed', 'TIMESTAMPTZ'],
-            ['extensions', '3', '{"report_id,extension_key"}',
-             '{"report_id,date_processed"}',
-             '{"(report_id) REFERENCES reports_WEEKNUM(id)"}',
-             'date_processed', 'TIMESTAMPTZ'],
-            ['raw_crashes', '4', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ'],
-            ['signature_summary_installations', '5',
-             '{"signature_id,product_name,version_string,report_date"}',
-             '{}',
-             '{"(signature_id) REFERENCES signatures(signature_id)"}',
-             'report_date', 'DATE'],
-            ['processed_crashes', '6', '{uuid}', '{}', '{}', 'date_processed',
-                'TIMESTAMPTZ']]
-
-
-class Skiplist(BaseTable):
-    table = 'skiplist'
-    columns = ['category', 'rule']
-    rows = [['ignore', 'everything'],
-            ['prefix', 'SocketShutdown']]
 
 
 class RawCrashes(BaseTable):
@@ -1075,12 +927,9 @@ class ProcessedCrashes(BaseTable):
 
 
 # the order that tables are loaded is important.
-tables = [OSNames, OSNameMatches, ProcessTypes, Products, ReleaseChannels,
-          ProductReleaseChannels, ProductBuildTypes, RawADU,
-          ReleaseChannelMatches, ReleasesRaw, UptimeLevels, WindowsVersions,
-          Reports, RawCrashes, UpdateChannelMap, ProcessedCrashes, OSVersions,
-          ProductProductidMap, ReleaseRepositories, CrontabberState,
-          CrashTypes, ReportPartitionInfo, Skiplist]
+tables = [Products, ProductReleaseChannels, ProductBuildTypes,
+          RawADU, ReleasesRaw, Reports, RawCrashes, UpdateChannelMap,
+          ProcessedCrashes, ProductProductidMap]
 
 # FIXME this could be built up from BaseTable's releases dict, instead
 featured_versions = ('5.0a1', '4.0a2', '3.1b1', '2.1')

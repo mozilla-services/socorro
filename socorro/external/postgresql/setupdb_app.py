@@ -25,7 +25,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateTable
 
 from socorro.app.generic_app import App, main as configman_main
-from socorro.external.postgresql import fakedata
+from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.models import *
 
 
@@ -437,6 +437,12 @@ class SocorroDB(App):
     )
 
     required_config.add_option(
+        name='no_staticdata',
+        default=False,
+        doc='Whether or not to fill in static data Socorro needs to function',
+    )
+
+    required_config.add_option(
         name='fakedata',
         default=False,
         doc='Whether or not to fill the data with synthetic test data',
@@ -466,9 +472,20 @@ class SocorroDB(App):
         doc='Create all tables with UNLOGGED for running tests',
     )
 
-    @staticmethod
-    def generate_fakedata(db, fakedata_days):
+    def bulk_load_table(self, db, table):
+        io = cStringIO.StringIO()
+        for line in table.generate_rows():
+            io.write('\t'.join([str(x) for x in line]))
+            io.write('\n')
+        io.seek(0)
+        db.bulk_load(io, table.table, table.columns, '\t')
 
+    def import_staticdata(self, db):
+        for table in staticdata.tables:
+            table = table()
+            self.bulk_load_table(db, table)
+
+    def generate_fakedata(self, db, fakedata_days):
         start_date = end_date = None
         for table in fakedata.tables:
             table = table(days=fakedata_days)
@@ -485,12 +502,7 @@ class SocorroDB(App):
             else:
                 end_date = table.end_date
 
-            io = cStringIO.StringIO()
-            for line in table.generate_rows():
-                io.write('\t'.join([str(x) for x in line]))
-                io.write('\n')
-            io.seek(0)
-            db.bulk_load(io, table.table, table.columns, '\t')
+            self.bulk_load_table(db, table)
 
         db.session.execute("""
                 SELECT backfill_matviews(cast(:start as DATE),
@@ -609,6 +621,8 @@ class SocorroDB(App):
             db.create_views()
             db.commit()
             db.set_grants(self.config)  # config has user lists
+            if not self.config['no_staticdata']:
+                self.import_staticdata(db)
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
