@@ -260,7 +260,7 @@ $(function () {
 
         // Prepare the list of fields.
         selectElt.select2({
-            'placeholder': 'Add a field',
+            'placeholder': 'Aggregate on...',
             'allowClear': true
         });
 
