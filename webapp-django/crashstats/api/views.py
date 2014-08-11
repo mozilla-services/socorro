@@ -267,7 +267,12 @@ def model_wrapper(request, model_name):
                 )
             raise
         except ValueError as e:
-            if 'No JSON object could be decoded' in e:
+            if (
+                # built in json module ValueError
+                'No JSON object could be decoded' in e or
+                # ujson module ValueError
+                'Expected object or value' in e
+            ):
                 return http.HttpResponse(
                     'Not a valid JSON response',
                     status=400

@@ -13,6 +13,8 @@ import requests
 import stat
 import time
 
+import ujson
+
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
@@ -264,7 +266,7 @@ class SocorroCommon(object):
 
         result = resp.content
         if expect_json:
-            result = json.loads(result)
+            result = ujson.loads(result)
 
         if cache_key:
             cache.set(cache_key, result, self.cache_seconds)
