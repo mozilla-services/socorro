@@ -180,7 +180,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                 query = self.config.query % target_date
                 cur.execute(query)
                 for row in cur:
-                    if None in row:
+                    if None in row or len(row) != 9:
                         continue
                     f.write(
                         "\t"
