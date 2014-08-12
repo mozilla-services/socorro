@@ -1733,12 +1733,6 @@ def crontabber_state(request, default_context=None):
     return render(request, 'crashstats/crontabber_state.html', context)
 
 
-@utils.json_view
-def crontabber_state_json(request):
-    response = models.CrontabberState().get()
-    return {'state': response['state']}
-
-
 @pass_default_context
 @login_required
 def your_crashes(request, default_context=None):
