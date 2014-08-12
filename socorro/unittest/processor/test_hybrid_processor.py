@@ -275,8 +275,9 @@ class TestHybridProcessor(TestCase):
                 raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
                 raw_dump = {'upload_file_minidump':
                                 '/some/path/%s.dump' % raw_crash.uuid,
-                            'aux_dump_001':
-                            '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                            'upload_file_minidump_aux_dump_001':
+                            '/some/path/upload_file_minidump_aux_001.%s.dump'
+                                % raw_crash.uuid,
                             }
                 leg_proc = HybridCrashProcessor(config, config.mock_quit_fn)
 
@@ -360,7 +361,8 @@ class TestHybridProcessor(TestCase):
                 eq_(
                   second_call,
                   ((raw_crash.uuid,
-                   '/some/path/aux_001.%s.dump' % raw_crash.uuid,
+                   '/some/path/upload_file_minidump_aux_001.%s.dump'
+                       % raw_crash.uuid,
                    '/tmp/%s.MainThread.TEMPORARY.json' % raw_crash.uuid,
                    0, None, datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                    [
@@ -388,10 +390,12 @@ class TestHybridProcessor(TestCase):
                 epc.hang_type = 0
                 epc.java_stack_trace = None
                 epc.Winsock_LSP = None
-                epc.additional_minidumps = ['aux_dump_001']
-                epc.aux_dump_001 = {'success': True}
+                epc.additional_minidumps = [
+                    'upload_file_minidump_aux_dump_001'
+                ]
+                epc.upload_file_minidump_aux_dump_001 = {'success': True}
                 eq_(
-                  processed_crash,
+                  dict(processed_crash),
                   dict(epc)
                 )
 
@@ -1302,3 +1306,253 @@ class TestHybridProcessor(TestCase):
                 '/tmp/fake_crash_id.MainThread.TEMPORARY.json'
             )
             mocked_unlink.reset_mock()
+
+    def test_transform_binary_file_1(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        processed_crash = DotDict()
+        processed_crash.hang_type = 23
+        processed_crash.java_stack_trace = ['why are you using Java?']
+        processed_crash_update_dict = {'hello': 'good-bye'}
+        processor._do_breakpad_stack_dump_analysis = mock.Mock(
+          return_value=processed_crash_update_dict
+        )
+        submitted_timestamp='2014-08-07T00:00:00'
+        processor_notes = []
+
+        with mock.patch(
+            'socorro.processor.hybrid_processor.os.unlink'
+        ) as mocked_unlink:
+
+            # the call being tested:
+            processor.transform_binary_file(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807',
+                'upload_file_minidump',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.upload_file_minidump.TEMPORARY.dump',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.TEMPORARY.json',
+                processed_crash,
+                submitted_timestamp,
+                processor_notes,
+            )
+
+            # this is what should have happened internally
+            processor._do_breakpad_stack_dump_analysis.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.upload_file_minidump.TEMPORARY.dump',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.TEMPORARY.json',
+                processed_crash.hang_type,
+                processed_crash.java_stack_trace,
+                submitted_timestamp,
+                []
+            )
+            self.assertTrue('hello' in processed_crash)
+            self.assertTrue('upload_file_minidump' not in processed_crash)
+            self.assertEqual(processed_crash.hello, 'good-bye')
+            mocked_unlink.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.upload_file_minidump.TEMPORARY.dump'
+            )
+            mocked_unlink.reset_mock()
+
+    def test_transform_binary_file_2(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        processed_crash = DotDict()
+        processed_crash.hang_type = 23
+        processed_crash.java_stack_trace = ['why are you using Java?']
+        processed_crash.additional_minidumps = []
+        processed_crash_update_dict = {'hello': 'good-bye'}
+        processor._do_breakpad_stack_dump_analysis = mock.Mock(
+          return_value=processed_crash_update_dict
+        )
+        submitted_timestamp='2014-08-07T00:00:00'
+        processor_notes = []
+
+        with mock.patch(
+            'socorro.processor.hybrid_processor.os.unlink'
+        ) as mocked_unlink:
+
+            # the call being tested:
+            processor.transform_binary_file(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807',
+                'upload_file_minidump_aux_1',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.upload_file_minidump_aux_1.TEMPORARY.dump',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.TEMPORARY.json',
+                processed_crash,
+                submitted_timestamp,
+                processor_notes,
+            )
+
+            # this is what should have happened internally
+            processor._do_breakpad_stack_dump_analysis.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.upload_file_minidump_aux_1.TEMPORARY.dump',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.TEMPORARY.json',
+                processed_crash.hang_type,
+                processed_crash.java_stack_trace,
+                submitted_timestamp,
+                []
+            )
+            self.assertTrue('hello' not in processed_crash)
+            self.assertTrue('upload_file_minidump_aux_1' in processed_crash)
+            self.assertEqual(
+                processed_crash.upload_file_minidump_aux_1['hello'],
+                'good-bye'
+            )
+            self.assertEqual(
+                processed_crash.additional_minidumps,
+                ['upload_file_minidump_aux_1']
+            )
+            mocked_unlink.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.upload_file_minidump_aux_1.TEMPORARY.dump'
+            )
+            mocked_unlink.reset_mock()
+
+    def test_transform_binary_file_3(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        processed_crash = DotDict()
+        processed_crash.hang_type = 23
+        processed_crash.java_stack_trace = ['why are you using Java?']
+        processed_crash.additional_minidumps = []
+        processed_crash_update_dict = {'hello': 'good-bye'}
+        processor._do_breakpad_stack_dump_analysis = mock.Mock(
+          return_value=processed_crash_update_dict
+        )
+        processor._extract_memory_info = mock.Mock(
+          return_value="I'm a memory report"
+        )
+        submitted_timestamp='2014-08-07T00:00:00'
+        processor_notes = []
+
+        with mock.patch(
+            'socorro.processor.hybrid_processor.os.unlink'
+        ) as mocked_unlink:
+
+            # the call being tested:
+            processor.transform_binary_file(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807',
+                'memory_report',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.TEMPORARY.json',
+                processed_crash,
+                submitted_timestamp,
+                processor_notes,
+            )
+
+            # this is what should have happened internally
+            processor._extract_memory_info.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                processor_notes
+            )
+            self.assertTrue('hello' not in processed_crash)
+            self.assertTrue('memory_report' in processed_crash)
+            self.assertEqual(
+                processed_crash.memory_report,
+                "I'm a memory report"
+            )
+            self.assertEqual(
+                processed_crash.additional_minidumps,
+                []
+            )
+            mocked_unlink.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+            )
+            mocked_unlink.reset_mock()
+
+    def test_extract_memory_info_1(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        processor_notes = []
+
+        with mock.patch(
+            'socorro.processor.hybrid_processor.gzip'
+        ) as mocked_gzip:
+            with mock.patch(
+                'socorro.processor.hybrid_processor.json'
+            ) as mocked_json:
+
+                mocked_fd = mocked_gzip.open.return_value
+                mocked_json.load.return_value = {'memory': 'info'}
+
+                # the call being tested:
+                memory_info = processor._extract_memory_info(
+                    'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                    processor_notes,
+                )
+
+                # this is what should have happened internally
+                mocked_gzip.open.assert_called_once_with(
+                    'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                    'rb'
+                )
+                mocked_json.load.assert_called_once_with(mocked_fd)
+                self.assertEqual(memory_info, mocked_json.load.return_value)
+                mocked_fd.close.assert_called_once()
+                self.assertEqual(processor_notes, [])
+
+    def test_extract_memory_info_2(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        processor_notes = []
+
+        with mock.patch(
+            'socorro.processor.hybrid_processor.gzip'
+        ) as mocked_gzip:
+
+            mocked_fd = mocked_gzip.open.side_effect=IOError('bad')
+
+            # the call being tested:
+            memory_info = processor._extract_memory_info(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                processor_notes,
+            )
+
+            # this is what should have happened internally
+            mocked_gzip.open.assert_called_once_with(
+                'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                'rb'
+            )
+            error_message = (
+                "error in gzip for de7ed3e3-fe90-472c-9e69-b24ed2140807"
+                ".memory_report.TEMPORARY.dump: IOError('bad',)"
+            )
+            self.assertEqual(processor_notes, [error_message])
+            self.assertEqual(memory_info, {'ERROR': error_message})
+
+    def test_extract_memory_info_3(self):
+        config = setup_config_with_mocks()
+        processor = HybridCrashProcessor(config)
+        processor_notes = []
+
+        with mock.patch(
+            'socorro.processor.hybrid_processor.gzip'
+        ) as mocked_gzip:
+            with mock.patch(
+                'socorro.processor.hybrid_processor.json'
+            ) as mocked_json:
+
+                mocked_fd = mocked_gzip.open.return_value
+                mocked_json.load.side_effect=ValueError('sigh')
+
+                # the call being tested:
+                memory_info = processor._extract_memory_info(
+                    'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                    processor_notes,
+                )
+
+                # this is what should have happened internally
+                mocked_gzip.open.assert_called_once_with(
+                    'de7ed3e3-fe90-472c-9e69-b24ed2140807.memory_report.TEMPORARY.dump',
+                    'rb'
+                )
+                mocked_json.load.assert_called_once_with(mocked_fd)
+                error_message = (
+                    "error in json for de7ed3e3-fe90-472c-9e69-b24ed2140807"
+                    ".memory_report.TEMPORARY.dump: ValueError('sigh',)"
+                )
+                self.assertEqual(processor_notes, [error_message])
+                self.assertEqual(memory_info, {'ERROR': error_message})
+                mocked_fd.close.assert_called_once()
+
+
+

@@ -16,6 +16,7 @@ import json
 import tempfile
 from urllib import unquote_plus
 from contextlib import closing, contextmanager
+import gzip
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
@@ -373,22 +374,17 @@ class HybridCrashProcessor(RequiredConfig):
                 crash_id
             ) as raw_crash_json_pathname:
                 for name, dump_pathname in raw_dumps.iteritems():
-                    if name != self.config.dump_field:
-                        processed_crash.additional_minidumps.append(name)
-                    with self._temp_file_context(dump_pathname):
-                        dump_analysis = self._do_breakpad_stack_dump_analysis(
-                            crash_id,
-                            dump_pathname,
-                            raw_crash_json_pathname,
-                            processed_crash.hang_type,
-                            processed_crash.java_stack_trace,
-                            submitted_timestamp,
-                            processor_notes
-                        )
-                    if name == self.config.dump_field:
-                        processed_crash.update(dump_analysis)
-                    else:
-                        processed_crash[name] = dump_analysis
+                    # all minidumps should be named "upload_file_minidump"
+                    # or "upload_file_minidump_<name>
+                    self.transform_binary_file(
+                        crash_id,
+                        name,
+                        dump_pathname,
+                        raw_crash_json_pathname,
+                        processed_crash,
+                        submitted_timestamp,
+                        processor_notes
+                    )
             processed_crash.topmost_filenames = "|".join(
                 processed_crash.get('topmost_filenames', [])
             )
@@ -865,6 +861,66 @@ class HybridCrashProcessor(RequiredConfig):
             processor_notes
         )
         return processed_crash_update
+
+
+    #--------------------------------------------------------------------------
+    def transform_binary_file(
+        self,
+        crash_id,
+        name,
+        dump_pathname,
+        raw_crash_json_pathname,
+        processed_crash,
+        submitted_timestamp,
+        processor_notes
+    ):
+        with self._temp_file_context(dump_pathname):
+            if name.startswith(self.config.dump_field):
+                stackwalk_output = self._do_breakpad_stack_dump_analysis(
+                    crash_id,
+                    dump_pathname,
+                    raw_crash_json_pathname,
+                    processed_crash.hang_type,
+                    processed_crash.java_stack_trace,
+                    submitted_timestamp,
+                    processor_notes
+                )
+                if name == self.config.dump_field:
+                    processed_crash.update(stackwalk_output)
+                else:
+                    processed_crash.additional_minidumps.append(name)
+                    processed_crash[name] = stackwalk_output
+            elif name == "memory_report":
+                processed_crash.memory_report = self._extract_memory_info(
+                    dump_pathname,
+                    processor_notes
+                )
+            else:
+                processor_notes.append(
+                    "%s  received as unexpected upload" % dump_pathname
+                )
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _extract_memory_info(dump_pathname, processor_notes):
+        """Extract and return the JSON data from the .json.gz memory report.
+        file"""
+        try:
+            fd = gzip.open(dump_pathname, "rb")
+        except IOError, x:
+            error_message = "error in gzip for %s: %r" % (dump_pathname, x)
+            processor_notes.append(error_message)
+            return {"ERROR": error_message}
+        try:
+            memory_info = json.load(fd)
+        except ValueError, x:
+            error_message = "error in json for %s: %r" % (dump_pathname, x)
+            processor_notes.append(error_message)
+            return {"ERROR": error_message}
+        finally:
+            fd.close()
+
+        return memory_info
 
     #--------------------------------------------------------------------------
     @staticmethod
