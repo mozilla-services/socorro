@@ -23,5 +23,42 @@ thead td {
 }
 
 .tablesorter .header {
-	padding: 0.5em;
+  	padding: 0.5em;
+}
+
+div.panel.ongoing {
+    width: 50%;
+    margin: 0 auto;
+    display: none;
+}
+
+@-webkit-keyframes color_change {
+  from { color: #9f3774; }
+  to { color: #ccc; }
+}
+@-moz-keyframes color_change {
+  from { color: #9f3774; }
+  to { color: #ccc; }
+}
+@-ms-keyframes color_change {
+  from { color: #9f3774; }
+  to { color: #ccc; }
+}
+@-o-keyframes color_change {
+  from { color: #9f3774; }
+  to { color: #ccc; }
+}
+@keyframes color_change {
+  from { color: #9f3774; }
+  to { color: #ccc; }
+}
+
+.ongoing.panel .title {
+    color: #9f3774;
+    font-weight: bold;
+   -webkit-animation: color_change 1s infinite alternate;
+   -moz-animation: color_change 1s infinite alternate;
+   -ms-animation: color_change 1s infinite alternate;
+   -o-animation: color_change 1s infinite alternate;
+   animation: color_change 1s infinite alternate;
 }

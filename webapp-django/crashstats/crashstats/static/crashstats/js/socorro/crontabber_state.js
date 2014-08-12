@@ -11,6 +11,9 @@ var format = d3.format(",.0f"),
         if (node.skips > 0) {
             return "#fafa78"; // yellow
         }
+        if (node.ongoing) {
+            return "#9f3774"; // pinkish
+        }
         return "#4DAF4A"; // green
     },
     title = function(d) {
@@ -26,6 +29,9 @@ var format = d3.format(",.0f"),
         }
         if (skips > 0) {
             return name + " has been skipped " + format(skips) + " times.";
+        }
+        if (d.ongoing) {
+            return name + " is ongoing for " + moment(d.ongoing).fromNow(true);
         }
         return name + " is working normally.";
     };
@@ -177,13 +183,13 @@ d3.json("data.json", function(data) {
             'depends_on'
         ];
 
-    table.classed('tablesorter', true)
+    table.classed('tablesorter', true);
 
     thead.append("tr").selectAll("td")
         .data(tableFields)
       .enter().append("td")
         .text(function capitalize(s) {
-            return s[0].toUpperCase() + s.slice(1);
+            return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
         })
         .classed("header", true);
 
@@ -218,5 +224,61 @@ d3.json("data.json", function(data) {
             return d;
         });
 
-    $('crontabber-table tablesorter').tablesorter();
+    // now do only the ongoing jobs
+    table = d3.select('#ongoing-table').append('table');
+    thead = table.append('thead');
+    tbody = table.append('tbody');
+    tableFields = [
+        'name',
+        'ongoing',
+    ];
+    var anyOngoing = false;
+
+    table.classed('tablesorter', true);
+
+    thead.append("tr").selectAll("td")
+        .data(tableFields)
+      .enter()
+        .append("td")
+
+        .text(function capitalize(s) {
+            if (s === 'ongoing') {
+                return "Ongoing for";
+            }
+            return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
+        })
+        .classed("header", true);
+
+    var tr = tbody.selectAll("tr")
+        .data(nodes)
+      .enter().append("tr")
+        .filter(function(node) {
+            if (node.ongoing) {
+                anyOngoing = true;
+            }
+            return node.ongoing;
+        })
+        .selectAll("td")
+        .data(function(d) {
+            // get only the tableFields
+            var scrubbed = _.map(tableFields, function(field) {
+                return d[field];
+            });
+            return scrubbed;
+        })
+      .enter().append("td")
+        .text(function(d, i) {
+            field = tableFields[i];
+            if (field === 'ongoing') {
+                return moment(d).fromNow(true);
+            }
+            return d;
+        });
+
+    if (anyOngoing) {
+        // if there are any ongoing rows, only they display the ongoing panel
+        $('div.ongoing').show();
+    }
+    $('.tablesorter').tablesorter();
+
 });
