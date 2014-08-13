@@ -2,7 +2,6 @@ from django.contrib.auth.models import User, Group, Permission
 from django import forms
 
 from crashstats.crashstats.forms import BaseForm, BaseModelForm
-from crashstats.supersearch import form_fields
 
 
 class SkipListForm(BaseForm):
@@ -80,9 +79,9 @@ class SuperSearchFieldForm(BaseForm):
     description = forms.CharField(required=False)
     query_type = forms.CharField(required=False)
     data_validation_type = forms.CharField(required=False)
-    permissions_needed = form_fields.MultipleValueField(required=False)
+    permissions_needed = forms.CharField(required=False)
     form_field_type = forms.CharField(required=False)
-    form_field_choices = form_fields.MultipleValueField(required=False)
+    form_field_choices = forms.CharField(required=False)
     is_exposed = forms.BooleanField(required=False)
     is_returned = forms.BooleanField(required=False)
     is_mandatory = forms.BooleanField(required=False)
@@ -96,7 +95,8 @@ class SuperSearchFieldForm(BaseForm):
         default. We don't want that to cause an error, but don't want it to
         be put in the database either.
         """
-        values = self.cleaned_data['permissions_needed']
+        value = self.cleaned_data['permissions_needed']
+        values = [x.strip() for x in value.split(',')]
 
         perms = Permission.objects.filter(content_type__model='')
         all_permissions = [
@@ -112,5 +112,8 @@ class SuperSearchFieldForm(BaseForm):
         default. We don't want that to cause an error, but don't want it to
         be put in the database either.
         """
-        values = self.cleaned_data['form_field_choices']
-        return [x for x in values if x.strip()]
+        return [
+            x.strip()
+            for x in self.cleaned_data['form_field_choices'].split(',')
+            if x.strip()
+        ]
