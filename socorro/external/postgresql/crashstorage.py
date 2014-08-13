@@ -105,7 +105,12 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """nota bene: this function does not save the dumps in PG, only
         the raw crash json is saved."""
-        self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
+        try:
+            self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
 
     #-------------------------------------------------------------------------
     def _save_raw_crash_transaction(self, connection, raw_crash, crash_id):
@@ -222,7 +227,12 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             'date_processed': processed_crash["date_processed"],
             'uuid': crash_id
         }
-        execute_no_results(connection, upsert_sql, values)
+        try:
+            execute_no_results(connection, upsert_sql, values)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            execute_no_results(connection, upsert_sql, values)
 
     #--------------------------------------------------------------------------
     def _save_processed_report(self, connection, processed_crash):
@@ -307,7 +317,13 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         value_list.append(crash_id)
         value_list.extend(value_list)
 
-        report_id = single_value_sql(connection, upsert_sql, value_list)
+        try:
+            report_id = single_value_sql(connection, upsert_sql, value_list)
+        except self.config.database_class.IntegrityError:
+            # Transaction failed due to rare UPDATE race condition,
+            # so just retry
+            report_id = single_value_sql(connection, upsert_sql, value_list)
+
         return report_id
 
     #--------------------------------------------------------------------------
