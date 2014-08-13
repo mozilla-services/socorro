@@ -1280,8 +1280,8 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'signaturesummary' in url:
-                ok_('report_type' in params)
-                eq_('uptime', params['report_type'])
+                ok_('report_types' in params)
+                ok_('uptime' in params['report_types'])
 
                 ok_('signature' in params)
                 eq_('one & two', params['signature'])
@@ -1292,24 +1292,26 @@ class TestViews(BaseTestViews):
                 ok_('end_date' in params)
                 eq_('2013-01-01', params['end_date'])
 
-                return Response("""
-                [
-                  {
-                    "version_string": "12.0",
-                    "percentage": "48.440",
-                    "report_count": 52311,
-                    "product_name": "WaterWolf",
-                    "category": "XXX"
-                  },
-                  {
-                    "version_string": "13.0b4",
-                    "percentage": "9.244",
-                    "report_count": 9983,
-                    "product_name": "WaterWolf",
-                    "category": "YYY"
-                  }
-                ]
-                """)
+                return Response({
+                    "reports": {
+                        "uptime": [
+                            {
+                                "version_string": "12.0",
+                                "percentage": "48.440",
+                                "report_count": 52311,
+                                "product_name": "WaterWolf",
+                                "category": "XXX"
+                            },
+                            {
+                                "version_string": "13.0b4",
+                                "percentage": "9.244",
+                                "report_count": 9983,
+                                "product_name": "WaterWolf",
+                                "category": "YYY"
+                            }
+                        ]
+                    }
+                })
 
             raise NotImplementedError(url)
 
@@ -1321,19 +1323,19 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['start_date'])
         ok_(dump['errors']['end_date'])
-        ok_(dump['errors']['report_type'])
+        ok_(dump['errors']['report_types'])
         ok_(dump['errors']['signature'])
 
         response = self.client.get(url, {
-            'report_type': 'uptime',
+            'report_types': ['uptime'],
             'signature': 'one & two',
             'start_date': '2012-1-1',
             'end_date': '2013-1-1',
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump)
-        eq_(len(dump), 2)
+        ok_(dump['reports'])
+        eq_(len(dump['reports']['uptime']), 2)
 
     @mock.patch('requests.get')
     def test_Status(self, rget):

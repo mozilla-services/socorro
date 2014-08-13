@@ -1208,7 +1208,7 @@ class SignatureSummary(SocorroMiddleware):
     URL_PREFIX = '/signaturesummary/'
 
     required_params = (
-        'report_type',
+        ('report_types', list),
         'signature',
         ('start_date', datetime.date),
         ('end_date', datetime.date),
@@ -1216,6 +1216,7 @@ class SignatureSummary(SocorroMiddleware):
 
     possible_params = (
         ('versions', list),
+        'report_type',  # kept for legacy
     )
 
     API_WHITELIST = (
@@ -1223,6 +1224,7 @@ class SignatureSummary(SocorroMiddleware):
         'percentage',
         'product_name',
         'version_string',
+        'reports',
     )
 
 

@@ -6,7 +6,6 @@ import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-import socorro.database.database as db
 from socorro.lib import external_common
 from socorro.external import BadArgumentError
 
@@ -61,6 +60,7 @@ class SignatureSummary(PostgreSQLBase):
 
     def get(self, **kwargs):
         filters = [
+            ("report_types", None, ["list", "str"]),
             ("report_type", None, "str"),
             ("signature", None, "str"),
             ("start_date", None, "datetime"),
@@ -69,6 +69,29 @@ class SignatureSummary(PostgreSQLBase):
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
+        if not params.get('report_types') and params.get('report_type'):
+            # to support the legacy case
+            individual_report = True
+            report_types = [params['report_type']]
+        else:
+            individual_report = False
+            report_types = params['report_types']
+
+        # check that all the report types are recognized
+        for report_type in report_types:
+            query_params = report_type_sql.get(report_type, {})
+            known_report_types = (
+                'products',
+                'distinct_install',
+                'exploitability',
+                'devices',
+                'graphics'
+            )
+            if (
+                report_type not in known_report_types and
+                'first_col' not in query_params
+            ):
+                raise BadArgumentError(report_type)
 
         products = []
         versions = []
@@ -85,27 +108,39 @@ class SignatureSummary(PostgreSQLBase):
         params['product'] = tuple(products)
         params['version'] = tuple(versions)
 
-        if params['product'] and params['report_type'] is not 'products':
+        all_results = {}
+        with self.get_connection() as connection:
+            for report_type in report_types:
+                result_cols, query_string, query_parameters = self._get_query(
+                    report_type,
+                    params
+                )
+                sql_results = self.query(
+                    query_string,
+                    params=query_parameters,
+                    connection=connection
+                )
+                results = [dict(zip(result_cols, row)) for row in sql_results]
+                all_results[report_type] = results
+
+            if individual_report:
+                return all_results.values()[0]
+            else:
+                return {'reports': all_results}
+
+    def _get_query(self, report_type, params):
+
+        if params['product'] and report_type is not 'products':
             product_list = ' AND product_name IN %s '
         else:
             product_list = ''
 
-        if params['version'] and params['report_type'] is not 'products':
+        if params['version'] and report_type is not 'products':
             version_list = ' AND version_string IN %s '
         else:
             version_list = ''
 
-        query_params = report_type_sql.get(params['report_type'], {})
-        if (params['report_type'] not in
-            ('products', 'distinct_install', 'exploitability', 'devices', 
-             'graphics')
-            and 'first_col' not in query_params):
-            raise BadArgumentError('report type')
-
-        self.connection = self.database.connection()
-        cursor = self.connection.cursor()
-
-        if params['report_type'] == 'products':
+        if report_type == 'products':
             result_cols = ['product_name',
                            'version_string',
                            'report_count',
@@ -138,11 +173,13 @@ class SignatureSummary(PostgreSQLBase):
                 as percentage
             FROM totals
             ORDER BY report_count DESC"""
-            query_parameters = (params['signature'],
-                                params['start_date'],
-                                params['end_date'])
+            query_parameters = (
+                params['signature'],
+                params['start_date'],
+                params['end_date']
+            )
 
-        elif params['report_type'] == 'distinct_install':
+        elif report_type == 'distinct_install':
             result_cols = ['product_name',
                            'version_string',
                            'crashes',
@@ -176,7 +213,7 @@ class SignatureSummary(PostgreSQLBase):
             if version_list:
                 query_parameters += (params['version'],)
 
-        elif params['report_type'] == 'exploitability':
+        elif report_type == 'exploitability':
             # Note, even if params['product'] is something we can't use
             # that in this query
             result_cols = [
@@ -219,7 +256,7 @@ class SignatureSummary(PostgreSQLBase):
             if version_list:
                 query_parameters += (params['version'],)
 
-        elif params['report_type'] == 'devices':
+        elif report_type == 'devices':
             result_cols = [
                 'cpu_abi',
                 'manufacturer',
@@ -286,7 +323,7 @@ class SignatureSummary(PostgreSQLBase):
             if version_list:
                 query_parameters += (params['version'],)
 
-        elif params['report_type'] == 'graphics':
+        elif report_type == 'graphics':
             result_cols = [
                 'vendor_hex',
                 'adapter_hex',
@@ -344,22 +381,22 @@ class SignatureSummary(PostgreSQLBase):
                 params['start_date'],
                 params['end_date'],
             )
-            
+
             if product_list:
                 query_parameters += (params['product'],)
             if version_list:
                 query_parameters += (params['version'],)
 
-        elif params['report_type'] in report_type_columns:
+        elif report_type in report_type_columns:
             result_cols = ['category', 'report_count', 'percentage']
             query_string = """
                 WITH crashes AS (
                     SELECT """
-            query_string += report_type_columns[params['report_type']]
+            query_string += report_type_columns[report_type]
             query_string += """ AS category
                         , sum(report_count) AS report_count
                     FROM signature_summary_"""
-            query_string += params['report_type']
+            query_string += report_type
             query_string += """
                         JOIN signatures USING (signature_id)
                     WHERE
@@ -397,13 +434,4 @@ class SignatureSummary(PostgreSQLBase):
             if version_list:
                 query_parameters += (params['version'],)
 
-        sql_results = db.execute(cursor, query_string, query_parameters)
-        results = []
-        for row in sql_results:
-            newrow = dict(zip(result_cols, row))
-            results.append(newrow)
-
-        # Closing the connection here because we're not using
-        # the parent class' query()
-        self.connection.close()
-        return results
+        return result_cols, query_string, query_parameters

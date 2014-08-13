@@ -1036,7 +1036,7 @@ class TestModels(TestCase):
         today = datetime.datetime.utcnow()
         yesterday = today - datetime.timedelta(days=10)
         r = api.get(
-            report_type='products',
+            report_types=['products'],
             signature='Pickle::ReadBytes',
             start_date=yesterday,
             end_date=today,
@@ -1044,7 +1044,7 @@ class TestModels(TestCase):
         )
         ok_(r[0]['version_string'])
         r = api.get(
-            report_type='products',
+            report_types=['products'],
             signature='Pickle::ReadBytes',
             start_date=yesterday,
             end_date=today,

@@ -4,7 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_, assert_raises
+from nose.tools import ok_, eq_, assert_raises
 
 from socorro.external.postgresql.signature_summary import SignatureSummary
 from socorro.lib import datetimeutil
@@ -447,33 +447,43 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                     "start_date": lastweek_str,
                     "end_date": now_str,
                 },
-                'res_expected': [{
-                    "product_name": 'Firefox',
-                    "version_string": "8.0",
-                    "report_count": 1,
-                    "percentage": '100.000',
-                }],
+                'res_expected': [
+                    {
+                        "product_name": 'Firefox',
+                        "version_string": "8.0",
+                        "report_count": 1,
+                        "percentage": '50.000',
+                    },
+                    {
+                        "product_name": 'Firefox',
+                        "version_string": "9.0",
+                        "report_count": 1,
+                        "percentage": '50.000',
+                    }
+                ],
             },
             # Test 2: find ALL matches for all product versions and signature
-            'products': {
+            'products_no_version': {
                 'params': {
                     "report_type": "products",
                     "signature": "Fake Signature #1",
                     "start_date": lastweek_str,
                     "end_date": now_str,
                 },
-                'res_expected': [{
-                    "product_name": 'Firefox',
-                    "version_string": "8.0",
-                    "report_count": 1,
-                    "percentage": '50.000',
-                },
-                {
-                    "product_name": 'Firefox',
-                    "version_string": "9.0",
-                    "report_count": 1,
-                    "percentage": '50.000',
-                }],
+                'res_expected': [
+                    {
+                        "product_name": 'Firefox',
+                        "version_string": "8.0",
+                        "report_count": 1,
+                        "percentage": '50.000',
+                    },
+                    {
+                        "product_name": 'Firefox',
+                        "version_string": "9.0",
+                        "report_count": 1,
+                        "percentage": '50.000',
+                    }
+                ],
             },
             # Test 3: find architectures reported for a given version and a
             # signature
@@ -676,9 +686,59 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
         signature_summary = SignatureSummary(config=self.config)
 
         self.setup_data()
+        report_types = {}
+        common_params = {}
+        for test, data in self.test_source_data.items():
+            if test.endswith('_no_version'):
+                continue
+            report_type = data['params'].pop('report_type')
+            report_types[report_type] = data['res_expected']
+            common_params.update(data['params'])
+        res = signature_summary.get(
+            report_types=report_types.keys(),
+            **common_params
+        )
+        for report_type, res_expected in report_types.items():
+            sub_res = res['reports'][report_type]
+            eq_(sub_res, res_expected)
+
+    def test_get_products(self):
+        """The `versions` parameter doesn't matter when you get
+        the `products` report"""
+        signature_summary = SignatureSummary(config=self.config)
+        self.setup_data()
+        result = signature_summary.get(
+            report_types=["products"],
+            # note that this sends {"versions": "Firefox:8.0"}
+            # but it gets ignored
+            **self.test_source_data['products']['params']
+        )
+        eq_(len(result['reports']['products']), 2)
+        version_strings = [
+            x['version_string'] for x in result['reports']['products']
+        ]
+        eq_(version_strings, ['8.0', '9.0'])
+
+        # equally if you don't send the versions parameter
+        result = signature_summary.get(
+            report_types=["products"],
+            # note that this sends {"versions": "Firefox:8.0"}
+            # but it gets ignored
+            **self.test_source_data['products_no_version']['params']
+        )
+        eq_(len(result['reports']['products']), 2)
+        version_strings = [
+            x['version_string'] for x in result['reports']['products']
+        ]
+        eq_(version_strings, ['8.0', '9.0'])
+
+    def test_get_one_report_at_a_time(self):
+        signature_summary = SignatureSummary(config=self.config)
+
+        self.setup_data()
         for test, data in self.test_source_data.items():
             res = signature_summary.get(**data['params'])
-            self.assertNotEqual(res, [])
+            ok_(isinstance(res, list))
             eq_(res, data['res_expected'])
 
     def test_get_with_product(self):
@@ -691,13 +751,23 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
             res = signature_summary.get(**data['params'])
             eq_(res, data['res_expected'])
 
-    def test_get_with_(self):
+    def test_get_with_bad_report_type(self):
         signature_summary = SignatureSummary(config=self.config)
 
-        self.setup_data()
-        data = self.test_source_data['architecture']
         assert_raises(
             BadArgumentError,
             signature_summary.get,
-            **data
+            **{
+                "report_type": "unheardof",
+                "other": "stuff"
+            }
+        )
+
+        assert_raises(
+            BadArgumentError,
+            signature_summary.get,
+            **{
+                "report_types": ["unheardof"],
+                "other": "stuff"
+            }
         )

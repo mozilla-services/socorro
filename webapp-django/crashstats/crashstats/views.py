@@ -375,12 +375,13 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
 
         for signature in signatures:
             signature_summary_api = models.SignatureSummary()
-            releases = signature_summary_api.get(
-                report_type='products',
+            result = signature_summary_api.get(
+                report_types=['products'],
                 signature=signature['signature'],
                 start_date=start_date,
                 end_date=end_date,
             )
+            releases = result['reports']['products']
 
             active = []
             for release in releases:
@@ -2129,21 +2130,22 @@ def signature_summary(request):
         'distinct_install': 'distinctInstall',
         'devices': 'devices',
         'graphics': 'graphics',
+        'exploitability': 'exploitabilityScore',
     }
-
     api = models.SignatureSummary()
 
     result = {}
     signature_summary = {}
-    for r in report_types:
-        name = report_types[r]
-        result[name] = api.get(
-            report_type=r,
-            signature=signature,
-            start_date=start_date,
-            end_date=end_date,
-            versions=version,
-        )
+
+    results = api.get(
+        report_types=report_types.keys(),
+        signature=signature,
+        start_date=start_date,
+        end_date=end_date,
+        versions=version,
+    )
+    for r, name in report_types.items():
+        result[name] = results['reports'][r]
         signature_summary[name] = []
 
     # whether you can view the exploitability stuff depends on several
@@ -2164,14 +2166,6 @@ def signature_summary(request):
             can_view_exploitability = True
 
     if can_view_exploitability:
-        result['exploitabilityScore'] = api.get(
-            report_type='exploitability',
-            signature=signature,
-            start_date=start_date,
-            end_date=end_date,
-            versions=version,
-        )
-        signature_summary['exploitabilityScore'] = []
         for r in result['exploitabilityScore']:
             signature_summary['exploitabilityScore'].append({
                 'report_date': r['report_date'],
@@ -2180,6 +2174,9 @@ def signature_summary(request):
                 'medium_count': r['medium_count'],
                 'high_count': r['high_count'],
             })
+    else:
+        result.pop('exploitabilityScore')
+        signature_summary.pop('exploitabilityScore')
 
     # because in python we use pep8 under_scored style in js we use camelCase
     signature_summary['canViewExploitability'] = can_view_exploitability

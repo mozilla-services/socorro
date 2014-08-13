@@ -1,3 +1,4 @@
+import copy
 import csv
 import datetime
 import json
@@ -130,6 +131,92 @@ BUG_STATUS = """ {
               "signature": "Other FakeSignature"}
             ]
 } """
+
+SAMPLE_SIGNATURE_SUMMARY = {
+    "reports": {
+        "products": [
+            {
+                "version_string": "33.0a2",
+                "percentage": "57.542",
+                "report_count": 103,
+                "product_name": "Firefox"
+            },
+        ],
+        "uptime": [
+            {
+                "category": "< 1 min",
+                "percentage": "29.126",
+                "report_count": 30
+            }
+        ],
+        "architecture": [
+            {
+                "category": "x86",
+                "percentage": "100.000",
+                "report_count": 103
+            }
+        ],
+        "flash_version": [
+            {
+                "category": "[blank]",
+                "percentage": "100.000",
+                "report_count": 103
+            }
+        ],
+        "graphics": [
+            {
+                "report_count": 24,
+                "adapter_name": None,
+                "vendor_hex": "0x8086",
+                "percentage": "23.301",
+                "vendor_name": None,
+                "adapter_hex": "0x0166"
+            }
+        ],
+        "distinct_install": [
+            {
+                "crashes": 103,
+                "version_string": "33.0a2",
+                "product_name": "Firefox",
+                "installations": 59
+            }
+        ],
+        "devices": [
+            {
+                "cpu_abi": "XXX",
+                "manufacturer": "YYY",
+                "model": "ZZZ",
+                "version": "1.2.3",
+                "report_count": 52311,
+                "percentage": "48.440",
+            }
+        ],
+        "os": [
+            {
+                "category": "Windows 8.1",
+                "percentage": "55.340",
+                "report_count": 57
+            }
+        ],
+        "process_type": [
+            {
+                "category": "Browser",
+                "percentage": "100.000",
+                "report_count": 103
+            }
+        ],
+        "exploitability": [
+            {
+                "low_count": 0,
+                "high_count": 0,
+                "null_count": 0,
+                "none_count": 4,
+                "report_date": "2014-08-12",
+                "medium_count": 0
+            }
+        ]
+    }
+}
 
 
 class RobotsTestViews(DjangoTestCase):
@@ -1060,77 +1147,30 @@ class TestViews(BaseTestViews):
             """)
 
         def mocked_get(url, params, **options):
+            signature_summary_data = copy.deepcopy(SAMPLE_SIGNATURE_SUMMARY)
             if '/signaturesummary' in url:
-                return Response("""
-                [
-                  {
-                    "version_string": "18.0",
-                    "percentage": "48.440",
-                    "report_count": 52311,
-                    "product_name": "WaterWolf",
-                    "category": "XXX",
-                    "crashes": "1234",
-                    "installations": "5679",
-                    "null_count" : "456",
-                    "low_count": "789",
-                    "medium_count": "123",
-                    "high_count": "1200",
-                    "report_date": "2013-01-01",
-                    "cpu_abi": "XXX",
-                    "manufacturer": "YYY",
-                    "model": "ZZZ",
-                    "version": "1.2.3",
-                    "vendor_hex" : "0x8086",
-                    "adapter_hex": " 0x2972",
-                    "vendor_name": "abc",
-                    "adapter_name" : "def"
-                  },
-                  {
-                    "version_string": "18.0",
-                    "percentage": "48.440",
-                    "report_count": 52311,
-                    "product_name": "NightTrain",
-                    "category": "XXX",
-                    "crashes": "1234",
-                    "installations": "5679",
-                    "null_count" : "456",
-                    "low_count": "789",
-                    "medium_count": "123",
-                    "high_count": "1200",
-                    "report_date": "2013-01-01",
-                    "cpu_abi": "XXX",
-                    "manufacturer": "YYY",
-                    "model": "ZZZ",
-                    "version": "1.2.3",
-                    "vendor_hex" : "0x8086",
-                    "adapter_hex": " 0x2972",
-                    "vendor_name": "abc",
-                    "adapter_name" : "def"
-                  },
-                  {
-                    "version_string": "13.0b4",
-                    "percentage": "9.244",
-                    "report_count": 9983,
-                    "product_name": "WaterWolf",
-                    "category": "YYY",
-                    "crashes": "3210",
-                    "installations": "9876",
-                    "null_count" : "123",
-                    "low_count": "456",
-                    "medium_count": "789",
-                    "high_count": "1100",
-                    "report_date": "2013-01-02",
-                    "cpu_abi": "AAA",
-                    "manufacturer": "BBB",
-                    "model": "CCC",
-                    "version": "4.5.6",
-                    "vendor_hex": "0x10de",
-                    "adapter_hex": "0x9804",
-                    "vendor_name": "",
-                    "adapter_name": ""
-                  }
+                signature_summary_data['reports']['products'] = [
+                    {
+                        "version_string": "18.0",
+                        "percentage": "48.440",
+                        "report_count": 52311,
+                        "product_name": "WaterWolf",
+                    },
+                    {
+                        "version_string": "18.0",
+                        "percentage": "48.440",
+                        "report_count": 52311,
+                        "product_name": "NightTrain",
+                    },
+                    {
+                        "version_string": "13.0b4",
+                        "percentage": "9.244",
+                        "report_count": 9983,
+                        "product_name": "WaterWolf",
+                    }
+
                 ]
-                """)
+                return Response(signature_summary_data)
 
             if '/crashes/signatures' in url:
                 return Response(u"""
@@ -2734,64 +2774,104 @@ class TestViews(BaseTestViews):
     def test_signature_summary(self, rget):
         def mocked_get(url, params, **options):
             if '/signaturesummary' in url:
-                return Response("""
-                [
-                  {
-                    "version_string": "12.0",
-                    "percentage": "48.440",
-                    "report_count": 52311,
-                    "product_name": "WaterWolf",
-                    "category": "XXX",
-                    "crashes": "1234",
-                    "installations": "5679",
-                    "null_count" : "456",
-                    "low_count": "789",
-                    "medium_count": "123",
-                    "high_count": "1200",
-                    "report_date": "2013-01-01",
-                    "cpu_abi": "XXX",
-                    "manufacturer": "YYY",
-                    "model": "ZZZ",
-                    "version": "1.2.3",
-                    "vendor_hex" : "0x8086",
-                    "adapter_hex": " 0x2972",
-                    "vendor_name": "abc",
-                    "adapter_name" : "def"
-                  },
-                  {
-                    "version_string": "13.0b4",
-                    "percentage": "9.244",
-                    "report_count": 9983,
-                    "product_name": "WaterWolf",
-                    "category": "YYY",
-                    "crashes": "3210",
-                    "installations": "9876",
-                    "null_count" : "123",
-                    "low_count": "456",
-                    "medium_count": "789",
-                    "high_count": "1100",
-                    "report_date": "2013-01-02",
-                    "cpu_abi": "AAA",
-                    "manufacturer": "BBB",
-                    "model": "CCC",
-                    "version": "4.5.6",
-                    "vendor_hex": "0x10de",
-                    "adapter_hex": "0x9804",
-                    "vendor_name": "",
-                    "adapter_name": ""
-                  }
-                ]
-                """)
+                assert params['report_types']
+                return Response({
+                    "reports": {
+                        "products": [
+                            {
+                                "version_string": "33.0a2",
+                                "percentage": "57.542",
+                                "report_count": 103,
+                                "product_name": "Firefox"
+                            },
+                        ],
+                        "uptime": [
+                            {
+                                "category": "< 1 min",
+                                "percentage": "29.126",
+                                "report_count": 30
+                            }
+                        ],
+                        "architecture": [
+                            {
+                                "category": "x86",
+                                "percentage": "100.000",
+                                "report_count": 103
+                            }
+                        ],
+                        "flash_version": [
+                            {
+                                "category": "[blank]",
+                                "percentage": "100.000",
+                                "report_count": 103
 
+                            }
+                        ],
+                        "graphics": [
+                            {
+                                "report_count": 24,
+                                "adapter_name": None,
+                                "vendor_hex": "0x8086",
+                                "percentage": "23.301",
+                                "vendor_name": None,
+                                "adapter_hex": "0x0166"
+                            }
+                        ],
+                        "distinct_install": [
+                            {
+                                "crashes": 103,
+                                "version_string": "33.0a2",
+                                "product_name": "Firefox",
+                                "installations": 59
+                            }
+                        ],
+                        "devices": [
+                            {
+                                "cpu_abi": "XXX",
+                                "manufacturer": "YYY",
+                                "model": "ZZZ",
+                                "version": "1.2.3",
+                                "report_count": 52311,
+                                "percentage": "48.440",
+                            }
+                        ],
+                        "os": [
+                            {
+                                "category": "Windows 8.1",
+                                "percentage": "55.340",
+                                "report_count": 57
+                            }
+                        ],
+                        "process_type": [
+                            {
+                                "category": "Browser",
+                                "percentage": "100.000",
+                                "report_count": 103
+                            }
+                        ],
+                        "exploitability": [
+                            {
+                                "low_count": 0,
+                                "high_count": 0,
+                                "null_count": 0,
+                                "none_count": 4,
+                                "report_date": "2014-08-12",
+                                "medium_count": 0
+                            }
+                        ]
+                    }
+                })
             raise NotImplementedError(url)
 
         url = reverse('crashstats:signature_summary')
 
         rget.side_effect = mocked_get
 
-        response = self.client.get(url, {'range_value': '1',
-                                         'signature': 'sig',
-                                         'version': 'WaterWolf:19.0'})
+        response = self.client.get(url, {
+            'range_value': '1',
+            'signature': 'sig',
+            'version': 'WaterWolf:19.0'
+        })
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
@@ -2810,7 +2890,7 @@ class TestViews(BaseTestViews):
         # percentages are turned into string as they're fed straight into
         # a mustache template.
         # for example,
-        eq_(struct['uptimeRange'][0]['percentage'], '48.44')
+        eq_(struct['uptimeRange'][0]['percentage'], '29.13')
 
         user = self._login()
         group = self._create_group_with_permission('view_exploitability')
@@ -2828,101 +2908,46 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_signature_summary_flash_exploitability(self, rget):
         def mocked_get(url, params, **options):
-            if (
-                'report_type' in params and
-                params['report_type'] == 'flash_version'
-            ):
-                assert 'signature' in params
+            signature_summary_data = copy.deepcopy(SAMPLE_SIGNATURE_SUMMARY)
+            if '/signaturesummary' in url:
                 if 'sig1' in params['signature']:
-                    return Response("""
-                    [
-                      {
-                        "category": "11.9.900.117",
-                        "percentage": "50.794",
-                        "report_count": 320
-                      },
-                      {
-                        "category": "11.9.900.152",
-                        "percentage": "45.397",
-                        "report_count": 286
-                      },
-                      {
-                        "category": "11.7.700.224",
-                        "percentage": "1.429",
-                        "report_count": 9
-                      }
+                    signature_summary_data['reports']['flash_version'] = [
+                        {
+                            "category": "11.9.900.117",
+                            "percentage": "50.794",
+                            "report_count": 320
+                        },
+                        {
+                            "category": "11.9.900.152",
+                            "percentage": "45.397",
+                            "report_count": 286
+                        },
+                        {
+                            "category": "11.7.700.224",
+                            "percentage": "1.429",
+                            "report_count": 9
+                        }
                     ]
-                    """)
                 elif 'sig2' in params['signature']:
-                    return Response("""
-                    [
-                      {
-                        "category": "11.9.900.117",
-                        "percentage": "50.794",
-                        "report_count": 320
-                      },
-                      {
-                        "category": "[blank]",
-                        "percentage": "45.397",
-                        "report_count": 286
-                      },
-                      {
-                        "category": "11.7.700.224",
-                        "percentage": "1.429",
-                        "report_count": 9
-                      }
+                    signature_summary_data['reports']['flash_version'] = [
+                        {
+                            "category": "11.9.900.117",
+                            "percentage": "50.794",
+                            "report_count": 320
+                        },
+                        {
+                            "category": "[blank]",
+                            "percentage": "45.397",
+                            "report_count": 286
+                        },
+                        {
+                            "category": "11.7.700.224",
+                            "percentage": "1.429",
+                            "report_count": 9
+                        }
                     ]
-                    """)
-            elif '/signaturesummary' in url:
-                return Response("""
-                [
-                  {
-                    "version_string": "12.0",
-                    "percentage": "48.440",
-                    "report_count": 52311,
-                    "product_name": "WaterWolf",
-                    "category": "XXX",
-                    "crashes": "1234",
-                    "installations": "5679",
-                    "null_count" : "456",
-                    "low_count": "789",
-                    "medium_count": "123",
-                    "high_count": "1200",
-                    "report_date": "2013-01-01",
-                    "cpu_abi": "XXX",
-                    "manufacturer": "YYY",
-                    "model": "ZZZ",
-                    "version": "1.2.3",
-                    "vendor_hex" : "0x8086",
-                    "adapter_hex": " 0x2972",
-                    "vendor_name": "abc",
-                    "adapter_name" : "def"
-                  },
-                  {
-                    "version_string": "13.0b4",
-                    "percentage": "9.244",
-                    "report_count": 9983,
-                    "product_name": "WaterWolf",
-                    "category": "YYY",
-                    "crashes": "3210",
-                    "installations": "9876",
-                    "null_count" : "123",
-                    "low_count": "456",
-                    "medium_count": "789",
-                    "high_count": "1100",
-                    "report_date": "2013-01-02",
-                    "cpu_abi": "AAA",
-                    "manufacturer": "BBB",
-                    "model": "CCC",
-                    "version": "4.5.6",
-                    "vendor_hex": "0x10de",
-                    "adapter_hex": "0x9804",
-                    "vendor_name": "",
-                    "adapter_name": ""
-                  }
-                ]
-                """)
 
+                return Response(signature_summary_data)
             raise NotImplementedError(url)
 
         url = reverse('crashstats:signature_summary')
@@ -2933,9 +2958,11 @@ class TestViews(BaseTestViews):
         group = self._create_group_with_permission('view_flash_exploitability')
         user.groups.add(group)
 
-        response = self.client.get(url, {'range_value': '1',
-                                         'signature': 'sig1',
-                                         'version': 'WaterWolf:19.0'})
+        response = self.client.get(url, {
+            'range_value': '1',
+            'signature': 'sig1',
+            'version': 'WaterWolf:19.0'
+        })
         eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
