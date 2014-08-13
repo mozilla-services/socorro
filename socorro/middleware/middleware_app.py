@@ -13,7 +13,10 @@
 import cgi
 import json
 import re
+
 import web
+import ujson
+
 from socorro.app.generic_app import App, main
 from socorro.external import (
     MissingArgumentError,
@@ -550,7 +553,7 @@ class ImplementationWrapper(JsonWebServiceBase):
                 web.header('Content-Type', result[1])
                 return result[0]
             web.header('Content-Type', 'application/json')
-            dumped = json.dumps(result)
+            dumped = ujson.dumps(result)
             web.header('Content-Length', len(dumped))
             return dumped
 

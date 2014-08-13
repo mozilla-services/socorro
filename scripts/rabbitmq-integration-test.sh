@@ -216,7 +216,7 @@ fi
 count=0
 while true
 do
-  curl -s "http://localhost:8883/crash/?uuid=${CRASHID}"  | grep '"total": 1' > /dev/null
+  curl -s "http://localhost:8883/crash/?uuid=${CRASHID}"  | grep '"total":1' > /dev/null
   if [ $? != 0 ]
   then
     echo "INFO: waiting for middleware..."
