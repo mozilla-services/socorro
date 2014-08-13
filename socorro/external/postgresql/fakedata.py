@@ -442,12 +442,11 @@ class ProductReleaseChannels(BaseTable):
                 yield row
 
 
-class RawADU(BaseTable):
-    table = 'raw_adu'
-    columns = ['adu_count', 'date', 'product_name', 'product_os_platform',
+class RawADI(BaseTable):
+    table = 'raw_adi'
+    columns = ['adi_count', 'date', 'product_name', 'product_os_platform',
                'product_os_version', 'product_version', 'build',
-               'build_channel', 'product_guid', 'received_at',
-               'update_channel']
+               'product_guid', 'received_at', 'update_channel']
 
     def generate_rows(self):
         for timestamp in date_range(self.start_date, self.end_date):
@@ -467,8 +466,8 @@ class RawADU(BaseTable):
                             for buildid in buildids:
                                 row = [adu, str(timestamp), product, os_name,
                                        os_name, number, buildid,
-                                       channel.lower(), product_guid,
-                                       str(received_at), channel.lower()]
+                                       product_guid, str(received_at),
+                                       channel.lower()]
                                 yield row
 
 
@@ -928,7 +927,7 @@ class ProcessedCrashes(BaseTable):
 
 # the order that tables are loaded is important.
 tables = [Products, ProductReleaseChannels, ProductBuildTypes,
-          RawADU, ReleasesRaw, Reports, RawCrashes, UpdateChannelMap,
+          RawADI, ReleasesRaw, Reports, RawCrashes, UpdateChannelMap,
           ProcessedCrashes, ProductProductidMap]
 
 # FIXME this could be built up from BaseTable's releases dict, instead

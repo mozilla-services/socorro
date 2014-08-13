@@ -40,7 +40,7 @@ END IF;
 -- if so, adjust lastday
 SELECT max("date")
 INTO last_adu
-FROM raw_adu;
+FROM raw_adi;
 
 IF lastday > last_adu THEN
     RAISE INFO 'last day of backfill period is after final day of ADU.  adjusting last day to %',last_adu;
