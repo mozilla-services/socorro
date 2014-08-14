@@ -47,8 +47,11 @@ def upgrade():
                         product_os_version,
                         product_version,
                         build,
-                        product_guid,
-                        CASE WHEN (build_channel ILIKE 'release%')
+                        CASE WHEN (product_guid = 'webapprt@mozilla.org')
+                        THEN '{webapprt@mozilla.org}'
+                        ELSE product_guid
+                        END,
+                        CASE WHEN (build_channel ILIKE 'release%%')
                         THEN 'release'
                         ELSE build_channel
                         END
@@ -56,7 +59,7 @@ def upgrade():
                         -- FILTER with product_productid_map
                         JOIN product_productid_map ON productid = product_guid
                     WHERE
-                        report_date='{0}'
+                        report_date='%s'
                     GROUP BY
                         report_date,
                         raw_adi_logs.product_name,
@@ -66,7 +69,7 @@ def upgrade():
                         build,
                         product_guid,
                         build_channel
-                """.format(backfill_date))
+                """ % backfill_date)
 
 def downgrade():
     op.execute("""TRUNCATE raw_adi""")

@@ -24,7 +24,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
         super(TestFetchADIFromHive, self).setUp()
         # Add something to product_productid_map
         cursor = self.conn.cursor()
-        cursor.execute("TRUNCATE raw_adi_logs, product_productid_map, products CASCADE")
+        cursor.execute("TRUNCATE raw_adi, raw_adi_logs, product_productid_map, products CASCADE")
         cursor.execute("""
             INSERT into products (
                 product_name,
@@ -40,7 +40,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 product_name,
                 productid
             ) VALUES (
-                'NothingMuch', '{a-guid}'
+                'NothingMuch', 'webapprt@mozilla.org'
             ), (
                 'WinterWolf', 'a-guid'
             )
@@ -63,7 +63,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
 
         def return_test_data(fake):
             test_data = [
-                ['2014-01-01',
+                [(datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
                  'WinterWolf',
                  'Ginko',
                  '2.3.1',
@@ -71,6 +71,15 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  'nightly-ww3v20',
                  'nightly',
                  'a-guid',
+                 1],
+                [(datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
+                 'NothingMuch',
+                 'Ginko',
+                 '3.2.1',
+                 '10.0.4',
+                 'release-ww3v20',
+                 'release-cck-blah',
+                 'webapprt@mozilla.org',
                  1],
                 ['2019-01-01',
                  'NothingMuch',
@@ -135,11 +144,11 @@ class TestFetchADIFromHive(IntegrationTestBase):
         pgcursor.execute(
             """ select %s from raw_adi_logs """ % ','.join(columns)
         )
-        adi = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
+        adi_logs = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
 
-        eq_(adi, [
+        eq_(adi_logs, [
             {
-                'report_date': datetime.date(2014, 1, 1),
+                'report_date': (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
                 'product_name': 'WinterWolf',
                 'product_os_platform': 'Ginko',
                 'product_os_version': '2.3.1',
@@ -147,6 +156,16 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 'build': 'nightly-ww3v20',
                 'build_channel': 'nightly',
                 'product_guid': 'a-guid',
+                'count': 1
+            }, {
+                'report_date': (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
+                'product_name': 'NothingMuch',
+                'product_os_platform': 'Ginko',
+                'product_os_version': '3.2.1',
+                'product_version': '10.0.4',
+                'build': 'release-ww3v20',
+                'build_channel': 'release-cck-blah',
+                'product_guid': 'webapprt@mozilla.org',
                 'count': 1
             }, {
                 'report_date': datetime.date(2019, 1, 1),
@@ -158,5 +177,43 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 'build_channel': 'release-cck-\\',
                 'product_guid': '{a-guid}',
                 'count': 2
+            }
+        ])
+
+        columns = (
+            'adi_count',
+            'date',
+            'product_name',
+            'product_os_platform',
+            'product_os_version',
+            'product_version',
+            'build',
+            'product_guid',
+            'update_channel',
+        )
+        pgcursor.execute(
+            """ select %s from raw_adi """ % ','.join(columns)
+        )
+        adi = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
+        eq_(adi, [
+            {'update_channel': 'release',
+                'product_guid': '{webapprt@mozilla.org}',
+                'product_version': '10.0.4',
+                'adi_count': 1,
+                'product_os_platform': 'Ginko',
+                'build': 'release-ww3v20',
+                'date': (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
+                'product_os_version': '3.2.1',
+                'product_name': 'NothingMuch'},
+
+            {'update_channel': 'nightly',
+                'product_guid': 'a-guid',
+                'product_version': '10.0.4',
+                'adi_count': 1,
+                'product_os_platform': 'Ginko',
+                'build': 'nightly-ww3v20',
+                'date': (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
+                'product_os_version': '2.3.1',
+                'product_name': 'WinterWolf'
             }
         ])

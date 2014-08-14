@@ -85,7 +85,10 @@ _RAW_ADI_QUERY = """
         product_os_version,
         product_version,
         build,
-        product_guid,
+        CASE WHEN (product_guid = 'webapprt@mozilla.org')
+        THEN '{webapprt@mozilla.org}'
+        ELSE product_guid
+        END,
         CASE WHEN (build_channel ILIKE 'release%%')
         THEN 'release'
         ELSE build_channel
