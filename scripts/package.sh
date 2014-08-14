@@ -30,6 +30,8 @@ fpm -s dir -t $TYPE \
     --vendor "Mozilla" \
     --url "https://wiki.mozilla.org/Socorro" \
     --description "$DESC" \
+    --before-install ../scripts/package/before-install.sh \
+    --after-install ../scripts/package/after-install.sh \
     socorro
 
 echo "> Build Complete."
