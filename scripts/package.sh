@@ -17,21 +17,21 @@ if [ ! -d 'builds/socorro' ]; then
     echo "  Please run './scripts/build.sh' before continuing."
     exit 1
 fi
-cd builds
 
 echo "> Building Socorro $VERSION ..."
 fpm -s dir -t $TYPE \
     -v $VERSION \
     -n "socorro" \
     -m "<socorro-dev@mozilla.com>" \
+    -C builds \
     --epoch $VERSION \
     --prefix ${PREFIX%%"socorro"} \
     --license "MPL" \
     --vendor "Mozilla" \
     --url "https://wiki.mozilla.org/Socorro" \
     --description "$DESC" \
-    --before-install ../scripts/package/before-install.sh \
-    --after-install ../scripts/package/after-install.sh \
+    --before-install scripts/package/before-install.sh \
+    --after-install scripts/package/after-install.sh \
     socorro
 
 echo "> Build Complete."
