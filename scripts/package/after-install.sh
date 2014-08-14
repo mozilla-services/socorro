@@ -1,22 +1,4 @@
-#!/bin/bash
-#
-# Socorro deploy script
-#
-
-if [ $# != 1 ]
-then
-  echo "Syntax: deploy.sh <url-to-socorro_tar_gz>"
-  exit 1
-fi
-
-URL=$1
-
-grep '6.' /etc/redhat-release &> /dev/null
-if [ $? != 0 ]
-then
-  echo "Only RHEL 6 based Linux distros (CentOS, etc.) are supported"
-  exit 1
-fi
+#! /bin/bash
 
 function error {
   if [ $# != 2 ]
@@ -32,94 +14,6 @@ function error {
     exit $EXIT_CODE
   fi
 }
-
-# Ensure we're executing in the directory we live in, so that we don't
-# have different socorro.tar.gz files based on your $PWD when you run
-# this script.
-cd "$(dirname "$0")"
-error $? "could not change working directory"
-
-# current date to the second, used for archiving old builds
-DATE=`date +%d-%m-%Y_%H_%M_%S`
-error $? "could not set date"
-
-# ensure socorro user exists
-id socorro &> /dev/null
-if [ $? != 0 ]; then
-    echo "Creating socorro user"
-    useradd socorro
-    error $? "could not create socorro user"
-fi
-
-# ensure base directories exist
-echo "Creating system config, log and crash storage directories"
-mkdir -p /etc/socorro
-error $? "could not create /etc/socorro"
-mkdir -p /var/log/socorro
-error $? "could not create /var/log/socorro"
-chown socorro /var/log/socorro
-error $? "could not chown /var/log/socorro"
-mkdir -p /data/socorro
-error $? "could not create /data/socorro"
-mkdir -p /var/lock/socorro
-error $? "could not create /var/lock/socorro"
-chown socorro /var/lock/socorro
-error $? "could not chown /var/lock/socorro"
-mkdir -p /home/socorro/primaryCrashStore \
-    /home/socorro/fallback \
-    /home/socorro/persistent
-error $? "could not make socorro crash storage directories"
-chown apache:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
-error $? "could not chown apache on crash storage directories, is httpd installed?"
-chmod o+x /home/socorro
-error $? "could not chmod o+x socorro homedir"
-chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
-error $? "could not chmod crash storage directories"
-
-# download latest successful Jenkins build
-OLD_CSUM=""
-if [ -f socorro.tar.gz ]
-then
-  OLD_CSUM=`md5sum socorro.tar.gz | awk '{print $1}'`
-  error $? "could not get old checksum"
-fi
-echo "Downloading socorro.tar.gz"
-curl -s -z socorro.tar.gz $URL > socorro-new.tar.gz
-error $? "curl reported failure"
-
-if [ ! -s socorro-new.tar.gz ]
-then
-  echo "No new file available."
-  echo "Remove socorro.tar.gz and rerun to override."
-  exit 0
-fi
-
-NEW_CSUM=`md5sum socorro-new.tar.gz | awk '{print $1}'`
-error $? "could not get new checksum"
-
-if [ "$OLD_CSUM" == "$NEW_CSUM" ]
-then
-  echo "No changes from previous build, aborting"
-  echo "(remove socorro.tar.gz and re-run to proceed anyway)"
-  exit 0
-fi
-
-# untar new build into tmp area
-echo "Unpacking new build"
-TMP=`mktemp -d /tmp/socorro-install-$$-XXX`
-error $? "mktemp reported failure"
-tar -C ${TMP} -zxf socorro-new.tar.gz
-error $? "could not untar new Socorro build"
-
-# backup old build
-echo "Backing up old build to /data/socorro.${DATE}"
-mv /data/socorro /data/socorro.${DATE}
-error $? "could not backup old Socorro build"
-
-# install new build
-echo "Installing new build to /data/socorro"
-mv ${TMP}/socorro/ /data/
-error $? "could not install new Socorro build"
 
 # deploy system files
 cp /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
@@ -252,6 +146,3 @@ mv socorro-new.tar.gz socorro.tar.gz
 error $? "could not mv socorro-new.tar.gz -> socorro.tar.gz"
 
 echo "Socorro build installed successfully!"
-echo "Downloaded from ${URL}"
-echo "Checksum: ${NEW_CSUM}"
-echo "Backed up original to /data/socorro.${DATE}"
