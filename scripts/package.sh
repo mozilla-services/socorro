@@ -6,7 +6,11 @@
 #  2: Type of package to build
 ##
 VERSION=${1:-$(git describe --tags | cut -d'-' -f1)}
-TYPE=${2:-"deb"}
+TYPE=${2:-"rpm"}
+# PREFIX will have any 'socorro' directory suffix removed
+PREFIX=${PREFIX:-"/data"}
+DESC="A distributed system for collecting, processing,
+ and displaying crash reports from clients using Breakpad"
 
 if [ ! -d 'builds/socorro' ]; then
     echo "Socorro has not been built (build/socorro does not exist)."
@@ -19,9 +23,13 @@ echo "> Building Socorro $VERSION ..."
 fpm -s dir -t $TYPE \
     -v $VERSION \
     -n "socorro" \
-    -m "<socorro-dev@mozilla.com>"
+    -m "<socorro-dev@mozilla.com>" \
+    --epoch $VERSION \
+    --prefix ${PREFIX%%"socorro"} \
     --license "MPL" \
-    --url "https://wiki.mozilla.org/Socorro"
+    --vendor "Mozilla" \
+    --url "https://wiki.mozilla.org/Socorro" \
+    --description "$DESC" \
     socorro
 
 echo "> Build Complete."
