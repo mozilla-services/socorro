@@ -16,11 +16,9 @@ Contributing
    diskperformancetests
    dumpingdumptables
    glossary/jsondumpstorage
-   processeddumpstorage
    fs
    database
    package
    commonconfig
-   populateelasticsearch
    dependencies
    addaservice

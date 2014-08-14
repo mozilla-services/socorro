@@ -34,6 +34,7 @@ Contents:
    webapp
    api/index
    crontabber
+   elasticsearch
    throttling
    contributing
    database
