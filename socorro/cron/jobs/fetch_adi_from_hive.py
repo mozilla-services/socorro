@@ -78,7 +78,24 @@ _RAW_ADI_QUERY = """
         update_channel
     )
     SELECT
-        count,
+        sum(count),
+        report_date,
+        raw_adi_logs.product_name,
+        product_os_platform,
+        product_os_version,
+        product_version,
+        build,
+        product_guid,
+        CASE WHEN (build_channel ILIKE 'release%%')
+        THEN 'release'
+        ELSE build_channel
+        END
+    FROM raw_adi_logs
+        -- FILTER with product_productid_map
+        JOIN product_productid_map ON productid = product_guid
+    WHERE
+        report_date=%s
+    GROUP BY
         report_date,
         raw_adi_logs.product_name,
         product_os_platform,
@@ -87,11 +104,6 @@ _RAW_ADI_QUERY = """
         build,
         product_guid,
         build_channel
-    FROM raw_adi_logs
-        -- FILTER with product_productid_map
-        JOIN product_productid_map ON productid = product_guid
-    WHERE
-        report_date=%s
 """
 
 
