@@ -52,11 +52,15 @@ fi
 
 # jenkins only settings for the pre-configman components
 # can be removed when all tests are updated to use configman
-if [ $WORKSPACE ]; then
-    pushd socorro/unittest/config
+pushd socorro/unittest/config
+for file in *.py.dist; do
+  if [ $WORKSPACE ]; then
     cp $JENKINS_CONF commonconfig.py
-    popd
-fi
+  else
+    cp $file `basename $file .dist`
+  fi
+done
+popd
 
 # setup any unset test configs and databases without overwriting existing files
 pushd config

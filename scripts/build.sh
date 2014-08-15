@@ -29,14 +29,6 @@ set -e
 
 make clean
 
-# copy default unit test configs
-pushd socorro/unittest/config
-for file in *.py.dist
-do
-  cp $file `basename $file .dist`
-done
-popd
-
 errors=0
 while read d
 do
