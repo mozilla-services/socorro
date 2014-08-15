@@ -9,10 +9,12 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
-export MAVEN_HOME=${MAVEN_HOME:-"/opt/maven"}
-export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/jre-openjdk/"}
+export MAVEN_HOME=${MAVEN_HOME:-"/opt/maven/bin"}
+export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/jre-openjdk/bin"}
 
-export PATH=$MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
+if [ -n "$WORKSPACE" ]; then
+  export PATH=$MAVEN_HOME:$JAVA_HOME:$PATH
+fi
 
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
