@@ -192,8 +192,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
             'update_channel',
         )
         pgcursor.execute(
-            """ select %s from raw_adi
-                order by update_channel desc""" % ','.join(columns)
+            """ select %s from raw_adi """ % ','.join(columns)
         )
         adi = [dict(zip(columns, row)) for row in pgcursor.fetchall()]
         eq_(adi, [
