@@ -34,13 +34,6 @@ export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
 # any failures in this script should cause the build to fail
 set -e
 
-# Install Maven
-if [ ! -d /opt/maven ]; then
-  wget http://apache.arvixe.com/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
-  sudo su -c "tar -zxvf apache-maven-3.2.2-bin.tar.gz -C /opt/ && cd /opt && mv apache-maven-3.2.2 maven"
-  rm apache-maven-3.2.2-bin.tar.gz
-fi
-
 make clean
 
 # copy default unit test configs
@@ -85,6 +78,12 @@ echo "Running integration test..."
 # package socorro.tar.gz for distribution
 mkdir builds/
 # make the analysis
+# Install Maven
+if [ ! -d "$MAVEN_HOME" ]; then
+  wget http://apache.arvixe.com/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
+  sudo su -c "tar -zxvf apache-maven-3.2.2-bin.tar.gz -C /opt/ && cd /opt && mv apache-maven-3.2.2 maven"
+  rm apache-maven-3.2.2-bin.tar.gz
+fi
 git submodule update --init socorro-toolbox akela
 cd akela && mvn package; cd ../
 cd socorro-toolbox && mvn package; cd ../
