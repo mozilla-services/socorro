@@ -43,7 +43,7 @@ mkdir -p analysis
 rsync socorro-toolbox/target/*.jar analysis/
 rsync akela/target/*.jar analysis/
 rsync -a socorro-toolbox/src/main/pig/ analysis/
-PREFIX=builds/socorro source ./scripts/install.sh
+source scripts/install.sh
 if [ -n $BUILD_NUMBER ]
 then
   echo "$BUILD_NUMBER" > builds/socorro/JENKINS_BUILD_NUMBER
