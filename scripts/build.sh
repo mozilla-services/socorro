@@ -27,7 +27,7 @@ export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
 # any failures in this script should cause the build to fail
 set -e
 
-make clean
+source scripts/clean.sh
 
 source scripts/bootstrap.sh
 # run unit tests
