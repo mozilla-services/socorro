@@ -5,9 +5,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Jenkins build script for running tests and packaging build
-#
-# Inspired by Zamboni
-# https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
@@ -28,7 +25,7 @@ export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
 source scripts/clean.sh
 
 source scripts/bootstrap.sh
-# run unit tests
+
 source scripts/test.sh
 
 source scripts/integration-test.sh
