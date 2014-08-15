@@ -50,6 +50,21 @@ if [ -n "$elasticsearch_index" ]; then
     ES_RESOURCES="$ES_RESOURCES resource.elasticsearch.elasticsearch_index=$elasticsearch_index"
 fi
 
+errors=0
+while read d
+do
+  if [ ! -f "$d/__init__.py" ]
+  then
+    echo "$d is missing an __init__.py file, tests will not run"
+    errors=$((errors+1))
+  fi
+done < <(find socorro/unittest/* -not -name logs -type d)
+
+if [ $errors != 0 ]
+then
+  exit 1
+fi
+
 # jenkins only settings for the pre-configman components
 # can be removed when all tests are updated to use configman
 pushd socorro/unittest/config
