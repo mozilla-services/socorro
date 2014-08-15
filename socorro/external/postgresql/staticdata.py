@@ -22,7 +22,6 @@ class OSNameMatches(BaseTable):
     columns = ['os_name', 'match_string']
     rows = [['Windows', 'Windows%'],
             ['Mac OS X', 'Mac%'],
-            ['Mac OS X', 'Darwin%'],
             ['Linux', 'Linux%']]
 
 
