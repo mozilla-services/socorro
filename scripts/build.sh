@@ -44,8 +44,5 @@ rsync socorro-toolbox/target/*.jar analysis/
 rsync akela/target/*.jar analysis/
 rsync -a socorro-toolbox/src/main/pig/ analysis/
 source scripts/install.sh
-if [ -n $BUILD_NUMBER ]
-then
-  echo "$BUILD_NUMBER" > builds/socorro/JENKINS_BUILD_NUMBER
-fi
-tar -C builds --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
+
+source scripts/package.sh
