@@ -32,7 +32,6 @@ source scripts/bootstrap.sh
 source scripts/test.sh
 
 # pull pre-built, known version of breakpad
-make clean
 wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
 tar -zxf breakpad.tar.gz
 mv breakpad stackwalk
