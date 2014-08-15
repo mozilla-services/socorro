@@ -1,30 +1,30 @@
 #! /bin/bash -ex
 
-export PREFIX=${PREFIX:-/data/socorro}
+export BUILD_DIR=${BUILD_DIR:-/data/socorro}
 
-# package up the tarball in $PREFIX
+# package up the tarball in $BUILD_DIR
 # create base directories
-mkdir -p $PREFIX/application
+mkdir -p $BUILD_DIR/application
 
 # copy to install directory
-rsync -a config $PREFIX/application
-rsync -a ${VIRTUAL_ENV} $PREFIX
-rsync -a socorro $PREFIX/application
-rsync -a scripts $PREFIX/application
-rsync -a tools $PREFIX/application
-rsync -a sql $PREFIX/application
-rsync -a wsgi $PREFIX/application
-rsync -a stackwalk $PREFIX/
-rsync -a scripts/stackwalk.sh $PREFIX/stackwalk/bin/
-rsync -a analysis $PREFIX/
-rsync -a alembic $PREFIX/application
-rsync -a webapp-django $PREFIX/
+rsync -a config $BUILD_DIR/application
+rsync -a ${VIRTUAL_ENV} $BUILD_DIR
+rsync -a socorro $BUILD_DIR/application
+rsync -a scripts $BUILD_DIR/application
+rsync -a tools $BUILD_DIR/application
+rsync -a sql $BUILD_DIR/application
+rsync -a wsgi $BUILD_DIR/application
+rsync -a stackwalk $BUILD_DIR/
+rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
+rsync -a analysis $BUILD_DIR/
+rsync -a alembic $BUILD_DIR/application
+rsync -a webapp-django $BUILD_DIR/
 
 # copy default config files
-pushd $PREFIX/application/scripts/config
+pushd $BUILD_DIR/application/scripts/config
 for file in *.py.dist; do cp $file `basename $file .dist`; done
 popd
 
 # record current git revision in install dir
-git rev-parse HEAD > $PREFIX/application/socorro/external/postgresql/socorro_revision.txt
-cp $PREFIX/stackwalk/revision.txt $PREFIX/application/socorro/external/postgresql/breakpad_revision.txt
+git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
+cp $BUILD_DIR/stackwalk/revision.txt $BUILD_DIR/application/socorro/external/postgresql/breakpad_revision.txt
