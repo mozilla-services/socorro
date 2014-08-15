@@ -33,8 +33,6 @@ source scripts/test.sh
 
 source scripts/integration-test.sh
 
-# package socorro.tar.gz for distribution
-mkdir builds/
 # make the analysis
 git submodule update --init socorro-toolbox akela
 cd akela && mvn package; cd ../
