@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash -e
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,8 +24,6 @@ export rmq_virtual_host=${rmq_virtual_host:-"/"}
 export elasticSearchHostname=${elasticSearchHostname:-"localhost"}
 export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
 
-# any failures in this script should cause the build to fail
-set -e
 
 source scripts/clean.sh
 
