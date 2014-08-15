@@ -36,6 +36,7 @@ set -e
 if [ ! -d /opt/maven ]; then
   wget http://apache.arvixe.com/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
   sudo su -c "tar -zxvf apache-maven-3.2.2-bin.tar.gz -C /opt/ && cd /opt && mv apache-maven-3.2.2 maven"
+  rm apache-maven-3.2.2-bin.tar.gz
 fi
 
 make clean
