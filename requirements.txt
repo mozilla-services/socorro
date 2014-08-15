@@ -1,7 +1,7 @@
 # dev requirements
 
 # sha256: SYQkQdJNiNDs_DhobQIcs7G-56v8VB6fxzReRiDe6rY
-Mako==0.7.3
+
 # sha256: M57ATSCtnNzL_p843OYYLMUEznieXQ-WR-qnUvD5UwA
 MarkupSafe==0.15
 # sha256: EWRYQrqOyYaujPvkxsrP9cNfD0Unq_T1WBrotK1JwLY
