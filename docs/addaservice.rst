@@ -271,14 +271,6 @@ tests.
 Expose your service
 -------------------
 
-We currently support 2 different middlewares. The current one is based on a lot
-of files in ``socorro.middleware``, and the new one is using ``configman``,
-our new configuration manager. Sadly, at the moment you will need to expose
-your new service in both systems, until we get rid of the current middleware.
-
-With the new configman-middleware
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 The way it works overall is simple: ``socorro/middleware/middleware_app.py``
 has a list (called ``SERVICES_LIST``) of tuples, each tuple being composed
 of 2 elements:
@@ -320,73 +312,6 @@ of the types of implementations listed in the default configuration for
 To test your service, start the middleware and try to access the new URL::
 
     $ curl http://domain/crash/uuid/xxx-xxx-xxx/
-
-With the old middleware
-^^^^^^^^^^^^^^^^^^^^^^^
-
-First create a new file for your service in ``socorro/middleware/`` and call it
-``nameofservice_service.py``. Then create a class inside as follow::
-
-    import logging
-
-    from socorro.middleware.service import DataAPIService
-
-    logger = logging.getLogger("webapi")
-
-
-    class Crash(DataAPIService):
-
-        service_name = "crash" # Name of the submodule to look for in external
-        uri = "/crash/(.*)" # URL of the service
-
-        def __init__(self, config):
-            super(Crash, self).__init__(config)
-            logger.debug('Crash service __init__')
-
-        def get(self, *args):
-            # Parse parameters of the URL
-            params = self.parse_query_string(args[0])
-
-            # Find the implementation module in external depending on the configuration
-            module = self.get_module(params)
-
-            # Instantiate the implementation class
-            impl = module.Crash(config=self.context)
-
-            # Call and return the result of the implementation method
-            return impl.get(**params)
-
-``uri`` is the URL pattern you want to match. It is a regular expression, and
-the content of each part (``(.*)``) will be in ``args``.
-
-``service_name`` will be used to find the corresponding implementation
-resource. It has to match the filename of the module you need.
-
-If you want to add mandatory parameters, modify the URI and values will be
-passed in ``args``.
-
-Finally add your service to the list of running services in
-scripts/config/webapiconfig.py.dist as follow::
-
-    import socorro.middleware.search_service as search
-    import socorro.middleware.myservice_service as myservice # add
-
-    servicesList = cm.Option()
-    servicesList.doc = 'a python list of classes to offer as services'
-    servicesList.default = [myservice.MyService, search.Search, (...)] # add
-
-You can also add a config key for the implementation of your service. If you
-don't, your service will use the default config key
-(``serviceImplementationModule``). To add a specific configuration key::
-
-    # MyService service config
-    myserviceImplementationModule = cm.Option()
-    myserviceImplementationModule.doc = "String, name of the module myservice uses."
-    myserviceImplementationModule.default = 'socorro.external.elasticsearch' # for example
-
-Then restart Apache and you should be good to go! If you're using a Vagrant VM,
-you can hit the middleware directly by calling
-http://socorro-api/bpapi/myservice/params/.
 
 
 And then?
