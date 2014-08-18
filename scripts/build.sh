@@ -9,6 +9,13 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
+export MAVEN_HOME=${MAVEN_HOME:-"/opt/maven/bin"}
+export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/jre-openjdk/bin"}
+
+if [ -n "$WORKSPACE" ]; then
+  export PATH=$MAVEN_HOME:$JAVA_HOME:$PATH
+fi
+
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
 export database_port=${database_port:-"5432"}
@@ -71,6 +78,12 @@ echo "Running integration test..."
 # package socorro.tar.gz for distribution
 mkdir builds/
 # make the analysis
+# Install Maven
+if [ ! -d "$MAVEN_HOME" ]; then
+  wget http://apache.arvixe.com/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
+  sudo su -c "tar -zxvf apache-maven-3.2.2-bin.tar.gz -C /opt/ && cd /opt && mv apache-maven-3.2.2 maven"
+  rm apache-maven-3.2.2-bin.tar.gz
+fi
 git submodule update --init socorro-toolbox akela
 cd akela && mvn package; cd ../
 cd socorro-toolbox && mvn package; cd ../
