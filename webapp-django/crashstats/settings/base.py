@@ -334,3 +334,6 @@ DISALLOWED_SYMBOLS_SNIPPETS = (
     # https://bugzilla.mozilla.org/show_bug.cgi?id=1012672
     'qcom/proprietary',
 )
+
+# Rate limit for when using the Web API for anonymous hits
+API_RATE_LIMIT = '10/m'

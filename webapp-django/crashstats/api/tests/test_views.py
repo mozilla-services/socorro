@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
@@ -227,7 +228,10 @@ class TestViews(BaseTestViews):
         # should still be ok
         eq_(response.status_code, 200)
 
-        for i in range(1001):
+        rate_limit = settings.API_RATE_LIMIT
+        rate_limit_times = int(re.findall('\d+', rate_limit)[0])
+
+        for i in range(rate_limit_times + 1):
             response = self.client.get(url, {
                 'product': 'WaterWolf',
                 'versions': ['10.0', '11.1'],
