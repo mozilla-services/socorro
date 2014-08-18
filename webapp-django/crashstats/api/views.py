@@ -171,7 +171,7 @@ def has_permissions(user, permissions):
 @waffle_switch('app_api_all')
 @ratelimit(
     method=['GET', 'POST', 'PUT'],
-    rate='10/m',
+    rate=settings.API_RATE_LIMIT,
     skip_if=_skip_ratelimit
 )
 @utils.add_CORS_header  # must be before `utils.json_view`
