@@ -50,13 +50,32 @@ if [ -n "$elasticsearch_index" ]; then
     ES_RESOURCES="$ES_RESOURCES resource.elasticsearch.elasticsearch_index=$elasticsearch_index"
 fi
 
+errors=0
+while read d
+do
+  if [ ! -f "$d/__init__.py" ]
+  then
+    echo "$d is missing an __init__.py file, tests will not run"
+    errors=$((errors+1))
+  fi
+done < <(find socorro/unittest/* -not -name logs -type d)
+
+if [ $errors != 0 ]
+then
+  exit 1
+fi
+
 # jenkins only settings for the pre-configman components
 # can be removed when all tests are updated to use configman
-if [ $WORKSPACE ]; then
-    pushd socorro/unittest/config
+pushd socorro/unittest/config
+for file in *.py.dist; do
+  if [ $WORKSPACE ]; then
     cp $JENKINS_CONF commonconfig.py
-    popd
-fi
+  else
+    cp $file `basename $file .dist`
+  fi
+done
+popd
 
 # setup any unset test configs and databases without overwriting existing files
 pushd config
@@ -70,14 +89,6 @@ popd
 PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_integration_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
 
 PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
-
-pushd socorro/unittest/config
-for file in *.py.dist; do
-    if [ ! -f `basename $file .dist` ]; then
-        cp $file `basename $file .dist`
-    fi
-done
-popd
 
 PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --logging.stderr_error_logging_level=40 --unlogged
 
