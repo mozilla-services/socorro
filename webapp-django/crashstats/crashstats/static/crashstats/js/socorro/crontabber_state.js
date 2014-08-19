@@ -50,7 +50,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-d3.json("data.json", function(data) {
+d3.json("/api/CrontabberState/", function(data) {
 
     /**
      * Reshape the data

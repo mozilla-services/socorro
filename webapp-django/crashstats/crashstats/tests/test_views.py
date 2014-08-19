@@ -3043,39 +3043,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
-    def test_crontabber_state_json(self, rget):
-        url = reverse('crashstats:crontabber_state_json')
-
-        sample_data = {
-            "state": {
-                "slow-one": {
-                    "next_run": "2013-02-19T01:16:00+00:00",
-                    "first_run": "2012-11-05T23:27:07+00:00",
-                    "last_error": {
-                        "traceback": "error error error",
-                        "type": "<class 'sluggish.jobs.InternalError'>",
-                        "value": "Have already run this for 2012-12-24 23:27"
-                    },
-                    "last_run": "2013-02-09T00:16:00+00:00",
-                    "last_success": "2012-12-24T22:27:07+00:00",
-                    "error_count": 6,
-                    "depends_on": []
-                }
-            }
-        }
-
-        def mocked_get(**options):
-            assert '/crontabber_state' in options['url']
-            return Response(json.dumps(sample_data))
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url)
-        ok_('application/json' in response['Content-Type'])
-        eq_(response.status_code, 200)
-        eq_(sample_data, json.loads(response.content))
-
-    @mock.patch('requests.get')
     def test_your_crashes(self, rget):
         url = reverse('crashstats:your_crashes')
 
