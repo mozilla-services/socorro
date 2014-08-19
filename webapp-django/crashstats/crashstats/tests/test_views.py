@@ -3086,9 +3086,8 @@ class TestViews(BaseTestViews):
                 return Response({
                     'email': {
                         'name': 'email',
-                        'query_type': 'str',
+                        'query_type': 'string',
                         'namespace': 'processed_crash',
-                        'form_field_type': 'StringField',
                         'form_field_choices': None,
                         'permissions_needed': ['crashstats.view_pii'],
                         'default_value': None,
@@ -3144,9 +3143,8 @@ class TestViews(BaseTestViews):
                 return Response({
                     'email': {
                         'name': 'email',
-                        'query_type': 'str',
+                        'query_type': 'string',
                         'namespace': 'processed_crash',
-                        'form_field_type': 'StringField',
                         'form_field_choices': None,
                         'permissions_needed': ['crashstats.view_pii'],
                         'default_value': None,

@@ -47,14 +47,6 @@ $(function () {
         'width': 'element'
     });
 
-    var formFieldTypeElt = $('select[name=form_field_type]', formElt);
-    formFieldTypeElt.select2({
-        'width': 'element'
-    });
-    if (formFieldTypeElt.data('selected')) {
-        formFieldTypeElt.select2('val', formFieldTypeElt.data('selected'));
-    }
-
     $('input[name=form_field_choices]', formElt).select2({
         'tags': [],
         'width': 'element'
