@@ -180,11 +180,6 @@ class HybridCrashProcessor(RequiredConfig):
         'collected',
         default=True,
     )
-    required_config.add_option(
-        'with_old_monitor',
-        doc='boolean indictating if we are using the old monitor_app.py',
-        default=False,
-    )
     required_config.namespace('statistics')
     required_config.statistics.add_option(
         'stats_class',

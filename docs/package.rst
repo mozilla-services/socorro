@@ -24,6 +24,5 @@ Package Layout
 * ``.../socorro/deferredcleanup`` : modules used by the deferred file system cleanup script
 * ``.../socorro/integrationtest`` : for future use
 * ``.../socorro/lib`` : common modules used throughout the system
-* ``.../socorro/monitor`` : modules used by the monitor application
 * ``.../socorro/processor`` : modules used by the processor application
 * ``.../socorro/unittest`` : testing framework modules
