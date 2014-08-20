@@ -1,9 +1,9 @@
 {% extends "crashstats_base.html" %}
 {% block site_css %}
   {{ super() }}
+
   {% compress css %}
   <link href="{{ static('crashstats/css/topcrashers.less') }}" rel="stylesheet" type="text/less" media="screen" />
-  <link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" rel="stylesheet" type="text/css">
   {% endcompress %}
 {% endblock %}
 
@@ -212,7 +212,7 @@ Top Crashers for {{ product }} {{ version }}
 </script>
   {{ super() }}
   {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
   {% endcompress %}
   <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
   {% compress js %}

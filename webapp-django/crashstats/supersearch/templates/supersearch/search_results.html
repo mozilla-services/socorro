@@ -74,10 +74,10 @@
         <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
         <thead>
             <tr>
-                <th scope="col">Rank</th>
-                <th scope="col">{{ facet | replace('_', ' ') | capitalize }}</th>
-                <th scope="col">Count</th>
-                <th scope="col">%</th>
+                <th class="column-narrow" scope="col">Rank</th>
+                <th class="facet-term" scope="col">{{ facet | replace('_', ' ') | capitalize }}</th>
+                <th class="column-narrow" scope="col">Count</th>
+                <th class="column-narrow" scope="col">%</th>
                 {% if facet == 'signature' %}
                 <th scope="col">Bugs</th>
                 {% endif %}

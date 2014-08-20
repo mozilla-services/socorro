@@ -4,26 +4,10 @@
 
 {% block admin_title %}{{ super() }} - Super Search Fields{% endblock %}
 
-{% block site_js %}
-  {{ super() }}
-
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
-<script>
-$(function () {
-    $('.tablesorter').tablesorter();
-    $('.delete').click(function (e) {
-        var field_name = $(this).data('field-name');
-        return confirm('Do you really want to delete the "'+ field_name +'" field?');
-    });
-});
-</script>
-{% endblock %}
-
 {% block site_css %}
   {{ super() }}
 
     {% compress css %}
-<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/less" rel="stylesheet">
 <link href="{{ static('manage/css/supersearch_fields.less') }}" type="text/less" rel="stylesheet">
     {% endcompress %}
 {% endblock %}
@@ -90,4 +74,19 @@ $(function () {
     </div>
   </div>
 
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+
+<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+<script>
+$(function () {
+    $('.tablesorter').tablesorter();
+    $('.delete').click(function (e) {
+        var field_name = $(this).data('field-name');
+        return confirm('Do you really want to delete the "'+ field_name +'" field?');
+    });
+});
+</script>
 {% endblock %}

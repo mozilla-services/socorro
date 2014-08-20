@@ -183,11 +183,11 @@ d3.json("/api/CrontabberState/", function(data) {
             'depends_on'
         ];
 
-    table.classed('tablesorter', true);
+    table.classed('data-table tablesorter', true)
 
-    thead.append("tr").selectAll("td")
+    thead.append("tr").selectAll("th")
         .data(tableFields)
-      .enter().append("td")
+      .enter().append("th")
         .text(function capitalize(s) {
             return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
         })
@@ -234,12 +234,12 @@ d3.json("/api/CrontabberState/", function(data) {
     ];
     var anyOngoing = false;
 
-    table.classed('tablesorter', true);
+    table.classed('data-table tablesorter', true);
 
-    thead.append("tr").selectAll("td")
+    thead.append("tr").selectAll("th")
         .data(tableFields)
       .enter()
-        .append("td")
+        .append("th")
 
         .text(function capitalize(s) {
             if (s === 'ongoing') {

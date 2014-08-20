@@ -1,3 +1,5 @@
+@import "fonts.less";
+
 /* standard table styles for data tables */
 table.data-table {
     width: 100%;
@@ -86,6 +88,29 @@ table.vertical {
         font-weight: bold;
     }
 }
+.tablesorter {
+    thead {
+        font-size: .9rem;
+    }
+    .header {
+        cursor: pointer;
+        &:after {
+            font-family: 'icons';
+            content: '\e800';
+            float: right;
+        }
+    }
+    .headerSortUp:after {
+        font-family: 'icons';
+        content: '\e801';
+        float: right;
+    }
+    .headerSortDown:after {
+        font-family: 'icons';
+        content: '\e802';
+        float: right;
+    }
+}
 /**
  * Adds a little flyout to the left of a row in
  * order to draw attention or display a notice.
@@ -93,7 +118,7 @@ table.vertical {
 .row-notice {
     display: inline-block;
     position: absolute;
-    left: 15px;
+    left: -6px;
     background-color: #D33419;
     color: white;
     margin-top: -6px;

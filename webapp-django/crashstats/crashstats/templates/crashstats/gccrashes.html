@@ -1,8 +1,14 @@
 {% extends "crashstats_base.html" %}
 {% block site_css %}
   {{ super() }}
+
   {% compress css %}
-    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/jquery-ui-1.10.3/flick/jquery.ui.custom.min.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
+  {% endcompress %}
+
+  {% compress css %}
     <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/gccrashes.less') }}" media="screen" />
   {% endcompress %}
     <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/nv.d3.min.css') }}" media="screen" />
@@ -67,9 +73,12 @@ Total Volume of GC Crashes for {{ product }} {{ selected_version }}
   {{ super() }}
   <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
   <script src="{{ static('crashstats/js/lib/nv.d3.min.js') }}"></script>
+
   {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.datepicker.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
+  {% endcompress %}
+
+  {% compress js %}
   <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/gccrashes.js') }}"></script>
   {% endcompress %}

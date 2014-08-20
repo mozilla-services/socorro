@@ -2,29 +2,31 @@
 
 {% block site_css %}
   {{ super() }}
+
+  {% compress css %}
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
+  {% endcompress %}
+
   {% compress css %}
   <link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
-  {% endcompress %}
-  {% compress css %}
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
   {% endcompress %}
 {% endblock %}
 
 
 {% block report %}
-<div id="report-list">
-    <ul id="report-list-nav">
-        <li><a href="#sigsummary"><span>Signature Summary</span></a></li>
-        <li><a href="#graph"><span>Graph</span></a></li>
-        <li><a href="#table"><span>Table</span></a></li>
-        <li><a href="#reports"><span>Reports</span></a></li>
-        <li><a href="#bugzilla"><span>Bugzilla</span></a></li>
-        <li><a href="#comments"><span>Comments</span></a></li>
-        <li><a id="correlations-report-list" href="#correlations"><span>Correlations</span></a></li>
+<div id="report-list" class="no-border ui-tabs ui-widget ui-widget-content ui-corner-all">
+    <ul id="report-list-nav" class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+        <li class="ui-state-default ui-corner-top"><a href="#sigsummary" class="ui-tabs-anchor"><span>Signature Summary</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#graph" class="ui-tabs-anchor"><span>Graph</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#table" class="ui-tabs-anchor"><span>Table</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#reports" class="ui-tabs-anchor"><span>Reports</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#bugzilla" class="ui-tabs-anchor"><span>Bugzilla</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#comments" class="ui-tabs-anchor"><span>Comments</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a id="correlations-report-list" href="#correlations" class="ui-tabs-anchor"><span>Correlations</span></a></li>
         {% if request.user.has_perm('crashstats.view_pii') %}
-        <li><a href="#sigurls"><span>URLs</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#sigurls" class="ui-tabs-anchor"><span>URLs</span></a></li>
         {% endif %}
     </ul>
 
@@ -65,7 +67,7 @@
 
     </div>
 
-    <div id="table" class="ui-tabls-hide"
+    <div id="table" class="ui-tabs-hide"
          data-partial-url="{{ url('crashstats:report_list_partial', 'table') }}">
 
        <p class="loading-placeholder">
@@ -166,10 +168,11 @@
 <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
 
 {% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
+<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+{% endcompress %}
+
+{% compress js %}
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>

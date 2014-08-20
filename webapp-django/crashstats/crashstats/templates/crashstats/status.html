@@ -8,35 +8,9 @@
   {{ super() }}
   {% compress css %}
   <link media="screen" href="{{ static('crashstats/css/rickshaw.min.css') }}" rel="stylesheet" type="text/css">
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
   <link media="screen" href="{{ static('crashstats/css/laglog.css') }}" type="text/css" rel="stylesheet">
   {% endcompress %}
 {% endblock %}
-
-
-{% block site_js %}
-  {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
-  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-  {% compress js %}
-  <script src="{{ static('crashstats/js/lib/rickshaw.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/lib/filesize.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
-  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/server_status.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/laglog.js') }}"></script>
-  {% endcompress %}
-  <script>
-    var waiting_job_count = {{ plot_data.waiting_job_count | safe }};
-    var processors_count = {{ plot_data.processors_count | safe }};
-    var avg_process_sec = {{ plot_data.avg_process_sec | safe }};
-    var avg_wait_sec = {{ plot_data.avg_wait_sec | safe }};
-    var x_ticks = {{ plot_data.date_created | safe }};
-  </script>
-{% endblock %}
-
 
 {% block content %}
 <div id="mainbody">
@@ -139,4 +113,30 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
+  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+
+  {% compress js %}
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+  {% endcompress %}
+
+  {% compress js %}
+  <script src="{{ static('crashstats/js/lib/rickshaw.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/lib/filesize.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/server_status.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/laglog.js') }}"></script>
+  {% endcompress %}
+  <script>
+    var waiting_job_count = {{ plot_data.waiting_job_count | safe }};
+    var processors_count = {{ plot_data.processors_count | safe }};
+    var avg_process_sec = {{ plot_data.avg_process_sec | safe }};
+    var avg_wait_sec = {{ plot_data.avg_wait_sec | safe }};
+    var x_ticks = {{ plot_data.date_created | safe }};
+  </script>
 {% endblock %}
