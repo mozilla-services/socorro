@@ -40,7 +40,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 product_name,
                 productid
             ) VALUES (
-                'NothingMuch', 'webapprt@mozilla.org'
+                'NothingMuch', '{webapprt@mozilla.org}'
             ), (
                 'WinterWolf', 'a-guid'
             )
