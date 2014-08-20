@@ -80,7 +80,13 @@ _RAW_ADI_QUERY = """
     SELECT
         sum(count),
         report_date,
-        raw_adi_logs.product_name,
+        CASE WHEN (raw_adi_logs.product_name = 'Fennec'
+            AND product_guid = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}')
+        THEN 'FennecAndroid'
+        WHEN (raw_adi_logs.product_name = 'Webapp Runtime')
+        THEN 'WebappRuntime'
+        ELSE raw_adi_logs.product_name
+        END,
         product_os_platform,
         product_os_version,
         product_version,
@@ -95,7 +101,11 @@ _RAW_ADI_QUERY = """
         END
     FROM raw_adi_logs
         -- FILTER with product_productid_map
-        JOIN product_productid_map ON productid = product_guid
+        JOIN product_productid_map ON productid =
+            CASE WHEN (product_guid = 'webapprt@mozilla.org')
+            THEN '{webapprt@mozilla.org}'
+            ELSE product_guid
+            END
     WHERE
         report_date=%s
     GROUP BY
