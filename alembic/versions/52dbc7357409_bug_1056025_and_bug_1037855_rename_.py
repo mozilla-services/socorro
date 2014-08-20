@@ -10,6 +10,8 @@ Create Date: 2014-08-20 10:15:41.198381
 revision = '52dbc7357409'
 down_revision = '3a36327c2845'
 
+import datetime
+
 from alembic import op
 from socorro.lib import citexttype, jsontype, buildtype
 from socorro.lib.migrations import fix_permissions, load_stored_proc
