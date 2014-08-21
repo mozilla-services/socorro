@@ -80,7 +80,6 @@ class SuperSearchFieldForm(BaseForm):
     query_type = forms.CharField(required=False)
     data_validation_type = forms.CharField(required=False)
     permissions_needed = forms.CharField(required=False)
-    form_field_type = forms.CharField(required=False)
     form_field_choices = forms.CharField(required=False)
     is_exposed = forms.BooleanField(required=False)
     is_returned = forms.BooleanField(required=False)

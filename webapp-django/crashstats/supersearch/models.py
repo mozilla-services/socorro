@@ -206,7 +206,6 @@ class SuperSearchField(models.SocorroMiddleware):
         'query_type',
         'data_validation_type',
         'permissions_needed',
-        'form_field_type',
         'form_field_choices',
         'is_exposed',
         'is_returned',

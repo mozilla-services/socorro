@@ -903,8 +903,7 @@ class TestViews(BaseTestViews):
                     'name': 'signature',
                     'namespace': 'processed_crash',
                     'in_database_name': 'signature',
-                    'query_type': 'str',
-                    'form_field_type': 'StringField',
+                    'query_type': 'string',
                     'form_field_choices': None,
                     'permissions_needed': [],
                     'default_value': None,
@@ -917,7 +916,6 @@ class TestViews(BaseTestViews):
                     'namespace': 'processed_crash',
                     'in_database_name': 'product',
                     'query_type': 'enum',
-                    'form_field_type': 'MultipleValueField',
                     'form_field_choices': None,
                     'permissions_needed': [],
                     'default_value': None,
@@ -932,9 +930,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('signature' in response.content)
-        ok_('StringField' in response.content)
+        ok_('string' in response.content)
         ok_('product' in response.content)
-        ok_('MultipleValueField' in response.content)
+        ok_('enum' in response.content)
 
     @mock.patch('requests.get')
     def test_supersearch_fields_missing(self, rget):
@@ -951,7 +949,6 @@ class TestViews(BaseTestViews):
                         'namespace': 'processed_crash',
                         'in_database_name': 'product',
                         'query_type': 'enum',
-                        'form_field_type': 'MultipleValueField',
                         'form_field_choices': None,
                         'permissions_needed': [],
                         'default_value': None,
@@ -992,8 +989,7 @@ class TestViews(BaseTestViews):
                     'name': 'signature',
                     'namespace': 'processed_crash',
                     'in_database_name': 'signature',
-                    'query_type': 'str',
-                    'form_field_type': 'StringField',
+                    'query_type': 'string',
                     'form_field_choices': None,
                     'permissions_needed': [],
                     'default_value': None,
@@ -1006,7 +1002,6 @@ class TestViews(BaseTestViews):
                     'namespace': 'processed_crash',
                     'in_database_name': 'platform',
                     'query_type': 'enum',
-                    'form_field_type': 'MultipleValueField',
                     'form_field_choices': None,
                     'permissions_needed': [],
                     'default_value': None,
@@ -1037,7 +1032,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'name': 'signature'})
         eq_(response.status_code, 200)
         ok_('signature' in response.content)
-        ok_('StringField' in response.content)
+        ok_('string' in response.content)
         ok_('platform' not in response.content)
 
         # Test a missing field.

@@ -5,6 +5,15 @@ from django import forms
 from . import form_fields
 
 
+TYPE_TO_FIELD_MAPPING = {
+    'enum': form_fields.MultipleValueField,
+    'string': form_fields.StringField,
+    'number': form_fields.IntegerField,
+    'bool': form_fields.BooleanField,
+    'date': form_fields.DateTimeField,
+}
+
+
 def make_restricted_choices(sequence, exclude=None):
     if exclude is None:
         exclude = []
@@ -28,10 +37,7 @@ class SearchForm(forms.Form):
 
         # Generate the list of fields.
         for field_data in all_fields.values():
-            if (
-                field_data['form_field_type'] is None or
-                not field_data['is_exposed']
-            ):
+            if not field_data['is_exposed']:
                 continue
 
             if field_data['permissions_needed']:
@@ -47,9 +53,9 @@ class SearchForm(forms.Form):
                     # of fields.
                     continue
 
-            field_type = getattr(
-                form_fields,
-                field_data['form_field_type']
+            field_type = TYPE_TO_FIELD_MAPPING.get(
+                field_data['query_type'],
+                form_fields.MultipleValueField
             )
 
             field_obj = field_type(
