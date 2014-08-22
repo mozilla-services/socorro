@@ -553,7 +553,9 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         def add_field_to_properties(properties, namespaces, field):
             if not namespaces:
-                properties[field['in_database_name']] = field['storage_mapping']
+                properties[field['in_database_name']] = (
+                    field['storage_mapping']
+                )
                 return
 
             namespace = namespaces.pop(0)

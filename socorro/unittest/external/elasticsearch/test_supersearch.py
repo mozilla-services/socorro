@@ -42,6 +42,18 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'multi_field',
+            'fields': {
+                'signature': {
+                    'type': 'string'
+                },
+                'full': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
+            }
+        },
     },
     'product': {
         'name': 'product',
@@ -56,6 +68,18 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'multi_field',
+            'fields': {
+                'product': {
+                    'type': 'string'
+                },
+                'full': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
+            }
+        },
     },
     'version': {
         'name': 'version',
@@ -70,6 +94,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'keyword'
+        },
     },
     'platform': {
         'name': 'platform',
@@ -84,6 +112,18 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'multi_field',
+            'fields': {
+                'os_name': {
+                    'type': 'string'
+                },
+                'full': {
+                    'type': 'string',
+                    'index': 'not_analyzed'
+                }
+            }
+        },
     },
     'release_channel': {
         'name': 'release_channel',
@@ -98,6 +138,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string'
+        },
     },
     'date': {
         'name': 'date',
@@ -112,6 +155,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'date',
+            'format': 'yyyy-MM-dd\'T\'HH:mm:ssZZ||yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSZZ'
+        },
     },
     'address': {
         'name': 'address',
@@ -126,6 +173,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string'
+        },
     },
     'build_id': {
         'name': 'build_id',
@@ -140,6 +190,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'long'
+        },
     },
     'reason': {
         'name': 'reason',
@@ -154,6 +207,9 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string'
+        },
     },
     'email': {
         'name': 'email',
@@ -168,6 +224,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'keyword'
+        },
     },
     'url': {
         'name': 'url',
@@ -182,6 +242,10 @@ SUPERSEARCH_FIELDS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'keyword'
+        },
     },
     'uuid': {
         'data_validation_type': 'enum',
