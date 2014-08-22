@@ -119,7 +119,6 @@
         }).trigger('change');
 
         // Results table sorting
-        $('#date').tooltip();
         $('#signatureList').tablesorter();
 
         // Upon submitting the form, hide the submit button and disable the

@@ -2,10 +2,14 @@
 
 {% block site_css %}
   {{ super() }}
+
   {% compress css %}
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.tabs.css') }}" type="text/css" rel="stylesheet">
-  <link media="screen" href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
+  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
+  {% endcompress %}
+
+  {% compress css %}
   <style type="text/css">
   #details th, #metadata th {
       width: 15%;
@@ -42,20 +46,20 @@
       {% endif %}
 
       <div id="report-header-details">ID: <span>{{ report.uuid }}</span><br/> Signature: <span>{{ report.signature }}</span></div>
-      <div id="report-index" class="flora">
+      <div id="report-index" class="no-border ui-tabs ui-widget ui-widget-content ui-corner-all">
 
-      <ul class="ui-tabs-nav">
-        <li><a href="#details"><span>Details</span></a></li>
-        <li><a href="#metadata"><span>Metadata</span></a></li>
-        <li><a href="#modules"><span>Modules</span></a></li>
-        <li><a href="#rawdump"><span>Raw Dump</span></a></li>
-        <li><a href="#extensions"><span>Extensions</span></a></li>
+      <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+        <li class="ui-state-default ui-corner-top"><a href="#details" class="ui-tabs-anchor"><span>Details</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#metadata" class="ui-tabs-anchor"><span>Metadata</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#modules" class="ui-tabs-anchor"><span>Modules</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#rawdump" class="ui-tabs-anchor"><span>Raw Dump</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#extensions" class="ui-tabs-anchor"><span>Extensions</span></a></li>
         {% if total_correlations > 0 %}
-        <li><a href="#correlation"><span>Correlations</span></a></li>
+        <li class="ui-state-default ui-corner-top"><a href="#correlation" class="ui-tabs-anchor"><span>Correlations</span></a></li>
         {% endif %}
       </ul>
 
-      <div id="details">
+      <div id="details" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
         <table class="record data-table vertical">
           <tbody>
             <tr>
@@ -420,7 +424,7 @@
         {% endif %}
         </div><!-- /details -->
 
-      <div id="metadata" class="ui-tabs-hide">
+      <div id="metadata" class="ui-tabs-hide"
         <table class="record data-table vertical">
           <tbody>
             {% for key in raw_keys %}
@@ -555,11 +559,13 @@ var SocReport = {
 {% endblock %}
 {% block site_js %}
   {{ super() }}
+
   {% compress js %}
-  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
-  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
-  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.tabs.min.js') }}"></script>
-  <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+  {% endcompress %}
+
+  {% compress js %}
   <script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
   <script type="text/javascript" src="{{ static('crashstats/js/socorro/report.js') }}"></script>
   <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>

@@ -1,6 +1,17 @@
 {% extends "crashstats_base.html" %}
 {% block page_title %}{{ signature }} - Signature report - Mozilla Crash Reports{% endblock %}
 
+{% block site_css %}
+    {{ super() }}
+    {% compress css %}
+<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
+    {% endcompress %}
+
+    {% compress css %}
+<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
+<link href="{{ static('signature/css/signature_report.less') }}" type="text/less" rel="stylesheet">
+    {% endcompress %}
+{% endblock %}
 
 {% block content %}
 <div id="mainbody">
@@ -114,22 +125,6 @@
 {% endblock %}
 
 
-{% block site_css %}
-    {{ super() }}
-    {% compress css %}
-<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
-    {% endcompress %}
-    {% compress css %}
-<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
-<link href="{{ static('signature/css/signature_report.less') }}" type="text/less" rel="stylesheet">
-    {% endcompress %}
-    {% compress css %}
-<link href="{{ static('crashstats/css/flora/flora.css') }}" type="text/css" rel="stylesheet">
-<link href="{{ static('crashstats/css/flora/flora.tablesorter.css') }}" type="text/css" rel="stylesheet">
-    {% endcompress %}
-{% endblock %}
-
-
 {% block site_js %}
     {{ super() }}
 
@@ -139,12 +134,11 @@ var SIGNATURE = '{{ signature }}';
 var FIELDS = {{ fields | json_dumps }};
 </script>
 
+{% compress js %}
+<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+{% endcompress %}
+
     {% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.core.min.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.widget.min.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.mouse.min.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.ui.sortable.min.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/ui/jquery.tablesorter.min.js') }}"></script>
 <script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
 <script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
 <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
