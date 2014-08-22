@@ -115,21 +115,21 @@ class SuperSearch(models.SocorroMiddleware):
         all_fields = SuperSearchFields().get()
 
         self.required_params = tuple(
-            x['name'] for x in all_fields.values()
+            (x['name'], list) for x in all_fields.values()
             if x['is_exposed']
             and not x['permissions_needed']
             and x['is_mandatory']
         )
 
         self.possible_params = tuple(
-            x['name'] for x in all_fields.values()
+            (x['name'], list) for x in all_fields.values()
             if x['is_exposed']
             and not x['permissions_needed']
             and not x['is_mandatory']
         ) + (
-            '_facets',
-            '_results_offset',
-            '_results_number',
+            ('_facets', list),
+            ('_results_offset', int),
+            ('_results_number', int),
             '_return_query',
         )
 
@@ -150,17 +150,17 @@ class SuperSearchUnredacted(SuperSearch):
         all_fields = SuperSearchFields().get()
 
         self.required_params = tuple(
-            x['name'] for x in all_fields.values()
+            (x['name'], list) for x in all_fields.values()
             if x['is_exposed'] and x['is_mandatory']
         )
 
         self.possible_params = tuple(
-            x['name'] for x in all_fields.values()
+            (x['name'], list) for x in all_fields.values()
             if x['is_exposed'] and not x['is_mandatory']
         ) + (
-            '_facets',
-            '_results_offset',
-            '_results_number',
+            ('_facets', list),
+            ('_results_offset', int),
+            ('_results_number', int),
             '_return_query',
         )
 

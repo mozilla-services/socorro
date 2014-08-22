@@ -73,7 +73,7 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             ok_('signature' in params)
-            eq_(params['signature'], '=' + DUMB_SIGNATURE)
+            eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
             if 'product' in params:
                 return Response({
@@ -273,7 +273,7 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             ok_('signature' in params)
-            eq_(params['signature'], '=' + DUMB_SIGNATURE)
+            eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
             ok_('_facets' in params)
 
@@ -344,10 +344,10 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             ok_('signature' in params)
-            eq_(params['signature'], '=' + DUMB_SIGNATURE)
+            eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
             ok_('user_comments' in params)
-            eq_(params['user_comments'], '!__null__')
+            eq_(params['user_comments'], ['!__null__'])
 
             if 'product' in params:
                 return Response({

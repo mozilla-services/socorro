@@ -1912,6 +1912,10 @@ class TestViews(BaseTestViews):
 
             if '/supersearch' in url:
                 ok_('exploitability' not in params)
+
+                if 'product' in params:
+                    eq_(params['product'], ['WaterWolf', 'NightTrain'])
+
                 return Response({
                     'hits': [
                         {
@@ -1954,6 +1958,12 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'exploitability': 'high'})
         eq_(response.status_code, 200)
 
+        # Verify values can be lists.
+        response = self.client.get(url, {
+            'product': ['WaterWolf', 'NightTrain']
+        })
+        eq_(response.status_code, 200)
+
     @mock.patch('requests.get')
     def test_SuperSearchUnredacted(self, rget):
 
@@ -1963,6 +1973,10 @@ class TestViews(BaseTestViews):
 
             if '/supersearch' in url:
                 ok_('exploitability' in params)
+
+                if 'product' in params:
+                    eq_(params['product'], ['WaterWolf', 'NightTrain'])
+
                 return Response({
                     'hits': [
                         {
@@ -2008,3 +2022,10 @@ class TestViews(BaseTestViews):
 
         # Verify user comments are not scrubbed.
         ok_('thebig@lebowski.net' in res['hits'][0]['user_comments'])
+
+        # Verify values can be lists.
+        response = self.client.get(url, {
+            'exploitability': 'high',
+            'product': ['WaterWolf', 'NightTrain']
+        })
+        eq_(response.status_code, 200)
