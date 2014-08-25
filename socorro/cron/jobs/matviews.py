@@ -81,7 +81,7 @@ class TCBSCronApp(_MatViewBackfillBase):
 class ADUCronApp(_MatViewBackfillBase):
     proc_name = 'update_adu'
     app_name = 'adu-matview'
-    depends_on = ('reports-clean',)
+    depends_on = ('reports-clean', 'fetch-adi-from-hive')
 
 
 class NightlyBuildsCronApp(_MatViewBackfillBase):
