@@ -616,7 +616,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'bool',
         'storage_mapping': {
-            'None_value': False,
+            'null_value': False,
             'type': 'boolean'
         }
     },
@@ -694,6 +694,20 @@ SUPERSEARCH_FIELDS = {
             'type': 'string'
         }
     },
+    'fake_field': {
+        'data_validation_type': 'enum',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'fake_field',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'fake_field',
+        'namespace': 'raw_crash',
+        'permissions_needed': [],
+        'query_type': 'enum',
+    },
 }
 
 
@@ -725,7 +739,7 @@ class TestSuperSearch(ElasticSearchTestCase):
         ]
 
         res = api.get_indexes(dates)
-        eq_(res, ['socorro_integration_test'])
+        eq_(res, ['socorro_integration_test_reports'])
 
         config = self.get_config_context(es_index='socorro_%Y%W')
         api = SuperSearch(config=config)
@@ -766,6 +780,15 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()
+
+        # Create the supersearch fields.
+        self.storage.es.bulk_index(
+            index=config.webapi.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            docs=SUPERSEARCH_FIELDS.values(),
+            id_field='name',
+            refresh=True,
+        )
 
         now = datetimeutil.utc_now()
 
@@ -949,15 +972,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             dict(default_crash_report, uuid=21, address='0xa2e4509ca0')
         )
 
-        # Create the supersearch fields.
-        self.storage.es.bulk_index(
-            index=config.webapi.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            docs=SUPERSEARCH_FIELDS.values(),
-            id_field='name',
-            refresh=True,
-        )
-
         # As indexing is asynchronous, we need to force elasticsearch to
         # make the newly created content searchable before we run the tests
         self.storage.es.refresh()
@@ -968,6 +982,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # clear the test index
         config = self.get_config_context()
         self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        self.storage.es.delete_index(config.webapi.elasticsearch_default_index)
 
         super(IntegrationTestSuperSearch, self).tearDown()
 
@@ -1565,7 +1580,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res, res_expected)
 
         mocked_get_indexes.return_value = [
-            'socorro_integration_test',
+            'socorro_integration_test_reports',
             'something_that_does_not_exist',
             'another_one'
         ]
@@ -1673,7 +1688,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             namespace='superspace',
             description='inaccurate description',
             permissions_needed=['view_nothing'],
-            storage_mapping='{"type": "boolean"}'
+            storage_mapping={"type": "boolean"}
         )
 
         # Now let's update that field a little.
@@ -1843,14 +1858,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
                 storage.es.delete_index(index=index)
 
     def test_get_mapping(self):
-        res = self.api.get_mapping()
+        mapping = self.api.get_mapping()['mappings']
+        doctype = self.api.config.elasticsearch_doctype
 
-        mapping = res['mappings']
-        ok_(self.config.elasticsearch_doctype in mapping)
-        properties = mapping[self.config.elasticsearch_doctype]['properties']
+        ok_(doctype in mapping)
+        properties = mapping[doctype]['properties']
 
         ok_('processed_crash' in properties)
         ok_('raw_crash' in properties)
 
         # Those fields have no `storage_mapping`.
-        ok_('signature' not in properties['processed_crash']['properties'])
+        ok_('fake_field' not in properties['processed_crash']['properties'])

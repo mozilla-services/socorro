@@ -574,7 +574,7 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             )
 
         for field in all_fields.values():
-            if not field['storage_mapping']:
+            if not field.get('storage_mapping'):
                 continue
 
             namespaces = field['namespace'].split('.')

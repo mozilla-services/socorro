@@ -89,6 +89,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         # clear the test index
         config = self.get_config_context()
         self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        self.storage.es.delete_index(config.webapi.elasticsearch_default_index)
 
         super(IntegrationTestQuery, self).tearDown()
 
@@ -177,7 +178,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         )
         mocked_connection.search.assert_called_with(
             {},
-            index=['socorro_integration_test'],
+            index=[self.api.config.elasticsearch_index],
             doc_type=self.api.config.elasticsearch_doctype
         )
 
