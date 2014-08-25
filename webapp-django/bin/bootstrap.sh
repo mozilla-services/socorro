@@ -18,7 +18,7 @@ if [ -n "$WORKSPACE" ]
 then
     # this means we're running jenkins
     cp crashstats/settings/local.py-dist crashstats/settings/local.py
-    echo "# force jenkins.sh" >> crashstats/settings/local.py
+    echo "# force compression for CI" >> crashstats/settings/local.py
     echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 fi
 
