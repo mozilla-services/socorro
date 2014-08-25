@@ -3065,7 +3065,7 @@ class TestViews(BaseTestViews):
                 })
 
             assert 'email' in params
-            assert params['email'] == 'test@mozilla.com'
+            assert params['email'] == ['test@mozilla.com']
 
             return Response({
                 'hits': [
@@ -3122,7 +3122,7 @@ class TestViews(BaseTestViews):
                 })
 
             assert 'email' in params
-            assert params['email'] == 'test@mozilla.com'
+            assert params['email'] == ['test@mozilla.com']
 
             return Response({
                 'hits': [],
