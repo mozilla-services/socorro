@@ -75,6 +75,19 @@ class webapp::socorro {
       baseurl  => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos',
       enabled  => 1,
       gpgcheck => 0;
+
+    'dchen':
+      baseurl  => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/',
+      enabled  => 1,
+      gpgcheck => 0;
+  }
+
+  package {
+    [
+      'apache-maven',
+    ]:
+    ensure => latest,
+    require => Yumrepo['dchen'];
   }
 
   package {
@@ -90,6 +103,7 @@ class webapp::socorro {
       'libxslt-devel',
       'openldap-devel',
       'java-1.7.0-openjdk',
+      'java-1.7.0-openjdk-devel',
       'yum-plugin-fastestmirror',
       'httpd',
       'mod_wsgi',
