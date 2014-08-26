@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.conf.urls import patterns, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -15,6 +17,8 @@ handler404 = 'crashstats.base.views.handler404'
 
 urlpatterns = patterns(
     '',
+    (r'^(?P<path>contribute\.json)$', 'django.views.static.serve',
+     {'document_root': os.path.join(settings.ROOT, '..')}),
     (r'', include(urls, namespace='crashstats')),
     (r'', include(supersearch_urls)),
     (r'^signature/', include(
