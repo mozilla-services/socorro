@@ -1,5 +1,9 @@
 #! /bin/bash
 
+# ensure base directories owned
+chown socorro $PREFIX/var/log/socorro
+chown socorro $PREFIX/var/lock/socorro
+
 # deploy system files
 cp /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
 
@@ -98,4 +102,3 @@ done
 /data/socorro/socorro-virtualenv/bin/python \
     /data/socorro/webapp-django/manage.py syncdb --noinput \
     &> /var/log/socorro/django-syncdb.log
-

@@ -5,6 +5,10 @@ export BUILD_DIR=${BUILD_DIR:-builds/socorro}
 # package up the tarball in $BUILD_DIR
 # create base directories
 mkdir -p $BUILD_DIR/application
+mkdir -p $BUILD_DIR/etc/socorro
+mkdir -p $BUILD_DIR/var/log/socorro
+mkdir -p $BUILD_DIR/var/lock/socorro
+mkdir -p $BUILD_DIR/data/socorro
 
 # copy to install directory
 rsync -a config $BUILD_DIR/application
