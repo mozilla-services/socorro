@@ -28,3 +28,9 @@ popd
 # record current git revision in install dir
 git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
 cp $BUILD_DIR/stackwalk/revision.txt $BUILD_DIR/application/socorro/external/postgresql/breakpad_revision.txt
+
+# Write down build number, if ran by Jenkins
+if [ -n "$BUILD_NUMBER" ]
+then
+  echo "$BUILD_NUMBER" > $BUILD_DIR/JENKINS_BUILD_NUMBER
+fi
