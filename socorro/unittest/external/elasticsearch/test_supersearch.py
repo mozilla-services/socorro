@@ -1695,7 +1695,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         res = self.api.update_field(
             name='super_field',
             description='very accurate description',
-            storage_mapping={'type': 'long', 'analyzer': 'custom'},
+            storage_mapping={'type': 'long', 'analyzer': 'keyword'},
         )
         ok_(res)
 
@@ -1708,7 +1708,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         # Verify the changes were taken into account.
         eq_(field['description'], 'very accurate description')
-        eq_(field['storage_mapping'], {'type': 'long', 'analyzer': 'custom'})
+        eq_(field['storage_mapping'], {'type': 'long', 'analyzer': 'keyword'})
 
         # Verify other values did not change.
         eq_(field['permissions_needed'], ['view_nothing'])
@@ -1867,5 +1867,60 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         ok_('processed_crash' in properties)
         ok_('raw_crash' in properties)
 
+        # Check in_database_name is used.
+        ok_('os_name' in properties['processed_crash']['properties'])
+        ok_('platform' not in properties['processed_crash']['properties'])
+
         # Those fields have no `storage_mapping`.
-        ok_('fake_field' not in properties['processed_crash']['properties'])
+        ok_('fake_field' not in properties['raw_crash']['properties'])
+
+        # Test overwriting a field.
+        mapping = self.api.get_mapping(overwrite_mapping={
+            'name': 'fake_field',
+            'storage_mapping': {
+                'type': 'long'
+            }
+        })['mappings']
+        properties = mapping[doctype]['properties']
+
+        ok_('fake_field' in properties['raw_crash']['properties'])
+        eq_(
+            properties['raw_crash']['properties']['fake_field']['type'],
+            'long'
+        )
+
+    def test_test_mapping(self):
+        """Much test. So meta. Wow test_test_. """
+        mapping = self.api.get_mapping()
+        ok_(self.api.test_mapping(mapping) is None)
+
+        # Insert an invalid storage mapping.
+        mapping = self.api.get_mapping({
+            'name': 'fake_field',
+            'storage_mapping': {
+                'type': 'unkwown'
+            }
+        })
+        assert_raises(
+            pyelasticsearch.exceptions.ElasticHttpError,
+            self.api.test_mapping,
+            mapping,
+        )
+
+        # Test with a correct mapping but with data that cannot be indexed.
+        self.storage.save_processed({
+            'uuid': '1234567890',
+            'date_processed': datetimeutil.utc_now(),
+            'product': 'WaterWolf',
+        })
+        mapping = self.api.get_mapping({
+            'name': 'signature',
+            'storage_mapping': {
+                'type': 'long'
+            }
+        })
+        assert_raises(
+            pyelasticsearch.exceptions.ElasticHttpError,
+            self.api.test_mapping,
+            mapping,
+        )
