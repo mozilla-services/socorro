@@ -21,6 +21,9 @@ from socorro.external.elasticsearch.crashstorage import (
     ElasticSearchCrashStorage
 )
 from socorro.lib.datetimeutil import string_to_datetime
+from socorro.unittest.external.elasticsearch.test_supersearch import (
+    SUPERSEARCH_FIELDS
+)
 
 
 class IntegrationTestElasticsearchStorageApp(generic_app.App):
@@ -40,7 +43,6 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         default='./testcrash/processed_crash.json',
         doc='The file containing the processed crash.'
     )
-
     required_config.add_option(
         'raw_crash_file',
         default='./testcrash/raw_crash.json',
@@ -49,6 +51,15 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
 
     def main(self):
         storage = self.config.elasticsearch_storage_class(self.config)
+
+        # Create the supersearch fields.
+        storage.es.bulk_index(
+            index=self.config.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            docs=SUPERSEARCH_FIELDS.values(),
+            id_field='name',
+            refresh=True,
+        )
 
         crash_file = open(self.config.processed_crash_file)
         processed_crash = json.load(crash_file)
@@ -80,6 +91,7 @@ class IntegrationTestElasticsearchStorageApp(generic_app.App):
         finally:
             # Clean up created index.
             storage.es.delete_index(es_index)
+            storage.es.delete_index(self.config.elasticsearch_default_index)
 
 
 if __name__ == '__main__':
