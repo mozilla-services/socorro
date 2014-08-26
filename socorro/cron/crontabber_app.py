@@ -13,23 +13,23 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00
   socorro.cron.jobs.matviews.RawUpdateChannelCronApp|1d|05:00
   socorro.cron.jobs.matviews.TCBSCronApp|1d|05:00
-  socorro.cron.jobs.matviews.ADUCronApp|1d|05:00
+  socorro.cron.jobs.matviews.ADUCronApp|1d|07:30
   socorro.cron.jobs.fetch_adi_from_hive.FetchADIFromHiveCronApp|1d|07:00
   socorro.cron.jobs.matviews.NightlyBuildsCronApp|1d|05:00
   socorro.cron.jobs.matviews.DuplicatesCronApp|1h
   socorro.cron.jobs.matviews.ReportsCleanCronApp|1h
   socorro.cron.jobs.bugzilla.BugzillaCronApp|1h
-  socorro.cron.jobs.matviews.BuildADUCronApp|1d|05:00
-  socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|05:00
-  socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|05:00
-  socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|05:00
-  socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|05:00
+  socorro.cron.jobs.matviews.BuildADUCronApp|1d|07:30
+  socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|07:30
+  socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|07:30
+  socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|07:30
+  socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|07:30
   socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|05:00
-  socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|05:00
+  socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|07:30
   socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|05:00
   socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00
   socorro.cron.jobs.matviews.ExploitabilityCronApp|1d|05:00
-  socorro.cron.jobs.matviews.CrashAduByBuildSignatureCronApp|1d|05:00
+  socorro.cron.jobs.matviews.CrashAduByBuildSignatureCronApp|1d|07:30
   socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
   socorro.cron.jobs.automatic_emails.AutomaticEmailsCronApp|1h
   socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
