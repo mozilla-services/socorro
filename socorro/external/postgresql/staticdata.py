@@ -14,7 +14,8 @@ class OSNames(BaseTable):
     columns = ['os_name', 'os_short_name']
     rows = [['Windows', 'win'],
             ['Mac OS X', 'mac'],
-            ['Linux', 'lin']]
+            ['Linux', 'lin'],
+            ['Unknown', 'unknown']]
 
 
 class OSNameMatches(BaseTable):
