@@ -100,5 +100,5 @@ $ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
 
 # test webapp
 pushd webapp-django
-./bin/jenkins.sh
+./bin/ci.sh
 popd
