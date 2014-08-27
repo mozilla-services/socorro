@@ -4,12 +4,9 @@
 chown socorro /var/log/socorro
 chown socorro /var/lock/socorro
 
-# TODO optional support for crashmover
-for service in processor
-do
-  chkconfig --add socorro-${service}
-  chkconfig socorro-${service} on
-done
+# crond doesn't like files with executable bits, and doesn't load
+# them.
+chmod 644 /etc/cron.d/socorro
 
 # create DB if it does not exist
 # TODO handle DB not on local device - could use setupdb for this
@@ -32,6 +29,10 @@ else
     popd > /dev/null
 fi
 
+/data/socorro/socorro-virtualenv/bin/python \
+    /data/socorro/webapp-django/manage.py syncdb --noinput \
+    &> /var/log/socorro/django-syncdb.log
+
 # ensure that partitions have been created
 pushd /data/socorro/application > /dev/null
 su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
@@ -40,9 +41,12 @@ su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
     &> /var/log/socorro/crontabber.log"
 popd > /dev/null
 
-# crond doesn't like files with executable bits, and doesn't load
-# them.
-chmod 644 /etc/cron.d/socorro
+# TODO optional support for crashmover
+for service in processor
+do
+  chkconfig --add socorro-${service}
+  chkconfig socorro-${service} on
+done
 
 # TODO optional support for crashmover
 for service in socorro-processor httpd
@@ -52,7 +56,3 @@ do
     /sbin/service ${service} start
   fi
 done
-
-/data/socorro/socorro-virtualenv/bin/python \
-    /data/socorro/webapp-django/manage.py syncdb --noinput \
-    &> /var/log/socorro/django-syncdb.log
