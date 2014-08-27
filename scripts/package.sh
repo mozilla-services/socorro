@@ -29,6 +29,8 @@ fpm -s dir -t $TYPE \
     --description "$DESC" \
     --before-install scripts/package/before-install.sh \
     --after-install scripts/package/after-install.sh \
+    --before-remove scripts/package/before-remove.sh \
+    --after-remove scripts/package/after-remove.sh \
     --exclude *.pyc \
     --exclude *.swp \
     data etc var

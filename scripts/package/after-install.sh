@@ -49,10 +49,13 @@ do
 done
 
 # TODO optional support for crashmover
-for service in socorro-processor httpd
+for service in socorro-processor
 do
   if [ -f /etc/init.d/${service} ]
   then
     /sbin/service ${service} start
   fi
 done
+
+# Restart Apache
+/sbin/service httpd restart

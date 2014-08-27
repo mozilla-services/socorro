@@ -1,7 +1,7 @@
 #! /bin/bash -e
 
-# Create a new socorro user if they don't already exist
-id socorro || useradd socorro
+# Create a new socorro user
+useradd socorro 2> /dev/null
 
 chmod o+x /home/socorro
 
@@ -13,7 +13,7 @@ chown apache:socorro /home/socorro/primaryCrashStore /home/socorro/fallback
 
 chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
-for service in socorro-processor httpd
+for service in socorro-processor
 do
   if [ -f /etc/init.d/${service} ]
   then
