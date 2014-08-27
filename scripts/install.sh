@@ -11,20 +11,22 @@ mkdir -p $BUILD_DIR/var/lock/socorro
 mkdir -p $BUILD_DIR/data/socorro
 
 # copy default config files
-pushd config
-for file in *.py.dist; do
-  cp $file $BUILD_DIR/etc/soccoro/`basename $file .dist`
+for file in scripts/config/*.py.dist; do
+  cp $file $BUILD_DIR/etc/socorro/`basename $file .dist`
 done
-for file in *.ini-dist; do
-  cp $file $BUILD_DIR/etc/soccoro/`basename $file -dist`
-done
-popd
 
-cp scripts/crons/socorrorc /etc/socorro/
-cp scripts/init.d/socorro-${service} /etc/init.d/
-cp config/crontab-dist /etc/cron.d/socorro
-cp webapp-django/crashstats/settings/local.py /etc/socorro/local.py
-cp config/apache.conf-dist /etc/httpd/conf.d/socorro.conf
+for file in config/*.ini-dist; do
+  cp $file $BUILD_DIR/etc/socorro/`basename $file -dist`
+done
+
+cp scripts/crons/socorrorc $BUILD_DIR/etc/socorro/
+for service in processor
+do
+    cp scripts/init.d/socorro-${service} $BUILD_DIR/etc/init.d/
+done
+cp config/crontab-dist $BUILD_DIR/etc/cron.d/socorro
+cp webapp-django/crashstats/settings/local.py $BUILD_DIR/etc/socorro/local.py
+cp config/apache.conf-dist $BUILD_DIR/etc/httpd/conf.d/socorro.conf
 
 # copy to install directory
 rsync -a ${VIRTUAL_ENV} $BUILD_DIR
