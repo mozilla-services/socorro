@@ -49,12 +49,7 @@ for service in socorro-processor httpd
 do
   if [ -f /etc/init.d/${service} ]
   then
-    /sbin/service ${service} status > /dev/null
-    if [ $? != 0 ]; then
-        /sbin/service ${service} start
-    else
-        /sbin/service ${service} restart
-    fi
+    /sbin/service ${service} start
   fi
 done
 
