@@ -29,6 +29,8 @@ fpm -s dir -t $TYPE \
     --description "$DESC" \
     --before-install scripts/package/before-install.sh \
     --after-install scripts/package/after-install.sh \
+    --exclude *.pyc \
+    --exclude *.swp \
     data etc var
 
 echo "> Build Complete."
