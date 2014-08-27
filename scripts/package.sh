@@ -7,8 +7,6 @@
 ##
 VERSION=${1:-$(git describe --tags | cut -d'-' -f1)}
 TYPE=${2:-"rpm"}
-# PREFIX will have any 'socorro' directory suffix removed
-PREFIX=${PREFIX:-"/data"}
 DESC="A distributed system for collecting, processing,
  and displaying crash reports from clients using Breakpad"
 
@@ -23,15 +21,14 @@ fpm -s dir -t $TYPE \
     -v $VERSION \
     -n "socorro" \
     -m "<socorro-dev@mozilla.com>" \
-    -C builds \
+    -C builds/socorro/ \
     --epoch $VERSION \
-    --prefix ${PREFIX%%"socorro"} \
     --license "MPL" \
     --vendor "Mozilla" \
     --url "https://wiki.mozilla.org/Socorro" \
     --description "$DESC" \
     --before-install scripts/package/before-install.sh \
     --after-install scripts/package/after-install.sh \
-    socorro
+    data etc var
 
 echo "> Build Complete."
