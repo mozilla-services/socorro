@@ -36,8 +36,13 @@ source scripts/test.sh
 
 source scripts/integration-test.sh
 
-source scripts/analysis.sh
+# Don't build the package on Travis-CI
+if [ -z "$CI" ]; then
 
-source scripts/install.sh
+  source scripts/analysis.sh
 
-source scripts/package.sh
+  source scripts/install.sh
+
+  source scripts/package.sh
+
+fi
