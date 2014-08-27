@@ -1,14 +1,18 @@
 #! /bin/bash -ex
 
 export BUILD_DIR=${BUILD_DIR:-builds/socorro}
+export SOCORRO_DIR=${BUILD_DIR}/data/socorro
 
-# package up the tarball in $BUILD_DIR
 # create base directories
-mkdir -p $BUILD_DIR/application
+mkdir -p $BUILD_DIR/etc/init.d
+mkdir -p $BUILD_DIR/etc/cron.d
+mkdir -p $BUILD_DIR/etc/httpd/conf.d
+
+mkdir -p $SOCORRO_DIR
 mkdir -p $BUILD_DIR/etc/socorro
 mkdir -p $BUILD_DIR/var/log/socorro
 mkdir -p $BUILD_DIR/var/lock/socorro
-mkdir -p $BUILD_DIR/data/socorro
+
 
 # copy default config files
 for file in scripts/config/*.py.dist; do
@@ -29,25 +33,25 @@ cp webapp-django/crashstats/settings/local.py $BUILD_DIR/etc/socorro/local.py
 cp config/apache.conf-dist $BUILD_DIR/etc/httpd/conf.d/socorro.conf
 
 # copy to install directory
-rsync -a ${VIRTUAL_ENV} $BUILD_DIR
-rsync -a socorro $BUILD_DIR/application
-rsync -a scripts $BUILD_DIR/application
-rsync -a tools $BUILD_DIR/application
-rsync -a sql $BUILD_DIR/application
-rsync -a wsgi $BUILD_DIR/application
-rsync -a stackwalk $BUILD_DIR/
-rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
-rsync -a analysis $BUILD_DIR/
-rsync -a alembic $BUILD_DIR/application
-rsync -a webapp-django $BUILD_DIR/
+rsync -a ${VIRTUAL_ENV} $SOCORRO_DIR/
+rsync -a socorro $SOCORRO_DIR/application
+rsync -a scripts $SOCORRO_DIR/application
+rsync -a tools $SOCORRO_DIR/application
+rsync -a sql $SOCORRO_DIR/application
+rsync -a wsgi $SOCORRO_DIR/application
+rsync -a stackwalk $SOCORRO_DIR/
+rsync -a scripts/stackwalk.sh $SOCORRO_DIR/stackwalk/bin/
+rsync -a analysis $SOCORRO_DIR/
+rsync -a alembic $SOCORRO_DIR/application
+rsync -a webapp-django $SOCORRO_DIR/
 
 
 # record current git revision in install dir
-git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
-cp $BUILD_DIR/stackwalk/revision.txt $BUILD_DIR/application/socorro/external/postgresql/breakpad_revision.txt
+git rev-parse HEAD > $SOCORRO_DIR/application/socorro/external/postgresql/socorro_revision.txt
+cp $SOCORRO_DIR/stackwalk/revision.txt $SOCORRO_DIR/application/socorro/external/postgresql/breakpad_revision.txt
 
 # Write down build number, if ran by Jenkins
 if [ -n "$BUILD_NUMBER" ]
 then
-  echo "$BUILD_NUMBER" > $BUILD_DIR/JENKINS_BUILD_NUMBER
+  echo "$BUILD_NUMBER" > $SOCORRO_DIR/JENKINS_BUILD_NUMBER
 fi
