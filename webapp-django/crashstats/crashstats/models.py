@@ -961,6 +961,7 @@ class RawCrash(SocorroMiddleware):
         'useragent_locale',
         'AdapterSubsysID',
         'AdapterDriverVersion',
+        'ShutdownProgress',
     )
 
     API_CLEAN_SCRUB = (
