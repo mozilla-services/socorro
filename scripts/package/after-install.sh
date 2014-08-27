@@ -1,8 +1,8 @@
 #! /bin/bash
 
 # ensure base directories owned
-chown socorro $PREFIX/var/log/socorro
-chown socorro $PREFIX/var/lock/socorro
+chown socorro /var/log/socorro
+chown socorro /var/lock/socorro
 
 # TODO optional support for crashmover
 for service in processor
