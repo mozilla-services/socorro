@@ -147,44 +147,6 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             );
         """ % {'now': now, 'lastweek': lastweek})
 
-        # insert bixie errors
-        cursor.execute("""
-            INSERT INTO bixie.raw_product_releases
-            (id, product_name, version, build, build_type, platform,
-             repository, stability)
-            VALUES
-            (
-                1,
-                'EmailApp',
-                '0.1',
-                1234567890,
-                'Release',
-                'mobile',
-                'repo',
-                'stable'
-            ),
-            (
-                2,
-                'EmailApp',
-                '0.2',
-                1234567890,
-                'Beta',
-                'mobile',
-                'repo',
-                'stable'
-            ),
-            (
-                3,
-                'ClockOClock',
-                '1.0.18',
-                1234567890,
-                'Release',
-                'mobile',
-                'repo',
-                'stable'
-            )
-        """)
-
         self.connection.commit()
 
     #--------------------------------------------------------------------------
@@ -194,8 +156,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         cursor.execute("""
             TRUNCATE products, product_version_builds, product_versions,
                      product_release_channels, release_channels,
-                     product_versions,
-                     bixie.raw_product_releases
+                     product_versions
             CASCADE
         """)
         self.connection.commit()
@@ -366,52 +327,6 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         }
         res = products.get(**params)
         eq_(res['total'], 4)
-
-    def test_get_webapp_products(self):
-        api = Products(config=self.config)
-
-        res = api.get(type='webapp')
-        res_expected = {
-            'products': ['ClockOClock', 'EmailApp'],
-            'hits': {
-                'EmailApp': [
-                    {
-                        "product": "EmailApp",
-                        "version": "0.2",
-                        "start_date": None,
-                        "end_date": None,
-                        "throttle": 1.0,
-                        "featured": False,
-                        "release": "Beta",
-                        "has_builds": False
-                    },
-                    {
-                        "product": "EmailApp",
-                        "version": "0.1",
-                        "start_date": None,
-                        "end_date": None,
-                        "throttle": 1.0,
-                        "featured": False,
-                        "release": "Release",
-                        "has_builds": False
-                    }
-                ],
-                'ClockOClock': [
-                    {
-                        "product": "ClockOClock",
-                        "version": "1.0.18",
-                        "start_date": None,
-                        "end_date": None,
-                        "throttle": 1.0,
-                        "featured": False,
-                        "release": "Release",
-                        "has_builds": False
-                    }
-                ]
-            },
-            'total': 3
-        }
-        eq_(res, res_expected)
 
     def test_get_default_version(self):
         products = Products(config=self.config)
