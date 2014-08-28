@@ -147,44 +147,6 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             );
         """ % {'now': now, 'lastweek': lastweek})
 
-        # insert bixie errors
-        cursor.execute("""
-            INSERT INTO bixie.raw_product_releases
-            (id, product_name, version, build, build_type, platform,
-             repository, stability)
-            VALUES
-            (
-                1,
-                'EmailApp',
-                '0.1',
-                1234567890,
-                'Release',
-                'mobile',
-                'repo',
-                'stable'
-            ),
-            (
-                2,
-                'EmailApp',
-                '0.2',
-                1234567890,
-                'Beta',
-                'mobile',
-                'repo',
-                'stable'
-            ),
-            (
-                3,
-                'ClockOClock',
-                '1.0.18',
-                1234567890,
-                'Release',
-                'mobile',
-                'repo',
-                'stable'
-            )
-        """)
-
         self.connection.commit()
 
     #--------------------------------------------------------------------------
@@ -194,8 +156,7 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         cursor.execute("""
             TRUNCATE products, product_version_builds, product_versions,
                      product_release_channels, release_channels,
-                     product_versions,
-                     bixie.raw_product_releases
+                     product_versions
             CASCADE
         """)
         self.connection.commit()
