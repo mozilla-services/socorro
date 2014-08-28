@@ -13,6 +13,7 @@
 import cgi
 import json
 import re
+import time
 
 import web
 import ujson
@@ -386,6 +387,16 @@ class MiddlewareApp(App):
         default=32 * 1024 * 1024,
         doc="Number of bytes that warrents a critial"
     )
+    #--------------------------------------------------------------------------
+    # introspection namespace
+    #     the namespace for things related to running middleware
+    #--------------------------------------------------------------------------
+    required_config.namespace('introspection')
+    required_config.introspection.add_option(
+        'implementation_class',
+        default='socorro.middleware.middleware_app.ImplementationWrapper',
+        from_string_converter=class_converter
+    )
 
     # because the socorro.webapi.servers classes bring up their own default
     # configurations like port number, the only way to override the default
@@ -429,16 +440,19 @@ class MiddlewareApp(App):
 
         all_services_mapping = {}
 
+        implementation_class = self.config.introspection.implementation_class
+
         # 2 wrap each service class with the ImplementationWrapper class
         def wrap(cls, file_and_class):
             return type(
                 cls.__name__,
-                (ImplementationWrapper,),
+                (implementation_class,),
                 {
                     'cls': cls,
                     'file_and_class': file_and_class,
                     # give lookup access of dependent services to all services
                     'all_services': all_services_mapping,
+                    'config': self.config,
                 }
             )
 
@@ -686,6 +700,34 @@ class ImplementationWrapper(JsonWebServiceBase):
                 params[key] = value.split(terms_sep)
 
         return params
+
+
+class MeasuringImplementationWrapper(ImplementationWrapper):
+    """This class does nothing differently than its parent class except it
+    measures how long it takes to generated the data for every GET request.
+
+    This timing is just to get and collect the data. It excludes the time
+    to parse the request and to serialize to JSON.
+
+    Use it only for development purposes to give yourself a feel for how
+    much time is spent on gathering different pieces of data.
+    """
+
+    def GET(self, *args, **kwargs):
+        t0 = time.time()
+        result = (
+            super(MeasuringImplementationWrapper, self)
+            .GET(*args, **kwargs)
+        )
+        t1 = time.time()
+        self.config.logger.info(
+            'measuringmiddleware:%.2f\t%s\t%s' % (
+                1000 * (t1 - t0),
+                web.ctx.path,
+                web.ctx.query
+            )
+        )
+        return result
 
 
 if __name__ == '__main__':

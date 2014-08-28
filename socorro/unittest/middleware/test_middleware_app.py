@@ -8,6 +8,8 @@ import mock
 import os
 import psycopg2
 import urllib
+import re
+
 from paste.fixture import TestApp, AppError
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
@@ -420,6 +422,43 @@ class ImplementationWrapperTestCase(TestCase):
         mock_logging.info.has_call([mock.call(
             'Error captured in Sentry. Reference: 123456789'
         )])
+
+
+class MeasuringImplementationWrapperTestCase(TestCase):
+
+    @mock.patch('logging.info')
+    def test_basic_get(self, logging_info):
+
+        config_ = DotDict(
+            logger=logging,
+            web_server=DotDict(
+                ip_address='127.0.0.1',
+                port='88888'
+            )
+        )
+
+        # what the middleware app does is that it creates a class based on
+        # another and sets an attribute called `cls`
+        class MadeUp(middleware_app.MeasuringImplementationWrapper):
+            cls = AuxImplementation1
+            all_services = {}
+            config = config_
+
+        server = CherryPy(config_, (
+            ('/aux/(.*)', MadeUp),
+        ))
+
+        testapp = TestApp(server._wsgi_func)
+        response = testapp.get('/aux/', params={'add': 1})
+        eq_(response.status, 200)
+        for call in logging_info.call_args_list:
+            # mock calls are funny
+            args = call[0]
+            arg = args[0]
+            if re.findall('measuringmiddleware:[\d\.]+\t/aux/\t\?add=1', arg):
+                break
+        else:
+            raise AssertionError('call never found')
 
 
 @attr(integration='postgres')
