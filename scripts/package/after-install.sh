@@ -16,6 +16,7 @@ if [ $? != 0 ]; then
     pushd /data/socorro/application > /dev/null
     PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
         ./socorro/external/postgresql/setupdb_app.py \
+        --alembic_config=/etc/socorro/alembic.ini \
         --database_name=breakpad --fakedata \
         --database_superusername=postgres \
         &> /var/log/socorro/setupdb.log
