@@ -4,7 +4,7 @@
 
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import eq_, ok_
 
 from socorro.external.postgresql.products import Products
 from socorro.lib import datetimeutil
@@ -450,3 +450,35 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         }
 
         eq_(res, res_expected)
+
+    def test_post(self):
+        products = Products(config=self.config)
+
+        build_id = self.now.strftime('%Y%m%d%H%M')
+        ok_(products.post(
+            product='KillerApp',
+            version='1.0',
+        ))
+
+        # let's check certain things got written to certain tables
+        cursor = self.connection.cursor()
+        try:
+            # expect there to be a new product
+            cursor.execute(
+                'select product_name from products '
+                "where product_name=%s",
+                ('KillerApp',)
+            )
+            product_name, = cursor.fetchone()
+            eq_(product_name, 'KillerApp')
+        finally:
+            self.connection.rollback()
+
+    def test_post_bad_product_name(self):
+        products = Products(config=self.config)
+
+        build_id = self.now.strftime('%Y%m%d%H%M')
+        ok_(not products.post(
+            product='Spaces not allowed',
+            version='',
+        ))

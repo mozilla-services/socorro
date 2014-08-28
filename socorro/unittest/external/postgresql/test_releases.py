@@ -4,8 +4,9 @@
 
 import datetime
 from nose.plugins.attrib import attr
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 
+from socorro.external import MissingArgumentError
 from socorro.external.postgresql.releases import Releases
 from socorro.lib import datetimeutil
 
@@ -144,6 +145,26 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ;
         """ % {"build_date": build_date, "sunset_date": sunset_date})
 
+        self.connection.commit()
+
+    #--------------------------------------------------------------------------
+    def tearDown(self):
+        """Clean up the database, delete tables and functions. """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            TRUNCATE
+                product_versions,
+                products,
+                releases_raw,
+                release_channels,
+                product_release_channels
+            CASCADE
+        """)
+        self.connection.commit()
+        super(IntegrationTestReleases, self).tearDown()
+
+    def _insert_release_channels(self):
+        cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO release_channels
             (release_channel, sort)
@@ -154,7 +175,10 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ('Release', 4),
             ('ESR', 5);
         """)
+        self.connection.commit()
 
+    def _insert_product_release_channels(self):
+        cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO product_release_channels
             (product_name, release_channel, throttle)
@@ -173,25 +197,12 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             ('FennecAndroid', 'Beta', 1),
             ('FennecAndroid', 'Release', 1);
         """)
-
         self.connection.commit()
-
-    #--------------------------------------------------------------------------
-    def tearDown(self):
-        """Clean up the database, delete tables and functions. """
-        cursor = self.connection.cursor()
-        cursor.execute("""
-            TRUNCATE product_versions CASCADE;
-            TRUNCATE products CASCADE;
-            TRUNCATE releases_raw CASCADE;
-            TRUNCATE release_channels CASCADE;
-            TRUNCATE product_release_channels CASCADE;
-        """)
-        self.connection.commit()
-        super(IntegrationTestReleases, self).tearDown()
 
     #--------------------------------------------------------------------------
     def test_get_featured(self):
+        self._insert_release_channels()
+        self._insert_product_release_channels()
         service = Releases(config=self.config)
 
         #......................................................................
@@ -251,6 +262,9 @@ class IntegrationTestReleases(PostgreSQLTestCase):
 
     #--------------------------------------------------------------------------
     def test_update_featured(self):
+        self._insert_release_channels()
+        self._insert_product_release_channels()
+
         service = Releases(config=self.config)
 
         #......................................................................
@@ -364,3 +378,45 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             "total": 2
         }
         eq_(res, res_expected)
+
+    def test_update_release(self):
+        self._insert_release_channels()
+        service = Releases(config=self.config)
+
+        now = datetimeutil.utc_now()
+        build_id = now.strftime('%Y%m%d%H%M')
+        params = dict(
+            product='Firefox',
+            version='1.0',
+            update_channel='beta',
+            build_id=build_id,
+            platform='Windows',
+            beta_number=1,
+            release_channel='Beta',
+            throttle=1
+        )
+
+        res = service.update_release(**params)
+        ok_(res)
+
+    def test_update_release_missingargumenterror(self):
+        self._insert_release_channels()
+        service = Releases(config=self.config)
+
+        now = datetimeutil.utc_now()
+        build_id = now.strftime('%Y%m%d%H%M')
+        params = dict(
+            product='',
+            version='1.0',
+            update_channel='beta',
+            build_id=build_id,
+            platform='Windows',
+            beta_number=1,
+            release_channel='Beta',
+            throttle=1
+        )
+        assert_raises(
+            MissingArgumentError,
+            service.update_release,
+            **params
+        )

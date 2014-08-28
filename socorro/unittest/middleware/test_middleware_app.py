@@ -453,16 +453,18 @@ class IntegrationTestMiddlewareApp(TestCase):
     def tearDown(self):
         super(IntegrationTestMiddlewareApp, self).tearDown()
         self.conn.cursor().execute("""
-        TRUNCATE TABLE bugs CASCADE;
-        TRUNCATE TABLE bug_associations CASCADE;
-        TRUNCATE TABLE extensions CASCADE;
-        TRUNCATE TABLE reports CASCADE;
-        TRUNCATE products CASCADE;
-        TRUNCATE releases_raw CASCADE;
-        TRUNCATE release_channels CASCADE;
-        TRUNCATE product_release_channels CASCADE;
-        TRUNCATE os_names CASCADE;
-        TRUNCATE graphics_device CASCADE;
+            TRUNCATE
+                bugs,
+                bug_associations,
+                extensions,
+                reports,
+                products,
+                releases_raw,
+                release_channels,
+                product_release_channels,
+                os_names,
+                graphics_device
+            CASCADE
         """)
         self.conn.commit()
         self.conn.close()
@@ -1490,3 +1492,74 @@ class IntegrationTestMiddlewareApp(TestCase):
                 }
             )
             eq_(response.data, {'hits': [], 'total':0})
+
+    def test_post_product(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.post(
+                server,
+                '/products/',
+                {
+                    'product': 'KillerApp',
+                    'version': '1.0',
+                }
+            )
+            eq_(response.data, True)
+
+            # do it a second time
+            response = self.post(
+                server,
+                '/products/',
+                {
+                    'product': 'KillerApp',
+                    'version': '1.0',
+                }
+            )
+            eq_(response.data, False)
+
+    def test_post_bad_product(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.post(
+                server,
+                '/products/',
+                {
+                    'product': 'Spaces not allowed',
+                    'version': '',
+                }
+            )
+            eq_(response.data, False)
+
+    def test_update_release(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.post(
+                server,
+                '/products/releases/',
+                {
+                    'product': 'Firefox',
+                    'version': '1.0',
+                    'update_channel': 'beta',
+                    'build_id': '201406060122',
+                    'platform': 'Windows',
+                    'beta_number': '1',
+                    'release_channel': 'Beta',
+                    'throttle': '1'
+                }
+            )
+            eq_(response.data, True)
