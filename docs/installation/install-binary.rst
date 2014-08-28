@@ -11,12 +11,8 @@ instead of from source.
 
 As *root*:
 ::
-  mkdir -p "$HOME/socorro-deploy"
-  curl https://raw.githubusercontent.com/mozilla/socorro/master/scripts/deploy.sh \
-    -o "$HOME/socorro-deploy/deploy.sh"
-  chmod +x "$HOME/socorro-deploy/deploy.sh"
-  "$HOME/socorro-deploy/deploy.sh" \
-    https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro.tar.gz
+  curl https://.../socorro.rpm
+  yum install socorro.rpm
 
 This will install the very latest development release of Socorro, if you wish
 to install a particular release you can select one from the build history
