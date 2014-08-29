@@ -21,7 +21,12 @@ ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
 tar -zxf breakpad.tar.gz
 mv breakpad stackwalk
-make stackwalker
+# Build JSON stackwalker
+# Depends on breakpad, run "make breakpad" if you don't have it yet
+pushd minidump-stackwalk
+make
+popd
+cp minidump-stackwalk/stackwalker stackwalk/bin
 
 # bootstrap webapp
 pushd webapp-django

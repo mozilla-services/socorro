@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-.PHONY: all test bootstrap install lint clean breakpad stackwalker json_enhancements_pg_extension
+.PHONY: all test bootstrap install lint clean breakpad json_enhancements_pg_extension
 
 all: test
 
@@ -26,9 +26,3 @@ breakpad:
 
 json_enhancements_pg_extension: bootstrap
 	bash ./scripts/json-enhancements.sh
-
-stackwalker:
-	# Build JSON stackwalker
-	# Depends on breakpad, run "make breakpad" if you don't have it yet
-	cd minidump-stackwalk; make
-	cp minidump-stackwalk/stackwalker stackwalk/bin
