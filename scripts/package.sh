@@ -10,9 +10,9 @@ TYPE=${2:-"rpm"}
 DESC="A distributed system for collecting, processing,
  and displaying crash reports from clients using Breakpad"
 
-if [ ! -d 'builds/socorro' ]; then
-    echo "Socorro has not been built (build/socorro does not exist)."
-    echo "  Please run './scripts/build.sh' before continuing."
+if [ ! -d "$BUILD_DIR" ]; then
+    echo "Socorro has not been built ($BUILD_DIR does not exist)."
+    echo "  Please run './scripts/install.sh' before continuing."
     exit 1
 fi
 
@@ -21,7 +21,7 @@ fpm -s dir -t $TYPE \
     -v $VERSION \
     -n "socorro" \
     -m "<socorro-dev@mozilla.com>" \
-    -C builds/socorro/ \
+    -C $BUILD_DIR \
     --epoch $VERSION \
     --license "MPL" \
     --vendor "Mozilla" \
