@@ -31,6 +31,7 @@ fpm -s dir -t $TYPE \
     --after-install scripts/package/after-install.sh \
     --before-remove scripts/package/before-remove.sh \
     --after-remove scripts/package/after-remove.sh \
+    --config-files /etc/socorro \
     --exclude *.pyc \
     --exclude *.swp \
     data etc var
