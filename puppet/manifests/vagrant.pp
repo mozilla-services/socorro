@@ -17,10 +17,7 @@ class webapp::socorro {
     'httpd':
       ensure  => running,
       enable  => true,
-      require => [
-        Package['httpd'],
-        File['socorro_apache.conf'],
-      ];
+      require => Package['httpd'];
 
     'memcached':
       ensure  => running,
@@ -187,50 +184,6 @@ class webapp::socorro {
         Exec['postgres-initdb'],
       ],
       notify  => Service['postgresql-9.3'];
-
-    'alembic.ini':
-      path    => '/etc/socorro/alembic.ini',
-      source  => '/vagrant/puppet/files/config/alembic.ini',
-      require => File['/etc/socorro'],
-      ensure  => file;
-
-    'collector.ini':
-      path    => '/etc/socorro/collector.ini',
-      source  => '/vagrant/puppet/files/config/collector.ini',
-      require => File['/etc/socorro'],
-      ensure  => file;
-
-    'middleware.ini':
-      path    => '/etc/socorro/middleware.ini',
-      source  => '/vagrant/puppet/files/config/middleware.ini',
-      require => File['/etc/socorro'],
-      ensure  => file;
-
-    'processor.ini':
-      path    => '/etc/socorro/processor.ini',
-      source  => '/vagrant/puppet/files/config/processor.ini',
-      require => File['/etc/socorro'],
-      ensure  => file;
-
-    'socorro_apache.conf':
-      path    => '/etc/httpd/conf.d/socorro.conf',
-      source  => '/vagrant/puppet/files/etc_httpd_conf.d/socorro.conf',
-      owner   => 'apache',
-      ensure  => file,
-      require => Package['httpd'],
-      notify  => Service['httpd'];
-
-    'socorro_crontab':
-      path   => '/etc/cron.d/socorro',
-      source => '/vagrant/puppet/files/etc_cron.d/socorro',
-      owner  => 'root',
-      ensure => file;
-
-    'socorro_django_local.py':
-      path    => '/etc/socorro/local.py',
-      source  => '/vagrant/puppet/files/config/local.py',
-      require => File['/etc/socorro'],
-      ensure  => file;
 
     'pgsql.sh':
       path   => '/etc/profile.d/pgsql.sh',
