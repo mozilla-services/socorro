@@ -449,6 +449,13 @@ class TestGoogleAnalytics(BaseTestViews):
 
 class TestViews(BaseTestViews):
 
+    def test_contribute_json(self):
+        response = self.client.get('/contribute.json')
+        eq_(response.status_code, 200)
+        # should be valid JSON
+        ok_(json.loads(response.content))
+        eq_(response['Content-Type'], 'application/json')
+
     @mock.patch('requests.get')
     def test_handler500(self, rget):
         root_urlconf = __import__(

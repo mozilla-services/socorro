@@ -1,0 +1,32 @@
+{
+    "name": "Socorro",
+    "description": "Socorro is a server to accept and process Breakpad crash reports from Firefox, Thunderbird, etc.",
+    "repository": {
+        "url": "https://github.com/mozilla/socorro",
+        "license": "MPL2",
+        "tests": "https://travis-ci.org/mozilla/socorro"
+    },
+    "participate": {
+        "home": "https://wiki.mozilla.org/Socorro",
+        "docs": "http://socorro.readthedocs.org/",
+        "irc": "irc://irc.mozilla.org/#breakpad",
+        "mailing-list": "https://www.mozilla.org/en-US/about/forums/#tools-socorro"
+    },
+    "bugs": {
+        "list": "https://bugzilla.mozilla.org/buglist.cgi?resolution=---&query_format=advanced&product=Socorro",
+        "report": "https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro"
+    },
+    "urls": {
+        "prod": "https://crash-stats.mozilla.com/",
+        "stage": "https://crash-stats.allizom.org/"
+    },
+    "keywords": [
+        "django",
+        "jquery",
+        "postgresql",
+        "elasticsearch",
+        "rabbitmq",
+        "python",
+        "css"
+    ]
+}
