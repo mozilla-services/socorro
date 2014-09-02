@@ -14,6 +14,7 @@ fi
 
 export BUILD_TYPE=${BUILD_TYPE:-"tar"}
 export BUILD_DIR=${BUILD_DIR:-"builds/$BUILD_TYPE/socorro"}
+export BUILD_VERSION=${BUILD_NUMBER:-$(git describe --tags | cut -d'-' -f1)}
 
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
