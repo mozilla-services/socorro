@@ -91,10 +91,19 @@ class webapp::socorro {
   }
 
   package {
+    'fpm':
+      ensure   => latest,
+      provider => gem,
+      require  => Package['ruby-devel'];
+  }
+
+  package {
     [
       'subversion',
       'make',
       'rsync',
+      'ruby-devel',
+      'rpm-build',
       'time',
       'gcc-c++',
       'python-devel',
