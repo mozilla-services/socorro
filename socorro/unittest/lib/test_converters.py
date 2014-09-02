@@ -1,5 +1,5 @@
 from configman import ConfigurationManager, RequiredConfig, Namespace
-from configman.converters import to_str
+from configman.converters import to_str, str_to_python_object
 
 from socorro.lib.converters import str_to_classes_in_namespaces_converter
 from socorro.unittest.testbase import TestCase
@@ -175,3 +175,38 @@ class TestConverters(TestCase):
         self.assertEqual(config.Alpha_00.a, 21)
         self.assertEqual(config.Beta_01.b, 38)
 
+    #--------------------------------------------------------------------------
+    def test_classes_in_namespaces_converter_5(self):
+        n = Namespace()
+        n.add_option(
+            'kls_list',
+            default=(
+                'socorro.unittest.lib.test_converters.Alpha, '
+                'socorro.unittest.lib.test_converters.Alpha, '
+                'socorro.unittest.lib.test_converters.Alpha'
+            ),
+            from_string_converter=str_to_classes_in_namespaces_converter(
+                '%(name)s_%(index)02d'
+            )
+        )
+
+        cm = ConfigurationManager(
+            n,
+            [{
+                'kls_list': (
+                    'socorro.unittest.lib.test_converters.Alpha, '
+                    'socorro.unittest.lib.test_converters.Beta, '
+                    'socorro.unittest.lib.test_converters.Beta, '
+                    'socorro.unittest.lib.test_converters.Alpha'
+                ),
+                'Alpha_00.a': 21,
+                'Beta_01.b': 38,
+            }]
+        )
+        config = cm.get_config()
+
+
+        self.assertEqual(len(config.kls_list.subordinate_namespace_names), 4)
+        for a_class_name, a_class in config.kls_list.class_list:
+            self.assertTrue(isinstance(a_class_name, str))
+            self.assertEqual(a_class_name, a_class.__name__)
