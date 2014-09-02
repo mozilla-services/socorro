@@ -31,9 +31,6 @@ if [ "$BUILD_TYPE" != "tar" ]; then
     cp config/apache.conf-dist $BUILD_DIR/etc/httpd/conf.d/socorro.conf
 else
     rsync -a config $BUILD_DIR/application
-    pushd $BUILD_DIR/application/scripts/config
-    for file in *.py.dist; do cp $file `basename $file .dist`; done
-    popd
 fi
 
 if [ "$BUILD_TYPE" != "tar" ]; then
@@ -53,6 +50,12 @@ rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
 rsync -a analysis $BUILD_DIR/
 rsync -a alembic $BUILD_DIR/application
 rsync -a webapp-django $BUILD_DIR/
+
+if [ "$BUILD_TYPE" == "tar" ]; then
+    pushd $BUILD_DIR/application/scripts/config
+    for file in *.py.dist; do cp $file `basename $file .dist`; done
+    popd
+fi
 
 # record current git revision in install dir
 git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
