@@ -1,6 +1,5 @@
 #! /bin/bash -ex
 
-export BUILD_DIR=${BUILD_DIR:-builds/socorro}
 
 # package up the tarball in $BUILD_DIR
 # create base directories

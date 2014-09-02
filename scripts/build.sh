@@ -12,6 +12,9 @@ if [ -z "$WORKSPACE" -o -z "$CI" ]; then
   export PATH=$JAVA_HOME/bin:$PATH
 fi
 
+export BUILD_TYPE=${BUILD_TYPE:-"tar"}
+export BUILD_DIR=${BUILD_DIR:-"builds/$BUILD_TYPE/socorro"}
+
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}
 export database_port=${database_port:-"5432"}
