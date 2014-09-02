@@ -1,7 +1,5 @@
 #! /bin/bash -ex
 
-mkdir -p $BUILD_DIR/application
-
 if [ "$BUILD_TYPE" != "tar" ]; then
     # create base directories
     mkdir -p $BUILD_DIR/etc/init.d
@@ -29,13 +27,13 @@ if [ "$BUILD_TYPE" != "tar" ]; then
     cp config/crontab-dist $BUILD_DIR/etc/cron.d/socorro
     cp webapp-django/crashstats/settings/local.py $BUILD_DIR/etc/socorro/local.py
     cp config/apache.conf-dist $BUILD_DIR/etc/httpd/conf.d/socorro.conf
-else
-    rsync -a config $BUILD_DIR/application
-fi
 
-if [ "$BUILD_TYPE" != "tar" ]; then
-    BUILD_DIR=${BUILD_DIR/data/socorro}
+    # Update BUILD_DIR for rest of install, not package.
+    BUILD_DIR=$BUILD_DIR/opt/socorro
     mkdir -p $BUILD_DIR
+else
+    mkdir -p $BUILD_DIR/application
+    rsync -a config $BUILD_DIR/application
 fi
 
 # copy to install directory
@@ -65,4 +63,8 @@ cp $BUILD_DIR/stackwalk/revision.txt $BUILD_DIR/application/socorro/external/pos
 if [ -n "$BUILD_NUMBER" ]
 then
   echo "$BUILD_NUMBER" > $BUILD_DIR/JENKINS_BUILD_NUMBER
+fi
+
+if [ "$BUILD_TYPE" != "tar" ]; then
+    BUILD_DIR=${BUILD_DIR%%/opt/socorro}
 fi
