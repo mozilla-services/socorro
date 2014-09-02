@@ -43,26 +43,28 @@ class TestSkunkClassificationRule(TestCase):
 
     def test_predicate(self):
         rc = DotDict()
+        rd = {}
         pc = DotDict()
         pc.classifications = DotDict()
         processor = None
 
         skunk_rule = SkunkClassificationRule()
-        ok_(skunk_rule.predicate(rc, pc, processor))
+        ok_(skunk_rule.predicate(rc, rd, pc, processor))
 
         pc.classifications.skunk_works = DotDict()
-        ok_(skunk_rule.predicate(rc, pc, processor))
+        ok_(skunk_rule.predicate(rc, rd, pc, processor))
 
         pc.classifications.skunk_works.classification = 'stupid'
-        ok_(not skunk_rule.predicate(rc, pc, processor))
+        ok_(not skunk_rule.predicate(rc, rd, pc, processor))
 
     def test_action(self):
         rc = DotDict()
+        rd = {}
         pc = DotDict()
         processor = None
 
         skunk_rule = SkunkClassificationRule()
-        ok_(skunk_rule.action(rc, pc, processor))
+        ok_(skunk_rule.action(rc, rd, pc, processor))
 
     def test_version(self):
         skunk_rule = SkunkClassificationRule()
@@ -156,8 +158,10 @@ class TestDontConsiderTheseFilter(TestCase):
         # find non-plugin crashes
         test_raw_crash = DotDict()
         test_raw_crash.PluginHang = '0'
+        test_raw_dumps = {}
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -168,6 +172,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.ProductName = "Internet Explorer"
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -178,6 +183,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.ProductName = "Firefox"
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -189,6 +195,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.Version = 'dwight'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -200,6 +207,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.Version = '17.1'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -212,6 +220,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.BuildID = '201307E2'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -224,6 +233,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.BuildID = '201307E2'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -236,6 +246,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.BuildID = '20131458'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -248,6 +259,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.BuildID = '20121015'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -260,6 +272,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.BuildID = '20121015'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -273,6 +286,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_raw_crash.BuildID = '20121015'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             DotDict(),
             fake_processor
         ))
@@ -286,6 +300,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash = DotDict()
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -301,6 +316,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.json_dump = DotDict()
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -318,6 +334,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.json_dump.cpu_arch = 'amd64'
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -336,6 +353,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.success = False
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -361,6 +379,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.c.success = False
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -386,6 +405,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.c.success = False
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -411,6 +431,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.c.success = False
         ok_(filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -436,6 +457,7 @@ class TestDontConsiderTheseFilter(TestCase):
         test_processed_crash.c.success = True
         ok_(not filter_rule.predicate(
             test_raw_crash,
+            test_raw_dumps,
             test_processed_crash,
             fake_processor
         ))
@@ -459,9 +481,9 @@ class TestUpdateWindowAttributes(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = UpdateWindowAttributes()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -483,9 +505,9 @@ class TestUpdateWindowAttributes(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = UpdateWindowAttributes()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
         ok_(not 'classifications' in pc)
@@ -509,9 +531,9 @@ class TestSetWindowPos(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -538,9 +560,9 @@ class TestSetWindowPos(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -568,9 +590,9 @@ class TestSetWindowPos(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -596,9 +618,9 @@ class TestSetWindowPos(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -621,9 +643,9 @@ class TestSetWindowPos(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = SetWindowPos()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
         ok_(not 'classifications' in pc)
@@ -644,9 +666,9 @@ class TestSendWaitReceivePort(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = SendWaitReceivePort()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -663,9 +685,10 @@ class TestSendWaitReceivePort(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
+        rd = {}
 
         rule = SendWaitReceivePort()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
         ok_(not 'classifications' in pc)
@@ -687,9 +710,9 @@ class TestBug811804(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = Bug811804()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -709,9 +732,9 @@ class TestBug811804(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = Bug811804()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
         ok_(not 'classifications' in pc)
@@ -733,9 +756,9 @@ class TestBug812318(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = Bug812318()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -756,9 +779,9 @@ class TestBug812318(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = Bug812318()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -777,9 +800,9 @@ class TestBug812318(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = Bug812318()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
         ok_(not 'classifications' in pc)

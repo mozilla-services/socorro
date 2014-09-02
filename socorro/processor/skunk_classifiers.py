@@ -53,37 +53,41 @@ added to the processed crash:
 import datetime
 
 from socorro.lib.util import DotDict
+from socorro.lib.transform_rules import Rule
 
 
 #==============================================================================
-class SkunkClassificationRule(object):
+class SkunkClassificationRule(Rule):
     """the base class for Skunk Rules.  It provides the framework for the rules
     'predicate', 'action', and 'version' as well as utilites to help rules do
     their jobs."""
 
     #--------------------------------------------------------------------------
-    def predicate(self, raw_crash,  processed_crash, processor):
-        """the default predicate for Skunk Classifiers invokes any derivied
+    def predicate(self, *args, **kwargs):
+        """the default predicate for Support Classifiers invokes any derivied
         _predicate function, trapping any exceptions raised in the process.  We
         are obligated to catch these exceptions to give subsequent rules the
         opportunity act.  An error during the predicate application is a
         failure of the rule, not a failure of the classification system itself
         """
         try:
-            return self._predicate(raw_crash,  processed_crash, processor)
+            return self._predicate(*args, **kwargs)
         except Exception, x:
-            processor.config.logger.debug(
-                'skunk_classifier: %s predicate rejection - consideration of '
-                '%s failed because of "%s"',
+            if not self.config:
+                if 'processor' in kwargs:
+                    self.config = kwargs['processor'].config
+                else:
+                    raise
+            self.config.logger.debug(
+                'Rule %s predicicate failed because of "%s"',
                 self.__class__,
-                raw_crash.get('uuid', 'unknown uuid'),
                 x,
                 exc_info=True
             )
             return False
 
     #--------------------------------------------------------------------------
-    def _predicate(self, raw_crash,  processed_crash, processor):
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         """"The default predicate is too look into the processed crash to see
         if the 'skunk_works' classification has already been applied.
         parameters:
@@ -98,8 +102,9 @@ class SkunkClassificationRule(object):
                         resources that might be useful to a classifier rule.
                         'processor.config' is the configuration for the
                         processor in which database connection paramaters can
-                        be found.  'processor.config.logger' is useful for any logging
-                        of debug information. 'processor.c_signature_tool' or
+                        be found.  'processor.config.logger' is useful for any
+                        logging of debug information.
+                        'processor.c_signature_tool' or
                         'processor.java_signature_tool' contain utilities that
                         might be useful during classification.
 
@@ -115,28 +120,46 @@ class SkunkClassificationRule(object):
             return True
 
     #--------------------------------------------------------------------------
-    def action(self, raw_crash,  processed_crash, processor):
-        """the default action for Skunk Classifiers invokes any derivied
+    def action(self, *args, **kwargs):
+        """the default action for Support Classifiers invokes any derivied
         _action function, trapping any exceptions raised in the process.  We
         are obligated to catch these exceptions to give subsequent rules the
         opportunity act and perhaps (mitigate the error).  An error during the
         action application is a failure of the rule, not a failure of the
         classification system itself."""
         try:
-            return self._action(raw_crash,  processed_crash, processor)
-        except Exception, x:
-            processor.config.logger.debug(
-                'skunk_classifier: %s action failure - %s failed because of '
-                '"%s"',
+            return self._action(*args, **kwargs)
+        except KeyError, x:
+            # skunk classifiers originally did not have access to a config
+            # object and used the 'processor' keyword argument (a reference
+            # to the actual processor class) to "borrow" a logger.  This code
+            # provides backwards compatibility
+            if not self.config:
+                if 'processor' in kwargs:
+                    self.config = kwargs['processor'].config
+                else:
+                    raise
+            self.config.logger.debug(
+                'Rule %s action failed because of missing key "%s"',
                 self.__class__,
-                raw_crash.get('uuid', 'unknown uuid'),
+                x,
+            )
+        except Exception, x:
+            if not self.config:
+                if 'processor' in kwargs:
+                    self.config = kwargs['processor'].config
+                else:
+                    raise
+            self.config.logger.debug(
+                'Rule %s action failed because of "%s"',
+                self.__class__,
                 x,
                 exc_info=True
             )
-            return False
+        return False
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         """Rules derived from this base class ought to override this method
         with an actual classification rule.  Successful application of this
         method should include a call to '_add_classification'.
@@ -153,8 +176,9 @@ class SkunkClassificationRule(object):
                         resources that might be useful to a classifier rule.
                         'processor.config' is the configuration for the
                         processor in which database connection paramaters can
-                        be found.  'processor.config.logger' is useful for any logging
-                        of debug information. 'processor.c_signature_tool' or
+                        be found.  'processor.config.logger' is useful for any
+                        logging of debug information.
+                        'processor.c_signature_tool' or
                         'processor.java_signature_tool' contain utilities that
                         might be useful during classification.
 
@@ -230,7 +254,8 @@ class SkunkClassificationRule(object):
 
         """
         try:
-            if (dump_name == 'upload_file_minidump_plugin'
+            if (
+                dump_name == 'upload_file_minidump_plugin'
                 and processed_crash['process_type'] == 'plugin'
             ):
                 a_json_dump = processed_crash['json_dump']
@@ -293,6 +318,7 @@ class SkunkClassificationRule(object):
                 return True
         return False
 
+
 #==============================================================================
 class DontConsiderTheseFilter(SkunkClassificationRule):
     """This classifier is meant to match every crash that is of no interest.
@@ -304,34 +330,7 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
     first18 = datetime.date(2012, 10, 23)
 
     #--------------------------------------------------------------------------
-    def predicate(self, raw_crash,  processed_crash, processor):
-        """this method overrides the base class predicate.  The base class
-        assumes that an exception raised during the predicate is a failure of
-        the predicate.  In this case, the logic is the opposite, an exception
-        means the success of the predicate.
-
-        This class is to find all crashes that are not Firefox Plugin crashes
-        of with certian qualities.  If an error happens during the
-        determination, then we consider the crash in question to be
-        not of the proper type.  So the predicate returns true, forcing the
-        rule system to take the action (which does nothing) and stops the rule
-        application process.
-        """
-        try:
-            return self._predicate(raw_crash,  processed_crash, processor)
-        except Exception, x:
-            processor.config.logger.debug(
-                'skunk_classifier: %s predicate rejection - consideration of '
-                '%s failed because of "%s"',
-                self.__class__,
-                raw_crash.get('uuid', 'unknown uuid'),
-                x,
-                exc_info=True
-            )
-            return False
-
-    #--------------------------------------------------------------------------
-    def _predicate(self, raw_crash,  processed_crash, processor):
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         """this predicate matches all crashes that are NOT Firefox Plugin
         crashes of a certain vintage.  This prediciate was adapted from
         bsmedberg's skunk processor.
@@ -466,13 +465,12 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         # classification process will continue by applying further rules.
         return False
 
-
     #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, processed_crash, processor):
         """the predicate has determined that the crash is uninteresting to
         the SkunkClassifiers.  Don't do anything but return true to stop any
         further application of rules."""
@@ -487,7 +485,7 @@ class UpdateWindowAttributes(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         stack = self._get_stack(processed_crash, 'upload_file_minidump_plugin')
         if stack is False:
             return False
@@ -535,7 +533,7 @@ class SetWindowPos(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         found = self._do_set_window_pos_classification(
             processed_crash,
             processor.c_signature_tool,
@@ -604,7 +602,7 @@ class SendWaitReceivePort(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
 
         stack = self._get_stack(processed_crash, 'upload_file_minidump_flash2')
         if stack is False:
@@ -633,7 +631,7 @@ class Bug811804(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
 
         try:
             signature = processed_crash.upload_file_minidump_flash2.signature
@@ -659,7 +657,7 @@ class Bug812318(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         stack = self._get_stack(processed_crash, 'upload_file_minidump_flash2')
         if stack is False:
             return False
@@ -697,7 +695,7 @@ class NullClassification(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash,  processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         self._add_classification(
             processed_crash,
             'not classified',
@@ -705,7 +703,6 @@ class NullClassification(SkunkClassificationRule):
             processor.config.logger
         )
         return True
-
 
 
 default_classifier_rules = (

@@ -21,18 +21,19 @@ the support classifcation rules live here.
 
 from socorro.lib.ver_tools import normalize
 from socorro.lib.util import DotDict
+from socorro.lib.transform_rules import Rule
 
 from sys import maxint
 
 
 #==============================================================================
-class SupportClassificationRule(object):
+class SupportClassificationRule(Rule):
     """the base class for Support Rules.  It provides the framework for the
     rules 'predicate', 'action', and 'version' as well as utilites to help
     rules do their jobs."""
 
     #--------------------------------------------------------------------------
-    def predicate(self, raw_crash, processed_crash, processor):
+    def predicate(self, *args, **kwargs):
         """the default predicate for Support Classifiers invokes any derivied
         _predicate function, trapping any exceptions raised in the process.  We
         are obligated to catch these exceptions to give subsequent rules the
@@ -40,49 +41,23 @@ class SupportClassificationRule(object):
         failure of the rule, not a failure of the classification system itself
         """
         try:
-            return self._predicate(raw_crash, processed_crash, processor)
+            return self._predicate(*args, **kwargs)
         except Exception, x:
-            processor.config.logger.debug(
-                'support_classifier: %s predicate rejection - consideration of'
-                ' %s failed because of "%s"',
+            if not self.config:
+                if 'processor' in kwargs:
+                    self.config = kwargs['processor'].config
+                else:
+                    raise
+            self.config.logger.debug(
+                'Rule %s predicicate failed because of "%s"',
                 self.__class__,
-                raw_crash.get('uuid', 'unknown uuid'),
                 x,
                 exc_info=True
             )
             return False
 
     #--------------------------------------------------------------------------
-    def _predicate(self, raw_crash, processed_crash, processor):
-        """"The default support classifier predicate just returns True.  We
-        want all the support classifiers run.
-
-        parameters:
-            raw_crash - a mapping representing the raw crash data originally
-                        submitted by the client
-            processed_crash - the ultimate result of the processor, this is the
-                              analized version of a crash.  It contains the
-                              output of the MDSW program for each of the dumps
-                              within the crash.
-            processor - a reference to the processor object that is assigned
-                        to working on the current crash. This object contains
-                        resources that might be useful to a classifier rule.
-                        'processor.config' is the configuration for the
-                        processor in which database connection paramaters can
-                        be found.  'processor.config.logger' is useful for any
-                        logging of debug information.
-                        'processor.c_signature_tool' or
-                        'processor.java_signature_tool' contain utilities that
-                        might be useful during classification.
-
-        returns:
-            True - this rule should be applied
-            False - this rule should not be applied
-        """
-        return True
-
-    #--------------------------------------------------------------------------
-    def action(self, raw_crash, processed_crash, processor):
+    def action(self, *args, **kwargs):
         """the default action for Support Classifiers invokes any derivied
         _action function, trapping any exceptions raised in the process.  We
         are obligated to catch these exceptions to give subsequent rules the
@@ -90,62 +65,30 @@ class SupportClassificationRule(object):
         action application is a failure of the rule, not a failure of the
         classification system itself."""
         try:
-            return self._action(raw_crash, processed_crash, processor)
+            return self._action(*args, **kwargs)
         except KeyError, x:
-            processor.config.logger.debug(
-                'support_classifier: %s action failure - %s failed because of '
-                '"%s"',
+            if not self.config:
+                if 'processor' in kwargs:
+                    self.config = kwargs['processor'].config
+                else:
+                    raise
+            self.config.logger.debug(
+                'Rule %s action failed because of missing key "%s"',
                 self.__class__,
-                raw_crash.get('uuid', 'unknown uuid'),
                 x,
             )
         except Exception, x:
-            processor.config.logger.debug(
-                'support_classifier: %s action failure - %s failed because of '
-                '"%s"',
+            if not self.config and 'processor' in kwargs:
+                self.config = kwargs['processor'].config
+            if not self.config:
+                raise
+            self.config.logger.debug(
+                'Rule %s action failed because of "%s"',
                 self.__class__,
-                raw_crash.get('uuid', 'unknown uuid'),
                 x,
                 exc_info=True
             )
         return False
-
-    #--------------------------------------------------------------------------
-    def _action(self, raw_crash, processed_crash, processor):
-        """Rules derived from this base class ought to override this method
-        with an actual classification rule.  Successful application of this
-        method should include a call to '_add_classification'.
-
-        parameters:
-            raw_crash - a mapping representing the raw crash data originally
-                        submitted by the client
-            processed_crash - the ultimate result of the processor, this is the
-                              analized version of a crash.  It contains the
-                              output of the MDSW program for each of the dumps
-                              within the crash.
-            processor - a reference to the processor object that is assigned
-                        to working on the current crash. This object contains
-                        resources that might be useful to a classifier rule.
-                        'processor.config' is the configuration for the
-                        processor in which database connection paramaters can
-                        be found.  'processor.config.logger' is useful for any
-                        logging of debug information.
-                        'processor.c_signature_tool' or
-                        'processor.java_signature_tool' contain utilities that
-                        might be useful during classification.
-
-        returns:
-            True - this rule was applied successfully and no further rules
-                   should be applied
-            False - this rule did not succeed and further rules should be
-                    tried
-        """
-        return True
-
-    #--------------------------------------------------------------------------
-    def version(self):
-        """This method should be overridden in a base class."""
-        return '0.0'
 
     #--------------------------------------------------------------------------
     def _add_classification(
@@ -190,7 +133,7 @@ class BitguardClassifier(SupportClassificationRule):
         return '1.0'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash, processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         for a_module in processed_crash['json_dump']['modules']:
             if a_module['filename'] == 'bitguard.dll':
                 self._add_classification(
@@ -215,7 +158,7 @@ class OutOfDateClassifier(SupportClassificationRule):
         return '1.0'
 
     #--------------------------------------------------------------------------
-    def _predicate(self, raw_crash, processed_crash, processor):
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         try:
             return (
                 raw_crash.ProductName == 'Firefox'
@@ -225,12 +168,18 @@ class OutOfDateClassifier(SupportClassificationRule):
             self.out_of_date_threshold = normalize(
                 processor.config.firefox_out_of_date_version
             )
-            return self._predicate(raw_crash, processed_crash, processor)
+            return self._predicate(
+                raw_crash,
+                raw_dumps,
+                processed_crash,
+                processor
+            )
 
     #--------------------------------------------------------------------------
     @staticmethod
     def _normalize_windows_version(version_str):
         ver_list = version_str.split('.')[:2]
+
         def as_int(x):
             try:
                 return int(x)
@@ -248,7 +197,13 @@ class OutOfDateClassifier(SupportClassificationRule):
         return tuple(ver_list_normalized)
 
     #--------------------------------------------------------------------------
-    def _windows_action(self, raw_crash, processed_crash, processor):
+    def _windows_action(
+        self,
+        raw_crash,
+        raw_dumps,
+        processed_crash,
+        processor
+    ):
         win_version_normalized = self._normalize_windows_version(
             processed_crash["json_dump"]["system_info"]["os_ver"]
         )
@@ -277,6 +232,7 @@ class OutOfDateClassifier(SupportClassificationRule):
     @staticmethod
     def _normalize_osx_version(version_str):
         ver_list = version_str.split('.')[:2]
+
         def as_int(x):
             try:
                 return int(x)
@@ -285,11 +241,12 @@ class OutOfDateClassifier(SupportClassificationRule):
         return tuple(as_int(x) for x in ver_list)
 
     #--------------------------------------------------------------------------
-    def _osx_action(self, raw_crash, processed_crash, processor):
+    def _osx_action(self, raw_crash, raw_dumps, processed_crash, processor):
         osx_version_normalized = self._normalize_osx_version(
             processed_crash["json_dump"]["system_info"]["os_ver"]
         )
-        if (osx_version_normalized <= (10, 4) or
+        if (
+            osx_version_normalized <= (10, 4) or
             processed_crash["json_dump"]["system_info"]["cpu_arch"] == 'ppc'
         ):
             return self._add_classification(
@@ -313,12 +270,22 @@ class OutOfDateClassifier(SupportClassificationRule):
         )
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash, processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         crashed_version = normalize(raw_crash.Version)
         if "Win" in processed_crash["json_dump"]["system_info"]['os']:
-            return self._windows_action(raw_crash, processed_crash, processor)
+            return self._windows_action(
+                raw_crash,
+                raw_dumps,
+                processed_crash,
+                processor
+            )
         elif processed_crash["json_dump"]["system_info"]['os'] == "Mac OS X":
-            return self._osx_action(raw_crash, processed_crash, processor)
+            return self._osx_action(
+                raw_crash,
+                raw_dumps,
+                processed_crash,
+                processor
+            )
         else:
             return self._add_classification(
                 processed_crash,
