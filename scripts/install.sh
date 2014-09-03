@@ -25,7 +25,6 @@ if [ "$BUILD_TYPE" != "tar" ]; then
         cp scripts/init.d/socorro-${service} $BUILD_DIR/etc/init.d/
     done
     cp config/crontab-dist $BUILD_DIR/etc/cron.d/socorro
-    cp webapp-django/crashstats/settings/local.py $BUILD_DIR/etc/socorro/local.py
     cp config/apache.conf-dist $BUILD_DIR/etc/httpd/conf.d/socorro.conf
 
     # Copy in production-style defaults
@@ -56,9 +55,6 @@ if [ "$BUILD_TYPE" == "tar" ]; then
     pushd $BUILD_DIR/application/scripts/config
     for file in *.py.dist; do cp $file `basename $file .dist`; done
     popd
-else
-    ln -fs ${BUILD_DIR%%/data/socorro}/etc/socorro/local.py \
-        $BUILD_DIR/webapp-django/crashstats/settings/local.py
 fi
 
 # record current git revision in install dir

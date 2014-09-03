@@ -8,6 +8,10 @@ chown socorro /var/lock/socorro
 # them.
 chmod 644 /etc/cron.d/socorro
 
+# Link the local Django settings to the distributed settings.
+ln -fs /etc/socorro/local.py \
+    /data/socorro/webapp-django/crashstats/settings/local.py
+
 # create DB if it does not exist
 # TODO handle DB not on localhost - could use setupdb for this
 psql -U postgres -h localhost -l | grep breakpad > /dev/null
