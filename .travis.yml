@@ -20,6 +20,8 @@ before_install:
   - sudo ln -s /usr/local/lib/node_modules/less/bin/lessc /usr/local/bin
   - sed -i 's:jenkins-pg92:localhost:' config/alembic.ini-dist
 
+install: true
+
 before_script:
     - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
     - psql -c 'create database socorro_test;' -U postgres
