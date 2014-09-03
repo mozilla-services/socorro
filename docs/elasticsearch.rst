@@ -198,6 +198,7 @@ Here is an explanation of each parameter of a field:
 | Parameter            | Description                                          |
 +======================+======================================================+
 | name                 | Name of the field, as exposed in the API.            |
+|                      | Must be unique.                                      |
 +----------------------+------------------------------------------------------+
 | in_database_name     | Name of the field in the database.                   |
 +----------------------+------------------------------------------------------+
@@ -206,23 +207,44 @@ Here is an explanation of each parameter of a field:
 | description          | Description of the field, for admins only.           |
 +----------------------+------------------------------------------------------+
 | query_type           | Defines operators that can be used in Super Search.  |
+|                      | See details below.                                   |
 +----------------------+------------------------------------------------------+
 | data_validation_type | Defines the validation done on values passed to      |
 |                      | filers of this field in Super Search.                |
 +----------------------+------------------------------------------------------+
 | permissions_needed   | Permissions needed from a user to access this field. |
 +----------------------+------------------------------------------------------+
-| form_field_type      | Type of form field to use in the django form.        |
-+----------------------+------------------------------------------------------+
-| form_field_choices   | Choices offered for filters of that field.           |
+| form_field_choices   | Choices offered for filters of that field in the     |
+|                      | Super Search form.                                   |
 +----------------------+------------------------------------------------------+
 | is_exposed           | Is this field exposed as a filter?                   |
 +----------------------+------------------------------------------------------+
 | is_returned          | Is this field returned in results?                   |
 +----------------------+------------------------------------------------------+
 | has_full_version     | Does this field have a full version in Elasticsearch?|
+|                      | Enable only if you use a multitype field in the      |
+|                      | storage mapping.                                     |
 +----------------------+------------------------------------------------------+
 | storage_mapping      | Mapping that is used in Elasticsearch for this field.|
+|                      | See Elasticsearch documentation for more info.       |
++----------------------+------------------------------------------------------+
+
+Here are the operators that will be available for each ``query_type``. Note that
+each operator automatically has an opposite version (for example, each field
+that has access to the ``contains`` operator also has ``does not contain``).
+
++----------------------+------------------------------------------------------+
+| Query type           | Operators                                            |
++======================+======================================================+
+| enum                 | has terms                                            |
++----------------------+------------------------------------------------------+
+| string               | contains, is, starts with, ends with, exists         |
++----------------------+------------------------------------------------------+
+| number               | has terms, >, >=, <, <=                              |
++----------------------+------------------------------------------------------+
+| date                 | has terms, >, >=, <, <=                              |
++----------------------+------------------------------------------------------+
+| bool                 | is true                                              |
 +----------------------+------------------------------------------------------+
 
 Moving data (backfilling, reindexing... )
