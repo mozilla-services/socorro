@@ -22,7 +22,6 @@ wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/b
 tar -zxf breakpad.tar.gz
 mv breakpad stackwalk
 # Build JSON stackwalker
-# Depends on breakpad, run "make breakpad" if you don't have it yet
 pushd minidump-stackwalk
 make
 popd
