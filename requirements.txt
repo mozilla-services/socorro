@@ -33,8 +33,8 @@ gunicorn==18.0
 
 # prod requirements
 
-# sha256: BZUlD7GUkBbcb9xzu2HBwvsrUiPjtmZxamnVXjnuGlU
-configman==1.2.6
+# sha256:gg1T4jLcD1FrtTXGHeTaPurWKlpJT4WBnQevmbgiDHY 
+configman==1.2.7
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
