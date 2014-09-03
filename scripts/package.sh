@@ -34,7 +34,7 @@ if [ "$BUILD_TYPE" != "tar" ]; then
         --config-files /etc/socorro \
         --exclude *.pyc \
         --exclude *.swp \
-        opt etc var
+        data etc var
 else
     tar -C ${BUILD_DIR%%socorro} --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
 fi

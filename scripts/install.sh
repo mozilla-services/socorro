@@ -32,7 +32,7 @@ if [ "$BUILD_TYPE" != "tar" ]; then
     cp -rp config/package/* $BUILD_DIR/etc/
 
     # Update BUILD_DIR for rest of install, not package.
-    BUILD_DIR=$BUILD_DIR/opt/socorro
+    BUILD_DIR=$BUILD_DIR/data/socorro
     mkdir -p $BUILD_DIR
 else
     mkdir -p $BUILD_DIR/application
@@ -57,7 +57,7 @@ if [ "$BUILD_TYPE" == "tar" ]; then
     for file in *.py.dist; do cp $file `basename $file .dist`; done
     popd
 else
-    ln -fs ${BUILD_DIR%%/opt/socorro}/etc/socorro/local.py \
+    ln -fs ${BUILD_DIR%%/data/socorro}/etc/socorro/local.py \
         $BUILD_DIR/webapp-django/crashstats/settings/local.py
 fi
 
@@ -72,5 +72,5 @@ then
 fi
 
 if [ "$BUILD_TYPE" != "tar" ]; then
-    BUILD_DIR=${BUILD_DIR%%/opt/socorro}
+    BUILD_DIR=${BUILD_DIR%%/data/socorro}
 fi
