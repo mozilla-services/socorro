@@ -35,13 +35,18 @@ Install socorro
 ---------------
 
 From inside the Socorro checkout (as the user that owns /data/socorro):
+
 ::
+
   make install
 
-By default, this installs files to /data/socorro. You can change this by
-specifying the PREFIX:
+By default, this copies files to builds/socorro/rpm. You can change this by
+specifying the *BUILD_DIR*.
+
 ::
-  make install PREFIX=/usr/local/socorro
+
+  export BUILD_DIR=/usr/local/socorro
+  make install
 
 However if you do change this default, then make sure this is reflected in all
 files in /etc/socorro and also the WSGI files (described below).
@@ -50,7 +55,9 @@ Install configuration to system directory
 -----------------------------------------
 
 From inside the Socorro checkout, as the *root* user
+
 ::
+
   cp config/*.ini-dist /etc/socorro
 
 Make sure the copy each .ini-dist file to .ini and configure it.
