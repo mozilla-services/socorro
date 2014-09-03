@@ -29,12 +29,7 @@ Installing a tarball:
   # "$HOME/socorro-deploy/deploy.sh" \
      https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro.tar.gz
 
-This will install the very latest development release of Socorro, if you wish
-to install a particular release you can select one from the build history
-on https://ci.mozilla.org/job/socorro-release/
-
-For example, the Socorro 87 release is
-https://ci.mozilla.org/job/socorro-release/1068/
+This will install the very latest development release of Socorro.
 
 Info for Socorro releases to Mozilla's crash-stats server are available at
 https://github.com/mozilla/socorro/releases and the latest git SHA actually
