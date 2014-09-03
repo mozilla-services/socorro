@@ -14,7 +14,7 @@ Installing an RPM:
 
 .. code-block:: bash
 
-  $ curl https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro-latest.x86_64.rpm
+  $ curl -O https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro-latest.x86_64.rpm
   $ sudo rpm -i socorro-latest.x86_64.rpm
 
 Installing a tarball:
