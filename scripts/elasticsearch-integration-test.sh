@@ -2,7 +2,7 @@
 
 # elasticsearch integration test for Socorro
 
-elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
+source scripts/defaults
 
 echo -n "INFO: setting up environment..."
 . socorro-virtualenv/bin/activate >> setup.log 2>&1
