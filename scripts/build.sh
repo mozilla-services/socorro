@@ -6,15 +6,13 @@
 
 # Jenkins build script for running tests and packaging build
 
+source scripts/defaults
+
 export JAVA_HOME=${JAVA_HOME:-"/usr/lib/jvm/jre-openjdk"}
 
 if [ -z "$WORKSPACE" -o -z "$CI" ]; then
   export PATH=$JAVA_HOME/bin:$PATH
 fi
-
-export BUILD_TYPE=${BUILD_TYPE:-"tar"}
-export BUILD_DIR=${BUILD_DIR:-"builds/$BUILD_TYPE/socorro"}
-export BUILD_VERSION=${BUILD_NUMBER:-$(git describe --tags | cut -d'-' -f1)}
 
 export database_hostname=${database_hostname:-"localhost"}
 export database_username=${database_username:-"test"}

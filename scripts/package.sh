@@ -6,6 +6,8 @@
 
 # Package Socorro for redistribution
 
+source scripts/defaults
+
 DESC="A distributed system for collecting, processing,
  and displaying crash reports from clients using Breakpad"
 

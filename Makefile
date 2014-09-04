@@ -15,7 +15,7 @@ bootstrap:
 install: bootstrap
 	bash ./scripts/install.sh
 
-package:
+package: install
 	bash ./scripts/package.sh
 
 lint:

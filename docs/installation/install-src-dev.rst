@@ -70,6 +70,14 @@ Normally this is handled automatically by the cronjob scheduler
 ::
   python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
 
+Sync Django database
+--------------------
+
+Django needs to write its ORM tables:
+::
+  cd webapp-django
+  ./manage.py syncdb --noinput
+
 Run socorro in dev mode
 -----------------------
 

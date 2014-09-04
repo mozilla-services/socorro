@@ -1,6 +1,6 @@
 #! /bin/bash -ex
 
-export VIRTUAL_ENV=${VIRTUAL_ENV:-"$PWD/socorro-virtualenv"}
+source scripts/defaults
 
 git submodule update --init --recursive
 

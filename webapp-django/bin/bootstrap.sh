@@ -26,4 +26,3 @@ fi
 # even though COMPRESS_OFFLINE=True COMPRESS becomes (!DEBUG) which
 # will become False so that's why we need to use --force here.
 ./manage.py compress --force --engine=jinja2
-./manage.py syncdb --noinput
