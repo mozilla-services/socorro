@@ -29,6 +29,7 @@ pip-cache
 pip-log.txt
 build
 .DS_Store
+webapp-django/media/
 
 # exclude filesystem storage directories
 primaryCrashStore/
