@@ -6,16 +6,16 @@
 
 # Jenkins build script for running tests and packaging build
 
-source scripts/clean.sh
+./scripts/clean.sh
 
-source scripts/bootstrap.sh
+./scripts/bootstrap.sh
 
-source scripts/test.sh
+./scripts/test.sh
 
-source scripts/integration-test.sh
+./scripts/integration-test.sh
 
-source scripts/analysis.sh
+./scripts/analysis.sh
 
-source scripts/install.sh
+./scripts/install.sh
 
-source scripts/package.sh
+./scripts/package.sh
