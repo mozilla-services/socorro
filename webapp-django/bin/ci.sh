@@ -14,5 +14,6 @@ echo "Linting..."
 git ls-files crashstats | xargs check.py | bin/linting.py
 
 echo "Starting tests..."
+python manage.py syncdb --noinput
 FORCE_DB=true python manage.py test --noinput
 echo "Tests finished."
