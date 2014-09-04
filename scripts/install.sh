@@ -1,5 +1,7 @@
 #! /bin/bash -ex
 
+source scripts/defaults
+
 if [ "$BUILD_TYPE" != "tar" ]; then
     # create base directories
     mkdir -p $BUILD_DIR/etc/init.d

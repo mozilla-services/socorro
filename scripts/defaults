@@ -1,0 +1,4 @@
+export VIRTUAL_ENV=${VIRTUAL_ENV:-"$PWD/socorro-virtualenv"}
+export BUILD_TYPE=${BUILD_TYPE:-"tar"}
+export BUILD_DIR=${BUILD_DIR:-"builds/$BUILD_TYPE/socorro"}
+export BUILD_VERSION=${BUILD_NUMBER:-$(git describe --tags | cut -d'-' -f1)}
