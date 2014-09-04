@@ -172,7 +172,7 @@
 [storage]
 
     # the source storage class
-    #crashstorage_class=socorro.external.crashstorage_base.PolyCrashStorage
+    crashstorage_class=socorro.external.crashstorage_base.PolyCrashStorage
 
     # a list of keys not allowed in a redacted processed crash
     # see "resource.redactor.forbidden_keys" for the default or override it here
