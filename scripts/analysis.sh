@@ -1,5 +1,7 @@
 #! /bin/bash -e
 
+source scripts/defaults
+
 # make the analysis
 git submodule update --init socorro-toolbox akela
 cd akela && mvn package; cd ../

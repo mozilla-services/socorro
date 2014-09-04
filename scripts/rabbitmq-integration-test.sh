@@ -7,48 +7,14 @@
 #
 # This uses the same setup as http://socorro.readthedocs.org/en/latest/installation.html
 
+source scripts/defaults
+
 if [ "$#" != "1" ] || [ "$1" != "--destroy" ]
 then
   echo "WARNING - this script will destroy the local socorro install."
   echo "The default database and config files will be overwritten."
   echo "You must pass the --destroy flag to continue."
   exit 1
-fi
-
-
-if [ -z "$database_hostname" ]
-then
-  database_hostname="localhost"
-fi
-
-if [ -z "$database_username" ]
-then
-  database_username="breakpad_rw"
-fi
-
-if [ -z "$database_password" ]
-then
-  database_password="aPassword"
-fi
-
-if [ -z "$rmq_host" ]
-then
-  rmq_host="localhost"
-fi
-
-if [ -z "$rmq_user" ]
-then
-  rmq_user="guest"
-fi
-
-if [ -z "$rmq_password" ]
-then
-  rmq_password="guest"
-fi
-
-if [ -z "$rmq_virtual_host" ]
-then
-  rmq_virtual_host="/"
 fi
 
 function cleanup_rabbitmq() {
