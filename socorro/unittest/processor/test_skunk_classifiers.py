@@ -462,6 +462,32 @@ class TestDontConsiderTheseFilter(TestCase):
             fake_processor
         ))
 
+        # test the do-nothing action
+        test_raw_crash = DotDict()
+        test_raw_crash.PluginHang = '1'
+        test_raw_crash.ProductName = "Firefox"
+        test_raw_crash.Version = '19'
+        test_raw_crash.BuildID = '20121031'
+        test_processed_crash = DotDict()
+        test_processed_crash.dump = 'fake dump'
+        test_processed_crash.json_dump = DotDict()
+        test_processed_crash.json_dump.system_info = DotDict()
+        test_processed_crash.json_dump.system_info.cpu_arch = 'x86'
+        test_processed_crash.success = True
+        test_processed_crash.additional_minidumps = ['a', 'b', 'c']
+        test_processed_crash.a = DotDict()
+        test_processed_crash.a.success = True
+        test_processed_crash.b = DotDict()
+        test_processed_crash.b.success = True
+        test_processed_crash.c = DotDict()
+        test_processed_crash.c.success = True
+        ok_(filter_rule.action(
+            test_raw_crash,
+            test_raw_dumps,
+            test_processed_crash,
+            fake_processor
+        ))
+
 
 class TestUpdateWindowAttributes(TestCase):
 
