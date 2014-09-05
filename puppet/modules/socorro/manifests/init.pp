@@ -1,13 +1,9 @@
-Exec {
-  logoutput => 'on_failure'
-}
-
-node default {
-  include webapp::socorro
-}
-
 # Set up basic Socorro requirements.
-class webapp::socorro {
+class socorro {
+    include socorro::vagrant
+}
+
+class socorro::vagrant {
 
   service {
     'iptables':
@@ -175,7 +171,7 @@ class webapp::socorro {
 
     'pg_hba.conf':
       path    => '/var/lib/pgsql/9.3/data/pg_hba.conf',
-      source  => '/vagrant/puppet/files/var_lib_pgsql_9.3_data/pg_hba.conf',
+      source  => 'puppet:///modules/socorro/var_lib_pgsql_9.3_data/pg_hba.conf',
       owner   => 'postgres',
       group   => 'postgres',
       ensure  => file,
@@ -187,7 +183,7 @@ class webapp::socorro {
 
     'pgsql.sh':
       path   => '/etc/profile.d/pgsql.sh',
-      source => '/vagrant/puppet/files/etc_profile.d/pgsql.sh',
+      source => 'puppet:///modules/socorro/etc_profile.d/pgsql.sh',
       owner  => 'root',
       ensure => file;
   }
