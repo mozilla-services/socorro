@@ -21,47 +21,25 @@ class Products(PostgreSQLBase):
          or more product:version combinations """
         filters = [
             ("versions", None, ["list", "str"]),  # for legacy, to be removed
-            ("type", "desktop", "str"),
         ]
         params = external_common.parse_arguments(filters, kwargs)
-
-        accepted_types = ("desktop", "webapp")
-        if params.type not in accepted_types:
-            raise BadArgumentError('type', params.type, accepted_types)
-
         if params.versions and params.versions[0]:
             return self._get_versions(params)
 
-        if params.type == "desktop":
-            sql = """
-                /* socorro.external.postgresql.products.Products.get */
-                SELECT
-                    product_name,
-                    version_string,
-                    start_date,
-                    end_date,
-                    throttle,
-                    is_featured,
-                    build_type,
-                    has_builds
-                FROM product_info
-                ORDER BY product_sort, version_sort DESC, channel_sort
-            """
-        elif params.type == "webapp":
-            sql = """
-                /* socorro.external.postgresql.products.Products.get */
-                SELECT
-                    product_name,
-                    version,
-                    NULL as start_date,
-                    NULL as end_date,
-                    1.0 as throttle,
-                    FALSE as is_featured,
-                    build_type,
-                    FALSE as has_builds
-                FROM bixie.raw_product_releases
-                ORDER BY product_name, version DESC
-            """
+        sql = """
+            /* socorro.external.postgresql.products.Products.get */
+            SELECT
+                product_name,
+                version_string,
+                start_date,
+                end_date,
+                throttle,
+                is_featured,
+                build_type,
+                has_builds
+            FROM product_info
+            ORDER BY product_sort, version_sort DESC, channel_sort
+        """
 
         error_message = "Failed to retrieve products/versions from PostgreSQL"
         results = self.query(sql, error_message=error_message)
