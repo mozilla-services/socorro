@@ -3,6 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.tools import eq_, ok_
+from mock import Mock
+
+from configman.dotdict import DotDict
+from configman import Namespace
 
 from socorro.lib import transform_rules
 from socorro.unittest.testbase import TestCase
@@ -21,6 +25,24 @@ def foo(s, d):
 
 def bar(s, d):
     pass
+
+
+class TestRuleTestLaughable(transform_rules.Rule):
+    required_config = Namespace()
+    required_config.add_option('laughable', default='fred')
+
+    def _predicate(self, *args, **kwargs):
+        return self.config.laughable != 'fred'
+
+
+class TestRuleTestDangerous(transform_rules.Rule):
+    required_config = Namespace()
+    required_config.add_option('dangerous', default='sally')
+
+    def _action(self, *args, **kwargs):
+        return self.config.dangerous != 'sally'
+
+
 
 
 #==============================================================================
@@ -107,7 +129,7 @@ class TestTransformRules(TestCase):
         """test to make sure that classes can be used as predicates and
         actions"""
         class MyRule(object):
-            def __init__(self):
+            def __init__(self, config=None):
                 self.predicate_called = False
                 self.action_called = False
             def predicate(self):
@@ -120,18 +142,18 @@ class TestTransformRules(TestCase):
             MyRule, (), {},
             MyRule, (), {}
         )
-        eq_(r.predicate, r._predicitate_implementation.predicate)
+        eq_(r.predicate, r._predicate_implementation.predicate)
         eq_(r.action, r._action_implementation.action)
-        eq_(r._action_implementation, r._predicitate_implementation)
+        eq_(r._action_implementation, r._predicate_implementation)
         r.act()
-        ok_(r._predicitate_implementation.predicate_called)
+        ok_(r._predicate_implementation.predicate_called)
         ok_(r._action_implementation.action_called)
 
     def test_TransformRule_with_class_function_mix(self):
         """test to make sure that classes can be mixed with functions as
         predicates and actions"""
         class MyRule(object):
-            def __init__(self):
+            def __init__(self, config=None):
                 self.predicate_called = False
                 self.action_called = False
             def predicate(self):
@@ -150,7 +172,7 @@ class TestTransformRules(TestCase):
         )
         eq_(r.predicate, my_predicate)
         eq_(r.action, r._action_implementation.action)
-        self.assertNotEqual(r._action_implementation, r._predicitate_implementation)
+        self.assertNotEqual(r._action_implementation, r._predicate_implementation)
         r.act()
         # make sure that the class predicate function was not called
         ok_(not r._action_implementation.predicate_called)
@@ -437,3 +459,92 @@ class TestTransformRules(TestCase):
                 {'alpha': None}, None, 'alpha'
             )
         )
+
+    def test_rule_simple(self):
+        fake_config = DotDict()
+        fake_config.logger = Mock()
+        r1 = transform_rules.Rule(fake_config)
+        eq_(r1.predicate(None, None, None, None), True)
+        eq_(r1.action(None, None, None, None), True)
+        eq_(r1.act(), (True, True))
+
+        class BadPredicate(transform_rules.Rule):
+            def _predicate(self, *args, **kwargs):
+                return False
+
+        r2 = BadPredicate(fake_config)
+        eq_(r2.predicate(None, None, None, None), False)
+        eq_(r2.action(None, None, None, None), True)
+        eq_(r2.act(), (False, None))
+
+        class BadAction(transform_rules.Rule):
+            def _action(self, *args, **kwargs):
+                return False
+
+        r3 = BadAction(fake_config)
+        eq_(r3.predicate(None, None, None, None), True)
+        eq_(r3.action(None, None, None, None), False)
+        eq_(r3.act(), (True, False))
+
+    def test_rule_exceptions(self):
+        fake_config = DotDict()
+        fake_config.logger = Mock()
+
+        class BadPredicate(transform_rules.Rule):
+            def _predicate(self, *args, **kwargs):
+                raise Exception("highwater")
+
+        r2 = BadPredicate(fake_config)
+        ok_(not fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        eq_(r2.predicate(None, None, None, None), False)
+        ok_(fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        eq_(r2.action(None, None, None, None), True)
+        ok_(not fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        eq_(r2.act(), (False, None))
+        ok_(fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        class BadAction(transform_rules.Rule):
+            def _action(self, *args, **kwargs):
+                raise Exception("highwater")
+
+        r3 = BadAction(fake_config)
+        ok_(not fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        eq_(r3.predicate(None, None, None, None), True)
+        ok_(not fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        eq_(r3.action(None, None, None, None), False)
+        ok_(fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+        eq_(r3.act(), (True, False))
+        ok_(fake_config.logger.debug.called)
+        fake_config.logger.debug.reset_mock()
+
+    def test_rules_in_config(self):
+        config = DotDict()
+        config['TestRuleTestLaughable.laughable'] = 'wilma'
+        config['TestRuleTestDangerous.dangerous'] = 'dwight'
+        config.rules_list = [
+            TestRuleTestLaughable,
+            TestRuleTestDangerous
+        ]
+        trs = transform_rules.TransformRuleSystem(config)
+
+        ok_(isinstance(trs.rules[0], TestRuleTestLaughable))
+        ok_(isinstance(trs.rules[1], TestRuleTestDangerous))
+        ok_(trs.rules[0].predicate(None))
+        ok_(trs.rules[1].action(None))
+
+
+
+

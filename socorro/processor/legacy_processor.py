@@ -1184,7 +1184,7 @@ class LegacyCrashProcessor(RequiredConfig):
                              x[4],
                              x[5])
                             for x in rules]
-        rule_system = TransformRuleSystem()
+        rule_system = TransformRuleSystem(self.config)
         rule_system.load_rules(translated_rules)
 
         self.config.logger.debug(

@@ -13,7 +13,6 @@ import threading
 import datetime
 import time
 import json
-import tempfile
 from urllib import unquote_plus
 from contextlib import closing, contextmanager
 import gzip
@@ -23,7 +22,6 @@ from configman.converters import class_converter
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.postgresql.dbapi2_util import (
-    execute_no_results,
     execute_query_fetchall,
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
@@ -35,7 +33,6 @@ from socorro.lib.util import (
     emptyFilter,
     CachingIterator
 )
-from socorro.processor.breakpad_pipe_to_json import pipe_dump_to_json_dump
 
 
 #------------------------------------------------------------------------------
@@ -323,6 +320,7 @@ class HybridCrashProcessor(RequiredConfig):
         """
         self._statistics.incr('jobs')
         processor_notes = [self.config.processor_name, self.__class__.__name__]
+        processed_crash = self._create_minimal_processed_crash()
         try:
             self.quit_check()
             crash_id = raw_crash.uuid
@@ -346,6 +344,8 @@ class HybridCrashProcessor(RequiredConfig):
             # rule systems - it would be nice to unify them someday
             self.rule_system.raw_crash_transform.apply_all_rules(
                 raw_crash,
+                raw_dumps,
+                processed_crash,
                 self
             )
 
@@ -361,6 +361,7 @@ class HybridCrashProcessor(RequiredConfig):
             processed_crash = self._create_basic_processed_crash(
                 crash_id,
                 raw_crash,
+                processed_crash,
                 submitted_timestamp,
                 started_timestamp,
                 processor_notes
@@ -396,6 +397,7 @@ class HybridCrashProcessor(RequiredConfig):
                 self.rule_system.processed_transform \
                     .apply_all_rules(
                         raw_crash,
+                        raw_dumps,
                         processed_crash,
                         self
                     )
@@ -413,6 +415,7 @@ class HybridCrashProcessor(RequiredConfig):
             try:
                 self.rule_system.skunk_classifier.apply_until_action_succeeds(
                     raw_crash,
+                    raw_dumps,
                     processed_crash,
                     self
                 )
@@ -431,6 +434,7 @@ class HybridCrashProcessor(RequiredConfig):
                 self.rule_system.support_classifier \
                     .apply_until_action_succeeds(
                         raw_crash,
+                        raw_dumps,
                         processed_crash,
                         self
                     )
@@ -523,6 +527,7 @@ class HybridCrashProcessor(RequiredConfig):
     def _create_basic_processed_crash(self,
                                       uuid,
                                       raw_crash,
+                                      processed_crash,
                                       submitted_timestamp,
                                       started_timestamp,
                                       processor_notes):
@@ -537,7 +542,6 @@ class HybridCrashProcessor(RequiredConfig):
             submitted_timestamp: when job came in (a key used in partitioning)
             processor_notes: list of strings of error messages
         """
-        processed_crash = self._create_minimal_processed_crash()
         processed_crash.uuid = uuid
         processed_crash.startedDateTime = started_timestamp
         processed_crash.product = self._get_truncate_or_warn(
@@ -1390,7 +1394,7 @@ class HybridCrashProcessor(RequiredConfig):
                              x[4],
                              x[5])
                             for x in rules]
-        rule_system = TransformRuleSystem()
+        rule_system = TransformRuleSystem(self.config)
         rule_system.load_rules(translated_rules)
 
         return rule_system
@@ -1489,7 +1493,7 @@ class HybridCrashProcessor(RequiredConfig):
 #          put into Postgres.
 #    * these functions are used in the processor.json_rewrite category
 #------------------------------------------------------------------------------
-def json_equal_predicate(raw_crash, processor, key, value):
+def json_equal_predicate(raw_crash, raw_dumps, processed_crash, processor, key, value):
     """a TransformRule predicate function that tests if a key in the json
     is equal to a certain value.  In a rule definition, use of this function
     could look like this:
@@ -1512,7 +1516,7 @@ def json_equal_predicate(raw_crash, processor, key, value):
 
 
 #------------------------------------------------------------------------------
-def json_reformat_action(raw_crash, processor, key, format_str):
+def json_reformat_action(raw_crash, raw_dumps, processed_crash, processor, key, format_str):
     """a TransformRule action function that allows a single key in the target
     json file to be rewritten using a format string.  The json itself is used
     as a dict to feed to the format string.  This allows a key's value to be
@@ -1543,7 +1547,7 @@ def json_reformat_action(raw_crash, processor, key, format_str):
 
 
 #------------------------------------------------------------------------------
-def json_ProductID_predicate(raw_crash, processor):
+def json_ProductID_predicate(raw_crash, raw_dumps, processed_crash, processor):
     """a TransformRule predicate that tests if the value of the json field,
     'ProductID' is present in the processor's _product_id_map.  If it is, then
     the action part of the rule will be triggered.
@@ -1559,7 +1563,7 @@ def json_ProductID_predicate(raw_crash, processor):
 
 
 #------------------------------------------------------------------------------
-def json_Product_rewrite_action(raw_crash, processor):
+def json_Product_rewrite_action(raw_crash, raw_dumps, processed_crash, processor):
     """a TransformRule action function that will change the name of a product.
     It finds the new name in by looking up the 'ProductID' in the processor's
     '_product_id_map'.
@@ -1575,5 +1579,3 @@ def json_Product_rewrite_action(raw_crash, processor):
     old_product_name = raw_crash['ProductName']
     new_product_name = processor._product_id_map[product_id]['product_name']
     raw_crash['ProductName'] = new_product_name
-
-

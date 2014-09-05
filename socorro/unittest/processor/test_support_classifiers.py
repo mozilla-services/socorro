@@ -43,23 +43,25 @@ class TestSupportClassificationRule(TestCase):
 
     def test_predicate(self):
         rc = DotDict()
+        rd = {}
         pc = DotDict()
         pc.classifications = DotDict()
         processor = None
 
         support_rule = SupportClassificationRule()
-        ok_(support_rule.predicate(rc, pc, processor))
+        ok_(support_rule.predicate(rc, rd, pc, processor))
 
         pc.classifications.support = DotDict()
-        ok_(support_rule.predicate(rc, pc, processor))
+        ok_(support_rule.predicate(rc, rd, pc, processor))
 
     def test_action(self):
         rc = DotDict()
+        rd = {}
         pc = DotDict()
         processor = None
 
         support_rule = SupportClassificationRule()
-        ok_(support_rule.action(rc, pc, processor))
+        ok_(support_rule.action(rc, rd, pc, processor))
 
     def test_version(self):
         support_rule = SupportClassificationRule()
@@ -102,9 +104,9 @@ class TestBitguardClassfier(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = BitguardClassifier()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
         ok_('classifications' in pc)
@@ -122,9 +124,9 @@ class TestBitguardClassfier(TestCase):
         fake_processor = create_basic_fake_processor()
 
         rc = DotDict()
-
+        rd = {}
         rule = BitguardClassifier()
-        action_result = rule.action(rc, pc, fake_processor)
+        action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(not action_result)
         ok_('classifications' not in pc)
@@ -139,6 +141,7 @@ class TestOutOfDateClassifier(TestCase):
         raw_crash = DotDict()
         raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
+        raw_dumps = {}
 
         fake_processor = create_basic_fake_processor()
         fake_processor.config.firefox_out_of_date_version = '17'
@@ -146,6 +149,7 @@ class TestOutOfDateClassifier(TestCase):
         classifier = OutOfDateClassifier()
         ok_(classifier._predicate(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -153,6 +157,7 @@ class TestOutOfDateClassifier(TestCase):
         raw_crash.Version = '19'
         ok_(not classifier._predicate(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -161,6 +166,7 @@ class TestOutOfDateClassifier(TestCase):
         raw_crash.ProductName = 'NotFireFox'
         ok_(not classifier._predicate(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -196,6 +202,7 @@ class TestOutOfDateClassifier(TestCase):
         raw_crash = DotDict()
         raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
+        raw_dumps = {}
 
         fake_processor = create_basic_fake_processor()
 
@@ -206,6 +213,7 @@ class TestOutOfDateClassifier(TestCase):
             '5.1.2600 Service Pack 2'
         ok_(classifier._windows_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -221,6 +229,7 @@ class TestOutOfDateClassifier(TestCase):
             '5.0 Service Pack 23'
         ok_(classifier._windows_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -236,6 +245,7 @@ class TestOutOfDateClassifier(TestCase):
             '5.1.2600 Service Pack 3'
         ok_(classifier._windows_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -269,6 +279,7 @@ class TestOutOfDateClassifier(TestCase):
         raw_crash = DotDict()
         raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
+        raw_dumps = {}
 
         fake_processor = create_basic_fake_processor()
 
@@ -279,6 +290,7 @@ class TestOutOfDateClassifier(TestCase):
         processed_crash.json_dump['system_info']['cpu_arch'] = 'ppc'
         ok_(classifier._osx_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -294,6 +306,7 @@ class TestOutOfDateClassifier(TestCase):
         processed_crash.json_dump['system_info']['cpu_arch'] = 'ppc'
         ok_(classifier._osx_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -309,6 +322,7 @@ class TestOutOfDateClassifier(TestCase):
         processed_crash.json_dump['system_info']['cpu_arch'] = 'x86'
         ok_(classifier._osx_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -323,6 +337,7 @@ class TestOutOfDateClassifier(TestCase):
         processed_crash.json_dump['system_info']['os_ver'] = '10.99'
         ok_(classifier._osx_action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -338,6 +353,7 @@ class TestOutOfDateClassifier(TestCase):
         raw_crash = DotDict()
         raw_crash.ProductName = 'Firefox'
         raw_crash.Version = '16'
+        raw_dumps = {}
 
         fake_processor = create_basic_fake_processor()
 
@@ -349,6 +365,7 @@ class TestOutOfDateClassifier(TestCase):
         processed_crash.json_dump['system_info']['cpu_arch'] = 'ppc'
         ok_(classifier._action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))
@@ -361,6 +378,7 @@ class TestOutOfDateClassifier(TestCase):
             '5.1.2600 Service Pack 3'
         ok_(classifier._action(
             raw_crash,
+            raw_dumps,
             processed_crash,
             fake_processor
         ))

@@ -7,6 +7,10 @@ import configman
 import collections
 import inspect
 
+from configman import RequiredConfig, Namespace
+
+from socorro.lib.converters import str_to_classes_in_namespaces_converter
+
 #------------------------------------------------------------------------------
 # support methods
 
@@ -15,6 +19,7 @@ import inspect
 kw_list_re = re.compile('([^ =]+) *= *("[^"]*"|[^ ]*)')
 
 
+#------------------------------------------------------------------------------
 def kw_str_parse(a_string):
     """convert a string in the form 'a=b, c=d, e=f' to a dict"""
     try:
@@ -27,7 +32,110 @@ def kw_str_parse(a_string):
 
 
 #==============================================================================
-class TransformRule(object):
+class Rule(RequiredConfig):
+    """the base class for Support Rules.  It provides the framework for the
+    rules 'predicate', 'action', and 'version' as well as utilites to help
+    rules do their jobs."""
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config=None):
+        self.config = config
+
+    #--------------------------------------------------------------------------
+    def predicate(self, *args, **kwargs):
+        """the default predicate for Support Classifiers invokes any derivied
+        _predicate function, trapping any exceptions raised in the process.  We
+        are obligated to catch these exceptions to give subsequent rules the
+        opportunity to act.  An error during the predicate application is a
+        failure of the rule, not a failure of the classification system itself
+        """
+        try:
+            return self._predicate(*args, **kwargs)
+        except Exception, x:
+            self.config.logger.debug(
+                'Rule %s predicicate failed because of "%s"',
+                self.__class__,
+                x,
+                exc_info=True
+            )
+            return False
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, *args, **kwargs):
+        """"The default support classifier predicate just returns True.  We
+        want all the support classifiers run.
+
+        returns:
+            True - this rule should be applied
+            False - this rule should not be applied
+        """
+        return True
+
+    #--------------------------------------------------------------------------
+    def action(self, *args, **kwargs):
+        """the default action for Support Classifiers invokes any derivied
+        _action function, trapping any exceptions raised in the process.  We
+        are obligated to catch these exceptions to give subsequent rules the
+        opportunity to act and perhaps mitigate the error.  An error during the
+        action application is a failure of the rule, not a failure of the
+        classification system itself."""
+        try:
+            return self._action(*args, **kwargs)
+        except KeyError, x:
+            self.config.logger.debug(
+                'Rule %s action failed because of missing key "%s"',
+                self.__class__,
+                x,
+            )
+        except Exception, x:
+            self.config.logger.debug(
+                'Rule %s action failed because of "%s"',
+                self.__class__,
+                x,
+                exc_info=True
+            )
+        return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, *args, **kwargs):
+        """Rules derived from this base class ought to override this method
+        with an actual classification rule.  Successful application of this
+        method should include a call to '_add_classification'.
+
+        returns:
+            True - this rule was applied successfully and no further rules
+                   should be applied
+            False - this rule did not succeed and further rules should be
+                    tried
+        """
+        return True
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        """This method should be overridden in a derived class."""
+        return '0.0'
+
+    #--------------------------------------------------------------------------
+    def act(self, *args, **kwargs):
+        """gather a rules parameters together and run the predicate. If that
+        returns True, then go on and run the action function
+
+        returns:
+            a tuple indicating the results of applying the predicate and the
+            action function:
+               (False, None) - the predicate failed, action function not run
+               (True, True) - the predicate and action functions succeeded
+               (True, False) - the predicate succeeded, but the action function
+                               failed"""
+        if self.predicate(*args, **kwargs):
+            bool_result = self.action(*args, **kwargs)
+            return (True, bool_result)
+        else:
+            return (False, None)
+
+
+#==============================================================================
+class TransformRule(Rule):
     """a pairing of two functions with default parameters to be used as
     transformation rule."""
     #--------------------------------------------------------------------------
@@ -36,7 +144,8 @@ class TransformRule(object):
                        predicate_kwargs,
                        action,
                        action_args,
-                       action_kwargs):
+                       action_kwargs,
+                       config=None):
         """construct a new predicate/action rule pair.
         input parameters:
             pedicate - the name of a function to serve as a predicate.  The
@@ -67,10 +176,10 @@ class TransformRule(object):
         if inspect.isclass(self.predicate):
             # the predicate is a class, instantiate it and set the predicate
             # function to the object's 'predicate' method
-            self._predicitate_implementation = self.predicate()
-            self.predicate = self._predicitate_implementation.predicate
+            self._predicate_implementation = self.predicate(config)
+            self.predicate = self._predicate_implementation.predicate
         else:
-            self._predicitate_implementation = type(self.predicate)
+            self._predicate_implementation = type(self.predicate)
 
         try:
             if predicate_args in ('', None):
@@ -78,8 +187,9 @@ class TransformRule(object):
             elif isinstance(predicate_args, tuple):
                 self.predicate_args = predicate_args
             else:
-                self.predicate_args = tuple([eval(x.strip())
-                                       for x in predicate_args.split(',')])
+                self.predicate_args = tuple(
+                    [eval(x.strip()) for x in predicate_args.split(',')]
+                )
         except AttributeError:
             self.predicate_args = ()
 
@@ -93,12 +203,12 @@ class TransformRule(object):
         if inspect.isclass(self.action):
             # the action is actually a class, go on and instantiate it, then
             # assign the 'action' to be the object's 'action' method
-            if self._predicitate_implementation.__class__ is self.action:
+            if self._predicate_implementation.__class__ is self.action:
                 # if the predicate and the action are implemented in the same
                 # class, only instantiate one copy.
-                self._action_implementation = self._predicitate_implementation
+                self._action_implementation = self._predicate_implementation
             else:
-                self._action_implementation = self.action()
+                self._action_implementation = self.action(config)
             self.action = self._action_implementation.action
 
         try:
@@ -107,8 +217,9 @@ class TransformRule(object):
             elif isinstance(action_args, tuple):
                 self.action_args = action_args
             else:
-                self.action_args = tuple([eval(x.strip())
-                                    for x in action_args.split(',')])
+                self.action_args = tuple(
+                    [eval(x.strip()) for x in action_args.split(',')]
+                )
         except AttributeError:
             self.action_args = ()
         self.action_kwargs = kw_str_parse(action_kwargs)
@@ -163,22 +274,46 @@ class TransformRule(object):
 
 
 #==============================================================================
-class TransformRuleSystem(object):
+class TransformRuleSystem(RequiredConfig):
     """A collection of TransformRules that can be applied together"""
+    required_config = Namespace()
+    required_config.add_option(
+        name='rules_list',
+        default=[],
+        from_string_converter=str_to_classes_in_namespaces_converter()
+    )
+
     #--------------------------------------------------------------------------
-    def __init__(self):
-        self.rules = list()
+    def __init__(self, config=None):
+        self.rules = []
+        self.config = config
+        if config:
+            if "rules_list" in config:
+                for a_rule_class in config.rules_list:
+                    try:
+                        self.rules.append(
+                            a_rule_class(config[a_rule_class.__name__])
+                        )
+                    except KeyError:
+                        self.config.logger.debug(
+                            'Rule %s configuration is missing',
+                            a_rule_class.__name__
+                        )
 
     #--------------------------------------------------------------------------
     def load_rules(self, an_iterable):
         """cycle through a collection of Transform rule tuples loading them
         into the TransformRuleSystem"""
-        self.rules = [TransformRule(*x) for x in an_iterable]
+        self.rules = [
+            TransformRule(*x, config=self.config) for x in an_iterable
+        ]
 
     #--------------------------------------------------------------------------
     def append_rules(self, an_iterable):
         """add rules to the TransformRuleSystem"""
-        self.rules.extend(TransformRule(*x) for x in an_iterable)
+        self.rules.extend(
+            TransformRule(*x, config=self.config) for x in an_iterable
+        )
 
     #--------------------------------------------------------------------------
     def apply_all_rules(self, *args, **kwargs):
@@ -289,8 +424,12 @@ def eq_constant_predicate(source, destination, source_key='', value=''):
 # (eq_key_predicate, '', 'left_mapping_key="fred", right_mapping_key="wilma"',
 # ...)
 #------------------------------------------------------------------------------
-def eq_key_predicate(left_mapping, right_mapping, left_mapping_key='',
-                 right_mapping_key=''):
+def eq_key_predicate(
+    left_mapping,
+    right_mapping,
+    left_mapping_key='',
+    right_mapping_key=''
+):
     """a predicate to test equality between a left mapping key and a
    right mapping key
 

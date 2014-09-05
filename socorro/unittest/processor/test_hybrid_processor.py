@@ -330,9 +330,12 @@ class TestHybridProcessor(TestCase):
                   1,
                   leg_proc._create_basic_processed_crash.call_count
                 )
+                minimal_processed_crash = \
+                    leg_proc._create_minimal_processed_crash()
                 leg_proc._create_basic_processed_crash.assert_called_with(
                   raw_crash.uuid,
                   raw_crash,
+                  minimal_processed_crash,
                   datetime(2012, 5, 4, 15, 33, 33, tzinfo=UTC),
                   started_timestamp,
                   [
@@ -513,9 +516,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
 
                 # test 01
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -530,9 +535,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 raw_crash_missing_product = copy.deepcopy(raw_crash)
                 del raw_crash_missing_product['ProductName']
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash_missing_product,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -555,6 +562,7 @@ class TestHybridProcessor(TestCase):
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash_missing_version,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -575,9 +583,11 @@ class TestHybridProcessor(TestCase):
                 raw_crash_with_hangid = copy.deepcopy(raw_crash)
                 raw_crash_with_hangid.HangID = \
                     '30cb3212-b61d-4d1f-85ae-3bc4bcaa0504'
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash_with_hangid,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -597,9 +607,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 raw_crash_with_pluginhang = copy.deepcopy(raw_crash)
                 raw_crash_with_pluginhang.PluginHang = '1'
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash_with_pluginhang,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -619,9 +631,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 raw_crash_with_hang_only = copy.deepcopy(raw_crash)
                 raw_crash_with_hang_only.Hang = 16
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash_with_hang_only,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -645,9 +659,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 raw_crash_with_hang_only = copy.deepcopy(raw_crash)
                 raw_crash_with_hang_only.Hang = 'bad value'
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   raw_crash_with_hang_only,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -671,9 +687,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 bad_raw_crash = copy.deepcopy(raw_crash)
                 bad_raw_crash['SecondsSinceLastCrash'] = 'badness'
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   bad_raw_crash,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -688,9 +706,11 @@ class TestHybridProcessor(TestCase):
                 processor_notes = []
                 bad_raw_crash = copy.deepcopy(raw_crash)
                 bad_raw_crash['CrashTime'] = 'badness'
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   bad_raw_crash,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
@@ -706,9 +726,11 @@ class TestHybridProcessor(TestCase):
                 bad_raw_crash['StartupTime'] = 'badness'
                 bad_raw_crash['InstallTime'] = 'more badness'
                 bad_raw_crash['CrashTime'] = 'even more badness'
+                processed_crash = leg_proc._create_minimal_processed_crash()
                 processed_crash = leg_proc._create_basic_processed_crash(
                   '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
                   bad_raw_crash,
+                  processed_crash,
                   datetimeFromISOdateString(raw_crash.submitted_timestamp),
                   started_timestamp,
                   processor_notes,
