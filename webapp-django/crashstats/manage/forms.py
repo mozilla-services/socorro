@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.models import User, Group, Permission
 from django import forms
 
@@ -116,3 +118,69 @@ class SuperSearchFieldForm(BaseForm):
             for x in self.cleaned_data['form_field_choices'].split(',')
             if x.strip()
         ]
+
+
+class ProductForm(BaseForm):
+
+    product = forms.CharField()
+    initial_version = forms.CharField()
+
+    def __init__(self, *args, **kwargs):
+        self.existing_products = kwargs.pop('existing_products', [])
+        super(ProductForm, self).__init__(*args, **kwargs)
+
+    def clean_product(self):
+        value = self.cleaned_data['product']
+        if value in self.existing_products:
+            raise forms.ValidationError('%s already exists' % (value,))
+        return value
+
+
+class ReleaseForm(BaseForm):
+
+    product = forms.CharField()
+    version = forms.CharField()
+    update_channel = forms.CharField()
+    build_id = forms.CharField(
+        help_text='Must start in the format YYYYMMDD and this date to be '
+                  'within the last 30 days.'
+    )
+    platform = forms.ChoiceField()
+    beta_number = forms.CharField(required=False)
+    release_channel = forms.CharField()
+    throttle = forms.CharField()
+
+    def __init__(self, *args, **kwargs):
+        self.platforms = kwargs.pop('platforms', [])
+        super(ReleaseForm, self).__init__(*args, **kwargs)
+        self.fields['platform'].choices = [
+            (x, x) for x in self.platforms
+        ]
+
+    def clean_throttle(self):
+        value = self.cleaned_data['throttle']
+        try:
+            return int(value)
+        except ValueError:
+            raise forms.ValidationError('not a number')
+
+    def clean_beta_number(self):
+        value = self.cleaned_data['beta_number']
+        if not value.strip():
+            # that's ok
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            raise forms.ValidationError('not a number')
+
+    def clean_build_id(self):
+        value = self.cleaned_data['build_id']
+        try:
+            date = datetime.datetime.strptime(value[:8], '%Y%m%d')
+            now = datetime.datetime.utcnow()
+            if (now - date) > datetime.timedelta(days=30):
+                raise forms.ValidationError('Date older than 30 days')
+            return value
+        except ValueError:
+            raise forms.ValidationError('Must start with YYYYMMDD')

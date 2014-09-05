@@ -103,6 +103,10 @@ class TestViews(BaseTestViews):
         ok_(fields_url in response.content)
         users_url = reverse('manage:users')
         ok_(users_url in response.content)
+        products_url = reverse('manage:products')
+        ok_(products_url in response.content)
+        releases_url = reverse('manage:releases')
+        ok_(releases_url in response.content)
 
     @mock.patch('requests.put')
     @mock.patch('requests.get')
@@ -1167,3 +1171,125 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 400)
+
+    @mock.patch('requests.post')
+    def test_create_product(self, rpost):
+
+        def mocked_post(url, **options):
+            data = options['data']
+            eq_(data['product'], 'WaterCat')
+            eq_(data['version'], '1.0')
+            assert '/products/' in url, url
+            return Response(True)
+
+        rpost.side_effect = mocked_post
+
+        self._login()
+        url = reverse('manage:products')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('value="1.0"' in response.content)
+
+        # first attempt to create an existing combo
+        response = self.client.post(url, {
+            'product': 'WaterWolf',
+            'initial_version': '1.0'
+        })
+        eq_(response.status_code, 200)
+        ok_('WaterWolf already exists' in response.content)
+
+        # now with a new unique product
+        response = self.client.post(url, {
+            'product': 'WaterCat',
+            'initial_version': '1.0'
+        })
+        eq_(response.status_code, 302)
+
+    @mock.patch('requests.post')
+    def test_create_release(self, rpost):
+
+        def mocked_post(url, **options):
+            assert '/releases/release/' in url, url
+            data = options['data']
+            eq_(data['product'], 'WaterCat')
+            eq_(data['version'], '19.0')
+            eq_(data['beta_number'], 1)
+            eq_(data['throttle'], 0)
+            return Response(True)
+
+        rpost.side_effect = mocked_post
+
+        self._login()
+        url = reverse('manage:releases')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # there should be a dropdown with some known platforms
+        ok_('value="Windows"' in response.content)
+        ok_('value="Mac OS X"' in response.content)
+
+        # first attempt to create with a product version that doesn't exist
+        now = datetime.datetime.utcnow()
+        data = {
+            'product': 'WaterCat',
+            'version': '99.9',
+            'update_channel': 'beta',
+            'build_id': now.strftime('%Y%m%d%H%M'),
+            'platform': 'Windows',
+            'beta_number': '0',
+            'release_channel': 'Beta',
+            'throttle': '1'
+        }
+
+        # set some bad values that won't pass validation
+        data['throttle'] = 'xxx'
+        data['beta_number'] = 'yyy'
+        data['version'] = '19.0'
+        data['build_id'] = 'XX'
+        response = self.client.post(url, data)
+        eq_(response.status_code, 200)
+        ok_('Must start with YYYYMMDD' in response.content)
+        eq_(response.content.count('not a number'), 2)
+
+        data['build_id'] = '20140101XXXXX'
+        response = self.client.post(url, data)
+        eq_(response.status_code, 200)
+        ok_('Date older than 30 days' in response.content)
+
+        # finally, all with good parameters
+        data['beta_number'] = '1'
+        data['throttle'] = '0'
+        data['build_id'] = now.strftime('%Y%m%d%H%M')
+        response = self.client.post(url, data)
+        eq_(response.status_code, 302)
+
+    @mock.patch('requests.post')
+    def test_create_release_with_null_beta_number(self, rpost):
+        mock_calls = []
+
+        def mocked_post(url, **options):
+            assert '/releases/release/' in url, url
+            mock_calls.append(url)
+            data = options['data']
+            eq_(data['beta_number'], None)
+            return Response(True)
+
+        rpost.side_effect = mocked_post
+
+        self._login()
+
+        now = datetime.datetime.utcnow()
+        data = {
+            'product': 'WaterWolf',
+            'version': '99.9',
+            'update_channel': 'beta',
+            'build_id': now.strftime('%Y%m%d%H%M'),
+            'platform': 'Windows',
+            'beta_number': ' ',
+            'release_channel': 'Beta',
+            'throttle': '1'
+        }
+        url = reverse('manage:releases')
+        response = self.client.post(url, data)
+        eq_(response.status_code, 302)
+        # make sure it really called the POST to /releases/release/
+        ok_(mock_calls)

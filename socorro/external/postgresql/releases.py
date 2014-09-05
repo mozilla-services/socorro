@@ -100,7 +100,7 @@ class Releases(PostgreSQLBase):
 
         return True
 
-    def update_release(self, **kwargs):
+    def create_release(self, **kwargs):
         filters = [
             ('product', None, 'str'),
             ('version', None, 'str'),
@@ -114,7 +114,14 @@ class Releases(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
         # all fields are mandatory
         for key in [x[0] for x in filters if x[1] is None]:
-            if not params.get(key):
+            if key == 'beta_number':
+                # exception because this can either be a non-zero integer
+                # or a None
+                if params.get(key) is not None:
+                    if not params.get(key):
+                        raise MissingArgumentError(key)
+
+            elif not params.get(key) and params.get(key) != 0:
                 raise MissingArgumentError(key)
 
         with self.get_connection() as connection:

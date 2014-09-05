@@ -56,7 +56,7 @@ SERVICES_LIST = (
     (r'/products/builds/(.*)', 'products_builds.ProductsBuilds'),
     (r'/products/(.*)', 'products.Products'),
     (r'/query/', 'query.Query'),
-    (r'/releases/(featured)/(.*)', 'releases.Releases'),
+    (r'/releases/(featured|release)/(.*)', 'releases.Releases'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/search/(signatures|crashes)/(.*)', 'search.Search'),

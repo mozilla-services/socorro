@@ -146,6 +146,8 @@ class FormWrapper(forms.Form):
 BLACKLIST = (
     # not because it's sensitive but because it's only used for writes
     'ReleasesFeatured',
+    # only used for doing posts
+    'Releases',
     # because it's only used for the admin
     'Field',
     'SuperSearchField',
