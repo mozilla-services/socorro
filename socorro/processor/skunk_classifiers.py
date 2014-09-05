@@ -470,7 +470,7 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         return '0.1'
 
     #--------------------------------------------------------------------------
-    def _action(self, raw_crash, processed_crash, processor):
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         """the predicate has determined that the crash is uninteresting to
         the SkunkClassifiers.  Don't do anything but return true to stop any
         further application of rules."""
