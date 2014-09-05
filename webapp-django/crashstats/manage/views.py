@@ -13,10 +13,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from crashstats.crashstats.models import (
     CurrentProducts,
+    Releases,
     ReleasesFeatured,
     Field,
     SkipList,
-    GraphicsDevices
+    GraphicsDevices,
+    Platforms
 )
 from crashstats.supersearch.models import (
     SuperSearchField,
@@ -520,3 +522,84 @@ def supersearch_fields_missing(request):
     context['missing_fields_count'] = missing_fields['total']
 
     return render(request, 'manage/supersearch_fields_missing.html', context)
+
+
+@superuser_required
+def products(request):
+    context = {}
+    api = CurrentProducts()
+    if request.method == 'POST':
+        form = forms.ProductForm(
+            request.POST,
+            existing_products=dict(
+                (k, [v['version'] for v in vs])
+                for k, vs in api.get()['hits'].items()
+            ),
+            product_must_not_exist=True
+        )
+        if form.is_valid():
+            api = CurrentProducts()
+            api.post(
+                product=form.cleaned_data['product'],
+                version=form.cleaned_data['version']
+            )
+            messages.success(
+                request,
+                'Product %s (%s) added.' % (
+                    form.cleaned_data['product'],
+                    form.cleaned_data['version']
+                )
+            )
+            return redirect('manage:products')
+    else:
+        form = forms.ProductForm()
+    context['form'] = form
+    context['page_title'] = "Products"
+    return render(request, 'manage/products.html', context)
+
+
+@superuser_required
+def releases(request):
+    context = {}
+    products_api = CurrentProducts()
+    platforms_api = Platforms()
+    platform_names = [x['name'] for x in platforms_api.get()]
+
+    if request.method == 'POST':
+        form = forms.ReleaseForm(
+            request.POST,
+            existing_products=dict(
+                (k, [v['version'] for v in vs])
+                for k, vs in products_api.get()['hits'].items()
+            ),
+            product_must_exist=True,
+            platforms=platform_names
+        )
+        if form.is_valid():
+            api = Releases()
+            api.post(
+                product=form.cleaned_data['product'],
+                version=form.cleaned_data['version'],
+                update_channel=form.cleaned_data['update_channel'],
+                build_id=form.cleaned_data['build_id'],
+                platform=form.cleaned_data['platform'],
+                beta_number=form.cleaned_data['beta_number'],
+                release_channel=form.cleaned_data['release_channel'],
+                throttle=form.cleaned_data['throttle'],
+            )
+            messages.success(
+                request,
+                'New release for %s:%s added.' % (
+                    form.cleaned_data['product'],
+                    form.cleaned_data['version']
+                )
+            )
+            return redirect('manage:releases')
+    else:
+        form = forms.ReleaseForm(
+            platforms=platform_names
+        )
+
+    context['form'] = form
+    context['page_title'] = "Releases"
+    return render(request, 'manage/releases.html', context)

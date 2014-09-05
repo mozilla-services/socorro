@@ -22,6 +22,10 @@
       /* roughly 100/7 */
       width:14.2%;
   }
+  .add-products-versions-link {
+      float: right;
+      margin-right: 20px;
+  }
   </style>
 {% endblock %}
 
@@ -31,7 +35,14 @@
 
     <div class="panel">
       <div class="body notitle">
-        <p>Go straight to...</p>
+        <div class="add-products-versions-link">
+          <p>
+            If you want to <b>add a new product or release</b> go to<br>
+            <a href="{{ url('manage:products') }}">Products</a> and
+	    <a href="{{ url('manage:releases') }}">Releases</a>.
+          </p>
+        </div>
+        <p><b>Go straight to...</b></p>
         <ul>
           {% for product in products %}
           <li><a href="#{{ product }}">{{ product }}</a></li>

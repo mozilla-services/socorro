@@ -29,6 +29,10 @@
                  {% if url('manage:symbols_uploads') in request.path_info  %}class="selected"{% endif %}>Symbols Uploads</a></li>
             <li><a href="{{ url('manage:supersearch_fields') }}"
                  {% if url('manage:supersearch_fields') in request.path_info  %}class="selected"{% endif %}>Super Search Fields</a></li>
+            <li><a href="{{ url('manage:products') }}"
+                 {% if url('manage:products') in request.path_info  %}class="selected"{% endif %}>Products</a></li>
+            <li><a href="{{ url('manage:releases') }}"
+                 {% if url('manage:releases') in request.path_info  %}class="selected"{% endif %}>Releases</a></li>
         </ul>
     </div>
     {% block mainbody %}

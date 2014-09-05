@@ -1275,6 +1275,29 @@ class TestModels(TestCase):
                        'NightTrain': ['1', '2']})
         eq_(r, True)
 
+    @mock.patch('requests.post')
+    def test_create_release(self, rpost):
+        model = models.Releases
+        api = model()
+
+        def mocked_post(url, **options):
+            assert '/releases/release/' in url
+            return Response(True)
+
+        rpost.side_effect = mocked_post
+        now = datetime.datetime.utcnow()
+        r = api.post(**{
+            'product': 'Firefox',
+            'version': '1.0',
+            'update_channel': 'beta',
+            'build_id': now.strftime('%Y%m%d%H%M'),
+            'platform': 'Windows',
+            'beta_number': '0',
+            'release_channel': 'Beta',
+            'throttle': '1'
+        })
+        eq_(r, True)
+
     @mock.patch('requests.get')
     def test_correlations(self, rget):
         model = models.Correlations
