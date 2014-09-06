@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :puppet do |puppet|
     puppet.module_path = "puppet/modules"
     puppet.manifests_path = "puppet/manifests"
-    puppet.manifest_file = "site.pp"
+    puppet.manifest_file = "vagrant.pp"
     # enable this to see verbose and debug puppet output
     #puppet.options = "--verbose --debug"
   end
