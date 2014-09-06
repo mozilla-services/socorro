@@ -1,8 +1,4 @@
 # Set up basic Socorro requirements.
-class socorro {
-    include socorro::vagrant
-}
-
 class socorro::vagrant {
 
   service {

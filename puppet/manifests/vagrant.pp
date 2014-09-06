@@ -3,5 +3,5 @@ Exec {
 }
 
 node default {
-  include socorro
+  include socorro::vagrant
 }
