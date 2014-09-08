@@ -52,6 +52,8 @@ rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
 rsync -a analysis $BUILD_DIR/
 rsync -a alembic $BUILD_DIR/application
 rsync -a webapp-django $BUILD_DIR/
+# because this file is served from the parent of the `webapp-django/` directory
+cp contribute.json $BUILD_DIR/
 
 if [ "$BUILD_TYPE" == "tar" ]; then
     pushd $BUILD_DIR/application/scripts/config
