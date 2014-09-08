@@ -1310,7 +1310,16 @@ def report_list(request, partial=None, default_context=None):
          if x not in all_reports_columns_keys]
     )
 
-    if partial == 'reports':
+    if partial == 'reports' or partial == 'correlations':
+        # This is an optimization.
+        # The primary use of the "Reports" tab is to load data on the
+        # models.ReportList() model. However, the models.Correlations() model
+        # is also going to need to do this to figure out all the OSs and
+        # versions that it needs.
+        # By calling the models.ReportList().get(...), independent of
+        # sorting requirements for both partials, we can take advantage
+        # of the fact that the ReportList() data gets cached.
+
         context['sort'] = request.GET.get('sort', 'date_processed')
         context['reverse'] = request.GET.get('reverse', 'false').lower()
         context['reverse'] = context['reverse'] != 'false'
@@ -1374,6 +1383,8 @@ def report_list(request, partial=None, default_context=None):
             reverse=context['reverse'],
         )
 
+    if partial == 'reports':
+
         current_query = request.GET.copy()
         if 'page' in current_query:
             del current_query['page']
@@ -1398,28 +1409,7 @@ def report_list(request, partial=None, default_context=None):
         os_count = defaultdict(int)
         version_count = defaultdict(int)
 
-        assert start_date and end_date
-        api = models.ReportList()
-        report_list = api.get(
-            signature=context['signature'],
-            products=context['selected_products'],
-            versions=context['product_versions'],
-            os=form.cleaned_data['platform'],
-            start_date=start_date,
-            end_date=end_date,
-            build_ids=form.cleaned_data['build_id'],
-            reasons=form.cleaned_data['reason'],
-            release_channels=form.cleaned_data['release_channels'],
-            report_process=process_type,
-            report_type=hang_type,
-            plugin_in=plugin_field,
-            plugin_search_mode=plugin_query_type,
-            plugin_terms=form.cleaned_data['plugin_query'],
-            result_number=results_per_page,
-            result_offset=result_offset
-        )
-
-        for report in report_list['hits']:
+        for report in context['report_list']['hits']:
             os_name = report['os_name']
             version = report['version']
 
