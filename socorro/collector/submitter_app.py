@@ -185,20 +185,6 @@ class SubmitterApp(FetchTransformSaveApp):
     app_version = '3.1'
     app_description = __doc__
 
-    # set the Option defaults in the parent class to values that make sense
-    # for the context of this app
-    FetchTransformSaveApp.required_config.source.crashstorage_class. \
-        set_default(
-            SubmitterFileSystemWalkerSource,
-            force=True,
-        )
-    FetchTransformSaveApp.required_config.destination.crashstorage_class \
-        .set_default(
-            'socorro.collector.breakpad_submitter_utilities.'
-                'BreakpadPOSTDestination',
-            force=True,
-        )
-
     required_config = Namespace()
     required_config.namespace('submitter')
     required_config.submitter.add_option(
@@ -219,6 +205,16 @@ class SubmitterApp(FetchTransformSaveApp):
         short_form='n',
         default='all'
     )
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def get_application_defaults():
+        return {
+            "source.crashstorage_class": SubmitterFileSystemWalkerSource,
+            "destination.crashstorage_class":
+                'socorro.collector.breakpad_submitter_utilities'
+                '.BreakpadPOSTDestination',
+        }
 
     #--------------------------------------------------------------------------
     def __init__(self, config):

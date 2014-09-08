@@ -8,6 +8,9 @@ import collections
 import inspect
 
 from configman import RequiredConfig, Namespace
+from configman.dotdict import DotDict
+from configman.converters import to_str
+
 from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
 )
@@ -37,6 +40,13 @@ class Rule(RequiredConfig):
     """the base class for Support Rules.  It provides the framework for the
     rules 'predicate', 'action', and 'version' as well as utilites to help
     rules do their jobs."""
+    required_config = Namespace()
+    required_config.add_option(
+        'chatty',
+        doc='should this rule announce what it is doing?',
+        default=False,
+    )
+
 
     #--------------------------------------------------------------------------
     def __init__(self, config=None):
@@ -55,7 +65,7 @@ class Rule(RequiredConfig):
         except Exception, x:
             self.config.logger.debug(
                 'Rule %s predicicate failed because of "%s"',
-                self.__class__,
+                to_str(self.__class__),
                 x,
                 exc_info=True
             )
@@ -85,13 +95,13 @@ class Rule(RequiredConfig):
         except KeyError, x:
             self.config.logger.debug(
                 'Rule %s action failed because of missing key "%s"',
-                self.__class__,
+                to_str(self.__class__),
                 x,
             )
         except Exception, x:
             self.config.logger.debug(
                 'Rule %s action failed because of "%s"',
-                self.__class__,
+                to_str(self.__class__),
                 x,
                 exc_info=True
             )
@@ -283,20 +293,29 @@ class TransformRuleSystem(RequiredConfig):
         default=[],
         from_string_converter=str_to_classes_in_namespaces_converter()
     )
+    required_config.add_option(
+        'chatty_rules',
+        doc='should the rules announce what they are doing?',
+        default=False,
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config=None):
         self.rules = []
+        if not config:
+            config = DotDict()
+        if 'chatty_rules' not in config:
+            config.chatty_rules = False
         self.config = config
-        if config and "rules_list" in config:
+        if "rules_list" in config:
             self.tag = config.tag
             self.act = getattr(self, config.action)
             list_of_rules = config.rules_list.class_list
 
-            for a_rule_class_name, a_rule_class in list_of_rules:
+            for a_rule_class_name, a_rule_class, ns_name in list_of_rules:
                 try:
                     self.rules.append(
-                        a_rule_class(config[a_rule_class.__name__])
+                        a_rule_class(config[ns_name])
                     )
                 except KeyError:
                     self.rules.append(
@@ -325,9 +344,19 @@ class TransformRuleSystem(RequiredConfig):
 
         returns:
              True - since success or failure is ignored"""
-        # print 'args:', args, 'kwargs:', kwargs
         for x in self.rules:
-            x.act(*args, **kwargs)
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    'apply_all_rules: %s',
+                    to_str(x.__class__)
+                )
+            predicate_result, action_result = x.act(*args, **kwargs)
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    '               : pred - %s; act - %s',
+                    predicate_result,
+                    action_result
+                )
         return True
 
     #--------------------------------------------------------------------------
@@ -338,7 +367,18 @@ class TransformRuleSystem(RequiredConfig):
            True - if an action is run and succeeds
            False - if no action succeeds"""
         for x in self.rules:
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    'apply_until_action_succeeds: %s',
+                    to_str(x.__class__)
+                )
             predicate_result, action_result = x.act(*args, **kwargs)
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    '                           : pred - %s; act - %s',
+                    predicate_result,
+                    action_result
+                )
             if action_result:
                 return True
         return False
@@ -351,7 +391,18 @@ class TransformRuleSystem(RequiredConfig):
             True - an action ran and it failed
             False - no action ever failed"""
         for x in self.rules:
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    'apply_until_action_fails: %s',
+                    to_str(x.__class__)
+                )
             predicate_result, action_result = x.act(*args, **kwargs)
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    '                        : pred - %s; act - %s',
+                    predicate_result,
+                    action_result
+                )
             if not action_result:
                 return True
         return False
@@ -365,7 +416,18 @@ class TransformRuleSystem(RequiredConfig):
             False - an action ran and it failed
             None - no predicate ever succeeded"""
         for x in self.rules:
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    'apply_until_predicate_succeeds: %s',
+                    to_str(x.__class__)
+                )
             predicate_result, action_result = x.act(*args, **kwargs)
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    '                              : pred - %s; act - %s',
+                    predicate_result,
+                    action_result
+                )
             if predicate_result:
                 return action_result
         return None
@@ -378,7 +440,18 @@ class TransformRuleSystem(RequiredConfig):
             False - a predicate ran and it failed
             None - no predicate ever failed"""
         for x in self.rules:
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    'apply_until_predicate_fails: %s',
+                    to_str(x.__class__)
+                )
             predicate_result, action_result = x.act(*args, **kwargs)
+            if self.config.chatty_rules:
+                self.config.logger.debug(
+                    '                           : pred - %s; act - %s',
+                    predicate_result,
+                    action_result
+                )
             if not predicate_result:
                 return False
         return None
