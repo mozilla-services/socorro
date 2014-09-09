@@ -971,6 +971,8 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                             'build1/linux-i686/en-US/'):
                 return html_wrap % """
                     <a href="firefox-10.0b4.json">firefox-10.0b4.json</a>
+                    <a href="firefox-10.0b4.en-US.linux-i686.mozinfo.json">
+                     firefox-10.0b4.en-US.linux-i686.mozinfo.json</a>
                 """
             if url.endswith('/firefox/candidates/None-candidates/'
                             'build1/linux-i686/en-US/'):
@@ -1005,6 +1007,14 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                     "moz_source_repo":
                         "http://hg.mozilla.org/releases/mozilla-beta",
                     "moz_update_channel": "beta"
+                }
+                """
+            # Ignore unrecognized JSON files, see bug 1065071
+            if 'firefox-10.0b4.en-US.linux-i686.mozinfo.json' in url:
+                return """
+                {
+                    "something": "unexpected",
+                    "nothing": "else"
                 }
                 """
             # Nightly tests for nightly and aurora builds
