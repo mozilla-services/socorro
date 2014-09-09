@@ -93,10 +93,21 @@ def parseBuildJsonFile(url, nightly=False):
     if content:
         try:
             kvpairs = json.loads(content)
-            kvpairs['repository'] = kvpairs['moz_source_repo']\
-                .split('/', -1)[-1]
-            kvpairs['build_type'] = kvpairs['moz_update_channel']
-            kvpairs['buildID'] = kvpairs['buildid']
+            kvpairs['repository'] = kvpairs.get('moz_source_repo')
+            if kvpairs['repository']:
+                kvpairs['repository'] = kvpairs['repository']\
+                        .split('/', -1)[-1]
+            kvpairs['build_type'] = kvpairs.get('moz_update_channel')
+            kvpairs['buildID'] = kvpairs.get('buildid')
+
+            # bug 1065071 - ignore JSON files that have keys with
+            # missing values.
+            if None in kvpairs.values():
+                # TODO - we need to refactor this code so we can
+                # use `config.logger` here.
+                # Then we can debug log invalid JSON.
+                print 'warning, unsupported JSON file: %s' % url
+                pass
 
             return kvpairs
         # bug 963431 - it is valid to have an empty file
