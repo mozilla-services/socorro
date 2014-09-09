@@ -33,7 +33,6 @@ if [ "$BUILD_TYPE" != "tar" ]; then
         --after-install scripts/package/after-install.sh \
         --before-remove scripts/package/before-remove.sh \
         --after-remove scripts/package/after-remove.sh \
-        --rpm-verifyscript scripts/package/prelink.sh \
         --config-files /etc/socorro \
         --exclude *.pyc \
         --exclude *.swp \
