@@ -104,7 +104,6 @@ class webapp::socorro {
       'time',
       'gcc-c++',
       'python-devel',
-      'prelink',
       'git',
       'libxml2-devel',
       'libxslt-devel',
