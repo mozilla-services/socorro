@@ -983,35 +983,13 @@ class TestViews(BaseTestViews):
         })
         ok_(response.status_code, 400)
 
-    @mock.patch('requests.get')
-    def test_crash_trends(self, rget):
+    def test_crash_trends(self):
         url = reverse('crashstats:crash_trends', args=('WaterWolf',))
         no_nightly_url = reverse('crashstats:crash_trends', args=('LandCrab',))
         inconsistent_case_url = reverse('crashstats:crash_trends',
                                         args=('SeaMonkey',))
         unkown_product_url = reverse('crashstats:crash_trends',
                                      args=('NotKnown',))
-
-        def mocked_get(**options):
-            if '/products' in options['url']:
-                return Response("""
-                    {
-                        "products": ["WaterWolf"],
-                        "hits": [
-                            {
-                                "product": "WaterWolf",
-                                "version": "5.0a1",
-                                "release": "Release",
-                                "throttle": 10.0
-                            }
-                        ],
-                        "total": "1"
-                    }
-                    """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         response = self.client.get(url)
         eq_(response.status_code, 200)

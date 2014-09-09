@@ -483,9 +483,11 @@ class CurrentVersions(SocorroMiddleware):
         'version',
     )
 
-    def get(self):
-        products = CurrentProducts().get()['products']
-        releases = CurrentProducts().get()['hits']
+    def get(self, currentproducts=None):
+        if currentproducts is None:
+            currentproducts = CurrentProducts().get()
+        products = currentproducts['products']
+        releases = currentproducts['hits']
         currentversions = []
 
         for product_name in products:
