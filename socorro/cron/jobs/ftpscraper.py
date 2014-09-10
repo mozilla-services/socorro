@@ -143,7 +143,7 @@ class ScrapersMixin(object):
 
         return results, bad_lines
 
-    def parseB2GFile(self, url, nightly=False, logger=None):
+    def parseB2GFile(self, url, nightly=False):
         """
           Parse the B2G manifest JSON file
           Example: {"buildid": "20130125070201", "update_channel":
@@ -156,8 +156,8 @@ class ScrapersMixin(object):
         results = json.loads(content)
 
         # bug 869564: Return None if update_channel is 'default'
-        if results['update_channel'] == 'default' and logger:
-            logger.warning(
+        if results['update_channel'] == 'default':
+            self.config.logger.warning(
                 "Found default update_channel for buildid: %s. Skipping.",
                 results['buildid']
             )
@@ -231,7 +231,7 @@ class ScrapersMixin(object):
         candidate_url = urljoin(url, dirname)
         builds = self.getLinks(candidate_url, startswith='build')
         if not builds:
-            #logger.info('No build dirs in %s' % candidate_url)
+            self.config.logger.info('No build dirs in %s', candidate_url)
             return
 
         latest_build = builds.pop()
@@ -276,7 +276,7 @@ class ScrapersMixin(object):
 
             yield (platform, repository, version, kvpairs, bad_lines)
 
-    def getB2G(self, dirname, url, backfill_date=None, logger=None):
+    def getB2G(self, dirname, url, backfill_date=None):
         """
          Last mile of B2G scraping, calls parseB2G on .json
          Files look like:  socorro_unagi-stable_2013-01-25-07.json
@@ -296,7 +296,7 @@ class ScrapersMixin(object):
             platform = jsonfilename[1]
 
             info_url = '%s/%s' % (url, f)
-            kvpairs = self.parseB2GFile(info_url, nightly=True, logger=logger)
+            kvpairs = self.parseB2GFile(info_url, nightly=True)
 
             # parseB2GFile() returns None when a file is
             #    unable to be parsed or we ignore the file
@@ -336,11 +336,12 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     def run(self, date):
         # record_associations
-        logger = self.config.logger
-
         for product_name in self.config.products:
-            logger.debug('scraping %s releases for date %s',
-                         product_name, date)
+            self.config.logger.debug(
+                'scraping %s releases for date %s',
+                product_name,
+                date
+            )
             if product_name == 'b2g':
                 self.database_transaction_executor(
                     self.scrapeB2G,
@@ -609,7 +610,6 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                     nightly,
                     prod_url,
                     backfill_date=None,
-                    logger=self.config.logger
                 )
                 for info in b2gs:
                     (platform, repository, version, kvpairs) = info

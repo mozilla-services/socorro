@@ -41,6 +41,9 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2 = self.urllib2_patcher.start()
 
         self.scrapers = ftpscraper.ScrapersMixin()
+        self.scrapers.config = DotDict({
+            'logger': mock.Mock()
+        })
 
     def tearDown(self):
         super(TestFTPScraper, self).tearDown()
