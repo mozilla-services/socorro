@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell, inline: "if [ ! $(grep single-request-reopen /etc/sysconfig/network) ]; then echo RES_OPTIONS=single-request-reopen >> /etc/sysconfig/network && service network restart; fi"
 
   config.vm.provision :puppet do |puppet|
+    puppet.module_path = "puppet/modules"
     puppet.manifests_path = "puppet/manifests"
     puppet.manifest_file = "vagrant.pp"
     # enable this to see verbose and debug puppet output
