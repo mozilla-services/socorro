@@ -79,10 +79,6 @@ MANAGERS = ADMINS
 # on all server instances and True only for development.
 DEBUG = TEMPLATE_DEBUG = False
 
-# Is this a development instance? Set this to True on development/master
-# instances and False on stage/prod.
-DEV = False
-
 # By default compression is done in runtime, if you enable
 # offline compression, running the test suite will be 10 times faster
 # but you'll need to remember to first run:
