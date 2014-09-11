@@ -244,8 +244,15 @@ def build_default_context(product=None, versions=None):
     a dict. If there's any left-over, raise a 404 error
     """
     context = {}
-    api = models.CurrentVersions()
-    context['currentversions'] = api.get()
+    api = models.CurrentProducts()
+    context['currentproducts'] = api.get()
+
+    currentversions = [
+        v for p in context['currentproducts']['products']
+        for v in context['currentproducts']['hits'][p]
+    ]
+    context['currentversions'] = currentversions
+
     if versions is None:
         versions = []
     else:

@@ -291,7 +291,7 @@ def frontpage_json(request, default_context=None):
 @pass_default_context
 def products_list(request, default_context=None):
     context = default_context or {}
-    context['products'] = models.CurrentProducts().get()['products']
+    context['products'] = context['currentproducts']['products']
     return render(request, 'crashstats/products_list.html', context)
 
 
@@ -588,7 +588,7 @@ def daily(request, default_context=None):
                    .replace('os[]', 'os'))
         return redirect(new_url, permanent=True)
 
-    context['products'] = models.CurrentProducts().get()['products']
+    context['products'] = context['currentproducts']['products']
 
     form_selection = request.GET.get('form_selection')
 
@@ -2237,7 +2237,7 @@ def gccrashes(request, product, version=None, default_context=None):
         # No version was passed get the latest nightly
         version = get_latest_nightly(context, product)
 
-    current_products = models.CurrentProducts().get()['products']
+    current_products = context['currentproducts']['products']
 
     context['report'] = 'gccrashes'
     context['versions'] = versions
@@ -2314,10 +2314,7 @@ def crash_trends(request, product, versions=None, default_context=None):
     context['end_date'] = datetime.datetime.utcnow()
     context['start_date'] = context['end_date'] - datetime.timedelta(days=7)
 
-    api = models.CurrentProducts()
-    current_products = api.get()
-
-    context['products'] = current_products
+    context['products'] = context['currentproducts']
 
     url = reverse('crashstats:crashtrends_json')
     params = {
