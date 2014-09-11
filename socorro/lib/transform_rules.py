@@ -444,14 +444,16 @@ def eq_key_predicate(
 # (is_not_null_predicate, '', 'key="fred",
 # ...)
 #------------------------------------------------------------------------------
-def is_not_null_predicate(source, other, key=''):
+def is_not_null_predicate(raw_crash, dumps, processed_crash, processor, key=''):
     """a predicate that converts the key'd source to boolean.
 
     parameters:
-        source - the mapping containing the value to test
-        other - unused
-        key - the key into the source for the first value"""
+        raw_crash - dict
+        dumps - placeholder in a fat interface - unused
+        processed_crash - placeholder in a fat interface - unused
+        processor - placeholder in a fat interface - unused
+    """
     try:
-        return bool(source[key])
+        return bool(raw_crash[key])
     except KeyError:
         return False

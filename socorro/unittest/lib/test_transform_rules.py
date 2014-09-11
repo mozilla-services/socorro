@@ -441,22 +441,22 @@ class TestTransformRules(TestCase):
     def test_is_not_null_predicate(self):
         ok_(
             transform_rules.is_not_null_predicate(
-                {'alpha': 'hello'}, None, 'alpha'
+                {'alpha': 'hello'}, None, None, None, 'alpha'
             )
         )
         ok_(not
             transform_rules.is_not_null_predicate(
-                {'alpha': 'hello'}, None, 'beta'
+                {'alpha': 'hello'}, None, None, None, 'beta'
             )
         )
         ok_(not
             transform_rules.is_not_null_predicate(
-                {'alpha': ''}, None, 'alpha'
+                {'alpha': ''}, None, None, None, 'alpha'
             )
         )
         ok_(not
             transform_rules.is_not_null_predicate(
-                {'alpha': None}, None, 'alpha'
+                {'alpha': None}, None, None, None, 'alpha'
             )
         )
 

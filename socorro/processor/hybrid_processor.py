@@ -1383,14 +1383,14 @@ class HybridCrashProcessor(RequiredConfig):
         # The rule system was written for an older version of the processor.
         # There is data in the database that refers to the dynamic loading of
         # python modules, but only for the old processor.  This next code block
-        # takes the reference to the old code and replacese them with
+        # takes the reference to the old code and replaces them with
         # references to the equivalent modules in the new code.
         translated_rules = [(x[0].replace('processor.processor',
-                                          'processor.legacy_processor'),
+                                          'processor.hybrid_processor'),
                              x[1],
                              x[2],
                              x[3].replace('processor.processor',
-                                          'processor.legacy_processor'),
+                                          'processor.hybrid_processor'),
                              x[4],
                              x[5])
                             for x in rules]
@@ -1579,3 +1579,8 @@ def json_Product_rewrite_action(raw_crash, raw_dumps, processed_crash, processor
     old_product_name = raw_crash['ProductName']
     new_product_name = processor._product_id_map[product_id]['product_name']
     raw_crash['ProductName'] = new_product_name
+    processor.config.logger.debug('product name changed from %s to %s based '
+                                  'on productID %s',
+                                  old_product_name,
+                                  new_product_name,
+                                  product_id)
