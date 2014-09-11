@@ -275,6 +275,28 @@ class BaseTestViews(DjangoTestCase):
         def mocked_get(url, params, **options):
             now = datetime.datetime.utcnow()
             yesterday = now - datetime.timedelta(days=1)
+            if '/platforms/' in url:
+                return Response({
+                    "hits": [
+                        {
+                            "code": "win",
+                            "name": "Windows NT"
+                        },
+                        {
+                            "code": "mac",
+                            "name": "Mac OS X"
+                        },
+                        {
+                            "code": "lin",
+                            "name": "Linux"
+                        },
+                        {
+                            "code": "unk",
+                            "name": "Unknown"
+                        }
+                    ],
+                    "total": 4
+                })
             if 'products/' in url:
                 return Response("""
                     {"products": [
@@ -372,9 +394,12 @@ class BaseTestViews(DjangoTestCase):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-        from crashstats.crashstats.models import CurrentVersions
-        api = CurrentVersions()
-        api.get()
+
+        # call these here so it gets patched for each test because
+        # it gets used so often
+        from crashstats.crashstats.models import CurrentVersions, Platforms
+        CurrentVersions().get()
+        Platforms().get()
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()
@@ -5613,16 +5638,37 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:correlations_json')
 
         def mocked_get(url, params, **options):
-            ok_('report_type' in params)
-            eq_(params['report_type'], 'core-counts')
+            if '/platforms/' in url:
+                return Response({
+                    "hits": [
+                        {
+                            "code": "win",
+                            "name": "Windows NT"
+                        },
+                        {
+                            "code": "mac",
+                            "name": "Mac OS X"
+                        },
+                        {
+                            "code": "lin",
+                            "name": "Linux"
+                        },
+                        {
+                            "code": "unk",
+                            "name": "Unknown"
+                        }
+                    ],
+                    "total": 4
+                })
+            elif '/correlations/' in url:
+                ok_('report_type' in params)
+                eq_(params['report_type'], 'core-counts')
 
-            return Response("""
-                {
+                return Response({
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                     "count": 13,
                     "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
-                }
-            """)
+                })
 
             raise NotImplementedError(url)
 
@@ -5647,14 +5693,34 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:correlations_signatures_json')
 
         def mocked_get(url, params, **options):
-            assert '/correlations/signatures' in url
-            return Response("""
-                {
+            if '/platforms/' in url:
+                return Response({
+                    "hits": [
+                        {
+                            "code": "win",
+                            "name": "Windows NT"
+                        },
+                        {
+                            "code": "mac",
+                            "name": "Mac OS X"
+                        },
+                        {
+                            "code": "lin",
+                            "name": "Linux"
+                        },
+                        {
+                            "code": "unk",
+                            "name": "Unknown"
+                        }
+                    ],
+                    "total": 4
+                })
+            elif '/correlations/' in url:
+                return Response({
                     "hits": ["FakeSignature1",
                              "FakeSignature2"],
                     "total": 2
-                }
-            """)
+                })
 
             raise NotImplementedError(url)
 
