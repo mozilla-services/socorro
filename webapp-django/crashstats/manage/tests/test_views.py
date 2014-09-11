@@ -103,6 +103,10 @@ class TestViews(BaseTestViews):
         ok_(fields_url in response.content)
         users_url = reverse('manage:users')
         ok_(users_url in response.content)
+        products_url = reverse('manage:products')
+        ok_(products_url in response.content)
+        releases_url = reverse('manage:releases')
+        ok_(releases_url in response.content)
 
     @mock.patch('requests.put')
     @mock.patch('requests.get')
@@ -1167,3 +1171,87 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 400)
+
+    @mock.patch('requests.post')
+    def test_create_product(self, rpost):
+
+        def mocked_post(url, **options):
+            data = options['data']
+            eq_(data['product'], 'WaterWolf')
+            eq_(data['version'], '19.9')
+            assert '/products/' in url, url
+            return Response(True)
+
+        rpost.side_effect = mocked_post
+
+        self._login()
+        url = reverse('manage:products')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        # first attempt to create an existing combo
+        response = self.client.post(url, {
+            'product': 'WaterWolf',
+            'version': '19.0'
+        })
+        eq_(response.status_code, 200)
+        ok_('WaterWolf:19.0 already exists' in response.content)
+
+        # now with a new unique product version
+        response = self.client.post(url, {
+            'product': 'WaterWolf',
+            'version': '19.9'  # definitely doesn't exist
+        })
+        eq_(response.status_code, 302)
+
+    @mock.patch('requests.post')
+    def test_create_release(self, rpost):
+
+        def mocked_post(url, **options):
+            assert '/releases/release/' in url, url
+            data = options['data']
+            eq_(data['product'], 'WaterWolf')
+            eq_(data['version'], '19.0')
+            eq_(data['beta_number'], 1)
+            eq_(data['throttle'], 0)
+            return Response(True)
+
+        rpost.side_effect = mocked_post
+
+        self._login()
+        url = reverse('manage:releases')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # there should be a dropdown with some known platforms
+        ok_('value="Windows"' in response.content)
+        ok_('value="Mac OS X"' in response.content)
+
+        # first attempt to create with a product version that doesn't exist
+        now = datetime.datetime.utcnow()
+        data = {
+            'product': 'WaterWolf',
+            'version': '99.9',
+            'update_channel': 'beta',
+            'build_id': now.strftime('%Y%m%d%H%M'),
+            'platform': 'Windows',
+            'beta_number': '0',
+            'release_channel': 'Beta',
+            'throttle': '1'
+        }
+        response = self.client.post(url, data)
+        eq_(response.status_code, 200)
+        ok_('WaterWolf:99.9 does not exist' in response.content)
+
+        # try again with a valid version but a bad throttle and beta_number
+        data['throttle'] = 'xxx'
+        data['beta_number'] = 'yyy'
+        data['version'] = '19.0'
+        response = self.client.post(url, data)
+        eq_(response.status_code, 200)
+        eq_(response.content.count('not a number'), 2)
+
+        # finally, all with good parameters
+        data['beta_number'] = '1'
+        data['throttle'] = '0'
+        response = self.client.post(url, data)
+        eq_(response.status_code, 302)

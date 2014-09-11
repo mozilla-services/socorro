@@ -379,7 +379,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-    def test_update_release(self):
+    def test_create_release(self):
         self._insert_release_channels()
         service = Releases(config=self.config)
 
@@ -396,7 +396,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             throttle=1
         )
 
-        res = service.update_release(**params)
+        res = service.create_release(**params)
         ok_(res)
 
     def test_update_release_missingargumenterror(self):
@@ -417,6 +417,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         )
         assert_raises(
             MissingArgumentError,
-            service.update_release,
+            service.create_release,
             **params
         )

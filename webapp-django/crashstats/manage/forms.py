@@ -116,3 +116,75 @@ class SuperSearchFieldForm(BaseForm):
             for x in self.cleaned_data['form_field_choices'].split(',')
             if x.strip()
         ]
+
+
+class ProductForm(BaseForm):
+
+    product = forms.CharField()
+    version = forms.CharField()
+
+    def __init__(self, *args, **kwargs):
+        self.existing_products = kwargs.pop('existing_products', {})
+        self.product_must_exist = kwargs.pop('product_must_exist', False)
+        self.product_must_not_exist = kwargs.pop(
+            'product_must_not_exist', False
+        )
+        super(ProductForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super(ProductForm, self).clean()
+        if 'product' in cleaned_data and 'version' in cleaned_data:
+            product = cleaned_data['product']
+            version = cleaned_data['version']
+            existing_versions = self.existing_products.get(product, [])
+            if version in existing_versions and self.product_must_not_exist:
+                raise forms.ValidationError(
+                    '%s:%s already exists' % (
+                        product, version
+                    )
+                )
+            elif version not in existing_versions and self.product_must_exist:
+                raise forms.ValidationError(
+                    '%s:%s does not exist' % (
+                        product, version
+                    )
+                )
+
+        return cleaned_data
+
+
+class ReleaseForm(ProductForm):
+
+    update_channel = forms.CharField()
+    build_id = forms.CharField()
+    platform = forms.ChoiceField()
+    beta_number = forms.CharField()
+    release_channel = forms.CharField()
+    throttle = forms.CharField()
+
+    def __init__(self, *args, **kwargs):
+        self.platforms = kwargs.pop('platforms', [])
+        super(ReleaseForm, self).__init__(*args, **kwargs)
+        self.fields['platform'].choices = [
+            (x, x) for x in self.platforms
+        ]
+
+    def clean_platform(self):
+        value = self.cleaned_data['platform']
+        if value not in self.platforms:
+            raise forms.ValidationError('No a recognized platform')
+        return value
+
+    def clean_throttle(self):
+        value = self.cleaned_data['throttle']
+        try:
+            return int(value)
+        except ValueError:
+            raise forms.ValidationError('not a number')
+
+    def clean_beta_number(self):
+        value = self.cleaned_data['beta_number']
+        try:
+            return int(value)
+        except ValueError:
+            raise forms.ValidationError('not a number')

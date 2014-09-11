@@ -508,6 +508,44 @@ class IntegrationTestMiddlewareApp(TestCase):
         self.conn.commit()
         self.conn.close()
 
+    def _insert_release_channels(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO release_channels
+            (release_channel, sort)
+            VALUES
+            ('Nightly', 1),
+            ('Aurora', 2),
+            ('Beta', 3),
+            ('Release', 4),
+            ('ESR', 5);
+        """)
+        self.conn.commit()
+
+    def _insert_products(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO products
+            (product_name, sort, release_name)
+            VALUES
+            (
+                'Firefox',
+                1,
+                'firefox'
+            ),
+            (
+                'FennecAndroid',
+                2,
+                'fennecandroid'
+            ),
+            (
+                'Thunderbird',
+                3,
+                'thunderbird'
+            );
+        """)
+        self.conn.commit()
+
     def _setup_config_manager(self, extra_value_source=None):
         if extra_value_source is None:
             extra_value_source = {}
@@ -1034,7 +1072,7 @@ class IntegrationTestMiddlewareApp(TestCase):
             eq_(response.status, 200)
             eq_(response.body, 'Firefox')
 
-    def test_releases(self):
+    def test_releases_featured(self):
         config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
@@ -1579,7 +1617,9 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, False)
 
-    def test_update_release(self):
+    def test_create_release(self):
+        self._insert_release_channels()
+        self._insert_products()
         config_manager = self._setup_config_manager()
 
         with config_manager.context() as config:
@@ -1587,18 +1627,20 @@ class IntegrationTestMiddlewareApp(TestCase):
             app.main()
             server = middleware_app.application
 
+            now = datetimeutil.utc_now()
             response = self.post(
                 server,
-                '/products/releases/',
+                '/releases/release/',
                 {
                     'product': 'Firefox',
                     'version': '1.0',
                     'update_channel': 'beta',
-                    'build_id': '201406060122',
+                    'build_id': now.strftime('%Y%m%d%H%M'),
                     'platform': 'Windows',
-                    'beta_number': '1',
+                    'beta_number': '0',
                     'release_channel': 'Beta',
                     'throttle': '1'
                 }
             )
+            print response.status
             eq_(response.data, True)

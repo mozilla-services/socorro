@@ -1,0 +1,37 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - {{ page_title }}{% endblock %}
+
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  table.data-table th {
+      width: 250px;
+  }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - {{ page_title }}{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+      <h3>Add New Product</h3>
+
+      <form action="" method="post">{{ csrf() }}
+        <table class="data-table">
+        {{ form }}
+        <tr>
+          <th>&nbsp;</th>
+          <td><input type="submit" value="Submit"></td>
+        </tr>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

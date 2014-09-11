@@ -520,6 +520,30 @@ class CurrentProducts(SocorroMiddleware):
         }
     }
 
+    def post(self, **data):
+        # why does this feel so clunky?!
+        return super(CurrentProducts, self).post(self.URL_PREFIX, data)
+
+
+class Releases(SocorroMiddleware):
+
+    URL_PREFIX = '/releases/release/'
+
+    required_params = (
+        'product',
+        'version',
+        'update_channel',
+        'build_id',
+        'platform',
+        ('beta_number', int),
+        'release_channel',
+        ('throttle', int),
+    )
+
+    def post(self, **data):
+        # why does this feel so clunky?!
+        return super(Releases, self).post(self.URL_PREFIX, data)
+
 
 class ReleasesFeatured(SocorroMiddleware):
 
