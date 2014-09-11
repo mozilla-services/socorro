@@ -436,6 +436,10 @@ var Graph = (function() {
                $('.inner', $panel).html(response);
                $('.loading-placeholder', $panel).hide();
 
+               $('.date_field', $panel).datepicker({
+                   dateFormat: "yy-mm-dd"
+               });
+
                // handle submit events from the form.
                Plot.registerForm($panel);
                // draw the graph using initial data
