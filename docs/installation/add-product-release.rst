@@ -17,8 +17,16 @@ breakpad=#
 
 Start by adding a new product "KillerApp"
 ::
- -- Arguments: prodname, major_version
+ -- Arguments: prodname, initversion
  select add_new_product('KillerApp', '1.0');
+
+The prodname (product name) is "KillerApp" and the "initversion" (initial
+version) is "1.0".
+
+Products only need to be added once. Each product can have multiple releases.
+
+The initial version will be the same as the version of the first
+release you add, below.
 
 Now add a few releases for this product:
 ::
