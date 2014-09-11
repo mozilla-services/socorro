@@ -303,8 +303,12 @@ class ADUBySignatureJSONForm(BaseForm):
     product_name = forms.ChoiceField(required=True)
     signature = form_fields.SignatureField(required=True)
     channel = forms.ChoiceField(required=True)
-    start_date = forms.DateField(required=True, label='From')
-    end_date = forms.DateField(required=True, label='To')
+    start_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput({'class': 'date_field'}))
+    end_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput({'class': 'date_field'}))
 
     def __init__(self, current_channels,
                  current_products,
