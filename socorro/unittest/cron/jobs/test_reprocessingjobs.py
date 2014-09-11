@@ -6,6 +6,8 @@ from mock import Mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
+from socorro.lib.util import DotDict
+
 from crontabber.app import CronTabber
 
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
@@ -86,6 +88,13 @@ class IntegrationTestReprocessingJobs(IntegrationTestBase):
         res_expected = 0
         res, = cursor.fetchone()
         eq_(res, res_expected)
+
+        self.rabbit_queue_mocked.return_value.save_raw_crash \
+            .assert_called_once_with(
+                DotDict({'legacy_processing': True}),
+                [],
+                '13c4a348-5d04-11e3-8118-d231feb1dc81'
+            )
 
     def test_reprocessing_exception(self):
         config_manager = self._setup_config_manager()
