@@ -91,7 +91,7 @@ class IntegrationTestReprocessingJobs(IntegrationTestBase):
 
         self.rabbit_queue_mocked.return_value.save_raw_crash \
             .assert_called_once_with(
-                DotDict({'legacy_processing': True}),
+                DotDict({'legacy_processing': 0}),
                 [],
                 '13c4a348-5d04-11e3-8118-d231feb1dc81'
             )

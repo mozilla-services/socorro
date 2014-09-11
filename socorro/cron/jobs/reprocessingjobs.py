@@ -33,7 +33,7 @@ class ReprocessingJobsApp(BaseCronApp):
 
         for crash_id, in execute_query_iter(connection, _reprocessing_sql):
             self.queuing_connection_factory.save_raw_crash(
-                DotDict({'legacy_processing': True}),
+                DotDict({'legacy_processing': 0}),
                 [],
                 crash_id
             )
