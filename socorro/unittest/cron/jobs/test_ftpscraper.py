@@ -14,7 +14,7 @@ from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
 from crontabber.tests.base import TestCaseBase
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-
+from socorro.lib.util import DotDict
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
@@ -40,12 +40,18 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2_patcher = mock.patch('urllib2.urlopen')
         self.urllib2 = self.urllib2_patcher.start()
 
+        self.scrapers = ftpscraper.ScrapersMixin()
+        self.scrapers.config = DotDict({
+            'logger': mock.Mock()
+        })
+
     def tearDown(self):
         super(TestFTPScraper, self).tearDown()
         self.psycopg2_patcher.stop()
         self.urllib2_patcher.stop()
 
     def test_urljoin(self):
+
         eq_(
             ftpscraper.urljoin('http://google.com', '/page.html'),
             'http://google.com/page.html'
@@ -221,20 +227,21 @@ class TestFTPScraper(TestCaseBase):
             raise NotImplementedError(url)
 
         self.urllib2.side_effect = mocked_urlopener
+
         eq_(
-            ftpscraper.getLinks('ONE'),
+            self.scrapers.getLinks('ONE'),
             []
         )
         eq_(
-            ftpscraper.getLinks('ONE', startswith='One'),
+            self.scrapers.getLinks('ONE', startswith='One'),
             ['One.html']
         )
         eq_(
-            ftpscraper.getLinks('ONE', endswith='.html'),
+            self.scrapers.getLinks('ONE', endswith='.html'),
             ['One.html']
         )
         eq_(
-            ftpscraper.getLinks('ONE', startswith='Two'),
+            self.scrapers.getLinks('ONE', startswith='Two'),
             []
         )
 
@@ -245,7 +252,7 @@ class TestFTPScraper(TestCaseBase):
 
         self.urllib2.side_effect = mocked_urlopener
         eq_(
-            ftpscraper.getLinks('ONE'),
+            self.scrapers.getLinks('ONE'),
             []
         )
 
@@ -270,27 +277,27 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            ftpscraper.parseInfoFile('ONE'),
+            self.scrapers.parseInfoFile('ONE'),
             ({'BUILDID': '123'}, [])
         )
         eq_(
-            ftpscraper.parseInfoFile('TWO'),
+            self.scrapers.parseInfoFile('TWO'),
             ({'BUILDID': '123',
               'buildID': '456'}, [])
         )
         eq_(
-            ftpscraper.parseInfoFile('THREE', nightly=True),
+            self.scrapers.parseInfoFile('THREE', nightly=True),
             ({'buildID': '123',
               'rev': 'http://hg.mozilla.org/123'}, [])
         )
         eq_(
-            ftpscraper.parseInfoFile('FOUR', nightly=True),
+            self.scrapers.parseInfoFile('FOUR', nightly=True),
             ({'buildID': '123',
               'rev': 'http://hg.mozilla.org/123',
               'altrev': 'http://git.mozilla.org/123'}, [])
         )
         eq_(
-            ftpscraper.parseB2GFile('FIVE', nightly=True),
+            self.scrapers.parseB2GFile('FIVE', nightly=True),
             ({"buildid": "20130309070203",
               "update_channel": "nightly",
               "version": "18.0",
@@ -307,12 +314,12 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            ftpscraper.parseInfoFile('ONE'),
+            self.scrapers.parseInfoFile('ONE'),
             ({}, ['BUILDID'])
         )
 
         eq_(
-            ftpscraper.parseInfoFile('TWO'),
+            self.scrapers.parseInfoFile('TWO'),
             ({'BUILDID': '123'}, ['buildID'])
         )
 
@@ -325,7 +332,7 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            ftpscraper.parseInfoFile('ONE'),
+            self.scrapers.parseInfoFile('ONE'),
             ({}, [])
         )
 
@@ -353,11 +360,11 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(ftpscraper.getRelease('TWO', 'http://x')),
+            list(self.scrapers.getRelease('TWO', 'http://x')),
             []
         )
         eq_(
-            list(ftpscraper.getRelease('ONE', 'http://x')),
+            list(self.scrapers.getRelease('ONE', 'http://x')),
             [('linux', 'ONE',
              {'BUILDID': '123', 'version_build': 'build-11'}, [])]
         )
@@ -369,7 +376,7 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            ftpscraper.parseB2GFile('FIVE', nightly=True),
+            self.scrapers.parseB2GFile('FIVE', nightly=True),
             None
         )
 
@@ -398,11 +405,11 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(ftpscraper.getNightly('TWO', 'http://x')),
+            list(self.scrapers.getNightly('TWO', 'http://x')),
             []
         )
         eq_(
-            list(ftpscraper.getNightly('ONE', 'http://x')),
+            list(self.scrapers.getNightly('ONE', 'http://x')),
             [('linux', 'ONE', 'firefox',
               {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, []),
              ('linux', 'ONE', 'firefox',
@@ -436,11 +443,11 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(ftpscraper.getB2G('ONE', 'http://x')),
+            list(self.scrapers.getB2G('ONE', 'http://x')),
             []
         )
         eq_(
-            list(ftpscraper.getB2G('TWO', 'http://x')),
+            list(self.scrapers.getB2G('TWO', 'http://x')),
             [
                 ('unagi', 'b2g-release', u'18.0', {
                     u'buildid': u'20130309070203',
@@ -548,6 +555,11 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         self.conn.commit()
         self.urllib2_patcher = mock.patch('urllib2.urlopen')
         self.urllib2 = self.urllib2_patcher.start()
+
+        self.scrapers = ftpscraper.ScrapersMixin()
+        self.scrapers.config = DotDict({
+            'logger': mock.Mock()
+        })
 
     def tearDown(self):
         cursor = self.conn.cursor()
@@ -908,11 +920,11 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(ftpscraper.getJsonRelease('TWO', 'http://x')),
+            list(self.scrapers.getJsonRelease('TWO', 'http://x')),
             []
         )
         eq_(
-            list(ftpscraper.getJsonRelease('ONE', 'http://x')),
+            list(self.scrapers.getJsonRelease('ONE', 'http://x')),
             [('win', 'ONE', {
                 u'moz_app_version': u'27.0',
                 u'moz_app_name': u'firefox',
@@ -931,7 +943,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             })]
         )
         eq_(
-            list(ftpscraper.getJsonRelease('THREE', 'http://x')),
+            list(self.scrapers.getJsonRelease('THREE', 'http://x')),
             []
         )
 
@@ -1117,6 +1129,19 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             assert information['ftpscraper']
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
+
+            config.logger.warning.assert_any_call(
+                'Unable to JSON parse content %r',
+                ' ',
+                exc_info=True
+            )
+
+            config.logger.warning.assert_any_call(
+                'warning, unsupported JSON file: %s',
+                'http://ftp.mozilla.org/pub/mozilla.org/firefox/candidates/'
+                '10.0b4-candidates/build1/linux-i686/en-US/firefox-10.0b4.e'
+                'n-US.linux-i686.mozinfo.json'
+            )
 
         cursor = self.conn.cursor()
         columns = 'product_name', 'build_id', 'build_type'

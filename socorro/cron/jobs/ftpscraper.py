@@ -69,249 +69,248 @@ def patient_urlopen(url, max_attempts=4, sleep_time=20):
             return content
 
 
-def getLinks(url, startswith=None, endswith=None):
+class ScrapersMixin(object):
 
-    html = ''
-    results = []
-    content = patient_urlopen(url, sleep_time=30)
-    if not content:
-        return []
-    html = lxml.html.document_fromstring(content)
+    def getLinks(self, url, startswith=None, endswith=None):
 
-    for element, attribute, link, pos in html.iterlinks():
-        if startswith:
-            if link.startswith(startswith):
-                results.append(link)
-        elif endswith:
-            if link.endswith(endswith):
-                results.append(link)
-    return results
+        html = ''
+        results = []
+        content = patient_urlopen(url, sleep_time=30)
+        if not content:
+            return []
+        html = lxml.html.document_fromstring(content)
 
+        for element, attribute, link, pos in html.iterlinks():
+            if startswith:
+                if link.startswith(startswith):
+                    results.append(link)
+            elif endswith:
+                if link.endswith(endswith):
+                    results.append(link)
+        return results
 
-def parseBuildJsonFile(url, nightly=False):
-    content = patient_urlopen(url)
-    if content:
-        try:
-            kvpairs = json.loads(content)
-            kvpairs['repository'] = kvpairs.get('moz_source_repo')
-            if kvpairs['repository']:
-                kvpairs['repository'] = kvpairs['repository']\
-                        .split('/', -1)[-1]
-            kvpairs['build_type'] = kvpairs.get('moz_update_channel')
-            kvpairs['buildID'] = kvpairs.get('buildid')
-
-            # bug 1065071 - ignore JSON files that have keys with
-            # missing values.
-            if None in kvpairs.values():
-                # TODO - we need to refactor this code so we can
-                # use `config.logger` here.
-                # Then we can debug log invalid JSON.
-                print 'warning, unsupported JSON file: %s' % url
-                pass
-
-            return kvpairs
-        # bug 963431 - it is valid to have an empty file
-        # due to a quirk in our build system
-        except ValueError:
-            pass
-
-
-def parseInfoFile(url, nightly=False):
-    content = patient_urlopen(url)
-    results = {}
-    bad_lines = []
-    if not content:
-        return results, bad_lines
-    contents = content.splitlines()
-    if nightly:
-        results = {'buildID': contents[0], 'rev': contents[1]}
-        if len(contents) > 2:
-            results['altrev'] = contents[2]
-    elif contents:
-        results = {}
-        for line in contents:
-            if line == '':
-                continue
+    def parseBuildJsonFile(self, url, nightly=False):
+        content = patient_urlopen(url)
+        if content:
             try:
-                key, value = line.split('=')
-                results[key] = value
+                kvpairs = json.loads(content)
+                kvpairs['repository'] = kvpairs.get('moz_source_repo')
+                if kvpairs['repository']:
+                    kvpairs['repository'] = kvpairs['repository'].split(
+                        '/', -1
+                    )[-1]
+                kvpairs['build_type'] = kvpairs.get('moz_update_channel')
+                kvpairs['buildID'] = kvpairs.get('buildid')
+
+                # bug 1065071 - ignore JSON files that have keys with
+                # missing values.
+                if None in kvpairs.values():
+                    self.config.logger.warning(
+                        'warning, unsupported JSON file: %s', url
+                    )
+
+                return kvpairs
+            # bug 963431 - it is valid to have an empty file
+            # due to a quirk in our build system
             except ValueError:
-                bad_lines.append(line)
+                self.config.logger.warning(
+                    'Unable to JSON parse content %r',
+                    content,
+                    exc_info=True
+                )
 
-    return results, bad_lines
-
-
-def parseB2GFile(url, nightly=False, logger=None):
-    """
-      Parse the B2G manifest JSON file
-      Example: {"buildid": "20130125070201", "update_channel":
-                "nightly", "version": "18.0"}
-      TODO handle exception if file does not exist
-    """
-    content = patient_urlopen(url)
-    if not content:
-        return
-    results = json.loads(content)
-
-    # bug 869564: Return None if update_channel is 'default'
-    if results['update_channel'] == 'default' and logger:
-        logger.warning(
-            "Found default update_channel for buildid: %s. Skipping.",
-            results['buildid']
-        )
-        return
-
-    # Default 'null' channels to nightly
-    results['build_type'] = results['update_channel'] or 'nightly'
-
-    # Default beta_number to 1 for beta releases
-    if results['update_channel'] == 'beta':
-        results['beta_number'] = results.get('beta_number', 1)
-
-    return results
-
-
-def getJsonRelease(dirname, url):
-    candidate_url = urljoin(url, dirname)
-    version = dirname.split('-candidates')[0]
-
-    builds = getLinks(candidate_url, startswith='build')
-
-    if not builds:
-        return
-
-    latest_build = builds.pop()
-    build_url = urljoin(candidate_url, latest_build)
-    version_build = os.path.basename(os.path.normpath(latest_build))
-
-    for platform in ['linux', 'mac', 'win', 'debug']:
-        platform_urls = getLinks(build_url, startswith=platform)
-        for p in platform_urls:
-            platform_url = urljoin(build_url, p)
-            platform_local_url = urljoin(platform_url, 'en-US/')
-            json_files = getLinks(platform_local_url, endswith='.json')
-
-            for f in json_files:
-                json_url = urljoin(platform_local_url, f)
-                kvpairs = parseBuildJsonFile(json_url)
-                if not kvpairs:
+    def parseInfoFile(self, url, nightly=False):
+        content = patient_urlopen(url)
+        results = {}
+        bad_lines = []
+        if not content:
+            return results, bad_lines
+        contents = content.splitlines()
+        if nightly:
+            results = {'buildID': contents[0], 'rev': contents[1]}
+            if len(contents) > 2:
+                results['altrev'] = contents[2]
+        elif contents:
+            results = {}
+            for line in contents:
+                if line == '':
                     continue
-                kvpairs['version_build'] = version_build
-                yield (platform, version, kvpairs)
+                try:
+                    key, value = line.split('=')
+                    results[key] = value
+                except ValueError:
+                    bad_lines.append(line)
 
+        return results, bad_lines
 
-def getJsonNightly(dirname, url):
-    nightly_url = urljoin(url, dirname)
+    def parseB2GFile(self, url, nightly=False):
+        """
+          Parse the B2G manifest JSON file
+          Example: {"buildid": "20130125070201", "update_channel":
+                    "nightly", "version": "18.0"}
+          TODO handle exception if file does not exist
+        """
+        content = patient_urlopen(url)
+        if not content:
+            return
+        results = json.loads(content)
 
-    json_files = getLinks(nightly_url, endswith='.json')
-    for f in json_files:
-        if 'en-US' in f:
-            pv, platform = re.sub('\.json$', '', f).split('.en-US.')
-        elif 'multi' in f:
-            pv, platform = re.sub('\.json$', '', f).split('.multi.')
-        else:
-            continue
+        # bug 869564: Return None if update_channel is 'default'
+        if results['update_channel'] == 'default':
+            self.config.logger.warning(
+                "Found default update_channel for buildid: %s. Skipping.",
+                results['buildid']
+            )
+            return
 
-        version = pv.split('-')[-1]
-        repository = []
+        # Default 'null' channels to nightly
+        results['build_type'] = results['update_channel'] or 'nightly'
 
-        for field in dirname.split('-'):
-            if not field.isdigit():
-                repository.append(field)
-        repository = '-'.join(repository).strip('/')
+        # Default beta_number to 1 for beta releases
+        if results['update_channel'] == 'beta':
+            results['beta_number'] = results.get('beta_number', 1)
 
-        json_url = urljoin(nightly_url, f)
-        kvpairs = parseBuildJsonFile(json_url, nightly=True)
+        return results
 
-        yield (platform, repository, version, kvpairs)
-
-
-def getRelease(dirname, url):
-    candidate_url = urljoin(url, dirname)
-    builds = getLinks(candidate_url, startswith='build')
-    if not builds:
-        #logger.info('No build dirs in %s' % candidate_url)
-        return
-
-    latest_build = builds.pop()
-    build_url = urljoin(candidate_url, latest_build)
-    version_build = os.path.basename(os.path.normpath(latest_build))
-    info_files = getLinks(build_url, endswith='_info.txt')
-
-    for f in info_files:
-        info_url = urljoin(build_url, f)
-        kvpairs, bad_lines = parseInfoFile(info_url)
-
-        platform = f.split('_info.txt')[0]
-
+    def getJsonRelease(self, dirname, url):
+        candidate_url = urljoin(url, dirname)
         version = dirname.split('-candidates')[0]
-        kvpairs['version_build'] = version_build
 
-        yield (platform, version, kvpairs, bad_lines)
+        builds = self.getLinks(candidate_url, startswith='build')
 
+        if not builds:
+            return
 
-def getNightly(dirname, url):
-    nightly_url = urljoin(url, dirname)
+        latest_build = builds.pop()
+        build_url = urljoin(candidate_url, latest_build)
+        version_build = os.path.basename(os.path.normpath(latest_build))
 
-    info_files = getLinks(nightly_url, endswith='.txt')
-    for f in info_files:
-        if 'en-US' in f:
-            pv, platform = re.sub('\.txt$', '', f).split('.en-US.')
-        elif 'multi' in f:
-            pv, platform = re.sub('\.txt$', '', f).split('.multi.')
-        else:
-            ##return
-            continue
+        for platform in ['linux', 'mac', 'win', 'debug']:
+            platform_urls = self.getLinks(build_url, startswith=platform)
+            for p in platform_urls:
+                platform_url = urljoin(build_url, p)
+                platform_local_url = urljoin(platform_url, 'en-US/')
+                json_files = self.getLinks(
+                    platform_local_url,
+                    endswith='.json'
+                )
+                for f in json_files:
+                    json_url = urljoin(platform_local_url, f)
+                    kvpairs = self.parseBuildJsonFile(json_url)
+                    if not kvpairs:
+                        continue
+                    kvpairs['version_build'] = version_build
+                    yield (platform, version, kvpairs)
 
-        version = pv.split('-')[-1]
-        repository = []
+    def getJsonNightly(self, dirname, url):
+        nightly_url = urljoin(url, dirname)
 
-        for field in dirname.split('-'):
-            if not field.isdigit():
-                repository.append(field)
-        repository = '-'.join(repository).strip('/')
+        json_files = self.getLinks(nightly_url, endswith='.json')
+        for f in json_files:
+            if 'en-US' in f:
+                pv, platform = re.sub('\.json$', '', f).split('.en-US.')
+            elif 'multi' in f:
+                pv, platform = re.sub('\.json$', '', f).split('.multi.')
+            else:
+                continue
 
-        info_url = urljoin(nightly_url, f)
-        kvpairs, bad_lines = parseInfoFile(info_url, nightly=True)
+            version = pv.split('-')[-1]
+            repository = []
 
-        yield (platform, repository, version, kvpairs, bad_lines)
+            for field in dirname.split('-'):
+                if not field.isdigit():
+                    repository.append(field)
+            repository = '-'.join(repository).strip('/')
 
+            json_url = urljoin(nightly_url, f)
+            kvpairs = self.parseBuildJsonFile(json_url, nightly=True)
 
-def getB2G(dirname, url, backfill_date=None, logger=None):
-    """
-     Last mile of B2G scraping, calls parseB2G on .json
-     Files look like:  socorro_unagi-stable_2013-01-25-07.json
-    """
-    url = '%s/%s' % (url, dirname)
-    info_files = getLinks(url, endswith='.json')
-    platform = None
-    version = None
-    repository = 'b2g-release'
-    for f in info_files:
-        # Pull platform out of the filename
-        jsonfilename = os.path.splitext(f)[0].split('_')
+            yield (platform, repository, version, kvpairs)
 
-        # Skip if this file isn't for socorro!
-        if jsonfilename[0] != 'socorro':
-            continue
-        platform = jsonfilename[1]
+    def getRelease(self, dirname, url):
+        candidate_url = urljoin(url, dirname)
+        builds = self.getLinks(candidate_url, startswith='build')
+        if not builds:
+            self.config.logger.info('No build dirs in %s', candidate_url)
+            return
 
-        info_url = '%s/%s' % (url, f)
-        kvpairs = parseB2GFile(info_url, nightly=True, logger=logger)
+        latest_build = builds.pop()
+        build_url = urljoin(candidate_url, latest_build)
+        version_build = os.path.basename(os.path.normpath(latest_build))
+        info_files = self.getLinks(build_url, endswith='_info.txt')
 
-        # parseB2GFile() returns None when a file is
-        #    unable to be parsed or we ignore the file
-        if kvpairs is None:
-            continue
-        version = kvpairs['version']
+        for f in info_files:
+            info_url = urljoin(build_url, f)
+            kvpairs, bad_lines = self.parseInfoFile(info_url)
 
-        yield (platform, repository, version, kvpairs)
+            platform = f.split('_info.txt')[0]
+
+            version = dirname.split('-candidates')[0]
+            kvpairs['version_build'] = version_build
+
+            yield (platform, version, kvpairs, bad_lines)
+
+    def getNightly(self, dirname, url):
+        nightly_url = urljoin(url, dirname)
+
+        info_files = self.getLinks(nightly_url, endswith='.txt')
+        for f in info_files:
+            if 'en-US' in f:
+                pv, platform = re.sub('\.txt$', '', f).split('.en-US.')
+            elif 'multi' in f:
+                pv, platform = re.sub('\.txt$', '', f).split('.multi.')
+            else:
+                ##return
+                continue
+
+            version = pv.split('-')[-1]
+            repository = []
+
+            for field in dirname.split('-'):
+                if not field.isdigit():
+                    repository.append(field)
+            repository = '-'.join(repository).strip('/')
+
+            info_url = urljoin(nightly_url, f)
+            kvpairs, bad_lines = self.parseInfoFile(info_url, nightly=True)
+
+            yield (platform, repository, version, kvpairs, bad_lines)
+
+    def getB2G(self, dirname, url, backfill_date=None):
+        """
+         Last mile of B2G scraping, calls parseB2G on .json
+         Files look like:  socorro_unagi-stable_2013-01-25-07.json
+        """
+        url = '%s/%s' % (url, dirname)
+        info_files = self.getLinks(url, endswith='.json')
+        platform = None
+        version = None
+        repository = 'b2g-release'
+        for f in info_files:
+            # Pull platform out of the filename
+            jsonfilename = os.path.splitext(f)[0].split('_')
+
+            # Skip if this file isn't for socorro!
+            if jsonfilename[0] != 'socorro':
+                continue
+            platform = jsonfilename[1]
+
+            info_url = '%s/%s' % (url, f)
+            kvpairs = self.parseB2GFile(info_url, nightly=True)
+
+            # parseB2GFile() returns None when a file is
+            #    unable to be parsed or we ignore the file
+            if kvpairs is None:
+                continue
+            version = kvpairs['version']
+
+            yield (platform, repository, version, kvpairs)
 
 
 #==============================================================================
 @with_postgres_transactions()
 @as_backfill_cron_app
-class FTPScraperCronApp(BaseCronApp):
+class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     app_name = 'ftpscraper'
     app_description = 'FTP Scraper'
     app_version = '0.1'
@@ -337,11 +336,12 @@ class FTPScraperCronApp(BaseCronApp):
 
     def run(self, date):
         # record_associations
-        logger = self.config.logger
-
         for product_name in self.config.products:
-            logger.debug('scraping %s releases for date %s',
-                         product_name, date)
+            self.config.logger.debug(
+                'scraping %s releases for date %s',
+                product_name,
+                date
+            )
             if product_name == 'b2g':
                 self.database_transaction_executor(
                     self.scrapeB2G,
@@ -395,15 +395,15 @@ class FTPScraperCronApp(BaseCronApp):
         cursor = connection.cursor()
 
         for directory in ('nightly', 'candidates'):
-            if not getLinks(prod_url, startswith=directory):
+            if not self.getLinks(prod_url, startswith=directory):
                 logger.debug('Dir %s not found for %s',
                              directory, product_name)
                 continue
 
             url = urljoin(self.config.base_url, product_name, directory, '')
-            releases = getLinks(url, endswith='-candidates/')
+            releases = self.getLinks(url, endswith='-candidates/')
             for release in releases:
-                for info in getJsonRelease(release, url):
+                for info in self.getJsonRelease(release, url):
                     platform, version, kvpairs = info
                     build_type = 'release'
                     beta_number = None
@@ -428,9 +428,11 @@ class FTPScraperCronApp(BaseCronApp):
                             ignore_duplicates=True
                         )
 
-                    if (self._is_final_beta(version)
+                    if (
+                        self._is_final_beta(version)
                         and build_type == 'release'
-                        and version > '26.0'):
+                        and version > '26.0'
+                    ):
                         logger.debug('is final beta version %s', version)
                         repository = 'mozilla-beta'
                         build_id = kvpairs['buildID']
@@ -459,9 +461,9 @@ class FTPScraperCronApp(BaseCronApp):
                               '')
         cursor = connection.cursor()
         dir_prefix = date.strftime('%Y-%m-%d')
-        nightlies = getLinks(nightly_url, startswith=dir_prefix)
+        nightlies = self.getLinks(nightly_url, startswith=dir_prefix)
         for nightly in nightlies:
-            for info in getJsonNightly(nightly, nightly_url):
+            for info in self.getJsonNightly(nightly, nightly_url):
                 platform, repository, version, kvpairs = info
 
                 build_type = 'nightly'
@@ -489,15 +491,15 @@ class FTPScraperCronApp(BaseCronApp):
         logger = self.config.logger
         cursor = connection.cursor()
         for directory in ('nightly', 'candidates'):
-            if not getLinks(prod_url, startswith=directory):
+            if not self.getLinks(prod_url, startswith=directory):
                 logger.debug('Dir %s not found for %s',
                              directory, product_name)
                 continue
 
             url = urljoin(self.config.base_url, product_name, directory, '')
-            releases = getLinks(url, endswith='-candidates/')
+            releases = self.getLinks(url, endswith='-candidates/')
             for release in releases:
-                for info in getRelease(release, url):
+                for info in self.getRelease(release, url):
                     platform, version, kvpairs, bad_lines = info
                     if kvpairs.get('buildID') is None:
                         self.config.logger.warning(
@@ -554,9 +556,9 @@ class FTPScraperCronApp(BaseCronApp):
                               '')
         cursor = connection.cursor()
         dir_prefix = date.strftime('%Y-%m-%d')
-        nightlies = getLinks(nightly_url, startswith=dir_prefix)
+        nightlies = self.getLinks(nightly_url, startswith=dir_prefix)
         for nightly in nightlies:
-            for info in getNightly(nightly, nightly_url):
+            for info in self.getNightly(nightly, nightly_url):
                 platform, repository, version, kvpairs, bad_lines = info
                 for bad_line in bad_lines:
                     self.config.logger.warning(
@@ -593,7 +595,7 @@ class FTPScraperCronApp(BaseCronApp):
         )
 
         dir_prefix = date.strftime('%Y-%m-%d')
-        version_dirs = getLinks(b2g_manifests, startswith='1.')
+        version_dirs = self.getLinks(b2g_manifests, startswith='1.')
         for version_dir in version_dirs:
             prod_url = urljoin(
                 b2g_manifests,
@@ -601,14 +603,13 @@ class FTPScraperCronApp(BaseCronApp):
                 date.strftime('%Y'),
                 date.strftime('%m')
             )
-            nightlies = getLinks(prod_url, startswith=dir_prefix)
+            nightlies = self.getLinks(prod_url, startswith=dir_prefix)
 
             for nightly in nightlies:
-                b2gs = getB2G(
+                b2gs = self.getB2G(
                     nightly,
                     prod_url,
                     backfill_date=None,
-                    logger=self.config.logger
                 )
                 for info in b2gs:
                     (platform, repository, version, kvpairs) = info
