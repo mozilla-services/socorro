@@ -1537,32 +1537,6 @@ class TestModels(TestCase):
                     channel='nightly')
         eq_(r['total'], 2)
 
-    @mock.patch('requests.get')
-    def test_platforms(self, rget):
-        api = models.Platforms()
-
-        def mocked_get(url, **options):
-            assert '/platforms/' in url
-            return Response({
-                "hits": [
-                    {
-                        "code": "win",
-                        "name": "Windows"
-                    },
-                    {
-                        "code": "unk",
-                        "name": "Unknown"
-                    }
-                ],
-                "total": 2
-            })
-
-        rget.side_effect = mocked_get
-        r = api.get()
-        eq_(len(r), 2)
-        eq_(r[0], {'code': 'win', 'name': 'Windows'})
-        eq_(r[1], {'code': 'unk', 'name': 'Unknown'})
-
 
 class TestModelsWithFileCaching(TestCase):
 
