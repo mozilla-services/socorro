@@ -513,9 +513,6 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         # once https://bugzilla.mozilla.org/show_bug.cgi?id=790642 lands.
         os_short_name_binding = {'lin': 'linux'}
         for operating_system in operating_systems:
-            if operating_system['name'] == 'Unknown':
-                # not applicable in this context
-                continue
             os_code = operating_system['code'][0:3].lower()
             key = '%s_count' % os_short_name_binding.get(os_code, os_code)
             crash_counts.append([crash[key], operating_system['name']])
