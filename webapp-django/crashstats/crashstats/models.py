@@ -569,44 +569,22 @@ class ProductsVersions(CurrentVersions):
 
 class Platforms(SocorroMiddleware):
 
+    URL_PREFIX = '/platforms/'
+
     API_WHITELIST = (
         'code',
         'name',
     )
 
     def get(self):
-        # For dev only, this should be moved to a middleware service
-        # using the database as soon as possible.
-        platforms = [
-            {
-                'code': 'win',
-                'name': 'Windows',
-                'display': True,
-            },
-            {
-                'code': 'win32',
-                'name': 'Windows',
-            },
-            {
-                'code': 'win',
-                'name': 'Windows NT',
-            },
-            {
-                'code': 'mac',
-                'name': 'Mac OS X',
-                'display': True,
-            },
-            {
-                'code': 'lin',
-                'name': 'Linux',
-                'display': True,
-            },
-            {
-                'code': 'linux-i686',
-                'name': 'Linux'
-            }
+        # When we first exposed this model it would just return a plain
+        # list. It was hardcoded. To avoid deprecating things for people
+        # we continue this trandition by only returning the hits directly
+        result = super(Platforms, self).get()
+        return [
+            dict(x, display=x['name'] in settings.DISPLAY_OS_NAMES)
+            for x in result['hits']
         ]
-        return platforms
 
 
 class CrashesPerAdu(SocorroMiddleware):

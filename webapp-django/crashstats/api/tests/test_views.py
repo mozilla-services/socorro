@@ -343,14 +343,14 @@ class TestViews(BaseTestViews):
         ok_('featured' in version)
         ok_('release' in version)
 
-    @mock.patch('requests.get')
-    def test_Platforms(self, rget):
+    def test_Platforms(self):
+        # note: this gets mocked out in the setUp
         url = reverse('api:model_wrapper', args=('Platforms',))
         response = self.client.get(url)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump[0]['code'])
-        ok_(dump[0]['name'])
+        # see the setUp for this fixture
+        eq_(dump[0], {'code': 'win', 'name': 'Windows'})
 
     @mock.patch('requests.get')
     def test_TCBS(self, rget):
