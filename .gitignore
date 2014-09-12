@@ -30,8 +30,9 @@ pip-log.txt
 build
 .DS_Store
 webapp-django/media/
+minidump-stackwalk/*.o
+minidump-stackwalk/stackwalker
 
 # exclude filesystem storage directories
 primaryCrashStore/
 processedCrashStore/
-minidump-stackwalk/*.o
