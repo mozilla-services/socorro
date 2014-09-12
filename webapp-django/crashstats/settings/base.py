@@ -337,3 +337,7 @@ DISALLOWED_SYMBOLS_SNIPPETS = (
 
 # Rate limit for when using the Web API for anonymous hits
 API_RATE_LIMIT = '10/m'
+
+# When we pull platforms from the Platforms API we later decide which of
+# these to display at various points in the UI.
+DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
