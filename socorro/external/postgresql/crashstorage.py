@@ -355,6 +355,28 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             crash_id = processed_crash['uuid']
             table_suffix = self._table_suffix_for_crash_id(crash_id)
             plugin_reports_table_name = 'plugins_reports_%s' % table_suffix
+
+
+            # why are we deleting first?  This might be a reprocessing job and
+            # the plugins_reports data might already be in the table: a
+            # straight insert might fail.  Why not check to see if there is
+            # data already there and then just not insert if data is there?
+            # We may be reprocessing to deal with missing plugin_reports data,
+            # so just because there is already data there doesn't mean that we
+            # can skip this. What about using "upsert" sql - that would be fine
+            # and result in one fewer round trip between client and database,
+            # but "upsert" sql is opaque and not easy to understand at a
+            # glance.  This was faster to implement.  What about using
+            # "transaction check points"?  Too many round trips between the
+            # client and the server.
+            plugins_reports_delete_sql = (
+                'delete from %s where report_id = %%s'
+                % plugin_reports_table_name
+            )
+            execute_no_results(connection,
+                               plugins_reports_delete_sql,
+                               (report_id,))
+
             plugins_reports_insert_sql = (
                 'insert into %s '
                 '    (report_id, plugin_id, date_processed, version) '
