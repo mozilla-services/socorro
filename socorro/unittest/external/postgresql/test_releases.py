@@ -379,7 +379,7 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-    def test_update_release(self):
+    def test_create_release(self):
         self._insert_release_channels()
         service = Releases(config=self.config)
 
@@ -396,8 +396,36 @@ class IntegrationTestReleases(PostgreSQLTestCase):
             throttle=1
         )
 
-        res = service.update_release(**params)
+        res = service.create_release(**params)
         ok_(res)
+
+    def test_create_release_with_beta_number_null(self):
+        self._insert_release_channels()
+        service = Releases(config=self.config)
+
+        now = datetimeutil.utc_now()
+        build_id = now.strftime('%Y%m%d%H%M')
+        params = dict(
+            product='Firefox',
+            version='1.0',
+            update_channel='beta',
+            build_id=build_id,
+            platform='Windows',
+            beta_number=None,
+            release_channel='Beta',
+            throttle=1
+        )
+
+        res = service.create_release(**params)
+        ok_(res)
+
+        # but...
+        params['beta_number'] = 0
+        assert_raises(
+            MissingArgumentError,
+            service.create_release,
+            **params
+        )
 
     def test_update_release_missingargumenterror(self):
         self._insert_release_channels()
@@ -417,6 +445,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         )
         assert_raises(
             MissingArgumentError,
-            service.update_release,
+            service.create_release,
             **params
         )

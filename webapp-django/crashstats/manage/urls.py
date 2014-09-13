@@ -77,4 +77,10 @@ urlpatterns = patterns(
     url('^supersearch-field/delete/$',
         views.supersearch_field_delete,
         name='supersearch_field_delete'),
+    url('^products/$',
+        views.products,
+        name='products'),
+    url('^releases/$',
+        views.releases,
+        name='releases'),
 )
