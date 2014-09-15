@@ -8,14 +8,14 @@ Installing from binary package
 If you do not wish to install from source, and are using a RHEL-compatible
 64-bit Linux distribution (such as CentOS), then you can install from a package
 instead of from source. Both tarball and RPM based installs are
-provided.
+provided - RPM is recommended.
 
 Installing an RPM:
 
 .. code-block:: bash
 
   $ curl -O https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro-latest.x86_64.rpm
-  $ sudo rpm -i socorro-latest.x86_64.rpm
+  $ sudo rpm -i --nofiledigest socorro-latest.x86_64.rpm
 
 Installing a tarball:
 
