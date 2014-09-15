@@ -14,6 +14,7 @@
 
 {% block site_js %}
     {{ super() }}
+    <script type="text/javascript" src="{{ static('api/js/lib/filesize.min.js') }}"></script>
     {% compress js %}
     <script type="text/javascript" src="{{ static('api/js/testdrive.js') }}"></script>
     {% endcompress %}
@@ -127,6 +128,15 @@
           </p>
           <p><strong>Output:</strong></p>
           <pre></pre>
+          <span class="binary-response-warning">
+            Looks like this is binary output!
+            <a href="#" class="show">See it anyway?</a>
+            <a href="#" class="open">Download the content?</a>
+          </span>
+          <p class="response-size">
+            <strong>Size:</strong>
+            <code></code>
+          </p>
 
           </div>
         </form>

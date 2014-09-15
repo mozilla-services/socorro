@@ -20,23 +20,21 @@ a.collapse-list, a.expand-list {
 input.error {
     border: 2px solid red;
 }
-div.test-drive {
-    display: none;
-}
-button.close {
+/* things that are hidden by default */
+div.test-drive,
+button.close,
+.status-error,
+img.loading-ajax,
+.binary-response-warning {
     display: none;
 }
 .status-error {
-    display: none;
     color: red;
     font-weight: bold;
 }
 pre.docstring {
     background-color: rgb(225,225,225);
     padding: 6px;
-}
-img.loading-ajax {
-    display: none;
 }
 .title h2 a {
     text-decoration: none;

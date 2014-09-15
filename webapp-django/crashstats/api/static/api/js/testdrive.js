@@ -97,9 +97,19 @@
                var container = $('.test-drive', form);
                $('.used-url code', container).text(url);
                $('.used-url a', container).attr('href', url);
+               if (jqXHR.getResponseHeader('Content-Type') === 'application/octet-stream') {
+                    $('pre', container).hide();
+                    $('.binary-response-warning', container).show();
+               } else {
+                    // in case it was binary *before* this run, reset it
+                    $('pre', container).show();
+                    $('.binary-response-warning', container).hide();
+               }
                $('pre', container).text(response);
                $('.status code', container).hide();
                $('.status-error', container).hide();
+               $('.response-size code', container).text(filesize(response.length));
+               $('.response-size').show();
                container.show();
                setTimeout(function() {
                    // add a slight delay so it feels smoother for endpoints
@@ -111,9 +121,15 @@
            },
            error: function(jqXHR, textStatus, errorThrown) {
                var container = $('.test-drive', form);
+               $('.used-url code', container).text(url);
+               $('.used-url a', container).attr('href', url);
                $('pre', container).text(jqXHR.responseText);
                $('.status code', container).text(jqXHR.status).show();
                $('.status-error', container).show();
+               $('.response-size').hide();
+               // in case it was binary before this run
+               $('pre', container).show();
+               $('.binary-response-warning', container).hide();
                container.show();
                setTimeout(function() {
                    // add a slight delay so it feels smoother for endpoints
@@ -166,10 +182,25 @@
             $(this).removeClass('error');
         });
 
-        $('button.close').click(function(event) {
+        $('button.close').on('click', function(event) {
             event.preventDefault();
             $('.test-drive', $(this).parents('form')).hide();
             $(this).hide();
+        });
+
+        $('.binary-response-warning').on('click', 'a.show', function(event) {
+            event.preventDefault();
+            var parent = $(this).closest('.test-drive');
+            $('pre', parent).show();
+            $(this).hide();
+        });
+
+        $('.binary-response-warning').on('click', 'a.open', function(event) {
+            event.preventDefault();
+            var parent = $(this).closest('.test-drive');
+            var url = $('.used-url a', parent).attr('href');
+            location.href = url;
+            // window.open(url);
         });
 
     });
