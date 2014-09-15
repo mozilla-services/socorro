@@ -878,6 +878,10 @@ class UnredactedCrash(ProcessedCrash):
 
 
 class RawCrash(SocorroMiddleware):
+    """
+    To access any of the raw dumps (e.g. format=raw) you need an API
+    token that carries the "View Raw Dumps" permission.
+    """
 
     URL_PREFIX = '/crash_data/'
 
@@ -886,6 +890,7 @@ class RawCrash(SocorroMiddleware):
     )
     possible_params = (
         'format',
+        'name',
     )
 
     defaults = {
