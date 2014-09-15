@@ -1258,6 +1258,38 @@ class TestModels(TestCase):
         r = api.get(crash_id='some-crash-id')
         eq_(r['Vendor'], 'Mozilla')
 
+    @mock.patch('requests.get')
+    def test_raw_crash_raw_data(self, rget):
+
+        model = models.RawCrash
+        api = model()
+
+        mocked_calls = []
+
+        def mocked_get(url, params, **options):
+            assert '/crash_data/' in url
+            mocked_calls.append(params)
+            assert params['datatype'] == 'raw'
+            if params.get('name') == 'other':
+                return Response('\xe0\xe0')
+            elif params.get('name') == 'unknown':
+                return Response('not found', 404)
+            else:
+                return Response('\xe0')
+
+        rget.side_effect = mocked_get
+        r = api.get(crash_id='some-crash-id', format='raw')
+        eq_(r, '\xe0')
+
+        r = api.get(crash_id='some-crash-id', format='raw', name='other')
+        eq_(r, '\xe0\xe0')
+
+        assert_raises(
+            models.BadStatusCodeError,
+            api.get,
+            crash_id='some-crash-id', format='raw', name='unknown'
+        )
+
     @mock.patch('requests.put')
     def test_put_featured_versions(self, rput):
         model = models.ReleasesFeatured
