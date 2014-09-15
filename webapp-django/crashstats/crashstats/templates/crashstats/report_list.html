@@ -143,6 +143,7 @@
 
     </div><!-- /correlation -->
 
+    {% if request.user.has_perm('crashstats.view_pii') %}
     <div id="sigurls" class="ui-tabs-hide"
          data-partial-url="{{ url('crashstats:report_list_partial', 'sigurls') }}">
 
@@ -157,6 +158,7 @@
       <div class="inner"></div>
 
     </div><!-- /sigurls -->
+    {% endif %}
 
 </div>
 

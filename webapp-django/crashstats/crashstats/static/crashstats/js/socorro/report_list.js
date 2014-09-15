@@ -66,9 +66,14 @@ $(document).ready(function () {
         'reports',
         'table',
         'graph',
-        'sigurls',
         'correlations'
     ];
+
+    // only load signature urls if the current user can view it.
+    if ($('#sigurls').length) {
+        load_order.push('signurls');
+    }
+
     var increment = Math.ceil(100 / load_order.length);
     var progress_elem = document.querySelector('.awty-progress');
 
