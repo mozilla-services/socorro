@@ -37,7 +37,8 @@ class CrashDataBase(object):
 
         filters = [
             ('uuid', None, 'str'),
-            ('datatype', None, 'str')
+            ('datatype', None, 'str'),
+            ('name', None, 'str')  # only applicable if datatype == 'raw'
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
@@ -61,7 +62,10 @@ class CrashDataBase(object):
         get = store.__getattribute__(datatype_method_mapping[params.datatype])
         try:
             if params.datatype == 'raw':
-                return (get(params.uuid), 'application/octet-stream')
+                return (
+                    get(params.uuid, name=params.name),
+                    'application/octet-stream'
+                )
             else:
                 return get(params.uuid)
         except CrashIDNotFound:

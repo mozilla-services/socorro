@@ -118,11 +118,20 @@ class TestIntegrationHBaseCrashData(TestCase):
                 'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'
             }
 
-            # Test 1: get a raw dump
+            # Test 1a: get a raw dump
             res_expected = ('peter is a swede',
                             'application/octet-stream')
             res = service.get(**params)
+            eq_(res, res_expected)
 
+            # Test 1b: get a raw dump with the default name
+            res = service.get(**dict(params, name='upload_file_minidump'))
+            eq_(res, res_expected)
+
+            # Test 1c: get a raw dump with a different name
+            res_expected = ('lars is a norseman',
+                            'application/octet-stream')
+            res = service.get(**dict(params, name='lars'))
             eq_(res, res_expected)
 
             # Test 2: get a raw crash

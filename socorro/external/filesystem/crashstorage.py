@@ -150,11 +150,11 @@ class FileSystemRawCrashStorage(CrashStorageBase):
             return DotDict()
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, crash_id, dump_name=None):
+    def get_raw_dump(self, crash_id, name=None):
         """read the binary crash dump from the underlying file system by
         getting the pathname and then opening and reading the file."""
         try:
-            job_pathname = self.std_crash_store.getDump(crash_id, dump_name)
+            job_pathname = self.std_crash_store.getDump(crash_id, name)
             with open(job_pathname) as  dump_file:
                 binary = dump_file.read()
             return binary
@@ -289,11 +289,11 @@ class FileSystemThrottledCrashStorage(FileSystemRawCrashStorage):
                     raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
-    def get_raw_dump(self, crash_id, dump_name=None):
+    def get_raw_dump(self, crash_id, name=None):
         """fetch the dump trying each file system in turn"""
         for a_crash_store in self._crash_store_tuple:
             try:
-                job_pathname = a_crash_store.getDump(crash_id, dump_name)
+                job_pathname = a_crash_store.getDump(crash_id, name)
                 with open(job_pathname) as  dump_file:
                     dump = dump_file.read()
                 return dump
