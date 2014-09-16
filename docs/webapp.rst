@@ -106,27 +106,6 @@ certain crashes.
 If you need permissions that depend on the content you'll need to
 write it yourself with some conditionals.
 
-
-Becoming a superuser
---------------------
-
-If the site is up and running and you know there are superusers using
-the site, the best way to become a superuser (and thus being able to
-access the Admin UI) is to talk to that other superuser person.
-
-If you're starting a fresh new Socorro instance without any users at
-all, you need to bootstrap at least one superuser so the paragraph
-above starts to make sense. To do that, you first need to **sign in at
-least once** using the email address you want to identify as a
-superuser. Once you've done that, run the following command::
-
-    cd webapp-django
-    ./manage.py makesuperuser theemail@address.com
-
-Now the user with this email address should see a link to "Admin" in
-the footer.
-
-
 Trouble logging in with Persona?
 --------------------------------
 
