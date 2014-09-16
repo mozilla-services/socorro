@@ -974,6 +974,7 @@ class RawCrash(SocorroMiddleware):
         'AdapterSubsysID',
         'AdapterDriverVersion',
         'ShutdownProgress',
+        'DOMIPCEnabled',
     )
 
     API_CLEAN_SCRUB = (
