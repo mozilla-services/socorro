@@ -30,7 +30,7 @@ Contents:
    installation/install-src-prod
    installation/systemtest
    installation/troubleshoot
-   installation/add-product-release
+   installation/setup-socorro
    webapp
    api/index
    crontabber
