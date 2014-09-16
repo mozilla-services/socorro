@@ -1126,10 +1126,25 @@ def report_index(request, crash_id, default_context=None):
             hang_id=context['hang_id']
         )
 
-    context['raw_dump_urls'] = [
-        reverse('crashstats:raw_data', args=(crash_id, 'dmp')),
-        reverse('crashstats:raw_data', args=(crash_id, 'json'))
-    ]
+    if request.user.has_perm('crashstats.view_rawdump'):
+        context['raw_dump_urls'] = [
+            reverse('crashstats:raw_data', args=(crash_id, 'dmp')),
+            reverse('crashstats:raw_data', args=(crash_id, 'json'))
+        ]
+        if context['raw'].get('additional_minidumps'):
+            suffixes = [
+                x.strip()
+                for x in context['raw']['additional_minidumps'].split(',')
+                if x.strip()
+            ]
+            for suffix in suffixes:
+                name = 'upload_file_minidump_%s' % (suffix,)
+                context['raw_dump_urls'].append(
+                    reverse(
+                        'crashstats:raw_data_named',
+                        args=(crash_id, name, 'dmp')
+                    )
+                )
 
     correlations_api = models.CorrelationsSignatures()
     total_correlations = 0
@@ -2383,7 +2398,7 @@ def crashtrends_json(request, default_context=None):
 
 
 @permission_required('crashstats.view_rawdump')
-def raw_data(request, crash_id, extension):
+def raw_data(request, crash_id, extension, name=None):
     api = models.RawCrash()
     if extension == 'json':
         format = 'meta'
@@ -2394,7 +2409,7 @@ def raw_data(request, crash_id, extension):
     else:
         raise NotImplementedError(extension)
 
-    data = api.get(crash_id=crash_id, format=format)
+    data = api.get(crash_id=crash_id, format=format, name=name)
     response = http.HttpResponse(content_type=content_type)
 
     if extension == 'json':
