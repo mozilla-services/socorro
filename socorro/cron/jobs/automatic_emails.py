@@ -90,24 +90,24 @@ class AutomaticEmailsCronApp(BaseCronApp, ElasticSearchBase):
     required_config.add_option(
         'delay_between_emails',
         default=7,
-        doc='Delay between two emails sent to the same user, in days. ',
+        doc='Delay between two emails sent to the same user, in days.',
     )
     required_config.add_option(
         'restrict_products',
         default=['Firefox'],
-        doc='List of products for which to send an email. ',
+        doc='List of products for which to send an email.',
         from_string_converter=list_converter
     )
     required_config.add_option(
         'exacttarget_user',
         default='',
-        doc='ExactTarget API user. ',
+        doc='ExactTarget API user.',
         reference_value_from='secrets.exacttarget',
     )
     required_config.add_option(
         'exacttarget_password',
         default='',
-        doc='ExactTarget API password. ',
+        doc='ExactTarget API password.',
         reference_value_from='secrets.exacttarget',
     )
     required_config.add_option(
@@ -115,19 +115,19 @@ class AutomaticEmailsCronApp(BaseCronApp, ElasticSearchBase):
         default='',
         doc='Name of the generic email template to use in ExactTarget. If '
             'empty, no email will be sent for generic crashes (but emails '
-            'will still be sent for those with a recognized classification). '
+            'will still be sent for those with a recognized classification).'
     )
     required_config.add_option(
         'test_mode',
         default=False,
         doc='Activate the test mode, in which all email addresses are '
             'replaced by the one in test_email_address. Use it to avoid '
-            'sending unexpected emails to your users. '
+            'sending unexpected emails to your users.'
     )
     required_config.add_option(
         'test_email_address',
         default='test@example.org',
-        doc='In test mode, send all emails to this email address. '
+        doc='In test mode, send all emails to this email address.'
     )
     # the following list of email domains is taken from looking through many
     # days of errors from crontabbers.log and noticing repeatedly common
