@@ -4,10 +4,11 @@ $(function () {
     'use strict';
 
     // parameters
-    var form = $('#search-form form');
+    var searchSection = $('#search-form');
+    var form = $('form', searchSection);
     var fieldsURL = form.data('fields-url');
     var SIGNATURE = form.data('signature');
-    var tabsElt = $('.tabs');
+    var panelsNavSection = $('#panels-nav');
 
     var pageNum = 1;  // the page number as passed in the URL
 
@@ -28,8 +29,8 @@ $(function () {
     }
 
     function showTab(tabName) {
-        $('.selected', tabsElt).removeClass('selected');
-        $('.' + tabName, tabsElt).addClass('selected');
+        $('.selected', panelsNavSection).removeClass('selected');
+        $('.' + tabName, panelsNavSection).addClass('selected');
 
         loadTab(tabName);
 
@@ -119,25 +120,20 @@ $(function () {
     }
 
     function bindEvents() {
-        $('.new-line').click(function (e) {
+        searchSection.on('click', '.new-line', function (e) {
             e.preventDefault();
             form.dynamicForm('newLine');
         });
 
-        $('button[type=submit]', form).click(function (e) {
+        searchSection.on('click', 'button[type=submit]', function (e) {
             e.preventDefault();
             var params = getParamsWithSignature();
             var queryString = '?' + $.param(params, true);
             window.location.search = queryString;
         });
 
-        // Change tab using navigation links.
-        $('a', tabsElt).click(function (e) {
-            showTab($(this).data('tab-name'));
-        });
-
         // Show or hide filters.
-        $('.toggle-filters').click(function (e) {
+        searchSection.on('click', '.toggle-filters', function (e) {
             e.preventDefault();
 
             var elt = $(this);
@@ -150,6 +146,11 @@ $(function () {
                 elt.html('Hide');
             }
         });
+
+        // Change tab using navigation links.
+        panelsNavSection.on('click', 'a', function (e) {
+            showTab($(this).data('tab-name'));
+        });
     }
 
     tabsLoadFunctions.reports = function () {
@@ -160,6 +161,25 @@ $(function () {
         var columnsInput = $('input[name=_columns_fake]', reportsPanel);
 
         var dataUrl = reportsPanel.data('source-url');
+
+        // Make the columns input sortable.
+        columnsInput.select2({
+            'data': window.FIELDS,
+            'multiple': true,
+            'width': 'element'
+        });
+        columnsInput.on("change", function() {
+            $('input[name=_columns]').val(columnsInput.val());
+        });
+        columnsInput.select2('container').find('ul.select2-choices').sortable({
+            containment: 'parent',
+            start: function() {
+                columnsInput.select2('onSortStart');
+            },
+            update: function() {
+                columnsInput.select2('onSortEnd');
+            }
+        });
 
         function prepareResultsQueryString(params, page) {
             var i;
@@ -186,10 +206,11 @@ $(function () {
             addLoaderToElt(contentElt);
 
             var params = getParamsWithSignature();
-            var url = dataUrl + prepareResultsQueryString(params, page);
+            var url = prepareResultsQueryString(params, page);
+            window.history.replaceState(params, null, url);
 
             $.ajax({
-                url: url,
+                url: dataUrl + url,
                 success: function(data) {
                     contentElt.empty().append($(data));
                     $('.tablesorter').tablesorter();
@@ -202,7 +223,7 @@ $(function () {
             });
         }
 
-        $('submit', reportsPanel).click(function (e) {
+        reportsPanel.on('click', '.controls button[type=submit]', function (e) {
             e.preventDefault();
             showReports();
         });

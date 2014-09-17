@@ -7,14 +7,18 @@
     <table class="tablesorter data-table">
         <thead>
             <tr>
-                <th scope="col">Crash ID</th>
+                <th scope="col" class="crash-id">Crash ID</th>
                 <th scope="col">Comment</th>
             </tr>
         </thead>
         <tbody>
             {% for crash in query.hits %}
             <tr>
-                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
+                <td>
+                    <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">
+                        {{ crash.uuid }}
+                    </a>
+                </td>
                 <td>
                     {{ crash.user_comments }}
                 </td>
