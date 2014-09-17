@@ -5,12 +5,21 @@
 import mock
 from nose.tools import eq_, ok_
 
-import socorro.processor.signature_utilities as sig
+from configman.dotdict import DotDict as CDotDict
+
 import socorro.lib.util as sutil
 
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.lib.util import DotDict
-from socorro.processor.signature_utilities import JavaSignatureTool
+from socorro.processor.signature_utilities import (
+    CSignatureTool,
+    CSignatureToolDB,
+    JavaSignatureTool,
+    SignatureGenerationRule,
+    OOMSignature,
+    SigTrunc,
+    StackwalkerErrorSignatureRule,
+)
 from socorro.unittest.testbase import TestCase
 
 import re
@@ -18,17 +27,21 @@ import re
 from mock import Mock, patch
 
 
+#==============================================================================
 class BaseTestClass(TestCase):
 
-    def assert_equal_with_nicer_output (self, expected, received):
+    def assert_equal_with_nicer_output(self, expected, received):
         eq_(
             expected,
             received,
             'expected:\n%s\nbut got:\n%s' % (expected, received)
         )
 
+
+#==============================================================================
 class TestCSignatureTool(BaseTestClass):
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def setup_config_C_sig_tool(
         ig='ignored1',
@@ -42,9 +55,10 @@ class TestCSignatureTool(BaseTestClass):
         config.prefix_signature_re = pr
         config.signatures_with_line_numbers_re = si
         config.signature_sentinels = ss
-        s = sig.CSignatureTool(config)
+        s = CSignatureTool(config)
         return s, config
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def setup_db_C_sig_tool(
         ig='ignored1',
@@ -62,15 +76,15 @@ class TestCSignatureTool(BaseTestClass):
             # these become the results of four successive calls to
             # execute_query_fetchall
             mocked_query.side_effect = [
-                [(pr,),],
+                [(pr,), ],
                 [(ig,), ],
                 [(si,), ],
                 [(x,) for x in ss],
             ]
-            s = sig.CSignatureToolDB(config)
+            s = CSignatureToolDB(config)
             return s, config
 
-
+    #--------------------------------------------------------------------------
     def test_C_config_tool_init(self):
         """test_C_config_tool_init: constructor test"""
         expectedRegEx = sutil.DotDict()
@@ -106,6 +120,7 @@ class TestCSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(fixupComma, s.fixup_comma)
         self.assert_equal_with_nicer_output(fixupInteger, s.fixup_integer)
 
+    #--------------------------------------------------------------------------
     def test_C_db_tool_init(self):
         """test_C_db_tool_init: constructor test"""
         expectedRegEx = sutil.DotDict()
@@ -137,7 +152,7 @@ class TestCSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(fixupComma, s.fixup_comma)
         self.assert_equal_with_nicer_output(fixupInteger, s.fixup_integer)
 
-
+    #--------------------------------------------------------------------------
     def test_normalize(self):
         """test_normalize: bunch of variations"""
         s, c = self.setup_config_C_sig_tool()
@@ -165,8 +180,9 @@ class TestCSignatureTool(BaseTestClass):
         ]
         for args, e in a:
             r = s.normalize_signature(*args)
-            self.assert_equal_with_nicer_output(e,r)
+            self.assert_equal_with_nicer_output(e, r)
 
+    #--------------------------------------------------------------------------
     def test_generate_1(self):
         """test_generate_1: simple"""
         for s, c in (self.setup_config_C_sig_tool('a|b|c', 'd|e|f'),
@@ -174,13 +190,14 @@ class TestCSignatureTool(BaseTestClass):
             a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
             e = 'd | e | f | g'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
             a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
             e = 'd | e | f | g'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
+    #--------------------------------------------------------------------------
     def test_generate_2(self):
         """test_generate_2: hang"""
         for s, c in (self.setup_config_C_sig_tool('a|b|c', 'd|e|f'),
@@ -188,24 +205,24 @@ class TestCSignatureTool(BaseTestClass):
             a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
             e = 'hang | d | e | f | g'
             sig, notes = s.generate(a, hang_type=-1)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
             a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
             e = 'hang | d | e | f | g'
             sig, notes = s.generate(a, hang_type=-1)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
             a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
             e = 'd | e | f | g'
             sig, notes = s.generate(a, hang_type=0)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
             a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
             e = 'chromehang | d | e | f | g'
             sig, notes = s.generate(a, hang_type=1)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
-
+    #--------------------------------------------------------------------------
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
         for s, c in (self.setup_config_C_sig_tool('a|b|c', 'd|e|f'),
@@ -223,7 +240,7 @@ class TestCSignatureTool(BaseTestClass):
                 "| ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
                 "ffffffffffffff | ggggggggggggggggggggggggggggggggg..."
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
             e = "hang | ddddddddddddddddddddddddddddddddddddddddddddddddddd" \
                 "ddddddddddddddddddd " \
                 "| eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
@@ -231,8 +248,9 @@ class TestCSignatureTool(BaseTestClass):
                 "| ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
                 "ffffffffffffff | gggggggggggggggggggggggggg..."
             sig, notes = s.generate(a, hang_type=-1)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
+    #--------------------------------------------------------------------------
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
         for s, c in (self.setup_config_C_sig_tool('a|b|c', 'd|e|f'),
@@ -241,13 +259,14 @@ class TestCSignatureTool(BaseTestClass):
             a[7] = 'sentinel'
             e = 'sentinel'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
-            s, c  = self.setup_config_C_sig_tool('a|b|c|sentinel', 'd|e|f')
+            s, c = self.setup_config_C_sig_tool('a|b|c|sentinel', 'd|e|f')
             e = 'f | e | d | i'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
+    #--------------------------------------------------------------------------
     def test_generate_4(self):
         """test_generate_4: tuple sentinel"""
         for s, c in (self.setup_config_C_sig_tool('a|b|c', 'd|e|f'),
@@ -256,7 +275,7 @@ class TestCSignatureTool(BaseTestClass):
             a[7] = 'sentinel2'
             e = 'd | e | f | g'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
         for s, c in (self.setup_config_C_sig_tool('a|b|c', 'd|e|f'),
                      self.setup_db_C_sig_tool('a|b|c', 'd|e|f')):
@@ -265,7 +284,7 @@ class TestCSignatureTool(BaseTestClass):
             a[22] = 'ff'
             e = 'sentinel2'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
         for s, c in (self.setup_config_C_sig_tool('a|b|c|sentinel2', 'd|e|f'),
                      self.setup_db_C_sig_tool('a|b|c|sentinel2', 'd|e|f')):
@@ -274,11 +293,13 @@ class TestCSignatureTool(BaseTestClass):
             a[22] = 'ff'
             e = 'f | e | d | i'
             sig, notes = s.generate(a)
-            self.assert_equal_with_nicer_output(e,sig)
+            self.assert_equal_with_nicer_output(e, sig)
 
 
+#==============================================================================
 class TestCSignatureToolDB(BaseTestClass):
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def setup_config():
         config = sutil.DotDict()
@@ -287,7 +308,7 @@ class TestCSignatureToolDB(BaseTestClass):
         config.transaction_executor_class = Mock()
         return config
 
-
+    #--------------------------------------------------------------------------
     def test__init__(self):
         """This class ought to load its values from the database at the time
         of initialization. This test assures us that it really happens."""
@@ -299,8 +320,10 @@ class TestCSignatureToolDB(BaseTestClass):
              ("('sentinel', lambda x: 'mmm' in x)",),
              ('fake sentinel',),),
         ]
+
         def query_results_mock_fn(dummy1, dummy2, dummy3=None):
             return query_results.pop(0)
+
         expected_re_dict = {
             'signatures_with_line_numbers_re': 'js_Interpret',
             'prefix_signature_re':
@@ -318,7 +341,7 @@ class TestCSignatureToolDB(BaseTestClass):
         ) as execute_query_mock:
             execute_query_mock.side_effect = query_results_mock_fn
             config = self.setup_config()
-            c_sig_tool = sig.CSignatureToolDB(config)
+            c_sig_tool = CSignatureToolDB(config)
             c_sig_tool._read_signature_rules_from_database(Mock())
 
             config.database_class.assert_called_once_with(config)
@@ -358,12 +381,14 @@ class TestCSignatureToolDB(BaseTestClass):
             ok_(
                 actual_fn(['x', 'y', 'z', 'mmm', 'i', 'j', 'k'])
             )
-            ok_(not
-                actual_fn(['x', 'y', 'z', 'i', 'j', 'k'])
+            ok_(
+                not actual_fn(['x', 'y', 'z', 'i', 'j', 'k'])
             )
 
 
+#==============================================================================
 class TestJavaSignatureTool(BaseTestClass):
+    #--------------------------------------------------------------------------
     def test_generate_signature_1(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -375,6 +400,7 @@ class TestJavaSignatureTool(BaseTestClass):
              'in expected format']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_2(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -389,6 +415,7 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_3(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -403,12 +430,13 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_4(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = ('   SomeJavaException: %s  \n'
                             'at org.mozilla.lars.myInvention('
-                            'larsFile.java)' % ('t'*1000))
+                            'larsFile.java)' % ('t' * 1000))
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
@@ -418,12 +446,13 @@ class TestJavaSignatureTool(BaseTestClass):
              'length']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_4_2(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = ('   SomeJavaException: %s  \n'
                             'at org.mozilla.lars.myInvention('
-                            'larsFile.java:1234)' % ('t'*1000))
+                            'larsFile.java:1234)' % ('t' * 1000))
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
@@ -433,6 +462,7 @@ class TestJavaSignatureTool(BaseTestClass):
              'length']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_5(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -448,6 +478,7 @@ class TestJavaSignatureTool(BaseTestClass):
              'not in the expected format']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_6(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -459,6 +490,7 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_7(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -469,6 +501,7 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_8(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -479,12 +512,13 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_9(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = ('   SomeJavaException: totally made up  \n'
                             'at org.mozilla.lars.myInvention('
-                            '%slarsFile.java:1234)' % ('t'*1000))
+                            '%slarsFile.java:1234)' % ('t' * 1000))
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('SomeJavaException: '
              'at org.mozilla.lars.myInvention('
@@ -495,6 +529,7 @@ class TestJavaSignatureTool(BaseTestClass):
              'SignatureTool: signature truncated due to length']
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_10_no_interference(self):
         """In general addresses of the form @xxxxxxxx are to be replaced with
         the literal "<addr>", however in this case, the hex address is not in
@@ -511,27 +546,28 @@ class TestJavaSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(e, sig)
         self.assert_equal_with_nicer_output([], notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_11_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
-	at android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
-	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
-	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
-	at org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
-	at android.os.Handler.handleCallback(Handler.java:587)
-	at android.os.Handler.dispatchMessage(Handler.java:92)
-	at android.os.Looper.loop(Looper.java:150)
-	at org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
-	at android.os.Handler.handleCallback(Handler.java:587)
-	at android.os.Handler.dispatchMessage(Handler.java:92)
-	at android.os.Looper.loop(Looper.java:150)
-	at android.app.ActivityThread.main(ActivityThread.java:4293)
-	at java.lang.reflect.Method.invokeNative(Native Method)
-	at java.lang.reflect.Method.invoke(Method.java:507)
-	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
-	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
-	at dalvik.system.NativeStart.main(Native Method)"""
+\tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
+\tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
+\tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
+\tat org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
+\tat android.os.Handler.handleCallback(Handler.java:587)
+\tat android.os.Handler.dispatchMessage(Handler.java:92)
+\tat android.os.Looper.loop(Looper.java:150)
+\tat org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
+\tat android.os.Handler.handleCallback(Handler.java:587)
+\tat android.os.Handler.dispatchMessage(Handler.java:92)
+\tat android.os.Looper.loop(Looper.java:150)
+\tat android.app.ActivityThread.main(ActivityThread.java:4293)
+\tat java.lang.reflect.Method.invokeNative(Native Method)
+\tat java.lang.reflect.Method.invoke(Method.java:507)
+\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
+\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
+\tat dalvik.system.NativeStart.main(Native Method)"""
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
              'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
@@ -540,28 +576,28 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-
+    #--------------------------------------------------------------------------
     def test_generate_signature_12_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """java.lang.IllegalArgumentException: Given view not a child of android.widget.AbsoluteLayout@4054b560
-	at android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
-	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
-	at org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
-	at org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
-	at android.os.Handler.handleCallback(Handler.java:587)
-	at android.os.Handler.dispatchMessage(Handler.java:92)
-	at android.os.Looper.loop(Looper.java:150)
-	at org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
-	at android.os.Handler.handleCallback(Handler.java:587)
-	at android.os.Handler.dispatchMessage(Handler.java:92)
-	at android.os.Looper.loop(Looper.java:150)
-	at android.app.ActivityThread.main(ActivityThread.java:4293)
-	at java.lang.reflect.Method.invokeNative(Native Method)
-	at java.lang.reflect.Method.invoke(Method.java:507)
-	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
-	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
-	at dalvik.system.NativeStart.main(Native Method)"""
+\tat android.view.ViewGroup.updateViewLayout(ViewGroup.java:1968)
+\tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1492)
+\tat org.mozilla.gecko.GeckoApp.repositionPluginViews(GeckoApp.java:1475)
+\tat org.mozilla.gecko.gfx.LayerController$2.run(LayerController.java:269)
+\tat android.os.Handler.handleCallback(Handler.java:587)
+\tat android.os.Handler.dispatchMessage(Handler.java:92)
+\tat android.os.Looper.loop(Looper.java:150)
+\tat org.mozilla.gecko.GeckoApp$32.run(GeckoApp.java:1670)
+\tat android.os.Handler.handleCallback(Handler.java:587)
+\tat android.os.Handler.dispatchMessage(Handler.java:92)
+\tat android.os.Looper.loop(Looper.java:150)
+\tat android.app.ActivityThread.main(ActivityThread.java:4293)
+\tat java.lang.reflect.Method.invokeNative(Native Method)
+\tat java.lang.reflect.Method.invoke(Method.java:507)
+\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:849)
+\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:607)
+\tat dalvik.system.NativeStart.main(Native Method)"""
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
              'Given view not a child of android.widget.AbsoluteLayout@<addr>: '
@@ -570,31 +606,32 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_13_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoConnectivityReceiver@2c004bc8
-	at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:628)
-	at android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1066)
-	at android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:354)
-	at org.mozilla.gecko.GeckoConnectivityReceiver.unregisterFor(GeckoConnectivityReceiver.java:92)
-	at org.mozilla.gecko.GeckoApp.onApplicationPause(GeckoApp.java:2104)
-	at org.mozilla.gecko.GeckoApplication.onActivityPause(GeckoApplication.java:43)
-	at org.mozilla.gecko.GeckoActivity.onPause(GeckoActivity.java:24)
-	at android.app.Activity.performPause(Activity.java:4563)
-	at android.app.Instrumentation.callActivityOnPause(Instrumentation.java:1195)
-	at android.app.ActivityThread.performNewIntents(ActivityThread.java:2064)
-	at android.app.ActivityThread.handleNewIntent(ActivityThread.java:2075)
-	at android.app.ActivityThread.access$1400(ActivityThread.java:127)
-	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1205)
-	at android.os.Handler.dispatchMessage(Handler.java:99)
-	at android.os.Looper.loop(Looper.java:137)
-	at android.app.ActivityThread.main(ActivityThread.java:4441)
-	at java.lang.reflect.Method.invokeNative(Native Method)
-	at java.lang.reflect.Method.invoke(Method.java:511)
-	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:784)
-	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:551)
-	at dalvik.system.NativeStart.main(Native Method)"""
+\tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:628)
+\tat android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1066)
+\tat android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:354)
+\tat org.mozilla.gecko.GeckoConnectivityReceiver.unregisterFor(GeckoConnectivityReceiver.java:92)
+\tat org.mozilla.gecko.GeckoApp.onApplicationPause(GeckoApp.java:2104)
+\tat org.mozilla.gecko.GeckoApplication.onActivityPause(GeckoApplication.java:43)
+\tat org.mozilla.gecko.GeckoActivity.onPause(GeckoActivity.java:24)
+\tat android.app.Activity.performPause(Activity.java:4563)
+\tat android.app.Instrumentation.callActivityOnPause(Instrumentation.java:1195)
+\tat android.app.ActivityThread.performNewIntents(ActivityThread.java:2064)
+\tat android.app.ActivityThread.handleNewIntent(ActivityThread.java:2075)
+\tat android.app.ActivityThread.access$1400(ActivityThread.java:127)
+\tat android.app.ActivityThread$H.handleMessage(ActivityThread.java:1205)
+\tat android.os.Handler.dispatchMessage(Handler.java:99)
+\tat android.os.Looper.loop(Looper.java:137)
+\tat android.app.ActivityThread.main(ActivityThread.java:4441)
+\tat java.lang.reflect.Method.invokeNative(Native Method)
+\tat java.lang.reflect.Method.invoke(Method.java:511)
+\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:784)
+\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:551)
+\tat dalvik.system.NativeStart.main(Native Method)"""
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
              'Receiver not registered: '
@@ -605,26 +642,27 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_14_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """android.view.WindowManager$BadTokenException: Unable to add window -- token android.os.BinderProxy@406237c0 is not valid; is your activity running?
-	at android.view.ViewRoot.setView(ViewRoot.java:533)
-	at android.view.WindowManagerImpl.addView(WindowManagerImpl.java:202)
-	at android.view.WindowManagerImpl.addView(WindowManagerImpl.java:116)
-	at android.view.Window$LocalWindowManager.addView(Window.java:424)
-	at android.app.ActivityThread.handleResumeActivity(ActivityThread.java:2174)
-	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:1672)
-	at android.app.ActivityThread.access$1500(ActivityThread.java:117)
-	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:935)
-	at android.os.Handler.dispatchMessage(Handler.java:99)
-	at android.os.Looper.loop(Looper.java:130)
-	at android.app.ActivityThread.main(ActivityThread.java:3687)
-	at java.lang.reflect.Method.invokeNative(Native Method)
-	at java.lang.reflect.Method.invoke(Method.java:507)
-	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:867)
-	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:625)
-	at dalvik.system.NativeStart.main(Native Method)
+\tat android.view.ViewRoot.setView(ViewRoot.java:533)
+\tat android.view.WindowManagerImpl.addView(WindowManagerImpl.java:202)
+\tat android.view.WindowManagerImpl.addView(WindowManagerImpl.java:116)
+\tat android.view.Window$LocalWindowManager.addView(Window.java:424)
+\tat android.app.ActivityThread.handleResumeActivity(ActivityThread.java:2174)
+\tat android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:1672)
+\tat android.app.ActivityThread.access$1500(ActivityThread.java:117)
+\tat android.app.ActivityThread$H.handleMessage(ActivityThread.java:935)
+\tat android.os.Handler.dispatchMessage(Handler.java:99)
+\tat android.os.Looper.loop(Looper.java:130)
+\tat android.app.ActivityThread.main(ActivityThread.java:3687)
+\tat java.lang.reflect.Method.invokeNative(Native Method)
+\tat java.lang.reflect.Method.invoke(Method.java:507)
+\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:867)
+\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:625)
+\tat dalvik.system.NativeStart.main(Native Method)
 """
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('android.view.WindowManager$BadTokenException: '
@@ -635,34 +673,35 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
+    #--------------------------------------------------------------------------
     def test_generate_signature_15_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
         java_stack_trace = """java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.GeckoNetworkManager@405afea8
-	at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:610)
-	at android.app.ContextImpl.unregisterReceiver(ContextImpl.java:883)
-	at android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:331)
-	at org.mozilla.gecko.GeckoNetworkManager.stopListening(GeckoNetworkManager.java:141)
-	at org.mozilla.gecko.GeckoNetworkManager.stop(GeckoNetworkManager.java:136)
-	at org.mozilla.gecko.GeckoApp.onApplicationPause(GeckoApp.java:2130)
-	at org.mozilla.gecko.GeckoApplication.onActivityPause(GeckoApplication.java:55)
-	at org.mozilla.gecko.GeckoActivity.onPause(GeckoActivity.java:22)
-	at org.mozilla.gecko.GeckoApp.onPause(GeckoApp.java:1948)
-	at android.app.Activity.performPause(Activity.java:3877)
-	at android.app.Instrumentation.callActivityOnPause(Instrumentation.java:1191)
-	at android.app.ActivityThread.performPauseActivity(ActivityThread.java:2345)
-	at android.app.ActivityThread.performPauseActivity(ActivityThread.java:2315)
-	at android.app.ActivityThread.handlePauseActivity(ActivityThread.java:2295)
-	at android.app.ActivityThread.access$1700(ActivityThread.java:117)
-	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:942)
-	at android.os.Handler.dispatchMessage(Handler.java:99)
-	at android.os.Looper.loop(Looper.java:130)
-	at android.app.ActivityThread.main(ActivityThread.java:3691)
-	at java.lang.reflect.Method.invokeNative(Native Method)
-	at java.lang.reflect.Method.invoke(Method.java:507)
-	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:907)
-	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:665)
-	at dalvik.system.NativeStart.main(Native Method)
+\tat android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:610)
+\tat android.app.ContextImpl.unregisterReceiver(ContextImpl.java:883)
+\tat android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:331)
+\tat org.mozilla.gecko.GeckoNetworkManager.stopListening(GeckoNetworkManager.java:141)
+\tat org.mozilla.gecko.GeckoNetworkManager.stop(GeckoNetworkManager.java:136)
+\tat org.mozilla.gecko.GeckoApp.onApplicationPause(GeckoApp.java:2130)
+\tat org.mozilla.gecko.GeckoApplication.onActivityPause(GeckoApplication.java:55)
+\tat org.mozilla.gecko.GeckoActivity.onPause(GeckoActivity.java:22)
+\tat org.mozilla.gecko.GeckoApp.onPause(GeckoApp.java:1948)
+\tat android.app.Activity.performPause(Activity.java:3877)
+\tat android.app.Instrumentation.callActivityOnPause(Instrumentation.java:1191)
+\tat android.app.ActivityThread.performPauseActivity(ActivityThread.java:2345)
+\tat android.app.ActivityThread.performPauseActivity(ActivityThread.java:2315)
+\tat android.app.ActivityThread.handlePauseActivity(ActivityThread.java:2295)
+\tat android.app.ActivityThread.access$1700(ActivityThread.java:117)
+\tat android.app.ActivityThread$H.handleMessage(ActivityThread.java:942)
+\tat android.os.Handler.dispatchMessage(Handler.java:99)
+\tat android.os.Looper.loop(Looper.java:130)
+\tat android.app.ActivityThread.main(ActivityThread.java:3691)
+\tat java.lang.reflect.Method.invokeNative(Native Method)
+\tat java.lang.reflect.Method.invoke(Method.java:507)
+\tat com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:907)
+\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:665)
+\tat dalvik.system.NativeStart.main(Native Method)
 """
         sig, notes = j.generate(java_stack_trace, delimiter=': ')
         e = ('java.lang.IllegalArgumentException: '
@@ -672,3 +711,519 @@ class TestJavaSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(e, sig)
         e = []
         self.assert_equal_with_nicer_output(e, notes)
+
+#==============================================================================
+#  rules testing section
+
+frames_from_json_dump = {
+    u'frames': [
+        {
+            u'frame': 0,
+            u'function': u'NtWaitForMultipleObjects',
+            u'function_offset': u'0x15',
+            u'module': u'ntdll.dll',
+            u'module_offset': u'0x2015d',
+            u'offset': u'0x77ad015d',
+            u'registers': {
+                u'eax': u'0x00000040',
+                u'ebp': u'0x0025e968',
+                u'ebx': u'0x0025e91c',
+                u'ecx': u'0x00000000',
+                u'edi': u'0x00000000',
+                u'edx': u'0x00000000',
+                u'efl': u'0x00200246',
+                u'eip': u'0x77ad015d',
+                u'esi': u'0x00000004',
+                u'esp': u'0x0025e8cc'
+            },
+            u'trust': u'context'
+        },
+        {
+            u'frame': 1,
+            u'function': u'WaitForMultipleObjectsEx',
+            u'function_offset': u'0xff',
+            u'module': u'KERNELBASE.dll',
+            u'module_offset': u'0x115f6',
+            u'offset': u'0x775e15f6',
+            u'trust': u'cfi'
+        },
+        {
+            u'frame': 2,
+            u'function': u'WaitForMultipleObjectsExImplementation',
+            u'function_offset': u'0x8d',
+            u'module': u'kernel32.dll',
+            u'module_offset': u'0x119f7',
+            u'offset': u'0x766119f7',
+            u'trust': u'cfi'
+        },
+        {
+            u'frame': 3,
+            u'function': u'RealMsgWaitForMultipleObjectsEx',
+            u'function_offset': u'0xe1',
+            u'module': u'user32.dll',
+            u'module_offset': u'0x20869',
+            u'offset': u'0x77370869',
+            u'trust': u'cfi'
+        },
+        {
+            u'frame': 4,
+            u'function': u'MsgWaitForMultipleObjects',
+            u'function_offset': u'0x1e',
+            u'module': u'user32.dll',
+            u'module_offset': u'0x20b68',
+            u'offset': u'0x77370b68',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F117835525________________________________________',
+            u'frame': 5,
+            u'function': u'F_1152915508__________________________________',
+            u'function_offset': u'0xbb',
+            u'line': 118,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x36a13b',
+            u'offset': u'0x5e3aa13b',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_851861807_______________________________________',
+            u'frame': 6,
+            u'function': u'F2166389______________________________________',
+            u'function_offset': u'0xe5',
+            u'line': 552,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x35faf5',
+            u'offset': u'0x5e39faf5',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_851861807_______________________________________',
+            u'frame': 7,
+            u'function': u'F_917831355___________________________________',
+            u'function_offset': u'0x29b',
+            u'line': 488,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x360a7b',
+            u'offset': u'0x5e3a0a7b',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_851861807_______________________________________',
+            u'frame': 8,
+            u'function': u'F1315696776________________________________',
+            u'function_offset': u'0xd',
+            u'line': 439,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x35e2fd',
+            u'offset': u'0x5e39e2fd',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_766591945_______________________________________',
+            u'frame': 9,
+            u'function': u'F_1428703866________________________________',
+            u'function_offset': u'0xc1',
+            u'line': 203,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x35bf21',
+            u'offset': u'0x5e39bf21',
+            u'trust': u'cfi'
+        }
+    ],
+    u'threads_index': 0,
+    u'total_frames': 32
+}
+
+sample_json_dump = {
+    u'json_dump': {
+        u'crash_info': {
+            u'address': u'0x77ad015d',
+            u'crashing_thread': 0,
+            u'type': u'EXCEPTION_BREAKPOINT'
+        },
+        u'crashing_thread': frames_from_json_dump,
+    }
+}
+
+csig_config = DotDict()
+csig_config.irrelevant_signature_re = ''
+csig_config.prefix_signature_re = ''
+csig_config.signatures_with_line_numbers_re = ''
+csig_config.signature_sentinels = []
+c_signature_tool = CSignatureTool(csig_config)
+
+
+#------------------------------------------------------------------------------
+def create_basic_fake_processor():
+    fake_processor = DotDict()
+    fake_processor.c_signature_tool = c_signature_tool
+    fake_processor.config = DotDict()
+    # need help figuring out failures? switch to FakeLogger and read stdout
+    fake_processor.config.logger = sutil.SilentFakeLogger()
+    #fake_processor.config.logger = sutil.FakeLogger()
+    return fake_processor
+
+
+#==============================================================================
+class TestSignatureGeneration(TestCase):
+
+    def get_config(self):
+        config = {
+            'c_signature': {
+                'c_signature_tool_class': CSignatureTool,
+                'maximum_frames_to_consider': 40,
+                'signature_sentinels': eval(
+                    CSignatureTool.required_config.signature_sentinels
+                    .default
+                ),
+                'irrelevant_signature_re': eval(
+                    CSignatureTool.required_config.irrelevant_signature_re
+                    .default
+                ),
+                'prefix_signature_re': eval(
+                    CSignatureTool.required_config.prefix_signature_re
+                    .default
+                ),
+                'signatures_with_line_numbers_re': (
+                    CSignatureTool.required_config
+                    .signatures_with_line_numbers_re.default
+                ),
+            },
+            'java_signature': {
+                'java_signature_tool_class': JavaSignatureTool,
+            }
+        }
+        return CDotDict(config)
+
+    #--------------------------------------------------------------------------
+    def test_instantiation(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+
+        ok_(isinstance(sgr.c_signature_tool, CSignatureTool))
+        ok_(isinstance(sgr.java_signature_tool, JavaSignatureTool))
+
+
+    #--------------------------------------------------------------------------
+    def test_create_frame_list_1(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+        frame_signatures_list = sgr._create_frame_list(frames_from_json_dump)
+        expected = [
+            u'NtWaitForMultipleObjects',
+            u'WaitForMultipleObjectsEx',
+            u'WaitForMultipleObjectsExImplementation',
+            u'RealMsgWaitForMultipleObjectsEx',
+            u'MsgWaitForMultipleObjects',
+            u'F_1152915508__________________________________',
+            u'F2166389______________________________________',
+            u'F_917831355___________________________________',
+            u'F1315696776________________________________',
+            u'F_1428703866________________________________'
+        ]
+        eq_(frame_signatures_list, expected)
+        ok_('normalized' in frames_from_json_dump['frames'][0])
+        eq_(frames_from_json_dump['frames'][0]['normalized'], expected[0])
+
+    #--------------------------------------------------------------------------
+    def test_create_frame_list_2(self):
+        config = self.get_config()
+        config.c_signature.maximum_frames_to_consider = 3
+        sgr = SignatureGenerationRule(config)
+        frame_signatures_list = sgr._create_frame_list(frames_from_json_dump)
+        expected = [
+            u'NtWaitForMultipleObjects',
+            u'WaitForMultipleObjectsEx',
+            u'WaitForMultipleObjectsExImplementation',
+        ]
+        eq_(frame_signatures_list, expected)
+        ok_('normalized' in frames_from_json_dump['frames'][0])
+        eq_(frames_from_json_dump['frames'][0]['normalized'], expected[0])
+
+    #--------------------------------------------------------------------------
+    def test_action_1(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+
+        raw_crash = CDotDict(
+            {
+                'JavaStackTrace': (
+                    '   SomeJavaException: %s  \n'
+                    'at org.mozilla.lars.myInvention('
+                    'larsFile.java)' % ('t' * 1000)
+                )
+            }
+        )
+        raw_dumps = {}
+        processed_crash = CDotDict()
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        # the call to be tested
+        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+
+        eq_(
+            processed_crash.signature,
+            'SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)'
+        )
+        eq_(
+            processor_meta.processor_notes,
+            [
+                'JavaSignatureTool: dropped Java exception description due to '
+                'length'
+            ]
+        )
+
+    #--------------------------------------------------------------------------
+    def test_action_2(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+
+        raw_crash = CDotDict()
+        raw_dumps = {}
+        processed_crash = CDotDict(sample_json_dump)
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        # the call to be tested
+        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+
+        eq_(
+            processed_crash.signature,
+            'WaitForMultipleObjectsEx | RealMsgWaitForMultipleObjectsEx '
+            '| MsgWaitForMultipleObjects | F_1152915508_________________'
+            '_________________'
+        )
+        eq_(processor_meta.processor_notes, [])
+
+    #--------------------------------------------------------------------------
+    def test_action_3(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+
+        raw_crash = CDotDict()
+        raw_dumps = {}
+        processed_crash = CDotDict({
+            'json_dump': {
+                'crashing_thread': {
+                    'frames': []
+                }
+            }
+        })
+        processed_crash.frames = []
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        # the call to be tested
+        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+
+        eq_(
+            processed_crash.signature,
+            'EMPTY: no crashing thread identified'
+        )
+        eq_(
+            processor_meta.processor_notes,
+            [
+                'CSignatureTool: No signature could be created because we do '
+                'not know which thread crashed'
+            ]
+        )
+
+
+
+#==============================================================================
+class TestOOMSignature(TestCase):
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_predicate_no_match(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = OOMSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_predicate(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+        rd = {}
+        rc = DotDict()
+        rc.OOMAllocationSize = 17
+        fake_processor = create_basic_fake_processor()
+        rule = OOMSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_predicate_signature_fragment_1(self):
+        pc = DotDict()
+        pc.signature = 'this | is | a | NS_ABORT_OOM | signature'
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = OOMSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_predicate_signature_fragment_2(self):
+        pc = DotDict()
+        pc.signature = 'mozalloc_handle_oom | this | is | bad'
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = OOMSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_predicate_signature_fragment_3(self):
+        pc = DotDict()
+        pc.signature = 'CrashAtUnhandlableOOM'
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = OOMSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_action_success(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+
+        fake_processor = create_basic_fake_processor()
+
+        rc = DotDict()
+        rd = {}
+
+        rule = OOMSignature(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+
+        ok_(action_result)
+        ok_(pc.original_signature, 'hello')
+        ok_(pc.signature, 'OOM | unknown | hello')
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_action_small(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+
+        fake_processor = create_basic_fake_processor()
+
+        rc = DotDict()
+        rc.OOMAllocationSize = 17
+        rd = {}
+
+        rule = OOMSignature(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+
+        ok_(action_result)
+        ok_(pc.original_signature, 'hello')
+        ok_(pc.signature, 'OOM | small')
+
+    #--------------------------------------------------------------------------
+    def test_OOMAllocationSize_action_large(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+
+        fake_processor = create_basic_fake_processor()
+
+        rc = DotDict()
+        rc.OOMAllocationSize = 17000000
+        rd = {}
+
+        rule = OOMSignature(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+
+        ok_(action_result)
+        ok_(pc.original_signature, 'hello')
+        ok_(pc.signature, 'OOM | large | hello')
+
+
+#==============================================================================
+class TestSigTrunc(TestCase):
+
+    #--------------------------------------------------------------------------
+    def test_SigTrunc_predicate_no_match(self):
+        pc = DotDict()
+        pc.signature = '0' * 100
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = SigTrunc(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_SigTrunc_predicate(self):
+        pc = DotDict()
+        pc.signature = '9' * 256
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = SigTrunc(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_SigTrunc_action_success(self):
+        pc = DotDict()
+        pc.signature = '9' * 256
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = SigTrunc(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+        ok_(action_result)
+        eq_(len(pc.signature), 255)
+        ok_(pc.signature.endswith('9...'))
+
+#==============================================================================
+class TestStackwalkerErrorSignatureRule(TestCase):
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        pc = DotDict()
+        pc.signature = '0' * 100
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = StackwalkerErrorSignatureRule(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(not predicate_result)
+
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        pc = DotDict()
+        pc.signature = "EMPTY: like my soul"
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = StackwalkerErrorSignatureRule(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_SigTrunc_action_success(self):
+        pc = DotDict()
+        pc.signature = "EMPTY: like my soul"
+        pc.mdsw_status_string = 'catastrophic stackwalker failure'
+        rc = DotDict()
+        rd = {}
+        fake_processor = create_basic_fake_processor()
+        rule = StackwalkerErrorSignatureRule(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+        ok_(action_result)
+        ok_(
+            pc.signature,
+            "EMPTY: like my soul; catastrophic stackwalker failure"
+        )
+
