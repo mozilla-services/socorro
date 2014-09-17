@@ -54,3 +54,26 @@ http://crash-stats/home/products/KillerApp
 
 You should also change the DEFAULT_PRODUCT in local.py (/etc/socorro/local.py
 in a packaged install, ./webapp-django/crashstats/settings/local.py otherwise).
+
+Active Daily Install (ADI)
+--------------------------
+
+Most graphs and some reports in Socorro depend on having an estimate of
+Active Daily Installs for each release, in order to express crashes as a ratio
+of crashes per install.
+
+You should insert an ADI number (or estimate) for each day per release into
+the raw_adi table in PostgreSQL:
+::
+  psql breakpad
+  -- args: adi_count, date, product_name, product_os_platform,
+  --       product_os_version, product_version, build, product_guid,
+  --       update_channel
+  INSERT INTO raw_adi VALUES (15, '2014-01-01', 'KillerApp', 'Linux', '2.6.18',
+                              '1.0', '20140101165243',
+                              '{killerapp@example.com}', 'release');
+
+The source of this data is going to be very specific to your application,
+you can see how we automate this for crash-stats.mozilla.com in this job:
+
+https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/fetch_adi_from_hive.py
