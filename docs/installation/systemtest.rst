@@ -25,4 +25,5 @@ file for your crash are in the "./testcrash" directory you can use)
 
 You should get a "CrashID" returned.
 
-Attempt to pull up the newly inserted crash: http://crash-stats:8000/report/index/YOUR_CRASH_ID_GOES_HERE
+Attempt to pull up the newly inserted crash:
+http://crash-stats/report/index/YOUR_CRASH_ID_GOES_HERE

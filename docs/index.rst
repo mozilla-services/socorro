@@ -29,8 +29,8 @@ Contents:
    installation/install-src-dev
    installation/install-src-prod
    installation/systemtest
-   installation/troubleshoot
    installation/setup-socorro
+   installation/troubleshoot
    webapp
    api/index
    crontabber
