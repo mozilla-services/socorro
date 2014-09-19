@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """this file defines the method of converting a raw crash into a processed
-crash.  In this latest version, all transformations have be reimplemented
+crash.  In this latest version, all transformations have been reimplemented
 as sets of loadable rules.  The rules are applied one at a time, each doing
 some small part of the transformation process."""
 
@@ -18,14 +18,32 @@ from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
 
 
-#
+# Rule sets are defined as lists of lists (or tuples).  As they will be loaded
+# from json, they will always come in a lists rather than tuples. Arguably,
+# tuples may be more appropriate, but really, they can be anything iterable.
+
+# The outermost sequence is a list of rule sets.  There can be any number of
+# them and can be organized at will.  The example below shows an organization
+# by processing stage: pre-processing the raw_crash, converter raw to
+# processed, and post-processing the processed_crash.
+
+# Each rule set is defined by five elements:
+#    rule name: any useful string
+#    tag: a categorization system, programmer defined system (for future)
+#    rule set class: the fully qualified name of the class that implements
+#                    the rule application process.  On the introduction of
+#                    Processor2015, the only option is the one in the example.
+#    rule list: a comma delimited list of fully qualified class names that
+#               implement the individual transformation rules.  The API that
+#               these classes must conform to is defined by the rule base class
+#               socorro.lib.transform_rules.Rule
 default_rule_set = [
     [   # rules to change the internals of the raw crash
-        "raw_transform",
-        "processor.json_rewrite",
-        "socorro.lib.transform_rules.TransformRuleSystem",
-        "apply_all_rules",
-        ""
+        "raw_transform",  # name of the rule
+        "processor.json_rewrite",  # a tag in a dotted-form
+        "socorro.lib.transform_rules.TransformRuleSystem",  # rule set class
+        "apply_all_rules",  # rule set class method to apply rules
+        ""  # comma delimited list of fully qualified rule class names
     ],
     [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
@@ -43,6 +61,8 @@ default_rule_set = [
     ],
 ]
 
+# rules come into Socorro via Configman.  Configman defines them as strings
+# conveniently, a json module can be used to serialize and deserialize them.
 default_rules_set_str = ujson.dumps(default_rule_set)
 
 
@@ -54,11 +74,11 @@ def rule_sets_from_string(rule_sets_as_string):
     rule_sets = ujson.loads(rule_sets_as_string)
 
     class ProcessorRuleSets(RequiredConfig):
-        # why do rules come it sets?  Why not just have a big list of rules?
+        # why do rules come in sets?  Why not just have a big list of rules?
         # rule sets are containers for rules with a similar purpose and
         # execution mode.  For example, there are rule sets for adjusting the
         # raw_crash, transforming raw to processed, post processing the
-        # processed_crasnh and then all the different forms of classifiers.
+        # processed_crash and then all the different forms of classifiers.
         # Some rule sets have different execution modes: run all the rules,
         # run the rules until one fails, run the rules until one succeeds,
         # etc.
@@ -107,7 +127,7 @@ class Processor2015(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         name='rule_sets',
-        doc="a heirarchy of rules in json form",
+        doc="a hierarchy of rules in json form",
         default=default_rules_set_str,
         from_string_converter=rule_sets_from_string,
     )
@@ -116,11 +136,22 @@ class Processor2015(RequiredConfig):
     def __init__(self, config, quit_check_callback=None):
         super(Processor2015, self).__init__()
         self.config = config
+        # the quit checks are components of a system of callbacks used
+        # primarily by the TaskManager system.  This is the system that
+        # controls the execution model.  If the ThreadedTaskManager is in use,
+        # these callbacks just check the ThreadedTaskManager task manager's
+        # quit flag.  If they detect a quit condition, they raise an exception
+        # that causes the thread to shut down.  For the GreenletTaskMangager,
+        # using cooperative multitasking, the callbacks do the 'yield' to
+        # allow another green thread to take over.
+        # It is perfectly acceptable to hook into this callback system to
+        # accomplish any task that needs be done periodically.
         if quit_check_callback:
             self.quit_check = quit_check_callback
         else:
             self.quit_check = lambda: False
 
+        # here we instantiate the rule sets and their rules.
         self.rule_system = DotDict()
         for a_rule_set_name in config.rule_sets.names:
             self.rule_system[a_rule_set_name] = (
@@ -158,15 +189,20 @@ class Processor2015(RequiredConfig):
 
         crash_id = raw_crash.get('uuid', 'unknown')
         try:
+            # quit_check calls ought to be scattered around the code to allow
+            # the processor to be responsive to requests to shut down.
             self.quit_check()
+
             processor_meta_data.started_timestamp = self._log_job_start(
                 crash_id
             )
 
             # apply transformations
-            #    step through each of the rule systems, applying the rules of
-            #    each to.
+            #    step through each of the rule sets to apply the rules.
             for a_rule_set in self.rule_system:
+                # for each rule set, invoke the 'act' method - this method
+                # will be the method specified in fourth element of the
+                # rule set configuration list.
                 a_rule_set.act(
                     raw_crash,
                     raw_dumps,
@@ -175,6 +211,8 @@ class Processor2015(RequiredConfig):
                 )
                 self.quit_check()
 
+            # the crash made it through the processor rules with no exceptions
+            # raised, call it a success.
             processed_crash.success = True
 
         except Exception, x:
@@ -188,6 +226,8 @@ class Processor2015(RequiredConfig):
                 'unrecoverable processor error: %s' % x
             )
 
+        # the processor notes are in the form of a list.  Join them all
+        # together to make a single string
         processed_crash.processor_notes = '; '.join(
             processor_meta_data.processor_notes
         )
@@ -197,7 +237,6 @@ class Processor2015(RequiredConfig):
         processed_crash.completeddatetime = completed_datetime
 
         self._log_job_end(
-            completed_datetime,
             processed_crash.success,
             crash_id
         )
@@ -207,14 +246,14 @@ class Processor2015(RequiredConfig):
     def reject_raw_crash(self, crash_id, reason):
         self._log_job_start(crash_id)
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
-        self._log_job_end(utc_now(), False, crash_id)
+        self._log_job_end(False, crash_id)
 
     #--------------------------------------------------------------------------
     def _log_job_start(self, crash_id):
         self.config.logger.info("starting job: %s", crash_id)
 
     #--------------------------------------------------------------------------
-    def _log_job_end(self, completed_datetime, success, crash_id):
+    def _log_job_end(self, success, crash_id):
         self.config.logger.info(
             "finishing %s job: %s",
             'successful' if success else 'failed',
