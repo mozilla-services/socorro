@@ -45,12 +45,7 @@ Install stackwalker
 This is the binary which processes breakpad crash dumps into stack traces.
 You must build it with GCC 4.6 or above.
 
-If you are using RHEL/CentOS and installed GCC from the devtoolset repo
-(per the installation instructions), make sure to "activate" it:
-::
-  scl enable devtoolset-1.1 bash
-
-Then compile breakpad and the stackwalker binary:
+Compile breakpad and the stackwalker binary:
 ::
   make breakpad stackwalker
 
