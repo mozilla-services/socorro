@@ -72,8 +72,9 @@ a_raw_crash = {
 
 class TestElasticsearchCrashStorage(TestCase):
 
+    @mock.patch('socorro.external.elasticsearch.crashstorage.SuperSearch')
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
-    def test_indexing(self, pyes_mock):
+    def test_indexing(self, pyes_mock, search_mock):
         mock_logging = mock.Mock()
         mock_es = mock.Mock()
         pyes_mock.exceptions.ElasticHttpNotFoundError = \
@@ -131,8 +132,9 @@ class TestElasticsearchCrashStorage(TestCase):
                 not in call_args
             )
 
+    @mock.patch('socorro.external.elasticsearch.crashstorage.SuperSearch')
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
-    def test_success(self, pyes_mock):
+    def test_success(self, pyes_mock, search_mock):
         mock_logging = mock.Mock()
         mock_es = mock.Mock()
 
@@ -183,8 +185,9 @@ class TestElasticsearchCrashStorage(TestCase):
                 **expected_request_kwargs
             )
 
+    @mock.patch('socorro.external.elasticsearch.crashstorage.SuperSearch')
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
-    def test_failure_no_retry(self, pyes_mock):
+    def test_failure_no_retry(self, pyes_mock, search_mock):
         mock_logging = mock.Mock()
         mock_es = mock.Mock()
 
@@ -241,8 +244,9 @@ class TestElasticsearchCrashStorage(TestCase):
                 **expected_request_kwargs
             )
 
+    @mock.patch('socorro.external.elasticsearch.crashstorage.SuperSearch')
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
-    def test_failure_limited_retry(self, pyes_mock):
+    def test_failure_limited_retry(self, pyes_mock, search_mock):
         mock_logging = mock.Mock()
         mock_es = mock.Mock()
 
@@ -303,8 +307,9 @@ class TestElasticsearchCrashStorage(TestCase):
                 **expected_request_kwargs
             )
 
+    @mock.patch('socorro.external.elasticsearch.crashstorage.SuperSearch')
     @mock.patch('socorro.external.elasticsearch.crashstorage.pyelasticsearch')
-    def test_success_after_limited_retry(self, pyes_mock):
+    def test_success_after_limited_retry(self, pyes_mock, search_mock):
         mock_logging = mock.Mock()
         mock_es = mock.Mock()
 

@@ -366,6 +366,12 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             if not params[param]:
                 raise MissingArgumentError(param)
 
+        # Before making the change, make sure it does not break indexing.
+        new_mapping = self.get_mapping(overwrite_mapping=params)
+
+        # Try the mapping. If there is an error, an exception will be raised.
+        self.test_mapping(new_mapping)
+
         es_connection = self.get_connection().get_es()
 
         try:
@@ -423,6 +429,12 @@ class SuperSearch(SearchBase, ElasticSearchBase):
         for key in params.keys():
             if key not in kwargs:
                 del params[key]
+
+        # Before making the change, make sure it does not break indexing.
+        new_mapping = self.get_mapping(overwrite_mapping=params)
+
+        # Try the mapping. If there is an error, an exception will be raised.
+        self.test_mapping(new_mapping)
 
         es_connection = self.get_connection().get_es()
 
@@ -543,3 +555,104 @@ class SuperSearch(SearchBase, ElasticSearchBase):
             'hits': missing_fields,
             'total': len(missing_fields),
         }
+
+    def get_mapping(self, overwrite_mapping=None):
+        """Return the mapping to be used in elasticsearch, generated from the
+        current list of fields in the database.
+        """
+        properties = {}
+        all_fields = self.get_fields()
+
+        if overwrite_mapping:
+            field = overwrite_mapping['name']
+            if field in all_fields:
+                all_fields[field].update(overwrite_mapping)
+            else:
+                all_fields[field] = overwrite_mapping
+
+        def add_field_to_properties(properties, namespaces, field):
+            if not namespaces:
+                properties[field['in_database_name']] = (
+                    field['storage_mapping']
+                )
+                return
+
+            namespace = namespaces.pop(0)
+
+            if namespace not in properties:
+                properties[namespace] = {
+                    'type': 'object',
+                    'dynamic': 'true',
+                    'properties': {}
+                }
+
+            add_field_to_properties(
+                properties[namespace]['properties'],
+                namespaces,
+                field,
+            )
+
+        for field in all_fields.values():
+            if not field.get('storage_mapping'):
+                continue
+
+            namespaces = field['namespace'].split('.')
+
+            add_field_to_properties(properties, namespaces, field)
+
+        return {
+            'index': {
+                'query': {
+                    'default_field': 'signature'
+                }
+            },
+            'mappings': {
+                self.config.elasticsearch_doctype: {
+                    '_all': {
+                        'enabled': False
+                    },
+                    '_source': {
+                        'compress': True
+                    },
+                    'properties': properties
+                }
+            }
+        }
+
+    def test_mapping(self, mapping):
+        temp_index = 'socorro_mapping_test'
+        number_of_crashes_to_test = 100
+
+        es_connection = self.get_connection().get_es()
+
+        try:
+            es_connection.create_index(
+                temp_index,
+                settings=mapping,
+            )
+
+            now = datetimeutil.utc_now()
+            current_indices = self.generate_list_of_indexes(now, now)
+
+            crashes_sample = es_connection.search(
+                query='*',
+                index=current_indices[0],
+                doc_type=self.config.elasticsearch_doctype,
+                size=number_of_crashes_to_test,
+            )
+            crashes = [x['_source'] for x in crashes_sample['hits']['hits']]
+
+            for crash in crashes:
+                es_connection.index(
+                    index=temp_index,
+                    doc_type=self.config.elasticsearch_doctype,
+                    doc=crash,
+                )
+
+        finally:
+            try:
+                es_connection.delete_index(temp_index)
+            except ElasticHttpNotFoundError:
+                # If the index does not exist (if the index creation failed
+                # for example), we don't need to do anything.
+                pass

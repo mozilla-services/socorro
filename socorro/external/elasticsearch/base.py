@@ -36,8 +36,12 @@ class ElasticSearchBase(object):
             # old middleware
             context = self.context
         self.config = context
-        self.http = httpc.HttpClient(context.elasticSearchHostname,
-                                     context.elasticSearchPort)
+
+        if context.get('elasticSearchHostname'):
+            self.http = httpc.HttpClient(
+                context.elasticSearchHostname,
+                context.elasticSearchPort
+            )
 
     def generate_list_of_indexes(self, from_date, to_date, es_index=None):
         """Return the list of indexes to query to access all the crash reports

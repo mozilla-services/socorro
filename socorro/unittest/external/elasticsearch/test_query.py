@@ -24,6 +24,9 @@ from socorro.external.elasticsearch.query import Query
 from socorro.lib import datetimeutil
 
 from .unittestbase import ElasticSearchTestCase
+from .test_supersearch import (
+    SUPERSEARCH_FIELDS
+)
 
 # Remove debugging noise during development
 # import logging
@@ -46,6 +49,15 @@ class IntegrationTestQuery(ElasticSearchTestCase):
 
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()
+
+        # Create the supersearch fields.
+        self.storage.es.bulk_index(
+            index=config.webapi.elasticsearch_default_index,
+            doc_type='supersearch_fields',
+            docs=SUPERSEARCH_FIELDS.values(),
+            id_field='name',
+            refresh=True,
+        )
 
         self.now = datetimeutil.utc_now()
 
@@ -89,6 +101,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         # clear the test index
         config = self.get_config_context()
         self.storage.es.delete_index(config.webapi.elasticsearch_index)
+        self.storage.es.delete_index(config.webapi.elasticsearch_default_index)
 
         super(IntegrationTestQuery, self).tearDown()
 
@@ -177,7 +190,7 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         )
         mocked_connection.search.assert_called_with(
             {},
-            index=['socorro_integration_test'],
+            index=[self.api.config.elasticsearch_index],
             doc_type=self.api.config.elasticsearch_doctype
         )
 

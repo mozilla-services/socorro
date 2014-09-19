@@ -12,6 +12,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound
 )
+from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib import datetimeutil
 
 from configman import Namespace
@@ -42,13 +43,6 @@ class ElasticSearchCrashStorage(CrashStorageBase):
         default='socorro.external.elasticsearch.connection_context.'
                 'ConnectionContext',
         from_string_converter=class_converter,
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.add_option(
-        'elasticsearch_base_settings',
-        doc='the file containing the mapping of the indexes receiving '
-            'crash reports',
-        default='%s/mappings/socorro_index_settings.json' % DIRECTORY,
         reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
@@ -240,13 +234,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def create_socorro_index(self, es_index):
         """Create an index that will receive crash reports. """
-        settings_json = open(
-            self.config.elasticsearch_base_settings
-        ).read()
-        es_settings = json.loads(
-            settings_json % self.config.elasticsearch_doctype
-        )
-
+        es_settings = SuperSearch(config=self.config).get_mapping()
         self.create_index(es_index, es_settings)
 
     #--------------------------------------------------------------------------
