@@ -32,18 +32,13 @@ Then the repository definition:
   enabled=1
   EOF
 
-Install `Devtools 1.1 repository <http://people.centos.org/tru/devtools-1.1/readme>`_, needed for stackwalker
-::
-  sudo curl http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -o /etc/yum.repos.d/devtools-1.1.repo
-
 Now you can actually install the packages:
 ::
   sudo yum install postgresql93-server postgresql93-plperl \
     postgresql93-contrib postgresql93-devel subversion make rsync \
     subversion gcc-c++ python-devel python-pip mercurial nodejs-less \
-    git libxml2-devel libxslt-devel java-1.7.0-openjdk \
-    python-virtualenv npm devtoolset-1.1-gcc-c++ rabbitmq-server \
-    elasticsearch httpd mod_wsgi memcached daemonize
+    git libxml2-devel libxslt-devel java-1.7.0-openjdk python-virtualenv npm \
+    rabbitmq-server elasticsearch httpd mod_wsgi memcached daemonize
 
 Enable Apache on startup:
 ::
