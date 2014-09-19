@@ -1,0 +1,13 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# User specific aliases and functions
+VENV="${HOME}/socorro/socorro-virtualenv/bin/activate"
+if [ -f $VENV ] && [ -r $VENV ]; then
+    . $VENV
+    export PYTHONPATH=.
+fi
