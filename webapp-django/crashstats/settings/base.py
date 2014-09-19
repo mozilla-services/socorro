@@ -151,13 +151,6 @@ VCS_MAPPINGS = {
     }
 }
 
-# top three operating systems
-OPERATING_SYSTEMS = (
-    'Linux',
-    'Mac OS X',
-    'Windows',
-)
-
 # Identifies nightly releases
 NIGHTLY_RELEASE_TYPES = (
     'Aurora',
