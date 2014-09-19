@@ -6,6 +6,7 @@ $(function () {
     // parameters
     var form = $('#search-form form');
     var fieldsURL = form.data('fields-url');
+    var SIGNATURE = form.data('signature');
     var tabsElt = $('.tabs');
 
     var pageNum = 1;  // the page number as passed in the URL

@@ -25,6 +25,7 @@
 
         <form method="get" action="{{ url('signature:signature_report') }}"
             data-fields-url="{{ url('supersearch.search_fields') }}?exclude=signature"
+            data-signature="{{ signature }}"
         >
             <button type="submit" id="search-button">Search</button>
             <button class="new-line">new line</button>
@@ -130,7 +131,6 @@
 
 <script>
 var BASE_URL = location.protocol + '//' + location.host;
-var SIGNATURE = '{{ signature }}';
 var FIELDS = {{ fields | json_dumps }};
 </script>
 
