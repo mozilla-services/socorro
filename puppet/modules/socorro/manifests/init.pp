@@ -182,6 +182,12 @@ class socorro::vagrant {
       source => 'puppet:///modules/socorro/etc_profile.d/pgsql.sh',
       owner  => 'root',
       ensure => file;
+
+    '.bashrc':
+      path   => '/home/vagrant/.bashrc',
+      source => 'puppet:///modules/socorro/home/bashrc',
+      owner  => 'vagrant',
+      ensure => file;
   }
 
 }
