@@ -341,6 +341,98 @@ class TestUtils(TestCase):
         self.maxDiff = None
         eq_(actual, expected)
 
+    def test_parse_dump_invalid_frames(self):
+        """What's special about this one is that the dump is bad in that
+        it starts wiht a 2 but there's no 0 or 1.
+        So what the parse_dump() function does is that it pads everything
+        to the left with blocks of empty frames.
+
+        See https://bugzilla.mozilla.org/show_bug.cgi?id=1071043
+        """
+
+        dump = (
+            'OS|Windows NT|6.1.7601 Service Pack 1\n'
+            'CPU|x86|GenuineIntel family 15 model 4 stepping 9|2\n'
+            'Crash|EXCEPTION_ACCESS_VIOLATION_READ|0x290|0\n'
+            'Module|bad.exe|1.0.0.1234|debug.pdb|debugver|saddr|eaddr|1\n'
+            '\n'
+            '2|0|bad.dll|signature|cvs:cvs.m.org/repo:fname:rev|576|0x0\n'
+        )
+
+        vcs_mappings = {
+            'cvs': {
+                'cvs.m.org': ('http://bonsai.m.org/cvsblame.cgi?'
+                              'file=%(file)s&rev=%(revision)s&'
+                              'mark=%(line)s#%(line)s')
+            },
+            'hg': {
+                'hg.m.org': ('http://hg.m.org/'
+                             '%(repo)s/annotate/%(revision)s'
+                             '/%(file)s#l%(line)s')
+            }
+        }
+
+        actual = utils.parse_dump(dump, vcs_mappings)
+
+        expected = {
+            'crash_info': {
+                'crash_address': '0x290',
+                'crashing_thread': 0,
+                'type': 'EXCEPTION_ACCESS_VIOLATION_READ'
+            },
+            'main_module': 0,
+            'modules': [{
+                'base_addr': 'saddr',
+                'debug_file': 'debug.pdb',
+                'debug_id': 'debugver',
+                'end_addr': 'eaddr',
+                'filename': 'bad.exe',
+                'version': '1.0.0.1234'
+            }],
+            'status': 'OK',
+            'system_info': {
+                'cpu_arch': 'x86',
+                'cpu_count': 2,
+                'cpu_info': 'GenuineIntel family 15 model 4 stepping 9',
+                'os': 'Windows NT',
+                'os_ver': '6.1.7601 Service Pack 1'
+            },
+            'thread_count': 3,
+            'threads': [
+                {
+                    'frame_count': 0,
+                    'frames': [],
+                    'thread': 0
+                },
+                {
+                    'frame_count': 0,
+                    'frames': [],
+                    'thread': 1
+                },
+                {
+                    'frame_count': 1,
+                    'frames': [{
+                        'file': 'fname',
+                        'frame': 0,
+                        'function': 'signature',
+                        'line': 576,
+                        'module': 'bad.dll',
+                        'short_signature': 'signature',
+                        'signature': 'signature',
+                        'source_link': (
+                            'http://bonsai.m.org/cvsblame.cgi?file=fname&'
+                            'rev=rev&mark=576#576'
+                        )
+                    }],
+                    'thread': 2
+                },
+            ]
+        }
+
+        # the default line length for assert would be too short to be useful
+        self.maxDiff = None
+        eq_(actual, expected)
+
     def test_build_releases(self):
         now = datetime.datetime.utcnow()
         now = now.replace(microsecond=0).isoformat()
