@@ -283,24 +283,12 @@ class BaseTestViews(DjangoTestCase):
                             'name': 'Windows',
                         },
                         {
-                            'code': 'win32',
-                            'name': 'Windows',
-                        },
-                        {
-                            'code': 'win',
-                            'name': 'Windows NT',
-                        },
-                        {
                             'code': 'mac',
                             'name': 'Mac OS X',
                         },
                         {
                             'code': 'lin',
                             'name': 'Linux',
-                        },
-                        {
-                            'code': 'linux-i686',
-                            'name': 'Linux'
                         }
                     ],
                     "total": 6
@@ -5760,29 +5748,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:correlations_json')
 
         def mocked_get(url, params, **options):
-            if '/platforms/' in url:
-                return Response({
-                    "hits": [
-                        {
-                            "code": "win",
-                            "name": "Windows NT"
-                        },
-                        {
-                            "code": "mac",
-                            "name": "Mac OS X"
-                        },
-                        {
-                            "code": "lin",
-                            "name": "Linux"
-                        },
-                        {
-                            "code": "unk",
-                            "name": "Unknown"
-                        }
-                    ],
-                    "total": 4
-                })
-            elif '/correlations/' in url:
+            if '/correlations/' in url:
                 ok_('report_type' in params)
                 eq_(params['report_type'], 'core-counts')
 
@@ -5815,29 +5781,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:correlations_signatures_json')
 
         def mocked_get(url, params, **options):
-            if '/platforms/' in url:
-                return Response({
-                    "hits": [
-                        {
-                            "code": "win",
-                            "name": "Windows NT"
-                        },
-                        {
-                            "code": "mac",
-                            "name": "Mac OS X"
-                        },
-                        {
-                            "code": "lin",
-                            "name": "Linux"
-                        },
-                        {
-                            "code": "unk",
-                            "name": "Unknown"
-                        }
-                    ],
-                    "total": 4
-                })
-            elif '/correlations/' in url:
+            if '/correlations/' in url:
                 return Response({
                     "hits": ["FakeSignature1",
                              "FakeSignature2"],
