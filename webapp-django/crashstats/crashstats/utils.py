@@ -192,11 +192,19 @@ def parse_dump(dump, vcs_mappings):
             if parsed_dump['crash_info']['crashing_thread'] is None:
                 parsed_dump['crash_info']['crashing_thread'] = thread_num
 
-            if thread_num < len(parsed_dump['threads']):
-                parsed_dump['threads'][thread_num]['frames'].append(frame)
-            else:
-                parsed_dump['threads'].append({'thread': thread_num,
-                                               'frames': [frame]})
+            if thread_num >= len(parsed_dump['threads']):
+                # `parsed_dump['threads']` is a list and we haven't stuff
+                # this many items in it yet so, up til and including
+                # `thread_num` we stuff in an initial empty one
+                for x in range(len(parsed_dump['threads']), thread_num + 1):
+                    # This puts in the possible padding too if thread_num
+                    # is higher than the next index
+                    if x >= len(parsed_dump['threads']):
+                        parsed_dump['threads'].append({
+                            'thread': x,
+                            'frames': []
+                        })
+            parsed_dump['threads'][thread_num]['frames'].append(frame)
 
     parsed_dump['thread_count'] = len(parsed_dump['threads'])
     for thread in parsed_dump['threads']:
