@@ -435,7 +435,8 @@ class CorrelationsJSONFormBase(BaseForm):
         products = [(x, x) for x in current_products]
         versions = [(x['version'], x['version']) for x in current_versions]
         self.platforms = [(x['name'], x['name']) for x in current_platforms]
-
+        # add a necessary exception
+        self.platforms.append(('Windows NT', 'Windows NT'))
         self.fields['product'].choices = products
         self.fields['version'].choices = versions
 
