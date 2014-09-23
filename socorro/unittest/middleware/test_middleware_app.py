@@ -606,7 +606,7 @@ class IntegrationTestMiddlewareApp(TestCase):
 
     def test_overriding_implementation_class(self):
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'CrashData: fs, Crash: typo'
+            'implementations.service_overrides': 'Backfill: psql, Bugs: typo'
         })
 
         with config_manager.context() as config:
