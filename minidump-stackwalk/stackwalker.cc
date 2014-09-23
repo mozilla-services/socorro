@@ -165,6 +165,8 @@ string FrameTrust(StackFrame::FrameTrust trust) {
     return "cfi";
   case StackFrame::FRAME_TRUST_CONTEXT:
     return "context";
+  case StackFrame::FRAME_TRUST_PREWALKED:
+    return "prewalked";
   }
 
   return "none";
