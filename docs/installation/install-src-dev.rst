@@ -39,16 +39,6 @@ From inside the Socorro checkout
   make test database_username=test database_password=aPassword
 
 
-Install stackwalker
--------------------
-
-This is the binary which processes breakpad crash dumps into stack traces.
-You must build it with GCC 4.6 or above.
-
-Compile breakpad and the stackwalker binary:
-::
-  make breakpad stackwalker
-
 Populate PostgreSQL Database
 ----------------------------
 

@@ -17,10 +17,16 @@ source "$VIRTUAL_ENV/bin/activate"
 ${VIRTUAL_ENV}/bin/pip install tools/peep-1.2.tar.gz
 ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
-# pull pre-built, known version of breakpad
-wget --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
-tar -zxf breakpad.tar.gz && rm breakpad.tar.gz
-mv breakpad stackwalk
+if [ "`uname -sm`" == "Linux x86_64" ]; then
+  # pull pre-built, known version of breakpad
+  wget -N --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
+  tar -zxf breakpad.tar.gz
+  rm -rf stackwalk
+  mv breakpad stackwalk
+else
+  # build breakpad from source
+  make breakpad
+fi
 # Build JSON stackwalker
 pushd minidump-stackwalk
 make
