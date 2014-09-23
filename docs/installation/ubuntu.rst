@@ -2,40 +2,31 @@
 
 .. _ubuntu-chapter:
 
-Ubuntu 12.04 (Precise)
+Ubuntu 14.04 (Trusty)
 ----------------------
 
-Add the `PostgreSQL Apt repository <http://www.postgresql.org/download/linux/ubuntu/>`_:
-::
-  # /etc/apt/sources.list.d/pgdg.list
-  deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main
-
-Add the public key for the PostgreSQL Apt Repository:
+Add public keys for PostgreSQL and ElasticSearch Apt Repositories:
 ::
   wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
     sudo apt-key add -
-
-Add the `Elasticsearch repository <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html>`_:
-::
-  # /etc/apt/sources.list.d/elasticsearch.list
-  deb http://packages.elasticsearch.org/elasticsearch/0.90/debian stable main
-
-Add the public key for the Elasticsearch repository:
-::
   wget --quiet -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | \
     sudo apt-key add -
 
 Install dependencies
 ::
   sudo apt-get install python-software-properties
-  # needed for python2.6
+  # python 2.6
   sudo add-apt-repository ppa:fkrull/deadsnakes
+  # postgresql 9.3
+  sudo apt-add-repository 'deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main'
+  # elasticsearch 0.9
+  sudo apt-add-repository 'deb http://packages.elasticsearch.org/elasticsearch/0.90/debian stable main'
   sudo apt-get update
   sudo apt-get install build-essential subversion libpq-dev openjdk-7-jre \
     python-virtualenv python-dev postgresql-9.3 postgresql-plperl-9.3 \
     postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.6 \
     python2.6-dev libxslt1-dev git-core mercurial node-less rabbitmq-server \
-    elasticsearch memcached apache2
+    elasticsearch memcached apache2 libsasl2-dev
 
 Modify postgresql config
 ::
