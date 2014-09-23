@@ -48,6 +48,40 @@
     content: url('../../img/3rdparty/silk/arrow_bottom.png');
 }
 
+th.crash-id {
+    width: 235px;
+}
+a.crash-id {
+    font-family: monospace;
+}
+
+.controls {
+    text-align: center;
+    position: relative;
+
+    button {
+        cursor: pointer;
+        padding: 2px 6px;
+        vertical-align: middle;
+    }
+
+    hr {
+        background-color: #ccc;
+        border-color: #ccc;
+        color: #ccc;
+        margin-top: 15px;
+        width: 60%;
+    }
+}
+
+#reports-panel {
+    .controls {
+        input {
+            width: 800px;
+        }
+    }
+}
+
 #aggregations-panel {
     .panel {
         float: left;
@@ -66,9 +100,6 @@
     }
 
     .controls {
-        text-align: center;
-        position: relative;
-
         .loader {
             background-image: url('../../img/ajax-loader16x16.gif');
             display: inline-block;
@@ -81,19 +112,6 @@
 
         .fields-list {
             width: 30%;
-        }
-
-        button {
-            padding: 2px 6px;
-            vertical-align: middle;
-        }
-
-        hr {
-            background-color: #ccc;
-            border-color: #ccc;
-            color: #ccc;
-            margin-top: 15px;
-            width: 60%;
         }
     }
 }

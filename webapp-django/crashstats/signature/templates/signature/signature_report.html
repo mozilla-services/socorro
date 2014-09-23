@@ -68,7 +68,14 @@
         </header>
 
         <div class="body">
-            <!-- TODO include a fields list input here -->
+            <div class="controls">
+                <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
+                <!-- This second input is required by select2 for sorting. -->
+                <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+                <button type="submit">Update</button>
+                <hr>
+            </div>
+
             <div class="content">
                 <div class="loader"></div>
             </div>
@@ -135,6 +142,7 @@ var FIELDS = {{ fields | json_dumps }};
 </script>
 
 {% compress js %}
+<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
 <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
 {% endcompress %}
 

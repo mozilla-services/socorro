@@ -75,6 +75,8 @@ def signature_report(request, default_context=None):
         {'id': field, 'text': field.replace('_', ' ')} for field in fields
     ]
 
+    context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+
     return render(request, 'signature/signature_report.html', context)
 
 
