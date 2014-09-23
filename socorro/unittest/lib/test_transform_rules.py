@@ -532,11 +532,14 @@ class TestTransformRules(TestCase):
 
     def test_rules_in_config(self):
         config = DotDict()
+        config.tag = 'test.rule'
+        config.action = 'apply_all_rules'
         config['TestRuleTestLaughable.laughable'] = 'wilma'
         config['TestRuleTestDangerous.dangerous'] = 'dwight'
-        config.rules_list = [
-            TestRuleTestLaughable,
-            TestRuleTestDangerous
+        config.rules_list = DotDict()
+        config.rules_list.class_list = [
+            ('TestRuleTestLaughable', TestRuleTestLaughable),
+            ('TestRuleTestDangerous', TestRuleTestDangerous)
         ]
         trs = transform_rules.TransformRuleSystem(config)
 

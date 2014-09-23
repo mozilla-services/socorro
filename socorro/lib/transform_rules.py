@@ -8,8 +8,9 @@ import collections
 import inspect
 
 from configman import RequiredConfig, Namespace
-
-from socorro.lib.converters import str_to_classes_in_namespaces_converter
+from socorro.lib.converters import (
+    str_to_classes_in_namespaces_converter,
+)
 
 #------------------------------------------------------------------------------
 # support methods
@@ -287,18 +288,20 @@ class TransformRuleSystem(RequiredConfig):
     def __init__(self, config=None):
         self.rules = []
         self.config = config
-        if config:
-            if "rules_list" in config:
-                for a_rule_class in config.rules_list:
-                    try:
-                        self.rules.append(
-                            a_rule_class(config[a_rule_class.__name__])
-                        )
-                    except KeyError:
-                        self.config.logger.debug(
-                            'Rule %s configuration is missing',
-                            a_rule_class.__name__
-                        )
+        if config and "rules_list" in config:
+            self.tag = config.tag
+            self.act = getattr(self, config.action)
+            list_of_rules = config.rules_list.class_list
+
+            for a_rule_class_name, a_rule_class in list_of_rules:
+                try:
+                    self.rules.append(
+                        a_rule_class(config[a_rule_class.__name__])
+                    )
+                except KeyError:
+                    self.rules.append(
+                        a_rule_class(config)
+                    )
 
     #--------------------------------------------------------------------------
     def load_rules(self, an_iterable):
@@ -444,7 +447,9 @@ def eq_key_predicate(
 # (is_not_null_predicate, '', 'key="fred",
 # ...)
 #------------------------------------------------------------------------------
-def is_not_null_predicate(raw_crash, dumps, processed_crash, processor, key=''):
+def is_not_null_predicate(
+    raw_crash, dumps, processed_crash, processor, key=''
+):
     """a predicate that converts the key'd source to boolean.
 
     parameters:
