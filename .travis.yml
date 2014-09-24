@@ -30,3 +30,6 @@ before_script:
 
 script:
   - ./scripts/build.sh
+
+notifications:
+  irc: "irc.mozilla.org#breakpad"
