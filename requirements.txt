@@ -33,7 +33,7 @@ gunicorn==18.0
 
 # prod requirements
 
-# sha256: gg1T4jLcD1FrtTXGHeTaPurWKlpJT4WBnQevmbgiDHY 
+# sha256: gg1T4jLcD1FrtTXGHeTaPurWKlpJT4WBnQevmbgiDHY
 configman==1.2.7
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
@@ -80,8 +80,10 @@ python-dateutil==2.1
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
 happybase==0.7
-# sha256: gUyn_VPMe5xD3xcySB-hAlYu8O4Unob8uvc3o_NW9Yc
-crontabber==0.12
+# one for the tarball and one for the wheel
+# sha256: jnCezcfODgRDFbVkmZ3NANtTdQ86f9gUwQzjcVRBdsA
+# sha256: s8RczTgpJ4974sJWXjacD73FJ_d9BjYjh4Crb-dYMbI
+crontabber==0.13
 
 # sometimes you get the tarball, sometimes you get the wheel
 # sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
