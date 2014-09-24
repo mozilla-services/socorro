@@ -606,7 +606,7 @@ class IntegrationTestMiddlewareApp(TestCase):
 
     def test_overriding_implementation_class(self):
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'CrashData: fs, Crash: typo'
+            'implementations.service_overrides': 'Backfill: psql, Bugs: typo'
         })
 
         with config_manager.context() as config:
@@ -1071,6 +1071,21 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.status, 200)
             eq_(response.body, 'Firefox')
+
+    def test_releases_channels(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/releases/channels/',
+                {'products': ['Firefox', 'Fennec']}
+            )
+            eq_(response.data, {})
 
     def test_releases_featured(self):
         config_manager = self._setup_config_manager()

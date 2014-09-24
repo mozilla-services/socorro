@@ -200,6 +200,54 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         self.connection.commit()
 
     #--------------------------------------------------------------------------
+    def test_get_channels(self):
+        self._insert_release_channels()
+        self._insert_product_release_channels()
+        service = Releases(config=self.config)
+
+        #......................................................................
+        # Test 1: one product
+        params = {
+            "products": ["Firefox"]
+        }
+        res = service.get_channels(**params)
+        res_expected = {
+            "Firefox": ["Beta", "Aurora", "Nightly", "ESR"]
+        }
+        eq_(res, res_expected)
+
+        #......................................................................
+        # Test 2: several products
+        params = {
+            "products": ["Firefox", "FennecAndroid"]
+        }
+        res = service.get_channels(**params)
+        res_expected = {
+            "FennecAndroid": ["Aurora", "Nightly"],
+            "Firefox": ["Beta", "Aurora", "Nightly", "ESR"]
+        }
+        eq_(res, res_expected)
+
+        #......................................................................
+        # Test 3: an unknown product
+        params = {
+            "products": ["Unknown"]
+        }
+        res = service.get_channels(**params)
+        res_expected = {}
+        eq_(res, res_expected)
+
+        #......................................................................
+        # Test 4: all products
+        res = service.get_channels()
+        res_expected = {
+            "Thunderbird": ["Nightly"],
+            "FennecAndroid": ["Aurora", "Nightly"],
+            "Firefox": ["Beta", "Aurora", "Nightly", "ESR"]
+        }
+        eq_(res, res_expected)
+
+    #--------------------------------------------------------------------------
     def test_get_featured(self):
         self._insert_release_channels()
         self._insert_product_release_channels()
