@@ -33,6 +33,4 @@ script:
 
 notifications:
   irc: "irc.mozilla.org#breakpad"
-
-notifications:
   email: true
