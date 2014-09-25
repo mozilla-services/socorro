@@ -354,7 +354,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _fetch_from_boto_s3(self, crash_id, name_of_thing):
-        """retreive something from ceph.
+        """retrieve something from ceph.
         """
         conn = self._connect()
 
@@ -461,23 +461,31 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
        bug 1066058
     """
 
+    required_config = Namespace()
+    required_config.add_option(
+        'bucket_name',
+        doc="The name of the Support Reason API S3 bucket.",
+        default='mozilla-support-reason',
+        reference_value_from='resource.ceph',
+        likely_to_be_changed=True,
+    )
+
     #--------------------------------------------------------------------------
-    @staticmethod
-    def _create_bucket_name_for_crash_id(crash_id):
-        """The name of this bucket is not dynamic.
+    def _create_bucket_name_for_crash_id(self, crash_id):
+        """The name of this bucket is configurable, but not auto-generated.
         """
-        return 'mozilla-support-reason'
+        return self.config.bucket_name
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def _do_save_processed(self, processed_crash):
+    def _do_save_processed(boto_s3_store, processed_crash):
         """Replaces the function of the same name in the parent class.
         """
         crash_id = processed_crash['uuid']
-        reason = processed_crash['classifications']['support']['classification']
 
         try:
             # Set up the data chunk to be passed to S3.
+            reason = processed_crash['classifications']['support']['classification']
             content = {
                 # Unfortunate mixing of uuid and crash_id terminology. :(
                 'uuid': crash_id,
@@ -488,7 +496,7 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
             return
 
         # Submit the data chunk to S3.
-        self._submit_to_boto_s3(
+        boto_s3_store._submit_to_boto_s3(
             crash_id,
             'support_reason',
             json.dumps(content)
