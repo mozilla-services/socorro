@@ -110,6 +110,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'temporary_file_system_storage_path':
             '/i/am/hiding/junk/files/here',
             'dump_file_suffix': '.dump',
+            'bucket_name': 'mozilla-support-reason',
         })
         if storage_class == 'BotoS3CrashStorage':
             s3 = BotoS3CrashStorage(config)
@@ -418,6 +419,42 @@ class TestCase(socorro.unittest.testbase.TestCase):
                 ),
             ],
             any_order=True,
+        )
+
+    def test_save_processed_support_reason_bad_classification(self):
+        boto_s3_store = self.setup_mocked_s3_storage(
+            storage_class='SupportReasonAPIStorage'
+        )
+
+        # the tested call
+        report = {
+            'uuid': '3c61f81e-ea2b-4d24-a3ce-6bb9d2140915',
+            'classifications': {
+                'support': {
+                    'not_a_thing': 'blah'
+                }
+            }
+        }
+        boto_s3_store.save_processed(report)
+
+        # this should be entirely rejected
+        self.assertEqual(boto_s3_store._calling_format.call_count, 0)
+
+        self.assertEqual(boto_s3_store._connect_to_endpoint.call_count, 0)
+
+        self.assertEqual(
+            boto_s3_store._mocked_connection.get_bucket.call_count,
+            0
+        )
+
+        bucket_mock = boto_s3_store._mocked_connection.get_bucket \
+            .return_value
+        self.assertEqual(bucket_mock.new_key.call_count, 0)
+
+        storage_key_mock = bucket_mock.new_key.return_value
+        self.assertEqual(
+            storage_key_mock.set_contents_from_string.call_count,
+            0
         )
 
     def test_save_raw_and_processed(self):
