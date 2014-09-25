@@ -322,5 +322,5 @@
     #port=8882
 
     # a class implementing a wsgi web server
-    #wsgi_server_class=socorro.webapi.servers.CherryPy
+    wsgi_server_class=socorro.webapi.servers.ApacheModWSGI
 

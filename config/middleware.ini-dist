@@ -433,7 +433,7 @@
 [web_server]
 
     # a class implementing a wsgi web server
-    #wsgi_server_class=socorro.webapi.servers.ApacheModWSGI
+    wsgi_server_class=socorro.webapi.servers.ApacheModWSGI
 
 [webapi]
 
