@@ -1,0 +1,64 @@
+@import "fonts.less";
+@import "mixins.less";
+
+.accordion {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    h3 {
+        color: white;
+        margin: 0;
+    }
+    a {
+        display: block;
+        background-color: #ebebeb;
+        color: black;
+        padding: .5rem;
+        border: 1px solid #333;
+        text-decoration: none;
+        &:focus,
+        &:active {
+            background-color: #d9d9d9;
+            color: black;
+            border: 1px solid #333;
+            outline: none;
+        }
+    }
+    p {
+        margin: 0;
+        padding: .5rem;
+    }
+    .content-pane {
+        background-color: #fafafa;
+        color: black;
+        border: 1px solid #333;
+        border-top: 0;
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: .5s;
+        h3 {
+            color: #333;
+            padding: .5rem 1rem;
+        }
+    }
+    .show {
+        max-height: 50000px;
+        opacity: 1;
+    }
+    [data-icon]:before {
+        float: right;
+        font-family: 'icons';
+        /* ensure inherited styles does not override the font style here. */
+        font-style: normal;
+        content: attr(data-icon);
+        .rotate(0);
+        /* @see http://css-tricks.com/examples/IconFont/ */
+        speak: none;
+    }
+    [aria-expanded="true"] {
+        [data-icon]:before {
+            .rotate(-90deg);
+        }
+    }
+}

@@ -1,4 +1,4 @@
-/* globals Panels, $, SocReport, socSortCorrelation */
+/* globals Panels, $, SocReport, socSortCorrelation, accordion */
 
 var Correlations = (function() {
     var loaded = null;
@@ -14,6 +14,65 @@ var Correlations = (function() {
         };
     }
 
+    /**
+     * Populates the panel specified by type.
+     * @param {string} type - The correlation type
+     * @param {object} data - The data to populate the panel with.
+     */
+    function populatePanel(type, data) {
+        var contentContainer = $('#' + type + '-correlation');
+        var noData = $('<p />', { text: 'No correlation data found.' });
+
+        if(data) {
+            var panelHeading = $('<h3 />', {
+                text: data.reason
+            });
+            // first separate the data into individual 'rows'
+            var dataRows = data.load.split(/\n/);
+
+            if (dataRows.length > 1) {
+                var table = $('<table />', {
+                    class: 'data-table'
+                });
+                var thead = $('<thead />');
+                var headerRow = $('<tr />');
+                // a little work left to be done on the type header
+                var headers = ['All Crashes For OS', 'All Crashes For Signature', type];
+
+                $(headers).each(function(index, header) {
+                    headerRow.append($('<th />', {
+                        text: header
+                    }));
+                });
+                table.append(thead).append(headerRow);
+
+                // loop through the lines and remove the vs. bits and split the
+                // string into 3 'columns' per 'row'. Create the table rows and
+                // attach them to the table.
+                $(dataRows).each(function(index, row) {
+                    var tableRow = $('<tr />');
+                var columns = row.replace(/\svs\.\s/, '').split(/(?:\)\s+)/);
+                    $(columns).each(function(index, column) {
+                        tableRow.append($('<td />', {
+                            text: column
+                        }));
+                    });
+                    table.append(tableRow);
+                });
+
+                contentContainer.empty().append([panelHeading, table]);
+                socSortCorrelation('#' + type + '_correlation');
+            }
+            // guard against empty records that sometimes gets returned.
+            else if (dataRows.length === 1 && dataRows[0] === '') {
+                // there seemed to be data but alas, it was an empty promise.
+                contentContainer.empty().append(noData);
+            }
+        } else {
+            contentContainer.empty().append(noData);
+        }
+    }
+
     // Load correlation data for various types.
     // @types CPU, Add-On, Module
     function loadCorrelationTabData(version, os, deferred) {
@@ -22,13 +81,16 @@ var Correlations = (function() {
 
         function loadByType(type) {
             $.getJSON(makeUrl(type), function(data) {
-                if(data) {
-                    $('#' + type + '_correlation').html('<h3>' + data.reason +
-                        '</h3><pre>'+ data.load + '</pre>');
-                    socSortCorrelation('#' + type + '_correlation');
-                } else {
-                    $('#' + type + '_correlation').text('No correlation data found.');
+
+                populatePanel(type, data);
+
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                var msg = errorThrown;
+                if (jqXHR.responseText !== '') {
+                    msg += ': ' + jqXHR.responseText;
                 }
+
+                $('#' + type + '-correlation').html(msg);
             });
         }
 
@@ -62,6 +124,8 @@ var Correlations = (function() {
                var version = $wrapper.data('correlation_version');
                var os = $wrapper.data('correlation_os');
 
+               accordion.init(document.querySelector('.accordion'));
+
                $('button.load-version-data').click(function () {
                    var type = $(this).attr('name');
                    var makeUrl = urlMaker(version, os);
@@ -72,19 +136,25 @@ var Correlations = (function() {
                       height: '17',
                       alt: 'loading spinner'
                    });
-                   var contentPanel = $('#' + type + '-panel');
+                   var loader = $('<p />', {
+                       text: 'Loading '
+                   }).append(spinner);
+                   var contentPanel = $('#' + type + '-correlation');
 
-                   contentPanel.empty().append(['Loading ', spinner]);
+                   contentPanel.empty().append(loader);
 
                    $.getJSON(makeUrl(type), function(data) {
-                       if (data) {
-                         contentPanel.html('<h3>' + data.reason + '</h3><pre>' +
-                                                       data.load + '</pre>');
-                       } else {
-                          contentPanel.text('No correlation data found.');
+                       populatePanel(type, data);
+                  }).fail(function(jqXHR, textStatus, errorThrown) {
+                      var msg = errorThrown;
+                      if (jqXHR.responseText !== '') {
+                          msg += ': ' + jqXHR.responseText;
                       }
-                   });
+
+                      $('#' + type + '-correlation').html(msg);
+                  });
                });
+
                if (version && os) {
                    loadCorrelationTabData(version, os, deferred);
                }

@@ -11,6 +11,7 @@
 
   {% compress css %}
   <link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
+  <link media="screen" href="{{ static('crashstats/css/accordion.less') }}" type="text/less" rel="stylesheet" />
   {% endcompress %}
 {% endblock %}
 
@@ -180,6 +181,7 @@
 <script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/lib/awty.js') }}"></script>
+<script type="text/javascript" src="{{ static('crashstats/js/lib/accordion.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
