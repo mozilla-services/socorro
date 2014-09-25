@@ -639,9 +639,12 @@ class TestSuperSearch(ElasticSearchTestCase):
     def test_get_indexes(self):
         config = self.get_config_context()
         storage = crashstorage.ElasticSearchCrashStorage(config)
+        connection_context = config.resource.elasticsearch.elasticsearch_class(
+            config.resource.elasticsearch
+        )
 
         # Create the supersearch fields.
-        storage.es.bulk_index(
+        connection_context.bulk_index(
             index=config.webapi.elasticsearch_default_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),
@@ -885,8 +888,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             dict(default_crash_report, uuid=21, address='0xa2e4509ca0')
         )
 
+        connection_context = config.resource.elasticsearch.elasticsearch_class(
+            config.resource.elasticsearch
+        )
+
         # Create the supersearch fields.
-        self.storage.es.bulk_index(
+        connection_context.bulk_index(
             index=config.webapi.elasticsearch_default_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),
