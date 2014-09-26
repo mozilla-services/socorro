@@ -4190,7 +4190,7 @@ class TestViews(BaseTestViews):
         ok_('Unknown Exploitability' in response.content)
 
     @mock.patch('requests.get')
-    def test_report_index_not_found(self, rget):
+    def test_report_index_processed_crash_not_found(self, rget):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, params, **options):
@@ -4209,7 +4209,73 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
 
         eq_(response.status_code, 200)
-        ok_("We couldn't find" in response.content)
+        ok_("Crash Not Found" in response.content)
+
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_report_index_raw_crash_not_found(self, rget, rpost):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
+
+        def mocked_get(url, params, **options):
+            assert '/crash_data/' in url
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return Response("""
+                {
+                  "client_crash_date": "2012-06-11T06:08:45",
+                  "dump": "%s",
+                  "signature": "FakeSignature1",
+                  "user_comments": null,
+                  "uptime": 14693,
+                  "release_channel": "nightly",
+                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                  "flash_version": "[blank]",
+                  "hangid": null,
+                  "distributor_version": null,
+                  "truncated": true,
+                  "process_type": null,
+                  "id": 383569625,
+                  "os_version": "10.6.8 10K549",
+                  "version": "5.0a1",
+                  "build": "20120609030536",
+                  "ReleaseChannel": "nightly",
+                  "addons_checked": null,
+                  "product": "WaterWolf",
+                  "os_name": "Mac OS X",
+                  "last_crash": 371342,
+                  "date_processed": "2012-06-11T06:08:44",
+                  "cpu_name": "amd64",
+                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                  "address": "0x8",
+                  "completeddatetime": "2012-06-11T06:08:57",
+                  "success": true,
+                  "exploitability": "Unknown Exploitability"
+                }
+                """ % dump)
+            elif params['datatype'] == 'meta':  # raw crash json!
+                raise models.BadStatusCodeError(404)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response("""
+                   {"hits": [{"id": "123456789",
+                              "signature": "Something"}]}
+                """)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+
+        url = reverse('crashstats:report_index',
+                      args=[crash_id])
+        response = self.client.get(url)
+
+        eq_(response.status_code, 200)
+        ok_("Crash Not Found" in response.content)
 
     @mock.patch('requests.get')
     def test_report_index_pending(self, rget):

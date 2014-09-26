@@ -1016,10 +1016,7 @@ def report_index(request, crash_id, default_context=None):
 
     api = models.UnredactedCrash()
 
-    try:
-        context['report'] = api.get(crash_id=crash_id)
-    except models.BadStatusCodeError as e:
-        error_code = e.status
+    def handle_middleware_404(crash_id, error_code):
         if error_code == 404:
             # if crash was submitted today, send to pending screen
             crash_date = datetime.datetime.strptime(crash_id[-6:], '%y%m%d')
@@ -1035,8 +1032,15 @@ def report_index(request, crash_id, default_context=None):
         elif error_code == 410:
             return render(request,
                           'crashstats/report_index_too_old.html', context)
-        else:
-            raise
+
+        # this is OK because this function is expected to be called within
+        # an exception stack frame
+        raise
+
+    try:
+        context['report'] = api.get(crash_id=crash_id)
+    except models.BadStatusCodeError as e:
+        return handle_middleware_404(crash_id, e.status)
 
     if 'json_dump' in context['report']:
         json_dump = context['report']['json_dump']
@@ -1089,7 +1093,10 @@ def report_index(request, crash_id, default_context=None):
     )
 
     raw_api = models.RawCrash()
-    context['raw'] = raw_api.get(crash_id=crash_id)
+    try:
+        context['raw'] = raw_api.get(crash_id=crash_id)
+    except models.BadStatusCodeError as e:
+        return handle_middleware_404(crash_id, e.status)
 
     context['raw_keys'] = []
     if request.user.has_perm('crashstats.view_pii'):
