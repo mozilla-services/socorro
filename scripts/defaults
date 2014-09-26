@@ -23,3 +23,5 @@ export rmq_virtual_host=${rmq_virtual_host:-"/"}
 
 export elasticSearchHostname=${elasticSearchHostname:-"localhost"}
 export elasticsearch_urls=${elasticsearch_urls:-"http://localhost:9200"}
+
+export puppet_lint_args='--no-autoloader_layout-check --no-80chars-check'

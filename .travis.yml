@@ -19,6 +19,7 @@ before_install:
   - npm install -g less
   - sudo ln -s /usr/local/lib/node_modules/less/bin/lessc /usr/local/bin
   - sed -i 's:jenkins-pg92:localhost:' config/alembic.ini-dist
+  - gem install puppet puppet-lint
 
 install: true
 
