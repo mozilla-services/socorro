@@ -32,5 +32,4 @@ script:
   - ./scripts/build.sh
 
 notifications:
-  irc: "irc.mozilla.org#breakpad"
-  email: true
+  webhooks: http://requestb.in/1hw0pfj1
