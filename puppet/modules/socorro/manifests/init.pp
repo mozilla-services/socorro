@@ -166,11 +166,11 @@ class socorro::vagrant {
       ensure => directory;
 
     'pg_hba.conf':
+      ensure  => file,
       path    => '/var/lib/pgsql/9.3/data/pg_hba.conf',
       source  => 'puppet:///modules/socorro/var_lib_pgsql_9.3_data/pg_hba.conf',
       owner   => 'postgres',
       group   => 'postgres',
-      ensure  => file,
       require => [
         Package['postgresql93-server'],
         Exec['postgres-initdb'],
@@ -178,16 +178,16 @@ class socorro::vagrant {
       notify  => Service['postgresql-9.3'];
 
     'pgsql.sh':
+      ensure => file,
       path   => '/etc/profile.d/pgsql.sh',
       source => 'puppet:///modules/socorro/etc_profile.d/pgsql.sh',
-      owner  => 'root',
-      ensure => file;
+      owner  => 'root';
 
     '.bashrc':
+      ensure => file,
       path   => '/home/vagrant/.bashrc',
       source => 'puppet:///modules/socorro/home/bashrc',
-      owner  => 'vagrant',
-      ensure => file;
+      owner  => 'vagrant';
   }
 
 }
