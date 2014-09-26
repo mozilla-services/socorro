@@ -518,7 +518,6 @@ class TestViews(BaseTestViews):
         ok_('id="products_select"' not in response.content)
 
     def test_homepage_redirect(self):
-        raise NameError("delibertately breaking the test")
         response = self.client.get('/')
         eq_(response.status_code, 302)
         destination = reverse('crashstats:home',
