@@ -32,4 +32,4 @@ script:
   - ./scripts/build.sh
 
 notifications:
-  webhooks: http://requestb.in/1hw0pfj1
+  webhooks: https://travisified.paas.allizom.org/webhook
