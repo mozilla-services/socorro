@@ -367,7 +367,7 @@ class App(SocorroApp):
     required_config.logging.add_option(
         'stderr_line_format_string',
         doc='python logging system format for logging to stderr',
-        default='{asctime} {levelname} - {app_name}.{threadName} - '
+        default='{asctime} {levelname} - {app_name} - '
                 '{message}',
         reference_value_from='resource.logging',
     )
