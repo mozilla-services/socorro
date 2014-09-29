@@ -450,6 +450,13 @@ class CorrelationsJSONForm(CorrelationsJSONFormBase):
 
         self.fields['platform'].choices = self.platforms
 
+    def clean_platform(self):
+        platform = self.cleaned_data['platform']
+        if platform == 'Windows':
+            return 'Windows NT'
+        else:
+            return platform
+
 
 class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
     platforms = forms.CharField(required=True)
@@ -465,7 +472,13 @@ class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
         if not value.issubset(platforms):
             raise forms.ValidationError('Invalid platform(s)')
         else:
-            return '+'.join(value)
+            new_value = []
+            for v in value:
+                if v == 'Windows':
+                    new_value.append('Windows NT')
+                else:
+                    new_value.append(v)
+            return new_value
 
 
 class GCCrashesForm(BaseForm):
