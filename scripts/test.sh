@@ -104,3 +104,8 @@ $ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
 pushd webapp-django
 ./bin/ci.sh
 popd
+
+# lint puppet manifests; bug 976639
+pushd puppet
+find . -name '*.pp' -exec puppet parser validate {} \; -exec puppet-lint $puppet_lint_args {} \;
+popd
