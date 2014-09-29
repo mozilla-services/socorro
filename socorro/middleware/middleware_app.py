@@ -40,42 +40,45 @@ from configman.converters import class_converter
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
+    (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/bugs/(.*)', 'bugs.Bugs'),
-    (r'/crash_data/(.*)', 'crash_data.CrashData'),
+    (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
+    (r'/correlations/(.*)', 'correlations.Correlations'),
     (r'/crash/(.*)', 'crash.Crash'),
-    (r'/crashes/'
-     r'(comments|count_by_day|daily|frequency|paireduuid|signatures|'
-     r'signature_history|exploitability|adu_by_signature)/(.*)',
-     'crashes.Crashes'),
+    (r'/crash_data/(.*)', 'crash_data.CrashData'),
+    (
+        r'/crashes/'
+        r'(comments|count_by_day|daily|frequency|paireduuid|signatures|'
+        r'signature_history|exploitability|adu_by_signature)/(.*)',
+        'crashes.Crashes'
+    ),
+    (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
+    (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
     (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/field/(.*)', 'field.Field'),
-    (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
+    (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
+    (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
     (r'/job/(.*)', 'job.Job'),
+    (r'/laglog/(.*)', 'laglog.LagLog'),
     (r'/platforms/(.*)', 'platforms.Platforms'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/builds/(.*)', 'products_builds.ProductsBuilds'),
     (r'/products/(.*)', 'products.Products'),
     (r'/query/', 'query.Query'),
-    (r'/releases/(featured|release)/(.*)', 'releases.Releases'),
-    (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
-    (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
-    (r'/search/(signatures|crashes)/(.*)', 'search.Search'),
-    (r'/supersearch/'
-     r'(field|fields|missing_fields)/(.*)',
-     'supersearch.SuperSearch'),
-    (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
-    (r'/server_status/(.*)', 'server_status.ServerStatus'),
+    (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
     (r'/report/(list)/(.*)', 'report.Report'),
-    (r'/util/(versions_info)/(.*)', 'util.Util'),
-    (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
-    (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
-    (r'/correlations/(.*)', 'correlations.Correlations'),
+    (r'/search/(signatures|crashes)/(.*)', 'search.Search'),
+    (r'/server_status/(.*)', 'server_status.ServerStatus'),
+    (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
+    (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/skiplist/(.*)', 'skiplist.SkipList'),
-    (r'/backfill/(.*)', 'backfill.Backfill'),
+    (
+        r'/supersearch/(field|fields|missing_fields)/(.*)',
+        'supersearch.SuperSearch'
+    ),
+    (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
-    (r'/laglog/(.*)', 'laglog.LagLog'),
-    (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
-    (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
+    (r'/util/(versions_info)/(.*)', 'util.Util'),
 )
 
 # certain items in a URL path should NOT be split by `+`

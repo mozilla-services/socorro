@@ -62,8 +62,10 @@ class SetupSuperSearchApp(generic_app.App):
         all_fields = json.loads(data_file.read())
 
         # Index the data.
-        es_connection = index_creator.es
-        es_connection.bulk_index(
+        connection_context = self.config.elasticsearch.elasticsearch_class(
+            self.config.elasticsearch
+        )
+        connection_context.bulk_index(
             index='socorro',
             doc_type='supersearch_fields',
             docs=all_fields.values(),
@@ -71,6 +73,7 @@ class SetupSuperSearchApp(generic_app.App):
         )
 
         # Verify data was correctly inserted.
+        es_connection = index_creator.es
         es_connection.refresh()
         total_indexed = es_connection.count(
             '*',

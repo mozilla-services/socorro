@@ -363,7 +363,8 @@ class PolyCrashStorage(CrashStorageBase):
           name_of_class_option='crashstorage_class',
           instantiate_classes=False,  # we instantiate manually for thread
                                       # safety
-      )
+      ),
+      likely_to_be_changed=True,
     )
 
     #--------------------------------------------------------------------------

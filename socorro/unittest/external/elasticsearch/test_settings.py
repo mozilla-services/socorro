@@ -49,8 +49,12 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         es_index = self.storage.get_index_for_crash(self.now)
         self.storage.create_socorro_index(es_index)
 
+        connection_context = config.elasticsearch_class(
+            config
+        )
+
         # Create the supersearch fields.
-        self.storage.es.bulk_index(
+        connection_context.bulk_index(
             index=config.webapi.elasticsearch_default_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),

@@ -33,7 +33,7 @@ gunicorn==18.0
 
 # prod requirements
 
-# sha256: gg1T4jLcD1FrtTXGHeTaPurWKlpJT4WBnQevmbgiDHY 
+# sha256: gg1T4jLcD1FrtTXGHeTaPurWKlpJT4WBnQevmbgiDHY
 configman==1.2.7
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
@@ -49,6 +49,11 @@ pgxnclient==1.2.1
 pika==0.9.8
 # sha256: SLcCp8pHnhvCwae4GHWgfUdCmBMmBZk-LLl59eCCd9c
 psycopg2==2.4.5
+# sha256: Y_uAldsYamwLussgySl75CXfqd5MMws1NGD2NYIHxqo
+# sha256: 3-5BXIBkzjYnPzDY-eJ7bA4P8qQ9Uv1-1Gcurbry6DM
+elasticsearch==0.4.5
+# sha256: TkALLi9TZS3Q2AYspezEJbavbpaYm40x9d2HUYaqJHs
+urllib3==1.9
 # sha256: 2upIE6eJSfnxlBvixW1aviyZqFgjUMrwWYBPtleIrKU
 pyelasticsearch==0.6.1
 # sha256: cHay6ATFKumO3svU3B-8qBMYb-f1_dYlR4OgClWntEI
@@ -80,8 +85,10 @@ python-dateutil==2.1
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
 happybase==0.7
-# sha256: gUyn_VPMe5xD3xcySB-hAlYu8O4Unob8uvc3o_NW9Yc
-crontabber==0.12
+# one for the tarball and one for the wheel
+# sha256: jnCezcfODgRDFbVkmZ3NANtTdQ86f9gUwQzjcVRBdsA
+# sha256: s8RczTgpJ4974sJWXjacD73FJ_d9BjYjh4Crb-dYMbI
+crontabber==0.13
 
 # sometimes you get the tarball, sometimes you get the wheel
 # sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
