@@ -49,43 +49,43 @@ class PostgreSQLCrashStorage(CrashStorageBase):
 
     _reports_table_mappings = (
         # processed name, reports table name
-        ("addons_checked", "addons_checked"),
-        ("address", "address"),
-        ("app_notes", "app_notes"),
-        ("build", "build"),
-        ("client_crash_date", "client_crash_date"),
-        ("completeddatetime", "completed_datetime"),
-        ("cpu_info", "cpu_info"),
-        ("cpu_name", "cpu_name"),
-        ("date_processed", "date_processed"),
-        ("distributor", "distributor"),
-        ("distributor_version", "distributor_version"),
-        ("email", "email"),
-        ("exploitability", "exploitability"),
-        # ("flash_process_dump", "flash_process_dump"),  # future
-        ("flash_version", "flash_version"),
-        ("hangid", "hangid"),
-        ("install_age", "install_age"),
-        ("last_crash", "last_crash"),
-        ("os_name", "os_name"),
-        ("os_version", "os_version"),
-        ("processor_notes", "processor_notes"),
-        ("process_type", "process_type"),
-        ("product", "product"),
-        ("productid", "productid"),
-        ("reason", "reason"),
-        ("release_channel", "release_channel"),
-        ("signature", "signature"),
-        ("startedDateTime", "started_datetime"),
-        ("success", "success"),
-        ("topmost_filenames", "topmost_filenames"),
-        ("truncated", "truncated"),
-        ("uptime", "uptime"),
-        ("user_comments", "user_comments"),
-        ("user_id", "user_id"),
-        ("url", "url"),
-        ("uuid", "uuid"),
-        ("version", "version"),
+        ("addons_checked", "addons_checked", None),
+        ("address", "address", 20),
+        ("app_notes", "app_notes", 1024),
+        ("build", "build", 30),
+        ("client_crash_date", "client_crash_date", None),
+        ("completeddatetime", "completed_datetime", None),
+        ("cpu_info", "cpu_info", 100),
+        ("cpu_name", "cpu_name", 100),
+        ("date_processed", "date_processed", None),
+        ("distributor", "distributor", 20),
+        ("distributor_version", "distributor_version", 20),
+        ("email", "email", 100),
+        ("exploitability", "exploitability", None),
+        # ("flash_process_dump", "flash_process_dump", None),  # future
+        ("flash_version", "flash_version", None),
+        ("hangid", "hangid", None),
+        ("install_age", "install_age", None),
+        ("last_crash", "last_crash", None),
+        ("os_name", "os_name", 100),
+        ("os_version", "os_version", 100),
+        ("processor_notes", "processor_notes", None),
+        ("process_type", "process_type", None),
+        ("product", "product", 30),
+        ("productid", "productid", None),
+        ("reason", "reason", 255),
+        ("release_channel", "release_channel", None),
+        ("signature", "signature", 255),
+        ("startedDateTime", "started_datetime", None),
+        ("success", "success", None),
+        ("topmost_filenames", "topmost_filenames", None),
+        ("truncated", "truncated", None),
+        ("uptime", "uptime", None),
+        ("user_comments", "user_comments", 1024),
+        ("user_id", "user_id", 50),
+        ("url", "url", 255),
+        ("uuid", "uuid", 50),
+        ("version", "version", 16),
     )
 
     #--------------------------------------------------------------------------
@@ -254,11 +254,17 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         """
         column_list = []
         placeholder_list = []
+        # create a list of values to go into the reports table
         value_list = []
-        for pro_crash_name, report_name in self._reports_table_mappings:
+        for pro_crash_name, report_name, length in \
+            self._reports_table_mappings:
             column_list.append(report_name)
             placeholder_list.append('%s')
-            value_list.append(processed_crash[pro_crash_name])
+            value = processed_crash[pro_crash_name]
+            if isinstance(value, basestring) and length:
+                    value_list.append(value[:length])
+            else:
+                value_list.append(value)
 
         def print_eq(a, b):
             # Helper for UPDATE SQL clause
