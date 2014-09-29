@@ -74,6 +74,96 @@ a_processed_crash = {
     "version": "13.0a1",
 }
 
+a_processed_crash_with_everything_too_long = {
+    "addons": [["{1a5dabbd-0e74-41da-b532-a364bb552cab}", "1.0.4.1"]],
+    "addons_checked": None,
+    "address": "*" * 25,
+    "app_notes": "*" * 1200,
+    "build": "*" * 35,
+    "client_crash_date": "2012-04-08 10:52:42.0",
+    "completeddatetime": "2012-04-08 10:56:50.902884",
+    "cpu_info": "*" * 105,
+    "cpu_name": "*" * 107,
+    "crashedThread": 8,
+    "date_processed": "2012-04-08 10:56:41.558922",
+    "distributor": '*' * 24,
+    "distributor_version": '*' * 25,
+    "dump": "...",
+    "email": "*" * 101,
+    "exploitability": "high",
+    # "flash_process_dump": "flash dump",  # future
+    "flash_version": "[blank]",
+    "hangid": None,
+    "id": 361399767,
+    "install_age": 22385,
+    "last_crash": None,
+    "os_name": "*" * 111,
+    "os_version": "*" * 102,
+    "processor_notes": "SignatureTool: signature truncated due to length",
+    "process_type": "plugin",
+    "product": "*" * 34,
+    "productid": "FA-888888",
+    "PluginFilename": "dwight.txt",
+    "PluginName": "wilma",
+    "PluginVersion": "69",
+    "reason": "*" * 257,
+    "release_channel": "default",
+    "ReleaseChannel": "default",
+    "signature": "*" * 300,
+    "startedDateTime": "2012-04-08 10:56:50.440752",
+    "success": True,
+    "topmost_filenames": [],
+    "truncated": False,
+    "uptime": 170,
+    "url": "*" * 288,
+    "user_comments": "*" * 1111,
+    "user_id": '*' * 80,
+    "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+    "version": "*" * 18,
+}
+
+a_processed_report_with_everything_truncated = [
+    None,
+    ("*" * 25)[:20],
+    ("*" * 1200)[:1024],
+    ("*" * 35)[:30],
+    "2012-04-08 10:52:42.0",
+    "2012-04-08 10:56:50.902884",
+    ("*" * 105)[:100],
+    ("*" * 107)[:100],
+    "2012-04-08 10:56:41.558922",
+    ('*' * 24)[:20],
+    ('*' * 25)[:20],
+    ("*" * 101)[:100],
+    "high",
+    "[blank]",
+    None,
+    22385,
+    None,
+    ("*" * 111)[:100],
+    ("*" * 102)[:100],
+    "SignatureTool: signature truncated due to length",
+    "plugin",
+    ("*" * 34)[:30],
+    "FA-888888",
+    ("*" * 257)[:255],
+    "default",
+    ("*" * 300)[:255],
+    "2012-04-08 10:56:50.440752",
+    True,
+    [],
+    False,
+    170,
+    ("*" * 1111)[:1024],
+    ('*' * 80)[:50],
+    ("*" * 288)[:255],
+    "936ce666-ff3b-4c7a-9674-367fe2120408",
+    ("*" * 18)[:16],
+    "936ce666-ff3b-4c7a-9674-367fe2120408",
+]
+
+
+
 
 def remove_whitespace(string):
     return string.replace('\n', '').replace(' ', '')
@@ -490,6 +580,41 @@ class TestPostgresCrashStorage(TestCase):
                 actual_sql = remove_whitespace(actual_sql)
                 eq_(expected_sql, actual_sql)
                 eq_(expected_params, actual_params)
+
+    def test_basic_postgres_save_processed_success_3_truncations(self):
+
+        mock_logging = mock.Mock()
+        mock_postgres = mock.Mock()
+        required_config = PostgreSQLCrashStorage.get_required_config()
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'database_class': mock_postgres
+            }],
+            argv_source=[]
+        )
+
+        with config_manager.context() as config:
+            crashstorage = PostgreSQLCrashStorage(config)
+            with mock.patch(
+                'socorro.external.postgresql.crashstorage.single_value_sql'
+            ) as mocked_sql_execute:
+                fake_connection = mock.Mock(),
+                crashstorage._save_processed_report(
+                    fake_connection,
+                    a_processed_crash_with_everything_too_long
+                )
+                mocked_sql_execute.assert_called_with(
+                    fake_connection,
+                    "\n        WITH\n        update_report AS (\n            UPDATE reports_20120402 SET\n                addons_checked = %s, address = %s, app_notes = %s, build = %s, client_crash_date = %s, completed_datetime = %s, cpu_info = %s, cpu_name = %s, date_processed = %s, distributor = %s, distributor_version = %s, email = %s, exploitability = %s, flash_version = %s, hangid = %s, install_age = %s, last_crash = %s, os_name = %s, os_version = %s, processor_notes = %s, process_type = %s, product = %s, productid = %s, reason = %s, release_channel = %s, signature = %s, started_datetime = %s, success = %s, topmost_filenames = %s, truncated = %s, uptime = %s, user_comments = %s, user_id = %s, url = %s, uuid = %s, version = %s\n            WHERE uuid = %s\n            RETURNING id\n        ),\n        insert_report AS (\n            INSERT INTO reports_20120402 (addons_checked, address, app_notes, build, client_crash_date, completed_datetime, cpu_info, cpu_name, date_processed, distributor, distributor_version, email, exploitability, flash_version, hangid, install_age, last_crash, os_name, os_version, processor_notes, process_type, product, productid, reason, release_channel, signature, started_datetime, success, topmost_filenames, truncated, uptime, user_comments, user_id, url, uuid, version)\n            ( SELECT\n                %s as addons_checked, %s as address, %s as app_notes, %s as build, %s as client_crash_date, %s as completed_datetime, %s as cpu_info, %s as cpu_name, %s as date_processed, %s as distributor, %s as distributor_version, %s as email, %s as exploitability, %s as flash_version, %s as hangid, %s as install_age, %s as last_crash, %s as os_name, %s as os_version, %s as processor_notes, %s as process_type, %s as product, %s as productid, %s as reason, %s as release_channel, %s as signature, %s as started_datetime, %s as success, %s as topmost_filenames, %s as truncated, %s as uptime, %s as user_comments, %s as user_id, %s as url, %s as uuid, %s as version\n                WHERE NOT EXISTS (\n                    SELECT uuid from reports_20120402\n                    WHERE\n                        uuid = %s\n                    LIMIT 1\n                )\n            )\n            RETURNING id\n        )\n        SELECT * from update_report\n        UNION ALL\n        SELECT * from insert_report\n        ",
+                    a_processed_report_with_everything_truncated * 2
+                )
 
     def test_basic_postgres_save_processed_operational_error(self):
 
