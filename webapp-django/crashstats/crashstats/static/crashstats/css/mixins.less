@@ -40,15 +40,34 @@
     -moz-transform-origin: @top @left;
     transform-origin: @top @left;
 }
+// Gradients
+#gradient {
+  .horizontal (@startColor: #555, @endColor: #333) {
+    background-color: @endColor;
+    background-repeat: repeat-x;
+    background-image: -webkit-linear-gradient(left, @startColor, @endColor); /* Safari 5.1+, Chrome 10+ */
+    -ms-filter: %("progid:DXImageTransform.Microsoft.gradient(startColorstr='%d', endColorstr='%d', GradientType=1)",@startColor,@endColor); /* IE8+ */
+    background-image: linear-gradient(to right, @startColor, @endColor); /* the standard */
+  }
+  .vertical (@startColor: #555, @endColor: #333) {
+    background-color: @endColor;
+    background-repeat: repeat-x;
+    background-image: -webkit-linear-gradient(top, @startColor, @endColor); /* Safari 5.1+, Chrome 10+ */
+    -ms-filter: %("progid:DXImageTransform.Microsoft.gradient(startColorstr='%d', endColorstr='%d', GradientType=0)",@startColor,@endColor); /* IE8+ */
+    background-image: linear-gradient(to bottom, @startColor, @endColor); /* the standard */
+  }
+}
 .button() {
-    background-color: rgb(46, 93, 116);
-    color: #fff;
-    padding: .5em .5em;
-    border: none;
-    text-decoration: none;
-    white-space: nowrap;
+    background-color: #406A80;
+    #gradient > .vertical(#48768e, #406A80);
+    color: white;
+    margin: 1rem;
+    padding: .5rem;
+    border: 1px solid #406A80;
+    border-radius: .4rem;
+    min-width: 100px;
+    font-size: 1.3rem;
     cursor: pointer;
-    .rounded-corners(.5em);
 }
 .notification {
     background-color: #fff;
