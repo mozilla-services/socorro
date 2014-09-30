@@ -24,13 +24,19 @@ var Correlations = (function() {
         var noData = $('<p />', { text: 'No correlation data found.' });
 
         if(data) {
-            var panelHeading = $('<h3 />', {
-                text: data.reason
-            });
             // first separate the data into individual 'rows'
             var dataRows = data.load.split(/\n/);
+            var panelHeading = $('<h4 />', {
+                text: data.reason
+            });
 
-            if (dataRows.length > 1) {
+            // ensure there is at least one result and that the first item is
+            // not an empty string.
+            if (dataRows.length > 0 && dataRows[0] !== '') {
+
+                var resultCountTxt = ' (' + dataRows.length + (dataRows.length > 1 ? ' results' : ' result') + ')';
+                contentContainer.prev('h3').find('a').append(resultCountTxt);
+
                 var table = $('<table />', {
                     class: 'data-table'
                 });

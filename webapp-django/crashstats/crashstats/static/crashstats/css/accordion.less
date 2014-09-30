@@ -34,16 +34,20 @@
         border: 1px solid #333;
         border-top: 0;
         overflow: hidden;
-        max-height: 0;
+        height: 0;
         opacity: 0;
-        transition: .5s;
+        transition: opacity .5s;
         h3 {
             color: #333;
             padding: .5rem 1rem;
         }
+        h4 {
+            padding: 0.5rem 1rem 0 .5rem;
+            font-size: 1.2rem;
+        }
     }
     .show {
-        max-height: 50000px;
+        height: auto;
         opacity: 1;
     }
     [data-icon]:before {
