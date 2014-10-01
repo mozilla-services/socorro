@@ -163,7 +163,7 @@ class ReportListForm(BaseForm):
 class SignatureSummaryForm(BaseForm):
     all_param = 'ALL:ALL'
 
-    signature = form_fields.SignatureField(required=False)
+    signature = form_fields.SignatureField()
     range_value = forms.IntegerField(required=False, min_value=0)
     range_unit = forms.ChoiceField(required=False, choices=[
         ('days', 'days'),
