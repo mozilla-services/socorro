@@ -487,8 +487,7 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
             # Set up the data chunk to be passed to S3.
             reason = processed_crash['classifications']['support']['classification']
             content = {
-                # Unfortunate mixing of uuid and crash_id terminology. :(
-                'uuid': crash_id,
+                'crash_id': crash_id,
                 'reasons': [reason]
             }
         except KeyError:

@@ -415,7 +415,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             [
                 mock.call(
                     '{"reasons": ["SIGSEGV"],'
-                    ' "uuid": "3c61f81e-ea2b-4d24-a3ce-6bb9d2140915"}'
+                    ' "crash_id": "3c61f81e-ea2b-4d24-a3ce-6bb9d2140915"}'
                 ),
             ],
             any_order=True,
