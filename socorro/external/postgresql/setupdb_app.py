@@ -49,7 +49,7 @@ class PostgreSQLAlchemyManager(object):
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         # we only need to create the json extension for pg9.2.*
-        if not self.min_ver_check("9.3.0"):
+        if not self.min_ver_check(90300):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA bixie')
@@ -267,21 +267,22 @@ class PostgreSQLAlchemyManager(object):
     def commit(self):
         self.session.commit()
 
-    def version(self):
-        result = self.session.execute("SELECT version()")
-        version_info = result.fetchone()
-        return version_info["version"]
-
-    # the version number is the second substring
+    # get the postgres version as a sortable integer
     def version_number(self):
-        return self.version().split()[1]
+        result = self.session.execute("SELECT setting FROM pg_settings WHERE name = 'server_version_num'")
+        version_info = result.fetchone()
+        return version_info["setting"]
 
-    # Parse the version as a tuple since the PG version string is "simple"
-    # If we need a more "feature complete" version parser, we can use
-    # distutils.version:StrictVersion or pkg_resources:parse_version
+    # get the version as a user-readable string
+    def version_string(self):
+        result = self.session.execute("SELECT setting FROM pg_settings WHERE name = 'server_version'")
+        version_info = result.fetchone()
+        return version_info["setting"]
+
+    # compare the actual server version number to a required server version number
+    # version required should be an integer, in the format 90300 for 9.3
     def min_ver_check(self, version_required):
-        return (tuple(map(int, self.version_number().split("."))) >=
-                tuple(map(int, version_required.split("."))))
+        return self.version_number >= version_required
 
     def create_roles(self, config):
         """
@@ -559,9 +560,9 @@ class SocorroDB(App):
 
         with PostgreSQLAlchemyManager(sa_url, self.config.logger,
                                       autocommit=False) as db:
-            if not db.min_ver_check("9.2.0"):
+            if not db.min_ver_check(90200):
                 print 'ERROR - unrecognized PostgreSQL version: %s' % \
-                    db.version()
+                    db.version_string()
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
@@ -579,7 +580,7 @@ class SocorroDB(App):
                     connection.execute('commit')
                     connection.execute('DROP DATABASE %s' % self.database_name)
                 except exc.ProgrammingError, e:
-                    if re.match(
+                    if re.search(
                         'database "%s" does not exist' % self.database_name,
                         e.orig.pgerror.strip()):
                         # already done, no need to rerun
@@ -590,8 +591,8 @@ class SocorroDB(App):
                 connection.execute('commit')
                 connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
                                    self.database_name)
-            except ProgrammingError, e:
-                if re.match(
+            except exh.ProgrammingError, e:
+                if re.search(
                     'database "%s" already exists' % self.database_name,
                     e.orig.pgerror.strip()):
                     # already done, no need to rerun
