@@ -463,6 +463,9 @@ class TestTransformRules(TestCase):
     def test_rule_simple(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
+        fake_config.chatty_rules = False
+        fake_config.chatty = False
+
         r1 = transform_rules.Rule(fake_config)
         eq_(r1.predicate(None, None, None, None), True)
         eq_(r1.action(None, None, None, None), True)
@@ -489,6 +492,8 @@ class TestTransformRules(TestCase):
     def test_rule_exceptions(self):
         fake_config = DotDict()
         fake_config.logger = Mock()
+        fake_config.chatty_rules = False
+        fake_config.chatty = False
 
         class BadPredicate(transform_rules.Rule):
             def _predicate(self, *args, **kwargs):
@@ -532,14 +537,24 @@ class TestTransformRules(TestCase):
 
     def test_rules_in_config(self):
         config = DotDict()
+        config.chatty_rules = False
+        config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
         config['TestRuleTestLaughable.laughable'] = 'wilma'
         config['TestRuleTestDangerous.dangerous'] = 'dwight'
         config.rules_list = DotDict()
         config.rules_list.class_list = [
-            ('TestRuleTestLaughable', TestRuleTestLaughable),
-            ('TestRuleTestDangerous', TestRuleTestDangerous)
+            (
+                'TestRuleTestLaughable',
+                TestRuleTestLaughable,
+                'TestRuleTestLaughable'
+            ),
+            (
+                'TestRuleTestDangerous',
+                TestRuleTestDangerous,
+                'TestRuleTestDangerous'
+            )
         ]
         trs = transform_rules.TransformRuleSystem(config)
 

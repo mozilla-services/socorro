@@ -3,7 +3,7 @@ from configman import RequiredConfig, Namespace, class_converter
 
 #------------------------------------------------------------------------------
 def _default_list_splitter(class_list_str):
-    return [x.strip() for x in class_list_str.split(',')]
+    return [x.strip() for x in class_list_str.split(',') if x.strip()]
 
 
 #------------------------------------------------------------------------------
@@ -16,6 +16,8 @@ def str_to_classes_in_namespaces_converter(
         template_for_namespace="%(name)s",
         list_splitter_fn=_default_list_splitter,
         class_extractor=_default_class_extractor,
+        name_of_class_option='qualified_class_name',
+        instantiate_classes=False,
 ):
     """
     parameters:
@@ -74,30 +76,32 @@ def str_to_classes_in_namespaces_converter(
                     class_extractor(class_list_element)
                 )
 
-                class_list.append((a_class.__name__, a_class))
                 # figure out the Namespace name
                 namespace_name_dict = {
                     'name': a_class.__name__,
                     'index': namespace_index
                 }
                 namespace_name = template_for_namespace % namespace_name_dict
+                class_list.append((a_class.__name__, a_class, namespace_name))
                 subordinate_namespace_names.append(namespace_name)
                 # create the new Namespace
                 required_config.namespace(namespace_name)
                 a_class_namespace = required_config[namespace_name]
-                # add options for the classes required config
-                try:
-                    for k, v in a_class.get_required_config().iteritems():
-                        a_class_namespace[k] = v
-                except AttributeError:  # a_class has no get_required_config
-                    pass
+                a_class_namespace.add_option(
+                    name_of_class_option,
+                    doc='fully qualified classname',
+                    default=class_list_element,
+                    from_string_converter=class_converter,
+                    likely_to_be_changed=True,
+                )
 
             @classmethod
             def to_str(cls):
                 """this method takes this inner class object and turns it back
                 into the original string of classnames.  This is used
                 primarily as for the output of the 'help' option"""
-                return cls.original_input
+                return "'%s'" % cls.original_input
 
         return InnerClassList  # result of class_list_converter
+
     return class_list_converter  # result of classes_in_namespaces_converter

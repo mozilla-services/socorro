@@ -112,7 +112,7 @@ class TestProcessor2015(TestCase):
 
         p = Processor2015(config)
 
-        ok_(isinstance(p.rule_system, SDotDict))
+        ok_(isinstance(p.rule_system, DotDict))
         eq_(len(p.rule_system), 2)
         ok_('ruleset01' in p.rule_system)
         ok_(isinstance(p.rule_system.ruleset01, TransformRuleSystem))
