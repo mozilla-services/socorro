@@ -387,6 +387,11 @@ class BaseTestViews(DjangoTestCase):
                  }
                       """ % {'end_date': now.strftime('%Y-%m-%d'),
                              'yesterday': yesterday.strftime('%Y-%m-%d')})
+            if '/supersearch/fields/' in url:
+                from crashstats.supersearch.tests.test_views import (
+                    SUPERSEARCH_FIELDS_MOCKED_RESULTS
+                )
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -396,6 +401,8 @@ class BaseTestViews(DjangoTestCase):
         from crashstats.crashstats.models import CurrentVersions, Platforms
         CurrentVersions().get()
         Platforms().get()
+        from crashstats.supersearch.models import SuperSearchFields
+        SuperSearchFields().get()
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()

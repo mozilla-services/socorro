@@ -729,7 +729,7 @@ class TestViews(BaseTestViews):
         ok_(dump['errors']['crash_id'])
 
         def mocked_get(url, params, **options):
-            assert '/crash_data' in url
+            assert '/crash_data' in url, url
 
             if 'datatype' in params and params['datatype'] == 'processed':
                 return Response("""
@@ -778,6 +778,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         eq_(dump['uuid'], u'11cb72f5-eb28-41e1-a8e4-849982120611')
         ok_('upload_file_minidump_flash2' in dump)
+        ok_('url' not in dump)
 
     @mock.patch('requests.get')
     def test_UnredactedCrash(self, rget):

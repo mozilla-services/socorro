@@ -24,6 +24,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'signature',
     },
     'product': {
         'name': 'product',
@@ -35,6 +36,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'product',
     },
     'version': {
         'name': 'version',
@@ -46,6 +48,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'version',
     },
     'platform': {
         'name': 'platform',
@@ -57,6 +60,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'platform',
     },
     'dump': {
         'name': 'dump',
@@ -68,6 +72,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': False,
         'is_mandatory': False,
+        'in_database_name': 'dump',
     },
     'release_channel': {
         'name': 'release_channel',
@@ -79,6 +84,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'release_channel',
     },
     'date': {
         'name': 'date',
@@ -90,6 +96,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'date_processed',
     },
     'address': {
         'name': 'address',
@@ -101,6 +108,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'address',
     },
     'build_id': {
         'name': 'build_id',
@@ -112,6 +120,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'build',
     },
     'reason': {
         'name': 'reason',
@@ -123,6 +132,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'reason',
     },
     'java_stack_trace': {
         'name': 'java_stack_trace',
@@ -134,6 +144,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'java_stack_trace',
     },
     'email': {
         'name': 'email',
@@ -145,6 +156,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'email',
     },
     'url': {
         'name': 'url',
@@ -156,6 +168,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'url',
     },
     'exploitability': {
         'name': 'exploitability',
@@ -169,6 +182,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'exploitability',
     },
     'user_comments': {
         'name': 'user_comments',
@@ -180,6 +194,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
+        'in_database_name': 'user_comments',
     },
 }
 
