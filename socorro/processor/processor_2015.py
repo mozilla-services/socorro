@@ -10,6 +10,7 @@ some small part of the transformation process."""
 import ujson
 
 from configman import Namespace, RequiredConfig
+from configman.dotdict import DotDict as OrderedDotDict
 from configman.converters import (
     str_to_python_object,
 )
@@ -99,6 +100,7 @@ def rule_sets_from_string(rule_sets_as_string):
                 default=rule_set_class_str,
                 doc='the fully qualified name of the rule system class',
                 from_string_converter=str_to_python_object,
+                likely_to_be_changed=True,
             )
             required_config[name].add_option(
                 name='action',
@@ -107,13 +109,21 @@ def rule_sets_from_string(rule_sets_as_string):
                     'the name of the rule set method to run to processes '
                     'these rules'
                 ),
+                likely_to_be_changed=True,
             )
             required_config[name].add_option(
                 name='rules_list',
                 doc='a list of fully qualified class names for the rules',
                 default=default_rules_str,
-                from_string_converter=str_to_classes_in_namespaces_converter(),
+                from_string_converter=str_to_classes_in_namespaces_converter(
+                    name_of_class_option='rule_class'
+                ),
+                likely_to_be_changed=True,
             )
+
+        @classmethod
+        def to_str(klass):
+            return "'%s'" % rule_sets_as_string
 
     return ProcessorRuleSets
 
@@ -130,6 +140,7 @@ class Processor2015(RequiredConfig):
         doc="a hierarchy of rules in json form",
         default=default_rules_set_str,
         from_string_converter=rule_sets_from_string,
+        likely_to_be_changed=True,
     )
 
     #--------------------------------------------------------------------------
@@ -152,16 +163,17 @@ class Processor2015(RequiredConfig):
             self.quit_check = lambda: False
 
         # here we instantiate the rule sets and their rules.
-        self.rule_system = DotDict()
+        self.rule_system = OrderedDotDict()
         for a_rule_set_name in config.rule_sets.names:
+            self.config.logger.debug(
+                'setting up rule set: %s',
+                a_rule_set_name
+            )
             self.rule_system[a_rule_set_name] = (
                 config[a_rule_set_name].rule_system_class(
                     config[a_rule_set_name]
                 )
             )
-            self.config.logger.debug('setting up %s rules', a_rule_set_name)
-            for a_rule in self.rule_system[a_rule_set_name].rules:
-                self.config.logger.debug('   %s', a_rule.__class__.__name__)
 
     #--------------------------------------------------------------------------
     def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dumps):
@@ -178,6 +190,7 @@ class Processor2015(RequiredConfig):
         ]
         processor_meta_data.quit_check = self.quit_check
         processor_meta_data.processor = self
+        processor_meta_data.config = self.config
 
         # create the empty processed crash
         processed_crash = DotDict()
@@ -199,7 +212,7 @@ class Processor2015(RequiredConfig):
 
             # apply transformations
             #    step through each of the rule sets to apply the rules.
-            for a_rule_set in self.rule_system:
+            for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
                 # for each rule set, invoke the 'act' method - this method
                 # will be the method specified in fourth element of the
                 # rule set configuration list.

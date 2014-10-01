@@ -4,9 +4,12 @@
 
 import re
 
+from itertools import islice
+
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
+from socorro.lib.transform_rules import Rule
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 
 
@@ -75,7 +78,7 @@ class CSignatureToolBase(SignatureTool):
     def __init__(self, config, quit_check_callback=None):
         super(CSignatureToolBase, self).__init__(config, quit_check_callback)
         self.irrelevant_signature_re = None
-        self.prefix_signature_re =  None
+        self.prefix_signature_re = None
         self.signatures_with_line_numbers_re = None
         self.signature_sentinels = []
 
@@ -90,8 +93,8 @@ class CSignatureToolBase(SignatureTool):
         function=None,
         file=None,
         line=None,
-        offset=None,
         module_offset=None,
+        offset=None,
         function_offset=None,
         normalized=None,
         **kwargs  # eat any extra kwargs passed in
@@ -126,7 +129,7 @@ class CSignatureToolBase(SignatureTool):
             return '%s#%s' % (file, line)
         if not module:
             module = ''  # might have been None
-        return '%s@%s' % (module, offset)
+        return '%s@%s' % (module, module_offset)
 
     #--------------------------------------------------------------------------
     def _do_generate(self,
@@ -184,6 +187,7 @@ class CSignatureToolBase(SignatureTool):
 
         return signature, signature_notes
 
+
 #==============================================================================
 class CSignatureTool(CSignatureToolBase):
     """This is a C/C++ signature generation class that gets its initialization
@@ -191,10 +195,10 @@ class CSignatureTool(CSignatureToolBase):
 
     required_config = Namespace()
     required_config.add_option(
-      'signature_sentinels',
-      doc='a list of frame signatures that should always be considered top '
-          'of the stack if present in the stack',
-      default="""['_purecall',
+        'signature_sentinels',
+        doc='a list of frame signatures that should always be considered top '
+            'of the stack if present in the stack',
+        default="""['_purecall',
                ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
                 lambda x: 'CrashReporter::CreatePairedMinidumps(void*, '
                   'unsigned long, nsAString_internal*, nsILocalFile**, '
@@ -205,13 +209,13 @@ class CSignatureTool(CSignatureToolBase):
                   '(wchar_t const*, wchar_t const*, wchar_t const*, unsigned '
                   'int, unsigned int)'
               ]""",
-      from_string_converter=eval
+        from_string_converter=eval
     )
     required_config.add_option(
-      'irrelevant_signature_re',
-      doc='a regular expression matching frame signatures that should be '
-          'ignored when generating an overall signature',
-      default="""'|'.join([
+        'irrelevant_signature_re',
+        doc='a regular expression matching frame signatures that should be '
+            'ignored when generating an overall signature',
+        default="""'|'.join([
           '@0x[0-9a-fA-F]{2,}',
           '@0x[1-9a-fA-F]',
           'ashmem',
@@ -258,14 +262,16 @@ class CSignatureTool(CSignatureToolBase):
           '_ZdlPv',
           'zero',
           ])""",
-      from_string_converter=eval
+        from_string_converter=eval
     )
     required_config.add_option(
-      'prefix_signature_re',
-      doc='a regular expression matching frame signatures that should always '
-          'be coupled with the following frame signature when generating an '
-          'overall signature',
-      default="""'|'.join([
+        'prefix_signature_re',
+        doc=(
+            'a regular expression matching frame signatures that should '
+            'always be coupled with the following frame signature when '
+            'generating an overall signature'
+        ),
+        default="""'|'.join([
           '@0x0',
           '.*CrashAtUnhandlableOOM',
           'Abort',
@@ -413,24 +419,29 @@ class CSignatureTool(CSignatureToolBase):
           '.*DebugAbort.*',
           'mozilla::ipc::MessageChannel::~MessageChannel.*',
         ])""",
-      from_string_converter=eval
+        from_string_converter=eval
     )
     required_config.add_option(
-      'signatures_with_line_numbers_re',
-      doc='any signatures that match this list should be combined with their '
-          'associated source code line numbers',
-      default='js_Interpret'
+        'signatures_with_line_numbers_re',
+        doc=(
+            'any signatures that match this list should be combined '
+            'with their associated source code line numbers'
+        ),
+        default='js_Interpret'
     )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(CSignatureTool, self).__init__(config, quit_check_callback)
-        self.irrelevant_signature_re = \
-             re.compile(self.config.irrelevant_signature_re)
-        self.prefix_signature_re =  \
-            re.compile(self.config.prefix_signature_re)
-        self.signatures_with_line_numbers_re = \
-            re.compile(self.config.signatures_with_line_numbers_re)
+        self.irrelevant_signature_re = re.compile(
+            self.config.irrelevant_signature_re
+        )
+        self.prefix_signature_re = re.compile(
+            self.config.prefix_signature_re
+        )
+        self.signatures_with_line_numbers_re = re.compile(
+            self.config.signatures_with_line_numbers_re
+        )
         self.signature_sentinels = config.signature_sentinels
 
 
@@ -499,7 +510,7 @@ class CSignatureToolDB(CSignatureToolBase):
         # get sentinel rules
         self.signature_sentinels = [
             eval(sentinel_rule)  # eval quoted strings and tuples
-                if sentinel_rule[0] in "'\"(" else
+            if sentinel_rule[0] in "'\"(" else
             sentinel_rule  # already a string, don't need to eval
             for (sentinel_rule,) in execute_query_fetchall(
                 connection,
@@ -602,3 +613,181 @@ class JavaSignatureTool(SignatureTool):
             )
 
         return signature, signature_notes
+
+
+#==============================================================================
+class SignatureGenerationRule(Rule):
+    required_config = Namespace()
+    required_config.namespace('c_signature')
+    required_config.c_signature.add_option(
+        'c_signature_tool_class',
+        doc='the class that can generate a C signature',
+        default='socorro.processor.signature_utilities.CSignatureTool',
+        from_string_converter=class_converter
+    )
+    required_config.c_signature.add_option(
+        'maximum_frames_to_consider',
+        doc='the maximum number of frames to consider',
+        default=40,
+    )
+    required_config.namespace('java_signature')
+    required_config.java_signature.add_option(
+        'java_signature_tool_class',
+        doc='the class that can generate a Java signature',
+        default='socorro.processor.signature_utilities.JavaSignatureTool',
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(SignatureGenerationRule, self).__init__(config)
+        self.java_signature_tool = (
+            self.config.java_signature.java_signature_tool_class(
+                config.java_signature
+            )
+        )
+        self.c_signature_tool = self.config.c_signature.c_signature_tool_class(
+            config.c_signature
+        )
+
+    #--------------------------------------------------------------------------
+    def _create_frame_list(self, crashing_thread_mapping):
+        frame_signatures_list = []
+        for a_frame in islice(
+            crashing_thread_mapping.get('frames', {}),
+            self.config.c_signature.maximum_frames_to_consider
+        ):
+            normalized_signature = self.c_signature_tool.normalize_signature(
+                **a_frame
+            )
+            if 'normalized' not in a_frame:
+                a_frame['normalized'] = normalized_signature
+            frame_signatures_list.append(normalized_signature)
+        return frame_signatures_list
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        if 'JavaStackTrace' in raw_crash and raw_crash.JavaStackTrace:
+            # generate a Java signature
+            signature, signature_notes = self.java_signature_tool.generate(
+                raw_crash.JavaStackTrace,
+                delimiter=': '
+            )
+            processed_crash.signature = signature
+            if signature_notes:
+                processor_meta.processor_notes.extend(signature_notes)
+            return True
+
+        try:
+            if processed_crash.get('hang_type', None) == 1:
+                # force the signature to come from thread 0
+                signature_list = self._create_frame_list(
+                    processed_crash.json_dump["threads"][0],
+                )
+            else:
+                signature_list = self._create_frame_list(
+                    processed_crash.json_dump["crashing_thread"],
+                )
+        except Exception, x:
+            processor_meta.processor_notes.append(
+                'No crashing frames found because of %s' % x
+            )
+            signature_list = []
+        try:
+            crashed_thread = processed_crash["crashing_thread"] \
+                ["threads_index"]
+        except KeyError:
+            crashed_thread = None
+        signature, signature_notes = self.c_signature_tool.generate(
+            signature_list,
+            processed_crash.get('hang_type', ''),
+            crashed_thread,
+        )
+        processed_crash.signature = signature
+        if signature_notes:
+            processor_meta.processor_notes.extend(signature_notes)
+        return True
+
+
+#==============================================================================
+class OOMSignature(Rule):
+    """To satisfy Bug 1007530, this rule will modify the signature to
+    tag OOM (out of memory) crashes"""
+
+    signature_fragments = (
+        'NS_ABORT_OOM',
+        'mozalloc_handle_oom',
+        'CrashAtUnhandlableOOM'
+    )
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        if 'OOMAllocationSize' in raw_crash:
+            return True
+        signature = processed_crash.signature
+        for a_signature_fragment in self.signature_fragments:
+            if a_signature_fragment in signature:
+                return True
+        return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash.original_signature = processed_crash.signature
+        try:
+            size = int(raw_crash.OOMAllocationSize)
+        except (TypeError, AttributeError, KeyError):
+            processed_crash.signature = (
+                "OOM | unknown | " + processed_crash.signature
+            )
+            return True
+
+        if size <= 262144:  # 256K
+            processed_crash.signature = "OOM | small"
+        else:
+            processed_crash.signature = (
+                "OOM | large | " + processed_crash.signature
+            )
+        return True
+
+
+#==============================================================================
+class SigTrunc(Rule):
+    """ensure that the signature is never longer than 255 characters"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return len(processed_crash.signature) > 255
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash.signature = "%s..." % processed_crash.signature[:252]
+        return True
+
+
+#==============================================================================
+class StackwalkerErrorSignatureRule(Rule):
+    """ensure that the signature is never longer than 255 characters"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return processed_crash.signature.startswith('EMPTY')
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash.signature = "%s; %s" % (
+            processed_crash.signature,
+            processed_crash.mdsw_status_string
+        )
+        return True

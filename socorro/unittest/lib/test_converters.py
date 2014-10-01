@@ -95,14 +95,14 @@ class TestConverters(TestCase):
         req = result.required_config
         self.assertEqual(len(req), 2)
         self.assertTrue('class_Foo' in req)
-        self.assertEqual(len(req.class_Foo), 2)
+        self.assertEqual(len(req.class_Foo), 1)
         self.assertTrue('class_Bar' in req)
-        self.assertEqual(len(req.class_Bar), 2)
+        self.assertEqual(len(req.class_Bar), 1)
         self.assertEqual(
             sorted([x.strip() for x in class_list_str.split(',')]),
             sorted([
                 x.strip() for x in
-                to_str(result).split(',')
+                to_str(result).strip("'").split(',')
             ])
         )
 
@@ -207,6 +207,8 @@ class TestConverters(TestCase):
 
 
         self.assertEqual(len(config.kls_list.subordinate_namespace_names), 4)
-        for a_class_name, a_class in config.kls_list.class_list:
+        for i, (a_class_name, a_class, ns_name) in \
+            enumerate(config.kls_list.class_list):
             self.assertTrue(isinstance(a_class_name, str))
             self.assertEqual(a_class_name, a_class.__name__)
+            self.assertEqual(ns_name, "%s_%02d" % (a_class_name, i))

@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from crontabber.app import CronTabber, main
+from crontabber.app import CronTabberBase
 
 
 DEFAULT_JOBS = '''
@@ -55,17 +55,41 @@ DEFAULT_JOBS = '''
 '''
 
 
+# this class is for eventual support of CronTabber with the universal
+# socorro app.
+from socorro.app.socorro_app import App as App
+#==============================================================================
+class CronTabberApp(CronTabberBase, App):
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def get_application_defaults():
+        return {
+            'jobs': DEFAULT_JOBS,
+            'crontabber.database_class':
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+            'crontabber.transaction_executor_class':
+            'socorro.database.transaction_executor.TransactionExecutor',
+            'crontabber.job_state_db_class.database_class':
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+
+        }
+
+#------------------------------------------------------------------------------
+
+from crontabber.app import CronTabber
+
 # These settings should ideally be done in config, but because, at
 # the moment, it's easier for us to maintain python we're doing it here.
 CronTabber.required_config.crontabber.jobs.default = DEFAULT_JOBS
 CronTabber.required_config.crontabber.database_class.default = (
     'socorro.external.postgresql.connection_context.ConnectionContext'
 )
-CronTabber.required_config.crontabber.job_state_db_class.default.required_config.database_class.default = (
-    'socorro.external.postgresql.connection_context.ConnectionContext'
-)
-
+CronTabber.required_config.crontabber.job_state_db_class.default \
+    .required_config.database_class.default = (
+        'socorro.external.postgresql.connection_context.ConnectionContext'
+    )
 
 if __name__ == '__main__':  # pragma: no cover
+    from crontabber.app import main
     import sys
     sys.exit(main(CronTabber))

@@ -19,6 +19,9 @@ the support classifcation rules live here.
 }
 """
 
+from configman import Namespace
+from configman.converters import to_str
+
 from socorro.lib.ver_tools import normalize
 from socorro.lib.util import DotDict
 from socorro.lib.transform_rules import Rule
@@ -50,7 +53,7 @@ class SupportClassificationRule(Rule):
                     raise
             self.config.logger.debug(
                 'Rule %s predicicate failed because of "%s"',
-                self.__class__,
+                to_str(self.__class__),
                 x,
                 exc_info=True
             )
@@ -74,7 +77,7 @@ class SupportClassificationRule(Rule):
                     raise
             self.config.logger.debug(
                 'Rule %s action failed because of missing key "%s"',
-                self.__class__,
+                to_str(self.__class__),
                 x,
             )
         except Exception, x:
@@ -84,7 +87,7 @@ class SupportClassificationRule(Rule):
                 raise
             self.config.logger.debug(
                 'Rule %s action failed because of "%s"',
-                self.__class__,
+                to_str(self.__class__),
                 x,
                 exc_info=True
             )
@@ -153,6 +156,14 @@ class OutOfDateClassifier(SupportClassificationRule):
     of date if the version is less than the threshold
     'firefox_out_of_date_version' found in the processor configuration"""
 
+    required_config = Namespace()
+    required_config.add_option(
+        'firefox_out_of_date_version',
+        doc='the version of Firefox that is considered to be old enough '
+            'to warrant a warning to the user',
+        default='17',
+    )
+
     #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
@@ -165,9 +176,14 @@ class OutOfDateClassifier(SupportClassificationRule):
                 and normalize(raw_crash.Version) < self.out_of_date_threshold
             )
         except AttributeError:
-            self.out_of_date_threshold = normalize(
-                processor.config.firefox_out_of_date_version
-            )
+            try:
+                self.out_of_date_threshold = normalize(
+                    self.config.firefox_out_of_date_version
+                )
+            except (AttributeError, KeyError):
+                self.out_of_date_threshold = normalize(
+                    processor.config.firefox_out_of_date_version
+                )
             return self._predicate(
                 raw_crash,
                 raw_dumps,
