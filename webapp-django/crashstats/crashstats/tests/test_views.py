@@ -2873,6 +2873,10 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
+        # first try without the necessary parameters
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+
         response = self.client.get(url, {
             'range_value': '1',
             'signature': 'sig',
