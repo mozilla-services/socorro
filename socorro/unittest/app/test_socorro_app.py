@@ -14,6 +14,7 @@ from socorro.app.socorro_app import (
     SocorroApp,
     SocorroWelcomeApp,
     main,
+    klass_to_pypath,
 )
 from socorro.app.for_application_defaults import ApplicationDefaultsProxy
 
@@ -89,7 +90,7 @@ class TestSocorroApp(TestCase):
 
 
 #==============================================================================
-class TestSocorroWelcomApp(TestCase):
+class TestSocorroWelcomeApp(TestCase):
 
     #--------------------------------------------------------------------------
     def test_instantiation(self):
@@ -114,3 +115,43 @@ class TestSocorroWelcomApp(TestCase):
             sa.main()
             eq_(tag, 'lars was here')
 
+
+#--------------------------------------------------------------------------
+def test_klass_to_pypath_various_modules():
+    from socorro.processor.processor_app import ProcessorApp
+    eq_(
+        klass_to_pypath(ProcessorApp),
+        'socorro.processor.processor_app.ProcessorApp'
+    )
+
+
+#--------------------------------------------------------------------------
+def test_klass_to_pypath_a_faked_out_main():
+
+    # since we can't really get a class that reports its __module__ as
+    # being '__main__', we have to fake it with mocks.
+
+    fake_sys_modules = {
+        '__main__': '/some/bogus/path/socoro/processor/processor_app.py',
+    }
+    fake_sys_path = [
+        '', '/my/home/path', '/your/home/path', '/some/bogus/path',
+        '/elsewhere/'
+    ]
+
+    MockedMainClass = mock.Mock()
+    MockedMainClass.__module__ = '__main__'
+    MockedMainClass.__name__ = 'ProcessorApp'
+
+    with mock.patch(
+        'socorro.app.socorro_app.sys.modules',
+        new=fake_sys_modules
+    ):
+        with mock.patch(
+            'socorro.app.socorro_app.sys.path',
+            new=fake_sys_path
+        ):
+            eq_(
+                klass_to_pypath(ProcessorApp),
+                'socorro.processor.processor_app.ProcessorApp'
+            )
