@@ -269,9 +269,9 @@ class PostgreSQLAlchemyManager(object):
 
     # get the postgres version as a sortable integer
     def version_number(self):
-        result = self.session.execute("SELECT setting FROM pg_settings WHERE name = 'server_version_num'")
+        result = self.session.execute("SELECT setting::INT as version FROM pg_settings WHERE name = 'server_version_num'")
         version_info = result.fetchone()
-        return version_info["setting"]
+        return version_info["version"]
 
     # get the version as a user-readable string
     def version_string(self):
