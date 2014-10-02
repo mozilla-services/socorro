@@ -269,9 +269,9 @@ class PostgreSQLAlchemyManager(object):
 
     # get the postgres version as a sortable integer
     def version_number(self):
-        result = self.session.execute("SELECT setting FROM pg_settings WHERE name = 'server_version_num'")
+        result = self.session.execute("SELECT setting::INT as version FROM pg_settings WHERE name = 'server_version_num'")
         version_info = result.fetchone()
-        return version_info["setting"]
+        return version_info["version"]
 
     # get the version as a user-readable string
     def version_string(self):
@@ -282,7 +282,7 @@ class PostgreSQLAlchemyManager(object):
     # compare the actual server version number to a required server version number
     # version required should be an integer, in the format 90300 for 9.3
     def min_ver_check(self, version_required):
-        return self.version_number >= version_required
+        return self.version_number() >= version_required
 
     def create_roles(self, config):
         """
