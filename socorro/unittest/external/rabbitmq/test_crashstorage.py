@@ -158,7 +158,7 @@ class TestCrashStorage(TestCase):
         crash_store.acknowledgment_queue.put('b2')
         crash_store._consume_acknowledgement_queue()
 
-        config.logger.error.assert_called_once_with(
+        config.logger.warning.assert_called_once_with(
             'RabbitMQCrashStorage tried to acknowledge crash %s'
             ', which was not in the cache',
             'b2',
