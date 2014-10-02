@@ -215,7 +215,7 @@ class SocorroApp(RequiredConfig):
                 doc=(
                     'the fully qualified classname of the app to run'
                 ),
-                default=py_obj_to_str(klass),
+                default=klass_to_pypath(klass),
                 # the following setting means this option will NOT be
                 # commented out when configman generates a config file
                 likely_to_be_changed=True,
