@@ -282,7 +282,7 @@ class PostgreSQLAlchemyManager(object):
     # compare the actual server version number to a required server version number
     # version required should be an integer, in the format 90300 for 9.3
     def min_ver_check(self, version_required):
-        return self.version_number >= version_required
+        return self.version_number() >= version_required
 
     def create_roles(self, config):
         """
