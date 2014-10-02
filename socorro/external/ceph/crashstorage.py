@@ -323,7 +323,6 @@ class BotoS3CrashStorage(CrashStorageBase):
             )
             return self._bucket_cache[bucket_name]
 
-
     #--------------------------------------------------------------------------
     def _submit_to_boto_s3(self, crash_id, name_of_thing, thing):
         """submit something to ceph.
@@ -355,7 +354,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _fetch_from_boto_s3(self, crash_id, name_of_thing):
-        """submit something to ceph.
+        """retrieve something from ceph.
         """
         conn = self._connect()
 
@@ -453,3 +452,59 @@ class BotoS3CrashStorage(CrashStorageBase):
     def force_reconnect(self):
         del self.connection
         self._bucket_cache = {}
+
+
+#==============================================================================
+class SupportReasonAPIStorage(BotoS3CrashStorage):
+    """Used to send a small subset of processed crash data the Support Reason
+       API back-end. This is effectively a highly lossy S3 storage mechanism.
+       bug 1066058
+    """
+
+    required_config = Namespace()
+    required_config.add_option(
+        'bucket_name',
+        doc="The name of the Support Reason API S3 bucket.",
+        default='mozilla-support-reason',
+        reference_value_from='resource.ceph',
+        likely_to_be_changed=True,
+    )
+
+    #--------------------------------------------------------------------------
+    def _create_bucket_name_for_crash_id(self, crash_id):
+        """The name of this bucket is configurable, but not auto-generated.
+        """
+        return self.config.bucket_name
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _do_save_processed(boto_s3_store, processed_crash):
+        """Replaces the function of the same name in the parent class.
+        """
+        crash_id = processed_crash['uuid']
+
+        try:
+            # Set up the data chunk to be passed to S3.
+            reason = processed_crash['classifications']['support']['classification']
+            content = {
+                'crash_id': crash_id,
+                'reasons': [reason]
+            }
+        except KeyError:
+            # No classifier was found for this crash.
+            return
+
+        # Submit the data chunk to S3.
+        boto_s3_store._submit_to_boto_s3(
+            crash_id,
+            'support_reason',
+            json.dumps(content)
+        )
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        """There are no scenarios in which the raw crash could possibly be of
+        interest to the Support Reason API, therefore this function does
+        nothing; however it is necessary for compatibility purposes.
+        """
+        pass
