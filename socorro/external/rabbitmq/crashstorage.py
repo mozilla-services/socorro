@@ -193,7 +193,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                         crash_id_to_be_acknowledged
                     ]
                 except KeyError:
-                    self.config.logger.error(
+                    self.config.logger.warning(
                         'RabbitMQCrashStorage tried to acknowledge crash %s'
                         ', which was not in the cache',
                         crash_id_to_be_acknowledged,
