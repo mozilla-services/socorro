@@ -35,6 +35,9 @@ $(function () {
                 contentElt.empty().append(data).tabs();
                 $('.tablesorter').tablesorter();
 
+                // Enhance bug links.
+                BugLinks.enhance();
+
                 // Make every value a link that adds a new line to the form
                 $('.term').click(function (e) {
                     e.preventDefault();

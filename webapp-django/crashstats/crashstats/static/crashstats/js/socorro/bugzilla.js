@@ -2,24 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// from https://github.com/janl/mustache.js/blob/master/mustache.js#L82
-var entityMap = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': '&quot;',
-    "'": '&#39;',
-    "/": '&#x2F;'
-};
-function escapeHtml(string) {
-    return String(string).replace(/[&<>"'\/]/g, function (s) {
-        return entityMap[s];
-    });
-}
-
 var BugLinks = (function() {
     var NOT_DONE_STATUSES = ['UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED'];
     var URL = '/buginfo/bug';  // TODO move this outside
+
+    // from https://github.com/janl/mustache.js/blob/master/mustache.js#L82
+    var entityMap = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': '&quot;',
+        "'": '&#39;',
+        "/": '&#x2F;'
+    };
+    function escapeHtml(string) {
+        return String(string).replace(/[&<>"'\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
 
     function fetch_remotely(bug_ids) {
         var deferred = $.Deferred();
@@ -69,62 +69,66 @@ var BugLinks = (function() {
         }
     }
 
-    return {
-        transform_with_data: function() {
-            // this function is potentially called repeated every time
-            // fetch_without_data() has fetched more data for the links
-            $('.bug-link-with-data').each(function() {
-                var $link = $(this);
-                if ($link.data('transformed')) return;  // already done
-                var status = $link.data('status');
-                var resolution = $link.data('resolution') || '---';
-                var summary = $link.data('summary');
+    function transform_with_data() {
+        // this function is potentially called repeated every time
+        // fetch_without_data() has fetched more data for the links
+        $('.bug-link-with-data').each(function() {
+            var $link = $(this);
+            if ($link.data('transformed')) return;  // already done
+            var status = $link.data('status');
+            var resolution = $link.data('resolution') || '---';
+            var summary = $link.data('summary');
 
-                var combined = status + ' ' + resolution + ' ' + summary;
-                $link.attr('title', escapeHtml(combined));
-                if ($link.parents('.bug_ids_expanded_list').length) {
-                    $link.after(
-                        $('<span class="bug-summary">').text(combined)
-                    );
-                }
-                if (status && $.inArray(status, NOT_DONE_STATUSES) === -1) {
-                    $link.addClass("strike");
-                }
-                $link.data('transformed', true);
-            });
-        },
-        fetch_without_data: function() {
-            // in batches, do a XHR to pull down more details about bugs
-            // for those bug links that don't have data yet
-            var unique_bug_ids = [];
-            $('.bug-link-without-data').each(function() {
-                unique_bug_ids.push($(this).data('id'));
-            });
-            unique_bug_ids = $.unique(unique_bug_ids);
-            if (unique_bug_ids.length) {
-                fetch(unique_bug_ids);
+            var combined = status + ' ' + resolution + ' ' + summary;
+            $link.attr('title', escapeHtml(combined));
+            if ($link.parents('.bug_ids_expanded_list').length) {
+                $link.after(
+                    $('<span class="bug-summary">').text(combined)
+                );
             }
+            if (status && $.inArray(status, NOT_DONE_STATUSES) === -1) {
+                $link.addClass("strike");
+            }
+            $link.data('transformed', true);
+        });
+    }
+
+    function fetch_without_data() {
+        // in batches, do a XHR to pull down more details about bugs
+        // for those bug links that don't have data yet
+        var unique_bug_ids = [];
+        $('.bug-link-without-data').each(function() {
+            unique_bug_ids.push($(this).data('id'));
+        });
+        unique_bug_ids = $.unique(unique_bug_ids);
+        if (unique_bug_ids.length) {
+            fetch(unique_bug_ids);
+        }
+    }
+
+    return {
+        /* Enhance bug links using metadata about the bug. */
+        enhance: function() {
+            // apply to all bug links that already have the data
+            // when the template was rendered
+            transform_with_data();
+            // XHR fetch all other ones
+            fetch_without_data();
+        },
+        /* Enhance bug links and expanded bug lists. */
+        enhanceExpanded: function () {
+            this.enhance();
+
+            $('.bug_ids_more').hover(function() {
+                if (!$('.bug-link', this).length) return;
+                var inset = 10;
+                var $cell = $(this);
+                var bugList = $cell.find('.bug_ids_expanded_list');
+                bugList.css({
+                    top: $cell.position().top - inset,
+                    left: $cell.position().left - (bugList.width() + inset)
+                }).toggle();
+            });
         }
     };
 })();
-
-
-$(function() {
-    // apply to all bug links that already have the data
-    // when the template was rendered
-    BugLinks.transform_with_data();
-    // XHR fetch all other ones
-    BugLinks.fetch_without_data();
-
-    $('.bug_ids_more').hover(function() {
-        if (!$('.bug-link', this).length) return;
-        var inset = 10;
-        var $cell = $(this);
-        var bugList = $cell.find('.bug_ids_expanded_list');
-        bugList.css({
-            top: $cell.position().top - inset,
-            left: $cell.position().left - (bugList.width() + inset)
-        }).toggle();
-    });
-
-});

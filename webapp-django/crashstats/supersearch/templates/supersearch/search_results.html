@@ -119,7 +119,7 @@
                         <h3>Bugs for <code>{{ hit.term }}</code></h3>
                         <ul class="bug_ids_expanded full_bug_ids popup">
                             {% for bug in hit.bugs %}
-                            {{ show_bug_link(bug) }}
+                            <li>{{ show_bug_link(bug) }}</li>
                             {% endfor %}
                         </ul>
                     </div>

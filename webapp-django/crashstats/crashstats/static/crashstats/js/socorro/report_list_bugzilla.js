@@ -25,8 +25,7 @@ var Bugzilla = (function() {
                    // now that the HTML has been loaded,
                    // now we can let BugLinks loose on the HTML to convert
                    // bug links to something more useful
-                   BugLinks.transform_with_data();
-                   BugLinks.fetch_without_data();
+                   BugLinks.enhance();
                }
                deferred.resolve();
            });

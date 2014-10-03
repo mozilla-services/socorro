@@ -307,6 +307,9 @@ $(document).ready(function () {
         $(this).parents(".sig-history-container").addClass("hide");
     });
 
+    // Enhance bug links.
+    BugLinks.enhanceExpanded();
+
     /* Initialize things */
     Correlations.init();
 });

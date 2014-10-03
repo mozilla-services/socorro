@@ -152,5 +152,8 @@
         });
 
         updateVersions(searchFormParams.products, searchFormParams.versions);
+
+        // Enhance bug links.
+        BugLinks.enhance();
     });
 }($, window));

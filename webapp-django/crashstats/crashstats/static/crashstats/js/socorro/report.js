@@ -67,4 +67,7 @@ $(document).ready(function () {
     });
 
     $('#modules-list').tablesorter({sortList: [[1, 0]], headers: {1: {sorter : 'digit'}}});
+
+    // Enhance bug links.
+    BugLinks.enhance();
 });
