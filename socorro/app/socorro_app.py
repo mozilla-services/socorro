@@ -166,19 +166,22 @@ class SocorroApp(RequiredConfig):
 
     #--------------------------------------------------------------------------
     @classmethod
-    def run(klass):
+    def run(klass, config_path=None, values_source_list=None):
         global restart
         restart = True
         while restart:
             # the SIGHUP handler will change that back to True if it wants
             # the app to restart and run again.
             restart = False
-            app_exit_code = klass._do_run()
+            app_exit_code = klass._do_run(
+                config_path=config_path,
+                values_source_list=values_source_list
+            )
         return app_exit_code
 
     #--------------------------------------------------------------------------
     @classmethod
-    def _do_run(klass):
+    def _do_run(klass, config_path=None, values_source_list=None):
         # while this method is defined here, only derived classes are allowed
         # to call it.
         if klass is SocorroApp:
@@ -186,22 +189,28 @@ class SocorroApp(RequiredConfig):
                 "The SocorroApp class has no useable 'main' method"
             )
 
-        config_path = os.environ.get(
-            'DEFAULT_SOCORRO_CONFIG_PATH',
-            './config'
-        )
+        if config_path is None:
+            config_path = os.environ.get(
+                'DEFAULT_SOCORRO_CONFIG_PATH',
+                './config'
+            )
 
-        values_source_list = [
-            # pull in the application defaults from the 'application'
-            # configman option, once it has been defined
-            application_defaults_proxy,
-            # pull in any configuration file
-            ConfigFileFutureProxy,
-            # get values from the environment
-            environment,
-            # use the command line to get the final overriding values
-            command_line
-        ]
+        if values_source_list is None:
+            values_source_list = [
+                # pull in the application defaults from the 'application'
+                # configman option, once it has been defined
+                application_defaults_proxy,
+                # pull in any configuration file
+                ConfigFileFutureProxy,
+                # get values from the environment
+                environment,
+                # use the command line to get the final overriding values
+                command_line
+            ]
+        elif application_defaults_proxy not in values_source_list:
+            values_source_list = (
+                [application_defaults_proxy] + values_source_list
+            )
 
         config_definition = klass.get_required_config()
         if 'application' not in config_definition:
@@ -478,8 +487,11 @@ def _convert_format_string(s):
 
 
 #------------------------------------------------------------------------------
-def main(app_class):
-    return app_class.run()
+def main(app_class, config_path=None, values_source_list=None):
+    return app_class.run(
+        config_path=config_path,
+        values_source_list=values_source_list
+    )
 
 if __name__ == '__main__':
     main(SocorroWelcomeApp)
