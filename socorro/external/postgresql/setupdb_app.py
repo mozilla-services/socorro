@@ -591,7 +591,7 @@ class SocorroDB(App):
                 connection.execute('commit')
                 connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
                                    self.database_name)
-            except exh.ProgrammingError, e:
+            except exc.ProgrammingError, e:
                 if re.search(
                     'database "%s" already exists' % self.database_name,
                     e.orig.pgerror.strip()):
