@@ -30,7 +30,7 @@ def upgrade():
 
 def downgrade():
     op.execute("""
-        DELEE FROM os_versions
+        DELETE FROM os_versions
         WHERE major_version = 6
         AND minor_version = 4
         AND os_name = 'Windows'
