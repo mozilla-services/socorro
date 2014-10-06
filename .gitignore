@@ -5,7 +5,8 @@ socorro/unittest/config/*.py
 *.log
 distribute*.tar.gz
 analysis/build/
-google-breakpad
+breakpad/
+breakpad.tar.gz
 nosetests.xml
 scripts/config/*.py
 socorro/unittest/config/*.py
