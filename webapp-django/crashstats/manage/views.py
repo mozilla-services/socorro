@@ -476,6 +476,10 @@ def supersearch_field_create(request):
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
 
+    # The API is using cache to get all fields by a specific namespace
+    # for the whitelist lookup, clear that cache too.
+    cache.delete('api_supersearch_fields_%s' % field_data['namespace'])
+
     return redirect(reverse('manage:supersearch_fields'))
 
 

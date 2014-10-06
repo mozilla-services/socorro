@@ -1257,6 +1257,7 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
         r = api.get(crash_id='some-crash-id')
         eq_(r['Vendor'], 'Mozilla')
+        ok_('Email' in r)  # no filtering at this level
 
     @mock.patch('requests.get')
     def test_raw_crash_raw_data(self, rget):

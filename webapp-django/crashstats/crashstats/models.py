@@ -28,6 +28,45 @@ from crashstats.api.cleaner import Cleaner
 logger = logging.getLogger('crashstats_models')
 
 
+class Lazy(object):
+
+    def __init__(self, func):
+        self.func = func
+
+    def materialize(self):
+        return self.func()
+
+
+def get_api_whitelist(*args, **kwargs):
+
+    def get_from_es(namespace, baseline=None):
+        # @namespace is something like 'raw_crash' or 'processed_crash'
+        fields = cache.get('api_supersearch_fields_%s' % namespace)
+        if fields is None:
+            # This needs to be imported in runtime because otherwise you'll
+            # get a circular import.
+            from crashstats.supersearch.models import SuperSearchFields
+            all = SuperSearchFields().get()
+            fields = []
+            if baseline:
+                if isinstance(baseline, tuple):
+                    baseline = list(baseline)
+                fields.extend(baseline)
+            for meta in all.itervalues():
+                if (
+                    meta['namespace'] == namespace and
+                    not meta['permissions_needed'] and
+                    meta['is_returned']
+                ):
+                    fields.append(meta['in_database_name'])
+            fields = tuple(fields)
+        return fields
+
+    return Lazy(
+        functools.partial(get_from_es, *args, **kwargs)
+    )
+
+
 class BadStatusCodeError(Exception):
     def __init__(self, status, message="Bad status code"):
         self.message = message
@@ -845,6 +884,14 @@ class ProcessedCrash(SocorroMiddleware):
         'upload_file_minidump_*',
     )
 
+    # Same as for RawCrash, we supplement with the existing list, on top
+    # of the Super Search Fields, because there are many fields not yet
+    # listed in Super Search Fields.
+    API_WHITELIST = get_api_whitelist(
+        'processed_crash',
+        baseline=API_WHITELIST
+    )
+
     API_CLEAN_SCRUB = (
         ('user_comments', scrubber.EMAIL),
         ('user_comments', scrubber.URL),
@@ -976,6 +1023,11 @@ class RawCrash(SocorroMiddleware):
         'ShutdownProgress',
         'DOMIPCEnabled',
     )
+
+    # The reason we use the old list and pass it into the more dynamic wrapper
+    # for getting the complete list is because we're apparently way behind
+    # on having all of these added to the Super Search Fields.
+    API_WHITELIST = get_api_whitelist('raw_crash', baseline=API_WHITELIST)
 
     API_CLEAN_SCRUB = (
         ('Comments', scrubber.EMAIL),

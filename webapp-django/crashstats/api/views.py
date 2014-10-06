@@ -322,6 +322,10 @@ def model_wrapper(request, model_name):
 
         elif not request.user.has_perm('crashstats.view_pii'):
             clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
+
+            if isinstance(model.API_WHITELIST, models.Lazy):
+                model.API_WHITELIST = model.API_WHITELIST.materialize()
+
             if result and model.API_WHITELIST:
                 cleaner = Cleaner(
                     model.API_WHITELIST,

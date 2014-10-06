@@ -33,6 +33,15 @@ var ALL_PERMISSIONS = {{ all_permissions | json_dumps }};
   <div class="panel">
     <div class="body notitle">
 
+        <p class="api-exposure-warning">
+          <b>A Word of Warning!</b><br>
+          By default, adding a field to the <code>raw_crash</code> or
+          <code>processed_crash</code> namespaces will expose that field in the
+          public <a href="{{ url('api:documentation') }}">Web API</a>. Make
+          sure you have set appropriate permissions to fields containing
+          private or sensitive data before submitting.
+        </p>
+
         <form
             id="supersearch-field"
             method="post"
