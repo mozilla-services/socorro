@@ -30,11 +30,25 @@ Install dependencies
 
 Modify postgresql config
 ::
-  sudo editor /etc/postgresql/9.3/main/postgresql.conf
+  sudo vi /etc/postgresql/9.3/main/postgresql.conf
 
 Ensure that timezone is set to UTC
 ::
   timezone = 'UTC'
+
+Allow local connections for PostgreSQL
+::
+  sudo vi /etc/postgresql/9.3/main/pg_hba.conf
+
+Ensure that local connections are allowed:
+::
+  # IPv4 local connections:
+  host    all             all             127.0.0.1/32            md5
+  # IPv6 local connections:
+  host    all             all             ::1/128                 md5
+
+See http://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
+for more information on this file.
 
 Restart PostgreSQL to activate config changes, if the above was changed
 ::
