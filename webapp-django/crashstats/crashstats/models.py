@@ -28,18 +28,17 @@ from crashstats.api.cleaner import Cleaner
 logger = logging.getLogger('crashstats_models')
 
 
-# used because None can be an actual result
-_marker = object()
-
-
 class Lazy(object):
+
+    # used because None can be an actual result
+    _marker = object()
 
     def __init__(self, func):
         self.func = func
-        self.materialized = _marker
+        self.materialized = self._marker
 
     def materialize(self):
-        if self.materialized is _marker:
+        if self.materialized is self._marker:
             self.materialized = self.func()
         return self.materialized
 
