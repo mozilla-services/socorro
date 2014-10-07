@@ -31,6 +31,37 @@ is activated and the PYTHONPATH is set
 Or you can choose to manage the virtualenv yourself, perhaps using
 virtualenwrapper.
 
+Add a new superuser account to PostgreSQL
+-----------------------------------------
+
+Create a superuser account for yourself. Make sure to put your username
+and desired password instead of YOURNAME and YOURPASS.
+As the *postgres* user:
+::
+  psql template1 -c \
+    "create user YOURNAME with encrypted password 'YOURPASS' superuser"
+
+For running unit tests, you'll want a test user as well (make sure
+to remove this for production installs).
+::
+  psql template1 -c \
+    "create user test with encrypted password 'aPassword' superuser"
+
+
+Configure migrations (Alembic)
+------------------------------
+
+Also, before you run unit tests or make, be sure to copy and edit this file:
+
+  cp config/alembic.ini-dist config/alembic.ini
+  vi config/alembic.ini
+
+The important line to update is *sqlalchemy.url*, it should be changed
+to match the superuser account you created above:
+::
+  sqlalchemy.url = postgresql://YOURNAME:YOURPASS@localhost/socorro_migration_test
+
+
 Run unit/functional tests
 -------------------------
 

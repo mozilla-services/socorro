@@ -61,9 +61,28 @@ Initialize and enable PostgreSQL on startup:
   sudo service postgresql-9.3 start
   sudo chkconfig postgresql-9.3 on
 
-Verify that the postgresql service is set to use the UTC time zone:
+Modify postgresql config
 ::
-  sudo grep ^timezone /var/lib/pgsql/9.3/data/postgresql.conf
+  sudo vi /var/lib/pgsql/9.3/data/postgresql.conf
+
+Ensure that timezone is set to UTC
+::
+  timezone = 'UTC'
+
+Allow local connections for PostgreSQL
+::
+  sudo vi /var/lib/pgsql/9.3/data/pg_hba.conf
+
+Ensure that local connections are allowed:
+::
+
+  # IPv4 local connections:
+  host    all             all             127.0.0.1/32            md5
+  # IPv6 local connections:
+  host    all             all             ::1/128                 md5
+
+See http://www.postgresql.org/docs/9.3/static/auth-pg-hba-conf.html
+for more information on this file.
 
 You'll need to restart postgresql if the configuration was updated:
 ::

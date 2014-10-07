@@ -24,7 +24,6 @@ Contents:
    installation/index
    installation/deps
    installation/download
-   installation/postgres
    installation/install-binary
    installation/install-src-dev
    installation/install-src-prod
