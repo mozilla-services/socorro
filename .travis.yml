@@ -31,3 +31,6 @@ before_script:
 
 script:
   - ./scripts/build.sh
+
+notifications:
+  webhooks: http://leeroybot.lonnen.com/hubot/travis?room=%23breakpad
