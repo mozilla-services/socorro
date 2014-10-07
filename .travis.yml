@@ -32,4 +32,4 @@ script:
   - ./scripts/build.sh
 
 notifications:
-  webhooks: https://travisified.paas.allizom.org/webhook
+  webhooks: http://leeroybot.lonnen.com/hubot/travis
