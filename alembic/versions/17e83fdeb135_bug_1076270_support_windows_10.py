@@ -22,17 +22,19 @@ from sqlalchemy.sql import table, column
 
 def upgrade():
     op.execute("""
-        INSERT INTO os_versions
-        (major_version, minor_version, os_name, os_version_string)
-        VALUES (6, 4, 'Windows', 'Windows 10')
+        UPDATE os_versions
+        SET os_version_string = 'Windows 10'
+        WHERE major_version = 6
+        AND minor_version = 4
+        AND os_name = 'Windows'
     """)
 
 
 def downgrade():
     op.execute("""
-        DELETE FROM os_versions
+        UPDATE os_versions
+        SET os_version_string = 'Windows Unknown'
         WHERE major_version = 6
         AND minor_version = 4
-        AND os_name = 'Windows'
-        AND os_version_string = 'Windows 10'
+        AND os_name = 'Windows Unknown'
     """)
