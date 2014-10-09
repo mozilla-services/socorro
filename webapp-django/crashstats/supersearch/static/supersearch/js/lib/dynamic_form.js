@@ -133,6 +133,9 @@
             else if (field.valueType === 'bool') {
                 options = OPERATORS_BOOLEAN;
             }
+            else if (field.valueType === 'flag') {
+                options = OPERATORS_EXISTENCE;
+            }
             else if (field.valueType === 'string') {
                 options = OPERATORS_STRING;
             }

@@ -10,6 +10,7 @@ TYPE_TO_FIELD_MAPPING = {
     'string': form_fields.StringField,
     'number': form_fields.IntegerField,
     'bool': form_fields.BooleanField,
+    'flag': form_fields.StringField,
     'date': form_fields.DateTimeField,
 }
 
@@ -34,6 +35,23 @@ class SearchForm(forms.Form):
         **kwargs
     ):
         super(self.__class__, self).__init__(*args, **kwargs)
+
+        self.all_fields = all_fields
+
+        # Default values loaded from a database.
+        if 'product' in self.all_fields:
+            self.all_fields['product']['form_field_choices'] = \
+                current_products.keys()
+
+        if 'version' in self.all_fields:
+            self.all_fields['version']['form_field_choices'] = [
+                x['version'] for x in current_versions
+            ]
+
+        if 'platform' in self.all_fields:
+            self.all_fields['platform']['form_field_choices'] = [
+                x['name'] for x in current_platforms
+            ]
 
         # Generate the list of fields.
         for field_data in all_fields.values():
@@ -69,19 +87,6 @@ class SearchForm(forms.Form):
 
             self.fields[field_data['name']] = field_obj
 
-        # Default values loaded from a database.
-        if 'product' in self.fields:
-            products = [(x, x) for x in current_products]
-            self.fields['product'].choices = products
-        if 'version' in self.fields:
-            versions = [
-                (v['version'], v['version']) for v in current_versions
-            ]
-            self.fields['version'].choices = versions
-        if 'platform' in self.fields:
-            platforms = [(x['name'], x['name']) for x in current_platforms]
-            self.fields['platform'].choices = platforms
-
     def get_fields_list(self, exclude=None):
         '''Return a dictionary describing the fields, to pass to the
         dynamic_form.js library. '''
@@ -90,45 +95,16 @@ class SearchForm(forms.Form):
         if exclude is None:
             exclude = []
 
-        for field_name in self.fields:
-            if field_name in exclude:
+        for field in self.all_fields.itervalues():
+            if field['name'] in exclude:
                 continue
 
-            field = self.fields[field_name]
-            try:
-                values = [x[0] for x in field.choices]
-            except AttributeError:
-                values = None
-            multiple = True
-            extensible = True
-
-            if isinstance(field, (forms.DateField, forms.DateTimeField)):
-                field_type = 'date'
-            elif isinstance(field, forms.IntegerField):
-                field_type = 'int'
-            elif isinstance(field, form_fields.BooleanField):
-                field_type = 'bool'
-            else:
-                field_type = 'string'
-
-            if field_type == 'int':
-                value_type = 'number'
-            elif field_type == 'date':
-                value_type = 'date'
-            elif field_type == 'bool':
-                value_type = 'bool'
-            elif isinstance(field, form_fields.StringField):
-                value_type = 'string'
-            else:
-                value_type = 'enum'
-
-            fields_list[field_name] = {
-                'name': field_name.replace('_', ' '),
-                'type': field_type,
-                'valueType': value_type,
-                'values': values,
-                'multiple': multiple,
-                'extensible': extensible,
+            fields_list[field['name']] = {
+                'name': field['name'].replace('_', ' '),
+                'valueType': field['query_type'],
+                'values': field['form_field_choices'],
+                'multiple': True,
+                'extensible': True,
             }
 
         return fields_list
