@@ -14,14 +14,14 @@ ln -fs /etc/socorro/local.py \
 
 # create DB if it does not exist
 # TODO handle DB not on localhost - could use setupdb for this
-psql -U postgres -h localhost -l | grep breakpad > /dev/null
+su postgres -c "psql -l | grep breakpad" > /dev/null
 if [ $? != 0 ]; then
     echo "Creating new DB, may take a few minutes"
     pushd /data/socorro/application > /dev/null
-    PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
+    su postgres -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
         ./socorro/external/postgresql/setupdb_app.py \
         --alembic_config=/etc/socorro/alembic.ini --database_name=breakpad \
-        --database_superusername=postgres &> /var/log/socorro/setupdb.log
+        --database_superusername=postgres" &> /var/log/socorro/setupdb.log
     if [ $? != 0 ]; then
         echo "WARN could not create database on localhost"
         echo "See /var/log/socorro/setupdb.log for more info"
@@ -30,9 +30,9 @@ if [ $? != 0 ]; then
 else
     echo "Running database migrations with alembic"
     pushd /data/socorro/application > /dev/null
-    PYTHONPATH=. ../socorro-virtualenv/bin/python \
+    su postgres -c "PYTHONPATH=. ../socorro-virtualenv/bin/python \
         ../socorro-virtualenv/bin/alembic \
-        -c /etc/socorro/alembic.ini upgrade head &> /var/log/socorro/alembic.log
+        -c /etc/socorro/alembic.ini upgrade head" &> /var/log/socorro/alembic.log
     if [ $? != 0 ]; then
         echo "WARN could not run alembic migrations"
         echo "See /var/log/socorro/alembic.log for more info"
