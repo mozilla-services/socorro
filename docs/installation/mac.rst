@@ -8,8 +8,7 @@ Mac OS X
 Install dependencies
 ::
   brew update
-  brew tap homebrew/versions
-  brew install python26 git gpp postgresql subversion rabbitmq memcached npm
+  brew install git gpp postgresql subversion rabbitmq memcached npm
   sudo easy_install virtualenv virtualenvwrapper pip
   sudo pip-2.7 install docutils
   brew install mercurial
