@@ -21,7 +21,7 @@ Requirements
 * C++ compiler (GCC 4.6 or greater)
 * Subversion
 * Git
-* PostrgreSQL and Python dev libraries (for psycopg2)
+* PostgreSQL and Python dev libraries (for psycopg2)
 * Less
 
 Virtual Machine using Vagrant
