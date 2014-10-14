@@ -8,8 +8,8 @@
     {{ super() }}
 
     {% compress js %}
-<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
-<script src="{{ static('manage/js/supersearch_field.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/select2.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/supersearch_field.js') }}"></script>
     {% endcompress %}
 
 <script>

@@ -14,9 +14,9 @@
 
 {% block site_js %}
     {{ super() }}
-    <script type="text/javascript" src="{{ static('api/js/lib/filesize.min.js') }}"></script>
+    <script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib/filesize.min.js') }}"></script>
     {% compress js %}
-    <script type="text/javascript" src="{{ static('api/js/testdrive.js') }}"></script>
+    <script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/testdrive.js') }}"></script>
     {% endcompress %}
 {% endblock %}
 

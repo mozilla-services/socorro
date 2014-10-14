@@ -212,14 +212,14 @@ Top Crashers for {{ product }} {{ version }}
 </script>
   {{ super() }}
   {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/jquery.tablesorter.js') }}"></script>
   {% endcompress %}
-  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}f"></script><![endif]-->
+  <!--[if IE]><script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib/excanvas.pack.js') }}f"></script><![endif]-->
   {% compress js %}
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/topcrash.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/bugzilla.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/correlation.js') }}"></script>
   {% endcompress %}
 
 {% endblock %}

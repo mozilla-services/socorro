@@ -51,12 +51,12 @@
 
 {% block site_js %}
   {{ super() }}
-  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/underscore-min.js') }}"></script>
-  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/jquery.tablesorter.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/moment.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/underscore-min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/d3.min.js') }}"></script>
   {% compress js %}
-  <script src="{{ static('crashstats/js/lib/sankey.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/crontabber_state.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/sankey.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/crontabber_state.js') }}"></script>
   {% endcompress %}
 {% endblock %}
