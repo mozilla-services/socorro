@@ -59,7 +59,9 @@
 }
 .button() {
     background-color: #406A80;
-    #gradient > .vertical(#48768e, #406A80);
+    background-image: -webkit-linear-gradient(top, #5D94B0, #48768E 50%, #406A80 51%, #48768E);
+    background-image: linear-gradient(to bottom, #5D94B0, #48768E 50%, #406A80 51%, #48768E);
+    box-shadow: inset 0px 1px 1px #B5D7E8;
     color: white;
     margin: 1rem;
     padding: .5rem;
@@ -68,6 +70,15 @@
     min-width: 100px;
     font-size: 1.3rem;
     cursor: pointer;
+
+    &:hover {
+        background-image: -webkit-linear-gradient(top, #5D94B0, #51829C 50%, #48758C 51%, #51829C);
+        background-image: linear-gradient(to bottom, #5D94B0, #51829C 50%, #48758C 51%, #51829C);
+    }
+    &:active {
+        background-image: none;
+        background-color: #5D94B0;
+    }
 }
 .notification {
     background-color: #fff;
