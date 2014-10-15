@@ -38,12 +38,14 @@ class ProductRule(Rule):
         processed_crash.product = raw_crash.get('ProductName', '')
         processed_crash.version = raw_crash.get('Version', '')
         processed_crash.productid = raw_crash.get('ProductID', '')
-        processed_crash.distributor = raw_crash.get('Distributor', '')
+        processed_crash.distributor = raw_crash.get('Distributor', None)
         processed_crash.distributor_version = raw_crash.get(
             'Distributor_version',
-            ''
+            None
         )
         processed_crash.release_channel = raw_crash.get('ReleaseChannel', '')
+        # redundant, but I want to exactly match old processors.
+        processed_crash.ReleaseChannel = raw_crash.get('ReleaseChannel', '')
         processed_crash.build = raw_crash.get('BuildID', '')
 
         return True
@@ -59,9 +61,9 @@ class UserDataRule(Rule):
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
-        processed_crash.url = raw_crash.get('URL', '')
-        processed_crash.user_comments = raw_crash.get('Comments', '')
-        processed_crash.email = raw_crash.get('Email', '')
+        processed_crash.url = raw_crash.get('URL', None)
+        processed_crash.user_comments = raw_crash.get('Comments', None)
+        processed_crash.email = raw_crash.get('Email', None)
         #processed_crash.user_id = raw_crash.get('UserID', '')
         processed_crash.user_id = ''
 
@@ -687,6 +689,18 @@ class Winsock_LSPRule(Rule):
 
 #==============================================================================
 class TopMostFilesRule(Rule):
+    """Origninating from Bug 519703, the topmost_filenames was specified as
+    singular, there would be only one.  The original programmer, in the
+    source code stated "Lets build in some flex" and allowed the field to
+    have more than one in a list.  However, in all the years that this existed
+    it was never expanded to use more than just one.  Meanwhile, the code
+    ambiguously would sometimes give this as as single value and other times
+    return it as a list of one item.
+
+    This rule does not try to reproduce that imbiguity and avoids the list
+    entirely, just giving one single value.  The fact that the destination
+    varible in the processed_crash is plural rather than singular is
+    unfortunate."""
 
     #--------------------------------------------------------------------------
     def version(self):
@@ -696,19 +710,23 @@ class TopMostFilesRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.topmost_filenames = None
         try:
-            stack_frames = (
-                processed_crash.json_dump['crashing_thread']['frames']
+            crashing_thread = (
+                processed_crash.json_dump['crash_info']['crashing_thread']
             )
-        except KeyError:
+            stack_frames = (
+                processed_crash.json_dump['threads'][crashing_thread]['frames']
+            )
+        except KeyError, x:
             # guess we don't have frames or crashing_thread or json_dump
             # we have to give up
-            processed_crash.topmost_filenames = None
+            processor_meta.processor_notes.append(
+                "no 'topmost_file' name because '%s' is missing" % x
+            )
             return True
 
         for a_frame in stack_frames:
-            source = a_frame.get('source', None)
-            if source:
-                processed_crash.topmost_filenames = [source]
+            source_filename = a_frame.get('file', None)
+            if source_filename:
+                processed_crash.topmost_filenames = source_filename
                 return True
-        processed_crash.topmost_filenames = None
         return True

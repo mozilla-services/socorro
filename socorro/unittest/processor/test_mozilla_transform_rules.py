@@ -218,8 +218,8 @@ class TestProductRule(TestCase):
             processed_crash.productid,
             "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
         )
-        eq_(processed_crash.distributor, "")
-        eq_(processed_crash.distributor_version, "")
+        eq_(processed_crash.distributor, None)
+        eq_(processed_crash.distributor_version, None)
         eq_(processed_crash.release_channel, "")
         eq_(processed_crash.build, "20120420145725")
 
@@ -279,9 +279,9 @@ class TestUserDataRule(TestCase):
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        eq_(processed_crash.url, "")
-        eq_(processed_crash.user_comments, "")
-        eq_(processed_crash.email, "")
+        eq_(processed_crash.url, None)
+        eq_(processed_crash.user_comments, None)
+        eq_(processed_crash.email, None)
 
 
 #==============================================================================
@@ -1747,16 +1747,31 @@ class TestTopMostFilesRule(TestCase):
         raw_dumps = {}
         processed_crash = DotDict()
         processed_crash.json_dump = {
+            'crash_info': {
+                'crashing_thread': 0
+            },
             'crashing_thread': {
                 'frames': [
                     {
-                        'filename': 'dwight.dll'
+                        'source': 'not-the-right-file.dll'
                     },
                     {
-                        'source': 'wilma.cpp'
-                    }
+                        'file': 'not-the-right-file.cpp'
+                    },
                 ]
-            }
+            },
+            'threads': [
+                {
+                    'frames': [
+                        {
+                            'source': 'dwight.dll'
+                        },
+                        {
+                            'file': 'wilma.cpp'
+                        },
+                    ]
+                },
+            ]
         }
 
         processor_meta = self.get_basic_processor_meta()
@@ -1766,7 +1781,7 @@ class TestTopMostFilesRule(TestCase):
          # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
-        eq_(processed_crash.topmost_filenames, ['wilma.cpp'])
+        eq_(processed_crash.topmost_filenames, 'wilma.cpp')
 
         # raw_crash should be unchanged
         eq_(raw_crash, canonical_standard_raw_crash)

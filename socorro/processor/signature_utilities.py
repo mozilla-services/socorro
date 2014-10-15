@@ -127,6 +127,8 @@ class CSignatureToolBase(SignatureTool):
             else:
                 file = filename.rsplit('/')[-1]
             return '%s#%s' % (file, line)
+        if not module and not module_offset and offset:
+            return "@%s" % offset
         if not module:
             module = ''  # might have been None
         return '%s@%s' % (module, module_offset)
@@ -651,12 +653,19 @@ class SignatureGenerationRule(Rule):
         )
 
     #--------------------------------------------------------------------------
-    def _create_frame_list(self, crashing_thread_mapping):
+    def _create_frame_list(
+        self,
+        crashing_thread_mapping,
+        make_modules_lower_case=False
+    ):
         frame_signatures_list = []
         for a_frame in islice(
             crashing_thread_mapping.get('frames', {}),
             self.config.c_signature.maximum_frames_to_consider
         ):
+            if make_modules_lower_case and 'module' in a_frame:
+                a_frame['module'] = a_frame['module'].lower()
+
             normalized_signature = self.c_signature_tool.normalize_signature(
                 **a_frame
             )
@@ -679,25 +688,33 @@ class SignatureGenerationRule(Rule):
             return True
 
         try:
+            crashed_thread = (
+                processed_crash.json_dump['crash_info']['crashing_thread']
+            )
+        except KeyError:
+            crashed_thread = None
+        try:
             if processed_crash.get('hang_type', None) == 1:
                 # force the signature to come from thread 0
                 signature_list = self._create_frame_list(
                     processed_crash.json_dump["threads"][0],
+                    processed_crash.json_dump['system_info']['os'] in
+                    "Windows NT"
+                )
+            elif crashed_thread is not None:
+                signature_list = self._create_frame_list(
+                    processed_crash.json_dump["threads"][crashed_thread],
+                    processed_crash.json_dump['system_info']['os'] in
+                    "Windows NT"
                 )
             else:
-                signature_list = self._create_frame_list(
-                    processed_crash.json_dump["crashing_thread"],
-                )
+                signature_list = []
         except Exception, x:
             processor_meta.processor_notes.append(
                 'No crashing frames found because of %s' % x
             )
             signature_list = []
-        try:
-            crashed_thread = processed_crash["crashing_thread"] \
-                ["threads_index"]
-        except KeyError:
-            crashed_thread = None
+
         signature, signature_notes = self.c_signature_tool.generate(
             signature_list,
             processed_crash.get('hang_type', ''),

@@ -23,6 +23,7 @@ from socorro.processor.signature_utilities import (
 from socorro.unittest.testbase import TestCase
 
 import re
+import copy
 
 from mock import Mock, patch
 
@@ -836,12 +837,17 @@ frames_from_json_dump = {
 
 sample_json_dump = {
     u'json_dump': {
+        u'system_info': {
+            'os': 'Windows NT'
+        },
         u'crash_info': {
             u'address': u'0x77ad015d',
             u'crashing_thread': 0,
             u'type': u'EXCEPTION_BREAKPOINT'
         },
         u'crashing_thread': frames_from_json_dump,
+        u'threads':  [ frames_from_json_dump ]
+
     }
 }
 
@@ -1032,6 +1038,51 @@ class TestSignatureGeneration(TestCase):
             ]
         )
 
+    #--------------------------------------------------------------------------
+    def test_lower_case_modules(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+
+        raw_crash = CDotDict()
+        raw_dumps = {}
+        processed_crash = CDotDict(copy.deepcopy(sample_json_dump))
+        processed_crash.json_dump.threads = [
+            {
+                "frames": [
+                    {
+                        u'offset': u'0x5e39bf21',
+                        u'trust': u'cfi'
+                    },
+                    {
+                        u'offset': u'0x5e39bf21',
+                        u'trust': u'cfi'
+                    },
+                    {
+                        u'offset': u'0x5e39bf21',
+                        u'trust': u'cfi'
+                    },
+                    {
+                        u'frame': 3,
+                        u'module': u'USER2.dll',
+                        u'module_offset': u'0x20869',
+                        u'offset': u'0x77370869',
+                        u'trust': u'cfi'
+                    },
+                ]
+            },
+        ]
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        # the call to be tested
+        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+
+        eq_(
+            processed_crash.signature,
+            'user2.dll@0x20869'
+        )
+        eq_(processor_meta.processor_notes, [])
 
 
 #==============================================================================

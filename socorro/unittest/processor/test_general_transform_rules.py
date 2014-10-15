@@ -92,7 +92,7 @@ canonical_standard_raw_crash = DotDict({
 canonical_processed_crash = DotDict({
     "json_dump" : {
         "system_info" : {
-            "os_ver" : "6.1.7601 Service Pack 1",
+            "os_ver" : "6.1.7601 Service Pack 1 ",
             "cpu_count" : 4,
             "cpu_info" : "GenuineIntel family 6 model 42 stepping 7",
             "cpu_arch" : "x86",
