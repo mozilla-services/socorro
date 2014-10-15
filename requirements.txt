@@ -85,10 +85,9 @@ python-dateutil==2.1
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
 happybase==0.7
-# one for the tarball and one for the wheel
-# sha256: jnCezcfODgRDFbVkmZ3NANtTdQ86f9gUwQzjcVRBdsA
-# sha256: s8RczTgpJ4974sJWXjacD73FJ_d9BjYjh4Crb-dYMbI
-crontabber==0.13
+# sha256: 5XHktafnyZu9i5ru3QsI3inhqipXvuhA37ERHZS6WY8
+# sha256: aYVKn8zdV1lExVLVEli75Fyn9CNRlDRu_aF4rnLxHP4
+crontabber==0.14
 
 # sometimes you get the tarball, sometimes you get the wheel
 # sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
