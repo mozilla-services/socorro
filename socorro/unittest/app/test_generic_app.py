@@ -19,7 +19,6 @@ from socorro.app.socorro_app import App as SApp
 class TestGenericAppModule(TestCase):
 
     def test_exsistance(self):
-        print App, App.__mro__,
         ok_(issubclass(App, SocorroApp))
         eq_(App, SApp)
         ok_(isinstance(main, FunctionType))
