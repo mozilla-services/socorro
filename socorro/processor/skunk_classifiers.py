@@ -52,6 +52,9 @@ added to the processed crash:
 
 import datetime
 
+from configman import Namespace, class_converter
+from configman.converters import arbitrary_object_to_string
+
 from socorro.lib.util import DotDict
 from socorro.lib.transform_rules import Rule
 
@@ -79,9 +82,9 @@ class SkunkClassificationRule(Rule):
                 else:
                     raise
             self.config.logger.debug(
-                'Rule %s predicicate failed because of "%s"',
-                self.__class__,
-                x,
+                'skunk_classifier: %s predicicate failed because of "%s"',
+                arbitrary_object_to_string(self.__class__),
+                arbitrary_object_to_string(x),
                 exc_info=True
             )
             return False
@@ -140,7 +143,8 @@ class SkunkClassificationRule(Rule):
                 else:
                     raise
             self.config.logger.debug(
-                'Rule %s action failed because of missing key "%s"',
+                'skunk_classifier: %s action failed because of missing key'
+                '"%s"',
                 self.__class__,
                 x,
             )
@@ -151,7 +155,7 @@ class SkunkClassificationRule(Rule):
                 else:
                     raise
             self.config.logger.debug(
-                'Rule %s action failed because of "%s"',
+                'skunk_classifier: %s action failed because of "%s"',
                 self.__class__,
                 x,
                 exc_info=True
@@ -342,21 +346,31 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         'yes', the crash gets passed to the action where the ulimate rejection
         actually happens."""
 
+        try:
+            # Processor2015 puts messages into the processor notes
+            log = processor.processor_notes.append
+        except AttributeError:
+            # HybridProcessor puts those same messages in the logs instead
+            log = processor.config.logger.debug
+
         plugin_hang = raw_crash.get('PluginHang', '0')
         if plugin_hang == '0':
+            log(
+                'skunk_classifier: reject - not a plugin hang'
+            )
             return True
 
         product_name = raw_crash.get('ProductName', None)
         if product_name != 'Firefox':
-            processor.config.logger.debug(
-                'skunk_classifier: reject - Product "%s" is not Firefox',
+            log(
+                'skunk_classifier: reject - Product "%s" is not Firefox' %
                 product_name
             )
             return True
 
         version = raw_crash.get('Version', None)
         if version is None:
-            processor.config.logger.debug(
+            log(
                 'skunk_classifier: reject - Version missing'
             )
             return True
@@ -364,15 +378,15 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         try:
             majorversion = int(version.split('.')[0])
         except ValueError:
-            processor.config.logger.debug(
-                'skunk_classifier: reject - bad Version string "%s"',
+            log(
+                'skunk_classifier: reject - bad Version string "%s"' %
                 version
             )
             return True
 
         buildid = raw_crash.get('BuildID', None)
         if buildid is None:
-            processor.config.logger.debug(
+            log(
                 'skunk_classifier: reject - BuiltID missing'
             )
             return True
@@ -384,55 +398,50 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
                 int(buildid[6:8])
             )
         except ValueError:
-            processor.config.logger.debug(
-                'skunk_classifier: reject - bad BuildID "%s"',
-                buildid
+            log(
+                'skunk_classifier: reject - bad BuildID "%s"' % buildid
             )
             return True
 
         if majorversion < 17:
-            processor.config.logger.debug(
+            log(
                 'skunk_classifier: reject - not accepting Version '
-                '"%s"',
-                majorversion
+                '"%s"' % majorversion
             )
             return True
         elif majorversion == 18:
             if builddate < self.first18:
-                processor.config.logger.debug(
+                log(
                     'skunk_classifier: reject - not accepting Version'
-                    ' "%s" with old BuildID',
-                    majorversion
+                    ' "%s" with old BuildID' % majorversion
                 )
                 return True
         elif builddate < self.first19:
-            processor.config.logger.debug(
-                'skunk_classifier: reject - not accepting old BuildID '
-                '"%s"',
-                buildid
+            log(
+                'skunk_classifier: reject - not accepting old BuildID "%s"'
+                % buildid
             )
             return True
 
         # bsmedberg's code stores dumps differently than Socorro does.  In
         # Socorro, a 'plugin' crash has the 'plugin' dump as the primary
-        # dump named 'dump' rather than stored with the name 'plugin'
-        if 'dump' not in processed_crash:
-            processor.config.logger.debug(
+        # dump named 'json_dump' rather than stored with the name 'plugin'
+        if 'json_dump' not in processed_crash:
+            log(
                 'skunk_classifier: reject - plugin dump missing',
             )
             return True
 
         try:
             if processed_crash.json_dump['system_info']['cpu_arch'] == 'amd64':
-                processor.config.logger.debug(
+                log(
                     'skunk_classifier: reject - not accepting amd64 '
                     'architecture',
                 )
                 return True
         except (KeyError, AttributeError), x:
-            processor.config.logger.debug(
+            log(
                 'skunk_classifier: reject - no architecture info found',
-                exc_info=True
             )
             return True
 
@@ -446,16 +455,16 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
             # "were all dump successful in processing by MDSW?"
             try:
                 if not processed_crash[a_dump_name].success:
-                    processor.config.logger.debug(
+                    log(
                         'skunk_classifier: reject - all dumps must have '
-                        'processed correctly: %s has MDSW errors',
+                        'processed correctly: %s has MDSW errors' %
                         a_dump_name
                     )
                     return True
             except (KeyError, AttributeError):
-                processor.config.logger.debug(
+                log(
                     'skunk_classifier: reject - all dumps must have '
-                    'processed correctly: %s is missing components',
+                    'processed correctly: %s is missing components' %
                     a_dump_name
                 )
                 return True
@@ -478,6 +487,8 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
 
 
 #==============================================================================
+# this rule is no longer in use.  It remains in the codebase for reference
+# for anticipated future resurrection
 class UpdateWindowAttributes(SkunkClassificationRule):
     """"""
     #--------------------------------------------------------------------------
@@ -528,15 +539,39 @@ class UpdateWindowAttributes(SkunkClassificationRule):
 
 #==============================================================================
 class SetWindowPos(SkunkClassificationRule):
+    required_config = Namespace()
+    required_config.add_option(
+        name='normalize_tool',
+        doc='a fully qualified path to a signature normalization class',
+        default='socorro.processor.signature_utilities.CSignatureTool',
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config=None):
+        super(SetWindowPos, self).__init__(config)
+        self.signature_tool = None
+        if config:
+            try:
+                self.signature_tool = self.config.normalize_tool(config)
+            except KeyError:
+                # no normalize tool found in config, we must be running an
+                # old processor algorithm
+                pass
+
+
     #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
+        if not self.signature_tool:
+            # for backwards compatiblity, get one from the processor
+            self.signature_tool = processor.c_signature_tool
         found = self._do_set_window_pos_classification(
             processed_crash,
-            processor.c_signature_tool,
+            self.signature_tool,
             'upload_file_minidump_plugin',
             ('F_320940052', 'F_1378698112', 'F_468782153'),
             processor
@@ -544,7 +579,7 @@ class SetWindowPos(SkunkClassificationRule):
         if not found:
             found = self._do_set_window_pos_classification(
                 processed_crash,
-                processor.c_signature_tool,
+                self.signature_tool,
                 'upload_file_minidump_flash2',
                 ('F455544145',),
                 processor
@@ -596,6 +631,8 @@ class SetWindowPos(SkunkClassificationRule):
 
 
 #==============================================================================
+# this rule is no longer in use.  It remains in the codebase for reference
+# for anticipated future resurrection
 class SendWaitReceivePort(SkunkClassificationRule):
     #--------------------------------------------------------------------------
     def version(self):
@@ -625,6 +662,8 @@ class SendWaitReceivePort(SkunkClassificationRule):
 
 
 #==============================================================================
+# this rule is no longer in use.  It remains in the codebase for reference
+# for anticipated future resurrection
 class Bug811804(SkunkClassificationRule):
     #--------------------------------------------------------------------------
     def version(self):
@@ -651,6 +690,8 @@ class Bug811804(SkunkClassificationRule):
 
 
 #==============================================================================
+# this rule is no longer in use.  It remains in the codebase for reference
+# for anticipated future resurrection
 class Bug812318(SkunkClassificationRule):
     #--------------------------------------------------------------------------
     def version(self):
@@ -707,10 +748,10 @@ class NullClassification(SkunkClassificationRule):
 
 default_classifier_rules = (
     (DontConsiderTheseFilter, (), {}, DontConsiderTheseFilter, (), {}),
-    (UpdateWindowAttributes, (), {}, UpdateWindowAttributes, (), {}),
+    #(UpdateWindowAttributes, (), {}, UpdateWindowAttributes, (), {}),
     (SetWindowPos, (), {}, SetWindowPos, (), {}),
-    (SendWaitReceivePort, (), {}, SendWaitReceivePort, (), {}),
-    (Bug811804, (), {}, Bug811804, (), {}),
-    (Bug812318, (), {}, Bug812318, (), {}),
+    #(SendWaitReceivePort, (), {}, SendWaitReceivePort, (), {}),
+    #(Bug811804, (), {}, Bug811804, (), {}),
+    #(Bug812318, (), {}, Bug812318, (), {}),
     (NullClassification, (), {}, NullClassification, (), {}),
 )

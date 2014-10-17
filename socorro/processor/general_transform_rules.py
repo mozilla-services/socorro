@@ -61,10 +61,10 @@ class OSInfoRule(Rule):
         processed_crash.os_name = ''
         processed_crash.os_version = ''
         processed_crash.os_name = (
-            processed_crash.json_dump['system_info']['os']
+            processed_crash.json_dump['system_info']['os'].strip()
         )
         processed_crash.os_version = (
-            processed_crash.json_dump['system_info']['os_ver']
+            processed_crash.json_dump['system_info']['os_ver'].strip()
         )
 
         return True

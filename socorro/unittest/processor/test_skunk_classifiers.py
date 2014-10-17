@@ -35,6 +35,7 @@ def create_basic_fake_processor():
     fake_processor.config = DotDict()
     # need help figuring out failures? switch to FakeLogger and read stdout
     fake_processor.config.logger = SilentFakeLogger()
+    fake_processor.processor_notes = []
     #fake_processor.config.logger = FakeLogger()
     return fake_processor
 
