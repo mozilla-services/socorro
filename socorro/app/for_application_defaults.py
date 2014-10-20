@@ -44,15 +44,14 @@ class ApplicationDefaultsProxy(object):
         """in the future, re-implement this as an automatic discovery service
         """
         return {
-            'CollectorApp': 'socorro.collector.collector_app.CollectorApp',
-            'CrashMoverApp': 'socorro.collector.crashmover_app.CrashMoverApp',
-            'SubmitterApp': 'socorro.collector.submitter_app.SubmitterApp',
+            'collector': 'socorro.collector.collector_app.CollectorApp',
+            'crashmover': 'socorro.collector.crashmover_app.CrashMoverApp',
+            'submitter': 'socorro.collector.submitter_app.SubmitterApp',
             # crontabber not yet supported in this environment
-            #'CronTabberApp': 'socorro.cron.crontabber_app.CronTabberApp',
-            'MiddlewareApp': 'socorro.middleware.middleware_app.MiddlewareApp',
-            'ProcessorApp': 'socorro.processor.processor_app.ProcessorApp',
-            'HBaseClientApp':
-                'socorro.external.hb.hbase_client.HBaseClientApp',
+            #'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
+            'middleware': 'socorro.middleware.middleware_app.MiddlewareApp',
+            'processor': 'socorro.processor.processor_app.ProcessorApp',
+            'fetch': 'socorro.external.fetch_app.FetchApp',
         }
 
 

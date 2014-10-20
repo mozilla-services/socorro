@@ -34,32 +34,28 @@ class TestApplicationDefaultsProxy(TestCase):
 
     def test_app_converter(self):
         eq_(
-            self.proxy.str_to_application_class('CollectorApp'),
+            self.proxy.str_to_application_class('collector'),
             class_converter('socorro.collector.collector_app.CollectorApp')
         )
         eq_(
-            self.proxy.str_to_application_class('CrashMoverApp'),
+            self.proxy.str_to_application_class('crashmover'),
             class_converter('socorro.collector.crashmover_app.CrashMoverApp')
         )
         eq_(
-            self.proxy.str_to_application_class('SubmitterApp'),
+            self.proxy.str_to_application_class('submitter'),
             class_converter('socorro.collector.submitter_app.SubmitterApp')
         )
         #eq_(
-            #self.proxy.str_to_application_class('CronTabberApp'),
+            #self.proxy.str_to_application_class('crontabber'),
             #class_converter('socorro.cron.crontabber_app.CronTabberApp')
         #)
         eq_(
-            self.proxy.str_to_application_class('MiddlewareApp'),
+            self.proxy.str_to_application_class('middleware'),
             class_converter('socorro.middleware.middleware_app.MiddlewareApp')
         )
         eq_(
-            self.proxy.str_to_application_class('ProcessorApp'),
+            self.proxy.str_to_application_class('processor'),
             class_converter('socorro.processor.processor_app.ProcessorApp')
-        )
-        eq_(
-            self.proxy.str_to_application_class('HBaseClientApp'),
-            class_converter('socorro.external.hb.hbase_client.HBaseClientApp')
         )
         eq_(
             self.proxy.str_to_application_class(
