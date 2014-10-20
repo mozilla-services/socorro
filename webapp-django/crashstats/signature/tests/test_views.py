@@ -158,6 +158,15 @@ class TestViews(BaseTestViews):
         ok_('1.0' not in response.content)
         ok_('2017' not in response.content)
 
+        # Test missing parameter.
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'signature': '',
+        })
+        eq_(response.status_code, 400)
+
     @mock.patch('requests.get')
     def test_parameters(self, rget):
         def mocked_get(url, params, **options):

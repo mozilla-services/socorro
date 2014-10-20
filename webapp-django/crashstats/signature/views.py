@@ -42,7 +42,7 @@ def get_validated_params(request):
             'only one value is accepted'
         )
 
-    if not params['signature'][0]:
+    if not params['signature'] or not params['signature'][0]:
         return http.HttpResponseBadRequest(
             '"signature" parameter is mandatory'
         )
