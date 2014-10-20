@@ -14,7 +14,7 @@ ln -fs /etc/socorro/local.py \
 
 # create DB if it does not exist
 # TODO handle DB not on localhost - could use setupdb for this
-su postgres -c "psql -l | grep breakpad" > /dev/null
+su postgres -c "psql breakpad -c ''"
 if [ $? != 0 ]; then
     echo "Creating new DB, may take a few minutes"
     pushd /data/socorro/application > /dev/null
