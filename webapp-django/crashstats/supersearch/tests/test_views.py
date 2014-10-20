@@ -196,6 +196,18 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_mandatory': False,
         'in_database_name': 'user_comments',
     },
+    'a_test_field': {
+        'name': 'a_test_field',
+        'query_type': 'string',
+        'namespace': 'processed_crash',
+        'form_field_choices': [],
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': False,
+        'is_returned': True,
+        'is_mandatory': False,
+        'in_database_name': 'a_test_field',
+    },
 }
 
 
@@ -285,14 +297,32 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        self._login()
+        user = self._login()
         url = reverse('supersearch.search_fields')
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_(json.loads(response.content))  # Verify it's valid JSON
         ok_('WaterWolf' in response.content)
         ok_('SeaMonkey' in response.content)
         ok_('NightTrain' in response.content)
+
+        content = json.loads(response.content)
+        ok_('signature' in content)  # It contains at least one known field.
+
+        # Verify non-exposed fields are not listed.
+        ok_('a_test_field' not in content)
+
+        # Verify fields with permissions are not listed.
+        ok_('exploitability' not in content)
+
+        # Verify fields with permissions are listed.
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        content = json.loads(response.content)
+
+        ok_('exploitability' in content)
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

@@ -36,7 +36,7 @@ class SearchForm(forms.Form):
     ):
         super(self.__class__, self).__init__(*args, **kwargs)
 
-        self.all_fields = all_fields
+        self.all_fields = all_fields.copy()
 
         # Default values loaded from a database.
         if 'product' in self.all_fields:
@@ -54,8 +54,9 @@ class SearchForm(forms.Form):
             ]
 
         # Generate the list of fields.
-        for field_data in all_fields.values():
+        for field_name, field_data in all_fields.iteritems():
             if not field_data['is_exposed']:
+                del self.all_fields[field_name]
                 continue
 
             if field_data['permissions_needed']:
@@ -69,6 +70,7 @@ class SearchForm(forms.Form):
                     # The user is lacking one of the permissions needed
                     # for this field, so we do not add it to the list
                     # of fields.
+                    del self.all_fields[field_name]
                     continue
 
             field_type = TYPE_TO_FIELD_MAPPING.get(
@@ -85,7 +87,7 @@ class SearchForm(forms.Form):
                     field_data['form_field_choices'], ['any', 'all']
                 )
 
-            self.fields[field_data['name']] = field_obj
+            self.fields[field_name] = field_obj
 
     def get_fields_list(self, exclude=None):
         '''Return a dictionary describing the fields, to pass to the
