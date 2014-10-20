@@ -68,7 +68,8 @@ class socorro::vagrant {
     'dchen':
       baseurl  => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/',
       enabled  => 1,
-      gpgcheck => 0;
+      gpgcheck => 0,
+      require  => Package['ca-certificates'];
   }
 
   package {
@@ -88,36 +89,37 @@ class socorro::vagrant {
 
   package {
     [
-      'subversion',
-      'make',
-      'rsync',
-      'ruby-devel',
-      'rpm-build',
-      'time',
+      'ca-certificates',
+      'daemonize',
       'gcc-c++',
-      'python-devel',
       'git',
-      'libxml2-devel',
-      'libxslt-devel',
-      'openldap-devel',
+      'httpd',
       'java-1.7.0-openjdk',
       'java-1.7.0-openjdk-devel',
-      'yum-plugin-fastestmirror',
-      'httpd',
-      'mod_wsgi',
+      'libxml2-devel',
+      'libxslt-devel',
+      'make',
       'memcached',
-      'daemonize',
+      'mod_wsgi',
+      'openldap-devel',
+      'python-devel',
+      'rpm-build',
+      'rsync',
+      'ruby-devel',
+      'subversion',
+      'time',
       'unzip',
+      'yum-plugin-fastestmirror',
     ]:
     ensure => latest
   }
 
   package {
     [
-      'postgresql93-server',
-      'postgresql93-plperl',
       'postgresql93-contrib',
       'postgresql93-devel',
+      'postgresql93-plperl',
+      'postgresql93-server',
     ]:
     ensure  => latest,
     require => [ Yumrepo['PGDG'], Package['yum-plugin-fastestmirror']]
