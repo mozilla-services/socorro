@@ -1,7 +1,7 @@
 .. index:: download
 
-Download
-========
+Downloading source code from our git repo
+=========================================
 
 Clone from github
 ::

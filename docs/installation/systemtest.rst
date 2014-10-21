@@ -10,6 +10,12 @@ Generate a test crash:
 1) Install http://code.google.com/p/crashme/ add-on for Firefox
 2) Point your Firefox install at http://crash-reports/submit
 
+Note: crashme is `currently not working on Mac OS X <https://bugzilla.mozilla.org/show_bug.cgi?id=1086624>`_. The workaround is to kill the Firefox process manually in the Terminal:
+
+.. code-block:: bash
+
+    $ kill -ABRT <firefox pid>
+
 Note that if you're running a dev install (e.g. "honcho start") and 
 not under Apache, you'll need to specify the port number:
 
