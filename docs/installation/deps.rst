@@ -31,6 +31,8 @@ You can quickly spin up a CentOS VM using Vagrant:
 
 :ref:`vagrant-chapter`
 
+.. _local-installation:
+
 On your own machine
 -------------------
 

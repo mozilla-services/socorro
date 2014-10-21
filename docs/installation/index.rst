@@ -2,14 +2,23 @@
 
 .. _intro-chapter:
 
-Intro
------
+Installation
+------------
 
-Socorro is a set of components for collecting, processing and reporting on crashes. It is used by Mozilla for tracking crashes of Firefox, B2G, Thunderbird and other projects. The production Mozilla install is public and hosted at https://crash-stats.mozilla.com/
+We provide documentation for setting up a complete Socorro instance :ref:`with a VM <vagrant-chapter>` or :ref:`locally on your system without a VM <local-installation>`.
 
-The components which make up Socorro are:
+Socorro provides :ref:`an RPM binary package <install_binary_package-chapter>` for easier installation with every release. For people working on modifying or contributing changes to Socorro code, you will also be interested in :ref:`installing from source <install_from_source-chapter>`.
 
-* Collector - collects breakpad minidump crashes which come in over HTTP POST
-* Processor - turn breakpad minidump crashes into stack traces and other info
-* Middleware - provide HTTP REST interface for JSON reports and real-time data
-* Web UI aka crash-stats - django-based web app for visualizing crash data
+Contents:
+
+.. toctree::
+   :maxdepth: 2
+
+   deps
+   download
+   install-binary
+   install-src-dev
+   install-src-prod
+   setup-socorro
+   systemtest
+   troubleshoot
