@@ -473,6 +473,15 @@ class SocorroDB(App):
         doc='Create all tables with UNLOGGED for running tests',
     )
 
+    @staticmethod
+    def get_application_defaults():
+        """since this app is more of an interactive app than the others, the
+        logging of config information is rather disruptive.  Override the
+        default logging level to one that is less annoying."""
+        return {
+            'logging.stderr_error_logging_level': 50
+        }
+
     def bulk_load_table(self, db, table):
         io = cStringIO.StringIO()
         for line in table.generate_rows():
