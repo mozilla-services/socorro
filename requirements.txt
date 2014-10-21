@@ -32,9 +32,9 @@ honcho==0.5.0
 gunicorn==18.0
 
 # prod requirements
-
-# sha256: gg1T4jLcD1FrtTXGHeTaPurWKlpJT4WBnQevmbgiDHY
-configman==1.2.7
+# sha256: G4jdtVszwrmhMAnW9W-j8JcjtAqgxIF2D_jfh1tqA2s
+# sha256: HvSGayima8gi3CSoXzrGfGjaeUhPAsZqCyBSNMKEQ-4
+configman==1.2.8
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
