@@ -20,11 +20,10 @@ Your Crash Reports
     </div>
 
     <div class="panel">
-        <div class="body notitle">
-            <p>
-                You are signed in as <b>{{ request.user.email }}</b>.
-            </p>
-
+        <div class="title">
+            <h2>You are signed in as <b>{{ request.user.email }}</b>.</h2>
+        </div>
+        <div class="body">
             {% if crashes_list %}
 
             <p>

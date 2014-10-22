@@ -15,18 +15,16 @@
 </div>
 
 <div class="panel">
-    <div class="body notitle">
-
+    <div class="body">
         {% if request.user.is_authenticated() %}
-	<p>
-	  You are signed in but you do not have sufficient permissions to reach the resource you requested.
-	</p>
+                <p>
+                  You are signed in but you do not have sufficient permissions to reach the resource you requested.
+                </p>
 	{% else %}
-        <p>
-          The page you requested requires authentication. Use the login button at the lower right to log in.
-        </p>
+            <p>
+              The page you requested requires authentication. Use the login button at the lower right to log in.
+            </p>
 	{% endif %}
-
     </div>
 </div>
 

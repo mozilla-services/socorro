@@ -22,11 +22,13 @@ Your Permissions
 
     <div class="panel">
         <div class="title">
-            You are logged in as <b>{{ request.user.email }}</b>.
+            <h2>You are logged in as <b>{{ request.user.email }}</b>.</h2>
         </div>
         <div class="body">
         {% if request.user.is_superuser %}
-            <p>You are a <b>superuser</b>. You have <b>unrestricted access to everything</b>.</p>
+          <p>
+            You are a <b>superuser</b>. You have <b>unrestricted access to everything</b>.
+          </p>
         {% else %}
         <table class="permissions">
             <thead>

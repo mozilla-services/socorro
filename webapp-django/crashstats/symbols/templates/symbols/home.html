@@ -85,14 +85,12 @@
     </div>
   {% else %}
     <div class="panel">
-      <div class="body notitle">
+      <div class="title">
+        <h2>You currently do not have permission to upload symbols.</h2>
+      </div>
+      <div class="body">
         <p>
-          <b>You currently do not have permission to upload symbols.</b>
-        </p>
-        <p>
-          The necessary permission you need to have is
-          <b>{{ permission.name }}</b> and this needs to be manually given
-          to you and your account.
+          You lack the <b>{{ permission.name }}</b> permission, which needs to be manually granted to you and your account.
         </p>
         {% if symbols_request_link %}
         <p>

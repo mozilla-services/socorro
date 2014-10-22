@@ -9,30 +9,28 @@ Crash Reports in {{ signature }}
 
     <div class="page-heading">
         <h2>Crash Reports for {{ signature }}</h2>
-    <div>
-    <ul class="options">
-      {% for day in [3, 7, 14, 28] %}
-      <li>
-        <a href="{{ change_query_string(range_value=day, range_unit='days') }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
-      </li>
-      {% endfor %}
-    </ul>
+        <div>
+            <ul class="options">
+              {% for day in [3, 7, 14, 28] %}
+              <li>
+                <a href="{{ change_query_string(range_value=day, range_unit='days') }}" {% if day == current_day %} class="selected" {% endif %}>{{ day }} days</a>
+              </li>
+              {% endfor %}
+            </ul>
+        </div>
     </div>
 
+    <div class="panel">
+        <div class="body">
+            <p>
+                Results within {{ current_day }} days of {{ end_date }}{% if selected_products %}, and the product is {{ product }} {% if product_versions %} and
+                the version is one of {{ product_versions|join(', ') }}{% endif %}{% endif %} and the crashing process was of any
+                type (including unofficial release channels).
+            </p>
+            {% block report %}
+            {% endblock %}
+       </div>
     </div>
-
-<div class="panel">
-    <div class="body notitle">
-
-<p>
-    Results within {{ current_day }} days of {{ end_date }}{% if selected_products %}, and the product is {{ product }} {% if product_versions %} and
-    the version is one of {{ product_versions|join(', ') }}{% endif %}{% endif %} and the crashing process was of any
-    type (including unofficial release channels).
-</p>
-{% block report %}
-{% endblock %}
-   </div>
-</div>
 <!-- end content -->
 </div>
 {% endblock %}
