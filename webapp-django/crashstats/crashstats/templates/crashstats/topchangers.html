@@ -7,7 +7,7 @@ Top Changing Top Crashers for {{ product }}
 {% block content %}
 <div id="mainbody">
   <div class="page-heading">
-    <h2>Top Changers for {{ product }} {{ versions|join(', ') }}</h2>
+    <h2>Top Changers</h2>
     <ul class="options">
     {% for day in possible_days %}
       <li><a href="{{ change_query_string(days=day) }}" {% if days == day %}class="selected"{% endif %}>{{ day }} days</a></li>
@@ -16,41 +16,42 @@ Top Changing Top Crashers for {{ product }}
   </div>
 
   <div class="panel">
-    <div class="body notitle">
-      <div>
-        <div class="product_topchanger">
-          {% if topchangers %}
-          <table id="top_changers_up" class="top_changers">
-            <tr>
-              <th scope="col">Change</th>
-              <th scope="col">Rank</th>
-              <th scope="col">Signature</th>
-            </tr>
-            {% for result in topchangers|dictsort|reverse %}
-            {% with changer = result[1][0] %}
-            <tr>
-              <td>
-                {% if changer.changeInRank <= -5 %}
-                <div class="trend down">{{ changer.changeInRank }}</div>
-                {% elif changer.changeInRank >= 5 %}
-                <div class="trend up">{{ changer.changeInRank }}</div>
-                {% else %}
-                <div>{{ changer.changeInRank }}</div>
-                {% endif %}
-              </td>
-              <td>{{ changer.currentRank + 1 }}</td>
-              <td><a class="signature" href="{{ url('crashstats:report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
-            </tr>
-            {% endwith %}
-            {% endfor %}
-          </table>
-          {% else %}
-            <p>There were no top changers that matched the criteria you specified.</p>
-          {% endif %}
-        </div>
-        <br class="clear">
-      </div>
+    <div class="title">
+      <h2>{{ product }} {{ versions|join(', ') }}</h2>
+    </div>
+    <div class="body">
+        {% if topchangers %}
+        <table class="top_changers data-table tablesorter">
+          <tr>
+            <th scope="col">Change</th>
+            <th scope="col">Rank</th>
+            <th scope="col">Signature</th>
+          </tr>
+          {% for result in topchangers|dictsort|reverse %}
+          {% with changer = result[1][0] %}
+          <tr>
+            {% if changer.changeInRank <= -5 %}
+              <td class="trend down">{{ changer.changeInRank }}</td>
+            {% elif changer.changeInRank >= 5 %}
+              <td class="trend up">{{ changer.changeInRank }}</td>
+            {% else %}
+              <td>{{ changer.changeInRank }}</td>
+            {% endif %}
+            <td>{{ changer.currentRank + 1 }}</td>
+            <td><a class="signature" href="{{ url('crashstats:report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;signature={{ changer.signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}" title="View reports with this crasher.">{{ changer.signature }}</a></td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </table>
+        {% else %}
+          <p>There were no top changers that matched the criteria you specified.</p>
+        {% endif %}
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
 {% endblock %}
