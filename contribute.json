@@ -21,12 +21,14 @@
         "stage": "https://crash-stats.allizom.org/"
     },
     "keywords": [
+        "bash",
+        "css",
         "django",
+        "elasticsearch",
         "jquery",
         "postgresql",
-        "elasticsearch",
-        "rabbitmq",
+        "puppet",
         "python",
-        "css"
+        "rabbitmq"
     ]
 }
