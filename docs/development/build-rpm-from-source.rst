@@ -1,9 +1,9 @@
-.. index:: install-src-prod
+.. index:: build-rpm-from-source
 
-.. _prodinstall-chapter:
+.. _build-rpm-from-source-chapter:
 
-Production install
-==================
+Build RPM from source
+=====================
 
 RHEL (or clones e.g. CentOS)
 ----------------------------

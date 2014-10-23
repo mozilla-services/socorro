@@ -16,12 +16,7 @@ Note: crashme is `currently not working on Mac OS X <https://bugzilla.mozilla.or
 
     $ kill -ABRT <firefox pid>
 
-Note that if you're running a dev install (e.g. "honcho start") and 
-not under Apache, you'll need to specify the port number:
-
-http://crash-reports:5100/submit
-
-See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
+Also see: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
 
 If you already have a crash available and wish to submit it, you can
 use the standalone submitter tool (there is an example JSON and dump
