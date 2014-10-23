@@ -53,7 +53,7 @@ Setting up the virtual environment and dependencies::
 
   make bootstrap
   . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
+  python setup.py develop
 
 Testing
 --------

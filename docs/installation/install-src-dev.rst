@@ -15,7 +15,6 @@ installed
   # if you do not have this installed then run:
   npm install -g less
 
-
 Socorro can install the dependencies into a virtualenv for you.
 You only need to run this once
 ::
@@ -23,10 +22,14 @@ You only need to run this once
   make bootstrap
 
 Before running any Socorro components, always make sure that the virtualenv 
-is activated and the PYTHONPATH is set
+is activated:
 ::
   . socorro-virtualenv/bin/activate
-  export PYTHONPATH=.
+
+The Socorro package should be installed into the virtualenv too,
+in "develop" mode so you only need to run this once
+::
+  python setup.py develop
 
 Or you can choose to manage the virtualenv yourself, perhaps using
 virtualenwrapper.
