@@ -4,6 +4,22 @@
 {% block content %}
 <div id="mainbody">
 
+    <div class="panel">
+        <header class="title">
+            <h2><img src="{{ static('img/3rdparty/silk/error.png') }}"> Deprecation notice</h2>
+        </header>
+
+        <div class="body">
+            <p>
+                Dear user, this page is being deprecated.
+                We encourage you to start using
+                <strong><a href="{{ url('supersearch.search') }}">Super Search</a></strong> instead.
+                For more information, please read
+                <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1052761">bug 1052761</a>.
+            </p>
+        </div>
+    </div>
+
     {% if error %}
     <div id="message" class="error">
         <h2>Uh oh! Something went wrong...</h2>
