@@ -4354,6 +4354,16 @@ class TestViews(BaseTestViews):
             self.client.get,
             url
         )
+        # Let's also check that we get the response in the exception
+        # message.
+        try:
+            self.client.get(url)
+            assert False  # shouldn't get here
+        except models.BadStatusCodeError as exception:
+            ok_('Scary Error' in str(exception))
+            # and it should include the URL it used
+            mware_url = models.UnredactedCrash.base_url + '/crash_data/'
+            ok_(mware_url in str(exception))
 
     @mock.patch('requests.get')
     def test_report_pending_json(self, rget):
