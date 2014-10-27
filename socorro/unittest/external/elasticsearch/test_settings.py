@@ -44,12 +44,8 @@ class IntegrationTestSettings(ElasticSearchTestCase):
 
         self.now = utc_now()
 
-        connection_context = config.elasticsearch_class(
-            config
-        )
-
         # Create the supersearch fields.
-        connection_context.bulk_index(
+        self.storage.es.bulk_index(
             index=config.webapi.elasticsearch_default_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),

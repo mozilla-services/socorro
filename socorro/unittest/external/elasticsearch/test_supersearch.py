@@ -717,12 +717,9 @@ class TestSuperSearch(ElasticSearchTestCase):
     def test_get_indexes(self):
         config = self.get_config_context()
         storage = crashstorage.ElasticSearchCrashStorage(config)
-        connection_context = config.resource.elasticsearch.elasticsearch_class(
-            config.resource.elasticsearch
-        )
 
         # Create the supersearch fields.
-        connection_context.bulk_index(
+        storage.es.bulk_index(
             index=config.webapi.elasticsearch_default_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),
@@ -784,12 +781,8 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # clear the indices cache so the index is created on every test
         self.storage.indices_cache = set()
 
-        connection_context = config.resource.elasticsearch.elasticsearch_class(
-            config.resource.elasticsearch
-        )
-
         # Create the supersearch fields.
-        connection_context.bulk_index(
+        self.storage.es.bulk_index(
             index=config.webapi.elasticsearch_default_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),
