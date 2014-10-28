@@ -313,7 +313,10 @@ class SocorroCommon(object):
         if resp.status_code >= 400 and resp.status_code < 500:
             raise BadStatusCodeError(resp.status_code, resp.content)
         elif not resp.status_code == 200:
-            raise BadStatusCodeError(resp.status_code, url)
+            raise BadStatusCodeError(
+                resp.status_code,
+                '%s (%s)' % (resp.content, url)
+            )
 
         result = resp.content
         if expect_json:
