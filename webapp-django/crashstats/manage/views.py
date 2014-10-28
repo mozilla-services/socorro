@@ -2,6 +2,7 @@ import json
 import datetime
 import functools
 import copy
+import urllib
 
 from django import http
 from django.conf import settings
@@ -739,6 +740,14 @@ def events_data(request):
             return reverse('manage:user', args=(extra.get('id'),))
         if action in ('group.edit', 'group.add') and extra.get('id'):
             return reverse('manage:group', args=(extra.get('id'),))
+        if (
+            action in ('supersearch_field.post', 'supersearch_field.put')
+            and extra.get('name')
+        ):
+            return (
+                reverse('manage:supersearch_field') + '?' +
+                urllib.urlencode({'name': extra.get('name')})
+            )
 
     for event in batch_page.object_list:
         items.append({

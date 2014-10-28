@@ -1481,11 +1481,23 @@ class TestViews(BaseTestViews):
             action='group.edit',
             extra={'id': group.id}
         )
+        Log.objects.create(
+            user=self.user,
+            action='supersearch_field.post',
+            extra={'name': 'sig1'}
+        )
+        Log.objects.create(
+            user=self.user,
+            action='supersearch_field.put',
+            extra={'name': 'sig2'}
+        )
         url = reverse('manage:events_data')
         response = self.client.get(url)
         data = json.loads(response.content)
-        eq_(data['count'], 3)
-        three, two, one = data['events']
+        eq_(data['count'], 5)
+        five, four, three, two, one = data['events']
         eq_(one['url'], reverse('manage:user', args=(self.user.id,)))
         eq_(two['url'], reverse('manage:group', args=(group.id,)))
         eq_(three['url'], reverse('manage:group', args=(group.id,)))
+        eq_(four['url'], reverse('manage:supersearch_field') + '?name=sig1')
+        eq_(five['url'], reverse('manage:supersearch_field') + '?name=sig2')
