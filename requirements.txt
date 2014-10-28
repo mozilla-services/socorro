@@ -153,3 +153,7 @@ django-appconf==0.6
 # sha256: UE5EGWeseGBKs18DABj8mm-icOam6YRx0jEf139wZ0s
 # sha256: smA0Iw78731g5SZ4kO2mVt_EnFZ_JxJdkH7uT-f5puw
 django-compressor==1.4
+# sha256: Eq491FQ_jcXMX0vdf2_RaPTRYkQU11OkQVc8zBh6jkM
+django-jsonfield==0.9.13
+# sha256: iTXjRYmmVJstzm7v-uQNInOetVtqmUow9mpCjW-YuBM
+eventlog==0.8.0

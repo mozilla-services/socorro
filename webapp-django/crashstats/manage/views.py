@@ -1,6 +1,7 @@
 import json
 import datetime
 import functools
+import copy
 
 from django import http
 from django.conf import settings
@@ -10,6 +11,10 @@ from django.core.cache import cache
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db import transaction
+from django.core.paginator import Paginator
+
+from eventlog.models import log, Log
 
 from crashstats.crashstats.models import (
     CurrentProducts,
@@ -29,6 +34,46 @@ from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from . import forms
 from .utils import parse_graphics_devices_iterable
+
+
+def notice_change(before, after):
+    assert before.__class__ == after.__class__
+    changes = {}
+    if isinstance(before, User) or isinstance(before, Group):
+        # print dir(before)
+        # print repr(before._meta)
+        # print dir(before._meta)
+        # print before._meta.get_all_field_names()
+        for fieldname in before._meta.get_all_field_names():
+
+            v1 = getattr(before, fieldname, None)
+            v2 = getattr(after, fieldname, None)
+            if hasattr(v1, 'all'):
+                # many-to-many field!
+                # To be able to compare the list must have been
+                # field must have been expanded beforehand.
+                # If it hasn't we can't compare.
+                if not hasattr(before, '__%s' % fieldname):
+                    continue
+                # these have to have been expanded before!
+                v1 = getattr(before, '__%s' % fieldname)
+
+                v2 = getattr(
+                    after,
+                    '__%s' % fieldname,
+                    [unicode(x) for x in v2.all()]
+                )
+                # v2 = [x.id for x in v2.all()]
+
+            # print "\t%s:"%fieldname, (v1, v2),
+            # print v1 == v2
+            if v1 != v2:
+                changes[fieldname] = [v1, v2]
+        # print before._meta.get_all_related_objects_with_model()
+        # print before._meta.get_all_related_objects()
+        # print before._meta.get_all_related_many_to_many_objects()
+        return changes
+    raise NotImplementedError(before.__class__.__name__)
 
 
 def superuser_required(view_func):
@@ -234,13 +279,23 @@ def users_data(request):
 
 @json_view
 @superuser_required
+@transaction.commit_on_success
 def user(request, id):
     context = {}
     user_ = get_object_or_404(User, id=id)
     if request.method == 'POST':
+        # make a copy because it's mutable in the form
+        before = copy.copy(user_)
+        # expand the many-to-many field before changing it in the form
+        before.__groups = [unicode(x) for x in before.groups.all()]
+
         form = forms.EditUserForm(request.POST, instance=user_)
         if form.is_valid():
             form.save()
+            log(request.user, 'user.edit', {
+                'change': notice_change(before, user_),
+                'id': user_.id,
+            })
             messages.success(
                 request,
                 'User %s update saved.' % user_.email
@@ -253,6 +308,7 @@ def user(request, id):
     return render(request, 'manage/user.html', context)
 
 
+@transaction.commit_on_success
 @superuser_required
 def groups(request):
     context = {}
@@ -260,6 +316,7 @@ def groups(request):
         if request.POST.get('delete'):
             group = get_object_or_404(Group, pk=request.POST['delete'])
             group.delete()
+            log(request.user, 'group.delete', {'name': group.name})
             messages.success(
                 request,
                 'Group deleted.'
@@ -267,7 +324,12 @@ def groups(request):
             return redirect('manage:groups')
         form = forms.GroupForm(request.POST)
         if form.is_valid():
-            form.save()
+            group = form.save()
+            log(request.user, 'group.add', {
+                'id': group.id,
+                'name': group.name,
+                'permissions': [x.name for x in group.permissions.all()]
+            })
             messages.success(
                 request,
                 'Group created.'
@@ -286,9 +348,18 @@ def group(request, id):
     context = {}
     group_ = get_object_or_404(Group, id=id)
     if request.method == 'POST':
+        before = copy.copy(group_)
+        before.__permissions = [x.name for x in before.permissions.all()]
+        # print "permissions before", before.permissions.all()
         form = forms.GroupForm(request.POST, instance=group_)
         if form.is_valid():
             form.save()
+            # print "permissions after", group_.permissions.all()
+            group_.__permissions = [x.name for x in group_.permissions.all()]
+            log(request.user, 'group.edit', {
+                'id': group_.id,
+                'change': notice_change(before, group_),
+            })
             messages.success(
                 request,
                 'Group saved.'
@@ -348,6 +419,7 @@ def graphics_devices(request):
             )
             api = GraphicsDevices()
             result = api.post(json.dumps(payload))
+            log(request.user, 'graphicsdevices.post', {'success': result})
             messages.success(
                 request,
                 'Graphics device CSV upload successfully saved.'
@@ -365,6 +437,10 @@ def graphics_devices(request):
             }]
             api = GraphicsDevices()
             result = api.post(json.dumps(payload))
+            log(request.user, 'graphicsdevices.add', {
+                'payload': payload,
+                'success': result
+            })
             if result:
                 messages.success(
                     request,
@@ -473,6 +549,8 @@ def supersearch_field_create(request):
     api = SuperSearchField()
     api.post(field_data)
 
+    log(request.user, 'supersearch_field.post', field_data)
+
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
 
@@ -494,6 +572,8 @@ def supersearch_field_update(request):
     api = SuperSearchField()
     api.put(field_data)
 
+    log(request.user, 'supersearch_field.put', field_data)
+
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
 
@@ -509,6 +589,8 @@ def supersearch_field_delete(request):
 
     api = SuperSearchField()
     api.delete(name=field_name)
+
+    log(request.user, 'supersearch_field.delete', {'name': field_name})
 
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
@@ -543,6 +625,7 @@ def products(request):
                 product=form.cleaned_data['product'],
                 version=form.cleaned_data['initial_version']
             )
+            log(request.user, 'product.add', form.cleaned_data)
             messages.success(
                 request,
                 'Product %s (%s) added.' % (
@@ -583,6 +666,7 @@ def releases(request):
                 release_channel=form.cleaned_data['release_channel'],
                 throttle=form.cleaned_data['throttle'],
             )
+            log(request.user, 'release.add', form.cleaned_data)
             messages.success(
                 request,
                 'New release for %s:%s added.' % (
@@ -604,3 +688,70 @@ def releases(request):
     context['form'] = form
     context['page_title'] = "Releases"
     return render(request, 'manage/releases.html', context)
+
+
+@superuser_required
+def events(request):
+    context = {}
+
+    # The reason we can't use `.distinct('action')` is because
+    # many developers use sqlite for local development and
+    # that's not supported.
+    # If you use postgres, `Log.objects.all().values('action').distinct()`
+    # will actually return a unique list of dicts.
+    # Either way it's no inefficient convert it to a set and back to a list
+    # because there are so few in local dev and moot in prod.
+    context['all_actions'] = list(set([
+        x['action'] for x in
+        Log.objects.all().values('action').distinct()
+    ]))
+    return render(request, 'manage/events.html', context)
+
+
+@json_view
+@superuser_required
+def events_data(request):
+    form = forms.FilterEventsForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+    events_ = Log.objects.all()
+    if form.cleaned_data['user']:
+        events_ = events_.filter(
+            user__email__icontains=form.cleaned_data['user']
+        )
+    if form.cleaned_data['action']:
+        events_ = events_.filter(
+            action=form.cleaned_data['action']
+        )
+    count = events_.count()
+    try:
+        page = int(request.GET.get('page', 1))
+        assert page >= 1
+    except (ValueError, AssertionError):
+        return http.HttpResponseBadRequest('invalid page')
+    items = []
+    batch_size = settings.EVENTS_ADMIN_BATCH_SIZE
+    batch = Paginator(events_.select_related('user'), batch_size)
+    batch_page = batch.page(page)
+
+    def _get_edit_url(action, extra):
+        if action == 'user.edit' and extra.get('id'):
+            return reverse('manage:user', args=(extra.get('id'),))
+        if action in ('group.edit', 'group.add') and extra.get('id'):
+            return reverse('manage:group', args=(extra.get('id'),))
+
+    for event in batch_page.object_list:
+        items.append({
+            'user': event.user.email,
+            'timestamp': event.timestamp.isoformat(),
+            'action': event.action,
+            'extra': event.extra,
+            'url': _get_edit_url(event.action, event.extra)
+        })
+
+    return {
+        'events': items,
+        'count': count,
+        'batch_size': batch_size,
+        'page': page,
+    }

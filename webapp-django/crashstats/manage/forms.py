@@ -34,6 +34,12 @@ class FilterUsersForm(BaseForm):
         return {'0': None, '1': True, '-1': False}.get(value)
 
 
+class FilterEventsForm(BaseForm):
+
+    user = forms.CharField(required=False)
+    action = forms.CharField(required=False)
+
+
 class GroupForm(BaseModelForm):
 
     class Meta:

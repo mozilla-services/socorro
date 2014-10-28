@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',
+    'eventlog',
 )
 
 
@@ -318,8 +319,9 @@ TOKENS_DEFAULT_EXPIRATION_DAYS = 90
 # Store all dates timezone aware
 USE_TZ = True
 
-# Default for how many users to display in the Users Admin UI
+# Default for how many items to display in the admin batch tables
 USERS_ADMIN_BATCH_SIZE = 10
+EVENTS_ADMIN_BATCH_SIZE = 10
 
 # Individual strings that can't be allowed in any of the lines in the
 # content of a symbols archive file.

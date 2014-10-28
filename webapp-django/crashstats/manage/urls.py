@@ -83,4 +83,10 @@ urlpatterns = patterns(
     url('^releases/$',
         views.releases,
         name='releases'),
+    url('^events/$',
+        views.events,
+        name='events'),
+    url('^events/data/$',
+        views.events_data,
+        name='events_data'),
 )

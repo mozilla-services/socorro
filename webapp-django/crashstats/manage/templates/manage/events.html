@@ -1,0 +1,108 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Events{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('manage/js/events.js') }}"></script>
+  {% endcompress %}
+{% endblock %}
+
+{% block site_css %}
+  {{ super() }}
+  <style type="text/css">
+  .count {
+      display: none;
+      margin-bottom: 0;
+  }
+  p.pleasewait {
+      display: none;
+      float: right;
+      margin-right: 10px;
+  }
+  input[name="email"] {
+      width: 100%;
+  }
+  form.edit {
+      display: none;
+  }
+  form#filter {
+      margin-top: 30px;
+  }
+  .page-wrapper {
+      color: #666;
+      font-size: 80%;
+  }
+  .pagination {
+      display: none;
+      float: right;
+      margin: 0 10px;
+  }
+  td pre {
+      display:none;
+  }
+  </style>
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Events{% endblock %}
+
+{% block mainbody %}
+
+  <div class="panel">
+    <div class="body notitle">
+
+      <p class="pleasewait">
+        <img src="{{ static('img/loading.png') }}" alt="Loading animation" />
+        Loading...
+      </p>
+
+      <h3 class="count"><b></b> Events found
+        <span class="page-wrapper">(page <span class="page"></span>)</span>
+      </h3>
+
+      <p class="pagination">
+        <a href="" class="previous">&larr; Previous</a>
+        <a href="" class="next">Next &rarr;</a>
+      </p>
+
+      <form action="" id="filter" data-dataurl="{{ url('manage:events_data') }}">
+        <input type="hidden" name="page">
+        <table class="data-table vertical">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Action</th>
+              <th>When</th>
+              <th>URL</th>
+              <th>Extra Details</th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr>
+              <td><input type="text" name="user" placeholder="Filter by email"></td>
+              <td>
+                <select name="action">
+                    <option value="">All</option>
+                  {% for action in all_actions %}
+                    <option value="{{ action }}">{{ action }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+              <td><input type="submit" value="Filter">
+                  <input type="button" class="reset" value="Reset">
+              </td>
+            </tr>
+          </tfoot>
+          <tbody>
+          </tbody>
+        </table>
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}
