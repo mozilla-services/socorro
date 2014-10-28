@@ -55,7 +55,7 @@ setup(
     dependency_links=find_dependency_links(),
     entry_points={
         'console_scripts': [
-            'socorro-setupdb = socorro.external.postgresql.setupdb_app:main'
+                'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'
             ],
         },
     test_suite='nose.collector',
