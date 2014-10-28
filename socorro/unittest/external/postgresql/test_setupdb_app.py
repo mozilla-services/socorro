@@ -68,7 +68,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             extra_value_source = {}
         mock_logging = mock.Mock()
 
-        required_config = setupdb_app.SocorroDB.required_config
+        required_config = setupdb_app.SocorroDBApp.required_config
         required_config.add_option('logger', default=mock_logging)
 
         # We manually set the database_name to something deliberately
@@ -99,7 +99,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
         raise SkipTest
         config_manager = self._setup_config_manager({'dropdb': True})
         with config_manager.context() as config:
-            db = setupdb_app.SocorroDB(config)
+            db = setupdb_app.SocorroDBApp(config)
             db.main()
 
             # we can't know exactly because it would be tedious to have to

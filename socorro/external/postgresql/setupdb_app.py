@@ -24,7 +24,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateTable
 
-from socorro.app.generic_app import App, main as configman_main
+from socorro.app.socorro_app import App, main
 from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.models import *
 from socorro.external.postgresql.postgresqlalchemymanager import PostgreSQLAlchemyManager
@@ -33,9 +33,9 @@ from socorro.external.postgresql.postgresqlalchemymanager import PostgreSQLAlche
 ###########################################
 ##  Database creation object
 ###########################################
-class SocorroDB(App):
+class SocorroDBApp(App):
     """
-    SocorroDB
+    SocorroDBApp
         This function creates a base PostgreSQL schema for Socorro
 
     Notes:
@@ -169,7 +169,7 @@ class SocorroDB(App):
         logging of config information is rather disruptive.  Override the
         default logging level to one that is less annoying."""
         return {
-            'logging.stderr_error_logging_level': 50
+            'logging.stderr_error_logging_level': 40  # only ERROR or worse
         }
 
     def bulk_load_table(self, db, table):
@@ -332,8 +332,5 @@ class SocorroDB(App):
 
         return 0
 
-def main():
-    return configman_main(SocorroDB)
-
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(SocorroDBApp))

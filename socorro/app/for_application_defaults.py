@@ -46,7 +46,7 @@ class ApplicationDefaultsProxy(object):
         return {
             'collector': 'socorro.collector.collector_app.CollectorApp',
             'crashmover': 'socorro.collector.crashmover_app.CrashMoverApp',
-            'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDB',
+            'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
             'submitter': 'socorro.collector.submitter_app.SubmitterApp',
             # crontabber not yet supported in this environment
             #'crontabber': 'socorro.cron.crontabber_app.CronTabberApp',
