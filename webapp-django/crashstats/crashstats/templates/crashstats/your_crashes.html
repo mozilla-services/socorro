@@ -6,9 +6,9 @@ Your Crash Reports
 
 {% block site_js %}
   {{ super() }}
-  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/moment.min.js') }}"></script>
   {% compress js %}
-  <script type="text/javascript" src="{{ static('crashstats/js/socorro/your_crashes.js') }}"></script>
+  <script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/your_crashes.js') }}"></script>
   {% endcompress %}
 {% endblock %}
 

@@ -142,18 +142,18 @@ var FIELDS = {{ fields | json_dumps }};
 </script>
 
 {% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/jquery-ui.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/jquery.tablesorter.js') }}"></script>
 {% endcompress %}
 
     {% compress js %}
-<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
-<script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/select2.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/dynamic_form.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/utils.js') }}"></script>
     {% endcompress %}
 
     {% compress js %}
-<script src="{{ static('signature/js/signature_report.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/signature_report.js') }}"></script>
     {% endcompress %}
 
 {% endblock %}

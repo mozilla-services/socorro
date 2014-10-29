@@ -22,7 +22,7 @@
 {% endblock %}
 {% block site_js %}
   {{ super() }}
-  <script type="text/javascript" src="{{ static('crashstats/js/socorro/pending.js') }}"></script>
+  <script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/pending.js') }}"></script>
   <script type="text/javascript">
    document.onload = pendingReportTimer("{{ url('crashstats:report_pending', crash_id) }}");
   </script>

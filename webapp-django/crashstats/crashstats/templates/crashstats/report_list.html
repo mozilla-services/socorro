@@ -168,31 +168,31 @@
 {% block site_js %}
 {{ super() }}
 
-<script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/d3.min.js') }}"></script>
 
 {% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/jquery-ui.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/jquery.tablesorter.js') }}"></script>
 {% endcompress %}
 
 {% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/async-local-storage-with-Promise.min.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/lib/awty.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/lib/accordion.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_graph.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_reports.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_comments.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_correlations.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_sigurls.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_bugzilla.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_table.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib/jquery.cookie.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib//mustache.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib/async-local-storage-with-Promise.min.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/correlation.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib/awty.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/accordion.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/utils.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_signature_summary.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_graph.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_reports.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_comments.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_correlations.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_sigurls.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_bugzilla.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/report_list_table.js') }}"></script>
+<script type="text/javascript" src="{{ static('supersearch/static/supersearch//socorro/bugzilla.js') }}"></script>
 {% endcompress %}
 
 <script type="text/javascript">

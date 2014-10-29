@@ -11,9 +11,9 @@
 
 {% block site_js %}
   {{ super() }}
-  <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  <script type="text/javascript" src="{{ static('supersearch/static/supersearch/lib/moment.min.js') }}"></script>
   {% compress js %}
-  <script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
+  <script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/timeutils.js') }}"></script>
   {% endcompress %}
 {% endblock %}
 

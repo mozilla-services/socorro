@@ -4,9 +4,9 @@
 
 {% block site_js %}
   {{ super() }}
-  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/moment.min.js') }}"></script>
   {% compress js %}
-  <script type="text/javascript" src="{{ static('manage/js/users.js') }}"></script>
+  <script type="text/javascript" src="{{ static('supersearch/static/supersearch/socorro/users.js') }}"></script>
   {% endcompress %}
 {% endblock %}
 

@@ -79,7 +79,7 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
 {% block site_js %}
   {{ super() }}
   {% compress js %}
-  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/tcr_bybug.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/utils.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/tcr_bybug.js') }}"></script>
   {% endcompress %}
 {% endblock %}

@@ -87,19 +87,19 @@ var BASE_URL = location.protocol + '//' + location.host;
 </script>
 
 {% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/jquery-ui.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/jquery.tablesorter.js') }}"></script>
 {% endcompress %}
 
     {% compress js %}
-<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
-<script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/lib/select2.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/dynamic_form.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/utils.js') }}"></script>
     {% endcompress %}
 
     {% compress js %}
-<script src="{{ static('supersearch/js/socorro/search.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/search.js') }}"></script>
+<script src="{{ static('supersearch/static/supersearch/socorro/bugzilla.js') }}"></script>
     {% endcompress %}
 
 {% endblock %}

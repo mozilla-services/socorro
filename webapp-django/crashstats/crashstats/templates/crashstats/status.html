@@ -118,19 +118,19 @@
 {% block site_js %}
   {{ super() }}
   <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
-  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/d3.min.js') }}"></script>
 
   {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/jquery.tablesorter.js') }}"></script>
   {% endcompress %}
 
   {% compress js %}
-  <script src="{{ static('crashstats/js/lib/rickshaw.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/lib/filesize.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
-  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/server_status.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/laglog.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/rickshaw.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/filesize.min.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/lib/jquery.timeago.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/server_status.js') }}"></script>
+  <script src="{{ static('supersearch/static/supersearch/socorro/laglog.js') }}"></script>
   {% endcompress %}
   <script>
     var waiting_job_count = {{ plot_data.waiting_job_count | safe }};
