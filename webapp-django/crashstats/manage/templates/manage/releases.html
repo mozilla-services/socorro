@@ -17,10 +17,10 @@
 {% block mainbody %}
 
   <div class="panel">
-    <div class="body notitle">
-
-      <h3>Add New Release</h3>
-
+    <div class="body">
+      <div class="title">
+        <h3>Add New Release</h3>
+      </div>
       <form action="" method="post">{{ csrf() }}
         <table class="data-table">
         {{ form }}
