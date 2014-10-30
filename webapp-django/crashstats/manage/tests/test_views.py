@@ -233,7 +233,7 @@ class TestViews(BaseTestViews):
         eq_(put_call['WaterWolf'], '18.0.1')
 
         # check that it got logged
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'featured_versions.update')
         eq_(event.extra['success'], True)
@@ -450,7 +450,7 @@ class TestViews(BaseTestViews):
         eq_(json.loads(response.content), True)
 
         # check that it got logged
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'skiplist.add')
         eq_(event.extra['success'], True)
@@ -494,7 +494,7 @@ class TestViews(BaseTestViews):
         eq_(json.loads(response.content), True)
 
         # check that it got logged
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'skiplist.delete')
         eq_(event.extra['success'], True)
@@ -704,7 +704,7 @@ class TestViews(BaseTestViews):
         eq_(list(bob.groups.all()), [group_b])
 
         # check that the event got logged
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'user.edit')
         eq_(event.extra['id'], bob.pk)
@@ -773,7 +773,7 @@ class TestViews(BaseTestViews):
         eq_(list(group.permissions.all()), [p2])
 
         # check that it got logged
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'group.add')
         eq_(event.extra, {
@@ -906,7 +906,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         ok_(url in response['location'])
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'graphicsdevices.add')
         eq_(event.extra['payload'], [data])
@@ -946,7 +946,7 @@ class TestViews(BaseTestViews):
             eq_(response.status_code, 302)
             ok_(url in response['location'])
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'graphicsdevices.post')
         eq_(event.extra['success'], True)
@@ -1146,7 +1146,7 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 302)
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'supersearch_field.post')
         eq_(event.extra['name'], 'something')
@@ -1217,7 +1217,7 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 302)
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'supersearch_field.put')
         eq_(event.extra['name'], 'something')
@@ -1253,7 +1253,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'name': 'signature'})
         eq_(response.status_code, 302)
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'supersearch_field.delete')
         eq_(event.extra['name'], 'signature')
@@ -1294,7 +1294,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 302)
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'product.add')
         eq_(event.extra['product'], 'WaterCat')
@@ -1356,7 +1356,7 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, data)
         eq_(response.status_code, 302)
 
-        event, = Log.objects.all()[:1]
+        event, = Log.objects.all()
         eq_(event.user, self.user)
         eq_(event.action, 'release.add')
         eq_(event.extra['product'], 'WaterCat')
