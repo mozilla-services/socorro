@@ -41,10 +41,6 @@ def notice_change(before, after):
     assert before.__class__ == after.__class__
     changes = {}
     if isinstance(before, User) or isinstance(before, Group):
-        # print dir(before)
-        # print repr(before._meta)
-        # print dir(before._meta)
-        # print before._meta.get_all_field_names()
         for fieldname in before._meta.get_all_field_names():
 
             v1 = getattr(before, fieldname, None)
@@ -64,15 +60,9 @@ def notice_change(before, after):
                     '__%s' % fieldname,
                     [unicode(x) for x in v2.all()]
                 )
-                # v2 = [x.id for x in v2.all()]
 
-            # print "\t%s:"%fieldname, (v1, v2),
-            # print v1 == v2
             if v1 != v2:
                 changes[fieldname] = [v1, v2]
-        # print before._meta.get_all_related_objects_with_model()
-        # print before._meta.get_all_related_objects()
-        # print before._meta.get_all_related_many_to_many_objects()
         return changes
     raise NotImplementedError(before.__class__.__name__)
 
@@ -141,12 +131,18 @@ def update_featured_versions(request):
             data[product] = request.POST.getlist(product)
 
     featured_api = ReleasesFeatured()
-    if featured_api.put(**data):
+    success = featured_api.put(**data)
+    if success:
         messages.success(
             request,
             'Featured versions successfully updated. '
             'Cache might take some time to update.'
         )
+
+    log(request.user, 'featured_versions.update', {
+        'data': data,
+        'success': success
+    })
 
     url = reverse('manage:featured_versions')
     return redirect(url)
@@ -202,7 +198,15 @@ def skiplist_add(request):
         return http.HttpResponseBadRequest(str(form.errors))
 
     api = SkipList()
-    return api.post(category=category, rule=rule)
+    success = api.post(category=category, rule=rule)
+    log(request.user, 'skiplist.add', {
+        'data': {
+            'category': category,
+            'rule': rule,
+        },
+        'success': success
+    })
+    return success
 
 
 @superuser_required
@@ -217,7 +221,15 @@ def skiplist_delete(request):
         return http.HttpResponseBadRequest(str(form.errors))
 
     api = SkipList()
-    return api.delete(category=category, rule=rule)
+    success = api.delete(category=category, rule=rule)
+    log(request.user, 'skiplist.delete', {
+        'data': {
+            'category': category,
+            'rule': rule,
+        },
+        'success': success
+    })
+    return success
 
 
 @superuser_required

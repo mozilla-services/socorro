@@ -232,6 +232,13 @@ class TestViews(BaseTestViews):
         put_call = put_calls[0]
         eq_(put_call['WaterWolf'], '18.0.1')
 
+        # check that it got logged
+        event, = Log.objects.all()[:1]
+        eq_(event.user, self.user)
+        eq_(event.action, 'featured_versions.update')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['data'], {'WaterWolf': ['18.0.1']})
+
     def test_fields(self):
         url = reverse('manage:fields')
         response = self.client.get(url)
@@ -442,6 +449,16 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         eq_(json.loads(response.content), True)
 
+        # check that it got logged
+        event, = Log.objects.all()[:1]
+        eq_(event.user, self.user)
+        eq_(event.action, 'skiplist.add')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['data'], {
+            'category': 'suffix',
+            'rule': 'Foo'
+        })
+
     @mock.patch('requests.delete')
     def test_skiplist_delete(self, rdelete):
 
@@ -475,6 +492,16 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
         eq_(json.loads(response.content), True)
+
+        # check that it got logged
+        event, = Log.objects.all()[:1]
+        eq_(event.user, self.user)
+        eq_(event.action, 'skiplist.delete')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['data'], {
+            'category': 'suffix',
+            'rule': 'Foo'
+        })
 
     def test_users_page(self):
         url = reverse('manage:users')
