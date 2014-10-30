@@ -34,7 +34,7 @@
 {% block mainbody %}
 
     <div class="panel">
-      <div class="body notitle">
+      <div class="body">
         <div class="add-products-versions-link">
           <p>
             If you want to <b>add a new product or release</b> go to<br>
@@ -51,7 +51,7 @@
       </div>
     </div>
     <div class="panel">
-      <div class="body notitle">
+      <div class="body">
       <form action="{{ url('manage:update_featured_versions') }}" class="products" method="post">
       {{ csrf() }}
       {% for product in products %}
