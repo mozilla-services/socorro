@@ -82,12 +82,6 @@ class ElasticsearchBackfillApp(generic_app.App):
             self.config.secondary_storage
         )
 
-        self.connection_context = (
-            self.config.elasticsearch.elasticsearch_class(
-                self.config.elasticsearch
-            )
-        )
-
         now = datetimeutil.utc_now()
         current_date = self.config.end_date
 
@@ -120,7 +114,7 @@ class ElasticsearchBackfillApp(generic_app.App):
                 continue
 
             # First create the new index.
-            self.es_storage.create_socorro_index(es_new_index)
+            self.es_storage.create_index(es_new_index)
 
             # Get all the reports in elasticsearch, but only a few at a time.
             for es_from in range(
@@ -217,7 +211,7 @@ class ElasticsearchBackfillApp(generic_app.App):
         return index_format
 
     def index_crashes(self, es_index, crashes_to_index):
-        self.connection_context.bulk_index(
+        self.es_storage.es.bulk_index(
             es_index,
             self.config.elasticsearch.elasticsearch_doctype,
             crashes_to_index,

@@ -49,11 +49,6 @@ pgxnclient==1.2.1
 pika==0.9.8
 # sha256: SLcCp8pHnhvCwae4GHWgfUdCmBMmBZk-LLl59eCCd9c
 psycopg2==2.4.5
-# sha256: Y_uAldsYamwLussgySl75CXfqd5MMws1NGD2NYIHxqo
-# sha256: 3-5BXIBkzjYnPzDY-eJ7bA4P8qQ9Uv1-1Gcurbry6DM
-elasticsearch==0.4.5
-# sha256: TkALLi9TZS3Q2AYspezEJbavbpaYm40x9d2HUYaqJHs
-urllib3==1.9
 # sha256: 2upIE6eJSfnxlBvixW1aviyZqFgjUMrwWYBPtleIrKU
 pyelasticsearch==0.6.1
 # sha256: cHay6ATFKumO3svU3B-8qBMYb-f1_dYlR4OgClWntEI
