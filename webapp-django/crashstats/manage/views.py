@@ -47,9 +47,22 @@ def notice_change(before, after):
             v2 = getattr(after, fieldname, None)
             if hasattr(v1, 'all'):
                 # many-to-many field!
-                # To be able to compare the list must have been
-                # field must have been expanded beforehand.
-                # If it hasn't we can't compare.
+                # To be able to compare, the many-to-many field needs to
+                # have been converted to a list and attached to the object.
+                # If we don't do this, we won't notice the difference.
+                # Remember that many-to-many fields are stored in a different
+                # table. E.g. for a User:
+                #
+                #  user_id | group_id
+                #  --------|---------
+                #  3       | 45
+                #  3       | 89
+                #
+                # And all you have is a User instance with the ID 3,
+                # you can't find out what was in that many-to-many mapping
+                # table before because now it's 45 and 89.
+                # So it must have been expanded into a Python list and
+                # attached to the object itself.
                 if not hasattr(before, '__%s' % fieldname):
                     continue
                 # these have to have been expanded before!
