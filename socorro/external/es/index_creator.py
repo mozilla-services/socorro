@@ -1,0 +1,92 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import elasticsearch
+import json
+import os
+
+from configman import Namespace, RequiredConfig
+from configman.converters import class_converter
+
+from socorro.external.es.super_search_fields import SuperSearchFields
+
+
+DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
+
+class IndexCreator(RequiredConfig):
+
+    required_config = Namespace()
+    required_config.add_option(
+        'elasticsearch_base_settings',
+        default='%s/mappings/socorro_index_settings.json' % DIRECTORY,
+        doc='the file containing the mapping of the indexes receiving '
+            'crash reports',
+    )
+    required_config.add_option(
+        'elasticsearch_emails_index_settings',
+        default='%s/mappings/socorro_emails_index_settings.json' % DIRECTORY,
+        doc='the file containing the mapping of the indexes receiving '
+            'email addresses for the automatic-emails cron job',
+    )
+    required_config.add_option(
+        'elasticsearch_emails_index',
+        default='socorro_emails',
+        doc='the index that handles data about email addresses for '
+            'the automatic-emails cron job',
+    )
+
+    required_config.elasticsearch = Namespace()
+    required_config.elasticsearch.add_option(
+        'elasticsearch_class',
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch',
+    )
+
+    def __init__(self, config):
+        super(IndexCreator, self).__init__()
+        self.config = config
+        self.es_context = self.config.elasticsearch.elasticsearch_class(
+            config=self.config.elasticsearch
+        )
+
+    def get_index_client(self):
+        with self.es_context() as conn:
+            return elasticsearch.client.IndicesClient(conn)
+
+    def create_socorro_index(self, es_index):
+        """Create an index that will receive crash reports. """
+        es_settings = SuperSearchFields(config=self.config).get_mapping()
+        self.create_index(es_index, es_settings)
+
+    def create_emails_index(self):
+        """Create an index that will receive email addresses for the
+        automatic-emails cron job. """
+        es_index = self.config.elasticsearch_emails_index
+        settings_json = open(
+            self.config.elasticsearch_emails_index_settings
+        ).read()
+        es_settings = json.loads(settings_json)
+
+        self.create_index(es_index, es_settings)
+
+    def create_index(self, es_index, es_settings):
+        """Create an index in elasticsearch, with specified settings.
+
+        If the index already exists or is created concurrently during the
+        execution of this function, nothing will happen.
+        """
+        try:
+            client = self.get_index_client()
+            client.create(
+                index=es_index,
+                body=es_settings
+            )
+            self.config.logger.info(
+                'Created new elasticsearch index: %s', es_index
+            )
+        except elasticsearch.exceptions.RequestError:
+            # If this index already exists, swallow the error.
+            pass
