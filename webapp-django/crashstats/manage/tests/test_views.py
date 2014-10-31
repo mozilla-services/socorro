@@ -12,6 +12,7 @@ from django.utils.timezone import utc
 
 import mock
 from nose.tools import eq_, ok_
+from eventlog.models import Log
 
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.tests.test_views import (
@@ -231,6 +232,13 @@ class TestViews(BaseTestViews):
         put_call = put_calls[0]
         eq_(put_call['WaterWolf'], '18.0.1')
 
+        # check that it got logged
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'featured_versions.update')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['data'], {'WaterWolf': ['18.0.1']})
+
     def test_fields(self):
         url = reverse('manage:fields')
         response = self.client.get(url)
@@ -441,6 +449,16 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         eq_(json.loads(response.content), True)
 
+        # check that it got logged
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'skiplist.add')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['data'], {
+            'category': 'suffix',
+            'rule': 'Foo'
+        })
+
     @mock.patch('requests.delete')
     def test_skiplist_delete(self, rdelete):
 
@@ -474,6 +492,16 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
         eq_(json.loads(response.content), True)
+
+        # check that it got logged
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'skiplist.delete')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['data'], {
+            'category': 'suffix',
+            'rule': 'Foo'
+        })
 
     def test_users_page(self):
         url = reverse('manage:users')
@@ -675,6 +703,16 @@ class TestViews(BaseTestViews):
         ok_(not bob.is_superuser)
         eq_(list(bob.groups.all()), [group_b])
 
+        # check that the event got logged
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'user.edit')
+        eq_(event.extra['id'], bob.pk)
+        change = event.extra['change']
+        eq_(change['is_superuser'], [True, False])
+        eq_(change['is_active'], [False, True])
+        eq_(change['groups'], [['Group A'], ['Group B']])
+
     def test_groups(self):
         url = reverse('manage:groups')
         response = self.client.get(url)
@@ -734,6 +772,16 @@ class TestViews(BaseTestViews):
         group = Group.objects.get(name=data['name'])
         eq_(list(group.permissions.all()), [p2])
 
+        # check that it got logged
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'group.add')
+        eq_(event.extra, {
+            'id': group.id,
+            'name': 'New Group',
+            'permissions': ['Launch Missiles']
+        })
+
         # edit it
         edit_url = reverse('manage:group', args=(group.pk,))
         response = self.client.get(edit_url)
@@ -747,10 +795,24 @@ class TestViews(BaseTestViews):
         group = Group.objects.get(name=data['name'])
         eq_(list(group.permissions.all()), [p1])
 
+        event, = Log.objects.all()[:1]
+        eq_(event.user, self.user)
+        eq_(event.action, 'group.edit')
+        eq_(event.extra['change']['name'], ['New Group', 'New New Group'])
+        eq_(event.extra['change']['permissions'], [
+            ['Launch Missiles'],
+            ['Mess Around']
+        ])
+
         # delete it
         response = self.client.post(url, {'delete': group.pk})
         eq_(response.status_code, 302)
         ok_(not Group.objects.filter(name=data['name']))
+
+        event, = Log.objects.all()[:1]
+        eq_(event.user, self.user)
+        eq_(event.action, 'group.delete')
+        eq_(event.extra['name'], data['name'])
 
     def test_analyze_model_fetches(self):
         self._login()
@@ -834,14 +896,21 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        response = self.client.post(url, {
+        data = {
             'vendor_hex': 'abc123',
             'adapter_hex': 'xyz123',
             'vendor_name': 'Logictech',
             'adapter_name': 'Webcamera'
-        })
+        }
+        response = self.client.post(url, data)
         eq_(response.status_code, 302)
         ok_(url in response['location'])
+
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'graphicsdevices.add')
+        eq_(event.extra['payload'], [data])
+        eq_(event.extra['success'], True)
 
     @mock.patch('requests.post')
     def test_graphics_devices_csv_upload(self, rpost):
@@ -876,6 +945,11 @@ class TestViews(BaseTestViews):
             })
             eq_(response.status_code, 302)
             ok_(url in response['location'])
+
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'graphicsdevices.post')
+        eq_(event.extra['success'], True)
 
     def test_symbols_uploads(self):
         self._login()
@@ -1072,6 +1146,11 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 302)
 
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'supersearch_field.post')
+        eq_(event.extra['name'], 'something')
+
         response = self.client.post(url)
         eq_(response.status_code, 400)
 
@@ -1138,6 +1217,11 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 302)
 
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'supersearch_field.put')
+        eq_(event.extra['name'], 'something')
+
         response = self.client.post(url)
         eq_(response.status_code, 400)
 
@@ -1168,6 +1252,11 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {'name': 'signature'})
         eq_(response.status_code, 302)
+
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'supersearch_field.delete')
+        eq_(event.extra['name'], 'signature')
 
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -1204,6 +1293,11 @@ class TestViews(BaseTestViews):
             'initial_version': '1.0'
         })
         eq_(response.status_code, 302)
+
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'product.add')
+        eq_(event.extra['product'], 'WaterCat')
 
     @mock.patch('requests.post')
     def test_create_release(self, rpost):
@@ -1262,6 +1356,11 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, data)
         eq_(response.status_code, 302)
 
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'release.add')
+        eq_(event.extra['product'], 'WaterCat')
+
     @mock.patch('requests.post')
     def test_create_release_with_null_beta_number(self, rpost):
         mock_calls = []
@@ -1293,3 +1392,139 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         # make sure it really called the POST to /releases/release/
         ok_(mock_calls)
+
+    def test_view_events_page(self):
+        url = reverse('manage:events')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+
+        # this page will iterate over all unique possible Log actions
+        Log.objects.create(
+            user=self.user,
+            action='actionA'
+        )
+        Log.objects.create(
+            user=self.user,
+            action='actionB'
+        )
+        Log.objects.create(
+            user=self.user,
+            action='actionA'
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # for the action filter drop-downs
+        eq_(response.content.count('value="actionA"'), 1)
+        eq_(response.content.count('value="actionB"'), 1)
+
+    def test_events_data(self):
+        url = reverse('manage:events_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+
+        Log.objects.create(
+            user=self.user,
+            action='actionA',
+            extra={'foo': True}
+        )
+        other_user = User.objects.create(
+            username='other',
+            email='other@email.com'
+        )
+        Log.objects.create(
+            user=other_user,
+            action='actionB',
+            extra={'bar': False}
+        )
+        third_user = User.objects.create(
+            username='third',
+            email='third@user.com',
+        )
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        for i in range(settings.EVENTS_ADMIN_BATCH_SIZE * 2):
+            Log.objects.create(
+                user=third_user,
+                action='actionX',
+                timestamp=now - datetime.timedelta(
+                    seconds=i + 1
+                )
+            )
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 2 + settings.EVENTS_ADMIN_BATCH_SIZE * 2)
+        # the most recent should be "actionB"
+        eq_(len(data['events']), settings.EVENTS_ADMIN_BATCH_SIZE)
+        first = data['events'][0]
+        eq_(first['action'], 'actionB')
+        eq_(first['extra'], {'bar': False})
+
+        # try to go to another page
+        response = self.client.get(url, {'page': 'xxx'})
+        eq_(response.status_code, 400)
+        response = self.client.get(url, {'page': '0'})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'page': '2'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        first = data['events'][0]
+        # we should now be on one of the actionX events
+        eq_(first['action'], 'actionX')
+
+        # we can filter by user
+        response = self.client.get(url, {'user': 'other'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 1)
+
+        # we can filter by action
+        response = self.client.get(url, {'action': 'actionX'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], settings.EVENTS_ADMIN_BATCH_SIZE * 2)
+
+    def test_events_data_urls(self):
+        """some logged events have a URL associated with them"""
+        self._login()
+
+        Log.objects.create(
+            user=self.user,
+            action='user.edit',
+            extra={'id': self.user.id}
+        )
+
+        group = Group.objects.create(name='Wackos')
+        Log.objects.create(
+            user=self.user,
+            action='group.add',
+            extra={'id': group.id}
+        )
+        Log.objects.create(
+            user=self.user,
+            action='group.edit',
+            extra={'id': group.id}
+        )
+        Log.objects.create(
+            user=self.user,
+            action='supersearch_field.post',
+            extra={'name': 'sig1'}
+        )
+        Log.objects.create(
+            user=self.user,
+            action='supersearch_field.put',
+            extra={'name': 'sig2'}
+        )
+        url = reverse('manage:events_data')
+        response = self.client.get(url)
+        data = json.loads(response.content)
+        eq_(data['count'], 5)
+        five, four, three, two, one = data['events']
+        eq_(one['url'], reverse('manage:user', args=(self.user.id,)))
+        eq_(two['url'], reverse('manage:group', args=(group.id,)))
+        eq_(three['url'], reverse('manage:group', args=(group.id,)))
+        eq_(four['url'], reverse('manage:supersearch_field') + '?name=sig1')
+        eq_(five['url'], reverse('manage:supersearch_field') + '?name=sig2')

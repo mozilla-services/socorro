@@ -33,6 +33,8 @@
                  {% if url('manage:products') in request.path_info  %}class="selected"{% endif %}>Products</a></li>
             <li><a href="{{ url('manage:releases') }}"
                  {% if url('manage:releases') in request.path_info  %}class="selected"{% endif %}>Releases</a></li>
+            <li><a href="{{ url('manage:events') }}"
+                 {% if url('manage:events') in request.path_info  %}class="selected"{% endif %}>Events</a></li>
         </ul>
     </div>
     {% block mainbody %}
