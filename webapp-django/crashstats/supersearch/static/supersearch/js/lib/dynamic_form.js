@@ -18,7 +18,7 @@
      * and the optional second argument is an object containing the initial
      * form values.
      */
-    function dynamicForm(action, initialParams, containerId, onReadyCallback) {
+    function dynamicForm(action, initialParams, containerId, onReadyCallback, sortFuntion) {
         var form = this;
         initialParams = initialParams || null;
         containerId = containerId || null;
@@ -50,6 +50,7 @@
 
         var fieldsURL = action;
         var fields = {};
+        var sortedFieldNames = [];
         var lines = [];
         var lastFieldLineId = 0;
         var container = form;
@@ -66,6 +67,7 @@
             function(data) {
                 $('.loader', container).remove();
                 fields = data;
+                sortedFieldNames = Object.keys(fields).sort();
                 if (initialParams) {
                     setParams(initialParams);
                 }
@@ -355,17 +357,18 @@
             });
             this.fieldInput.append($('<option>'));
 
-            for (var f in fields) {
+            sortedFieldNames.forEach(function(f) {
                 this.fieldInput.append($('<option>', {
                     'value': f,
                     'text': fields[f].name
                 }));
-            }
+            }, this);
             this.line.append(this.fieldInput);
 
             this.fieldInput.select2({
                 placeholder: 'Choose a field',
-                width: 'element'
+                width: 'element',
+                sortResults: sortFuntion
             });
             this.fieldInput.on('change', this.createOperatorInput.bind(this));
 

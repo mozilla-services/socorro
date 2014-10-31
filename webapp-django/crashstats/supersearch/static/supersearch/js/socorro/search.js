@@ -162,15 +162,34 @@ $(function () {
         window.location = customURL + url;
     });
 
+    function sortResults(results, container, query) {
+        if (query.term) {
+            return results.sort(function (a, b) {
+                if (a.text.length > b.text.length) {
+                    return 1;
+                }
+                else if (a.text.length < b.text.length) {
+                    return -1;
+                }
+                else {
+                    return 0;
+                }
+            });
+        }
+        return results;
+    }
+
     facetsInput.select2({
         'data': window.FACETS,
         'multiple': true,
-        'width': 'element'
+        'width': 'element',
+        'sortResults': sortResults
     });
     columnsInput.select2({
         'data': window.COLUMNS,
         'multiple': true,
-        'width': 'element'
+        'width': 'element',
+        'sortResults': sortResults
     });
 
     // Make the columns input sortable
@@ -217,10 +236,10 @@ $(function () {
             params.page = page;
             var url = prepareResultsQueryString(params);
             showResults(resultsURL + url);
-        });
+        }, sortResults);
     }
     else {
         // No initial params, just load the form and let the user play with it.
-        form.dynamicForm(fieldsURL, null, '#search-params-fieldset');
+        form.dynamicForm(fieldsURL, null, '#search-params-fieldset', null, sortResults);
     }
 });
