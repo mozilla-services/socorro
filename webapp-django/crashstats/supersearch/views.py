@@ -97,7 +97,6 @@ def get_params(request):
     return params
 
 
-@waffle_switch('supersearch-all')
 @pass_default_context
 def search(request, default_context=None):
     allowed_fields = get_allowed_fields(request.user)
@@ -118,7 +117,6 @@ def search(request, default_context=None):
     return render(request, 'supersearch/search.html', context)
 
 
-@waffle_switch('supersearch-all')
 def search_results(request):
     '''Return the results of a search. '''
     params = get_params(request)
@@ -215,7 +213,6 @@ def search_results(request):
     return render(request, 'supersearch/search_results.html', data)
 
 
-@waffle_switch('supersearch-all')
 @utils.json_view
 def search_fields(request):
     '''Return the JSON document describing the fields used by the JavaScript
@@ -305,7 +302,6 @@ def get_report_list_parameters(source):
     return params
 
 
-@waffle_switch('supersearch-all')
 @waffle_switch('supersearch-custom-query')
 @permission_required('crashstats.run_custom_queries')
 @pass_default_context
@@ -347,7 +343,6 @@ def search_custom(request, default_context=None):
     return render(request, 'supersearch/search_custom.html', context)
 
 
-@waffle_switch('supersearch-all')
 @waffle_switch('supersearch-custom-query')
 @permission_required('crashstats.run_custom_queries')
 @require_POST

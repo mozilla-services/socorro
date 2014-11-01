@@ -142,7 +142,7 @@ your needs.
 Front-end
 ^^^^^^^^^
 
-Most of the features based on Elasticsearch are hidden behind switches (using
+Some of the features based on Elasticsearch are hidden behind switches (using
 django-waffle). You will need to activate those switches depending on the
 features you want to use.
 
@@ -158,9 +158,7 @@ Here is a list of the switches you need to turn on to use each feature:
 +-----------------------+-----------------------------------------------------+
 | Feature               | Switches                                            |
 +=======================+=====================================================+
-| Super Search          | supersearch-all                                     |
-+-----------------------+-----------------------------------------------------+
-| Custom Queries        | supersearch-all, supersearch-custom-query           |
+| Custom Queries        | supersearch-custom-query                            |
 +-----------------------+-----------------------------------------------------+
 | Signature report      | signature-report                                    |
 +-----------------------+-----------------------------------------------------+
