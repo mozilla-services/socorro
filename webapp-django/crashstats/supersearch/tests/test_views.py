@@ -215,11 +215,6 @@ class TestViews(BaseTestViews):
 
     @staticmethod
     def setUpClass():
-        TestViews.switch = Switch.objects.create(
-            name='supersearch-all',
-            active=True,
-        )
-
         TestViews.custom_switch = Switch.objects.create(
             name='supersearch-custom-query',
             active=True,
@@ -228,7 +223,6 @@ class TestViews(BaseTestViews):
     @staticmethod
     def tearDownClass():
         try:
-            TestViews.switch.delete()
             TestViews.custom_switch.delete()
         except AssertionError:
             # test_search_waffle_switch removes those switches before, causing
@@ -238,29 +232,6 @@ class TestViews(BaseTestViews):
     def test_search_waffle_switch(self):
         # Delete the custom-query switch but keep the generic one around.
         TestViews.custom_switch.delete()
-        url = reverse('supersearch.search_custom')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        url = reverse('supersearch.search_query')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        # delete the switch to verify it's not accessible
-        TestViews.switch.delete()
-
-        url = reverse('supersearch.search')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        url = reverse('supersearch.search_results')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        url = reverse('supersearch.search_fields')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
         url = reverse('supersearch.search_custom')
         response = self.client.get(url)
         eq_(response.status_code, 404)
