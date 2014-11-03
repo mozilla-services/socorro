@@ -32,7 +32,7 @@ def find_install_requires():
 
 setup(
     name='socorro',
-    version='88',
+    version='master',
     description=('Socorro is a server to accept and process Breakpad'
                  ' crash reports.'),
     long_description=open('README.md').read(),

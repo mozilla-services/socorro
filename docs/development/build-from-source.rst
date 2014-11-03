@@ -1,22 +1,23 @@
-.. index:: install-src-dev
+.. index:: build-from-source
 
-.. _install_from_source-chapter:
+.. _build_from_source-chapter:
 
-Installing from source
+Building from source
 ======================
+
+Clone the Socorro repository
+----------------------------
+
+If you haven't already, you'll need to clone the Socorro git repository:
+::
+  git clone git://github.com/mozilla/socorro.git
+  cd socorro
 
 Setting up environment
 ----------------------
 
-You may need to run this as the *root* user depending on how node.js was 
-installed
-::
-  which lessc
-  # if you do not have this installed then run:
-  npm install -g less
-
-Socorro can install the dependencies into a virtualenv for you.
-You only need to run this once
+Socorro can install python dependencies into a virtualenv for you.
+You only need to run this once:
 ::
   export PATH=$PATH:/usr/pgsql-9.3/bin/
   make bootstrap
@@ -27,12 +28,9 @@ is activated:
   . socorro-virtualenv/bin/activate
 
 The Socorro package should be installed into the virtualenv too,
-in "develop" mode so you only need to run this once
+in "develop" mode so you only need to run this once:
 ::
   python setup.py develop
-
-Or you can choose to manage the virtualenv yourself, perhaps using
-virtualenwrapper.
 
 Add a new superuser account to PostgreSQL
 -----------------------------------------
@@ -97,7 +95,7 @@ Django needs to write its ORM tables:
   cd webapp-django
   ./manage.py syncdb --noinput
 
-Run socorro in dev mode
+Run Socorro in dev mode
 -----------------------
 
 Copy default config files

@@ -5,7 +5,7 @@
 General architecture of Socorro
 ===============================
 
-.. image:: images/block-diagram.png
+.. image:: ../images/block-diagram.png
 
 Arrows direction represents the flow of interesting information (crashes,
 authentication assertions, cached values), not trivia like acks.

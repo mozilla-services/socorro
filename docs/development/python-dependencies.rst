@@ -1,6 +1,6 @@
-.. index:: dependencies
+.. index:: python-dependencies
 
-.. _dependencies-chapter:
+.. _python_dependencies-chapter:
 
 Dependencies
 ============

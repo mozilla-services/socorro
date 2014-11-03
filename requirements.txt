@@ -152,3 +152,5 @@ django-compressor==1.4
 django-jsonfield==0.9.13
 # sha256: iTXjRYmmVJstzm7v-uQNInOetVtqmUow9mpCjW-YuBM
 eventlog==0.8.0
+# sha256: Dyn1RPbQN5ifoMdymp6rfk2OpQ1vDvNzY_RydWwe3KY
+sphinx_rtd_theme

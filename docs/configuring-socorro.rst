@@ -1,7 +1,7 @@
-.. index:: setup-socorro
+.. index:: configuring-socorro
 
-Setting up Socorro reporting
-============================
+Configuring Socorro
+===================
 
 Socorro produces graphs and reports, most are updated once per day.
 

@@ -20,5 +20,5 @@ Contributing
    database
    package
    commonconfig
-   dependencies
+   python-dependencies
    addaservice

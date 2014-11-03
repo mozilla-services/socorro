@@ -14,7 +14,11 @@ The components which make up Socorro are:
 * Middleware - provide HTTP REST interface for JSON reports and real-time data
 * Web UI aka crash-stats - django-based web app for visualizing crash data
 
-For help with installation, start with :ref:`intro-chapter`.
+Socorro is available as an RPM for RHEL/CentOS, or you can build from source
+on Mac OSX, Ubuntu or RHEL/CentOS.
+
+* For production installation, proceed to :ref:`production_install-chapter`.
+* If you want to build from source, see the :ref:`development-chapter` section.
 
 We welcome contributions!
 
@@ -27,36 +31,12 @@ This documentation is `available on readthedocs <http://socorro.readthedocs.org>
 
 The Socorro development mailing list is https://lists.mozilla.org/listinfo/tools-socorro
 
-
-Contents:
-
 .. toctree::
-   :maxdepth: 2
+   :numbered:
+   :hidden:
 
-   installation/index
-   installation/deps
-   installation/download
-   installation/install-binary
-   installation/install-src-dev
-   installation/install-src-prod
-   installation/systemtest
-   installation/setup-socorro
-   installation/troubleshoot
-   webapp
-   api/index
-   crontabber
-   elasticsearch
-   throttling
-   contributing
-   database
-   generic_app
-   writingdocs
-   glossary/index
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   production-install
+   configuring-socorro
+   systemtest
+   troubleshoot
+   development/index
