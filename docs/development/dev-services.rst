@@ -204,7 +204,6 @@ Install dependencies
   sudo easy_install virtualenv virtualenvwrapper pip
   sudo pip-2.7 install docutils
   brew install mercurial
-  npm install -g less
 
 Install lessc
 ::
