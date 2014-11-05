@@ -80,6 +80,7 @@ MIDDLEWARE_CLASSES = (
 
     'waffle.middleware.WaffleMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
+    '%s.crashstats.middleware.Propagate400Errors' % PROJECT_MODULE,
 )
 
 
@@ -336,3 +337,7 @@ API_RATE_LIMIT = '10/m'
 # When we pull platforms from the Platforms API we later decide which of
 # these to display at various points in the UI.
 DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
+
+# When this is true, every 400 Bad Request error we get from the middleware
+# is propagated onto the client who caused the request in the webapp.
+PROPAGATE_MIDDLEWARE_400_ERRORS = True
