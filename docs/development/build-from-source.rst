@@ -76,8 +76,7 @@ Populate PostgreSQL Database
 
 Load Socorro schema plus test products:
 ::
-  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad \
-    --fakedata --dropdb
+  socorro setupdb --database_name=breakpad --fakedata --dropdb
 
 Create partitioned tables
 -------------------------
