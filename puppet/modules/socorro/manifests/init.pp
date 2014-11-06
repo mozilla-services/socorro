@@ -42,41 +42,30 @@ class socorro::vagrant {
   }
 
   yumrepo {
-    'PGDG':
-      baseurl  => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
-      descr    => 'PGDG',
-      enabled  => 1,
-      gpgcheck => 0;
-
+    'dchen':
+      baseurl  => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/';
+    'devtools':
+      baseurl  => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
+    'elasticsearch':
+      baseurl  => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos';
     'EPEL':
       baseurl  => 'http://dl.fedoraproject.org/pub/epel/$releasever/$basearch',
-      descr    => 'EPEL',
-      enabled  => 1,
-      gpgcheck => 0,
       timeout  => 60;
+    'PGDG':
+      baseurl  => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch';
+  }
 
-    'devtools':
-      baseurl  => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS',
-      enabled  => 1,
-      gpgcheck => 0;
-
-    'elasticsearch':
-      baseurl  => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos',
-      enabled  => 1,
-      gpgcheck => 0;
-
-    'dchen':
-      baseurl  => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/',
-      enabled  => 1,
-      gpgcheck => 0,
-      require  => Package['ca-certificates'];
+  Yumrepo['dchen', 'devtools', 'elasticsearch', 'EPEL', 'PGDG'] {
+    enabled  => 1,
+    gpgcheck => 0,
+    require  => Package['ca-certificates', 'yum-plugin-fastestmirror']
   }
 
   package {
     [
       'apache-maven',
     ]:
-    ensure => latest,
+    ensure  => latest,
     require => Yumrepo['dchen'];
   }
 
@@ -122,21 +111,21 @@ class socorro::vagrant {
       'postgresql93-server',
     ]:
     ensure  => latest,
-    require => [ Yumrepo['PGDG'], Package['yum-plugin-fastestmirror']]
+    require => Yumrepo['PGDG']
   }
 
   exec {
     'postgres-test-role':
-      path => '/usr/bin:/bin',
-      cwd => '/var/lib/pgsql',
+      path    => '/usr/bin:/bin',
+      cwd     => '/var/lib/pgsql',
       command => 'sudo -u postgres psql template1 -c "create user test with encrypted password \'aPassword\' superuser"',
-      unless => 'sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'test\'" | grep -q 1',
+      unless  => 'sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'test\'" | grep -q 1',
       require => [
         Package['postgresql93-server'],
         Exec['postgres-initdb'],
         File['pg_hba.conf'],
         Service['postgresql-9.3']
-      ];
+      ]
   }
 
   package {
@@ -148,7 +137,7 @@ class socorro::vagrant {
       'nodejs-less',
     ]:
     ensure  => latest,
-    require => [ Yumrepo['EPEL'], Package['yum-plugin-fastestmirror']]
+    require => Yumrepo['EPEL']
   }
 
   package {
@@ -160,7 +149,7 @@ class socorro::vagrant {
   package {
     'devtoolset-1.1-gcc-c++':
       ensure  => latest,
-      require => [ Yumrepo['devtools'], Package['yum-plugin-fastestmirror']]
+      require => Yumrepo['devtools']
   }
 
   file {
