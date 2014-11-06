@@ -1,4 +1,5 @@
 import math
+import urllib
 
 from django import http
 from django.core.urlresolvers import reverse
@@ -7,15 +8,16 @@ from django.shortcuts import render
 from waffle.decorators import waffle_switch
 
 from crashstats.api.views import has_permissions
-from crashstats.crashstats import models
+from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
 from crashstats.supersearch.models import (
     SuperSearchUnredacted,
-    SuperSearchFields
+    SuperSearchFields,
 )
 from crashstats.supersearch.views import (
     get_allowed_fields,
-    get_params
+    get_params,
+    get_report_list_parameters,
 )
 
 
@@ -55,6 +57,11 @@ def get_validated_params(request):
 def signature_report(request, default_context=None):
     context = default_context
 
+    params = get_validated_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
+
     signature = request.GET.get('signature')
     if not signature:
         return http.HttpResponseBadRequest(
@@ -76,6 +83,13 @@ def signature_report(request, default_context=None):
     ]
 
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+
+    context['report_list_query_string'] = urllib.urlencode(
+        utils.sanitize_dict(
+            get_report_list_parameters(params)
+        ),
+        True
+    )
 
     return render(request, 'signature/signature_report.html', context)
 

@@ -17,6 +17,14 @@
 <div id="mainbody">
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
+        <span>
+            &nbsp;&nbsp;
+            <em>
+                <a href="{{ url('crashstats:report_list') }}?signature={{ signature | urlencode }}&amp;{{ report_list_query_string }}">
+                    see the equivalent report/list/ page
+                </a>
+            </em>
+        </span>
     </div>
 
     <section id="search-form">
