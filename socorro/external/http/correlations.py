@@ -201,7 +201,12 @@ class CorrelationsSignatures(Correlations):
             elif on:
                 # if starts with exactly two spaces it contains the signature
                 if SIGNATURE_LINE_START_REGEX.match(line):
-                    this_signature = line.split('|')[-2].strip()
+                    if '|' in line:
+                        this_signature = line.split('|')[-2].strip()
+                    else:
+                        # less obvious
+                        # default to everything *but* the count
+                        this_signature = COUNT_REGEX.sub('', line).strip()
                     signatures.append(this_signature)
 
         return signatures
