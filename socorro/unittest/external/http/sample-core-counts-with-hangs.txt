@@ -1,0 +1,45 @@
+
+None
+  EMPTY: no crashing thread identified; corrupt dump (109 crashes)
+
+
+Windows NT
+
+  hang | _PeekMessage|EXCEPTION_BREAKPOINT (18 crashes)
+      6% (1/18) vs.   0% (1/81895) nt@Sc5J3e.com
+      6% (1/18) vs.   0% (1/81895) {e16ba13a-2ebe-d9d8-16a7-546c838d1fa1}
+      6% (1/18) vs.   0% (4/81895) yamlitoolbar@yamli.com (Yamli for Firefox, https://addons.mozilla.org/addon/12132)
+      6% (1/18) vs.   0% (4/81895) 6d504ebFhRf8dHkt1e150ac4k91757f@korpuslex
+      6% (1/18) vs.   0% (11/81895) {7e4355b8-96cd-43eb-b59a-82af29f01b16}
+      6% (1/18) vs.   0% (14/81895) fb2reader@clear.com.ua
+      6% (1/18) vs.   0% (28/81895) EnglishEnglishDictionary@lipocodes
+      6% (1/18) vs.   0% (31/81895) {00fe044f-e66e-46a7-97c3-971338ebe390}
+      6% (1/18) vs.   0% (31/81895) stealthyextension@gmail.com
+      6% (1/18) vs.   0% (35/81895) zulagames@ZulaGames.com
+      6% (1/18) vs.   0% (45/81895) speedanalysis02@SpeedAnalysis.com
+      6% (1/18) vs.   0% (47/81895) {59c81df5-4b7a-477b-912d-4e0fdf64e5f2} (ChatZilla, https://addons.mozilla.org/addon/16)
+      6% (1/18) vs.   0% (107/81895) content_blocker_6418E0D362104DADA084DC312DFA8ABC@kaspersky.com
+      6% (1/18) vs.   0% (109/81895) virtual_keyboard_294FF26A1D5B455495946778FDE7CEDB@kaspersky.com
+      6% (1/18) vs.   0% (124/81895) toolbar11147@findwide.com
+      6% (1/18) vs.   0% (205/81895) addon@defaulttab.com
+      6% (1/18) vs.   0% (302/81895) testpilot@labs.mozilla.com (Mozilla Labs - Test Pilot, https://addons.mozilla.org/addon/13661)
+      6% (1/18) vs.   0% (329/81895) 1853a82e-ce44-4a8c-a6fe-9bcf74a65575@4b6b1c16-5f0a-4ef0-866f-b063e235ef97.com
+
+  hang | NtUserPeekMessage | NtUserPeekMessage | NtUserPeekMessage | base::MessagePumpForUI::ProcessNextWindowsMessage()|EXCEPTION_BREAKPOINT (18 crashes)
+     39% (7/18) vs.  17% (13520/81895) {d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d} (Adblock Plus, https://addons.mozilla.org/addon/1865)
+     22% (4/18) vs.   9% (7183/81895) {82AF8DCA-6DE9-405D-BD5E-43525BDAD38A}
+      6% (1/18) vs.   0% (6/81895) {5e60143c-f353-4d8a-9d40-55188b961d89}
+      6% (1/18) vs.   0% (18/81895) 718bc5a3-95e4-4d4c-b94b-2c916fcf5266@gmail.com
+      6% (1/18) vs.   0% (22/81895) {E2883E8F-472F-4fb0-9522-AC9BF37916A7} (Adobe Flash Extension, https://addons.mozilla.org/addon/13845)
+      6% (1/18) vs.   0% (24/81895) {F74D5734-46F5-4B16-96F0-1E7FBF41B750}
+
+  hang (18 crashes)
+     28% (5/18) vs.   0% (378/81895) 2020Player_IKEA@2020Technologies.com
+      6% (1/18) vs.   0% (1/81895) {0cc68180-2a05-471a-a647-5c6cbe910ab9}
+      6% (1/18) vs.   0% (1/81895) {fff2d2b4-0f90-4edd-a75a-047e2658236a}
+      6% (1/18) vs.   0% (1/81895) {38f72c19-9857-4bc2-b729-9d00bd429872}
+      6% (1/18) vs.   0% (1/81895) {ad28a4d5-ff34-4e4c-af95-b3aa1bbc1d20}
+      6% (1/18) vs.   0% (1/81895) {18fa7aee-6838-42dd-8d32-3fd665a7e664}
+      6% (1/18) vs.   0% (1/81895) {2429c312-24d3-4127-94ed-c247fe9e02fc}
+      6% (1/18) vs.   0% (2/81895) {ea2115a6-5989-483c-b1ee-19fba43198ff}
+      6% (1/18) vs.   0% (3/81895) dealio@mybrowserbar.com
