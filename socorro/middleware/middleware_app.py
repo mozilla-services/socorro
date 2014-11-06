@@ -199,6 +199,18 @@ class MiddlewareApp(App):
     )
 
     #--------------------------------------------------------------------------
+    # elasticsearch namespace
+    #     the namespace is for external implementations of the services
+    #-------------------------------------------------------------------------
+    required_config.namespace('elasticsearch')
+    required_config.elasticsearch.add_option(
+        'elasticsearch_class',
+        default='socorro.external.elasticsearch.connection_context.'
+                'ConnectionContext',
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
     # rabbitmq namespace
     #     the namespace is for external implementations of the services
     #-------------------------------------------------------------------------
