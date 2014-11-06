@@ -11,7 +11,8 @@ from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
 )
 
-# Remove debugging noise during development
+# Uncomment these lines to decrease verbosity of the elasticsearch library
+# while running unit tests.
 # import logging
 # logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 

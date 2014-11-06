@@ -19,12 +19,6 @@ class IndexCreator(RequiredConfig):
 
     required_config = Namespace()
     required_config.add_option(
-        'elasticsearch_base_settings',
-        default='%s/mappings/socorro_index_settings.json' % DIRECTORY,
-        doc='the file containing the mapping of the indexes receiving '
-            'crash reports',
-    )
-    required_config.add_option(
         'elasticsearch_emails_index_settings',
         default='%s/mappings/socorro_emails_index_settings.json' % DIRECTORY,
         doc='the file containing the mapping of the indexes receiving '

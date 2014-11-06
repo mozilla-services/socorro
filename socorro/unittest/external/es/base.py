@@ -14,6 +14,9 @@ from socorro.unittest.testbase import TestCase
 
 
 DEFAULT_VALUES = {
+    'elasticsearch.elasticsearch_class': (
+        'socorro.external.es.connection_context.ConnectionContext'
+    ),
     'resource.elasticsearch.elasticsearch_default_index': (
         'socorro_integration_test'
     ),
