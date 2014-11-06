@@ -9,7 +9,7 @@ import boto.exception
 
 from socorro.lib.util import DotDict
 from socorro.external.crashstorage_base import Redactor
-from socorro.external.ceph.crashstorage import (
+from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
     SupportReasonAPIStorage
 )
@@ -91,7 +91,9 @@ class TestCase(socorro.unittest.testbase.TestCase):
     def setup_mocked_s3_storage(
             self,
             executor=TransactionExecutor,
-            storage_class='BotoS3CrashStorage'):
+            storage_class='BotoS3CrashStorage',
+            host='',
+            port=0):
 
         config = DotDict({
             'source': {
@@ -102,17 +104,17 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'redactor_class': Redactor,
             'forbidden_keys': Redactor.required_config.forbidden_keys.default,
             'logger': mock.Mock(),
-            'host': 's3.is.out.here.somewhere',
-            'port': 38080,
+            'host': host,
+            'port': port,
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
-            'buckets': 'daily',
             'temporary_file_system_storage_path':
             '/i/am/hiding/junk/files/here',
             'dump_file_suffix': '.dump',
             'bucket_name': 'mozilla-support-reason',
         })
         if storage_class == 'BotoS3CrashStorage':
+            config.bucket_name = 'crash_storage'
             s3 = BotoS3CrashStorage(config)
         elif storage_class == 'SupportReasonAPIStorage':
             s3 = SupportReasonAPIStorage(config)
@@ -125,14 +127,33 @@ class TestCase(socorro.unittest.testbase.TestCase):
         s3._open = mock.MagicMock()
         return s3
 
-    def assert_s3_connection_parameters(self, boto_s3_store):
-        boto_s3_store._connect_to_endpoint.assert_called_with(
-            aws_access_key_id=boto_s3_store.config.access_key,
-            aws_secret_access_key=boto_s3_store.config.secret_access_key,
-            host=boto_s3_store.config.host,
-            port=38080,
-            is_secure=False,
-            calling_format=boto_s3_store._calling_format.return_value
+    def assert_s3_connection_parameters(self, boto_s3_store, host='', port=0):
+        kwargs = {
+            "aws_access_key_id": boto_s3_store.config.access_key,
+            "aws_secret_access_key": boto_s3_store.config.secret_access_key,
+            "is_secure": False,
+            "calling_format": boto_s3_store._calling_format.return_value
+        }
+        if host:
+            kwargs['host'] = host
+        if port:
+            kwargs['port'] = port
+        boto_s3_store._connect_to_endpoint.assert_called_with(**kwargs)
+
+    def test_connect_with_host_port(self):
+        boto_s3_store = self.setup_mocked_s3_storage(
+            host='somewhere.sometime.someplace',
+            port=666,
+        )
+        boto_s3_store.save_raw_crash(
+            {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            {},
+            "0bba929f-8721-460c-dead-a43c20071027"
+        )
+        self.assert_s3_connection_parameters(
+            boto_s3_store,
+            host='somewhere.sometime.someplace',
+            port=666,
         )
 
     def test_save_raw_crash_1(self):
@@ -157,7 +178,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '071027'
+            'crash_storage'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.get_bucket \
@@ -209,7 +230,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '071027'
+            'crash_storage'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.get_bucket \
@@ -274,10 +295,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '071027'
+            'crash_storage'
         )
         boto_s3_store._mocked_connection.create_bucket.assert_called_with(
-            '071027'
+            'crash_storage'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.create_bucket \
@@ -333,7 +354,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '071027'
+            'crash_storage'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.get_bucket \
@@ -486,7 +507,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '071027'
+            'crash_storage'
         )
 
         bucket_mock = boto_s3_store._mocked_connection.get_bucket \
@@ -547,7 +568,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '120408'
+            'crash_storage'
         )
 
         self.assertEqual(mocked_get_contents_as_string.call_count, 1)
@@ -589,7 +610,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '120408'
+            'crash_storage'
         )
 
         boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
@@ -638,7 +659,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '120408'
+            'crash_storage'
         )
 
         boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
@@ -687,7 +708,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '120408'
+            'crash_storage'
         )
 
         boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
@@ -737,7 +758,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '120408'
+            'crash_storage'
         )
 
         mocked_get_contents_as_string.assert_has_calls(
@@ -847,7 +868,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             1
         )
         boto_s3_store._mocked_connection.get_bucket.assert_called_with(
-            '120408'
+            'crash_storage'
         )
 
         key_mock = boto_s3_store._mocked_connection.get_bucket \
@@ -876,7 +897,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         ]
 
         def temp_failure_fn(key):
-            self.assertEqual(key, '120408')
+            self.assertEqual(key, 'crash_storage')
             action = actions.pop()
             if isinstance(action, Exception):
                 raise action
@@ -905,9 +926,9 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store._mocked_connection.get_bucket \
             .assert_has_calls(
                 [
-                    mock.call('120408'),
-                    mock.call('120408'),
-                    mock.call('120408'),
+                    mock.call('crash_storage'),
+                    mock.call('crash_storage'),
+                    mock.call('crash_storage'),
                 ],
             )
 
@@ -917,22 +938,6 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         self.assertEqual(result, self._fake_unredacted_processed_crash())
-
-    def test_create_bucket_name_for_crash_id(self):
-        boto_s3_store = self.setup_mocked_s3_storage()
-        cid_bucket_pairs = [
-            ('936ce666-ff3b-4c7a-9674-367fe2120408', '120408'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe0600504', '600504'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe1600504', '600504'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe2600504', '600504'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe3600504', '600504'),
-            ('aabbccdd-ff3b-4c7a-9674-367fe4600504', '600504'),
-        ]
-        for cid, bucket_name in cid_bucket_pairs:
-            self.assertEqual(
-                boto_s3_store._create_bucket_name_for_crash_id(cid),
-                bucket_name
-            )
 
     def test_not_found(self):
         boto_s3_store = self.setup_mocked_s3_storage()
