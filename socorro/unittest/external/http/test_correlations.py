@@ -18,6 +18,10 @@ SAMPLE_CORE_COUNTS = open(
     os.path.join(os.path.dirname(__file__),
                  'sample-core-counts.txt')
 ).read()
+SAMPLE_CORE_COUNTS_WITH_HANGS = open(
+    os.path.join(os.path.dirname(__file__),
+                 'sample-core-counts-with-hangs.txt')
+).read()
 
 
 class Response(object):
@@ -426,3 +430,28 @@ class TestCorrelationsSignatures(TestCase):
         }
         result = model.get(**dict(params, platforms=['Mac OS X', 'Linux']))
         eq_(result, None)
+
+    @mock.patch('requests.get')
+    def test_empty_hang_signatures(self, rget):
+
+        def mocked_get(url, **kwargs):
+            if 'core-counts' in url and '32.0.2' in url:
+                return Response(SAMPLE_CORE_COUNTS_WITH_HANGS)
+            raise NotImplementedError
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model()
+
+        params = {
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '32.0.2',
+        }
+        result = model.get(**dict(params, platforms=['Windows NT']))
+        hits = result['hits']
+        # know thy fixtures
+        eq_(hits[0], '_PeekMessage')
+        eq_(hits[1], 'base::MessagePumpForUI::ProcessNextWindowsMessage()')
+        eq_(hits[2], 'hang')
+        eq_(result['total'], 3)
