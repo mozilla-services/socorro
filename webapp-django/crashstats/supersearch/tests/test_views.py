@@ -5,7 +5,6 @@ import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
-from django.utils.timezone import utc
 
 from waffle import Switch
 
@@ -784,7 +783,7 @@ class TestViews(BaseTestViews):
             'date': ['<2013-01-01T10:00:00+00:00']
         }
         res = get_report_list_parameters(source)
-        eq_(res['date'], datetime.datetime(2013, 1, 1, 10).replace(tzinfo=utc))
+        eq_(res['date'], '2013-01-01 10:00:00')
         ok_('range_value' not in res)
         ok_('range_unit' not in res)
 
@@ -792,7 +791,10 @@ class TestViews(BaseTestViews):
             'date': ['>=2013-01-01T10:00:00+00:00']
         }
         res = get_report_list_parameters(source)
-        eq_(res['date'].date(), datetime.datetime.utcnow().date())
+        eq_(
+            res['date'].split(' ')[0],
+            datetime.datetime.utcnow().date().isoformat()
+        )
         ok_('range_value' in res)
         eq_(res['range_unit'], 'hours')
 
@@ -807,7 +809,7 @@ class TestViews(BaseTestViews):
             'build_id': ['12345', '~67890'],
         }
         res = get_report_list_parameters(source)
-        eq_(res['date'].date(), datetime.date(2013, 2, 1))
+        eq_(res['date'], '2013-02-01 10:00:00')
         ok_('range_value' in res)
         ok_(res['range_unit'], 'hours')
 

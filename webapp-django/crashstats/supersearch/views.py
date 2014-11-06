@@ -299,6 +299,8 @@ def get_report_list_parameters(source):
                 params['range_value'] = to_hours(upper - lower)
                 params['range_unit'] = 'hours'
 
+            params['date'] = params['date'].strftime('%Y-%m-%d %H:%M:%S')
+
     return params
 
 
