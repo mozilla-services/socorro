@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
+import json
 from nose.tools import eq_, ok_, assert_raises
+
+import simplecrypt
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -13,7 +16,8 @@ from socorro.external.crashstorage_base import (
     PrimaryDeferredStorage,
     PrimaryDeferredProcessedStorage,
     Redactor,
-    BenchmarkingCrashStorage
+    BenchmarkingCrashStorage,
+    CryptoCrashStorage,
 )
 from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
@@ -718,4 +722,99 @@ class TestBench(TestCase):
             mock_logging.debug.reset_mock()
 
 
+class TestCrypto(TestCase):
 
+    def test_crypto_crashstore(self):
+        required_config = Namespace()
+
+        mock_logging = Mock()
+        required_config.add_option('logger', default=mock_logging)
+        required_config.update(CryptoCrashStorage.get_required_config())
+        fake_crash_store_class = Mock()
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{
+            'logger': mock_logging,
+            'wrapped_crashstore': fake_crash_store_class,
+            'password': 'password',
+          }],
+          argv_source=[]
+        )
+
+        with config_manager.context() as config:
+            crashstorage = CryptoCrashStorage(
+              config,
+              quit_check_callback=fake_quit_check
+            )
+            fake_crash_store_class.assert_called_with(config, fake_quit_check)
+            fake_crash_store = crashstorage.wrapped_crashstore
+
+
+            crashstorage.save_raw_crash({}, 'payload', 'ooid')
+            args = crashstorage.wrapped_crashstore.save_raw_crash.call_args[0]
+            eq_(
+                {},
+                json.loads(simplecrypt.decrypt('password', args[0]))
+            )
+            eq_('payload', simplecrypt.decrypt('password', args[1]))
+            eq_('ooid', args[2])
+
+            crashstorage.save_processed({})
+            args = crashstorage.wrapped_crashstore.save_processed.call_args[0]
+            eq_(
+                {},
+                json.loads(simplecrypt.decrypt('password', args[0]))
+            )
+
+            crashstorage.save_raw_and_processed({}, 'payload', {}, 'ooid' )
+            args = crashstorage.wrapped_crashstore.save_raw_and_processed. \
+                call_args[0]
+            eq_(
+                {},
+                json.loads(simplecrypt.decrypt('password', args[0]))
+            )
+            eq_(
+                'payload',
+                simplecrypt.decrypt('password', args[1])
+            )
+            eq_(
+                {},
+                json.loads(simplecrypt.decrypt('password', args[2]))
+            )
+            eq_('ooid', args[3])
+
+            fake_crash_store.get_raw_crash.return_value = simplecrypt.encrypt(
+                    'password',
+                    '{}',
+            )
+            eq_({}, crashstorage.get_raw_crash('uuid'))
+
+            fake_crash_store.get_raw_dump.return_value = simplecrypt.encrypt(
+                    'password',
+                    'payload',
+            )
+            eq_('payload', crashstorage.get_raw_dump('uuid'))
+
+            fake_crash_store.get_raw_dumps.return_value = [simplecrypt.encrypt(
+                    'password',
+                    'payload',
+            )]
+            eq_(['payload'], crashstorage.get_raw_dumps('uuid'))
+
+            fake_crash_store.get_raw_dumps_as_files.return_value = \
+                [simplecrypt.encrypt(
+                    'password',
+                    'payload',
+                )]
+            eq_(['payload'], crashstorage.get_raw_dumps_as_files('uuid'))
+
+            fake_crash_store.get_unredacted_processed.return_value = \
+                simplecrypt.encrypt(
+                    'password',
+                    'payload',
+                )
+            eq_('payload', crashstorage.get_unredacted_processed('uuid'))

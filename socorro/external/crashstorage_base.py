@@ -9,6 +9,9 @@ saving, fetching and iterating over raw crashes, dumps and processed crashes.
 import sys
 import collections
 import datetime
+import json
+
+import simplecrypt
 
 from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
@@ -986,3 +989,129 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             end_time - start_time
         )
 
+#==============================================================================
+class CryptoCrashStorage(CrashStorageBase):
+    """a wrapper around crash stores that provides encryption/decryption
+    """
+    required_config = Namespace()
+    required_config.add_option(
+        name="password",
+        doc="a password to use for encryption/decryption",
+        default='',
+    )
+    required_config.add_option(
+        name="wrapped_crashstore",
+        doc="another crash store to be encrypted/decrypted",
+        default='',
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(CryptoCrashStorage, self).__init__(
+            config,
+            quit_check_callback
+        )
+        self.wrapped_crashstore = config.wrapped_crashstore(
+            config,
+            quit_check_callback)
+        self.password = config.password
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        """some implementations may need explicit closing."""
+        self.wrapped_crashstore.close()
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        encrypted_raw_crash = simplecrypt.encrypt(
+                self.password,
+                json.dumps(raw_crash),
+        )
+        encrypted_dumps = simplecrypt.encrypt(self.password, dumps)
+
+        self.wrapped_crashstore.save_raw_crash(
+                encrypted_raw_crash,
+                encrypted_dumps,
+                crash_id,
+        )
+        self.config.logger.debug('%s encrypted save_raw_crash %s')
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        encrypted_processed_crash = simplecrypt.encrypt(
+                self.password,
+                json.dumps(processed_crash),
+        )
+        self.wrapped_crashstore.save_processed(encrypted_processed_crash)
+        self.config.logger.debug(
+            '%s encrypted save_processed %s',
+        )
+
+    #--------------------------------------------------------------------------
+    # FIXME make this DRYer, why is this a separate method anyway?
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
+                               crash_id):
+        encrypted_raw_crash = simplecrypt.encrypt(
+                self.password,
+                json.dumps(raw_crash),
+        )
+        encrypted_dumps = simplecrypt.encrypt(self.password, dumps)
+        encrypted_processed_crash = simplecrypt.encrypt(
+                self.password,
+                json.dumps(processed_crash),
+        )
+        self.wrapped_crashstore.save_raw_and_processed(
+            encrypted_raw_crash,
+            encrypted_dumps,
+            encrypted_processed_crash,
+            crash_id
+        )
+        self.config.logger.debug('%s encrypted save_raw_and_processed %s')
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, crash_id):
+        encrypted_result = self.wrapped_crashstore.get_raw_crash(crash_id)
+        result = json.loads(
+                simplecrypt.decrypt(self.password, encrypted_result)
+        )
+        self.config.logger.debug('%s decrypted get_raw_crash %s')
+        return result
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, crash_id, name=None):
+        encrypted_result = self.wrapped_crashstore.get_raw_dump(crash_id)
+        result = simplecrypt.decrypt(self.password, encrypted_result)
+        self.config.logger.debug('%s decrypted get_raw_dump %s')
+        return result
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        encrypted_results = self.wrapped_crashstore.get_raw_dumps(crash_id)
+        print encrypted_results
+        results = [simplecrypt.decrypt(self.password, x)
+                   for x in encrypted_results]
+        self.config.logger.debug('%s decrypted get_raw_dumps %s')
+        return results
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        encrypted_results = self.wrapped_crashstore.get_raw_dumps_as_files(
+                crash_id,
+        )
+        results = [simplecrypt.decrypt(self.password, x)
+                   for x in encrypted_results]
+        self.config.logger.debug('%s decrypted get_raw_dumps_as_files %s')
+        return results
+
+    #--------------------------------------------------------------------------
+    def get_unredacted_processed(self, crash_id):
+        encrypted_result = self.wrapped_crashstore.get_unredacted_processed(
+                crash_id,
+        )
+        result = simplecrypt.decrypt(
+                self.password,
+                encrypted_result,
+        )
+        self.config.logger.debug('%s decrypted get_unredacted_processed %s')
+        return result
