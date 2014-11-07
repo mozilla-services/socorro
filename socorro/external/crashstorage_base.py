@@ -1115,3 +1115,10 @@ class CryptoCrashStorage(CrashStorageBase):
         )
         self.config.logger.debug('%s decrypted get_unredacted_processed %s')
         return result
+
+    #--------------------------------------------------------------------------
+    def remove(self, crash_id):
+        self.wrapped_crashstore.remove(crash_id)
+        self.config.logger.debug(
+            '%s remove %s',
+        )
