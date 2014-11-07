@@ -1088,7 +1088,6 @@ class CryptoCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         encrypted_results = self.wrapped_crashstore.get_raw_dumps(crash_id)
-        print encrypted_results
         results = [simplecrypt.decrypt(self.password, x)
                    for x in encrypted_results]
         self.config.logger.debug('%s decrypted get_raw_dumps %s')
