@@ -739,8 +739,8 @@ class TestCrypto(TestCase):
             app_description='app description',
             values_source_list=[{
                 'logger': mock_logging,
-                'wrapped_crashstore': fake_crash_store_class,
-                'password': 'password',
+                'encrypted_crashstore': fake_crash_store_class,
+                'encryption_password': 'password',
             }],
             argv_source=[]
         )
@@ -751,10 +751,10 @@ class TestCrypto(TestCase):
                 quit_check_callback=fake_quit_check
             )
             fake_crash_store_class.assert_called_with(config, fake_quit_check)
-            fake_crash_store = crashstorage.wrapped_crashstore
+            fake_crash_store = crashstorage.encrypted_crashstore
 
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
-            args = crashstorage.wrapped_crashstore.save_raw_crash.call_args[0]
+            args = crashstorage.encrypted_crashstore.save_raw_crash.call_args[0]
             eq_(
                 {},
                 json.loads(simplecrypt.decrypt('password', args[0]))
@@ -763,28 +763,11 @@ class TestCrypto(TestCase):
             eq_('ooid', args[2])
 
             crashstorage.save_processed({})
-            args = crashstorage.wrapped_crashstore.save_processed.call_args[0]
+            args = crashstorage.encrypted_crashstore.save_processed.call_args[0]
             eq_(
                 {},
                 json.loads(simplecrypt.decrypt('password', args[0]))
             )
-
-            crashstorage.save_raw_and_processed({}, 'payload', {}, 'ooid')
-            args = crashstorage.wrapped_crashstore.save_raw_and_processed. \
-                call_args[0]
-            eq_(
-                {},
-                json.loads(simplecrypt.decrypt('password', args[0]))
-            )
-            eq_(
-                'payload',
-                simplecrypt.decrypt('password', args[1])
-            )
-            eq_(
-                {},
-                json.loads(simplecrypt.decrypt('password', args[2]))
-            )
-            eq_('ooid', args[3])
 
             fake_crash_store.get_raw_crash.return_value = simplecrypt.encrypt(
                 'password',
