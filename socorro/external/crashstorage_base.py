@@ -998,6 +998,7 @@ class CryptoCrashStorage(CrashStorageBase):
         name="password",
         doc="a password to use for encryption/decryption",
         default='',
+        secret=True,
     )
     required_config.add_option(
         name="wrapped_crashstore",
