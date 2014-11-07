@@ -995,7 +995,7 @@ class CryptoCrashStorage(CrashStorageBase):
     """
     required_config = Namespace()
     required_config.add_option(
-        name="password",
+        name="encryption_password",
         doc="a password to use for encryption/decryption",
         default='',
         secret=True,
@@ -1016,7 +1016,7 @@ class CryptoCrashStorage(CrashStorageBase):
         self.wrapped_crashstore = config.wrapped_crashstore(
             config,
             quit_check_callback)
-        self.password = config.password
+        self.encryption_password = config.encryption_password
 
     #--------------------------------------------------------------------------
     def close(self):
@@ -1026,10 +1026,10 @@ class CryptoCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         encrypted_raw_crash = simplecrypt.encrypt(
-                self.password,
+                self.encryption_password,
                 json.dumps(raw_crash),
         )
-        encrypted_dumps = simplecrypt.encrypt(self.password, dumps)
+        encrypted_dumps = simplecrypt.encrypt(self.encryption_password, dumps)
 
         self.wrapped_crashstore.save_raw_crash(
                 encrypted_raw_crash,
@@ -1041,7 +1041,7 @@ class CryptoCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         encrypted_processed_crash = simplecrypt.encrypt(
-                self.password,
+                self.encryption_password,
                 json.dumps(processed_crash),
         )
         self.wrapped_crashstore.save_processed(encrypted_processed_crash)
@@ -1054,12 +1054,12 @@ class CryptoCrashStorage(CrashStorageBase):
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
         encrypted_raw_crash = simplecrypt.encrypt(
-                self.password,
+                self.encryption_password,
                 json.dumps(raw_crash),
         )
-        encrypted_dumps = simplecrypt.encrypt(self.password, dumps)
+        encrypted_dumps = simplecrypt.encrypt(self.encryption_password, dumps)
         encrypted_processed_crash = simplecrypt.encrypt(
-                self.password,
+                self.encryption_password,
                 json.dumps(processed_crash),
         )
         self.wrapped_crashstore.save_raw_and_processed(
@@ -1074,7 +1074,7 @@ class CryptoCrashStorage(CrashStorageBase):
     def get_raw_crash(self, crash_id):
         encrypted_result = self.wrapped_crashstore.get_raw_crash(crash_id)
         result = json.loads(
-                simplecrypt.decrypt(self.password, encrypted_result)
+                simplecrypt.decrypt(self.encryption_password, encrypted_result)
         )
         self.config.logger.debug('%s decrypted get_raw_crash %s')
         return result
@@ -1082,7 +1082,10 @@ class CryptoCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         encrypted_result = self.wrapped_crashstore.get_raw_dump(crash_id)
-        result = simplecrypt.decrypt(self.password, encrypted_result)
+        result = simplecrypt.decrypt(
+            self.encryption_password,
+            encrypted_result,
+        )
         self.config.logger.debug('%s decrypted get_raw_dump %s')
         return result
 
@@ -1092,7 +1095,10 @@ class CryptoCrashStorage(CrashStorageBase):
         results = {}
         for dump in encrypted_results:
             results[dump] = \
-                simplecrypt.decrypt(self.password, encrypted_results[dump])
+                simplecrypt.decrypt(
+                    self.encryption_password,
+                    encrypted_results[dump]
+                )
         self.config.logger.debug('%s decrypted get_raw_dumps %s')
         return results
 
@@ -1104,7 +1110,10 @@ class CryptoCrashStorage(CrashStorageBase):
         results = {}
         for dump in encrypted_results:
             results[dump] = \
-                simplecrypt.decrypt(self.password, encrypted_results[dump])
+                simplecrypt.decrypt(
+                    self.encryption_password,
+                    encrypted_results[dump]
+                )
         self.config.logger.debug('%s decrypted get_raw_dumps_as_files %s')
         return results
 
@@ -1114,7 +1123,7 @@ class CryptoCrashStorage(CrashStorageBase):
                 crash_id,
         )
         result = simplecrypt.decrypt(
-                self.password,
+                self.encryption_password,
                 encrypted_result,
         )
         self.config.logger.debug('%s decrypted get_unredacted_processed %s')
