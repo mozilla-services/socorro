@@ -1050,27 +1050,6 @@ class CryptoCrashStorage(CrashStorageBase):
         )
 
     #--------------------------------------------------------------------------
-    # FIXME make this DRYer, why is this a separate method anyway?
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
-                               crash_id):
-        encrypted_raw_crash = simplecrypt.encrypt(
-                self.encryption_password,
-                json.dumps(raw_crash),
-        )
-        encrypted_dumps = simplecrypt.encrypt(self.encryption_password, dumps)
-        encrypted_processed_crash = simplecrypt.encrypt(
-                self.encryption_password,
-                json.dumps(processed_crash),
-        )
-        self.encrypted_crashstore.save_raw_and_processed(
-            encrypted_raw_crash,
-            encrypted_dumps,
-            encrypted_processed_crash,
-            crash_id
-        )
-        self.config.logger.debug('%s encrypted save_raw_and_processed %s')
-
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         encrypted_result = self.encrypted_crashstore.get_raw_crash(crash_id)
         result = json.loads(
