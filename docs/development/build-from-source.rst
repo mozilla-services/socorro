@@ -53,7 +53,7 @@ Configure migrations (Alembic)
 ------------------------------
 
 Also, before you run unit tests or make, be sure to copy and edit this file:
-
+::
   cp config/alembic.ini-dist config/alembic.ini
   vi config/alembic.ini
 
