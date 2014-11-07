@@ -799,18 +799,17 @@ class TestCrypto(TestCase):
             )
             eq_('payload', crashstorage.get_raw_dump('uuid'))
 
-            fake_crash_store.get_raw_dumps.return_value = [simplecrypt.encrypt(
-                    'password',
-                    'payload',
-            )]
-            eq_(['payload'], crashstorage.get_raw_dumps('uuid'))
+            fake_crash_store.get_raw_dumps.return_value = \
+                {'filename': simplecrypt.encrypt('password', b'binarydata')}
+
+            eq_({'filename': b'binarydata'},
+                crashstorage.get_raw_dumps('uuid'))
 
             fake_crash_store.get_raw_dumps_as_files.return_value = \
-                [simplecrypt.encrypt(
-                    'password',
-                    'payload',
-                )]
-            eq_(['payload'], crashstorage.get_raw_dumps_as_files('uuid'))
+                {'filename': simplecrypt.encrypt('password', '/path/to/file')}
+
+            eq_({'filename': '/path/to/file'},
+                crashstorage.get_raw_dumps_as_files('uuid'))
 
             fake_crash_store.get_unredacted_processed.return_value = \
                 simplecrypt.encrypt(

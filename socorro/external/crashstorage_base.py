@@ -1088,8 +1088,10 @@ class CryptoCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         encrypted_results = self.wrapped_crashstore.get_raw_dumps(crash_id)
-        results = [simplecrypt.decrypt(self.password, x)
-                   for x in encrypted_results]
+        results = {}
+        for dump in encrypted_results:
+            results[dump] = \
+                simplecrypt.decrypt(self.password, encrypted_results[dump])
         self.config.logger.debug('%s decrypted get_raw_dumps %s')
         return results
 
@@ -1098,8 +1100,10 @@ class CryptoCrashStorage(CrashStorageBase):
         encrypted_results = self.wrapped_crashstore.get_raw_dumps_as_files(
                 crash_id,
         )
-        results = [simplecrypt.decrypt(self.password, x)
-                   for x in encrypted_results]
+        results = {}
+        for dump in encrypted_results:
+            results[dump] = \
+                simplecrypt.decrypt(self.password, encrypted_results[dump])
         self.config.logger.debug('%s decrypted get_raw_dumps_as_files %s')
         return results
 
