@@ -300,6 +300,7 @@ class CSignatureTool(CSignatureToolBase):
           '.*free',
           'GCGraphBuilder::NoteXPCOMChild',
           'getanswer',
+          'HeapFree',
           'huge_dalloc',
           'ialloc',
           'imalloc',
