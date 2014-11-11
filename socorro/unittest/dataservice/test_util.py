@@ -63,11 +63,3 @@ class TestSupportClassificationRule(TestCase):
             class_options_from_namespaces
         ):
             eq_(bare_class.__name__, class_wrapped_in_option_object.default)
-
-
-
-
-
-
-
-

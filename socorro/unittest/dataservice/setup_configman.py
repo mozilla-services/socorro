@@ -24,6 +24,7 @@ class MyWSGIServer(WebServerBase):
     def run(self):
         return self
 
+
 #------------------------------------------------------------------------------
 def get_standard_config_manager(
     more_definitions=None,
@@ -107,8 +108,8 @@ def get_config_manager_with_internal_pg(
     internal_namespace.namespace('database')
     internal_namespace.database.add_option(
         'crashstorage_class',
-        default=
-        'socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage',
+        default='socorro'
+                '.external.postgresql.crashstorage.PostgreSQLCrashStorage',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql'
     )
@@ -134,6 +135,7 @@ def get_config_manager_with_internal_pg(
         service_classes=service_classes,
         overrides=overrides
     )
+
 
 #------------------------------------------------------------------------------
 def get_config_manager_for_dataservice(

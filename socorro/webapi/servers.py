@@ -4,9 +4,6 @@
 
 import web
 import os
-import re
-
-from collections import Sequence
 
 from socorro.webapi.classPartial import classWithPartialInit
 
@@ -22,6 +19,7 @@ class WebServerBase(RequiredConfig):
         self.config = config
 
         urls = []
+        ## expect it to be an instance of the class inner_class_list
         for each in services_list:
             uri, cls = each.uri, each
             if isinstance(uri, basestring):
@@ -32,7 +30,6 @@ class WebServerBase(RequiredConfig):
                 urls.append(classWithPartialInit(cls, config))
 
         self.urls = tuple(urls)
-
 
         web.webapi.internalerror = web.debugerror
         web.config.debug = False
@@ -77,9 +74,9 @@ class ApacheModWSGI(WebServerBase):
 class StandAloneServer(WebServerBase):
     required_config = Namespace()
     required_config.add_option(
-      'port',
-      doc='the port to listen to for submissions',
-      default=8882
+        'port',
+        doc='the port to listen to for submissions',
+        default=8882
     )
 
 
@@ -87,22 +84,22 @@ class StandAloneServer(WebServerBase):
 class CherryPy(StandAloneServer):
     required_config = Namespace()
     required_config.add_option(
-      'ip_address',
-      doc='the IP address from which to accept submissions',
-      default='127.0.0.1'
+        'ip_address',
+        doc='the IP address from which to accept submissions',
+        default='127.0.0.1'
     )
 
     #--------------------------------------------------------------------------
     def run(self):
         web.runsimple(
-          self._wsgi_func,
-          (self.config.web_server.ip_address, self.config.web_server.port)
+            self._wsgi_func,
+            (self.config.web_server.ip_address, self.config.web_server.port)
         )
 
     #--------------------------------------------------------------------------
     def _identify(self):
         self.config.logger.info(
-          'this is CherryPy from web.py running standalone at %s:%d',
-          self.config.web_server.ip_address,
-          self.config.web_server.port
+            'this is CherryPy from web.py running standalone at %s:%d',
+            self.config.web_server.ip_address,
+            self.config.web_server.port
         )

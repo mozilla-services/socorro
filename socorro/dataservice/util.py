@@ -22,7 +22,7 @@ def classes_in_namespaces_converter(
     'class_list_converter', populates the InnerClassList with a Namespace for
     each of the classes in the class list.  In addition, it puts the each class
     itself into the subordinate Namespace.  The requirement discovery mechanism
-    of configman then reads the InnerClassList's requried config, pulling in
+    of configman then reads the InnerClassList's required config, pulling in
     the namespaces and associated classes within.
 
     For example, if we have a class list like this: "Alpha, Beta", then this

@@ -22,7 +22,7 @@ from configman.converters import class_converter
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
-    'socorro.external.postgresql.bugs_service.Bugs,'
+    'socorro.external.postgresql.bugs_service.Bugs'
 )
 
 # an app running under modwsgi needs to have a name at the module level called
