@@ -19,9 +19,15 @@ class WebServerBase(RequiredConfig):
         self.config = config
 
         urls = []
-        ## expect it to be an instance of the class inner_class_list
+
         for each in services_list:
-            uri, cls = each.uri, each
+            if hasattr(each, 'uri'):
+                # this is the old middleware and dataservice
+                uri, cls = each.uri, each
+            else:
+                # this is middleware_app (soon to be deprecated)
+                uri, cls = each
+
             if isinstance(uri, basestring):
                 uri = (uri, )
 

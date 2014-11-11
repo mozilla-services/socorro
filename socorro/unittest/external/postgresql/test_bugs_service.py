@@ -13,12 +13,14 @@ from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
 )
 
-from .unittestbase import PostgreSQLTestCase
+from socorro.external.postgresql.service_base import (
+    PostgreSQLWebServiceBase
+)
 
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class IntegrationTestBugs(PostgreSQLTestCase):
+class IntegrationTestBugs(PostgreSQLWebServiceBase):
     """Test socorro.external.postgresql.bugs_service.Bugs class. """
 
     #--------------------------------------------------------------------------
@@ -62,7 +64,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
-        super(IntegrationTestBugs, self).setUp(Bugs)
+        super(IntegrationTestBugs, self).setUp()
         self.transaction(self._insert_test_data)
 
     #--------------------------------------------------------------------------

@@ -16,7 +16,7 @@ from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
 )
 
-from socorro.unittest.middleware.setup_configman import (
+from socorro.unittest.dataservice.setup_configman import (
     get_standard_config_manager
 )
 
@@ -584,7 +584,7 @@ class TestPostgreSQLWebServiceBase(TestCase):
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class IntegrationTestBase(PostgreSQLTestCase):
+class IntegrationTestBase(PostgreSQLWebServiceBase):
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -622,7 +622,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
-        super(IntegrationTestBase, self).setUp(PostgreSQLWebServiceBase)
+        super(IntegrationTestBase, self).setUp()
         self.transaction(self._insert_test_data)
 
     #--------------------------------------------------------------------------
