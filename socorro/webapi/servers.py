@@ -4,6 +4,9 @@
 
 import web
 import os
+import re
+
+from collections import Sequence
 
 from socorro.webapi.classPartial import classWithPartialInit
 
@@ -20,15 +23,16 @@ class WebServerBase(RequiredConfig):
 
         urls = []
         for each in services_list:
-            if hasattr(each, 'uri'):
-                # this is the old middleware
-                uri, cls = each.uri, each
-            else:
-                # this is the new middleware_app
-                uri, cls = each
-            urls.append(uri)
-            urls.append(classWithPartialInit(cls, config))
+            uri, cls = each.uri, each
+            if isinstance(uri, basestring):
+                uri = (uri, )
+
+            for a_uri in uri:
+                urls.append(a_uri)
+                urls.append(classWithPartialInit(cls, config))
+
         self.urls = tuple(urls)
+
 
         web.webapi.internalerror = web.debugerror
         web.config.debug = False
