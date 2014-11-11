@@ -14,7 +14,7 @@ from .dbapi2_util import (
     single_value_sql,
 )
 from socorro.external import DatabaseError
-from socorro.webapi.webapiService import MiddlewareWebServiceBase
+from socorro.webapi.webapiService import DataserviceWebServiceBase
 
 
 #------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ def add_param_to_dict(dictionary, key, value):
 
 
 #==============================================================================
-class PostgreSQLWebServiceBase(MiddlewareWebServiceBase):
+class PostgreSQLWebServiceBase(DataserviceWebServiceBase):
 
     """
     Base class for PostgreSQL based service implementations.
