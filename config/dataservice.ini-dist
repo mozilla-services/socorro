@@ -1,5 +1,5 @@
 # the fully qualified module or class of the application
-#application='MiddlewareApp'
+#application='DataserviceApp'
 
 [resource]
 
@@ -94,7 +94,7 @@
         #syslog_host=localhost
 
         # python logging system format for syslog entries
-        #syslog_line_format_string=middleware (pid {process}): {asctime} {levelname} - {threadName} - {message}
+        #syslog_line_format_string=dataservice (pid {process}): {asctime} {levelname} - {threadName} - {message}
 
         # syslog port
         #syslog_port=514
@@ -236,7 +236,7 @@
 
     # python logging system format for syslog entries
     # see "resource.logging.syslog_line_format_string" for the default or override it here
-    #syslog_line_format_string=middleware (pid {process}): {asctime} {levelname} - {threadName} - {message}
+    #syslog_line_format_string=dataservice (pid {process}): {asctime} {levelname} - {threadName} - {message}
 
     # syslog port
     # see "resource.logging.syslog_port" for the default or override it here
