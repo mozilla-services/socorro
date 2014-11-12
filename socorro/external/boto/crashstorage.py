@@ -34,51 +34,52 @@ class BotoS3CrashStorage(CrashStorageBase):
         "TransactionExecutorWithLimitedBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
-        reference_value_from='resource.ceph',
+        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'host',
-        doc="The hostname of the S3 crash storage to submit to",
-        default="ceph.dev.phx1.mozilla.com",
-        reference_value_from='resource.ceph',
+        doc="The hostname (leave empty for AWS)",
+        default="",
+        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'port',
-        doc="The network port of the S3 crash storage to submit to",
-        default=80,
-        reference_value_from='resource.ceph',
+        doc="The network port (leave at 0 for AWS)",
+        default=0,
+        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'access_key',
         doc="access key",
         default="",
-        reference_value_from='resource.ceph',
+        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'temporary_file_system_storage_path',
         doc='a local filesystem path where dumps temporarily '
             'during processing',
         default='/home/socorro/temp',
-        reference_value_from='resource.ceph',
+        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'dump_file_suffix',
         doc='the suffix used to identify a dump file (for use in temp files)',
         default='.dump',
-        reference_value_from='resource.ceph',
+        reference_value_from='resource.boto',
     )
     required_config.add_option(
         'secret_access_key',
         doc="secret access key",
         default="",
-        reference_value_from='secrets.ceph',
+        reference_value_from='secrets.boto',
     )
-    #required_config.add_option(
-        #'buckets',
-        #doc="How to organize the buckets (default: daily)",
-        #default="daily",
-        #reference_value_from='resource.ceph',
-    #)
+    required_config.add_option(
+        'bucket_name',
+        doc="The name of the bucket.",
+        default='crash-stats',
+        reference_value_from='resource.boto',
+        likely_to_be_changed=True,
+    )
 
     operational_exceptions = (
         socket.timeout,
@@ -96,7 +97,9 @@ class BotoS3CrashStorage(CrashStorageBase):
             config,
             quit_check_callback
         )
-        self._bucket_cache = {}
+
+        self._bucket_name = config.bucket_name
+
         self.transaction = config.transaction_executor_class(
             config,
             self,  # we are our own connection
@@ -140,12 +143,12 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def _do_save_processed(self, processed_crash):
+    def _do_save_processed(boto_s3_store, processed_crash):
         crash_id = processed_crash['uuid']
-        processed_crash_as_string = self._convert_mapping_to_string(
+        processed_crash_as_string = boto_s3_store._convert_mapping_to_string(
             processed_crash
         )
-        self._submit_to_boto_s3(
+        boto_s3_store._submit_to_boto_s3(
             crash_id,
             "processed_crash",
             processed_crash_as_string
@@ -269,7 +272,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def do_get_unredacted_processed(boto_s3_store, crash_id):
+    def _do_get_unredacted_processed(boto_s3_store, crash_id):
         try:
             processed_crash_as_string = boto_s3_store._fetch_from_boto_s3(
                 crash_id,
@@ -286,66 +289,36 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        return self.transaction(self.do_get_unredacted_processed, crash_id)
-
-    #--------------------------------------------------------------------------
-    @staticmethod
-    def _create_bucket_name_for_crash_id(crash_id):
-        """feel free to subclass and override this implementation for something
-        more creative"""
-        return crash_id[-6:]
+        return self.transaction(self._do_get_unredacted_processed, crash_id)
 
     #--------------------------------------------------------------------------
     def _get_bucket(self, conn, bucket_name):
         try:
-            return self._bucket_cache[bucket_name]
-        except KeyError:
-            now = datetime.datetime.now()
-            self._bucket_cache[bucket_name] = conn.get_bucket(bucket_name)
-            delta = datetime.datetime.now() - now
-            return self._bucket_cache[bucket_name]
+            return self._bucket_cache
+        except AttributeError:
+            self._bucket_cache = conn.get_bucket(bucket_name)
+            return self._bucket_cache
 
     #--------------------------------------------------------------------------
     def _get_or_create_bucket(self, conn, bucket_name):
         try:
-            return self._bucket_cache[bucket_name]
-        except KeyError:
-            now = datetime.datetime.now()
+            return self._bucket_cache
+        except AttributeError:
             try:
-                self._bucket_cache[bucket_name] = conn.get_bucket(bucket_name)
+                self._bucket_cache = conn.get_bucket(bucket_name)
             except self._S3ResponseError:
-                self._bucket_cache[bucket_name] = conn.create_bucket(
-                    bucket_name
-                )
-            delta = datetime.datetime.now() - now
-            self.config.logger.debug(
-                'conn.create_bucket %s: %s', bucket_name, delta
-            )
-            return self._bucket_cache[bucket_name]
+                self._bucket_cache = conn.create_bucket(bucket_name)
+            return self._bucket_cache
 
     #--------------------------------------------------------------------------
     def _submit_to_boto_s3(self, crash_id, name_of_thing, thing):
-        """submit something to ceph.
+        """submit something to boto.
         """
         if not isinstance(thing, basestring):
-            raise Exception('can only submit strings to Ceph')
+            raise Exception('can only submit strings to boto')
 
         conn = self._connect()
-
-        # create/connect to bucket
-        try:
-            # return a bucket for a given day
-            the_day_bucket_name = self._create_bucket_name_for_crash_id(
-                crash_id
-            )
-            bucket = self._get_or_create_bucket(conn, the_day_bucket_name)
-        except self._CreateError:
-            self.config.logger.error(
-                'bucket creating has failed for %s'
-                % the_day_bucket_name,
-                exc_info=True
-            )
-            raise
+        bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
 
         key = "%s.%s" % (crash_id, name_of_thing)
 
@@ -354,24 +327,10 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _fetch_from_boto_s3(self, crash_id, name_of_thing):
-        """retrieve something from ceph.
+        """retrieve something from boto.
         """
         conn = self._connect()
-
-        # create/connect to bucket
-        try:
-            # return a bucket for a given day
-            the_day_bucket_name = self._create_bucket_name_for_crash_id(
-                crash_id
-            )
-            bucket = self._get_bucket(conn, the_day_bucket_name)
-        except self._S3ResponseError:
-            self.config.logger.error(
-                'Ceph bucket fetching has failed for %s'
-                % the_day_bucket_name,
-                exc_info=True
-            )
-            raise
+        bucket = self._get_bucket(conn, self.config.bucket_name)
 
         key = "%s.%s" % (crash_id, name_of_thing)
 
@@ -383,14 +342,17 @@ class BotoS3CrashStorage(CrashStorageBase):
         try:
             return self.connection
         except AttributeError:
-            self.connection = self._connect_to_endpoint(
-                aws_access_key_id=self.config.access_key,
-                aws_secret_access_key=self.config.secret_access_key,
-                host=self.config.host,
-                port=self.config.port,
-                is_secure=False,
-                calling_format=self._calling_format(),
-            )
+            kwargs = {
+                "aws_access_key_id": self.config.access_key,
+                "aws_secret_access_key": self.config.secret_access_key,
+                "is_secure": False,
+                "calling_format": self._calling_format(),
+            }
+            if self.config.host:
+                kwargs["host"] = self.config.host
+            if self.config.port:
+                kwargs["port"] = self.config.port
+            self.connection = self._connect_to_endpoint(**kwargs)
             return self.connection
 
     #--------------------------------------------------------------------------
@@ -422,12 +384,12 @@ class BotoS3CrashStorage(CrashStorageBase):
     # manager. The following functions are required by that API.
     #--------------------------------------------------------------------------
     def commit(self):
-        """ceph doesn't support transactions so this silently
+        """boto doesn't support transactions so this silently
         does nothing"""
 
     #--------------------------------------------------------------------------
     def rollback(self):
-        """ceph doesn't support transactions so this silently
+        """boto doesn't support transactions so this silently
         does nothing"""
 
     #--------------------------------------------------------------------------
@@ -439,7 +401,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def in_transaction(self, dummy):
-        """ceph doesn't support transactions, so it is never in
+        """boto doesn't support transactions, so it is never in
         a transaction."""
         return False
 
@@ -451,7 +413,6 @@ class BotoS3CrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def force_reconnect(self):
         del self.connection
-        self._bucket_cache = {}
 
 
 #==============================================================================
@@ -461,20 +422,10 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
        bug 1066058
     """
 
-    required_config = Namespace()
-    required_config.add_option(
-        'bucket_name',
-        doc="The name of the Support Reason API S3 bucket.",
-        default='mozilla-support-reason',
-        reference_value_from='resource.ceph',
-        likely_to_be_changed=True,
+    BotoS3CrashStorage.required_config.bucket_name.set_default(
+        val='mozilla-support-reason',
+        force=True
     )
-
-    #--------------------------------------------------------------------------
-    def _create_bucket_name_for_crash_id(self, crash_id):
-        """The name of this bucket is configurable, but not auto-generated.
-        """
-        return self.config.bucket_name
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -485,7 +436,8 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
 
         try:
             # Set up the data chunk to be passed to S3.
-            reason = processed_crash['classifications']['support']['classification']
+            reason = \
+                processed_crash['classifications']['support']['classification']
             content = {
                 'crash_id': crash_id,
                 'reasons': [reason]
