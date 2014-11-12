@@ -6,19 +6,19 @@ from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import DatabaseError
-from socorro.external.postgresql.service_base import (
-    PostgreSQLWebServiceBase,
+from socorro.external.postgresql.crashreportsearch_service_base import (
     CrashesReportSearchWebServiceBase
 )
-from socorro.lib import search_common, util
-from socorro.unittest.testbase import TestCase
 from socorro.external.postgresql.dbapi2_util import (
-    execute_no_results,
+    execute_no_results
 )
+from socorro.external.postgresql.service_base import PostgreSQLWebServiceBase
+from socorro.lib import search_common, util
 
 from socorro.unittest.dataservice.setup_configman import (
     get_standard_config_manager
 )
+from socorro.unittest.testbase import TestCase
 
 from .unittestbase import PostgreSQLTestCase
 
