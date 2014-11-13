@@ -38,15 +38,46 @@
             data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
         >
             <button type="submit" id="search-button">Search</button>
-            <button class="new-line">new line</button>
-            {% if waffle.switch('supersearch-custom-query') %}
-            <button class="customize">Customize</button>
-            {% endif %}
 
-            <p>Search for crash reports, agregated by signature, that match all of the following rules:</p>
-            <fieldset id="search-params-fieldset"></fieldset>
+            <div id="ui-mode-switch">
+                <span>
+                    <input type="checkbox">
+                    <label data-on="ON" data-off="OFF"></label>
+                </span>
+                Simple Search mode
+            </div>
 
-            <p><em>Note: by default, the date will be a range between now and a week ago. You can override the lower bound, the upper bound, or both. </em></p>
+            <!-- Simplified search UI -->
+            <div id="simple-search">
+                <fieldset>
+                    {% for field in simple_search_fields %}
+                    <div>
+                        <label for="simple-{{ field }}">
+                            {{ field | replace('_', ' ') | capitalize }}
+                        </label>
+                        <select name="{{ field }}" id="simple-{{ field }}" multiple="multiple">
+                            {% for opt in simple_search_data[field] %}
+                            <option value="{{ opt[0] }}">{{ opt[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+                </fieldset>
+
+                <p><em>Note: the date will be a range between now and a week ago. You can change it in the Advanced Search mode. </em></p>
+            </div>
+
+            <!-- Advanced search UI -->
+            <div id="advanced-search">
+                {% if waffle.switch('supersearch-custom-query') %}
+                <button class="customize">Customize</button>
+                {% endif %}
+                <button class="new-line">New line</button>
+
+                <fieldset id="search-params-fieldset"></fieldset>
+
+                <p><em>Note: by default, the date will be a range between now and a week ago. You can override the lower bound, the upper bound, or both. </em></p>
+            </div>
 
             <fieldset class="options">
                 <h4>More options... <span class="show">click to show</span><span class="hide">click to hide</span></h4>

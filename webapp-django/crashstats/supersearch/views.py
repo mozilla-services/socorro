@@ -43,6 +43,14 @@ EXCLUDED_FIELDS_FROM_FACETS = (
 )
 
 
+SIMPLE_SEARCH_FIELDS = (
+    'product',
+    'version',
+    'platform',
+    'process_type',
+)
+
+
 def get_allowed_fields(user):
     return tuple(
         x['name']
@@ -113,6 +121,14 @@ def search(request, default_context=None):
 
     context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+
+    # Fields data for the simple search UI.
+    form = get_supersearch_form(request)
+    context['simple_search_fields'] = SIMPLE_SEARCH_FIELDS
+    context['simple_search_data'] = dict([
+        (x, form.fields[x].choices)
+        for x in SIMPLE_SEARCH_FIELDS
+    ])
 
     return render(request, 'supersearch/search.html', context)
 
