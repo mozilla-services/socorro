@@ -131,7 +131,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         kwargs = {
             "aws_access_key_id": boto_s3_store.config.access_key,
             "aws_secret_access_key": boto_s3_store.config.secret_access_key,
-            "is_secure": False,
+            "is_secure": True,
             "calling_format": boto_s3_store._calling_format.return_value
         }
         if host:
