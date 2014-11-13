@@ -70,7 +70,8 @@ def get_api_whitelist(*args, **kwargs):
                     not meta['permissions_needed'] and
                     meta['is_returned']
                 ):
-                    fields.append(meta['in_database_name'])
+                    if meta['in_database_name'] not in fields:
+                        fields.append(meta['in_database_name'])
             fields = tuple(fields)
         return fields
 

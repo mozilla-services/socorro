@@ -391,7 +391,25 @@ class BaseTestViews(DjangoTestCase):
                 from crashstats.supersearch.tests.test_views import (
                     SUPERSEARCH_FIELDS_MOCKED_RESULTS
                 )
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+                results = copy.copy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+                # to be realistic we want to introduce some dupes
+                # that have a different key but its `in_database_name`
+                # is one that is already in the hardcoded list (the
+                # baseline)
+                assert 'accessibility' not in results
+                results['accessibility'] = {
+                    'name': 'accessibility',
+                    'query_type': 'string',
+                    'namespace': 'raw_crash',
+                    'form_field_choices': None,
+                    'permissions_needed': [],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                    'in_database_name': 'Accessibility',
+                }
+                return Response(results)
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4461,6 +4479,10 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('<option value="user_comments">' in response.content)
         ok_('<option value="URL">' in response.content)
+        # and a column from the Raw Crash
+        ok_('<option value="Accessibility">' in response.content)
+        # and it's only supposed to appear once
+        eq_(response.content.count('<option value="Accessibility">'), 1)
 
     @mock.patch('requests.get')
     def test_report_list_partial_correlations(self, rget):
