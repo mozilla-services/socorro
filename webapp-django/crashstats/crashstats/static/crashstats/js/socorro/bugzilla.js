@@ -64,7 +64,7 @@ var BugLinks = (function() {
             // When the data has been downloaded and attached to
             // each link tag run this to update
             fetch_remotely(bug_ids.slice(i, j))
-              .done(BugLinks.transform_with_data);
+              .done(transform_with_data);
             i = j;
         }
     }
