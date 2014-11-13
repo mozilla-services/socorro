@@ -122,7 +122,7 @@ You will then need to add the specific configuration of Elasticsearch in
 your ``processor.ini`` file. You can either edit the file manually to add
 the correct namespace and options, or you can regenerate the config file::
 
-    $ python socorro/processor/processor_app.py --admin.conf=config/processor.ini --admin.dump_conf=config/processor.ini
+    $ socorro processor --admin.conf=config/processor.ini --admin.dump_conf=config/processor.ini
 
 Doing so will add the new Elasticsearch namespace and options to your file, filled
 with default values. You can then change them to fit your needs, or if you use
