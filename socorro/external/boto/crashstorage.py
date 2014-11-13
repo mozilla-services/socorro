@@ -345,7 +345,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             kwargs = {
                 "aws_access_key_id": self.config.access_key,
                 "aws_secret_access_key": self.config.secret_access_key,
-                "is_secure": False,
+                "is_secure": True,
                 "calling_format": self._calling_format(),
             }
             if self.config.host:
