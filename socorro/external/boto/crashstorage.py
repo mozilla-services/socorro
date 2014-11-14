@@ -71,6 +71,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         'secret_access_key',
         doc="secret access key",
         default="",
+        secret=True,
         reference_value_from='secrets.boto',
     )
     required_config.add_option(
