@@ -116,7 +116,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         # short cuts to external resources - makes testing/mocking easier
         self._connect_to_endpoint = boto.connect_s3
-        self._calling_format = boto.s3.connection.OrdinaryCallingFormat
+        self._calling_format = boto.s3.connection.SubdomainCallingFormat
         self._CreateError = boto.exception.S3CreateError
         self._S3ResponseError = boto.exception.S3ResponseError
         self._open = open
