@@ -76,7 +76,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     required_config.add_option(
         'bucket_name',
         doc="The name of the bucket.",
-        default='crash-stats',
+        default='crashstats',
         reference_value_from='resource.boto',
         likely_to_be_changed=True,
     )
