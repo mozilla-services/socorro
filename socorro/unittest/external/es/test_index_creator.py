@@ -18,6 +18,11 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
 
         self.config = self.get_tuned_config(IndexCreator)
 
+        # Helper for interacting with ES outside of the context of a specific
+        # test.
+        self.index_client = \
+            IndexCreator(config=self.config).es_context.indices_client()
+
     def setUp(self):
         super(IntegrationTestIndexCreator, self).setUp()
 
@@ -25,16 +30,33 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
         self.index_super_search_fields()
 
     def tearDown(self):
-        index_client = IndexCreator(config=self.config).get_index_client()
+        """Remove any indices that may have been created for a given test.
+        """
+
         try:
-            index_client.delete(self.config.elasticsearch.elasticsearch_index)
+            self.index_client.delete(
+                self.config.elasticsearch.elasticsearch_default_index
+            )
+
+        # "Missing" indices simply weren't created, so ignore.
         except elasticsearch.exceptions.NotFoundError:
             pass
 
         try:
-            index_client.delete(
+            self.index_client.delete(
+                self.config.elasticsearch.elasticsearch_index
+            )
+
+        # "Missing" indices simply weren't created, so ignore.
+        except elasticsearch.exceptions.NotFoundError:
+            pass
+
+        try:
+            self.index_client.delete(
                 self.config.elasticsearch.elasticsearch_emails_index
             )
+
+        # "Missing" indices simply weren't created, so ignore.
         except elasticsearch.exceptions.NotFoundError:
             pass
 
@@ -42,14 +64,13 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
 
     def test_create_index(self):
         index_creator = IndexCreator(config=self.config)
-
         index_creator.create_index(
             self.config.elasticsearch.elasticsearch_index,
-            {}
+            {'foo': 'bar'}
         )
 
         ok_(
-            index_creator.get_index_client().exists(
+            self.index_client.exists(
                 self.config.elasticsearch.elasticsearch_index
             )
         )
@@ -59,7 +80,7 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
         index_creator.create_emails_index()
 
         ok_(
-            index_creator.get_index_client().exists(
+            self.index_client.exists(
                 self.config.elasticsearch.elasticsearch_emails_index
             )
         )
@@ -71,7 +92,7 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
         )
 
         ok_(
-            index_creator.get_index_client().exists(
+            self.index_client.exists(
                 self.config.elasticsearch.elasticsearch_index
             )
         )

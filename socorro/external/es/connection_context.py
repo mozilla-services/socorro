@@ -9,6 +9,34 @@ from configman import Namespace, RequiredConfig
 from configman.converters import list_converter
 
 
+#==============================================================================
+class Connection(object):
+    """A facade in front of the ES class that standardises certain gross
+    elements of its API with those of other database connection types.
+    The Elasticsearch interface is a simple HTTP API, and as such, does not
+    maintain open connections (i.e. no persistence). Accordingly, the commit,
+    rollback, and close mechanisms cannot have any useful meaning.
+    """
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, connection):
+        self.config = config
+        self._connection = connection
+
+    def commit(self):
+        pass
+
+    def rollback(self):
+        pass
+
+    def close(self):
+        pass
+
+    def __getattr__(self, name):
+        return getattr(self._connection, name)
+
+
+#==============================================================================
 class ConnectionContext(RequiredConfig):
     """This class represents a connection to Elasticsearch. """
 
@@ -46,30 +74,56 @@ class ConnectionContext(RequiredConfig):
         doc='the default doctype to use in elasticsearch',
         reference_value_from='resource.elasticsearch',
     )
+    required_config.add_option(
+        name='elasticsearch_connection_wrapper_class',
+        default=Connection,
+        doc='a classname for the type of wrapper for ES connections',
+        reference_value_from='resource.elasticsearch',
+    )
 
+    # Operational exceptions are retryable, conditionals require futher
+    # analysis to determine if they can be retried or not.
+    operational_exceptions = (
+        elasticsearch.exceptions.ConnectionError,
+    )
+    conditional_exceptions = ()
+
+    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ConnectionContext, self).__init__()
         self.config = config
 
-    def connection(self):
-        """Return a connection to Elasticsearch.
-
-        Returns an instance of elasticsearch-py's Elasticsearch class.
+    def connection(self, name=None):
+        """Returns an instance of elasticsearch-py's Elasticsearch class as
+        encapsulated by the Connection class above.
         Documentation: http://elasticsearch-py.readthedocs.org
         """
-        return elasticsearch.Elasticsearch(
-            hosts=self.config.elasticsearch_urls,
-            timeout=self.config.elasticsearch_timeout,
-            connection_class=elasticsearch.connection.RequestsHttpConnection,
+
+        return Connection(
+            self.config,
+            elasticsearch.Elasticsearch(
+                hosts=self.config.elasticsearch_urls,
+                timeout=self.config.elasticsearch_timeout,
+                connection_class=\
+                    elasticsearch.connection.RequestsHttpConnection
+            )
         )
 
-    @contextlib.contextmanager
-    def __call__(self):
-        conn = self.connection()
-        try:
-            yield conn
-        finally:
-            self.close_connection(conn)
+    def indices_client(self, name=None):
+        """Returns an instance of elasticsearch-py's Index client class as
+        encapsulated by the Connection class above.
+        http://elasticsearch-py.readthedocs.org/en/master/api.html#indices
+        """
 
-    def close_connection(self, connection, force=False):
+        return Connection(
+            self.config,
+            elasticsearch.client.IndicesClient(self.connection())
+        )
+
+    def force_reconnect(self):
         pass
+
+    @contextlib.contextmanager
+    def __call__(self, name=None):
+        conn = self.connection(name)
+        yield conn
