@@ -80,6 +80,14 @@ class BotoS3CrashStorage(CrashStorageBase):
         reference_value_from='resource.boto',
         likely_to_be_changed=True,
     )
+    required_config.add_option(
+        'prefix',
+        doc="a prefix to use inside the bucket",
+        default='dev',
+        reference_value_from='resource.boto',
+        likely_to_be_changed=True,
+    )
+
 
     operational_exceptions = (
         socket.timeout,
@@ -320,7 +328,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         conn = self._connect()
         bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
 
-        key = "%s.%s" % (crash_id, name_of_thing)
+        key = "%s/%s.%s" % (self.config.prefix, crash_id, name_of_thing)
 
         storage_key = bucket.new_key(key)
         storage_key.set_contents_from_string(thing)
@@ -332,9 +340,9 @@ class BotoS3CrashStorage(CrashStorageBase):
         conn = self._connect()
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
-        key = "%s.%s" % (crash_id, name_of_thing)
+        key = "%s/%s.%s" % (self.config.prefix, crash_id, name_of_thing)
 
-        storage_key = bucket.new_key(key)
+        storage_key = bucket.get_key(key)
         return storage_key.get_contents_as_string()
 
     #--------------------------------------------------------------------------
