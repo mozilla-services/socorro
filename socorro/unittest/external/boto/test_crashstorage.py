@@ -113,6 +113,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'dump_file_suffix': '.dump',
             'bucket_name': 'mozilla-support-reason',
             'prefix': 'dev',
+            'calling_format': mock.Mock()
         })
         if storage_class == 'BotoS3CrashStorage':
             config.bucket_name = 'crash_storage'
@@ -121,7 +122,6 @@ class TestCase(socorro.unittest.testbase.TestCase):
             s3 = SupportReasonAPIStorage(config)
         s3._connect_to_endpoint = mock.Mock()
         s3._mocked_connection = s3._connect_to_endpoint.return_value
-        s3._calling_format = mock.Mock()
         s3._calling_format.return_value = mock.Mock()
         s3._CreateError = mock.Mock()
         s3._S3ResponseError = mock.Mock()
