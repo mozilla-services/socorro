@@ -112,6 +112,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             '/i/am/hiding/junk/files/here',
             'dump_file_suffix': '.dump',
             'bucket_name': 'mozilla-support-reason',
+            'prefix': 'dev',
         })
         if storage_class == 'BotoS3CrashStorage':
             config.bucket_name = 'crash_storage'
@@ -186,8 +187,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(bucket_mock.new_key.call_count, 2)
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump_names'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump_names'),
             ],
             any_order=True,
         )
@@ -238,10 +239,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(bucket_mock.new_key.call_count, 4)
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump_names'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump_names'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
             ],
             any_order=True,
         )
@@ -306,10 +307,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(bucket_mock.new_key.call_count, 4)
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump_names'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.dump'),
-                mock.call('0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump_names'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump'),
+                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
             ],
             any_order=True,
         )
@@ -363,7 +364,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    '0bba929f-8721-460c-dead-a43c20071027.processed_crash'
+                    'dev/0bba929f-8721-460c-dead-a43c20071027.processed_crash'
                 ),
             ],
         )
@@ -421,7 +422,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    '3c61f81e-ea2b-4d24-a3ce-6bb9d2140915.support_reason'
+                    'dev/3c61f81e-ea2b-4d24-a3ce-6bb9d2140915.support_reason'
                 ),
             ],
         )
@@ -516,7 +517,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    '0bba929f-8721-460c-dead-a43c20071027.processed_crash'
+                    'dev/0bba929f-8721-460c-dead-a43c20071027.processed_crash'
                 ),
             ],
         )
@@ -542,7 +543,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -586,7 +587,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -613,12 +614,12 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'crash_storage'
         )
 
-        boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
+        boto_s3_store._mocked_connection.get_bucket.return_value.get_key \
             .assert_called_with(
-                '936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+                'dev/936ce666-ff3b-4c7a-9674-367fe2120408.dump'
             )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
-            .return_value.new_key.return_value
+            .return_value.get_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
         key_mock.get_contents_as_string.assert_has_calls(
             [
@@ -634,7 +635,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -662,12 +663,12 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'crash_storage'
         )
 
-        boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
+        boto_s3_store._mocked_connection.get_bucket.return_value.get_key \
             .assert_called_with(
-                '936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+                'dev/936ce666-ff3b-4c7a-9674-367fe2120408.dump'
             )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
-            .return_value.new_key.return_value
+            .return_value.get_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
         key_mock.get_contents_as_string.assert_has_calls(
             [
@@ -683,7 +684,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -711,12 +712,12 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'crash_storage'
         )
 
-        boto_s3_store._mocked_connection.get_bucket.return_value.new_key \
+        boto_s3_store._mocked_connection.get_bucket.return_value.get_key \
             .assert_called_with(
-                '936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+                'dev/936ce666-ff3b-4c7a-9674-367fe2120408.dump'
             )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
-            .return_value.new_key.return_value
+            .return_value.get_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
         key_mock.get_contents_as_string.assert_has_calls(
             [
@@ -731,7 +732,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -787,7 +788,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -844,7 +845,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
             boto_s3_store._connect_to_endpoint.return_value
-            .get_bucket.return_value.new_key.return_value
+            .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
         mocked_get_contents_as_string.side_effect = [
@@ -872,7 +873,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         key_mock = boto_s3_store._mocked_connection.get_bucket \
-            .return_value.new_key.return_value
+            .return_value.get_key.return_value
         self.assertEqual(key_mock.get_contents_as_string.call_count, 1)
         key_mock.get_contents_as_string.assert_has_calls([mock.call(), ])
 
@@ -885,7 +886,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
         mocked_bucket = boto_s3_store._connect_to_endpoint.return_value \
             .get_bucket.return_value
-        mocked_key = mocked_bucket.new_key.return_value
+        mocked_key = mocked_bucket.get_key.return_value
         mocked_key.get_contents_as_string \
             .side_effect = [
                 self._fake_unredacted_processed_crash_as_string()
@@ -943,7 +944,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         boto_s3_store = self.setup_mocked_s3_storage()
         get_contents_as_string_mocked = (
             boto_s3_store._mocked_connection.get_bucket
-            .return_value.new_key.return_value.get_contents_as_string
+            .return_value.get_key.return_value.get_contents_as_string
         )
         get_contents_as_string_mocked.side_effect = \
             boto.exception.StorageResponseError(
