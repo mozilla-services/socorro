@@ -263,8 +263,8 @@ class BotoS3CrashStorage(CrashStorageBase):
             dumps_mapping = boto_s3_store.get_raw_dumps(crash_id)
             name_to_pathname_mapping = {}
             for a_dump_name, a_dump in dumps_mapping.iteritems():
-                if a_dump_name in (None, '', 'upload_file_minidump'):
-                    a_dump_name = 'dump'
+                if a_dump_name in (None, '', 'dump'):
+                    a_dump_name = 'upload_file_minidump'
                 dump_pathname = os.path.join(
                     boto_s3_store.config.temporary_file_system_storage_path,
                     "%s.%s.TEMPORARY%s" % (

@@ -816,8 +816,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
                 'city_dump': '/i/am/hiding/junk/files/here/936ce666-ff3b-4c7'
                 'a-9674-367fe2120408.city_dump.TEMPORARY.dump',
 
-                'dump': '/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-96'
-                '74-367fe2120408.dump.TEMPORARY.dump'
+                'upload_file_minidump': '/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-96'
+                '74-367fe2120408.upload_file_minidump.TEMPORARY.dump'
             }
         )
         boto_s3_store._open.assert_has_calls([
@@ -834,7 +834,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             mock.call().__enter__().write('this is "city_dump", the last one'),
             mock.call().__exit__(None, None, None),
             mock.call(u'/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-9674-'
-                      '367fe2120408.dump.TEMPORARY.dump', 'wb'),
+                      '367fe2120408.upload_file_minidump.TEMPORARY.dump', 'wb'),
             mock.call().__enter__(),
             mock.call().__enter__().write('this is "dump", the first one'),
             mock.call().__exit__(None, None, None)
