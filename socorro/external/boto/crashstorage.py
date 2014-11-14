@@ -88,7 +88,14 @@ class BotoS3CrashStorage(CrashStorageBase):
         reference_value_from='resource.boto',
         likely_to_be_changed=True,
     )
-
+    required_config.add_option(
+        'calling_format',
+        doc="fully qualified python path to the boto calling format function",
+        default='boto.s3.connection.SubdomainCallingFormat',
+        from_string_converter=class_converter,
+        reference_value_from='resource.boto',
+        likely_to_be_changed=True,
+    )
 
     operational_exceptions = (
         socket.timeout,
@@ -117,7 +124,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         # short cuts to external resources - makes testing/mocking easier
         self._connect_to_endpoint = boto.connect_s3
-        self._calling_format = boto.s3.connection.SubdomainCallingFormat
+        self._calling_format = config.calling_format
         self._CreateError = boto.exception.S3CreateError
         self._S3ResponseError = boto.exception.S3ResponseError
         self._open = open
@@ -431,10 +438,14 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
        bug 1066058
     """
 
-    BotoS3CrashStorage.required_config.bucket_name.set_default(
-        val='mozilla-support-reason',
-        force=True
-    )
+    # intially we wanted the support reason class to use a different bucket,
+    # but the following override interferes with the base class.  I suspect
+    # we'll end up using a prefix instead of differing bucket name in the
+    # future.  Leaving this code in place for the moment
+    #BotoS3CrashStorage.required_config.bucket_name.set_default(
+        #val='mozilla-support-reason',
+        #force=True
+    #)
 
     #--------------------------------------------------------------------------
     @staticmethod
