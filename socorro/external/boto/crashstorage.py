@@ -21,6 +21,9 @@ from configman import Namespace
 from configman.converters import class_converter
 
 
+class BadCrashIDException(ValueError): pass
+
+
 #==============================================================================
 class BotoS3CrashStorage(CrashStorageBase):
     """This class sends processed crash reports to an end point reachable
@@ -128,6 +131,23 @@ class BotoS3CrashStorage(CrashStorageBase):
         self._CreateError = boto.exception.S3CreateError
         self._S3ResponseError = boto.exception.S3ResponseError
         self._open = open
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def build_s3_dirs(prefix, name_of_thing, crash_id):
+        """
+        Use S3 pseudo-folders to make it easier to list later
+        {{prefix}}/{{date}}/{{name_of_thing}}/{{crash_id_mini}}
+        """
+        try:
+            date_position = -6
+            crash_date = crash_id[date_position:]
+            crash_id_mini = crash_id[:date_position]
+            key = "%s/%s/%s/%s" % (prefix, crash_date, name_of_thing,
+                                   crash_id_mini)
+            return key
+        except Exception, x:
+            raise BadCrashIDException(x)
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -336,7 +356,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         conn = self._connect()
         bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
 
-        key = "%s/%s.%s" % (self.config.prefix, crash_id, name_of_thing)
+        key = self.build_s3_dirs(self.config.prefix, name_of_thing, crash_id)
 
         storage_key = bucket.new_key(key)
         storage_key.set_contents_from_string(thing)
@@ -348,7 +368,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         conn = self._connect()
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
-        key = "%s/%s.%s" % (self.config.prefix, crash_id, name_of_thing)
+        key = self.build_s3_dirs(self.config.prefix, name_of_thing, crash_id)
 
         storage_key = bucket.get_key(key)
         return storage_key.get_contents_as_string()
