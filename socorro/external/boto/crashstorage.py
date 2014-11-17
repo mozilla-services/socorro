@@ -134,9 +134,10 @@ class BotoS3CrashStorage(CrashStorageBase):
     def build_s3_dirs(prefix, name_of_thing, crash_id):
         """
         Use S3 pseudo-directories to make it easier to list/expire later
-        {{prefix}}/{{name_of_thing}}/{{crash_id}}
+        {{prefix}}/{{version}}/{{name_of_thing}}/{{crash_id}}
         """
-        return "%s/%s/%s" % (prefix, name_of_thing, crash_id)
+        version = 'v1'
+        return '%s/%s/%s/%s' % (prefix, version, name_of_thing, crash_id)
 
     #--------------------------------------------------------------------------
     @staticmethod
