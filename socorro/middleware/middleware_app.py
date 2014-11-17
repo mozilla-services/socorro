@@ -3,7 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""implementation of the Socorro data service"""
+"""implementation of the Socorro data service
+   deprecated by socorro/dataservice/dataservice_app.py"""
 
 # This app can be invoked like this:
 #     .../socorro/middleware/middleware_app.py --help
