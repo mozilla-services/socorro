@@ -1540,6 +1540,15 @@ class UpdateChannelMap(DeclarativeBase):
     rewrite = Column(u'rewrite', JSON(), nullable=False)
 
 
+class MissingSymbols(DeclarativeBase):
+    """ Symbols which processor could not find """
+    __tablename__ = 'missing_symbols'
+
+    date_processed = Column(u'date_processed', DATE(), nullable=False)
+    debug_file = Column(u'debug_file', TEXT(), nullable=True, primary_key=True)
+    debug_id = Column(u'debug_id', TEXT(), nullable=True)
+
+
 ###########################################
 ##  Bixie
 ###########################################

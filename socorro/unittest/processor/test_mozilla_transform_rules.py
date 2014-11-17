@@ -32,6 +32,7 @@ from socorro.processor.mozilla_transform_rules import (
     FlashVersionRule,
     Winsock_LSPRule,
     TopMostFilesRule,
+    MissingSymbolsRule,
 )
 
 canonical_standard_raw_crash = DotDict({
@@ -1837,3 +1838,53 @@ class TestTopMostFilesRule(TestCase):
 
         # raw_crash should be unchanged
         eq_(raw_crash, canonical_standard_raw_crash)
+
+
+#==============================================================================
+class TestMissingSymbols(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = False
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    def test_everything_we_hoped_for(self):
+        config = self.get_basic_config()
+        config.database_class = Mock()
+        config.transaction_executor_class = Mock()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processed_crash.date_processed = 'now'
+        processed_crash.json_dump = {
+            'modules': [
+                {
+                    "debug_id": "ABCDEFG",
+                    "debug_file": "some-file.pdb",
+                    "missing_symbols": True,
+                },
+            ]
+        }
+
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = MissingSymbolsRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        from socorro.external.postgresql.dbapi2_util import execute_no_results
+        config.transaction_executor_class.return_value.assert_called_with(
+            execute_no_results, rule.sql, ('now', 'some-file.pdb', 'ABCDEFG')
+        )
