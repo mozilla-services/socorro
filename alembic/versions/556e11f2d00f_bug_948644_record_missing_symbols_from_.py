@@ -37,7 +37,6 @@ def upgrade():
     """)
 
 def downgrade():
-    op.drop_table('alembic_version')
     op.drop_table('missing_symbols')
     op.execute("""
         DELETE FROM report_partition_info
