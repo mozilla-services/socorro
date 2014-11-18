@@ -15,6 +15,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.cache import cache
+from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
 
@@ -1790,6 +1791,26 @@ def permissions(request, default_context=None):
     return render(request, 'crashstats/permissions.html', context)
 
 
+def quick_search(request):
+    query = request.GET.get('query', '').strip()
+    crash_id = utils.find_crash_id(query)
+
+    if crash_id:
+        url = reverse(
+            'crashstats:report_index',
+            kwargs=dict(crash_id=crash_id)
+        )
+    elif query:
+        url = '%s?signature=%s' % (
+            reverse('supersearch.search'),
+            urlquote('~%s' % query)
+        )
+    else:
+        url = reverse('supersearch.search')
+
+    return redirect(url)
+
+
 @pass_default_context
 def query(request, default_context=None):
     context = default_context or {}
@@ -1807,20 +1828,6 @@ def query(request, default_context=None):
             query_type = settings.QUERY_TYPES_MAP[query_type]
     else:
         query_type = settings.QUERY_TYPES[0]
-
-    if query_type == 'simple':
-        # If the query looks like a crash id and the form was the simple one,
-        # go to report/index directly, without running a search.
-        crash_id = utils.find_crash_id(form.cleaned_data['query'])
-        if crash_id:
-            url = reverse('crashstats:report_index',
-                          kwargs=dict(crash_id=crash_id))
-            return redirect(url)
-        # The 'simple' value is a special case used only with the form on top
-        # of our pages. It should be turned into 'contains' before doing
-        # anything else as 'simple' as a query type makes no sense for the
-        # middleware.
-        query_type = 'contains'
 
     results_per_page = 100
 

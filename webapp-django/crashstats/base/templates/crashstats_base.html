@@ -45,8 +45,7 @@
             </a>
         </h1>
 
-        <form id="simple_search" method="get" action="{{ url('crashstats:query') }}">
-            <input type="hidden" name="query_type" value="simple">
+        <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}">
             <label for="q" class="visually-hidden">Search</label>
             <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
             <input type="submit" class="hidden">

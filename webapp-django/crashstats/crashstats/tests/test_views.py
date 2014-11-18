@@ -2061,6 +2061,46 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
+    def test_quick_search(self):
+        url = reverse('crashstats:quick_search')
+
+        # Test with no parameter.
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        target = reverse('supersearch.search')
+        ok_(response['location'].endswith(target))
+
+        # Test with a signature.
+        response = self.client.get(
+            url,
+            {'query': 'moz'}
+        )
+        eq_(response.status_code, 302)
+        target = reverse('supersearch.search') + '?signature=%7Emoz'
+        ok_(response['location'].endswith(target))
+
+        # Test with a crash_id.
+        crash_id = '1234abcd-ef56-7890-ab12-abcdef130802'
+        response = self.client.get(
+            url,
+            {'query': crash_id}
+        )
+        eq_(response.status_code, 302)
+        target = reverse(
+            'crashstats:report_index',
+            kwargs=dict(crash_id=crash_id)
+        )
+        ok_(response['location'].endswith(target))
+
+        # Test a simple search containing a crash id and spaces
+        crash_id = '   1234abcd-ef56-7890-ab12-abcdef130802 '
+        response = self.client.get(
+            url,
+            {'query': crash_id}
+        )
+        eq_(response.status_code, 302)
+        ok_(response['location'].endswith(target))
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_query(self, rget, rpost):
@@ -2238,25 +2278,6 @@ class TestViews(BaseTestViews):
         ok_('<h2>Query Results</h2>' not in response.content)
         ok_('table id="signatures-list"' not in response.content)
         ok_('value="myFunctionIsCool"' in response.content)
-
-        # Test a simple search containing a crash id
-        crash_id = '1234abcd-ef56-7890-ab12-abcdef130802'
-        response = self.client.get(url, {
-            'query': crash_id,
-            'query_type': 'simple'
-        })
-        eq_(response.status_code, 302)
-        ok_(crash_id in response['Location'])
-
-        # Test a simple search containing a crash id and spaces
-        crash_id = '   1234abcd-ef56-7890-ab12-abcdef130802 '
-        response = self.client.get(url, {
-            'query': crash_id,
-            'query_type': 'simple'
-        })
-        eq_(response.status_code, 302)
-        ok_(urllib.quote(crash_id) not in response['Location'])
-        ok_(crash_id.strip() in response['Location'])
 
         # Test that null bytes break the page cleanly
         response = self.client.get(url, {'date': u' \x00'})
