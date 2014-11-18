@@ -787,8 +787,12 @@ class MissingSymbolsRule(Rule):
                 if 'missing_symbols' in module and module['missing_symbols']:
                     debug_file = module['debug_file']
                     debug_id = module['debug_id']
-                    self.transaction(execute_no_results, self.sql,
-                                     (date, debug_file, debug_id))
+                    try:
+                        self.transaction(execute_no_results, self.sql,
+                                         (date, debug_file, debug_id))
+                    except psycopg2.ProgrammingError as e:
+                        self.config.logger.warn('missing symbols rule failed'
+                                                '%s', e)
                 else:
                     return False
         else:
