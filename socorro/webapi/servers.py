@@ -19,15 +19,22 @@ class WebServerBase(RequiredConfig):
         self.config = config
 
         urls = []
+
         for each in services_list:
             if hasattr(each, 'uri'):
-                # this is the old middleware
+                # this is the old middleware and dataservice
                 uri, cls = each.uri, each
             else:
-                # this is the new middleware_app
+                # this is middleware_app (soon to be deprecated)
                 uri, cls = each
-            urls.append(uri)
-            urls.append(classWithPartialInit(cls, config))
+
+            if isinstance(uri, basestring):
+                uri = (uri, )
+
+            for a_uri in uri:
+                urls.append(a_uri)
+                urls.append(classWithPartialInit(cls, config))
+
         self.urls = tuple(urls)
 
         web.webapi.internalerror = web.debugerror
@@ -73,9 +80,9 @@ class ApacheModWSGI(WebServerBase):
 class StandAloneServer(WebServerBase):
     required_config = Namespace()
     required_config.add_option(
-      'port',
-      doc='the port to listen to for submissions',
-      default=8882
+        'port',
+        doc='the port to listen to for submissions',
+        default=8882
     )
 
 
@@ -83,22 +90,22 @@ class StandAloneServer(WebServerBase):
 class CherryPy(StandAloneServer):
     required_config = Namespace()
     required_config.add_option(
-      'ip_address',
-      doc='the IP address from which to accept submissions',
-      default='127.0.0.1'
+        'ip_address',
+        doc='the IP address from which to accept submissions',
+        default='127.0.0.1'
     )
 
     #--------------------------------------------------------------------------
     def run(self):
         web.runsimple(
-          self._wsgi_func,
-          (self.config.web_server.ip_address, self.config.web_server.port)
+            self._wsgi_func,
+            (self.config.web_server.ip_address, self.config.web_server.port)
         )
 
     #--------------------------------------------------------------------------
     def _identify(self):
         self.config.logger.info(
-          'this is CherryPy from web.py running standalone at %s:%d',
-          self.config.web_server.ip_address,
-          self.config.web_server.port
+            'this is CherryPy from web.py running standalone at %s:%d',
+            self.config.web_server.ip_address,
+            self.config.web_server.port
         )

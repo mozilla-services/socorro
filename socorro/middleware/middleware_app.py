@@ -3,7 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""implementation of the Socorro data service"""
+"""implementation of the Socorro data service
+   deprecated by socorro/dataservice/dataservice_app.py"""
 
 # This app can be invoked like this:
 #     .../socorro/middleware/middleware_app.py --help
@@ -511,7 +512,7 @@ class ImplementationWrapper(JsonWebServiceBase):
 
             file_name, class_name = self.file_and_class.rsplit('.', 1)
             implementations = dict(
-                self.context.implementations.implementation_list
+                self.config.implementations.implementation_list
             )
 
             try:
@@ -534,12 +535,12 @@ class ImplementationWrapper(JsonWebServiceBase):
                     (base_module_path, file_name, class_name, impl_code)
                 )
             instance = getattr(module, class_name)(
-                config=self.context,
+                config=self.config,
                 all_services=self.all_services
             )
         else:
             instance = self.cls(
-                config=self.context,
+                config=self.config,
                 all_services=self.all_services
             )
 
@@ -578,7 +579,7 @@ class ImplementationWrapper(JsonWebServiceBase):
                         '%s_%s' % (default_method, method_name)
                     )
             except AttributeError:
-                self.context.logger.warning(
+                self.config.logger.warning(
                     'The method %r does not exist on %r' %
                     (method_name, instance)
                 )
@@ -612,10 +613,10 @@ class ImplementationWrapper(JsonWebServiceBase):
                 }
             })
         except Exception, msg:
-            if self.context.sentry and self.context.sentry.dsn:
-                client = raven.Client(dsn=self.context.sentry.dsn)
+            if self.config.sentry and self.config.sentry.dsn:
+                client = raven.Client(dsn=self.config.sentry.dsn)
                 identifier = client.get_ident(client.captureException())
-                self.context.logger.info(
+                self.config.logger.info(
                     'Error captured in Sentry. Reference: %s' % identifier
                 )
             raise

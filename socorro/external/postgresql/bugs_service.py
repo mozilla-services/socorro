@@ -2,29 +2,31 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Deprecated by socorro/external/postgresql/bugs_service.py"""
-
-import logging
-
 from socorro.external import MissingArgumentError, BadArgumentError
-from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external.postgresql.service_base import (
+    PostgreSQLWebServiceBase
+)
 from socorro.lib import external_common
 
-logger = logging.getLogger("webapi")
 
-
-class Bugs(PostgreSQLBase):
+#==============================================================================
+class Bugs(PostgreSQLWebServiceBase):
     """Implement the /bugs service with PostgreSQL. """
+
+    uri = r'/bugs/(.*)'
+
     filters = [
         ("signatures", None, ["list", "str"]),
         ("bug_ids", None, ["list", "str"]),
     ]
 
+    #--------------------------------------------------------------------------
     def get(self, **kwargs):
         import warnings
         warnings.warn("You should use the POST method to access bugs")
         return self.post(**kwargs)
 
+    #--------------------------------------------------------------------------
     def post(self, **kwargs):
         """Return a list of signatures-to-bug_ids or bug_ids-to-signatures
            associations. """

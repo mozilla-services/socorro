@@ -2,71 +2,80 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Deprecated by socorro/unittest/external/postgresql/test_bugs_service.py"""
-
 from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
-from socorro.external.postgresql.bugs import Bugs, MissingArgumentError
+from socorro.external.postgresql.bugs_service import (
+    Bugs,
+    MissingArgumentError
+)
+from socorro.external.postgresql.dbapi2_util import (
+    execute_no_results,
+)
 
-from .unittestbase import PostgreSQLTestCase
+from socorro.external.postgresql.service_base import (
+    PostgreSQLWebServiceBase
+)
 
 
 #==============================================================================
 @attr(integration='postgres')  # for nosetests
-class IntegrationTestBugs(PostgreSQLTestCase):
-    """Test socorro.external.postgresql.bugs.Bugs class. """
+class IntegrationTestBugs(PostgreSQLWebServiceBase):
+    """Test socorro.external.postgresql.bugs_service.Bugs class. """
+
+    #--------------------------------------------------------------------------
+    def _insert_test_data(self, connection):
+        # clear old data, just in case
+        execute_no_results(
+            connection,
+            "TRUNCATE bug_associations, bugs CASCADE"
+        )
+        # Insert data
+        execute_no_results(
+            connection,
+            "INSERT INTO bugs VALUES (1),(2),(3),(4)"
+        )
+        execute_no_results(
+            connection,
+            """
+            INSERT INTO bug_associations
+                (signature, bug_id)
+                VALUES
+                (
+                    'sign1',
+                    1
+                ),
+                (
+                    'js',
+                    1
+                ),
+                (
+                    'mysignature',
+                    2
+                ),
+                (
+                    'mysignature',
+                    3
+                );
+            """
+        )
 
     #--------------------------------------------------------------------------
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
         super(IntegrationTestBugs, self).setUp()
-
-        cursor = self.connection.cursor()
-
-        # Insert data
-        cursor.execute("""
-            INSERT INTO bugs VALUES
-            (1),
-            (2),
-            (3),
-            (4);
-        """)
-
-        cursor.execute("""
-            INSERT INTO bug_associations
-            (signature, bug_id)
-            VALUES
-            (
-                'sign1',
-                1
-            ),
-            (
-                'js',
-                1
-            ),
-            (
-                'mysignature',
-                2
-            ),
-            (
-                'mysignature',
-                3
-            );
-        """)
-
-        self.connection.commit()
+        self.transaction(self._insert_test_data)
 
     #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
-        cursor = self.connection.cursor()
-        cursor.execute("""
-            TRUNCATE bug_associations, bugs
-            CASCADE
-        """)
-        self.connection.commit()
+        def truncate_transaction(connection):
+            execute_no_results(
+                connection,
+                "TRUNCATE bug_associations, bugs CASCADE"
+            )
+        self.transaction(truncate_transaction)
         super(IntegrationTestBugs, self).tearDown()
 
     #--------------------------------------------------------------------------
@@ -154,7 +163,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 5: search by bug_ids argument
         params = {
-            "bug_ids": ["1","2"]
+            "bug_ids": ["1", "2"]
         }
         res = bugs.post(**params)
         res_expected = {
