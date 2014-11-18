@@ -1548,6 +1548,8 @@ class MissingSymbols(DeclarativeBase):
     debug_file = Column(u'debug_file', TEXT(), nullable=True, primary_key=True)
     debug_id = Column(u'debug_id', TEXT(), nullable=True)
 
+    __mapper_args__ = {'primary_key': (date_processed, debug_file, debug_id)}
+
 
 ###########################################
 ##  Bixie
