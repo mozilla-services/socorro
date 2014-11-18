@@ -20,7 +20,7 @@ from configman.converters import class_converter
 
 #------------------------------------------------------------------------------
 # Here's the list of URIs mapping to classes and the files they belong to.
-# The final lookup depends on the `implementation_list` option inside the app.
+# The final lookup depends on the `services_list` option inside the app.
 SERVICES_LIST = (
     'socorro.external.postgresql.bugs_service.Bugs'
 )
@@ -95,6 +95,12 @@ class DataserviceApp(App):
         ):
             impl_class = self.config.services[impl_class_namespace].cls
             services_list.append(impl_class)
+
+        if not services_list:
+            raise RuntimeError(
+                "No services configured."
+                "See the [services].service_list setting in the config file"
+            )
 
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,
