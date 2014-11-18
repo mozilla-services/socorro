@@ -1,78 +1,9 @@
-# the fully qualified module or class of the application
-#application='DataserviceApp'
+# the fully qualified classname of the app to run
+application=socorro.dataservice.dataservice_app.DataserviceApp
 
 [resource]
 
-    [[elasticsearch]]
-
-        #+include ./common_elasticsearch.ini
-
-        # the source storage class
-        #crashstorage_class='socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage'
-
-        # String containing the URI of the Elastic Search instance.
-        #elasticSearchHostname=localhost
-
-        # String containing the port on which calling the Elastic Search instance.
-        #elasticSearchPort=9200
-
-        # the file containing the mapping of the indexes receiving crash reports
-        #elasticsearch_base_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_index_settings.json
-
-        # None
-        #elasticsearch_class='socorro.external.elasticsearch.connection_context.ConnectionContext'
-
-        # the default doctype to use in elasticsearch
-        #elasticsearch_doctype=crash_reports
-
-        # the index that handles data about email addresses for the automatic-emails cron job
-        #elasticsearch_emails_index=socorro_emails
-
-        # the file containing the mapping of the indexes receiving email addresses for the automatic-emails cron job
-        #elasticsearch_emails_index_settings=/home/lars/work/socorro/socorro/external/elasticsearch/mappings/socorro_emails_index_settings.json
-
-        # an index format to pull crashes from elasticsearch (use datetime's strftime format to have daily, weekly or monthly indexes)
-        #elasticsearch_index=socorro%Y%W
-
-        # the time in seconds before a query to elasticsearch fails
-        #elasticsearch_timeout=30
-
-        # the time in seconds before a query to elasticsearch fails in restricted sections
-        #elasticsearch_timeout_extended=120
-
-        # the urls to the elasticsearch instances
-        #elasticsearch_urls='http://localhost:9200'
-
-        # a class that will manage transactions
-        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
-
-    [[fs]]
-
-        #+include ./common_fs.ini
-
-        # None
-        #crashstorage_class='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage'
-
-        # the default dump field
-        #dump_field=upload_file_minidump
-
-        # the suffix used to identify a dump file
-        #dump_file_suffix=.dump
-
-        # a path to a file system
-        #fs_root='./crashes'
-
-        # the suffix used to identify a json file
-        #json_file_suffix=.json
-
-        # the suffix used to identify a gzipped json file
-        #jsonz_file_suffix=.jsonz
-
-        # the directory base name to use for the named radix tree storage
-        #name_branch_base=name
-
-        # umask to use for new files
-        #umask=18
+    #+include ./common_resource.ini
 
     [[logging]]
 
@@ -82,7 +13,7 @@
         #stderr_error_logging_level=10
 
         # python logging system format for logging to stderr
-        #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
+        #stderr_line_format_string={asctime} {levelname} - {app_name} - {message}
 
         # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
         #syslog_error_logging_level=40
@@ -94,7 +25,7 @@
         #syslog_host=localhost
 
         # python logging system format for syslog entries
-        #syslog_line_format_string=dataservice (pid {process}): {asctime} {levelname} - {threadName} - {message}
+        #syslog_line_format_string={app_name} (pid {process}): {asctime} {levelname} - {threadName} - {message}
 
         # syslog port
         #syslog_port=514
@@ -103,8 +34,11 @@
 
         #+include ./common_postgresql.ini
 
+        # delays in seconds between retries
+        #backoff_delays=10, 30, 60, 120, 300
+
         # the class responsible for connecting to Postgres
-        #database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+        #database_class=socorro.external.postgresql.connection_context.ConnectionContext
 
         # the hostname of the database
         #database_hostname=localhost
@@ -116,57 +50,20 @@
         #database_port=5432
 
         # a class that will manage transactions
-        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
+        #transaction_executor_class=socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff
 
-    [[rabbitmq]]
-
-        #+include ./common_rabbitmq.ini
-
-        # None
-        #crashstorage_class='socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
-
-        # toggle for using or ignoring the throttling flag
-        #filter_on_legacy_processing='False'
-
-        # the hostname of the RabbitMQ server
-        #host=localhost
-
-        # the port for the RabbitMQ server
-        #port=5672
-
-        # the name of priority crash queue name within RabbitMQ
-        #priority_queue_name=socorro.priority
-
-        # the class responsible for connecting to RabbitMQ
-        #rabbitmq_class='socorro.external.rabbitmq.connection_context.ConnectionContextPooled'
-
-        # a classname for the type of wrapper for RabbitMQ connections
-        #rabbitmq_connection_wrapper_class='socorro.external.rabbitmq.connection_context.Connection'
-
-        # the name of reprocessing crash queue name within RabbitMQ
-        #reprocessing_queue_name=socorro.reprocessing
-
-        # the name of the queue to recieve crashes
-        #routing_key=socorro.reprocessing
-
-        # the name of standard crash queue name within RabbitMQ
-        #standard_queue_name=socorro.normal
-
-        # a class that will manage transactions
-        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
-
-        # the name of the RabbitMQ virtual host
-        #virtual_host=/
+        # seconds between log during retries
+        #wait_log_interval=10
 
     [[redactor]]
 
         #+include ./common_redactor.ini
 
         # a list of keys not allowed in a redacted processed crash
-        #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+        #forbidden_keys=url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive,memory_info
 
         # the name of the class that implements a 'redact' method
-        #redactor_class='socorro.external.crashstorage_base.Redactor'
+        #redactor_class=socorro.external.crashstorage_base.Redactor
 
 [secrets]
 
@@ -182,35 +79,12 @@
         # the name of the user within the database
         #database_username=breakpad_rw
 
-    [[rabbitmq]]
-
-        #+include ./common_rabbitmq.ini
-
-        # the user's RabbitMQ password
-        #rabbitmq_password=guest
-
-        # the name of the user within the RabbitMQ instance
-        #rabbitmq_user=guest
-
     [[sentry]]
 
         #+include ./common_sentry.ini
 
         # DSN for Sentry via raven
         #dsn=
-
-[webapi]
-
-    #+include ./common_webapi.ini
-
-    # List of channels, excluding the `release` one.
-    #non_release_channels='beta, aurora, nightly'
-
-    # Array associating OS ids to full names.
-    #platforms='{"id": "windows", "name": "Windows NT"}, {"id": "mac", "name": "Mac OS X"}, {"id": "linux", "name": "Linux"}'
-
-    # List of channels to restrict based on build ids.
-    #restricted_channels='beta'
 
 [logging]
 
@@ -220,7 +94,7 @@
 
     # python logging system format for logging to stderr
     # see "resource.logging.stderr_line_format_string" for the default or override it here
-    #stderr_line_format_string={asctime} {levelname} - {threadName} - {message}
+    #stderr_line_format_string={asctime} {levelname} - {app_name} - {message}
 
     # logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)
     # see "resource.logging.syslog_error_logging_level" for the default or override it here
@@ -236,7 +110,7 @@
 
     # python logging system format for syslog entries
     # see "resource.logging.syslog_line_format_string" for the default or override it here
-    #syslog_line_format_string=dataservice (pid {process}): {asctime} {levelname} - {threadName} - {message}
+    #syslog_line_format_string={app_name} (pid {process}): {asctime} {levelname} - {threadName} - {message}
 
     # syslog port
     # see "resource.logging.syslog_port" for the default or override it here
@@ -251,19 +125,23 @@
 [services]
 
     # None
-    service_list='socorro.external.postgresql.bugs_service.Bugs'
+    #service_list=socorro.external.postgresql.bugs_service.Bugs
 
     [[Bugs]]
 
+        # delays in seconds between retries
+        # see "resource.postgresql.backoff_delays" for the default or override it here
+        #backoff_delays=10, 30, 60, 120, 300
+
         # None
-        cls='socorro.external.postgresql.bugs_service.Bugs'
+        #cls=socorro.external.postgresql.bugs_service.Bugs
 
         # the source storage class
-        crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+        #crashstorage_class=socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage
 
         # the class responsible for connecting to Postgres
         # see "resource.postgresql.database_class" for the default or override it here
-        database_class='socorro.external.postgresql.connection_context.ConnectionContext'
+        #database_class=socorro.external.postgresql.connection_context.ConnectionContext
 
         # the hostname of the database
         # see "resource.postgresql.database_hostname" for the default or override it here
@@ -287,12 +165,28 @@
 
         # a list of keys not allowed in a redacted processed crash
         # see "resource.redactor.forbidden_keys" for the default or override it here
-        #forbidden_keys='url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive'
+        #forbidden_keys=url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive,memory_info
 
         # the name of the class that implements a 'redact' method
         # see "resource.redactor.redactor_class" for the default or override it here
-        #redactor_class='socorro.external.crashstorage_base.Redactor'
+        #redactor_class=socorro.external.crashstorage_base.Redactor
 
         # a class that will manage transactions
         # see "resource.postgresql.transaction_executor_class" for the default or override it here
-        #transaction_executor_class='socorro.database.transaction_executor.TransactionExecutor'
+        #transaction_executor_class=socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff
+
+        # seconds between log during retries
+        # see "resource.postgresql.wait_log_interval" for the default or override it here
+        #wait_log_interval=10
+
+[web_server]
+
+    # the IP address from which to accept submissions
+    #ip_address=127.0.0.1
+
+    # the port to listen to for submissions
+    #port=8883
+
+    # a class implementing a wsgi web server
+    #wsgi_server_class=socorro.webapi.servers.CherryPy
+
