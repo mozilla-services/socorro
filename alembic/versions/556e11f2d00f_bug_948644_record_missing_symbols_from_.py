@@ -26,6 +26,20 @@ def upgrade():
     sa.Column('debug_file', sa.TEXT(), nullable=True),
     sa.Column('debug_id', sa.TEXT(), nullable=True),
 
+    op.execute("""
+        INSERT INTO report_partition_info 
+        (table_name, build_order, fkeys, indexes, keys, 
+            partition_column, timetype)
+        VALUES 
+        ('missing_symbols', max(build_order) + 1, '{}', '{}', '{}', '{}', 
+            'date_processed', 'TIMESTAMPTZ'); 
+    """)
+
+
 def downgrade():
     op.drop_table('alembic_version')
     op.drop_table('missing_symbols')
+    op.execute("""
+        DELETE FROM report_partition_info
+        WHERE table_name = 'missing_symbols'
+    """)
