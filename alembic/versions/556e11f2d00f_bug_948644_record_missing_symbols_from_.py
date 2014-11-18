@@ -28,12 +28,16 @@ def upgrade():
     )
 
     op.execute("""
+        WITH bo AS (
+            SELECT COALESCE(max(build_order) + 1, 1) as number
+            FROM report_partition_info
+        )
         INSERT INTO report_partition_info 
         (table_name, build_order, fkeys, indexes, keys, 
-            partition_column, timetype)
-        VALUES 
-        ('missing_symbols', max(build_order) + 1, '{}', '{}', '{}', '{}', 
-            'date_processed', 'TIMESTAMPTZ')
+         partition_column, timetype)
+        SELECT 'missing_symbols', bo.number, '{}', '{}', '{}',
+         'date_processed', 'TIMESTAMPTZ'
+        FROM bo
     """)
 
 def downgrade():
