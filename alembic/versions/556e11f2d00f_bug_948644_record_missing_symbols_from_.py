@@ -22,9 +22,10 @@ from sqlalchemy.sql import table, column
 
 def upgrade():
     op.create_table('missing_symbols',
-    sa.Column('date_processed', sa.DATE(), nullable=False),
-    sa.Column('debug_file', sa.TEXT(), nullable=True),
-    sa.Column('debug_id', sa.TEXT(), nullable=True),
+        sa.Column('date_processed', sa.DATE(), nullable=False),
+        sa.Column('debug_file', sa.TEXT(), nullable=True),
+        sa.Column('debug_id', sa.TEXT(), nullable=True),
+    )
 
     op.execute("""
         INSERT INTO report_partition_info 
@@ -32,9 +33,8 @@ def upgrade():
             partition_column, timetype)
         VALUES 
         ('missing_symbols', max(build_order) + 1, '{}', '{}', '{}', '{}', 
-            'date_processed', 'TIMESTAMPTZ'); 
+            'date_processed', 'TIMESTAMPTZ')
     """)
-
 
 def downgrade():
     op.drop_table('alembic_version')
