@@ -248,7 +248,8 @@ class DataserviceWebServiceBase(JsonWebServiceBase):
             raise BadRequest({
                 'error': {
                     'message': str(msg)
-                }
+                },
+                'type': msg.__class__.__name__
             })
         except ResourceNotFound, msg:
             raise NotFound({

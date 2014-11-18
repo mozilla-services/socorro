@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Deprecated by socorro/external/postgresql/bugs.py"""
+"""Deprecated by socorro/external/postgresql/bugs_service.py"""
 
 import logging
 
