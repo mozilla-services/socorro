@@ -54,6 +54,7 @@ class ConnectionContext(RequiredConfig):
     # what should be a hidden module, we expose just the Exception. Clients
     # can then just refer to it as ConnectionContext.IntegrityError
     IntegrityError = psycopg2.IntegrityError
+    ProgrammingError = psycopg2.ProgrammingError
 
     #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):

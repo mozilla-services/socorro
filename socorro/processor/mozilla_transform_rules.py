@@ -790,7 +790,7 @@ class MissingSymbolsRule(Rule):
                     try:
                         self.transaction(execute_no_results, self.sql,
                                          (date, debug_file, debug_id))
-                    except psycopg2.ProgrammingError as e:
+                    except self.database.ProgrammingError as e:
                         processor_meta.processor_notes.append(
                             "WARNING: missing symbols rule failed for"
                             "%s" % key
