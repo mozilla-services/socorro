@@ -44,19 +44,19 @@
                     <input type="checkbox">
                     <label data-on="ON" data-off="OFF"></label>
                 </span>
-                Simple Search mode
+                Simple search mode
             </div>
 
             <!-- Simplified search UI -->
             <div id="simple-search">
                 <fieldset>
-                    {% for field in simple_search_fields %}
+                    {% for field, field_data in simple_search_data %}
                     <div>
                         <label for="simple-{{ field }}">
                             {{ field | replace('_', ' ') | capitalize }}
                         </label>
                         <select name="{{ field }}" id="simple-{{ field }}" multiple="multiple">
-                            {% for opt in simple_search_data[field] %}
+                            {% for opt in field_data %}
                             <option value="{{ opt[0] }}">{{ opt[1] }}</option>
                             {% endfor %}
                         </select>
@@ -64,7 +64,7 @@
                     {% endfor %}
                 </fieldset>
 
-                <p><em>Note: the date will be a range between now and a week ago. You can change it in the Advanced Search mode. </em></p>
+                <p><em>Note: the date will be a range between now and a week ago. You can change it by switching the simple search mode off. </em></p>
             </div>
 
             <!-- Advanced search UI -->

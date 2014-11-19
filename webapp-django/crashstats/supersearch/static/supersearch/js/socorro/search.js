@@ -241,7 +241,7 @@ $(function () {
             var url = prepareResultsQueryString(params);
 
             window.location = customURL + url;
-        });
+        }.bind(this));
 
         var queryString = window.location.search.substring(1);
 

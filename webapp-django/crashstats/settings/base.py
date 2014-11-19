@@ -238,6 +238,14 @@ PLUGIN_FIELDS = (
     'name',
 )
 
+# fields used in the simplified UI for Super Search
+SIMPLE_SEARCH_FIELDS = (
+    'product',
+    'version',
+    'platform',
+    'process_type',
+)
+
 # the number of result filter on tcbs
 TCBS_RESULT_COUNTS = (
     '50',
