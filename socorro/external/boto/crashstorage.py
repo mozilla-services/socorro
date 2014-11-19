@@ -131,6 +131,16 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     @staticmethod
+    def build_s3_dirs(prefix, name_of_thing, crash_id):
+        """
+        Use S3 pseudo-directories to make it easier to list/expire later
+        {{prefix}}/{{version}}/{{name_of_thing}}/{{crash_id}}
+        """
+        version = 'v1'
+        return '%s/%s/%s/%s' % (prefix, version, name_of_thing, crash_id)
+
+    #--------------------------------------------------------------------------
+    @staticmethod
     def do_save_raw_crash(boto_s3_store, raw_crash, dumps, crash_id):
         raw_crash_as_string = boto_s3_store._convert_mapping_to_string(
             raw_crash
@@ -336,7 +346,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         conn = self._connect()
         bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
 
-        key = "%s/%s.%s" % (self.config.prefix, crash_id, name_of_thing)
+        key = self.build_s3_dirs(self.config.prefix, name_of_thing, crash_id)
 
         storage_key = bucket.new_key(key)
         storage_key.set_contents_from_string(thing)
@@ -348,7 +358,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         conn = self._connect()
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
-        key = "%s/%s.%s" % (self.config.prefix, crash_id, name_of_thing)
+        key = self.build_s3_dirs(self.config.prefix, name_of_thing, crash_id)
 
         storage_key = bucket.get_key(key)
         return storage_key.get_contents_as_string()

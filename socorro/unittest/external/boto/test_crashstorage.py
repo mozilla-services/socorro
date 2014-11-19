@@ -187,8 +187,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(bucket_mock.new_key.call_count, 2)
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump_names'),
+                mock.call('dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'),
             ],
             any_order=True,
         )
@@ -239,10 +239,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(bucket_mock.new_key.call_count, 4)
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump_names'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
+                mock.call('dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'),
             ],
             any_order=True,
         )
@@ -307,10 +307,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assertEqual(bucket_mock.new_key.call_count, 4)
         bucket_mock.new_key.assert_has_calls(
             [
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.raw_crash'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump_names'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.dump'),
-                mock.call('dev/0bba929f-8721-460c-dead-a43c20071027.flash_dump'),
+                mock.call('dev/v1/raw_crash/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump_names/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/dump/0bba929f-8721-460c-dead-a43c20071027'),
+                mock.call('dev/v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027'),
             ],
             any_order=True,
         )
@@ -364,7 +364,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    'dev/0bba929f-8721-460c-dead-a43c20071027.processed_crash'
+                    'dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'
                 ),
             ],
         )
@@ -422,7 +422,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    'dev/3c61f81e-ea2b-4d24-a3ce-6bb9d2140915.support_reason'
+                    'dev/v1/support_reason/3c61f81e-ea2b-4d24-a3ce-6bb9d2140915'
                 ),
             ],
         )
@@ -517,7 +517,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    'dev/0bba929f-8721-460c-dead-a43c20071027.processed_crash'
+                    'dev/v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027'
                 ),
             ],
         )
@@ -616,7 +616,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
 
         boto_s3_store._mocked_connection.get_bucket.return_value.get_key \
             .assert_called_with(
-                'dev/936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+                'dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408'
             )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value.get_key.return_value
@@ -665,7 +665,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
 
         boto_s3_store._mocked_connection.get_bucket.return_value.get_key \
             .assert_called_with(
-                'dev/936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+                'dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408'
             )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value.get_key.return_value
@@ -714,7 +714,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
 
         boto_s3_store._mocked_connection.get_bucket.return_value.get_key \
             .assert_called_with(
-                'dev/936ce666-ff3b-4c7a-9674-367fe2120408.dump'
+                'dev/v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408'
             )
         key_mock = boto_s3_store._mocked_connection.get_bucket \
             .return_value.get_key.return_value
@@ -956,3 +956,11 @@ class TestCase(socorro.unittest.testbase.TestCase):
             boto_s3_store.get_raw_crash,
             '0bba929f-dead-dead-dead-a43c20071027'
         )
+
+    def test_s3_dir_builder(self):
+        boto_s3_store = self.setup_mocked_s3_storage()
+        prefix = 'dev'
+        name_of_thing = 'dump'
+        crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
+        good = boto_s3_store.build_s3_dirs(prefix, name_of_thing, crash_id)
+        self.assertEqual("dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114", good)
