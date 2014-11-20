@@ -109,7 +109,7 @@ u_int64_t GetStackPointer(const MinidumpContext* context) {
 int main(int argc, char** argv)
 {
   if (argc < 3 || argc > 5) {
-    error("Usage: %s [-a] <minidump> <symbol path> [start address]\n"
+    error("Usage: %s [-a] <minidump> <symbol paths>\n"
           "  Default start address is the top of the stack from the exception record"
           , argv[0]);
   }
@@ -127,8 +127,12 @@ int main(int argc, char** argv)
   }
   ++current_arg;
 
-  SimpleSymbolSupplier supplier(argv[current_arg]);
-  ++current_arg;
+  vector<string> symbol_paths;
+  // allow symbol paths to be passed on the commandline.
+  for (; current_arg < argc; current_arg++) {
+    symbol_paths.push_back(argv[current_arg]);
+  }
+  SimpleSymbolSupplier supplier(symbol_paths);
   BasicSourceLineResolver resolver;
 
   SystemInfo system_info;
@@ -142,25 +146,17 @@ int main(int argc, char** argv)
     error("Minidump %s is missing modules or memory_list", argv[1]);
   }
 
-  u_int64_t addr;
-  if (current_arg < argc) {
-    addr = strtoull(argv[current_arg], NULL, 16);
-    if (addr == ULLONG_MAX) {
-      error("Couldn't parse address %s\n", argv[3]);
-    }
-  }
-  else {
-    // Default to top of the stack from the exception context
-    MinidumpException* exception = dump.GetException();
-    if (!exception)
-      error("Minidump %s doesn't have an exception record!", argv[1]);
+  // Default to top of the stack from the exception context
+  MinidumpException* exception = dump.GetException();
+  if (!exception)
+    error("Minidump %s doesn't have an exception record!", argv[1]);
 
-    MinidumpContext* context = exception->GetContext();
-    if (!context)
-      error("Minidump %s doesn't have an exception context!", argv[1]);
+  MinidumpContext* context = exception->GetContext();
+  if (!context)
+    error("Minidump %s doesn't have an exception context!", argv[1]);
 
-    addr = GetStackPointer(context);
-  }
+  uint64_t addr = GetStackPointer(context);
+
 
   MinidumpMemoryRegion* memory =
     memory_list->GetMemoryRegionForAddress(addr);
