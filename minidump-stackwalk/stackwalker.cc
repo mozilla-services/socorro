@@ -109,15 +109,15 @@ const unsigned kMaxThreadFrames = 100;
 // should be preserved at the end of the frame list.
 const unsigned kTailFramesWhenTruncating = 10;
 
-static string ToHex(u_int64_t value) {
+static string ToHex(uint64_t value) {
   char buffer[17];
   sprintf(buffer, "0x%lx", value);
   return buffer;
 }
 
-static string ToInt(int value) {
+static string ToInt(uint64_t value) {
   char buffer[17];
-  sprintf(buffer, "%d", value);
+  sprintf(buffer, "%ld", value);
   return buffer;
 }
 
@@ -691,9 +691,9 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   root["sensitive"]["exploitability"] = ExploitabilityString(process_state.exploitability());
 }
 
-static void ConvertLargestFreeVMToJSON(Minidump& dump,
-                                       Json::Value& raw_root,
-                                       Json::Value& root)
+static void ConvertMemoryInfoToJSON(Minidump& dump,
+                                    Json::Value& raw_root,
+                                    Json::Value& root)
 {
   MinidumpMemoryInfoList* memory_info_list = dump.GetMemoryInfoList();
   if (!memory_info_list || !memory_info_list->valid()) {
@@ -706,6 +706,8 @@ static void ConvertLargestFreeVMToJSON(Minidump& dump,
     strtoull(raw_root.get("BreakpadReserveSize", "0").asCString(), nullptr, 10);
 
   uint64_t largest_free_block = 0;
+  uint64_t write_combine_size = 0;
+  uint64_t tiny_block_size = 0;
 
   for (int i = 0; i < memory_info_list->info_count(); ++i) {
     const MinidumpMemoryInfo* memory_info =
@@ -714,6 +716,17 @@ static void ConvertLargestFreeVMToJSON(Minidump& dump,
       continue;
     }
     const MDRawMemoryInfo* raw_info = memory_info->info();
+
+    if (raw_info->state == MD_MEMORY_STATE_COMMIT &&
+        raw_info->protection & MD_MEMORY_PROTECT_WRITECOMBINE) {
+      write_combine_size += raw_info->region_size;
+    }
+
+    if (raw_info->state == MD_MEMORY_STATE_FREE &&
+        raw_info->region_size < 0x100000) {
+      tiny_block_size += raw_info->region_size;
+    }
+
     if (raw_info->base_address >= reserve_address &&
         raw_info->base_address < reserve_address + reserve_size) {
       continue;
@@ -725,6 +738,9 @@ static void ConvertLargestFreeVMToJSON(Minidump& dump,
   }
 
   root["largest_free_vm_block"] = ToHex(largest_free_block);
+  root["write_combine_size"] = ToInt(write_combine_size);
+  root["tiny_block_size"] = ToInt(tiny_block_size);
+
 }
 
 static string ResultString(ProcessResult result) {
@@ -1050,7 +1066,7 @@ int main(int argc, char** argv)
   if (result == google_breakpad::PROCESS_OK) {
     ConvertProcessStateToJSON(process_state, symbolizer, root);
   }
-  ConvertLargestFreeVMToJSON(minidump, raw_root, root);
+  ConvertMemoryInfoToJSON(minidump, raw_root, root);
   Json::Writer* writer;
   if (pretty)
     writer = new Json::StyledWriter();
