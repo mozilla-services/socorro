@@ -4,12 +4,15 @@ import mock
 import pyquery
 from nose.tools import eq_, ok_
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 
 from waffle import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.supersearch.views import get_report_list_parameters
+from crashstats.supersearch.views import (
+    get_report_list_parameters,
+)
 
 
 SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
@@ -60,6 +63,18 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_returned': True,
         'is_mandatory': False,
         'in_database_name': 'platform',
+    },
+    'process_type': {
+        'name': 'process_type',
+        'query_type': 'enum',
+        'namespace': 'processed_crash',
+        'form_field_choices': ['browser', 'content'],
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+        'in_database_name': 'process_type',
     },
     'dump': {
         'name': 'dump',
@@ -255,6 +270,19 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('Run a search to get some results' in response.content)
+
+        # Check the simplified filters are there.
+        for field in settings.SIMPLE_SEARCH_FIELDS:
+            ok_(field.capitalize().replace('_', ' ') in response.content)
+
+        # Verify selects are filled with the correct options.
+        doc = pyquery.PyQuery(response.content)
+        options = doc('#simple-search select[name=product] option')
+        ok_('WaterWolf' in str(options))
+        ok_('NightTrain' in str(options))
+
+        options = doc('#simple-search select[name=process_type] option')
+        ok_('browser' in str(options))
 
     @mock.patch('requests.get')
     def test_search_fields(self, rget):

@@ -114,6 +114,15 @@ def search(request, default_context=None):
     context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
+    # Fields data for the simple search UI.
+    form = get_supersearch_form(request)
+    ', '.join(x[1] for x in form.fields['product'].choices[:2])
+    context['simple_search_data'] = [
+        # field name, options, placeholder values
+        (x, form.fields[x].choices, [x[1] for x in form.fields[x].choices[:3]])
+        for x in settings.SIMPLE_SEARCH_FIELDS
+    ]
+
     return render(request, 'supersearch/search.html', context)
 
 

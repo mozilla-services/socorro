@@ -20,11 +20,19 @@
      */
     function dynamicForm(action, initialParams, containerId, onReadyCallback, sortFuntion) {
         var form = this;
+        var dynamic = form.data('dynamic');
+        var lines = [];
+        var container = form;
+
+        if (dynamic) {
+            lines = dynamic.lines;
+            container = dynamic.container;
+        }
+
         initialParams = initialParams || null;
         containerId = containerId || null;
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
-            var dynamic = form.data('dynamic');
             if (!dynamic) {
                 throw new Error('Impossible to call ' + action + ' on an object that was not initialized first');
             }
@@ -51,9 +59,7 @@
         var fieldsURL = action;
         var fields = {};
         var sortedFieldNames = [];
-        var lines = [];
         var lastFieldLineId = 0;
-        var container = form;
 
         if (containerId) {
             container = $(containerId, form);
@@ -564,7 +570,9 @@
             newLine: newLine,
             createLine: createLine,
             getParams: getParams,
-            setParams: setParams
+            setParams: setParams,
+            lines: lines,
+            container: container
         });
 
         return form;
