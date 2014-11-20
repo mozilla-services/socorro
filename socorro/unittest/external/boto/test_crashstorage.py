@@ -957,6 +957,16 @@ class TestCase(socorro.unittest.testbase.TestCase):
             '0bba929f-dead-dead-dead-a43c20071027'
         )
 
+    def test_not_found_get_key_returns_none(self):
+        boto_s3_store = self.setup_mocked_s3_storage()
+        boto_s3_store._mocked_connection.get_bucket \
+            .return_value.get_key.return_value = None
+        self.assertRaises(
+            CrashIDNotFound,
+            boto_s3_store.get_raw_crash,
+            '0bba929f-dead-dead-dead-a43c20071027'
+        )
+
     def test_s3_dir_builder(self):
         boto_s3_store = self.setup_mocked_s3_storage()
         prefix = 'dev'
