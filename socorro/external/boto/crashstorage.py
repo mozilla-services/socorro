@@ -361,6 +361,8 @@ class BotoS3CrashStorage(CrashStorageBase):
         key = self.build_s3_dirs(self.config.prefix, name_of_thing, crash_id)
 
         storage_key = bucket.get_key(key)
+        if storage_key is None:
+            raise CrashIDNotFound('%s not found, no value returned' % crash_id)
         return storage_key.get_contents_as_string()
 
     #--------------------------------------------------------------------------
