@@ -32,7 +32,37 @@ $(function () {
         $.ajax({
             url: url,
             success: function(data) {
-                contentElt.empty().append(data).tabs();
+                contentElt.empty().append(data);
+
+                if ($('.no-data', contentElt).length) {
+                    // There are no results, no need to do more.
+                    return;
+                }
+
+                // Determine which tab should be open. If there is a hash,
+                // we let jQuery UI's tabs open the correct one. Otherwise,
+                // we want to open the last one of the list.
+                var activeTab = null;
+                if (!location.hash) {
+                    activeTab = -1;
+                }
+
+                var params = form.dynamicForm('getParams');
+                var url = prepareResultsQueryString(params);
+
+                contentElt.tabs({
+                    active: activeTab,
+                    activate: function (event, ui) {
+                        // Make sure the hash is changed when switching tabs.
+                        var hash = '#' + ui.newPanel.attr('id');
+                        pushHistoryState(params, url, hash);
+                    },
+                    create: function (event, ui) {
+                        // Put the first tab's id in the hash of the URL.
+                        var hash = '#' + ui.panel.attr('id');
+                        pushHistoryState(params, url, hash, true);
+                    }
+                });
                 $('.tablesorter').tablesorter();
 
                 // Enhance bug links.
@@ -97,6 +127,14 @@ $(function () {
         // Update the public API URL.
         var queryString = $.param(params, true);
         publicApiUrlInput.val(BASE_URL + publicApiUrl + '?' + queryString);
+    }
+
+    function pushHistoryState(params, url, hash, replace) {
+        var func = replace && window.history.replaceState || window.history.pushState;
+        if (!hash) {
+            hash = location.hash;
+        }
+        func.call(window.history, params, 'Search results', url + hash);
     }
 
     function sortResults(results, container, query) {
@@ -185,13 +223,13 @@ $(function () {
             // and run the search and show results.
             queryString = $.param(params, true);
             showResults(resultsURL + '?' + queryString);
-            this.setParams(params);
+            SimpleSearch.setParams(params);
             updatePublicApiUrl(params);
         }
         else {
             // If there are no parameters, empty the form and show the
             // default content.
-            $('select', this.container).select2('val', null);
+            $('select', SimpleSearch.container).select2('val', null);
             contentElt.empty().append($('<p>', {'text': 'Run a search to get some results. '}));
         }
     };
@@ -328,7 +366,7 @@ $(function () {
             showResults(resultsURL + '?' + queryString);
             params = socorro.search.getFilteredParams(params);
             updatePublicApiUrl(params);
-            this.setParams(params);
+            AdvancedSearch.setParams(params);
         }
         else {
             // If there are no parameters, empty the form and show the default content
@@ -372,12 +410,12 @@ $(function () {
 
     submitButton.click(function (e) {
         e.preventDefault();
-        var params = currentMode.getParams();
-        updatePublicApiUrl(params);
 
+        var params = form.dynamicForm('getParams');
         var url = prepareResultsQueryString(params);
-        window.history.pushState(params, 'Search results', url);
 
+        updatePublicApiUrl(params);
+        pushHistoryState(params, url);
         showResults(resultsURL + url);
     });
 
