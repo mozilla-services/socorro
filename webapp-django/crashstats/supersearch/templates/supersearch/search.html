@@ -24,7 +24,7 @@
         <h2>Super Search</h2>
         <ul class="options">
             <li><a href="{{ url('supersearch.search') }}" class="selected">Search by fields</a></li>
-            {% if waffle.switch('supersearch-custom-query') %}
+            {% if waffle.switch('supersearch-custom-query') and request.user.has_perm('crashstats.run_custom_queries') %}
             <li><a href="{{ url('supersearch.search_custom') }}">Custom query</a></li>
             {% endif %}
         </ul>
@@ -50,12 +50,15 @@
             <!-- Simplified search UI -->
             <div id="simple-search">
                 <fieldset>
-                    {% for field, field_data in simple_search_data %}
+                    {% for field, field_data, examples in simple_search_data %}
                     <div>
                         <label for="simple-{{ field }}">
                             {{ field | replace('_', ' ') | capitalize }}
                         </label>
-                        <select name="{{ field }}" id="simple-{{ field }}" multiple="multiple">
+                        <select name="{{ field }}" id="simple-{{ field }}"
+                            multiple="multiple"
+                            placeholder="{{ ', '.join(examples) }}..."
+                        >
                             {% for opt in field_data %}
                             <option value="{{ opt[0] }}">{{ opt[1] }}</option>
                             {% endfor %}
@@ -64,12 +67,15 @@
                     {% endfor %}
                 </fieldset>
 
-                <p><em>Note: the date will be a range between now and a week ago. You can change it by switching the simple search mode off. </em></p>
+                <p><em>
+                    Note: the date will be a range between now and a week ago.
+                    You can change it by switching the simple search mode off.
+                </em></p>
             </div>
 
             <!-- Advanced search UI -->
             <div id="advanced-search">
-                {% if waffle.switch('supersearch-custom-query') %}
+                {% if waffle.switch('supersearch-custom-query') and request.user.has_perm('crashstats.run_custom_queries') %}
                 <button class="customize">Customize</button>
                 {% endif %}
                 <button class="new-line">New line</button>

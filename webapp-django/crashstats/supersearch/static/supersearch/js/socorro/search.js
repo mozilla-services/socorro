@@ -135,7 +135,6 @@ $(function () {
         });
         $('select', this.container).select2({
             'width': 'element',
-            'placeholder': 'Choose a value...',
             'closeOnSelect': false
         });
 

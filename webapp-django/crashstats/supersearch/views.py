@@ -116,8 +116,10 @@ def search(request, default_context=None):
 
     # Fields data for the simple search UI.
     form = get_supersearch_form(request)
+    ', '.join(x[1] for x in form.fields['product'].choices[:2])
     context['simple_search_data'] = [
-        (x, form.fields[x].choices)
+        # field name, options, placeholder values
+        (x, form.fields[x].choices, [x[1] for x in form.fields[x].choices[:3]])
         for x in settings.SIMPLE_SEARCH_FIELDS
     ]
 

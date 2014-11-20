@@ -4,13 +4,13 @@ import mock
 import pyquery
 from nose.tools import eq_, ok_
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 
 from waffle import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.views import (
-    SIMPLE_SEARCH_FIELDS,
     get_report_list_parameters,
 )
 
@@ -272,7 +272,7 @@ class TestViews(BaseTestViews):
         ok_('Run a search to get some results' in response.content)
 
         # Check the simplified filters are there.
-        for field in SIMPLE_SEARCH_FIELDS:
+        for field in settings.SIMPLE_SEARCH_FIELDS:
             ok_(field.capitalize().replace('_', ' ') in response.content)
 
         # Verify selects are filled with the correct options.
