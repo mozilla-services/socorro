@@ -23,7 +23,10 @@ from socorro.lib.transform_rules import Rule
 from socorro.lib.datetimeutil import UTC, datetimeFromISOdateString
 from socorro.lib.context_tools import temp_file_context
 
-from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
+from socorro.external.postgresql.dbapi2_util import (
+        execute_query_fetchall,
+        execute_no_results
+)
 
 #==============================================================================
 class ProductRule(Rule):
@@ -729,4 +732,72 @@ class TopMostFilesRule(Rule):
             if source_filename:
                 processed_crash.topmost_filenames = source_filename
                 return True
+        return True
+
+
+#==============================================================================
+class MissingSymbolsRule(Rule):
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        doc="the class of the database",
+        default=
+        'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(MissingSymbolsRule, self).__init__(config)
+        self.database = self.config.database_class(config)
+        self.transaction = self.config.transaction_executor_class(
+            config,
+            self.database,
+        )
+        self.sql = (
+            "INSERT INTO missing_symbols(date, debug_file, debug_id) "
+            "VALUES (%s, %s)"
+        )
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+
+        if 'date_processed' in processed_crash:
+            date = processed_crash['date_processed']
+        else:
+            return False
+
+        if 'modules' in processed_crash['json_dump'] and \
+            'date_processed' in processed_crash:
+            date_processed = processed_crash['date_processed']
+            for module in processed_crash['json_dump']['modules']:
+                if 'missing_symbols' in module and module['missing_symbols']:
+                    debug_file = module['debug_file']
+                    debug_id = module['debug_id']
+                    try:
+                        self.transaction(execute_no_results, self.sql,
+                                         (date, debug_file, debug_id))
+                    except self.database.ProgrammingError as e:
+                        processor_meta.processor_notes.append(
+                            "WARNING: missing symbols rule failed for"
+                            " %s" % key
+                        )
+                else:
+                    return False
+        else:
+            return False
+
         return True
