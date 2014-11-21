@@ -723,6 +723,7 @@ static void ConvertMemoryInfoToJSON(Minidump& dump,
     }
 
     if (raw_info->state == MD_MEMORY_STATE_FREE &&
+        // Minimum block size required by jemalloc and JS allocator
         raw_info->region_size < 0x100000) {
       tiny_block_size += raw_info->region_size;
     }
