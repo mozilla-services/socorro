@@ -765,7 +765,7 @@ class MissingSymbolsRule(Rule):
         )
         self.sql = (
             "INSERT INTO missing_symbols(date, debug_file, debug_id) "
-            "VALUES (%s, %s)"
+            "VALUES (%s, %s, %s)"
         )
 
     #--------------------------------------------------------------------------
