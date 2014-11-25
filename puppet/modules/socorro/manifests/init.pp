@@ -179,6 +179,12 @@ class socorro::vagrant {
       path   => '/home/vagrant/.bashrc',
       source => 'puppet:///modules/socorro/home/bashrc',
       owner  => 'vagrant';
+
+    'elasticsearch.yml':
+      ensure => file,
+      path   => '/etc/elasticsearch/elasticsearch.yml',
+      source => 'puppet:///modules/socorro/etc_elasticsearch/elasticsearch.yml',
+      owner  => 'root';
   }
 
 }
