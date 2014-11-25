@@ -882,17 +882,17 @@ class TestModels(TestCase):
         ok_(r['hits'])
         ok_(r['total'])
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.settings'
+                '.APP_CONFIG.services.Bugs')
     def test_bugs(self, rpost):
         model = models.Bugs
         api = model()
 
         def mocked_post(**options):
-            assert '/bugs/' in options['url'], options['url']
             assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
-            return Response('{"hits": ["123456789"]}')
-
+            return {"hits": ["123456789"]}
         rpost.side_effect = mocked_post
+
         r = api.get(signatures='Pickle::ReadBytes')
         ok_(r['hits'])
 
@@ -902,45 +902,15 @@ class TestModels(TestCase):
 
         assert_raises(ValueError, api.get)
 
-    @mock.patch('requests.post')
-    def test_bugs_no_caching(self, rpost):
-        model = models.Bugs
-        api = model()
-
-        calls = []  # anything mutable
-
-        def mocked_post(**options):
-            calls.append(options['data'])
-            assert '/bugs/' in options['url'], options['url']
-            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
-            return Response('{"hits": ["123456789"]}')
-
-        rpost.side_effect = mocked_post
-        r = api.get(signatures='Pickle::ReadBytes')
-        eq_(r['hits'], [u'123456789'])
-
-        # Change the response
-
-        def mocked_post_v2(**options):
-            calls.append(options['data'])
-            assert '/bugs/' in options['url'], options['url']
-            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
-            return Response('{"hits": ["987654310"]}')
-
-        rpost.side_effect = mocked_post_v2
-        r = api.get(signatures='Pickle::ReadBytes')
-        eq_(len(calls), 2)
-        eq_(r['hits'], [u'987654310'])
-
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.settings'
+                '.APP_CONFIG.services.Bugs')
     def test_signatures_by_bugs(self, rpost):
         model = models.SignaturesByBugs
         api = model()
 
         def mocked_post(**options):
-            assert '/bugs/' in options['url'], options['url']
             assert options['data'] == {'bug_ids': '123456789'}
-            return Response('{"hits": {"signatures": "Pickle::ReadBytes"}}')
+            return {"hits": {"signatures": "Pickle::ReadBytes"}}
 
         rpost.side_effect = mocked_post
         r = api.get(bug_ids='123456789')
@@ -951,36 +921,6 @@ class TestModels(TestCase):
         api = model()
 
         assert_raises(ValueError, api.get)
-
-    @mock.patch('requests.post')
-    def test_sigs_by_bugs_no_caching(self, rpost):
-        model = models.SignaturesByBugs
-        api = model()
-
-        calls = []  # anything mutable
-
-        def mocked_post(**options):
-            calls.append(options['data'])
-            assert '/bugs/' in options['url'], options['url']
-            assert options['data'] == {'bug_ids': '123456789'}
-            return Response('{"hits": {"signatures": ["Pickle::ReadBytes"]}}')
-
-        rpost.side_effect = mocked_post
-        r = api.get(bug_ids='123456789')
-        eq_(r['hits'], {'signatures': ['Pickle::ReadBytes']})
-
-        # Change the response
-
-        def mocked_post_v2(**options):
-            calls.append(options['data'])
-            assert '/bugs/' in options['url'], options['url']
-            assert options['data'] == {'bug_ids': '987654310'}
-            return Response('{"hits": {"signatures": ["Pickle::ReadBytes"]}}')
-
-        rpost.side_effect = mocked_post_v2
-        r = api.get(bug_ids='987654310')
-        eq_(len(calls), 2)
-        eq_(r['hits'], {u'signatures': ["Pickle::ReadBytes"]})
 
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):

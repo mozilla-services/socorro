@@ -36,6 +36,15 @@ make
 popd
 cp minidump-stackwalk/stackwalker stackwalk/bin
 
+# setup any unset test configs and databases without overwriting existing files
+pushd config
+for file in *.ini-dist; do
+    if [ ! -f `basename $file -dist` ]; then
+        cp $file `basename $file -dist`
+    fi
+done
+popd
+
 # bootstrap webapp
 pushd webapp-django
 ./bin/bootstrap.sh

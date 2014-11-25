@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from configman import Namespace
+
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.service_base import (
     PostgreSQLWebServiceBase
@@ -13,12 +15,41 @@ from socorro.lib import external_common
 class Bugs(PostgreSQLWebServiceBase):
     """Implement the /bugs service with PostgreSQL. """
 
+    # Necessary for use with socorro.webapi.servers.WebServerBase
     uri = r'/bugs/(.*)'
 
+    # This enables creating a bug_ids key whether or not kwargs passes one in
+    # needed by post(). Revisit need for this in future API revision.
     filters = [
         ("signatures", None, ["list", "str"]),
         ("bug_ids", None, ["list", "str"]),
     ]
+
+    required_config = Namespace()
+    required_config.add_option(
+        'api_whitelist',
+        doc='whitelist',
+        default={
+            'hits': (
+                'id',
+                'signature',
+            )
+        },
+    )
+    required_config.add_option(
+        'required_params',
+        default=('signatures',),
+    )
+    required_config.add_option(
+        'output_is_json',
+        doc='Does this service provide json output?',
+        default=True,
+    )
+    required_config.add_option(
+        'cache_seconds',
+        doc='number of seconds to store results in filesystem cache',
+        default=3600,
+    )
 
     #--------------------------------------------------------------------------
     def get(self, **kwargs):

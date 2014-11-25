@@ -1175,7 +1175,7 @@ class TestViews(BaseTestViews):
         ok_(dump['hits'])
         eq_(dump['total'], 4)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_Bugs(self, rpost):
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
@@ -1183,13 +1183,10 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['signatures'])
 
-        def mocked_post(**options):
-            assert '/bugs/' in options['url'], options['url']
-            return Response("""
-               {"hits": [{"id": "123456789",
-                          "signature": "Something"}]}
-            """)
-        rpost.side_effect = mocked_post
+        def mocked_get(**options):
+            return {"hits": [{"id": "123456789",
+                    "signature": "Something"}]}
+        rpost.side_effect = mocked_get
 
         response = self.client.get(url, {
             'signatures': 'one & two',
@@ -1198,7 +1195,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.SignaturesByBugs.get')
     def test_SignaturesForBugs(self, rpost):
         url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
         response = self.client.get(url)
@@ -1207,11 +1204,11 @@ class TestViews(BaseTestViews):
         ok_(dump['errors']['bug_ids'])
 
         def mocked_post(**options):
-            assert '/bugs/' in options['url'], options['url']
-            return Response("""
-               {"hits": [{"id": "123456789",
-                          "signature": "Something"}]}
-            """)
+            return {
+                "hits": [
+                    {"id": "123456789", "signature": "Something"}
+                ]
+            }
         rpost.side_effect = mocked_post
 
         response = self.client.get(url, {

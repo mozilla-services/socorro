@@ -3,6 +3,7 @@
 
 from funfactory.settings_base import *
 
+
 # This unset DATABASE_ROUTERS from funfactory because we're not
 # interested in using multiple database for the webapp part.
 DATABASE_ROUTERS = ()
@@ -31,6 +32,7 @@ INSTALLED_APPS = (
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
+    '%s.dataservice' % PROJECT_MODULE,
     '%s.crashstats' % PROJECT_MODULE,
     '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,

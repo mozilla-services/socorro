@@ -122,15 +122,13 @@ SAMPLE_UNREDACTED = """ {
     }
 } """
 
-BUG_STATUS = """ {
-    "hits": [{"id": "222222",
-              "signature": "FakeSignature1"},
-             {"id": "333333",
-              "signature": "FakeSignature1"},
-             {"id": "444444",
-              "signature": "Other FakeSignature"}
-            ]
-} """
+BUG_STATUS = {
+    "hits": [
+        {"id": "222222", "signature": "FakeSignature1"},
+        {"id": "333333", "signature": "FakeSignature1"},
+        {"id": "444444", "signature": "Other FakeSignature"}
+    ]
+}
 
 SAMPLE_SIGNATURE_SUMMARY = {
     "reports": {
@@ -217,6 +215,34 @@ SAMPLE_SIGNATURE_SUMMARY = {
         ]
     }
 }
+
+
+# Helper mocks for several tests
+def mocked_post_123(**options):
+    return {
+        "hits": [{
+            "id": "123456789",
+            "signature": "Something"
+        }]
+    }
+
+
+def mocked_post_threesigs(**options):
+    return {
+        "hits": [
+            {"id": "111111111", "signature": "FakeSignature 1"},
+            {"id": "222222222", "signature": "FakeSignature 3"},
+            {"id": "101010101", "signature": "FakeSignature"}
+        ]
+    }
+
+
+def mocked_post_nohits(**options):
+    return {"hits": [], "total": 0}
+
+
+def mocked_post_threeothersigs(**options):
+    return BUG_STATUS
 
 
 class RobotsTestViews(DjangoTestCase):
@@ -1165,17 +1191,19 @@ class TestViews(BaseTestViews):
             in response.content
         )
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.SignaturesByBugs.get')
     @mock.patch('requests.get')
     def test_topcrasher_ranks_bybug(self, rget, rpost):
         url = reverse('crashstats:topcrasher_ranks_bybug')
 
-        def mocked_post(**options):
-            assert '/bugs' in options['url'], options['url']
-            return Response("""
-               {"hits": [{"id": "123456789", "signature": "FakeSignature 1"},
-                         {"id": "123456789", "signature": "FakeSignature 3"}]}
-            """)
+        def mocked_bugs(**options):
+            return {
+                "hits": [
+                    {"id": "123456789", "signature": "FakeSignature 1"},
+                    {"id": "123456789", "signature": "FakeSignature 3"}
+                ]
+            }
+        rpost.side_effect = mocked_bugs
 
         def mocked_get(url, params, **options):
             signature_summary_data = copy.deepcopy(SAMPLE_SIGNATURE_SUMMARY)
@@ -1258,8 +1286,6 @@ class TestViews(BaseTestViews):
                     "end_date": "2012-05-24",
                     "totalNumberOfCrashes": 2}
                 """)
-
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {'bug_number': '123456789'})
@@ -1298,7 +1324,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'bug_number': '1234564654564646'})
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_topcrasher(self, rget, rpost):
         # first without a version
@@ -1317,18 +1343,17 @@ class TestViews(BaseTestViews):
         ok_(url in response['Location'])
 
         def mocked_post(**options):
-            assert '/bugs/' in options['url'], options['url']
-            return Response("""{
+            return {
                 "hits": [
                    {"id": 123456789,
                     "signature": "Something"},
                     {"id": 22222,
-                     "signature": "FakeSignature1 \u7684 Japanese"},
+                     "signature": u"FakeSignature1 \u7684 Japanese"},
                     {"id": 33333,
-                     "signature": "FakeSignature1 \u7684 Japanese"}
+                     "signature": u"FakeSignature1 \u7684 Japanese"}
                 ]
             }
-            """)
+        rpost.side_effect = mocked_post
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
@@ -1382,8 +1407,6 @@ class TestViews(BaseTestViews):
                 }
                 """)
             raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
         response = self.client.get(url)
@@ -1449,7 +1472,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_topcrasher_without_any_signatures(self, rget, rpost):
         # first without a version
@@ -1462,12 +1485,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(no_version_url)
         ok_(url in response['Location'])
 
-        def mocked_post(**options):
-            assert '/bugs' in options['url'], options['url']
-            return Response("""
-               {"hits": [{"id": "123456789",
-                          "signature": "Something"}]}
-            """)
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
@@ -1497,8 +1515,6 @@ class TestViews(BaseTestViews):
                 }
                 """)
             raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
         response = self.client.get(url)
@@ -1548,7 +1564,7 @@ class TestViews(BaseTestViews):
         )
         ok_(response['location'].endswith(correct_url))
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget, rpost):
         url = reverse(
@@ -1556,21 +1572,10 @@ class TestViews(BaseTestViews):
             args=(settings.DEFAULT_PRODUCT,)
         )
 
-        def mocked_post(url, **options):
-            assert '/bugs' in url, url
-            return Response({
-                "hits": [
-                    {"id": "111111111", "signature": "FakeSignature 1"},
-                    {"id": "222222222", "signature": "FakeSignature 3"},
-                    {"id": "101010101", "signature": "FakeSignature"}
-                ]
-            })
-
-        rpost.side_effect = mocked_post
+        rpost.side_effect = mocked_post_threesigs
 
         def mocked_get(url, params, **options):
             assert '/crashes/exploitability' in url
-
             ok_('product' in params)
             eq_('WaterWolf', params['product'])
 
@@ -1591,7 +1596,6 @@ class TestViews(BaseTestViews):
                     "total": 1
                   }
             """ % (settings.DEFAULT_PRODUCT,))
-
         rget.side_effect = mocked_get
 
         response = self.client.get(url)
@@ -1620,7 +1624,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'page': 'meow'})
         ok_(response.status_code, 200)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_exploitable_crashes_by_product_and_version(self, rget, rpost):
         url = reverse(
@@ -1628,17 +1632,7 @@ class TestViews(BaseTestViews):
             args=(settings.DEFAULT_PRODUCT, '19.0')
         )
 
-        def mocked_post(url, **options):
-            assert '/bugs' in url, url
-            return Response({
-                "hits": [
-                    {"id": "111111111", "signature": "FakeSignature 1"},
-                    {"id": "222222222", "signature": "FakeSignature 3"},
-                    {"id": "101010101", "signature": "FakeSignature"}
-                ]
-            })
-
-        rpost.side_effect = mocked_post
+        rpost.side_effect = mocked_post_threesigs
 
         def mocked_get(url, params, **options):
             assert '/crashes/exploitability' in url
@@ -2101,22 +2095,21 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
         ok_(response['location'].endswith(target))
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query(self, rget, rpost):
 
         def mocked_post(**options):
-            assert '/bugs' in options['url'], options['url']
-            return Response("""
-                {"hits": [
+            return {
+                "hits": [
                     {
-                    "id": "123456",
-                    "signature": "nsASDOMWindowEnumerator::GetNext()"
+                        "id": "123456",
+                        "signature": "nsASDOMWindowEnumerator::GetNext()"
                     }
-                 ],
-                 "total": 1
-                }
-            """)
+                ],
+                "total": 1
+            }
+        rpost.side_effect = mocked_post
 
         def mocked_get(url, params, **options):
             assert '/search/signatures' in url
@@ -2209,7 +2202,6 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2349,12 +2341,11 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('value="12345, 54321"' in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query_range(self, rget, rpost):
 
-        def mocked_post(**options):
-            return Response('{"hits": [], "total": 0}')
+        rpost.side_effect = mocked_post_nohits
 
         def mocked_get(url, params, **options):
             assert '/search/signatures' in url
@@ -2372,7 +2363,6 @@ class TestViews(BaseTestViews):
             ''' % {'x': x} for x in range(150))
             return Response('{"hits": [%s], "total": 150}' % response)
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2417,12 +2407,11 @@ class TestViews(BaseTestViews):
             in response.content)
         ok_('value="days" selected' in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query_pagination(self, rget, rpost):
 
-        def mocked_post(**options):
-            return Response('{"hits": [], "total": 0}')
+        rpost.side_effect = mocked_post_nohits
 
         def mocked_get(url, params, **options):
             assert '/search/signatures' in url
@@ -2440,7 +2429,6 @@ class TestViews(BaseTestViews):
             ''' % {'x': x} for x in range(150))
             return Response('{"hits": [%s], "total": 150}' % response)
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2450,17 +2438,14 @@ class TestViews(BaseTestViews):
         next_page_url = '%s?do_query=1&amp;page=2' % url
         ok_(next_page_url in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query_summary(self, rget, rpost):
-
-        def mocked_post(**options):
-            return Response('{"hits": [], "total": 0}')
 
         def mocked_get(url, params, **options):
             return Response('{"hits": [], "total": 0}')
 
-        rpost.side_effect = mocked_post
+        rpost.side_effect = mocked_post_nohits
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2496,12 +2481,11 @@ class TestViews(BaseTestViews):
         ok_('and its filename starts with lib' in response.content)
 
     @override_settings(SEARCH_MIDDLEWARE_IMPL='elasticsearch')
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query_force_impl_settings(self, rget, rpost):
 
-        def mocked_post(**options):
-            return Response('{"hits": [], "total": 0}')
+        rpost.side_effect = mocked_post_nohits
 
         def mocked_get(url, params, **options):
             ok_('_force_api_impl' in params)
@@ -2509,7 +2493,6 @@ class TestViews(BaseTestViews):
 
             return Response('{"hits": [], "total": 0}')
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2518,12 +2501,11 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query_force_impl_url(self, rget, rpost):
 
-        def mocked_post(**options):
-            return Response('{"hits": [], "total": 0}')
+        rpost.side_effect = mocked_post_nohits
 
         def mocked_get(url, params, **options):
             ok_('_force_api_impl' in params)
@@ -2531,7 +2513,6 @@ class TestViews(BaseTestViews):
 
             return Response('{"hits": [], "total": 0}')
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2542,12 +2523,11 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
     @override_settings(SEARCH_MIDDLEWARE_IMPL='mongodb')
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_query_force_impl_url_over_settings(self, rget, rpost):
 
-        def mocked_post(**options):
-            return Response('{"hits": [], "total": 0}')
+        rpost.side_effect = mocked_post_nohits
 
         def mocked_get(url, params, **options):
             ok_('_force_api_impl' in params)
@@ -2555,7 +2535,6 @@ class TestViews(BaseTestViews):
 
             return Response('{"hits": [], "total": 0}')
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
         url = reverse('crashstats:query')
 
@@ -2740,7 +2719,7 @@ class TestViews(BaseTestViews):
         eq_(resp['counts'][-1][0], now)
         eq_(resp['counts'][-1][1], 100)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_topchangers(self, rget, rpost):
         url = reverse('crashstats:topchangers',
@@ -2755,12 +2734,7 @@ class TestViews(BaseTestViews):
         url_wo_version = reverse('crashstats:topchangers',
                                  args=('WaterWolf',))
 
-        def mocked_post(**options):
-            assert 'by=signatures' in options['url'], options['url']
-            return Response("""
-               {"bug_associations": [{"bug_id": "123456789",
-                                      "signature": "Something"}]}
-            """)
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
@@ -2797,7 +2771,6 @@ class TestViews(BaseTestViews):
                 """)
             raise NotImplementedError(url)
 
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
         response = self.client.get(url_wo_version)
@@ -3194,7 +3167,7 @@ class TestViews(BaseTestViews):
         ok_('test@mozilla.com' in response.content)
         ok_('no crash report' in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -3204,6 +3177,8 @@ class TestViews(BaseTestViews):
         comment0 += "\\nwww.p0rn.com"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
+
+        rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
             if '/crash_data' in url:
@@ -3230,13 +3205,6 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response(BUG_STATUS)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -3285,11 +3253,13 @@ class TestViews(BaseTestViews):
         ok_('&#34;exploitability&#34;' in response.content)
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_additional_raw_dump_links(self, rget, rpost):
         # using \\n because it goes into the JSON string
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
+
+        rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
             if '/crash_data' in url:
@@ -3353,13 +3323,6 @@ class TestViews(BaseTestViews):
 
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response(BUG_STATUS)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
         response = self.client.get(url)
@@ -3399,7 +3362,7 @@ class TestViews(BaseTestViews):
         )
         ok_(bar_dmp_url in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_fennecandroid_report(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -3409,6 +3372,8 @@ class TestViews(BaseTestViews):
         comment0 += "\\nwww.p0rn.com"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
+
+        rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
             if '/crash_data' in url:
@@ -3440,13 +3405,6 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response(BUG_STATUS)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
 
@@ -3466,7 +3424,7 @@ class TestViews(BaseTestViews):
             link = doc('a.sig-overview').eq(0)
             ok_('product=WinterSun' in link.attr('href'))
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_odd_product_and_version(self, rget, rpost):
         """If the processed JSON references an unfamiliar product and
@@ -3479,6 +3437,8 @@ class TestViews(BaseTestViews):
         comment0 += "\\nwww.p0rn.com"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
+
+        rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
             if '/crash_data' in url:
@@ -3512,13 +3472,6 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response(BUG_STATUS)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
@@ -3534,7 +3487,7 @@ class TestViews(BaseTestViews):
         bad_url = reverse('crashstats:home', args=('SummerWolf',))
         ok_(bad_url not in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_correlations_failed(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -3542,6 +3495,8 @@ class TestViews(BaseTestViews):
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
+
+        rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
             if '/crash_data' in url:
@@ -3560,13 +3515,6 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response(BUG_STATUS)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -3621,9 +3569,8 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_report_pending_today(self, rget, rpost):
+    def test_report_pending_today(self, rget):
         def mocked_get(url, params, **options):
             if (
                 '/crash_data' in url and
@@ -3654,7 +3601,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_hangid_in_raw_data(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
@@ -3662,6 +3609,8 @@ class TestViews(BaseTestViews):
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
+
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if (
@@ -3756,16 +3705,6 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
@@ -3773,7 +3712,7 @@ class TestViews(BaseTestViews):
         # the HangID in the fixture above
         ok_('123456789' in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_invalid_InstallTime(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
@@ -3781,6 +3720,8 @@ class TestViews(BaseTestViews):
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
+
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if (
@@ -3875,22 +3816,12 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         ok_('<th>Install Time</th>' not in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_invalid_parsed_dump(self, rget, rpost):
         json_dump = {
@@ -3926,6 +3857,8 @@ class TestViews(BaseTestViews):
         url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
 
+        rpost.side_effect = mocked_post_123
+
         def mocked_get(url, params, **options):
             if (
                 '/crash_data' in url and
@@ -4019,22 +3952,12 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         ok_('<th>Install Time</th>' not in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_sparse_json_dump(self, rget, rpost):
         json_dump = {u'status': u'ERROR_NO_MINIDUMP_HEADER', u'sensitive': {}}
@@ -4044,6 +3967,8 @@ class TestViews(BaseTestViews):
         url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
 
+        rpost.side_effect = mocked_post_123
+
         def mocked_get(url, params, **options):
             if (
                 '/crash_data' in url and
@@ -4137,22 +4062,12 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_crash_exploitability(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
@@ -4162,6 +4077,8 @@ class TestViews(BaseTestViews):
         email1 = "some@otheremailaddress.com"
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if (
@@ -4256,16 +4173,6 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
-
         url = reverse('crashstats:report_index', args=[crash_id])
 
         response = self.client.get(url)
@@ -4302,11 +4209,13 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_("Crash Not Found" in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_raw_crash_not_found(self, rget, rpost):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
+
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             assert '/crash_data/' in url
@@ -4350,16 +4259,6 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
 
         url = reverse('crashstats:report_index',
                       args=[crash_id])
@@ -5422,23 +5321,20 @@ class TestViews(BaseTestViews):
         ))
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_report_list_partial_bugzilla(self, rpost):
 
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response({
-                    "hits": [
-                        {"id": 111111,
-                         "signature": "Something"},
-                        {"id": 123456789,
-                         "signature": "Something"}
-                    ]
-                })
-
-            raise NotImplementedError(url)
-
+        def mocked_post(**options):
+            return {
+                "hits": [
+                    {"id": 111111,
+                     "signature": "Something"},
+                    {"id": 123456789,
+                     "signature": "Something"}
+                ]
+            }
         rpost.side_effect = mocked_post
+
         url = reverse('crashstats:report_list_partial', args=('bugzilla',))
         response = self.client.get(url, {
             'signature': 'sig',
@@ -5534,7 +5430,7 @@ class TestViews(BaseTestViews):
         ok_('1150 - 100.0%' in response.content)
         ok_('1250 - 100.0%' in response.content)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_redirect_by_prefix(self, rget, rpost):
 
@@ -5543,6 +5439,8 @@ class TestViews(BaseTestViews):
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
+
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if (
@@ -5628,16 +5526,6 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response("""
-                   {"hits": [{"id": "123456789",
-                              "signature": "Something"}]}
-                """)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
 
         base_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         crash_id = settings.CRASH_ID_PREFIX + base_crash_id
@@ -5728,11 +5616,13 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('bla bla bla' in response.content)  # still. good.
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_remembered_date_range_type(self, rget, rpost):
         # if you visit the home page, the default date_range_type will be
         # 'report' but if you switch to 'build' it'll remember that
+
+        rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
             if '/products' in url and 'versions' not in params:
@@ -5832,15 +5722,6 @@ class TestViews(BaseTestViews):
                 """)
 
             raise NotImplementedError(url)
-
-        def mocked_post(**options):
-            assert '/bugs/' in options['url'], options['url']
-            return Response("""
-               {"hits": [{"id": "123456789",
-                          "signature": "Something"}]}
-            """)
-
-        rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
 
         url = reverse('crashstats:home', args=('WaterWolf',))
