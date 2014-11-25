@@ -5,6 +5,8 @@
 
 """the processor_app converts raw_crashes into processed_crashes"""
 
+import os
+
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -138,40 +140,58 @@ class ProcessorApp(FetchTransformSaveApp):
                 )
                 return
 
-            if 'uuid' not in raw_crash:
-                raw_crash.uuid = crash_id
-            processed_crash = (
-                self.processor.convert_raw_crash_to_processed_crash(
-                    raw_crash,
-                    dumps
+            try:
+
+                if 'uuid' not in raw_crash:
+                    raw_crash.uuid = crash_id
+                processed_crash = (
+                    self.processor.convert_raw_crash_to_processed_crash(
+                        raw_crash,
+                        dumps
+                    )
                 )
-            )
-            """ bug 866973 - save_raw_and_processed() instead of just processed
-                We are doing this in lieu of a queuing solution that could
-                allow us to operate an independent crashmover. When the queuing
-                system is implemented, we could go back to just saving the
-                processed crash, and have the raw crash saved by a crashmover
-                that's consuming crash_ids the same way that the processor
-                consumes them.
-            """
-            self.destination.save_raw_and_processed(
-                raw_crash,
-                None,
-                processed_crash,
-                crash_id
-            )
+                """ bug 866973 - save_raw_and_processed() instead of just
+                    save_processed().  The raw crash may have been modified
+                    by the processor rules.  The individual crash storage
+                    implementations may choose to honor re-saving the raw_crash
+                    or not.
+                """
+                self.destination.save_raw_and_processed(
+                    raw_crash,
+                    None,
+                    processed_crash,
+                    crash_id
+                )
+            finally:
+                # earlier, we created the dumps as files on the file system,
+                # we need to clean up after ourselves.
+                for a_dump_pathname in dumps.itervalues():
+                    try:
+                        if "TEMPORARY" in a_dump_pathname:
+                            os.unlink(a_dump_pathname)
+                    except os.OSError, x:
+                        # the file does not actually exist
+                        self.config.logger.info(
+                            'deletion of dump failed: %s',
+                            x,
+                        )
         finally:
             # no matter what causes this method to end, we need to make sure
             # that the finished_func gets called. If the new crash source is
             # RabbitMQ, this is what removes the job from the queue.
             try:
                 finished_func()
-            except Exception:
+            except Exception, x:
                 # when run in a thread, a failure here is not a problem, but if
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem
                 # so that we can continue.
-                self.config.logger.error('Error completing job', exc_info=True)
+                self.config.logger.error(
+                    'Error completing job %s: %s',
+                    crash_id,
+                    x,
+                    exc_info=True
+                )
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
