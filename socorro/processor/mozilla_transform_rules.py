@@ -764,8 +764,8 @@ class MissingSymbolsRule(Rule):
             self.database,
         )
         self.sql = (
-            "INSERT INTO missing_symbols(date, debug_file, debug_id) "
-            "VALUES (%s, %s, %s)"
+            "INSERT INTO missing_symbols(date_processed, debug_file, debug_id)"
+            " VALUES (%s, %s, %s)"
         )
 
     #--------------------------------------------------------------------------
@@ -793,7 +793,7 @@ class MissingSymbolsRule(Rule):
                     except self.database.ProgrammingError as e:
                         processor_meta.processor_notes.append(
                             "WARNING: missing symbols rule failed for"
-                            " %s" % key
+                            " %s" % raw_crash.uuid
                         )
                 else:
                     return False
