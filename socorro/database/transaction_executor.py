@@ -43,13 +43,19 @@ class TransactionExecutor(RequiredConfig):
                 result = function(connection, *args, **kwargs)
                 connection.commit()
                 return result
-            except:
+            except BaseException, x:
                 connection.rollback()
-                self.config.logger.error(
-                    'Exception raised during %s transaction',
-                    self.connection_source_type,
-                    exc_info=True)
-                self.db_conn_context_source.force_reconnect()
+                if hasattr(x, 'abandon_transaction'):
+                    self.config.logger.debug(
+                        '%s transaction intentionally abandoned by exception',
+                        self.connection_source_type)
+                    return
+                else:
+                    self.config.logger.error(
+                        'Exception raised during %s transaction',
+                        self.connection_source_type,
+                        exc_info=True)
+                    self.db_conn_context_source.force_reconnect()
                 raise
 
 
@@ -107,6 +113,7 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                     except:
                         connection.rollback()
                         raise
+
             except self.db_conn_context_source.conditional_exceptions, x:
                 # these exceptions may or may not be retriable
                 # the test is for is a last ditch effort to see if
@@ -128,6 +135,15 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                     '%s transaction error eligible for retry',
                     self.connection_source_type,
                     exc_info=True)
+
+            except BaseException, x:
+                if hasattr(x, 'abandon_transaction'):
+                    self.config.logger.debug(
+                        '%s transaction intentionally abandoned by exception',
+                        self.connection_source_type)
+                    return
+                raise
+
             self.db_conn_context_source.force_reconnect()
             self.config.logger.debug(
                 'retry in %s seconds' % wait_in_seconds
