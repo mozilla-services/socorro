@@ -793,7 +793,7 @@ class MissingSymbolsRule(Rule):
                     except self.database.ProgrammingError as e:
                         processor_meta.processor_notes.append(
                             "WARNING: missing symbols rule failed for"
-                            " %s" % key
+                            " %s" % raw_crash.uuid
                         )
                 else:
                     return False
