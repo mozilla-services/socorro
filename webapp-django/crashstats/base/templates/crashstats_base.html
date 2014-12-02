@@ -113,10 +113,6 @@
   {% endblock %}
 
         <div class="search">
-            <a href="{{ url('crashstats:query') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ product}}:{{ version }}{% endif %}#advanced">
-                Advanced Search
-            </a>
-            -
             <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}">
                 Super Search
             </a>
