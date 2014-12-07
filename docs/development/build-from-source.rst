@@ -144,3 +144,12 @@ PostgreSQL username/hostname/etc, refer to config/common_database.ini-dist and
 the "+include" line in the service-specific config files (such as
 collector.ini and processor.ini). This is optional but recommended.
 
+Troubleshooting
+---------------
+
+If you are seeing errors after starting Socorro with honcho, it may be
+that a previous unsuccessful run didn't clean up all the Python processes.
+
+You can inspect for such stray processes using ps:
+::
+  ps ax | grep python
