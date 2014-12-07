@@ -12,3 +12,10 @@ services (including web services).
 If web services are not starting up, /var/log/httpd is a good place to look.
 
 If you are not able to log in, try hitting http://crash-stats/_debug_login
+
+If you are seeing errors after starting Socorro with honcho, it may be 
+that a previous unsuccessful run didn't clean up all the Python processes. 
+You can inspect for such stray processes using ps:
+::
+  ps ax | grep python
+
