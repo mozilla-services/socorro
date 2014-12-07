@@ -211,7 +211,7 @@ Install lessc
 
 Set your PATH
 ::
-  export PATH=/usr/local/bin:$PATH
+  export PATH=/usr/local/bin:/usr/local/sbin:$PATH
 
 Initialize and run PostgreSQL
 ::
@@ -235,3 +235,7 @@ Ensure that timezone is set to UTC
 Restart PostgreSQL to activate config changes, if the above was changed
 ::
   pg_ctl restart
+
+Start RabbitMQ
+::
+  rabbitmq-server
