@@ -5,6 +5,8 @@
 import elasticsearch
 import mock
 import os
+import random
+import uuid
 from elasticsearch.helpers import bulk
 
 from configman import ConfigurationManager
@@ -760,8 +762,14 @@ class ElasticsearchTestCase(TestCase):
 
         return config_manager.get_config()
 
-    def get_mware_config(self):
-        return self.get_tuned_config(MiddlewareApp)
+    def get_mware_config(self, es_index=None):
+        extra_values = None
+        if es_index:
+            extra_values = {
+                'resource.elasticsearch.elasticsearch_index': es_index
+            }
+
+        return self.get_tuned_config(MiddlewareApp, extra_values=extra_values)
 
     def index_super_search_fields(self, fields=None):
         if fields is None:
@@ -784,3 +792,57 @@ class ElasticsearchTestCase(TestCase):
             actions=actions,
         )
         self.index_client.refresh(index=[es_index])
+
+    def index_crash(self, processed_crash, raw_crash=None, crash_id=None):
+        if crash_id is None:
+            crash_id = str(uuid.UUID(int=random.getrandbits(128)))
+
+        if raw_crash is None:
+            raw_crash = {}
+
+        doc = {
+            'crash_id': crash_id,
+            'processed_crash': processed_crash,
+            'raw_crash': raw_crash,
+        }
+        res = self.connection.index(
+            index=self.config.elasticsearch.elasticsearch_index,
+            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            id=crash_id,
+            body=doc,
+        )
+        return res['_id']
+
+    def index_many_crashes(self, number, processed_crash=None, raw_crash=None):
+        if processed_crash is None:
+            processed_crash = {}
+
+        if raw_crash is None:
+            raw_crash = {}
+
+        actions = []
+        for i in range(number):
+            crash_id = str(uuid.UUID(int=random.getrandbits(128)))
+            doc = {
+                'crash_id': crash_id,
+                'processed_crash': processed_crash,
+                'raw_crash': raw_crash,
+            }
+            action = {
+                '_index': self.config.elasticsearch.elasticsearch_index,
+                '_type': self.config.elasticsearch.elasticsearch_doctype,
+                '_id': crash_id,
+                '_source': doc,
+            }
+            actions.append(action)
+
+        bulk(
+            client=self.connection,
+            actions=actions,
+        )
+        self.refresh_index()
+
+    def refresh_index(self):
+        self.index_client.refresh(
+            index=self.config.elasticsearch.elasticsearch_index
+        )

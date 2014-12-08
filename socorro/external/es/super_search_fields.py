@@ -5,10 +5,10 @@
 
 class SuperSearchFields(object):
 
-    def __init__(self, config, *args, **kwargs):
-        super(SuperSearchFields, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        # super(SuperSearchFields, self).__init__(*args, **kwargs)
 
-        self.config = config
+        self.config = kwargs.get('config')
         self.es_context = self.config.elasticsearch.elasticsearch_class(
             self.config.elasticsearch
         )
