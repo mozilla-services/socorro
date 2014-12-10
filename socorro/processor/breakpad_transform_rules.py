@@ -9,6 +9,8 @@ from collections import Mapping
 
 from configman import Namespace
 
+from socorro.lib.converters import change_default
+
 from socorro.lib.util import DotDict
 from socorro.lib.transform_rules import Rule
 
@@ -301,5 +303,159 @@ class CrashingThreadRule(Rule):
 
         return True
 
+
+#==============================================================================
+class ExternalProcessRule(Rule):
+
+    required_config = Namespace()
+    required_config.add_option(
+        'dump_field',
+        doc='the default name of a dump',
+        default='upload_file_minidump',
+    )
+    required_config.add_option(
+        'command_line',
+        doc='the template for the command to invoke the external program',
+        default=(
+            'timeout -s KILL 30 %(command_pathname)s 2>/dev/null'
+        ),
+    )
+    required_config.add_option(
+        'command_pathname',
+        doc='the full pathname to the external program to run '
+        '(quote path with embedded spaces)',
+        default='/data/socorro/stackwalk/bin/dumplookup',
+    )
+    required_config.add_option(
+        'result_key',
+        doc='the key where the external process result should be stored '
+            'in the processed crash',
+        default='%s_result' %
+            required_config.command_pathname.default.split('/')[-1]
+            .replace('-',''),
+    )
+    required_config.add_option(
+        'return_code_key',
+        doc='the key where the external process return code should be stored '
+            'in the processed crash',
+        default='%s_return_code' %
+            required_config.command_pathname.default.split('/')[-1],
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(ExternalProcessRule, self).__init__(config)
+        self.command_line = config.command_line % config
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _execute_external_process(self, command_line, processor_meta):
+        subprocess_handle = subprocess.Popen(
+            command_line,
+            shell=True,
+            stdout=subprocess.PIPE
+        )
+        with closing(subprocess_handle.stdout):
+            try:
+                external_command_output = ujson.load(subprocess_handle.stdout)
+            except Exception, x:
+                processor_meta.processor_notes.append(
+                    "%s output failed in json conversion: %s" % (
+                        self.config.command_pathname,
+                        x
+                    )
+                )
+                external_command_output = {}
+
+        return_code = subprocess_handle.wait()
+        return external_command_output, return_code
+
+    #--------------------------------------------------------------------------
+    def _save_results(
+        self,
+        external_command_output,
+        return_code,
+        raw_crash,
+        processed_crash,
+        processor_meta
+    ):
+        processed_crash[self.config.result_key] = external_command_output
+        processed_crash[self.config.return_code_key] = return_code
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        command_line = self.command_line % {
+            "dump_file_pathname": raw_dumps[self.config['dump_field']]
+        }
+
+        external_command_output, external_process_return_code = \
+            self._execute_external_process(command_line, processor_meta)
+
+        self._save_results(
+            external_command_output,
+            external_process_return_code,
+            raw_crash,
+            processed_crash,
+            processor_meta
+        )
+
+        return True
+
+
+#==============================================================================
+class DumpLookupExternalRule(ExternalProcessRule):
+
+    required_config = Namespace()
+    required_config.add_option(
+        'dump_field',
+        doc='the default name of a dump',
+        default='upload_file_minidump',
+    )
+    required_config.add_option(
+        'processor_symbols_pathname_list',
+        doc='comma or space separated list of symbol files just as for '
+        'minidump_stackwalk (quote paths with embedded spaces)',
+        default='/mnt/socorro/symbols/symbols_ffx,'
+        '/mnt/socorro/symbols/symbols_sea,'
+        '/mnt/socorro/symbols/symbols_tbrd,'
+        '/mnt/socorro/symbols/symbols_sbrd,'
+        '/mnt/socorro/symbols/symbols_os',
+        from_string_converter=_create_symbol_path_str
+    )
+    required_config.command_pathname = change_default(
+        ExternalProcessRule,
+        'command_pathname',
+        '/data/socorro/stackwalk/bin/dump-lookup'
+    )
+    required_config.command_line = change_default(
+        ExternalProcessRule,
+        'command_line',
+        'timeout -s KILL 30 %(command_pathname)s '
+        '%%(dumpfile_pathname)s '
+        '%(processor_symbols_pathname_list)s 2>/dev/null'
+    )
+    required_config.result_key = change_default(
+        ExternalProcessRule,
+        'result_key',
+        'dump_lookup'
+    )
+    required_config.return_code_key = change_default(
+        ExternalProcessRule,
+        'return_code_key',
+        'dump_lookup_return_code'
+    )
+
+    #--------------------------------------------------------------------------
+    def _predicate(
+        self,
+        raw_crash,
+        raw_dumps,
+        processed_crash,
+        processor_meta
+    ):
+        return 'create_dump_lookup' in raw_crash
 
 

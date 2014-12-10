@@ -105,3 +105,12 @@ def str_to_classes_in_namespaces_converter(
         return InnerClassList  # result of class_list_converter
 
     return class_list_converter  # result of classes_in_namespaces_converter
+
+
+#------------------------------------------------------------------------------
+def change_default(kls, key, new_default):
+    """return a new configman Option object that is a copy of an existing one,
+    giving the new one a different default value"""
+    an_option = kls.get_required_config()[key].copy()
+    an_option.default = new_default
+    return an_option

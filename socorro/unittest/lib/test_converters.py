@@ -1,7 +1,12 @@
+from nose.tools import eq_, ok_
+
 from configman import ConfigurationManager, RequiredConfig, Namespace
 from configman.converters import to_str, str_to_python_object
 
-from socorro.lib.converters import str_to_classes_in_namespaces_converter
+from socorro.lib.converters import (
+    str_to_classes_in_namespaces_converter,
+    change_default
+)
 from socorro.unittest.testbase import TestCase
 
 #==============================================================================
@@ -205,10 +210,37 @@ class TestConverters(TestCase):
         )
         config = cm.get_config()
 
-
         self.assertEqual(len(config.kls_list.subordinate_namespace_names), 4)
         for i, (a_class_name, a_class, ns_name) in \
             enumerate(config.kls_list.class_list):
             self.assertTrue(isinstance(a_class_name, str))
             self.assertEqual(a_class_name, a_class.__name__)
             self.assertEqual(ns_name, "%s_%02d" % (a_class_name, i))
+
+    def test_change_default(self):
+        class Alpha(RequiredConfig):
+            required_config = Namespace()
+            required_config.add_option(
+                'an_option',
+                default=19,
+                doc='this is an an_option',
+                from_string_converter=str,
+            )
+        a_new_option_with_a_new_default = change_default(
+            Alpha,
+            'an_option',
+            '29300'
+        )
+
+        ok_(
+            a_new_option_with_a_new_default
+            is not Alpha.required_config.an_option
+        )
+        eq_(
+            a_new_option_with_a_new_default.default,
+            '29300'
+        )
+        eq_(
+            Alpha.required_config.an_option.default,
+            19
+        )
