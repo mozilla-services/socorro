@@ -394,3 +394,107 @@ class TestTransactionExecutor(TestCase):
             assert_raises(psycopg2.ProgrammingError,
                               executor,
                               mock_function_developer_mistake)
+
+    def test_abandon_transaction(self):
+        """this is when a transaction is intentionally aborted, not because
+        of an error, but because the client of the TransactionExcutor has
+        determined that the transaction is of no further use."""
+        required_config = Namespace()
+        required_config.add_option(
+          'transaction_executor_class',
+          default=TransactionExecutor,
+          doc='a class that will execute transactions'
+        )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[],
+          argv_source=[]
+        )
+        with config_manager.context() as config:
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(
+                config,
+                mocked_context
+            )
+
+            class AbandonTransaction(Exception):
+                abandon_transaction = True
+
+            def mock_function(connection):
+                assert isinstance(connection, MockConnection)
+                connection.transaction_status = \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                raise AbandonTransaction('crap!')
+
+            # the method to test
+            executor(mock_function)
+
+            eq_(commit_count, 0)
+            eq_(rollback_count, 1)
+            ok_(not mock_logging.errors)
+
+    def test_abandon_backoff_transaction(self):
+        """this is when a transaction is intentionally aborted, not because
+        of an error, but because the client of the TransactionExcutor has
+        determined that the transaction is of no further use.  This test
+        uses the TransactionExecutorWithInfiniteBackoff class instead of
+        the base TransactionExcutor"""
+        required_config = Namespace()
+        required_config.add_option(
+          'transaction_executor_class',
+          default=TransactionExecutorWithInfiniteBackoff,
+          doc='a class that will execute transactions'
+        )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[],
+          argv_source=[]
+        )
+        with config_manager.context() as config:
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(
+                config,
+                mocked_context
+            )
+
+            class AbandonTransaction(Exception):
+                abandon_transaction = True
+
+            def mock_function(connection):
+                assert isinstance(connection, MockConnection)
+                connection.transaction_status = \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                raise AbandonTransaction('crap!')
+
+            # the method to test
+            executor(mock_function)
+
+            eq_(commit_count, 0)
+            eq_(rollback_count, 1)
+            ok_(not mock_logging.errors)
+
+

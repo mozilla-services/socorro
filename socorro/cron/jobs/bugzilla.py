@@ -37,6 +37,7 @@ _URL = (
 class NothingUsefulHappened(Exception):
     """an exception to be raised when a pass through the inner loop has
     done nothing useful and we wish to induce a transaction rollback"""
+    abandon_transaction = True
 
 
 @with_postgres_transactions()
