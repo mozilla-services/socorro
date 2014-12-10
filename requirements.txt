@@ -158,6 +158,7 @@ django-jsonfield==0.9.13
 # sha256: iTXjRYmmVJstzm7v-uQNInOetVtqmUow9mpCjW-YuBM
 eventlog==0.8.0
 # sha256: Dyn1RPbQN5ifoMdymp6rfk2OpQ1vDvNzY_RydWwe3KY
+# sha256: PYBK7mdyHzjoQO-jo65SiYMo5kcJJZNB8qiQHVvwHNQ
 sphinx_rtd_theme
 # sha256: qZ245ZwSATitinLuztzCS0UQ0u7TzkghO34y8izE7m4
 pyOpenSSL==0.14
