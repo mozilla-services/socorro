@@ -801,6 +801,7 @@ class TestViews(BaseTestViews):
         ok_('_facets=platform' in next_page_url)
         ok_('_columns=version' in next_page_url)
         ok_('page=2' in next_page_url)
+        ok_('#crash-reports' in next_page_url)
 
         # Test that a negative page value does not break it.
         response = self.client.get(url, {'page': '-1'})

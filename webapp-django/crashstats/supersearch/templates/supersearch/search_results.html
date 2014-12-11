@@ -10,7 +10,7 @@
 </ul>
 
 <div id="crash-reports">
-    {{ pagination(query, current_url, current_page) }}
+    {{ pagination(query, current_url, current_page, '#crash-reports') }}
     <table id="reports-list" class="tablesorter data-table">
         <caption>Crash Reports</caption>
         <thead>
@@ -65,7 +65,7 @@
             {% endfor %}
         </tbody>
     </table>
-    {{ pagination(query, current_url, current_page) }}
+    {{ pagination(query, current_url, current_page, '#crash-reports') }}
 </div>
 
 {% for facet in query.facets %}
