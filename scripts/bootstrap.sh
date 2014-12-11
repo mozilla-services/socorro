@@ -17,6 +17,9 @@ source "$VIRTUAL_ENV/bin/activate"
 ${VIRTUAL_ENV}/bin/pip install tools/peep-2.0.tar.gz
 ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
+# install socorro in local virtualenv
+${VIRTUAL_ENV}/bin/python setup.py install
+
 if [ "`uname -sm`" == "Linux x86_64" ]; then
   # pull pre-built, known version of breakpad
   wget -N --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
