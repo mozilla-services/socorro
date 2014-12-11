@@ -701,6 +701,23 @@ SUPERSEARCH_FIELDS = {
             'type': 'string'
         }
     },
+    'write_combine_size': {
+        'data_validation_type': 'int',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'write_combine_size',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'write_combine_size',
+        'namespace': 'processed_crash.json_dump',
+        'permissions_needed': [],
+        'query_type': 'number',
+        'storage_mapping': {
+            'type': 'long'
+        }
+    },
     'fake_field': {
         'data_validation_type': 'enum',
         'default_value': None,

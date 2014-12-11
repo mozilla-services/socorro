@@ -90,7 +90,7 @@ class SuperSearch(SearchBase):
 
             if '.' in new_field:
                 # Remove the prefix ("processed_crash." or "raw_crash.").
-                new_field = new_field.split('.', 1)[1]
+                new_field = new_field.split('.')[-1]
 
             new_field = self.database_name_to_field_name_map.get(
                 new_field, new_field

@@ -95,6 +95,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         self.index_crash({
             'signature': 'js::break_your_browser',
             'date_processed': self.now,
+            'build': 20000000,
+            'os_name': 'Linux',
+            'json_dump': {
+                'write_combine_size': 9823012
+            }
         })
         self.refresh_index()
 
@@ -113,6 +118,15 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             res['facets']['signature'][0],
             {'term': 'js::break_your_browser', 'count': 1}
         )
+
+        # Test fields are being renamed.
+        ok_('date' in res['hits'][0])  # date_processed > date
+        ok_('build_id' in res['hits'][0])  # build > build_id
+        ok_('platform' in res['hits'][0])  # os_name > platform
+
+        # Test namespaces are correctly removed.
+        # processed_crash.json_dump.write_combine_size > write_combine_size
+        ok_('write_combine_size' in res['hits'][0])
 
     def test_get_with_enum_operators(self):
         self.index_crash({
