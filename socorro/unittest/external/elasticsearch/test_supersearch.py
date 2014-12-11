@@ -694,6 +694,23 @@ SUPERSEARCH_FIELDS = {
             'type': 'string'
         }
     },
+    'write_combine_size': {
+        'data_validation_type': 'int',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'write_combine_size',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'write_combine_size',
+        'namespace': 'processed_crash.json_dump',
+        'permissions_needed': [],
+        'query_type': 'number',
+        'storage_mapping': {
+            'type': 'long'
+        }
+    },
     'fake_field': {
         'data_validation_type': 'enum',
         'default_value': None,
@@ -714,20 +731,26 @@ SUPERSEARCH_FIELDS = {
 class TestSuperSearch(ElasticSearchTestCase):
     """Test SuperSearch's behavior with a mocked elasticsearch database. """
 
-    def test_get_indexes(self):
-        config = self.get_config_context()
-        storage = crashstorage.ElasticSearchCrashStorage(config)
+    def setUp(self):
+        self.config = self.get_config_context()
+        self.storage = crashstorage.ElasticSearchCrashStorage(self.config)
+        es_index = self.config.webapi.elasticsearch_default_index
 
         # Create the supersearch fields.
-        storage.es.bulk_index(
-            index=config.webapi.elasticsearch_default_index,
+        self.storage.es.bulk_index(
+            index=es_index,
             doc_type='supersearch_fields',
             docs=SUPERSEARCH_FIELDS.values(),
             id_field='name',
             refresh=True,
         )
 
-        api = SuperSearch(config=config)
+    def tearDown(self):
+        es_index = self.config.webapi.elasticsearch_default_index
+        self.storage.es.delete_index(es_index)
+
+    def test_get_indexes(self):
+        api = SuperSearch(config=self.config)
 
         now = datetime.datetime(2000, 2, 1, 0, 0)
         lastweek = now - datetime.timedelta(weeks=1)
@@ -816,6 +839,9 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             'url': 'https://mozilla.org',
             'user_comments': '',
             'install_age': 0,
+            'json_dump': {
+                'write_combine_size': 88239132,
+            },
         }
         default_raw_crash_report = {
             'Accessibility': True,
@@ -1005,10 +1031,14 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         ]
         eq_(res['facets']['signature'], expected_signatures)
 
-        # Test fields are being renamed
+        # Test fields are being renamed.
         ok_('date' in res['hits'][0])  # date_processed > date
         ok_('build_id' in res['hits'][0])  # build > build_id
         ok_('platform' in res['hits'][0])  # os_name > platform
+
+        # Test namespaces are correctly removed.
+        # processed_crash.json_dump.write_combine_size
+        ok_('write_combine_size' in res['hits'][0])
 
     def test_get_individual_filters(self):
         """Test a search with single filters returns expected results. """
