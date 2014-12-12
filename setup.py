@@ -17,19 +17,6 @@ def read(fname):
         return f.read().strip()
 
 
-def find_dependency_links():
-    return [x.split('#egg=')[1]
-            for x in read('requirements.txt').splitlines()
-            if x.startswith('http')]
-
-
-def find_install_requires():
-    return [x.strip() for x in
-            read('requirements.txt').splitlines()
-            if x.strip() and not x.startswith('#')
-            and not x.startswith('http')]
-
-
 setup(
     name='socorro',
     version='master',
@@ -51,8 +38,7 @@ setup(
     keywords=['socorro', 'breakpad', 'crash', 'reporting', 'minidump',
               'stacktrace'],
     packages=find_packages(),
-    install_requires=find_install_requires(),
-    dependency_links=find_dependency_links(),
+    install_requires=[], # use peep -r requirements.txt instead
     entry_points={
         'console_scripts': [
                 'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'
