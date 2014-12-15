@@ -12,6 +12,7 @@ from socorro.external.es.index_creator import IndexCreator
 from socorro.lib import datetimeutil, search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
+    require_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -90,6 +91,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ]
         )
 
+    @require_es_version('1.0')
     def test_get(self):
         """Run a very basic test, just to see if things work. """
         self.index_crash({
@@ -128,6 +130,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # processed_crash.json_dump.write_combine_size > write_combine_size
         ok_('write_combine_size' in res['hits'][0])
 
+    @require_es_version('1.0')
     def test_get_with_enum_operators(self):
         self.index_crash({
             'product': 'WaterWolf',
@@ -181,6 +184,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             ok_('that I used' in hit['app_notes'])
 
+    @require_es_version('1.0')
     def test_get_with_string_operators(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -313,6 +317,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ok_(not facet['term'].endswith('rowser'))
             eq_(facet['count'], 1)
 
+    @require_es_version('1.0')
     def test_get_with_range_operators(self):
         self.index_crash({
             'build': 2000,
@@ -384,6 +389,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             ok_(hit['build_id'] <= 2000)
 
+    @require_es_version('1.0')
     def test_get_with_bool_operators(self):
         self.index_crash(
             processed_crash={
@@ -429,6 +435,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(len(res['hits']), 1)
         ok_(not res['hits'][0]['accessibility'])
 
+    @require_es_version('1.0')
     def test_get_with_pagination(self):
         number_of_crashes = 21
         processed_crash = {
@@ -468,6 +475,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(res['total'], number_of_crashes)
         eq_(len(res['hits']), 0)
 
+    @require_es_version('1.0')
     def test_get_with_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -493,7 +501,19 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             'os_name': 'Linux',
             'date_processed': self.now,
         })
-        self.refresh_index()
+
+        # Index a lot of distinct values to test the results limit.
+        number_of_crashes = 51
+        processed_crash = {
+            'version': '10.%s',
+            'date_processed': self.now,
+        }
+        self.index_many_crashes(
+            number_of_crashes,
+            processed_crash,
+            loop_field='version',
+        )
+        # Note: index_many_crashes does the index refreshing.
 
         # Test several facets
         kwargs = {
@@ -545,6 +565,15 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             {'term': 'WaterWolf', 'count': 1},
         ]
         eq_(res['facets']['product'], expected_terms)
+
+        # Test the number of results.
+        kwargs = {
+            '_facets': ['version'],
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('version' in res['facets'])
+        eq_(len(res['facets']['version']), self.api.config.facets_max_number)
 
         # Test errors
         assert_raises(

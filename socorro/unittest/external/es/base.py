@@ -4,12 +4,14 @@
 
 import elasticsearch
 import mock
-import os
 import random
 import uuid
+from distutils.version import LooseVersion
 from elasticsearch.helpers import bulk
+from functools import wraps
 
-from configman import ConfigurationManager
+from configman import ConfigurationManager, environment
+from nose import SkipTest
 
 from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.unittest.testbase import TestCase
@@ -735,6 +737,28 @@ SUPERSEARCH_FIELDS = {
 }
 
 
+def require_es_version(minimum_version):
+    """Skip the test if the Elasticsearch version is less than specified.
+    :arg minimum_version: string; the minimum Elasticsearch version required
+    """
+    def decorated(test):
+        """Decorator to only run the test if ES version is greater or
+        equal than specified.
+        """
+        @wraps(test)
+        def test_with_version(self):
+            "Only run the test if ES version is not less than specified."
+            actual_version = self.connection.info()['version']['number']
+            if LooseVersion(actual_version) >= LooseVersion(minimum_version):
+                test(self)
+            else:
+                raise SkipTest
+
+        return test_with_version
+
+    return decorated
+
+
 class ElasticsearchTestCase(TestCase):
     """Base class for Elastic Search related unit tests. """
 
@@ -773,7 +797,7 @@ class ElasticsearchTestCase(TestCase):
             app_name='testapp',
             app_version='1.0',
             app_description='Elasticsearch integration tests',
-            values_source_list=[os.environ, values_source],
+            values_source_list=[environment, values_source],
             argv_source=[],
         )
 
@@ -830,7 +854,9 @@ class ElasticsearchTestCase(TestCase):
         )
         return res['_id']
 
-    def index_many_crashes(self, number, processed_crash=None, raw_crash=None):
+    def index_many_crashes(
+        self, number, processed_crash=None, raw_crash=None, loop_field=None
+    ):
         if processed_crash is None:
             processed_crash = {}
 
@@ -840,9 +866,16 @@ class ElasticsearchTestCase(TestCase):
         actions = []
         for i in range(number):
             crash_id = str(uuid.UUID(int=random.getrandbits(128)))
+
+            if loop_field is not None:
+                processed_copy = processed_crash.copy()
+                processed_copy[loop_field] = processed_crash[loop_field] % i
+            else:
+                processed_copy = processed_crash
+
             doc = {
                 'crash_id': crash_id,
-                'processed_crash': processed_crash,
+                'processed_crash': processed_copy,
                 'raw_crash': raw_crash,
             }
             action = {
