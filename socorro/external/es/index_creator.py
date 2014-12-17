@@ -52,9 +52,7 @@ class IndexCreator(RequiredConfig):
     def get_index_client(self):
         """Maintained for interoperability purposes elsewhere in the codebase.
         """
-
-        with self.es_context() as conn:
-            return conn.indices_client()
+        return self.es_context.indices_client()
 
     def create_socorro_index(self, es_index):
         """Create an index that will receive crash reports. """
@@ -82,11 +80,12 @@ class IndexCreator(RequiredConfig):
             client = self.es_context.indices_client()
             client.create(
                 index=es_index,
-                body=es_settings
+                body=es_settings,
             )
             self.config.logger.info(
                 'Created new elasticsearch index: %s', es_index
             )
-        except elasticsearch.exceptions.RequestError:
+        except elasticsearch.exceptions.RequestError, e:
             # If this index already exists, swallow the error.
-            pass
+            if 'IndexAlreadyExistsException' not in str(e):
+                raise

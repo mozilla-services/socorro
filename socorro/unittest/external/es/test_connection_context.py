@@ -15,19 +15,12 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 @attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestConnectionContext(ElasticsearchTestCase):
-    def __init__(self, *args, **kwargs):
-        super(IntegrationTestConnectionContext, self).__init__(
-            *args, **kwargs
-        )
-
-        self.config = self.get_tuned_config(ConnectionContext)
 
     def test_connection_context(self):
         """Instantiate the context and ensure that it quacks like a duck.
         """
-
         # The context is effectively a connection factory.
-        es_context = ConnectionContext(config=self.config)
+        es_context = ConnectionContext(config=self.config.elasticsearch)
 
         # The connection context *must* have specific elements.
         ok_(es_context.config)
@@ -35,8 +28,8 @@ class IntegrationTestConnectionContext(ElasticsearchTestCase):
 
         # There is one operational exception.
         ok_(
-            elasticsearch.exceptions.ConnectionError in \
-                es_context.operational_exceptions
+            elasticsearch.exceptions.ConnectionError in
+            es_context.operational_exceptions
         )
 
         # Currently there are no conditional exceptions.
@@ -45,8 +38,7 @@ class IntegrationTestConnectionContext(ElasticsearchTestCase):
     def test_connection_context_client(self):
         """Instantiate the client and ensure that it quacks like a duck.
         """
-
-        es_context = ConnectionContext(config=self.config)
+        es_context = ConnectionContext(config=self.config.elasticsearch)
         client = es_context.connection()
 
         # The client *must* have specific elements.

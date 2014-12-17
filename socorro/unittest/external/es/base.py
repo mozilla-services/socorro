@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import elasticsearch
 import mock
 import random
 import uuid
@@ -13,6 +12,7 @@ from functools import wraps
 from configman import ConfigurationManager, environment
 from nose import SkipTest
 
+from socorro.external.es.index_creator import IndexCreator
 from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.unittest.testbase import TestCase
 
@@ -769,11 +769,33 @@ class ElasticsearchTestCase(TestCase):
         es_context = self.config.elasticsearch.elasticsearch_class(
             config=self.config.elasticsearch
         )
+
+        self.index_creator = IndexCreator(self.config)
+        self.index_client = self.index_creator.get_index_client()
+
         with es_context() as conn:
             self.connection = conn
-            self.index_client = elasticsearch.client.IndicesClient(
-                self.connection
-            )
+
+    def setUp(self):
+        # Create the supersearch fields.
+        self.index_super_search_fields()
+
+        self.index_creator.create_socorro_index(
+            self.config.elasticsearch.elasticsearch_index
+        )
+
+        super(ElasticsearchTestCase, self).setUp()
+
+    def tearDown(self):
+        # Clear the test indices.
+        self.index_client.delete(
+            self.config.elasticsearch.elasticsearch_default_index
+        )
+        self.index_client.delete(
+            self.config.elasticsearch.elasticsearch_index
+        )
+
+        super(ElasticsearchTestCase, self).tearDown()
 
     def get_tuned_config(self, sources, extra_values=None):
         if not isinstance(sources, (list, tuple)):

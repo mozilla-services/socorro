@@ -8,7 +8,6 @@ from nose.tools import assert_raises, eq_, ok_
 
 from socorro.external import BadArgumentError
 from socorro.external.es.supersearch import SuperSearch
-from socorro.external.es.index_creator import IndexCreator
 from socorro.lib import datetimeutil, search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
@@ -30,28 +29,8 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
     def setUp(self):
         super(IntegrationTestSuperSearch, self).setUp()
 
-        # Create the supersearch fields.
-        self.index_super_search_fields()
-
-        # Create the reports index.
-        index_creator = IndexCreator(self.config)
-        index_creator.create_socorro_index(
-            self.config.elasticsearch.elasticsearch_index
-        )
-
         self.api = SuperSearch(config=self.config)
         self.now = datetimeutil.utc_now()
-
-    def tearDown(self):
-        # Clear the test indices.
-        self.index_client.delete(
-            self.config.elasticsearch.elasticsearch_default_index
-        )
-        self.index_client.delete(
-            self.config.elasticsearch.elasticsearch_index
-        )
-
-        super(IntegrationTestSuperSearch, self).tearDown()
 
     def test_get_indices(self):
         now = datetime.datetime(2001, 1, 2, 0, 0)

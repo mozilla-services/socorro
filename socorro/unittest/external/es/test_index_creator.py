@@ -10,6 +10,12 @@ from nose.tools import ok_
 from socorro.external.es.index_creator import IndexCreator
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
+# Uncomment these lines to decrease verbosity of the elasticsearch library
+# while running unit tests.
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('requests').setLevel(logging.ERROR)
+
 
 @attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestIndexCreator(ElasticsearchTestCase):
@@ -18,44 +24,13 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
 
         self.config = self.get_tuned_config(IndexCreator)
 
-        # Helper for interacting with ES outside of the context of a specific
-        # test.
-        self.index_client = \
-            IndexCreator(config=self.config).es_context.indices_client()
-
-    def setUp(self):
-        super(IntegrationTestIndexCreator, self).setUp()
-
-        # Create the supersearch fields.
-        self.index_super_search_fields()
-
     def tearDown(self):
         """Remove any indices that may have been created for a given test.
         """
-
-        try:
-            self.index_client.delete(
-                self.config.elasticsearch.elasticsearch_default_index
-            )
-
-        # "Missing" indices simply weren't created, so ignore.
-        except elasticsearch.exceptions.NotFoundError:
-            pass
-
-        try:
-            self.index_client.delete(
-                self.config.elasticsearch.elasticsearch_index
-            )
-
-        # "Missing" indices simply weren't created, so ignore.
-        except elasticsearch.exceptions.NotFoundError:
-            pass
-
         try:
             self.index_client.delete(
                 self.config.elasticsearch.elasticsearch_emails_index
             )
-
         # "Missing" indices simply weren't created, so ignore.
         except elasticsearch.exceptions.NotFoundError:
             pass
