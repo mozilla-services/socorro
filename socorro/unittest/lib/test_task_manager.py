@@ -121,7 +121,6 @@ class TestTaskManager(TestCase):
         config.idle_delay = 1
         config.quit_on_empty_queue =  True
 
-
         tm = TaskManager(
             config,
             task_func=Mock()

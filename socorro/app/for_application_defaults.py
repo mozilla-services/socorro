@@ -53,6 +53,8 @@ class ApplicationDefaultsProxy(object):
             'middleware': 'socorro.middleware.middleware_app.MiddlewareApp',
             'processor': 'socorro.processor.processor_app.ProcessorApp',
             'fetch': 'socorro.external.fetch_app.FetchApp',
+            'copy_processed':
+                'socorro.collector.crashmover_app.ProcessedCrashCopierApp'
         }
 
 
