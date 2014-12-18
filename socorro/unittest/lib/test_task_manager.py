@@ -19,6 +19,8 @@ class TestTaskManager(TestCase):
     def test_constuctor1(self):
         config = DotDict()
         config.logger = self.logger
+        config.quit_on_empty_queue =  False
+
         tm = TaskManager(config)
         ok_(tm.config == config)
         ok_(tm.logger == self.logger)
@@ -39,6 +41,8 @@ class TestTaskManager(TestCase):
     def test_get_iterator(self):
         config = DotDict()
         config.logger = self.logger
+        config.quit_on_empty_queue =  False
+
         tm = TaskManager(
             config,
             job_source_iterator=range(1),
@@ -79,6 +83,7 @@ class TestTaskManager(TestCase):
         config = DotDict()
         config.logger = self.logger
         config.idle_delay = 1
+        config.quit_on_empty_queue =  False
 
         class MyTaskManager(TaskManager):
             def _responsive_sleep(
@@ -95,6 +100,29 @@ class TestTaskManager(TestCase):
                     self.count = 0
 
         tm = MyTaskManager(
+            config,
+            task_func=Mock()
+        )
+
+        waiting_func = Mock()
+
+        tm.blocking_start(waiting_func=waiting_func)
+
+        eq_(
+            tm.task_func.call_count,
+            10
+        )
+        eq_(waiting_func.call_count, 0)
+
+
+    def test_blocking_start_with_quit_on_empty(self):
+        config = DotDict()
+        config.logger = self.logger
+        config.idle_delay = 1
+        config.quit_on_empty_queue =  True
+
+
+        tm = TaskManager(
             config,
             task_func=Mock()
         )
