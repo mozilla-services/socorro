@@ -12,11 +12,6 @@ if [ "$BUILD_TYPE" != "tar" ]; then
     mkdir -p $BUILD_DIR/var/log/socorro
     mkdir -p $BUILD_DIR/var/lock/socorro
 
-    # copy default config files
-    for file in scripts/config/*.py.dist; do
-      cp $file $BUILD_DIR/etc/socorro/`basename $file .dist`
-    done
-
     for file in config/*.ini-dist; do
       cp $file $BUILD_DIR/etc/socorro/`basename $file -dist`
     done
@@ -54,12 +49,6 @@ rsync -a alembic $BUILD_DIR/application
 rsync -a webapp-django $BUILD_DIR/
 # because this file is served from the parent of the `webapp-django/` directory
 cp contribute.json $BUILD_DIR/
-
-if [ "$BUILD_TYPE" == "tar" ]; then
-    pushd $BUILD_DIR/application/scripts/config
-    for file in *.py.dist; do cp $file `basename $file .dist`; done
-    popd
-fi
 
 # record current git revision in install dir
 git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
