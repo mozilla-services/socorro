@@ -5,7 +5,7 @@
 import elasticsearch
 
 from nose.plugins.attrib import attr
-from nose.tools import eq_
+from nose.tools import ok_
 
 from socorro.external.es.connection_context import (
     ConnectionContext
@@ -21,25 +21,42 @@ class IntegrationTestConnectionContext(ElasticsearchTestCase):
         )
 
         self.config = self.get_tuned_config(ConnectionContext)
-        self.es_context = ConnectionContext(config=self.config)
 
-    def tearDown(self):
-        with self.es_context() as conn:
-            index_client = elasticsearch.client.IndicesClient(conn)
-            index_client.delete(self.config.elasticsearch_index)
+    def test_connection_context(self):
+        """Instantiate the context and ensure that it quacks like a duck.
+        """
 
-    def test_connection(self):
-        with self.es_context() as conn:
-            conn.index(
-                index=self.config.elasticsearch_index,
-                doc_type='test_doc',
-                body={'foo': 'bar'},
-                refresh=True,
-            )
+        # The context is effectively a connection factory.
+        es_context = ConnectionContext(config=self.config)
 
-            docs = conn.search(
-                index=self.config.elasticsearch_index,
-                doc_type='test_doc',
-            )
+        # The connection context *must* have specific elements.
+        ok_(es_context.config)
+        ok_(es_context.connection)
 
-            eq_(len(docs['hits']['hits']), 1)
+        # There is one operational exception.
+        ok_(
+            elasticsearch.exceptions.ConnectionError in \
+                es_context.operational_exceptions
+        )
+
+        # Currently there are no conditional exceptions.
+        ok_(len(es_context.conditional_exceptions) == 0)
+
+    def test_connection_context_client(self):
+        """Instantiate the client and ensure that it quacks like a duck.
+        """
+
+        es_context = ConnectionContext(config=self.config)
+        client = es_context.connection()
+
+        # The client *must* have specific elements.
+        ok_(client._connection)
+        ok_(client.close)
+        ok_(client.commit)
+        ok_(client.config)
+        ok_(client.rollback)
+
+        # The underlying ES interface is exposed by _connection. This API is
+        # exhaustive and well outside of the scope of this test suite; in the
+        # interest of safety however, we'll check one here.
+        ok_(client._connection.index)

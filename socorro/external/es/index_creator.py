@@ -16,6 +16,9 @@ DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 
 class IndexCreator(RequiredConfig):
+    """The elasticsearch-py library is split into a handful of functional
+    areas; this class is concerned with IndicesClient only.
+    """
 
     required_config = Namespace()
     required_config.add_option(
@@ -47,8 +50,11 @@ class IndexCreator(RequiredConfig):
         )
 
     def get_index_client(self):
+        """Maintained for interoperability purposes elsewhere in the codebase.
+        """
+
         with self.es_context() as conn:
-            return elasticsearch.client.IndicesClient(conn)
+            return conn.indices_client()
 
     def create_socorro_index(self, es_index):
         """Create an index that will receive crash reports. """
@@ -73,7 +79,7 @@ class IndexCreator(RequiredConfig):
         execution of this function, nothing will happen.
         """
         try:
-            client = self.get_index_client()
+            client = self.es_context.indices_client()
             client.create(
                 index=es_index,
                 body=es_settings
