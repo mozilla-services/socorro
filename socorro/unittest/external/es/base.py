@@ -737,7 +737,7 @@ SUPERSEARCH_FIELDS = {
 }
 
 
-def require_es_version(minimum_version):
+def minimum_es_version(minimum_version):
     """Skip the test if the Elasticsearch version is less than specified.
     :arg minimum_version: string; the minimum Elasticsearch version required
     """

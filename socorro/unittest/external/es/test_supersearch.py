@@ -12,7 +12,7 @@ from socorro.external.es.index_creator import IndexCreator
 from socorro.lib import datetimeutil, search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
-    require_es_version,
+    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -54,7 +54,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         super(IntegrationTestSuperSearch, self).tearDown()
 
     def test_get_indices(self):
-        now = datetime.datetime(2000, 2, 1, 0, 0)
+        now = datetime.datetime(2001, 1, 2, 0, 0)
         lastweek = now - datetime.timedelta(weeks=1)
         lastmonth = now - datetime.timedelta(weeks=4)
 
@@ -75,7 +75,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ]
 
         res = api.get_indices(dates)
-        eq_(res, ['socorro_200004', 'socorro_200005'])
+        eq_(res, ['socorro_200052', 'socorro_200101'])
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -86,12 +86,12 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(
             res,
             [
-                'socorro_200001', 'socorro_200002', 'socorro_200003',
-                'socorro_200004', 'socorro_200005'
+                'socorro_200049', 'socorro_200050', 'socorro_200051',
+                'socorro_200052', 'socorro_200101'
             ]
         )
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get(self):
         """Run a very basic test, just to see if things work. """
         self.index_crash({
@@ -122,15 +122,15 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
         # Test fields are being renamed.
-        ok_('date' in res['hits'][0])  # date_processed > date
-        ok_('build_id' in res['hits'][0])  # build > build_id
-        ok_('platform' in res['hits'][0])  # os_name > platform
+        ok_('date' in res['hits'][0])  # date_processed -> date
+        ok_('build_id' in res['hits'][0])  # build -> build_id
+        ok_('platform' in res['hits'][0])  # os_name -> platform
 
         # Test namespaces are correctly removed.
         # processed_crash.json_dump.write_combine_size > write_combine_size
         ok_('write_combine_size' in res['hits'][0])
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get_with_enum_operators(self):
         self.index_crash({
             'product': 'WaterWolf',
@@ -158,7 +158,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(len(res['hits']), 1)
         eq_(res['hits'][0]['product'], 'WaterWolf')
 
-        # Not a term that exist.
+        # Not a term that exists.
         res = self.api.get(
             product='!WaterWolf'  # does not have terms
         )
@@ -184,7 +184,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             ok_('that I used' in hit['app_notes'])
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get_with_string_operators(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
@@ -317,7 +317,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ok_(not facet['term'].endswith('rowser'))
             eq_(facet['count'], 1)
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get_with_range_operators(self):
         self.index_crash({
             'build': 2000,
@@ -389,7 +389,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         for hit in res['hits']:
             ok_(hit['build_id'] <= 2000)
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get_with_bool_operators(self):
         self.index_crash(
             processed_crash={
@@ -435,7 +435,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(len(res['hits']), 1)
         ok_(not res['hits'][0]['accessibility'])
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get_with_pagination(self):
         number_of_crashes = 21
         processed_crash = {
@@ -475,7 +475,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(res['total'], number_of_crashes)
         eq_(len(res['hits']), 0)
 
-    @require_es_version('1.0')
+    @minimum_es_version('1.0')
     def test_get_with_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',

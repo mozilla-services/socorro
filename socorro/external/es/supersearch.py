@@ -28,6 +28,8 @@ class SuperSearch(SearchBase):
 
         self.all_fields = SuperSearchFields(config=self.config).get_fields()
 
+        # Create a map to associate a field's name in the database to its
+        # exposed name (in the results and facets).
         self.database_name_to_field_name_map = dict(
             (x['in_database_name'], x['name'])
             for x in self.all_fields.values()
