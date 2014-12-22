@@ -6,7 +6,6 @@
 . /etc/socorro/socorrorc
 
 NAME=`basename $0 .sh`
-echo $NAME
 lock $NAME
 
 DATE=`date -d 'yesterday' +%y%m%d`
