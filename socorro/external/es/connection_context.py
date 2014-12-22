@@ -93,17 +93,19 @@ class ConnectionContext(RequiredConfig):
         super(ConnectionContext, self).__init__()
         self.config = config
 
-    def connection(self, name=None):
+    def connection(self, name=None, timeout=None):
         """Returns an instance of elasticsearch-py's Elasticsearch class as
         encapsulated by the Connection class above.
         Documentation: http://elasticsearch-py.readthedocs.org
         """
+        if timeout is None:
+            timeout = self.config.elasticsearch_timeout
 
         return Connection(
             self.config,
             elasticsearch.Elasticsearch(
                 hosts=self.config.elasticsearch_urls,
-                timeout=self.config.elasticsearch_timeout,
+                timeout=timeout,
                 connection_class=\
                     elasticsearch.connection.RequestsHttpConnection
             )
@@ -124,6 +126,6 @@ class ConnectionContext(RequiredConfig):
         pass
 
     @contextlib.contextmanager
-    def __call__(self, name=None):
-        conn = self.connection(name)
+    def __call__(self, name=None, timeout=None):
+        conn = self.connection(name, timeout)
         yield conn
