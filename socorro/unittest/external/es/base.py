@@ -4,10 +4,14 @@
 
 import elasticsearch
 import mock
-import os
+import random
+import uuid
+from distutils.version import LooseVersion
 from elasticsearch.helpers import bulk
+from functools import wraps
 
-from configman import ConfigurationManager
+from configman import ConfigurationManager, environment
+from nose import SkipTest
 
 from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.unittest.testbase import TestCase
@@ -699,6 +703,23 @@ SUPERSEARCH_FIELDS = {
             'type': 'string'
         }
     },
+    'write_combine_size': {
+        'data_validation_type': 'int',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'write_combine_size',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'write_combine_size',
+        'namespace': 'processed_crash.json_dump',
+        'permissions_needed': [],
+        'query_type': 'number',
+        'storage_mapping': {
+            'type': 'long'
+        }
+    },
     'fake_field': {
         'data_validation_type': 'enum',
         'default_value': None,
@@ -714,6 +735,28 @@ SUPERSEARCH_FIELDS = {
         'query_type': 'enum',
     },
 }
+
+
+def minimum_es_version(minimum_version):
+    """Skip the test if the Elasticsearch version is less than specified.
+    :arg minimum_version: string; the minimum Elasticsearch version required
+    """
+    def decorated(test):
+        """Decorator to only run the test if ES version is greater or
+        equal than specified.
+        """
+        @wraps(test)
+        def test_with_version(self):
+            "Only run the test if ES version is not less than specified."
+            actual_version = self.connection.info()['version']['number']
+            if LooseVersion(actual_version) >= LooseVersion(minimum_version):
+                test(self)
+            else:
+                raise SkipTest
+
+        return test_with_version
+
+    return decorated
 
 
 class ElasticsearchTestCase(TestCase):
@@ -754,14 +797,20 @@ class ElasticsearchTestCase(TestCase):
             app_name='testapp',
             app_version='1.0',
             app_description='Elasticsearch integration tests',
-            values_source_list=[os.environ, values_source],
+            values_source_list=[environment, values_source],
             argv_source=[],
         )
 
         return config_manager.get_config()
 
-    def get_mware_config(self):
-        return self.get_tuned_config(MiddlewareApp)
+    def get_mware_config(self, es_index=None):
+        extra_values = None
+        if es_index:
+            extra_values = {
+                'resource.elasticsearch.elasticsearch_index': es_index
+            }
+
+        return self.get_tuned_config(MiddlewareApp, extra_values=extra_values)
 
     def index_super_search_fields(self, fields=None):
         if fields is None:
@@ -784,3 +833,66 @@ class ElasticsearchTestCase(TestCase):
             actions=actions,
         )
         self.index_client.refresh(index=[es_index])
+
+    def index_crash(self, processed_crash, raw_crash=None, crash_id=None):
+        if crash_id is None:
+            crash_id = str(uuid.UUID(int=random.getrandbits(128)))
+
+        if raw_crash is None:
+            raw_crash = {}
+
+        doc = {
+            'crash_id': crash_id,
+            'processed_crash': processed_crash,
+            'raw_crash': raw_crash,
+        }
+        res = self.connection.index(
+            index=self.config.elasticsearch.elasticsearch_index,
+            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            id=crash_id,
+            body=doc,
+        )
+        return res['_id']
+
+    def index_many_crashes(
+        self, number, processed_crash=None, raw_crash=None, loop_field=None
+    ):
+        if processed_crash is None:
+            processed_crash = {}
+
+        if raw_crash is None:
+            raw_crash = {}
+
+        actions = []
+        for i in range(number):
+            crash_id = str(uuid.UUID(int=random.getrandbits(128)))
+
+            if loop_field is not None:
+                processed_copy = processed_crash.copy()
+                processed_copy[loop_field] = processed_crash[loop_field] % i
+            else:
+                processed_copy = processed_crash
+
+            doc = {
+                'crash_id': crash_id,
+                'processed_crash': processed_copy,
+                'raw_crash': raw_crash,
+            }
+            action = {
+                '_index': self.config.elasticsearch.elasticsearch_index,
+                '_type': self.config.elasticsearch.elasticsearch_doctype,
+                '_id': crash_id,
+                '_source': doc,
+            }
+            actions.append(action)
+
+        bulk(
+            client=self.connection,
+            actions=actions,
+        )
+        self.refresh_index()
+
+    def refresh_index(self):
+        self.index_client.refresh(
+            index=self.config.elasticsearch.elasticsearch_index
+        )
