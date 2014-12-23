@@ -385,3 +385,22 @@ class SuperSearch(SearchBase):
             'total': total,
             'facets': aggregations,
         }
+
+    # For backwards compatibility with the previous elasticsearch module.
+    # All those methods used to live in this file, but have been moved to
+    # the super_search_fields.py file now. Since the configuration of the
+    # middleware expect those to still be here, we bind them for now.
+    def get_fields(self, **kwargs):
+        return SuperSearchFields().get_fields(**kwargs)
+
+    def create_field(self, **kwargs):
+        return SuperSearchFields().create_field(**kwargs)
+
+    def update_field(self, **kwargs):
+        return SuperSearchFields().update_field(**kwargs)
+
+    def delete_field(self, **kwargs):
+        return SuperSearchFields().delete_field(**kwargs)
+
+    def get_missing_fields(self):
+        return SuperSearchFields().get_missing_fields()
