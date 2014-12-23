@@ -149,35 +149,34 @@ class BreakpadStackwalkerRule(Rule):
                 dump_pathname: the complete pathname of the dumpfile to be
                                   analyzed
         """
-        with self._temp_file_context(dump_pathname):
-            command_line = self.mdsw_command_line.replace(
-                "DUMPFILEPATHNAME",
-                dump_pathname
-            ).replace(
-                "RAWFILEPATHNAME",
-                raw_crash_pathname
-            )
+        command_line = self.mdsw_command_line.replace(
+            "DUMPFILEPATHNAME",
+            dump_pathname
+        ).replace(
+            "RAWFILEPATHNAME",
+            raw_crash_pathname
+        )
 
-            if self.config.chatty:
-                self.config.logger.debug(
-                    "BreakpadStackwalkerRule: %s",
-                    command_line
+        if self.config.chatty:
+            self.config.logger.debug(
+                "BreakpadStackwalkerRule: %s",
+                command_line
+            )
+        subprocess_handle = subprocess.Popen(
+            command_line,
+            shell=True,
+            stdout=subprocess.PIPE
+        )
+        with closing(subprocess_handle.stdout):
+            try:
+                stackwalker_output = ujson.load(subprocess_handle.stdout)
+            except Exception, x:
+                processor_notes.append(
+                    "MDSW output failed in json: %s" % x
                 )
-            subprocess_handle = subprocess.Popen(
-                command_line,
-                shell=True,
-                stdout=subprocess.PIPE
-            )
-            with closing(subprocess_handle.stdout):
-                try:
-                    stackwalker_output = ujson.load(subprocess_handle.stdout)
-                except Exception, x:
-                    processor_notes.append(
-                        "MDSW output failed in json: %s" % x
-                    )
-                    stackwalker_output = {}
+                stackwalker_output = {}
 
-            return_code = subprocess_handle.wait()
+        return_code = subprocess_handle.wait()
 
         if not isinstance(stackwalker_output, Mapping):
             processor_notes.append(
