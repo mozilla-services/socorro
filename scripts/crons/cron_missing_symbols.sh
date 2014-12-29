@@ -18,7 +18,9 @@ COPY
  FROM missing_symbols WHERE
  date_processed='${OUTPUT_DATE}'
  AND debug_file != ''
- AND debug_id != '')
+ AND debug_id != ''
+ GROUP BY debug_file, debug_id
+ )
 TO STDOUT WITH CSV HEADER
 EOF
 
