@@ -789,7 +789,7 @@ class MissingSymbolsRule(Rule):
                     debug_id = module['debug_id']
                     try:
                         self.transaction(execute_no_results, self.sql,
-                                         (date, debug_file, debug_id))
+                            (date_processed, debug_file, debug_id))
                     except self.database.ProgrammingError as e:
                         processor_meta.processor_notes.append(
                             "WARNING: missing symbols rule failed for"
