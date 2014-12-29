@@ -53,8 +53,8 @@ do
   for J in $VERSIONS
   do
     techo "Phase 1: Version: $J start"
-    techo "Running psql query for uuids and passing to hbaseClient.py ."
-    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost export_jsonz_tarball_for_ooids $TMPDIR $TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
+    techo "Running socorro copy_processed"
+    socorro copy_processed --admin.conf=/etc/socorro/copy_processed.ini --new_crash_source.crash_id_query="select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" --destination.tarball_name=$TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
@@ -78,8 +78,8 @@ do
   for J in $MANUAL_VERSION_OVERRIDE
   do
     techo "Phase 1: Version: $J start"
-    techo "Running psql query for uuids and passing to hbaseClient.py ."
-    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/external/hbase/hbase_client.py -h $hbaseHost export_jsonz_tarball_for_ooids $TMPDIR $TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
+    techo "Running socorro copy_processed"
+    socorro copy_processed --admin.conf=/etc/socorro/copy_processed.ini --new_crash_source.crash_id_query="select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" --destination.tarball_name=$TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
