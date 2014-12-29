@@ -3573,6 +3573,47 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+    @mock.patch('requests.post')
+    @mock.patch('requests.get')
+    def test_report_index_no_dump(self, rget, rpost):
+        dump = ""
+        comment0 = "This is a comment"
+        email0 = "some@emailaddress.com"
+        url0 = "someaddress.com"
+
+        def mocked_get(url, params, **options):
+            if '/crash_data' in url:
+                assert 'datatype' in params
+
+                if params['datatype'] == 'meta':
+                    return Response(SAMPLE_META % (email0, url0))
+                if params['datatype'] == 'unredacted':
+                    data = json.loads(
+                        SAMPLE_UNREDACTED % (dump, comment0)
+                    )
+                    del data['dump']
+                    del data['json_dump']
+                    return Response(data)
+
+            if 'correlations/signatures' in url:
+                raise models.BadStatusCodeError(500)
+
+            raise NotImplementedError(url)
+        rget.side_effect = mocked_get
+
+        def mocked_post(url, **options):
+            if '/bugs/' in url:
+                return Response(BUG_STATUS)
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+
+        url = reverse('crashstats:report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('No dump available' in response.content)
+
     def test_report_index_invalid_crash_id(self):
         # last 6 digits indicate 30th Feb 2012 which doesn't exist
         url = reverse('crashstats:report_index',
