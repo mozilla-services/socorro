@@ -1870,8 +1870,10 @@ class TestMissingSymbols(TestCase):
         processed_crash.json_dump = {
             'modules': [
                 {
+                    "filename": "some-file.dll",
                     "debug_id": "ABCDEFG",
                     "debug_file": "some-file.pdb",
+                    "version": "1.2.3.4",
                     "missing_symbols": True,
                 },
             ]
@@ -1886,5 +1888,6 @@ class TestMissingSymbols(TestCase):
 
         from socorro.external.postgresql.dbapi2_util import execute_no_results
         config.transaction_executor_class.return_value.assert_called_with(
-            execute_no_results, rule.sql, ('now', 'some-file.pdb', 'ABCDEFG')
+            execute_no_results, rule.sql,
+            ('now', 'some-file.dll', 'some-file.pdb', 'ABCDEFG', '1.2.3.4')
         )

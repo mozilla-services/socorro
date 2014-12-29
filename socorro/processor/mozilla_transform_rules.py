@@ -764,8 +764,9 @@ class MissingSymbolsRule(Rule):
             self.database,
         )
         self.sql = (
-            "INSERT INTO missing_symbols(date_processed, debug_file, debug_id)"
-            " VALUES (%s, %s, %s)"
+            "INSERT INTO missing_symbols"
+            "(filename, date_processed, debug_file, debug_id, version)"
+            " VALUES (%s, %s, %s, %s, %s)"
         )
 
     #--------------------------------------------------------------------------
@@ -785,11 +786,14 @@ class MissingSymbolsRule(Rule):
             date_processed = processed_crash['date_processed']
             for module in processed_crash['json_dump']['modules']:
                 if 'missing_symbols' in module and module['missing_symbols']:
+                    filename = module['filename']
                     debug_file = module['debug_file']
                     debug_id = module['debug_id']
+                    version = module['version']
                     try:
                         self.transaction(execute_no_results, self.sql,
-                                         (date, debug_file, debug_id))
+                            (date, filename, debug_file, debug_id, version)
+                        )
                     except self.database.ProgrammingError as e:
                         processor_meta.processor_notes.append(
                             "WARNING: missing symbols rule failed for"
