@@ -4,7 +4,8 @@
 
 import time
 
-from nose.tools import ok_
+from nose.tools import ok_, eq_
+from mock import Mock
 
 from  socorro.lib.threaded_task_manager import ThreadedTaskManager, \
       ThreadedTaskManagerWithConfigSetup, \
@@ -13,10 +14,10 @@ from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.unittest.testbase import TestCase
 
 
-class TestFileSystemRawCrashStorage(TestCase):
+class TestThreadedTaskManager(TestCase):
 
     def setUp(self):
-        super(TestFileSystemRawCrashStorage, self).setUp()
+        super(TestThreadedTaskManager, self).setUp()
         self.logger = SilentFakeLogger()
 
     def test_constuctor1(self):
@@ -193,3 +194,24 @@ class TestFileSystemRawCrashStorage(TestCase):
             # we got threads to join
             ttm.wait_for_completion()
             raise
+
+    def test_blocking_start_with_quit_on_empty(self):
+        config = DotDict()
+        config.logger = self.logger
+        config.number_of_threads = 2
+        config.maximum_queue_size = 2
+        config.quit_on_empty_queue =  True
+
+        tm = ThreadedTaskManager(
+            config,
+            task_func=Mock()
+        )
+
+        waiting_func = Mock()
+
+        tm.blocking_start(waiting_func=waiting_func)
+
+        eq_(
+            tm.task_func.call_count,
+            10
+        )

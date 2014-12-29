@@ -225,6 +225,12 @@ class ThreadedTaskManager(TaskManager):
             for job_params in self._get_iterator():  # may never raise
                                                      # StopIteration
                 if job_params is None:
+                    if self.config.quit_on_empty_queue:
+                        self.wait_for_empty_queue(
+                            wait_log_interval=10,
+                            wait_reason='waiting for queue to drain'
+                        )
+                        raise KeyboardInterrupt
                     self.logger.info("there is nothing to do.  Sleeping "
                                      "for %d seconds" %
                                      self.config.idle_delay)

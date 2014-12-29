@@ -16,7 +16,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from configman import Namespace
+from configman import Namespace, class_converter
 from socorro.external.crashstorage_base import CrashStorageBase, \
                                                CrashIDNotFound
 from socorro.lib.ooid import dateFromOoid, depthFromOoid
@@ -649,3 +649,94 @@ class FSTemporaryStorage(FSLegacyDatedRadixTreeStorage):
 # more user friendly aliases for commonly used classes
 FSPermanentStorage = FSLegacyRadixTreeStorage
 FSDatedPermanentStorage = FSLegacyDatedRadixTreeStorage
+
+
+class TarFileCrashStore(CrashStorageBase):
+    required_config = Namespace()
+    required_config.add_option(
+        name='tarball_name',
+        doc='pathname to a the target tarfile',
+        default='fred.tar'
+    )
+    required_config.add_option(
+        name='temp_directory',
+        doc='the pathname of a temporary directory',
+        default='/tmp'
+    )
+    required_config.add_option(
+        name='tarfile_module',
+        doc='a module that supplies the tarfile interface',
+        default='tarfile',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        name='gzip_module',
+        doc='a module that supplies the gzip interface',
+        default='gzip',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        name='os_module',
+        doc='a module that supplies the os interface',
+        default='os',
+        from_string_converter=class_converter
+    )
+
+    @staticmethod
+    def stringify_datetimes(obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
+        raise TypeError
+
+    def __init__(self, config, quit_check_callback=None):
+        super(TarFileCrashStore, self).__init__(config, quit_check_callback)
+        self.tarfile_module = config.tarfile_module
+        self.gzip_module = config.gzip_module
+        self.os_module = config.os_module
+
+    def _save_to_tarfile(self, actual_pathname, target_pathname):
+        try:
+            self.tar_file.add(actual_pathname, target_pathname)
+        except AttributeError:
+            # the tar_file is lazy instantiated.  It isn't created until
+            # a process tries to save something to it
+            self.tar_file = self.tarfile_module.open(
+                self.config.tarball_name,
+                'w'
+            )
+            self.tar_file.add(actual_pathname, target_pathname)
+
+    def close(self):
+        try:
+            self.tar_file.close()
+        except AttributeError:
+            # the tar_file was never actually created because the save_*
+            # were never called.  we can silently ignore this
+            pass
+
+    def save_processed(self, processed_crash):
+        processed_crash_as_string = json.dumps(
+            processed_crash,
+            default=self.stringify_datetimes
+        )
+        crash_id = processed_crash['crash_id']
+        file_name = os.path.join(
+            self.config.temp_directory,
+            crash_id + '.jsonz'
+        )
+        file_handle = self.gzip_module.open(file_name, 'w', 9)
+        try:
+            file_handle.write(processed_crash_as_string)
+        finally:
+            file_handle.close()
+        self._save_to_tarfile(
+            file_name,
+            os.path.join(
+                crash_id[:2],
+                crash_id[2:4],
+                crash_id + '.jsonz'
+            )
+        )
+        self.os_module.unlink(file_name)
+        self.config.logger.debug('saved - %s', file_name)
+

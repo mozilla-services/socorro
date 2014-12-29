@@ -53,6 +53,11 @@ class TaskManager(RequiredConfig):
       default=7,
       doc='the delay in seconds if no job is found'
     )
+    required_config.add_option(
+      'quit_on_empty_queue',
+      default=False,
+      doc='stop if the queue is empty'
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config,
@@ -147,6 +152,8 @@ class TaskManager(RequiredConfig):
                                                          # StopIteration
                     self.quit_check()
                     if job_params is None:
+                        if self.config.quit_on_empty_queue:
+                            raise KeyboardInterrupt
                         self.logger.info("there is nothing to do.  Sleeping "
                                          "for %d seconds" %
                                          self.config.idle_delay)
@@ -156,7 +163,7 @@ class TaskManager(RequiredConfig):
                     try:
                         args, kwargs = job_params
                     except ValueError:
-                        args = arguments
+                        args = job_params
                         kwargs = {}
                     try:
                         self.task_func(*args, **kwargs)
