@@ -5,7 +5,7 @@
 import copy
 import re
 
-from mock import Mock, patch
+from mock import Mock, patch, call
 from nose.tools import eq_, ok_
 
 from configman.dotdict import DotDict as CDotDict
@@ -1874,6 +1874,16 @@ class TestMissingSymbols(TestCase):
                     "debug_file": "some-file.pdb",
                     "missing_symbols": True,
                 },
+                {
+                    "debug_id": "BCDEFGH",
+                    "debug_file": "other-file.pdb",
+                    "missing_symbols": False,
+                },
+                {
+                    "debug_id": "CDEFGHI",
+                    "debug_file": "yet-another-file.pdb",
+                    "missing_symbols": True,
+                },
             ]
         }
 
@@ -1885,6 +1895,13 @@ class TestMissingSymbols(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         from socorro.external.postgresql.dbapi2_util import execute_no_results
-        config.transaction_executor_class.return_value.assert_called_with(
-            execute_no_results, rule.sql, ('now', 'some-file.pdb', 'ABCDEFG')
+        eq_(config.transaction_executor_class.return_value.call_count, 2)
+        expected_execute_args = [
+                call(execute_no_results, rule.sql,
+                    ('now', 'some-file.pdb', 'ABCDEFG')),
+                call(execute_no_results, rule.sql,
+                    ('now', 'yet-another-file.pdb', 'CDEFGHI'))
+        ]
+        config.transaction_executor_class.return_value.assert_has_calls(
+                expected_execute_args
         )

@@ -774,30 +774,27 @@ class MissingSymbolsRule(Rule):
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
-        if 'date_processed' in processed_crash:
+        try:
             date = processed_crash['date_processed']
-        else:
-            return False
-
-        if 'modules' in processed_crash['json_dump'] and \
-            'date_processed' in processed_crash:
-            date_processed = processed_crash['date_processed']
             for module in processed_crash['json_dump']['modules']:
-                if 'missing_symbols' in module and module['missing_symbols']:
-                    debug_file = module['debug_file']
-                    debug_id = module['debug_id']
-                    try:
-                        self.transaction(execute_no_results, self.sql,
-                                         (date, debug_file, debug_id))
-                    except self.database.ProgrammingError as e:
-                        processor_meta.processor_notes.append(
-                            "WARNING: missing symbols rule failed for"
-                            " %s" % raw_crash.uuid
+                try:
+                    if module['missing_symbols']:
+                        self.transaction(
+                            execute_no_results,
+                            self.sql,
+                            (
+                                date,
+                                module['debug_file'],
+                                module['debug_id']
+                            )
                         )
-                else:
-                    return False
-        else:
+                except self.database.ProgrammingError as e:
+                    processor_meta.processor_notes.append(
+                        "WARNING: missing symbols rule failed for"
+                        " %s" % raw_crash.uuid
+                    )
+                except KeyError:
+                    pass
+        except KeyError:
             return False
-
         return True
