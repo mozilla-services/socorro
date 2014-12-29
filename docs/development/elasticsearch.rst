@@ -63,7 +63,7 @@ quantity of data you deal with, etc.
 Once elasticsearch is installed, you will want to set up the basic data
 required by Socorro. There is a script that will do that for you::
 
-    $ python scripts/setup_elasticsearch_app.py
+    $ cd scripts && python ./setup_supersearch_app.py
 
 Use the ``--help`` option to see the different parameters you can use. The only
 one you should have to change is ``elasticsearch_urls`` to make it reflect
