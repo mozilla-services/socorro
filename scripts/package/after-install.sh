@@ -48,6 +48,21 @@ if [ $? != 0 ]; then
     echo "See /var/log/socorro/django-syncdb.log for more info"
 fi
 
+# create ElasticSearch indexes
+echo "Creating ElasticSearch indexes"
+pushd /data/socorro/application/scripts > /dev/null
+su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
+    setup_supersearch_app.py \
+    &> /var/log/socorro/setup_supersearch.log"
+
+if [ $? != 0 ]; then
+    echo "WARN could not create ElasticSearch indexes"
+    echo "See /var/log/socorro/setup_supersearch.log for more info"
+    echo "You may want to run"
+    echo "/data/socorro/application/scripts/setup_supersearch_app.py manually"
+fi
+popd > /dev/null
+
 # ensure that partitions have been created
 pushd /data/socorro/application > /dev/null
 su socorro -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
