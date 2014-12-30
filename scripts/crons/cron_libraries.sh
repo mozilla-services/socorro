@@ -54,7 +54,7 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Running socorro copy_processed"
-    /data/socorro/socorro-virtualenv/bin/python /data/socorro/socorro-virtualenv/bin/socorro copy_processed --admin.conf=/etc/socorro/copy_processed.ini --new_crash_source.crash_id_query="select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" --destination.tarball_name=$TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
+    $PYTHON $SOCORRO_DIR/socorro-virtualenv/bin/socorro copy_processed --admin.conf=/etc/socorro/copy_processed.ini --new_crash_source.crash_id_query="select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" --destination.tarball_name=$TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
@@ -79,7 +79,7 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Running socorro copy_processed"
-    /data/socorro/socorro-virtualenv/bin/python /data/socorro/socorro-virtualenv/bin/socorro copy_processed --admin.conf=/etc/socorro/copy_processed.ini --new_crash_source.crash_id_query="select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" --destination.tarball_name=$TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
+    $PYTHON $SOCORRO_DIR/socorro-virtualenv/bin/socorro copy_processed --admin.conf=/etc/socorro/copy_processed.ini --new_crash_source.crash_id_query="select uuid from reports_${WEEK} where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}'" --destination.tarball_name=$TMPDIR/${I}_${J}.tar > $TMPDIR/${I}_${J}.log 2>&1
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
