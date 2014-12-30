@@ -184,7 +184,9 @@ class socorro::vagrant {
       ensure => file,
       path   => '/etc/elasticsearch/elasticsearch.yml',
       source => 'puppet:///modules/socorro/etc_elasticsearch/elasticsearch.yml',
-      owner  => 'root';
+      owner  => 'root',
+      require => Package['elasticsearch'],
+      notify => Service['elasticsearch'];
   }
 
 }
