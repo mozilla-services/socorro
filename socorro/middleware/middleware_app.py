@@ -59,7 +59,6 @@ SERVICES_LIST = (
     (r'/field/(.*)', 'field.Field'),
     (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
     (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
-    (r'/job/(.*)', 'job.Job'),
     (r'/laglog/(.*)', 'laglog.LagLog'),
     (r'/platforms/(.*)', 'platforms.Platforms'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),

@@ -393,82 +393,6 @@ class PriorityJobsTable(Table):
 databaseDependenciesForSetup[PriorityJobsTable] = []
 
 #=================================================================================================================
-class ProcessorsTable(Table):
-  """Define the table 'processors'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(ProcessorsTable, self).__init__(name = "processors", logger=logger,
-                                        creationSql = """
-                                            CREATE TABLE processors (
-                                                id serial NOT NULL PRIMARY KEY,
-                                                name varchar(255) NOT NULL UNIQUE,
-                                                startdatetime timestamp with time zone NOT NULL,
-                                                lastseendatetime timestamp with time zone
-                                            );""")
-  def updateDefinition(self, databaseCursor):
-    indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    #if 'idx_processor_name' in indexesList:
-      #databaseCursor.execute("""DROP INDEX idx_processor_name;
-                                #ALTER TABLE processors ADD CONSTRAINT processors_name_key UNIQUE (name);""")
-databaseDependenciesForSetup[ProcessorsTable] = []
-
-#=================================================================================================================
-class JobsTable(Table):
-  """Define the table 'jobs'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(JobsTable, self).__init__(name = "jobs",  logger=logger,
-                                    creationSql = """
-                                        CREATE TABLE jobs (
-                                            id serial NOT NULL PRIMARY KEY,
-                                            pathname character varying(1024) NOT NULL,
-                                            uuid varchar(50) NOT NULL UNIQUE,
-                                            owner integer,
-                                            priority integer DEFAULT 0,
-                                            queueddatetime timestamp with time zone,
-                                            starteddatetime timestamp with time zone,
-                                            completeddatetime timestamp with time zone,
-                                            success boolean,
-                                            message text,
-                                            FOREIGN KEY (owner) REFERENCES processors (id)
-                                        );
-                                        CREATE INDEX jobs_owner_key ON jobs (owner);
-                                        CREATE INDEX jobs_owner_starteddatetime_key ON jobs (owner, starteddatetime);
-                                        CREATE INDEX jobs_owner_starteddatetime_priority_key ON jobs (owner, starteddatetime, priority DESC);
-                                        CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs (completeddatetime, queueddatetime);
-                                        --CREATE INDEX jobs_priority_key ON jobs (priority);
-                                        """)
-  #-----------------------------------------------------------------------------------------------------------------
-  def updateDefinition(self, databaseCursor):
-    indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    if 'idx_owner' in indexesList:
-      databaseCursor.execute("""
-          DROP INDEX idx_owner;
-          CREATE INDEX jobs_owner_key ON jobs (owner);""")
-    if 'idx_queueddatetime' in indexesList:
-      databaseCursor.execute("""
-          DROP INDEX idx_queueddatetime;""")
-    if 'idx_starteddatetime' in indexesList:
-      databaseCursor.execute("""
-          DROP INDEX idx_starteddatetime;""")
-    if 'jobs_priority_queueddatetime' in indexesList:
-      databaseCursor.execute("""
-          DROP INDEX jobs_priority_queueddatetime;""")
-    if 'jobs_owner_starteddatetime' in indexesList:
-      databaseCursor.execute("""
-          DROP INDEX jobs_owner_starteddatetime;
-          CREATE INDEX jobs_owner_starteddatetime_key ON jobs (owner, starteddatetime);""")
-    #if 'jobs_priority_key' not in indexesList:
-    #  databaseCursor.execute("""CREATE INDEX jobs_priority_key ON jobs (priority);""")
-    if 'jobs_owner_starteddatetime_priority_key' not in indexesList:
-      databaseCursor.execute("""CREATE INDEX jobs_owner_starteddatetime_priority_key ON jobs (owner, starteddatetime, priority DESC);""")
-    if 'jobs_completeddatetime_queueddatetime_key' not in indexesList:
-      databaseCursor.execute("""CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs (completeddatetime, queueddatetime);""")
-    if 'jobs_success_key' not in indexesList:
-      databaseCursor.execute("""CREATE INDEX jobs_success_key ON jobs (success);""")
-databaseDependenciesForSetup[JobsTable] = [ProcessorsTable]
-
-#=================================================================================================================
 class BugsTable(Table):
   """Define the table 'bug_associations'"""
   #-----------------------------------------------------------------------------------------------------------------
@@ -1111,8 +1035,6 @@ databaseObjectClassListForUpdate = [#ReportsTable,
                                     #DumpsTable,
                                     ExtensionsTable,
                                     FramesTable,
-                                    ProcessorsTable,
-                                    JobsTable,
                                     ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
