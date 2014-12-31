@@ -920,21 +920,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, {'crashtrends': []})
 
-    def test_job(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/job/',
-                {'uuid': self.uuid}
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
     def test_platforms(self):
         config_manager = self._setup_config_manager()
 
@@ -1387,14 +1372,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             response = self.get(
                 server,
                 '/crashes/paireduuid/',
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('uuid' in response.body)
-
-            response = self.get(
-                server,
-                '/job/',
                 expect_errors=True
             )
             eq_(response.status, 400)

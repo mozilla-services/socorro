@@ -22,7 +22,6 @@ class IntegrationTestServerStatus(IntegrationTestBase):
     def _clear_tables(self):
         self.conn.cursor().execute("""
             TRUNCATE
-                processors,
                 server_status,
                 report_partition_info,
                 server_status,
@@ -85,25 +84,6 @@ class IntegrationTestServerStatus(IntegrationTestBase):
         # We have to do this here to accommodate separate crontabber processes
         self.conn.commit()
 
-        # Load sample data
-        cursor.execute("""
-            INSERT INTO processors
-            (id, lastseendatetime, name, startdatetime)
-            VALUES
-            (1, now(), 'test', now())
-        """)
-        cursor.execute("""
-            INSERT INTO reports
-            (uuid, signature, completed_datetime,
-            started_datetime, date_processed)
-            VALUES
-            ('123', 'legitimate(sig)', now(), now()-'1 minute'::interval,
-            now()),
-            ('456', 'MWSBAR.DLL@0x2589f', now(), now()-'2 minutes'::interval,
-            now());
-        """)
-        self.conn.commit()
-
         with config_manager.context() as config:
             tab = CronTabber(config)
             tab.run_all()
@@ -118,12 +98,11 @@ class IntegrationTestServerStatus(IntegrationTestBase):
                 , date_oldest_job_queued -- is NULL until we upgrade Rabbit
                 , avg_process_sec
                 , waiting_job_count -- should be 1
-                , processors_count -- should be 1
                 -- , date_created -- leaving timestamp verification out
             from server_status
         """)
 
-        res_expected = (None, None, 0.0, 1, 1)
+        res_expected = (None, None, 0.0, 1)
         res = cursor.fetchone()
         eq_(res, res_expected)
 

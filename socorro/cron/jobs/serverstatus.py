@@ -18,7 +18,6 @@ The following fields are updated in server_status table:
         last run
         or 0.0 in edge case where no jobs have been processed
     waiting_job_count - Number of jobs in queue, not assigned to a processor
-    processors_count - Number of processors running to process jobs
     date_created - timestamp for this record being udpated
 """
 
@@ -43,7 +42,6 @@ _server_stats_sql = """
     avg_process_sec,
     avg_wait_sec,
     waiting_job_count,
-    processors_count,
     date_created
   )
   SELECT
@@ -79,13 +77,6 @@ _server_stats_sql = """
 
     %(count)s
         AS waiting_job_count, -- From RabbitMQ
-
-    (
-      SELECT
-        count(processors.id)
-      FROM processors
-    )
-    AS processors_count,
 
     CURRENT_TIMESTAMP AS date_created
   """

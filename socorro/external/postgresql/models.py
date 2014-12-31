@@ -741,30 +741,6 @@ class HomePageGraphBuild(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
 
 
-class Job(DeclarativeBase):
-    __tablename__ = 'jobs'
-
-    #column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    message = Column(u'message', TEXT())
-    owner = Column(u'owner', INTEGER(), ForeignKey('processors.id'))
-    pathname = Column(u'pathname', VARCHAR(length=1024), nullable=False)
-    priority = Column(u'priority', INTEGER(), server_default=text('0'))
-    queueddatetime = Column(u'queueddatetime', TIMESTAMP(timezone=True))
-    starteddatetime = Column(u'starteddatetime', TIMESTAMP(timezone=True))
-    completeddatetime = Column(u'completeddatetime', TIMESTAMP(timezone=True))
-    success = Column(u'success', BOOLEAN())
-    uuid = Column(u'uuid', VARCHAR(length=50), nullable=False, index=True, unique=True)
-
-    __table_args__ = (
-        Index('jobs_completeddatetime_queueddatetime_key', completeddatetime, queueddatetime),
-        Index('jobs_owner_starteddatetime_key', owner, starteddatetime)
-    )
-
-    #relationship definitions
-    processors = relationship('Processor', primaryjoin='Job.owner==Processor.id')
-
-
 class NightlyBuild(DeclarativeBase):
     __tablename__ = 'nightly_builds'
 
@@ -862,16 +838,6 @@ class ProcessType(DeclarativeBase):
 
     #column definitions
     process_type = Column(u'process_type', CITEXT(), primary_key=True, nullable=False)
-
-
-class Processor(DeclarativeBase):
-    __tablename__ = 'processors'
-
-    #column definitions
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    lastseendatetime = Column(u'lastseendatetime', TIMESTAMP(timezone=True))
-    name = Column(u'name', VARCHAR(length=255), nullable=False)
-    startdatetime = Column(u'startdatetime', TIMESTAMP(timezone=True), nullable=False)
 
 
 class Product(DeclarativeBase):
@@ -1182,7 +1148,7 @@ class ServerStatu(DeclarativeBase):
     date_oldest_job_queued = Column(u'date_oldest_job_queued', TIMESTAMP(timezone=True))
     date_recently_completed = Column(u'date_recently_completed', TIMESTAMP(timezone=True))
     id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    processors_count = Column(u'processors_count', INTEGER(), nullable=False)
+    processors_count = Column(u'processors_count', INTEGER(), nullable=True)
     waiting_job_count = Column(u'waiting_job_count', INTEGER(), nullable=False)
 
     __table_args__ = (
