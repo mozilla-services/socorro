@@ -115,6 +115,7 @@ class TestProcessor2015(TestCase):
         ok_(isinstance(p.rule_system, DotDict))
         eq_(len(p.rule_system), 2)
         ok_('ruleset01' in p.rule_system)
+        print p.rule_system.ruleset01
         ok_(isinstance(p.rule_system.ruleset01, TransformRuleSystem))
         trs = p.rule_system.ruleset01
         eq_(trs.act, trs.apply_all_rules)

@@ -300,7 +300,11 @@ class TransformRuleSystem(RequiredConfig):
     )
 
     #--------------------------------------------------------------------------
-    def __init__(self, config=None):
+    def __init__(self, config=None, quit_check=None):
+        if quit_check:
+            self._quit_check = quit_check
+        else:
+            self._quit_check = self._null_quit_check
         self.rules = []
         if not config:
             config = DotDict()
@@ -321,6 +325,11 @@ class TransformRuleSystem(RequiredConfig):
                     self.rules.append(
                         a_rule_class(config)
                     )
+
+    #--------------------------------------------------------------------------
+    def _null_quit_check(self):
+        "a no-op method to do nothing if no quit check method has been defined"
+        pass
 
     #--------------------------------------------------------------------------
     def load_rules(self, an_iterable):
@@ -345,6 +354,7 @@ class TransformRuleSystem(RequiredConfig):
         returns:
              True - since success or failure is ignored"""
         for x in self.rules:
+            self._quit_check()
             if self.config.chatty_rules:
                 self.config.logger.debug(
                     'apply_all_rules: %s',
@@ -367,6 +377,7 @@ class TransformRuleSystem(RequiredConfig):
            True - if an action is run and succeeds
            False - if no action succeeds"""
         for x in self.rules:
+            self._quit_check()
             if self.config.chatty_rules:
                 self.config.logger.debug(
                     'apply_until_action_succeeds: %s',
@@ -391,6 +402,7 @@ class TransformRuleSystem(RequiredConfig):
             True - an action ran and it failed
             False - no action ever failed"""
         for x in self.rules:
+            self._quit_check()
             if self.config.chatty_rules:
                 self.config.logger.debug(
                     'apply_until_action_fails: %s',
@@ -416,6 +428,7 @@ class TransformRuleSystem(RequiredConfig):
             False - an action ran and it failed
             None - no predicate ever succeeded"""
         for x in self.rules:
+            self._quit_check()
             if self.config.chatty_rules:
                 self.config.logger.debug(
                     'apply_until_predicate_succeeds: %s',
@@ -440,6 +453,7 @@ class TransformRuleSystem(RequiredConfig):
             False - a predicate ran and it failed
             None - no predicate ever failed"""
         for x in self.rules:
+            self._quit_check()
             if self.config.chatty_rules:
                 self.config.logger.debug(
                     'apply_until_predicate_fails: %s',

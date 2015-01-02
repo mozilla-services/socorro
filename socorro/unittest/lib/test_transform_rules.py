@@ -289,6 +289,8 @@ class TestTransformRules(TestCase):
 
     def test_TransformRuleSystem_apply_all_rules(self):
 
+        quit_check_mock = Mock()
+
         def assign_1(s, d):
             d['one'] = 1
             return True
@@ -305,14 +307,17 @@ class TestTransformRules(TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = transform_rules.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
         d = {}
         rules.apply_all_rules(s, d)
         assert_expected(d, {'one': 2})
+        assert_expected(quit_check_mock.call_count, 4)
 
     def test_TransformRuleSystem_apply_all_until_action_succeeds(self):
+
+        quit_check_mock = Mock()
 
         def assign_1(s, d):
             d['one'] = 1
@@ -330,15 +335,18 @@ class TestTransformRules(TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = transform_rules.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
         d = {}
         rules.apply_until_action_succeeds(s, d)
         assert_expected(d, {'one': 1})
+        assert_expected(quit_check_mock.call_count, 2)
 
 
     def test_TransformRuleSystem_apply_all_until_action_fails(self):
+
+        quit_check_mock = Mock()
 
         def assign_1(s, d):
             d['one'] = 1
@@ -356,15 +364,18 @@ class TestTransformRules(TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = transform_rules.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
         d = {}
         rules.apply_until_action_fails(s, d)
         assert_expected(d, {})
+        assert_expected(quit_check_mock.call_count, 1)
 
 
     def test_TransformRuleSystem_apply_all_until_predicate_succeeds(self):
+
+        quit_check_mock = Mock()
 
         def assign_1(s, d):
             d['one'] = 1
@@ -382,14 +393,17 @@ class TestTransformRules(TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = transform_rules.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
         d = {}
         rules.apply_until_predicate_succeeds(s, d)
         assert_expected(d, {})
+        assert_expected(quit_check_mock.call_count, 1)
 
     def test_TransformRuleSystem_apply_all_until_predicate_fails(self):
+
+        quit_check_mock = Mock()
 
         def assign_1(s, d):
             d['one'] = 1
@@ -407,7 +421,7 @@ class TestTransformRules(TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = transform_rules.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem(quit_check=quit_check_mock)
         rules.load_rules(some_rules)
         s = {}
         d = {}
@@ -437,6 +451,8 @@ class TestTransformRules(TestCase):
         rules.load_rules(some_rules)
         res = rules.apply_until_predicate_fails()
         assert_expected(res, False)
+
+        assert_expected(quit_check_mock.call_count, 9)
 
     def test_is_not_null_predicate(self):
         ok_(
@@ -562,7 +578,3 @@ class TestTransformRules(TestCase):
         ok_(isinstance(trs.rules[1], TestRuleTestDangerous))
         ok_(trs.rules[0].predicate(None))
         ok_(trs.rules[1].action(None))
-
-
-
-
