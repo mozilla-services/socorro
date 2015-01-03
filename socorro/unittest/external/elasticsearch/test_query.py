@@ -19,7 +19,10 @@ from socorro.external import (
     MissingArgumentError,
     ResourceNotFound,
 )
-from socorro.external.elasticsearch import crashstorage
+from socorro.external.elasticsearch import (
+    crashstorage,
+    base,
+)
 from socorro.external.elasticsearch.query import Query
 from socorro.lib import datetimeutil
 
@@ -220,10 +223,12 @@ class IntegrationTestQuery(ElasticSearchTestCase):
         api = Query(config=config)
 
         last_week = self.now - datetime.timedelta(days=7)
-        indices = [
-            last_week.strftime(index_schema),
-            self.now.strftime(index_schema),
-        ]
+
+        es = base.ElasticSearchBase(config=config)
+        indices = es.generate_list_of_indexes(
+            last_week,
+            self.now,
+        )
 
         api.get(
             query='{}'
