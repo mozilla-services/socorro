@@ -169,7 +169,7 @@ class ProcessorApp(FetchTransformSaveApp):
                     try:
                         if "TEMPORARY" in a_dump_pathname:
                             os.unlink(a_dump_pathname)
-                    except os.OSError, x:
+                    except OSError, x:
                         # the file does not actually exist
                         self.config.logger.info(
                             'deletion of dump failed: %s',
