@@ -33,6 +33,10 @@ build
 webapp-django/media/
 minidump-stackwalk/*.o
 minidump-stackwalk/stackwalker
+minidump-stackwalk/dumplookup
+socorro.egg-info/
+dist/
+socorro-*.rpm
 
 # exclude filesystem storage directories
 primaryCrashStore/
