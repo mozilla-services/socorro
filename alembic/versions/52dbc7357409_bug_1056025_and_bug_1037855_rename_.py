@@ -21,9 +21,9 @@ from sqlalchemy import types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import table, column
 
-from socorro.cron.jobs.fetch_adi_from_hive import _RAW_ADI_QUERY
 
 def upgrade():
+    from socorro.cron.jobs.fetch_adi_from_hive import _RAW_ADI_QUERY
     op.execute("""TRUNCATE raw_adi""")
     now = datetime.datetime.utcnow()
     for backfill_date in [
