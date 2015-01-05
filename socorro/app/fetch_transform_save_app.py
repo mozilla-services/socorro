@@ -155,6 +155,7 @@ class FetchTransformSaveApp(App):
             dumps = {}
         try:
             self.destination.save_raw_crash(raw_crash, dumps, crash_id)
+            self.config.logger.info('saved - %s', crash_id)
         except Exception as x:
             self.config.logger.error(
                 "writing raw: %s",

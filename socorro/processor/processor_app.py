@@ -162,6 +162,7 @@ class ProcessorApp(FetchTransformSaveApp):
                     processed_crash,
                     crash_id
                 )
+                self.config.logger.info('saved - %s', crash_id)
             finally:
                 # earlier, we created the dumps as files on the file system,
                 # we need to clean up after ourselves.
