@@ -156,7 +156,9 @@ class FetchADIFromHiveCronApp(BaseCronApp):
     required_config.add_option(
         'hive_password',
         default='ignored',
-        doc='Password to connect to Hive with')
+        doc='Password to connect to Hive with',
+        secret=True)
+
 
     required_config.add_option(
         'hive_database',

@@ -109,6 +109,7 @@ class AutomaticEmailsCronApp(BaseCronApp, ElasticSearchBase):
         default='',
         doc='ExactTarget API password.',
         reference_value_from='secrets.exacttarget',
+        secret=True,
     )
     required_config.add_option(
         'email_template',

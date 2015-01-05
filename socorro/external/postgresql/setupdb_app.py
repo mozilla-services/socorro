@@ -72,6 +72,7 @@ class SocorroDBApp(App):
         name='database_password',
         default='aPassword',
         doc='Password to connect to database',
+        secret=True,
     )
 
     required_config.add_option(
@@ -84,6 +85,7 @@ class SocorroDBApp(App):
         name='database_superuserpassword',
         default='aPassword',
         doc='Password to connect to database',
+        secret=True,
     )
 
     required_config.add_option(
@@ -155,6 +157,7 @@ class SocorroDBApp(App):
         name='default_password',
         default='aPassword',
         doc='Default password for roles created by setupdb_app.py',
+        secret=True,
     )
 
     required_config.add_option(

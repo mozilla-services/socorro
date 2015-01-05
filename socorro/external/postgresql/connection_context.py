@@ -47,6 +47,7 @@ class ConnectionContext(RequiredConfig):
         default='aPassword',
         doc="the user's database password",
         reference_value_from='secrets.postgresql',
+        secret=True,
     )
 
     # clients of this class may need to detect Exceptions raised in the
