@@ -34,6 +34,7 @@ webapp-django/media/
 minidump-stackwalk/*.o
 minidump-stackwalk/stackwalker
 minidump-stackwalk/dumplookup
+minidump-stackwalk/get-minidump-instructions
 socorro.egg-info/
 dist/
 socorro-*.rpm
