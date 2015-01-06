@@ -53,8 +53,13 @@ using google_breakpad::SystemInfo;
 
 class HTTPSymbolSupplier : public SimpleSymbolSupplier {
  public:
+  // Construct an HTTPSymbolSupplier.
+  // |server_urls| contains URLs to query for symbols.
+  // |cache_path| is a directory in which to store downloaded symbols.
+  // |local_paths| are directories to query for symbols before checking URLs.
   HTTPSymbolSupplier(const vector<string>& server_urls,
-		     const vector<string>& local_paths);
+                     const string& cache_path,
+                     const vector<string>& local_paths);
   virtual ~HTTPSymbolSupplier();
 
   // Returns the path to the symbol file for the given module.  See the

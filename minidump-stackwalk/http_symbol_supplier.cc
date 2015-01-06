@@ -81,11 +81,19 @@ static bool mkdirs(const string& file) {
   return true;
 }
 
+static vector<string> vector_from(const string& front,
+                                  const vector<string>& rest) {
+  vector<string> vec(1, front);
+  std::copy(rest.begin(), rest.end(), std::back_inserter(vec));
+  return vec;
+}
+
 HTTPSymbolSupplier::HTTPSymbolSupplier(const vector<string>& server_urls,
+                                       const string& cache_path,
 				       const vector<string>& local_paths)
-  : SimpleSymbolSupplier(local_paths),
+  : SimpleSymbolSupplier(vector_from(cache_path, local_paths)),
     server_urls_(server_urls),
-    cache_path_(local_paths.empty() ? string() : local_paths[0]),
+    cache_path_(cache_path),
     curl_(curl_easy_init()) {
   for (auto i = server_urls_.begin(); i < server_urls_.end(); ++i) {
     if (*(i->end() - 1) != '/') {
