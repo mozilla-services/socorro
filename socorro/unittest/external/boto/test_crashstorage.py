@@ -29,7 +29,11 @@ a_raw_crash_as_string = json.dumps(a_raw_crash)
 class ABadDeal(Exception):
     pass
 
+class ConditionallyABadDeal(Exception):
+    pass
+
 BotoS3CrashStorage.operational_exceptions = (ABadDeal, )
+BotoS3CrashStorage.conditional_exceptions = (ConditionallyABadDeal, )
 
 
 class TestCase(socorro.unittest.testbase.TestCase):
@@ -91,6 +95,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
     def setup_mocked_s3_storage(
             self,
             executor=TransactionExecutor,
+            executor_for_gets=TransactionExecutor,
             storage_class='BotoS3CrashStorage',
             host='',
             port=0):
@@ -100,6 +105,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
                 'dump_field': 'dump'
             },
             'transaction_executor_class': executor,
+            'transaction_executor_class_for_get': executor_for_gets,
             'backoff_delays': [0, 0, 0],
             'redactor_class': Redactor,
             'forbidden_keys': Redactor.required_config.forbidden_keys.default,
@@ -581,6 +587,82 @@ class TestCase(socorro.unittest.testbase.TestCase):
 
         self.assertEqual(result, a_raw_crash)
 
+
+    def test_get_unredacted_processed_crash_with_consistency_trouble(self):
+        # setup some internal behaviors and fake outs
+        boto_s3_store = self.setup_mocked_s3_storage(
+            executor_for_gets=TransactionExecutorWithLimitedBackoff
+        )
+
+        actions = [
+            self._fake_unredacted_processed_crash_as_string(),
+            ConditionallyABadDeal('second-hit: not found, no value returned'),
+            ConditionallyABadDeal('first hit: not found, no value returned'),
+        ]
+
+        def temp_failure_fn(*args):
+            action = actions.pop()
+            if isinstance(action, Exception):
+                raise action
+            return action
+
+        boto_s3_store._fetch_from_boto_s3 = mock.Mock()
+        boto_s3_store._fetch_from_boto_s3 \
+            .side_effect = temp_failure_fn
+
+        # the tested call
+        result = boto_s3_store.get_raw_crash(
+            "936ce666-ff3b-4c7a-9674-367fe2120408"
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._fetch_from_boto_s3.call_count, 3)
+        boto_s3_store._fetch_from_boto_s3.has_calls([
+            mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
+            mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
+            mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
+        ])
+
+        self.assertEqual(result, self._fake_unredacted_processed_crash())
+
+    def test_get_unredacted_processed_crash_with_consistency_trouble_no_recover(self):
+        # setup some internal behaviors and fake outs
+        boto_s3_store = self.setup_mocked_s3_storage(
+            executor_for_gets=TransactionExecutorWithLimitedBackoff
+        )
+
+        actions = [
+            ConditionallyABadDeal('third-hit: not found, no value returned'),
+            ConditionallyABadDeal('second-hit: not found, no value returned'),
+            ConditionallyABadDeal('first hit: not found, no value returned'),
+        ]
+
+        def temp_failure_fn(*args):
+            action = actions.pop()
+            if isinstance(action, Exception):
+                raise action
+            return action
+
+        boto_s3_store._fetch_from_boto_s3 = mock.Mock()
+        boto_s3_store._fetch_from_boto_s3 \
+            .side_effect = temp_failure_fn
+
+        # the tested call
+        self.assertRaises(
+            ConditionallyABadDeal,
+            boto_s3_store.get_raw_crash,
+            "936ce666-ff3b-4c7a-9674-367fe2120408"
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store._fetch_from_boto_s3.call_count, 3)
+        boto_s3_store._fetch_from_boto_s3.has_calls([
+            mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
+            mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
+            mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
+        ])
+
+
     def test_get_raw_dump(self):
         """test fetching the raw dump without naming it"""
         # setup some internal behaviors and fake outs
@@ -882,7 +964,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
     def test_get_undredacted_processed_with_trouble(self):
         # setup some internal behaviors and fake outs
         boto_s3_store = self.setup_mocked_s3_storage(
-            TransactionExecutorWithLimitedBackoff
+            executor_for_gets=TransactionExecutorWithLimitedBackoff
         )
         mocked_bucket = boto_s3_store._connect_to_endpoint.return_value \
             .get_bucket.return_value

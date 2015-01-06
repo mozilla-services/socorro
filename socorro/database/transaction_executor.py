@@ -19,6 +19,8 @@ def string_to_list_of_ints(a_string):
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
 
+    is_infinite = False
+
     #--------------------------------------------------------------------------
     def __init__(self, config, db_conn_context_source,
                  quit_check_callback=None):
@@ -71,6 +73,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     required_config.add_option('wait_log_interval',
                                default=10,
                                doc='seconds between log during retries')
+
+    is_infinite = True
 
     #--------------------------------------------------------------------------
     def backoff_generator(self):
@@ -165,3 +169,5 @@ class TransactionExecutorWithLimitedBackoff(
         between retries."""
         for x in self.config.backoff_delays:
             yield x
+
+
