@@ -46,6 +46,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "common/scoped_ptr.h"
 #include "google_breakpad/common/breakpad_types.h"
 #include "google_breakpad/processor/basic_source_line_resolver.h"
 #include "google_breakpad/processor/call_stack.h"
@@ -60,6 +61,7 @@
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
 
+#include "http_symbol_supplier.h"
 #include "json/json.h"
 
 using google_breakpad::BasicSourceLineResolver;
@@ -75,6 +77,7 @@ using google_breakpad::MinidumpProcessor;
 using google_breakpad::PathnameStripper;
 using google_breakpad::ProcessResult;
 using google_breakpad::ProcessState;
+using google_breakpad::scoped_ptr;
 using google_breakpad::SimpleSymbolSupplier;
 using google_breakpad::SourceLineResolverInterface;
 using google_breakpad::StackFrame;
@@ -85,11 +88,11 @@ using google_breakpad::StackFrameMIPS;
 using google_breakpad::StackFramePPC;
 using google_breakpad::StackFrameSPARC;
 using google_breakpad::StackFrameX86;
-
 using google_breakpad::StackFrameSymbolizer;
 using google_breakpad::Stackwalker;
 using google_breakpad::SymbolSupplier;
 using google_breakpad::SystemInfo;
+using breakpad_extra::HTTPSymbolSupplier;
 
 using std::string;
 using std::vector;
@@ -976,6 +979,8 @@ void usage() {
   fprintf(stderr, "\t--pretty\tPretty-print JSON output.\n");
   fprintf(stderr, "\t--pipe-dump\tProduce pipe-delimited output in addition to JSON output\n");
   fprintf(stderr, "\t--raw-json\tAn input file with the raw annotations as JSON\n");
+  fprintf(stderr, "\t--symbols-url\tA base URL from which URLs to symbol files can be constructed\n");
+  fprintf(stderr, "\t--symbols-cache\tA directory in which downloaded symbols can be stored\n");
   fprintf(stderr, "\t--help\tDisplay this help text.\n");
 }
 
@@ -985,10 +990,14 @@ int main(int argc, char** argv)
   bool pretty = false;
   bool pipe = false;
   char* json_path = nullptr;
+  char* symbols_url = nullptr;
+  char* symbols_cache = nullptr;
   static struct option long_options[] = {
     {"pretty", no_argument, nullptr, 'p'},
     {"pipe-dump", no_argument, nullptr, 'i'},
     {"raw-json", required_argument, nullptr, 'r'},
+    {"symbols-url", required_argument, nullptr, 's'},
+    {"symbols-cache", required_argument, nullptr, 'c'},
     {"help", no_argument, nullptr, 'h'},
     {nullptr, 0, nullptr, 0}
   };
@@ -1010,6 +1019,12 @@ int main(int argc, char** argv)
     case 'r':
       json_path = optarg;
       break;
+    case 's':
+      symbols_url = optarg;
+      break;
+    case 'c':
+      symbols_cache = optarg;
+      break;
     case 'h':
       usage();
       return 0;
@@ -1027,6 +1042,13 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  if ((symbols_url || symbols_cache) && !(symbols_url && symbols_cache)) {
+    fprintf(stderr, "You must specify both --symbols-url and --symbols-cache "
+            "when using one of these options\n");
+    usage();
+    return 1;
+  }
+
   Minidump minidump(argv[optind]);
   vector<string> symbol_paths;
   // allow symbol paths to be passed on the commandline.
@@ -1040,9 +1062,18 @@ int main(int argc, char** argv)
   // run amok. Disabling this until we get an upstream fix.
   //Stackwalker::set_max_frames(UINT32_MAX);
   Json::Value root;
-  SimpleSymbolSupplier symbol_supplier(symbol_paths);
+  scoped_ptr<SymbolSupplier> symbol_supplier;
+  if (symbols_url) {
+    vector<string> server_paths(1, string(symbols_url));
+    symbol_supplier.reset(new HTTPSymbolSupplier(server_paths,
+                                                 symbols_cache,
+                                                 symbol_paths));
+  } else if (!symbol_paths.empty()) {
+    symbol_supplier.reset(new SimpleSymbolSupplier(symbol_paths));
+  }
+
   BasicSourceLineResolver resolver;
-  StackFrameSymbolizerForward symbolizer(&symbol_supplier, &resolver);
+  StackFrameSymbolizerForward symbolizer(symbol_supplier.get(), &resolver);
   MinidumpProcessor minidump_processor(&symbolizer, true);
   ProcessState process_state;
   ProcessResult result =
@@ -1068,13 +1099,12 @@ int main(int argc, char** argv)
     ConvertProcessStateToJSON(process_state, symbolizer, root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
-  Json::Writer* writer;
+  scoped_ptr<Json::Writer> writer;
   if (pretty)
-    writer = new Json::StyledWriter();
+    writer.reset(new Json::StyledWriter());
   else
-    writer = new Json::FastWriter();
+    writer.reset(new Json::FastWriter());
   printf("%s\n", writer->write(root).c_str());
 
-  delete writer;
   exit(0);
 }
