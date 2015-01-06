@@ -18,7 +18,7 @@ from socorro.external.crashstorage_base import (
 from socorro.lib.util import DotDict
 
 from configman import Namespace
-from configman.converters import class_converter
+from configman.converters import class_converter, py_obj_to_str
 
 
 #==============================================================================
@@ -28,6 +28,14 @@ class BotoS3CrashStorage(CrashStorageBase):
     """
 
     required_config = Namespace()
+    required_config.add_option(
+        'transaction_executor_class_for_get',
+        default="socorro.database.transaction_executor."
+        "TransactionExecutorWithLimitedBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.boto',
+    )
     required_config.add_option(
         'transaction_executor_class',
         default="socorro.database.transaction_executor."
@@ -105,7 +113,20 @@ class BotoS3CrashStorage(CrashStorageBase):
         boto.exception.ResumableUploadException,
     )
 
-    conditional_exceptions = ()
+    conditional_exceptions = (
+        boto.exception.StorageResponseError
+    )
+
+    #--------------------------------------------------------------------------
+    def is_operational_exception(self, x):
+        if "not found, no value returned" in str(x):
+            # the not found error needs to be re-tryable to compensate for
+            # eventual consistency.  However, a method capable of raising this
+            # exception should never be used with a transaction executor that
+            # has infinite back off.
+            return True
+        #elif   # for further cases...
+        return False
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -121,6 +142,20 @@ class BotoS3CrashStorage(CrashStorageBase):
             self,  # we are our own connection
             quit_check_callback
         )
+        if config.transaction_executor_class_for_get.is_infinite:
+            self.config.logger.error(
+                'the class %s identifies itself as an infinite iterator. '
+                'As a TransactionExecutor for reads from Boto, this may '
+                'result in infinite loops that will consume threads forever.'
+                % py_obj_to_str(config.transaction_executor_class_for_get)
+            )
+
+        self.transaction_for_get = config.transaction_executor_class_for_get(
+            config,
+            self,  # we are our own connection
+            quit_check_callback
+        )
+
 
         # short cuts to external resources - makes testing/mocking easier
         self._connect_to_endpoint = boto.connect_s3
@@ -213,7 +248,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
-        return self.transaction(self.do_get_raw_crash, crash_id)
+        return self.transaction_for_get(self.do_get_raw_crash, crash_id)
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -230,7 +265,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
-        return self.transaction(self.do_get_raw_dump, crash_id, name)
+        return self.transaction_for_get(self.do_get_raw_dump, crash_id, name)
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -259,7 +294,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
-        return self.transaction(self.do_get_raw_dumps, crash_id)
+        return self.transaction_for_get(self.do_get_raw_dumps, crash_id)
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -294,7 +329,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
-        return self.transaction(self.do_get_raw_dumps_as_files, crash_id)
+        return self.transaction_for_get(self.do_get_raw_dumps_as_files, crash_id)
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -315,7 +350,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        return self.transaction(self._do_get_unredacted_processed, crash_id)
+        return self.transaction_for_get(self._do_get_unredacted_processed, crash_id)
 
     #--------------------------------------------------------------------------
     def _get_bucket(self, conn, bucket_name):
@@ -434,13 +469,12 @@ class BotoS3CrashStorage(CrashStorageBase):
         return False
 
     #--------------------------------------------------------------------------
-    def is_operational_exception(self, msg):
-        return False
-    # Down to at least here^^^
-
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
-        del self.connection
+        try:
+            del self.connection
+        except AttributeError:
+            # already deleted, ignorable
+            pass
 
 
 #==============================================================================
@@ -492,3 +526,5 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
         nothing; however it is necessary for compatibility purposes.
         """
         pass
+
+
