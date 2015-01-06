@@ -48,9 +48,37 @@ using google_breakpad::CodeModule;
 using google_breakpad::PathnameStripper;
 using google_breakpad::SystemInfo;
 
-static bool file_exists(const string &file_name) {
+static bool file_exists(const string& file_name) {
   struct stat sb;
   return stat(file_name.c_str(), &sb) == 0;
+}
+
+static string dirname(const string& path) {
+  size_t i = path.rfind('/');
+  if (i == string::npos) {
+    return path;
+  }
+  return path.substr(0, i);
+}
+
+static bool mkdirs(const string& file) {
+  vector<string> dirs;
+  string dir = dirname(file);
+  while (!file_exists(dir)) {
+    dirs.push_back(dir);
+    string new_dir = dirname(dir);
+    if (new_dir == dir || dir.empty()) {
+      break;
+    }
+    dir = new_dir;
+  }
+  for (auto d = dirs.rbegin(); d != dirs.rend(); d++) {
+    if (mkdir(d->c_str(), 0755) != 0) {
+      BPLOG(ERROR) << "Error creating " << dir << ": " << errno;
+      return false;
+    }
+  }
+  return true;
 }
 
 HTTPSymbolSupplier::HTTPSymbolSupplier(const vector<string> &server_urls,
@@ -153,9 +181,6 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
   string path = debug_file_name;
   string url = URLEncode(curl_, debug_file_name);
 
-  // Save this, as we may need to create this directory.
-  string dir1 = JoinPath(cache_path_, path);
-
   // Append the identifier as a directory name.
   string identifier = module->debug_identifier();
   if (identifier.empty()) {
@@ -167,9 +192,6 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
   // See if we already attempted to fetch this symbol file.
   if (SymbolWasError(module, system_info))
     return false;
-
-  // May need to create this directory as well.
-  string dir2 = JoinPath(cache_path_, path);
 
   // Transform the debug file name into one ending in .sym.  If the existing
   // name ends in .pdb, strip the .pdb.  Otherwise, add .sym to the non-.pdb
@@ -186,13 +208,6 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
   debug_file_name += ".sym";
   path = JoinPath(path, debug_file_name);
   url = JoinURL(curl_, url, debug_file_name);
-
-  if (!file_exists(dir1) && mkdir(dir1.c_str(), 0755) != 0) {
-    return false;
-  }
-  if (!file_exists(dir2) && mkdir(dir2.c_str(), 0755) != 0) {
-    return false;
-  }
 
   string full_path = JoinPath(cache_path_, path);
 
@@ -249,6 +264,13 @@ HTTPSymbolSupplier::FetchURLToFile(CURL *curl, const string &url, const string &
   fclose(f);
   close(fd);
 
+  if (result) {
+    result = mkdirs(file);
+    if (!result) {
+      BPLOG(INFO) << "HTTPSymbolSupplier: failed to create directories for "
+                  << file;
+    }
+  }
   if (result) {
     result = 0 == rename(tempfile.c_str(), file.c_str());
     if (!result) {
