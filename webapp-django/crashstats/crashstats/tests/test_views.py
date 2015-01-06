@@ -3514,13 +3514,15 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.post')
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_no_dump(self, rget, rpost):
         dump = ""
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
         url0 = "someaddress.com"
+
+        rpost.side_effect = mocked_post_threesigs
 
         def mocked_get(url, params, **options):
             if '/crash_data' in url:
@@ -3541,13 +3543,6 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
-
-        def mocked_post(url, **options):
-            if '/bugs/' in url:
-                return Response(BUG_STATUS)
-            raise NotImplementedError(url)
-
-        rpost.side_effect = mocked_post
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
