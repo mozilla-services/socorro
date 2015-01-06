@@ -166,9 +166,9 @@ def memoize(function):
     using CACHE_MIDDLEWARE and/or CACHE_MIDDLEWARE_FILES Django config"""
 
     @functools.wraps(function)
-    def memoizer(*args, **kwargs):
+    def memoizer(instance, *args, **kwargs):
 
-        def get_cached_result(key):
+        def get_cached_result(key, instance, stringified_args):
             result = cache.get(key)
             if result is not None:
                 logger.debug("CACHE HIT %s" % stringified_args)
@@ -177,6 +177,7 @@ def memoize(function):
             # Didn't find key in middelware_cache, so try filecache
             if settings.CACHE_MIDDLEWARE_FILES:
                 # but is it fresh enough?
+                cache_file = get_cache_filename(key, instance)
                 age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
                 if age > instance.cache_seconds:
                     logger.debug("CACHE FILE TOO OLD")
@@ -191,7 +192,7 @@ def memoize(function):
             # Didn't find our values in the cache
             return None
 
-        def get_cache_filename(key):
+        def get_cache_filename(key, instance):
             root = settings.CACHE_MIDDLEWARE_FILES
             if isinstance(root, bool):
                 cache_file = os.path.join(
@@ -201,49 +202,38 @@ def memoize(function):
             else:
                 cache_file = root
 
-            cache_file = os.path.join(
-                cache_file,
-                classname,
-                key
-            )
-            if instance.expect_json:
-                cache_file = os.path.join(
-                    cache_file,
-                    '%s.json' % key
-                )
-            else:
-                cache_file = os.path.join(
-                    cache_file,
-                    '%s.dump' % key
-                )
+            cache_file = os.path.join(cache_file, classname, key)
+            cache_file += instance.expect_json and '.json' or '.dump'
             return cache_file
 
-        def refresh_caches(result):
+        def refresh_caches(key, instance, result):
             cache.set(key, result, instance.cache_seconds)
+            cache_file = get_cache_filename(key, instance)
             if cache_file and settings.CACHE_MIDDLEWARE_FILES:
                 if not os.path.isdir(os.path.dirname(cache_file)):
                     os.makedirs(os.path.dirname(cache_file))
-                if instance.expect_json:
-                    json.dump(result, open(cache_file, 'w'), indent=2)
-                else:
-                    open(cache_file, 'w').write(result)
+                with open(cache_file, 'w') as f:
+                    if instance.expect_json:
+                        json.dump(result, f, indent=2)
+                    else:
+                        f.write(result)
 
-        # Get us access to the model instance
-        (instance,) = args
         # Check if item is in the cache and call the decorated method if needed
-        if settings.CACHE_MIDDLEWARE and instance.cache_seconds:
+        do_cache = settings.CACHE_MIDDLEWARE and instance.cache_seconds
+        if do_cache:
             classname = instance.__class__.__name__
             stringified_args = classname + " " + str(kwargs)
-
             key = hashlib.md5(stringified_args).hexdigest()
-            cache_file = get_cache_filename(key)
+            result = get_cached_result(key, instance, stringified_args)
+            if result is not None:
+                return result
 
-            result = cache.get(key)
-            if result is None:
-                # Didn't find it in the cache, so run our function
-                result = function(*args, **kwargs)
-                refresh_caches(result)
-            return result
+        # Didn't find it in the cache or not using a cache, so run our function
+        result = function(instance, *args, **kwargs)
+
+        if do_cache:
+            refresh_caches(key, instance, result)
+        return result
 
     return memoizer
 
