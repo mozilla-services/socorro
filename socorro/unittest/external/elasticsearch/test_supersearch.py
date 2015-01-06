@@ -1921,12 +1921,26 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         ok_('processed_crash' in properties)
         ok_('raw_crash' in properties)
 
+        processed_crash = properties['processed_crash']['properties']
+
         # Check in_database_name is used.
-        ok_('os_name' in properties['processed_crash']['properties'])
-        ok_('platform' not in properties['processed_crash']['properties'])
+        ok_('os_name' in processed_crash)
+        ok_('platform' not in processed_crash)
 
         # Those fields have no `storage_mapping`.
         ok_('fake_field' not in properties['raw_crash']['properties'])
+
+        # Those fields have a `storage_mapping`.
+        eq_(processed_crash['release_channel'], {'type': 'string'})
+
+        # Test nested objects.
+        ok_('json_dump' in processed_crash)
+        ok_('properties' in processed_crash['json_dump'])
+        ok_('write_combine_size' in processed_crash['json_dump']['properties'])
+        eq_(
+            processed_crash['json_dump']['properties']['write_combine_size'],
+            {'type': 'long'}
+        )
 
         # Test overwriting a field.
         mapping = self.api.get_mapping(overwrite_mapping={
