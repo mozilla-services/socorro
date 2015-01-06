@@ -133,7 +133,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             namespace='superspace',
             description='inaccurate description',
             permissions_needed=['view_nothing'],
-            storage_mapping={"type": "boolean"}
+            storage_mapping={'type': 'boolean', 'null_value': False}
         )
 
         # Now let's update that field a little.
@@ -149,7 +149,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             'elasticsearch mapping changed for field "%s", '
             'was "%s", now "%s"',
             'super_field',
-            {'type': 'boolean'},
+            {'type': 'boolean', 'null_value': False},
             {'type': 'long', 'analyzer': 'keyword'},
         )
 

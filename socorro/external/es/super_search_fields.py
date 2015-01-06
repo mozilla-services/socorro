@@ -157,12 +157,26 @@ class SuperSearchFields(ElasticsearchBase):
                 index=self.config.elasticsearch.elasticsearch_default_index,
                 doc_type='supersearch_fields',
                 id=params['name'],
-            )
+            )['_source']  # Only the actual document is of interest.
         except elasticsearch.exceptions.NotFoundError:
             # This field does not exist yet, it thus cannot be updated!
             raise ResourceNotFound(
                 'The field "%s" does not exist in the database, it needs to '
                 'be created before it can be updated. ' % params['name']
+            )
+
+        if 'storage_mapping' in params and old_value['storage_mapping']:
+            # The storage mapping is an object, and thus is treated
+            # differently than other fields by Elasticsearch. If a user
+            # changes the object by removing a field from it, that field won't
+            # be removed as part of the update (which performs a merge of all
+            # objects in the back-end). We therefore want to remove that field
+            # before we do the merge, so that it is entirely overwritten.
+            es_connection.update(
+                index=self.config.elasticsearch_default_index,
+                doc_type='supersearch_fields',
+                body={'script': 'ctx._source.remove("storage_mapping")'},
+                id=params['name'],
             )
 
         # Then update the new field in the database. Note that Elasticsearch
@@ -182,7 +196,7 @@ class SuperSearchFields(ElasticsearchBase):
                 'elasticsearch mapping changed for field "%s", '
                 'was "%s", now "%s"',
                 params['name'],
-                old_value['_source']['storage_mapping'],
+                old_value['storage_mapping'],
                 params['storage_mapping'],
             )
 
