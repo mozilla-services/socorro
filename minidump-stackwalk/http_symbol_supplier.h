@@ -53,39 +53,40 @@ using google_breakpad::SystemInfo;
 
 class HTTPSymbolSupplier : public SimpleSymbolSupplier {
  public:
-  HTTPSymbolSupplier(const vector<string> &server_urls,
-		     const vector<string> &local_paths);
+  HTTPSymbolSupplier(const vector<string>& server_urls,
+		     const vector<string>& local_paths);
   virtual ~HTTPSymbolSupplier();
 
   // Returns the path to the symbol file for the given module.  See the
   // description above.
-  virtual SymbolSupplier::SymbolResult GetSymbolFile(const CodeModule *module,
-                                     const SystemInfo *system_info,
+  virtual SymbolSupplier::SymbolResult GetSymbolFile(const CodeModule* module,
+                                     const SystemInfo* system_info,
                                      string *symbol_file);
 
-  virtual SymbolSupplier::SymbolResult GetSymbolFile(const CodeModule *module,
-                                     const SystemInfo *system_info,
+  virtual SymbolSupplier::SymbolResult GetSymbolFile(const CodeModule* module,
+                                     const SystemInfo* system_info,
                                      string *symbol_file,
                                      string *symbol_data);
 
   // Allocates data buffer on heap and writes symbol data into buffer.
   // Symbol supplier ALWAYS takes ownership of the data buffer.
-  virtual SymbolSupplier::SymbolResult GetCStringSymbolData(const CodeModule *module,
-                                                            const SystemInfo *system_info,
-                                                            string *symbol_file,
-                                                            char **symbol_data,
-                                                            size_t* size);
+  virtual SymbolSupplier::SymbolResult GetCStringSymbolData(
+    const CodeModule* module,
+    const SystemInfo* system_info,
+    string* symbol_file,
+    char** symbol_data,
+    size_t* size);
 
  private:
-  bool FetchSymbolFile(const CodeModule *module, const SystemInfo *system_info);
+  bool FetchSymbolFile(const CodeModule* module, const SystemInfo* system_info);
 
-  static bool FetchURLToFile(CURL *curl, const string &url, const string &file);
-  bool SymbolWasError(const CodeModule *module, const SystemInfo *system_info);
+  static bool FetchURLToFile(CURL* curl, const string& url, const string& file);
+  bool SymbolWasError(const CodeModule* module, const SystemInfo* system_info);
 
   vector<string> server_urls_;
   string cache_path_;
   std::set<std::pair<string,string>> error_symbols_;
-  CURL *curl_;
+  CURL* curl_;
 };
 
 }  // namespace breakpad_extra

@@ -81,15 +81,16 @@ static bool mkdirs(const string& file) {
   return true;
 }
 
-HTTPSymbolSupplier::HTTPSymbolSupplier(const vector<string> &server_urls,
-				       const vector<string> &local_paths)
+HTTPSymbolSupplier::HTTPSymbolSupplier(const vector<string>& server_urls,
+				       const vector<string>& local_paths)
   : SimpleSymbolSupplier(local_paths),
     server_urls_(server_urls),
     cache_path_(local_paths.empty() ? string() : local_paths[0]),
     curl_(curl_easy_init()) {
-  for (vector<string>::iterator i = server_urls_.begin(); i < server_urls_.end(); ++i) {
-    if (*(i->end() - 1) != '/')
+  for (auto i = server_urls_.begin(); i < server_urls_.end(); ++i) {
+    if (*(i->end() - 1) != '/') {
       i->push_back('/');
+    }
   }
 }
 
@@ -97,32 +98,38 @@ HTTPSymbolSupplier::~HTTPSymbolSupplier() {
   curl_easy_cleanup(curl_);
 }
 
-SymbolSupplier::SymbolResult HTTPSymbolSupplier::GetSymbolFile(const CodeModule *module,
-                                               const SystemInfo *system_info,
-                                               string *symbol_file) {
+SymbolSupplier::SymbolResult
+HTTPSymbolSupplier::GetSymbolFile(const CodeModule* module,
+                                  const SystemInfo* system_info,
+                                  string* symbol_file) {
   SymbolSupplier::SymbolResult res =
     SimpleSymbolSupplier::GetSymbolFile(module, system_info, symbol_file);
-  if (res != SymbolSupplier::NOT_FOUND)
+  if (res != SymbolSupplier::NOT_FOUND) {
     return res;
+  }
 
-  if (!FetchSymbolFile(module, system_info))
+  if (!FetchSymbolFile(module, system_info)) {
     return SymbolSupplier::NOT_FOUND;
+  }
 
   return SimpleSymbolSupplier::GetSymbolFile(module, system_info, symbol_file);
 }
 
-SymbolSupplier::SymbolResult HTTPSymbolSupplier::GetSymbolFile(const CodeModule *module,
-                                               const SystemInfo *system_info,
-                                               string *symbol_file,
-                                               string *symbol_data) {
+SymbolSupplier::SymbolResult
+HTTPSymbolSupplier::GetSymbolFile(const CodeModule* module,
+                                  const SystemInfo* system_info,
+                                  string* symbol_file,
+                                  string* symbol_data) {
   SymbolSupplier::SymbolResult res =
     SimpleSymbolSupplier::GetSymbolFile(module, system_info,
                                         symbol_file, symbol_data);
-  if (res != SymbolSupplier::NOT_FOUND)
+  if (res != SymbolSupplier::NOT_FOUND) {
     return res;
+  }
 
-  if (!FetchSymbolFile(module, system_info))
+  if (!FetchSymbolFile(module, system_info)) {
     return SymbolSupplier::NOT_FOUND;
+  }
 
   return SimpleSymbolSupplier::GetSymbolFile(module, system_info,
                                              symbol_file, symbol_data);
@@ -138,11 +145,13 @@ HTTPSymbolSupplier::GetCStringSymbolData(const CodeModule *module,
     SimpleSymbolSupplier::GetCStringSymbolData(module, system_info,
                                                symbol_file, symbol_data,
                                                size);
-  if (res != SymbolSupplier::NOT_FOUND)
+  if (res != SymbolSupplier::NOT_FOUND) {
     return res;
+  }
 
-  if (!FetchSymbolFile(module, system_info))
+  if (!FetchSymbolFile(module, system_info)) {
     return SymbolSupplier::NOT_FOUND;
+  }
 
   return SimpleSymbolSupplier::GetCStringSymbolData(module, system_info,
                                                     symbol_file, symbol_data,
@@ -150,8 +159,9 @@ HTTPSymbolSupplier::GetCStringSymbolData(const CodeModule *module,
 }
 
 namespace {
-  string URLEncode(CURL *curl, const string& url) {
-    char* escaped_url_raw = curl_easy_escape(curl, const_cast<char*>(url.c_str()),
+  string URLEncode(CURL* curl, const string& url) {
+    char* escaped_url_raw = curl_easy_escape(curl,
+                                             const_cast<char*>(url.c_str()),
 					     url.length());
     if (not escaped_url_raw) {
       BPLOG(INFO) << "HTTPSymbolSupplier: couldn't escape URL: " << url;
@@ -171,8 +181,8 @@ namespace {
   }
 }
 
-bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
-                                         const SystemInfo *system_info) {
+bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
+                                         const SystemInfo* system_info) {
   // Copied from simple_symbol_supplier.cc
   string debug_file_name = PathnameStripper::File(module->debug_file());
   if (debug_file_name.empty()) {
@@ -190,15 +200,17 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
   url = JoinURL(curl_, url, identifier);
 
   // See if we already attempted to fetch this symbol file.
-  if (SymbolWasError(module, system_info))
+  if (SymbolWasError(module, system_info)) {
     return false;
+  }
 
   // Transform the debug file name into one ending in .sym.  If the existing
   // name ends in .pdb, strip the .pdb.  Otherwise, add .sym to the non-.pdb
   // name.
   string debug_file_extension;
-  if (debug_file_name.size() > 4)
+  if (debug_file_name.size() > 4) {
     debug_file_extension = debug_file_name.substr(debug_file_name.size() - 4);
+  }
   std::transform(debug_file_extension.begin(), debug_file_extension.end(),
                  debug_file_extension.begin(), tolower);
   if (debug_file_extension == ".pdb") {
@@ -212,7 +224,9 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
   string full_path = JoinPath(cache_path_, path);
 
   bool result = false;
-  for (vector<string>::iterator server_url = server_urls_.begin(); server_url < server_urls_.end(); ++server_url) {
+  for (auto server_url = server_urls_.begin();
+       server_url < server_urls_.end();
+       ++server_url) {
     string full_url = *server_url + url;
     if (FetchURLToFile(curl_, full_url, full_path)) {
       result = true;
@@ -226,15 +240,16 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule *module,
   return result;
 }
 
-bool
-HTTPSymbolSupplier::FetchURLToFile(CURL *curl, const string &url, const string &file)
-{
+bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
+                                        const string& url,
+                                        const string& file) {
   BPLOG(INFO) << "HTTPSymbolSupplier: fetching " << url;
 
   string tempfile = "/tmp/symbolXXXXXX";
   int fd = mkstemp(&tempfile[0]);
-  if (fd == -1)
+  if (fd == -1) {
     return false;
+  }
   FILE* f = fdopen(fd, "w");
 
   BPLOG(INFO) << "HTTPSymbolSupplier: querying " << url;
@@ -286,9 +301,8 @@ HTTPSymbolSupplier::FetchURLToFile(CURL *curl, const string &url, const string &
   return result;
 }
 
-bool
-HTTPSymbolSupplier::SymbolWasError(const CodeModule *module,
-                                   const SystemInfo *system_info) {
+bool HTTPSymbolSupplier::SymbolWasError(const CodeModule* module,
+                                        const SystemInfo* system_info) {
   return error_symbols_.find(std::make_pair(module->debug_file(),
                                             module->debug_identifier())) !=
     error_symbols_.end();
