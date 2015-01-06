@@ -19,16 +19,28 @@ stackwalker_OBJS := \
   json_writer.o \
   $(NULL)
 
-get-minidump-instructions_CXXFLAGS := `pkg-config libcurl --cflags`
-get-minidump-instructions_LIBS := `pkg-config libcurl --libs`
+EXTRA_OBJS := \
+  http_symbol_supplier.o \
+  $(NULL)
 
 VPATH += $(JSON_SRCDIR)
-CXXFLAGS += -I$(JSON_INCLUDEDIR) -std=gnu++0x -Wno-format -Werror
+
+CURL_CFLAGS := $(shell pkg-config libcurl --cflags)
+CURL_LIBS := $(shell pkg-config libcurl --libs)
+
+CXXFLAGS += \
+  -I$(BREAKPAD_SRCDIR) \
+  -I$(JSON_INCLUDEDIR) \
+  -std=gnu++0x \
+  -Wno-format \
+  -Werror \
+  $(CURL_CFLAGS) \
+  $(NULL)
+LIBS := $(CURL_LIBS)
 
 .SECONDEXPANSION:
-$(BINS): %: %.cc $(BREAKPAD_LIBS) $$($$*_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(BREAKPAD_LIBS) $($*_OBJS) $($*_CXXFLAGS) $($*_LIBS) -I$(BREAKPAD_SRCDIR)
-
+$(BINS): %: %.cc $(BREAKPAD_LIBS) $(EXTRA_OBJS) $$($$*_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(BREAKPAD_LIBS) $(EXTRA_OBJS) $($*_OBJS) $(LIBS)
 
 clean:
 	$(RM) $(BINS) *.o
