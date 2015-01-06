@@ -1196,14 +1196,7 @@ class TestViews(BaseTestViews):
     def test_topcrasher_ranks_bybug(self, rget, rpost):
         url = reverse('crashstats:topcrasher_ranks_bybug')
 
-        def mocked_bugs(**options):
-            return {
-                "hits": [
-                    {"id": "123456789", "signature": "FakeSignature 1"},
-                    {"id": "123456789", "signature": "FakeSignature 3"}
-                ]
-            }
-        rpost.side_effect = mocked_bugs
+        rpost.side_effect = mocked_post_threesigs
 
         def mocked_get(url, params, **options):
             signature_summary_data = copy.deepcopy(SAMPLE_SIGNATURE_SUMMARY)

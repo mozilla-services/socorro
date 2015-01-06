@@ -22,7 +22,7 @@ def_source.services.add_option(
     from_string_converter=classes_in_namespaces_converter()
 )
 
-settings.APP_CONFIG = configuration(
+settings.DATASERVICE_CONFIG = configuration(
     definition_source=[
         def_source,
         App.get_required_config(),

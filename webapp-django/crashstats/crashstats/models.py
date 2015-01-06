@@ -1306,15 +1306,15 @@ class Search(SocorroMiddleware):
 
 class Bugs(SocorroMiddleware):
 
-    required_params = settings.APP_CONFIG.services.Bugs.required_params
-    expect_json = settings.APP_CONFIG.services.Bugs.output_is_json
+    required_params = settings.DATASERVICE_CONFIG.services.Bugs.required_params
+    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
 
-    API_WHITELIST = settings.APP_CONFIG.services.Bugs.api_whitelist
+    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
 
     @memoize
     def get(self, **kwargs):
-        bugs_cls = settings.APP_CONFIG.services.Bugs.cls
-        bugs = bugs_cls(settings.APP_CONFIG.services.Bugs)
+        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
+        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
 
         if not kwargs.get('signatures'):
             raise ValueError("'signatures' can not be empty")
@@ -1323,18 +1323,18 @@ class Bugs(SocorroMiddleware):
 
 class SignaturesByBugs(SocorroMiddleware):
 
-    settings.APP_CONFIG.services.Bugs.required_params = (
+    settings.DATASERVICE_CONFIG.services.Bugs.required_params = (
         'bug_ids',
     )
     required_params = settings.\
-        APP_CONFIG.services.Bugs.required_params
-    expect_json = settings.APP_CONFIG.services.Bugs.output_is_json
+        DATASERVICE_CONFIG.services.Bugs.required_params
+    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
 
-    API_WHITELIST = settings.APP_CONFIG.services.Bugs.api_whitelist
+    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
 
     def get(self, **kwargs):
-        bugs_cls = settings.APP_CONFIG.services.Bugs.cls
-        bugs = bugs_cls(settings.APP_CONFIG.services.Bugs)
+        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
+        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
 
         if not kwargs.get('bug_ids'):
             raise ValueError("'bug_ids' can not be empty")

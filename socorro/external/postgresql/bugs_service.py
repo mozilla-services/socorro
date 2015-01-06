@@ -25,32 +25,6 @@ class Bugs(PostgreSQLWebServiceBase):
         ("bug_ids", None, ["list", "str"]),
     ]
 
-    required_config = Namespace()
-    required_config.add_option(
-        'api_whitelist',
-        doc='whitelist',
-        default={
-            'hits': (
-                'id',
-                'signature',
-            )
-        },
-    )
-    required_config.add_option(
-        'required_params',
-        default=('signatures',),
-    )
-    required_config.add_option(
-        'output_is_json',
-        doc='Does this service provide json output?',
-        default=True,
-    )
-    required_config.add_option(
-        'cache_seconds',
-        doc='number of seconds to store results in filesystem cache',
-        default=3600,
-    )
-
     #--------------------------------------------------------------------------
     def get(self, **kwargs):
         import warnings

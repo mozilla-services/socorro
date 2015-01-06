@@ -883,7 +883,7 @@ class TestModels(TestCase):
         ok_(r['total'])
 
     @mock.patch('crashstats.crashstats.models.settings'
-                '.APP_CONFIG.services.Bugs')
+                '.DATASERVICE_CONFIG.services.Bugs')
     def test_bugs(self, rpost):
         model = models.Bugs
         api = model()
@@ -903,7 +903,7 @@ class TestModels(TestCase):
         assert_raises(ValueError, api.get)
 
     @mock.patch('crashstats.crashstats.models.settings'
-                '.APP_CONFIG.services.Bugs')
+                '.DATASERVICE_CONFIG.services.Bugs')
     def test_signatures_by_bugs(self, rpost):
         model = models.SignaturesByBugs
         api = model()
