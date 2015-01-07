@@ -174,10 +174,10 @@ def memoize(function):
                 logger.debug("CACHE HIT %s" % stringified_args)
                 return result
 
-            # Didn't find key in middelware_cache, so try filecache
-            if settings.CACHE_MIDDLEWARE_FILES:
+            # Didn't find key in middleware_cache, so try filecache
+            cache_file = get_cache_filename(key, instance)
+            if settings.CACHE_MIDDLEWARE_FILES and os.path.isfile(cache_file):
                 # but is it fresh enough?
-                cache_file = get_cache_filename(key, instance)
                 age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
                 if age > instance.cache_seconds:
                     logger.debug("CACHE FILE TOO OLD")
