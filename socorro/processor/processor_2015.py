@@ -171,7 +171,8 @@ class Processor2015(RequiredConfig):
             )
             self.rule_system[a_rule_set_name] = (
                 config[a_rule_set_name].rule_system_class(
-                    config[a_rule_set_name]
+                    config[a_rule_set_name],
+                    self.quit_check
                 )
             )
 
