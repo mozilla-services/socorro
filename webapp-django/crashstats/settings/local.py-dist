@@ -169,18 +169,4 @@ SECRET_KEY = 'you must change this'
 #    'label': 'File a bug in bugzilla'
 #}
 #
-# We're adding configman to django, and so we need to specify a path 
-# to the .ini files needed. The setting below is appropriate for local
-# development where you invoke manage.py in the webapp-django/ directory
-# this configuration is for our travis environment
-import os
-build_path = os.environ.get(
-    'TRAVIS_BUILD_DIR',
-    os.environ.get(
-        'WORKSPACE',  # Jenkins
-        '..'  # development where webapp is in a sub-directory of socorro
-    )
-)
-
-DATASERVICE_INI = build_path + '/config/dataservice.ini'
-assert os.path.isfile(DATASERVICE_INI), DATASERVICE_INI
+DATASERVICE_CONFIG_BASE = {}

@@ -351,3 +351,5 @@ DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
 # When this is true, every 400 Bad Request error we get from the middleware
 # is propagated onto the client who caused the request in the webapp.
 PROPAGATE_MIDDLEWARE_400_ERRORS = True
+
+DATASERVICE_CONFIG_BASE = {}

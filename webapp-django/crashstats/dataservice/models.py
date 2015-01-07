@@ -3,7 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.conf import settings
-from configman import configuration, ConfigFileFutureProxy, Namespace
+from configman import (
+    configuration,
+    ConfigFileFutureProxy,
+    Namespace,
+    environment
+)
 from socorro.app.socorro_app import App
 
 from socorro.dataservice.util import (
@@ -28,7 +33,8 @@ settings.DATASERVICE_CONFIG = configuration(
         App.get_required_config(),
     ],
     values_source_list=[
-        settings.DATASERVICE_INI,
+        settings.DATASERVICE_CONFIG_BASE,
         ConfigFileFutureProxy,
+        environment
     ]
 )

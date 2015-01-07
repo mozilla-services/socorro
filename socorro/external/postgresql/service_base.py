@@ -32,20 +32,6 @@ class PostgreSQLWebServiceBase(DataserviceWebServiceBase):
         from_string_converter=class_converter
     )
     required_config.add_option(
-        'api_whitelist',
-        doc='whitelist',
-        default={
-            'hits': (
-                'id',
-                'signature',
-            )
-        },
-    )
-    required_config.add_option(
-        'required_params',
-        default=('signatures',),
-    )
-    required_config.add_option(
         'output_is_json',
         doc='Does this service provide json output?',
         default=True,

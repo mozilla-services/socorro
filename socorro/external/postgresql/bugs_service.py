@@ -25,6 +25,21 @@ class Bugs(PostgreSQLWebServiceBase):
         ("bug_ids", None, ["list", "str"]),
     ]
 
+    required_config = Namespace()
+    required_config.add_option(
+        'api_whitelist',
+        doc='whitelist',
+        default={
+            'hits': (
+                'id',
+                'signature',
+            )
+        },
+    )
+    required_config.add_option(
+        'required_params',
+        default=('signatures',),
+    )
     #--------------------------------------------------------------------------
     def get(self, **kwargs):
         import warnings
