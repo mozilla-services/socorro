@@ -10,7 +10,7 @@ from socorro.dataservice.util import (
     classes_in_namespaces_converter,
 )
 
-SERVICES_LIST = ('socorro.external.postgresql.bugs_service.Bugs')
+SERVICES_LIST = ('socorro.external.postgresql.bugs_service.Bugs',)
 
 # Allow configman to dynamically load the configuration and classes
 # for our API dataservice objects
@@ -18,7 +18,7 @@ def_source = Namespace()
 def_source.namespace('services')
 def_source.services.add_option(
     'service_list',
-    default=SERVICES_LIST,
+    default=','.join(SERVICES_LIST),
     from_string_converter=classes_in_namespaces_converter()
 )
 
