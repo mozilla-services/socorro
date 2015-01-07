@@ -432,6 +432,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         self._is_final_beta(version)
                         and build_type == 'release'
                         and version > '26.0'
+                        and kvpairs.get('buildID')
                     ):
                         logger.debug('is final beta version %s', version)
                         repository = 'mozilla-beta'
