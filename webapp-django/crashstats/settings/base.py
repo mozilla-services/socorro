@@ -352,4 +352,19 @@ DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
 # is propagated onto the client who caused the request in the webapp.
 PROPAGATE_MIDDLEWARE_400_ERRORS = True
 
-DATASERVICE_CONFIG_BASE = {}
+DATASERVICE_CONFIG_BASE = {
+    'resource': {
+        'postgresql': {
+            'transaction_executor_class':
+                'socorro.database.transaction_executor'
+                '.TransactionExecutorWithLimitedBackoff',
+            'backoff_delays': "0, 3",
+        },
+    },
+    'secrets': {
+        'postgresql': {
+            'database_password': 'aPassword',
+            'database_username': 'test',
+        },
+    }
+}

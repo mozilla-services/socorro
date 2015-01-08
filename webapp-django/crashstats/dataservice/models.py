@@ -5,7 +5,7 @@
 from django.conf import settings
 from configman import (
     configuration,
-    ConfigFileFutureProxy,
+    # ConfigFileFutureProxy,
     Namespace,
     environment
 )
@@ -34,7 +34,7 @@ settings.DATASERVICE_CONFIG = configuration(
     ],
     values_source_list=[
         settings.DATASERVICE_CONFIG_BASE,
-        ConfigFileFutureProxy,
+        # ConfigFileFutureProxy,
         environment
     ]
 )
