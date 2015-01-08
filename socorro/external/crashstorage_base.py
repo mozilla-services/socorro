@@ -244,6 +244,13 @@ class CrashStorageBase(RequiredConfig):
         """
         return []
 
+    #--------------------------------------------------------------------------
+    def ack_crash(self, crash_id):
+        """overridden by subclasses that must acknowledge a successful use of
+        an item pulled from the 'new_crashes' generator. """
+        return crash_id
+
+
 
 #==============================================================================
 class NullCrashStorage(CrashStorageBase):
