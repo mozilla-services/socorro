@@ -28,7 +28,7 @@ class FakeCrashStore(object):
 
 #==============================================================================
 class TestConnection(TestCase):
-    """Test PostgreSQLBase class. """
+    """Test FSNewCrashSource class. """
 
     #--------------------------------------------------------------------------
     def _setup_config(self):
