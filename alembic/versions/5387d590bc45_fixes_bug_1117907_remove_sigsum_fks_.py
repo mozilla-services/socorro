@@ -45,11 +45,12 @@ def upgrade():
             r record;
         BEGIN
             FOR r IN
-              select conname
-                from pg_constraint
-                where contype = 'f' and conname ~ 'signature_summary_'
+                WITH tables as ( select relname, oid from pg_class where relname ~ 'signature_summary_' and relkind = 'r' )
+                select conname, tables.relname as relname
+                    from pg_constraint JOIN tables ON tables.oid = pg_constraint.conrelid
+                    where contype = 'f' and conname ~ 'signature_summary_' LIMIT 1
                 LOOP
-                    EXECUTE 'DROP CONSTRAINT ' || quote_ident(r.conname);
+                    EXECUTE 'ALTER TABLE ' || quote_ident(r.relname) || ' DROP CONSTRAINT ' || quote_ident(r.conname);
                 END LOOP;
         END$$
     """)
