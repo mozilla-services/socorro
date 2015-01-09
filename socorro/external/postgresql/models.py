@@ -1511,7 +1511,7 @@ class MissingSymbols(DeclarativeBase):
     __tablename__ = 'missing_symbols'
 
     date_processed = Column(u'date_processed', DATE(), nullable=False)
-    debug_file = Column(u'debug_file', TEXT(), nullable=True, primary_key=True)
+    debug_file = Column(u'debug_file', TEXT(), nullable=True)
     debug_id = Column(u'debug_id', TEXT(), nullable=True)
 
     __mapper_args__ = {'primary_key': (date_processed, debug_file, debug_id)}
