@@ -178,7 +178,10 @@ SECRET_KEY = 'you must change this'
 # and 'resource.postgresql' keys.
 # Here's an example:
 #from . import base
-#DATASERVICE_CONFIG_BASE = base.DATASERVICE_CONFIG_BASE
+#try:
+#    DATASERVICE_CONFIG_BASE = base.DATASERVICE_CONFIG_BASE
+#except AttributeError:
+#    pass
 #DATASERVICE_CONFIG_BASE.update({
 #    'secrets': {
 #       'postgresql': {
