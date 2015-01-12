@@ -176,17 +176,15 @@ SECRET_KEY = 'you must change this'
 # dataservice objects inherit resource configuration and so can all
 # have their database resource configuration set once in 'secrets.postgresql'
 # and 'resource.postgresql' keys.
-# Here's an example:
-#from . import base
-#try:
-#    DATASERVICE_CONFIG_BASE = base.DATASERVICE_CONFIG_BASE
-#except AttributeError:
-#    pass
+#DATASERVICE_CONFIG_BASE = base.DATASERVICE_CONFIG_BASE
 #DATASERVICE_CONFIG_BASE.update({
 #    'secrets': {
 #       'postgresql': {
 #           'database_password': 'newpassword',
-#            'database_username': 'newusername',
+#           'database_username': 'newusername',
+#           'database_hostname': 'localhost',
+#           'database_name': 'breakpad',
+#           'database_port': '5432',
 #        }
 #    }
 #})
