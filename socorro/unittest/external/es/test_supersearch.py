@@ -561,6 +561,16 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _facets=['unkownfield']
         )
 
+    def test_get_missing_index(self):
+        config = self.get_mware_config(es_index='socorro_test_reports_%W')
+        api = SuperSearch(config=config)
+        params = {
+            'date': ['>2000-01-01T00:00:00', '<2000-01-10T00:00:00']
+        }
+
+        res = api.get(**params)
+        eq_(res, {'total': 0, 'hits': [], 'facets': {}})
+
     def test_get_return_query_mode(self):
         res = self.api.get(
             signature='js',

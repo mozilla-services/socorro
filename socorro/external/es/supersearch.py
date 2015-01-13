@@ -371,7 +371,10 @@ class SuperSearch(SearchBase):
 
                 if indices:
                     # Update the list of indices and try again.
-                    search = search.indices(*indices)
+                    # Note: we need to first empty the list of indices before
+                    # updating it, otherwise the removed indices never get
+                    # actually removed.
+                    search = search.index().index(*indices)
                 else:
                     # There is no index left in the list, return an empty
                     # result.
@@ -391,16 +394,16 @@ class SuperSearch(SearchBase):
     # the super_search_fields.py file now. Since the configuration of the
     # middleware expect those to still be here, we bind them for now.
     def get_fields(self, **kwargs):
-        return SuperSearchFields().get_fields(**kwargs)
+        return SuperSearchFields(config=self.config).get_fields(**kwargs)
 
     def create_field(self, **kwargs):
-        return SuperSearchFields().create_field(**kwargs)
+        return SuperSearchFields(config=self.config).create_field(**kwargs)
 
     def update_field(self, **kwargs):
-        return SuperSearchFields().update_field(**kwargs)
+        return SuperSearchFields(config=self.config).update_field(**kwargs)
 
     def delete_field(self, **kwargs):
-        return SuperSearchFields().delete_field(**kwargs)
+        return SuperSearchFields(config=self.config).delete_field(**kwargs)
 
     def get_missing_fields(self):
-        return SuperSearchFields().get_missing_fields()
+        return SuperSearchFields(config=self.config).get_missing_fields()
