@@ -990,7 +990,8 @@ int main(int argc, char** argv)
   bool pretty = false;
   bool pipe = false;
   char* json_path = nullptr;
-  char* symbols_url = nullptr;
+  // Yeah, this is ugly.
+  vector<char*> symbols_urls;
   char* symbols_cache = nullptr;
   static struct option long_options[] = {
     {"pretty", no_argument, nullptr, 'p'},
@@ -1020,7 +1021,7 @@ int main(int argc, char** argv)
       json_path = optarg;
       break;
     case 's':
-      symbols_url = optarg;
+      symbols_urls.push_back(optarg);
       break;
     case 'c':
       symbols_cache = optarg;
@@ -1042,7 +1043,8 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  if ((symbols_url || symbols_cache) && !(symbols_url && symbols_cache)) {
+  if ((!symbols_urls.empty() || symbols_cache) &&
+      !(!symbols_urls.empty() && symbols_cache)) {
     fprintf(stderr, "You must specify both --symbols-url and --symbols-cache "
             "when using one of these options\n");
     usage();
@@ -1063,8 +1065,8 @@ int main(int argc, char** argv)
   //Stackwalker::set_max_frames(UINT32_MAX);
   Json::Value root;
   scoped_ptr<SymbolSupplier> symbol_supplier;
-  if (symbols_url) {
-    vector<string> server_paths(1, string(symbols_url));
+  if (!symbols_urls.empty()) {
+    vector<string> server_paths(symbols_urls.begin(), symbols_urls.end());
     symbol_supplier.reset(new HTTPSymbolSupplier(server_paths,
                                                  symbols_cache,
                                                  symbol_paths));
