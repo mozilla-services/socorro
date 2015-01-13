@@ -31,6 +31,16 @@ class PostgreSQLWebServiceBase(DataserviceWebServiceBase):
             '.external.postgresql.crashstorage.PostgreSQLCrashStorage',
         from_string_converter=class_converter
     )
+    required_config.add_option(
+        'output_is_json',
+        doc='Does this service provide json output?',
+        default=True,
+    )
+    required_config.add_option(
+        'cache_seconds',
+        doc='number of seconds to store results in filesystem cache',
+        default=3600,
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config):

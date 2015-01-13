@@ -168,3 +168,41 @@ SECRET_KEY = 'you must change this'
 #           'component=General&groups=client-services-security',
 #    'label': 'File a bug in bugzilla'
 #}
+
+
+# Dataservice API configuration
+# Extend dataservices settings from settings/base.py here
+# At a minimum, you'll probably want to change db username/password. All
+# dataservice objects inherit resource configuration and so can all
+# have their database resource configuration set once in 'secrets.postgresql'
+# and 'resource.postgresql' keys.
+#DATASERVICE_CONFIG_BASE = base.DATASERVICE_CONFIG_BASE
+#DATASERVICE_CONFIG_BASE.update({
+#    'secrets': {
+#       'postgresql': {
+#           'database_password': 'newpassword',
+#           'database_username': 'newusername',
+#           'database_hostname': 'localhost',
+#           'database_name': 'breakpad',
+#           'database_port': '5432',
+#        }
+#    }
+#})
+
+# To change the configuration for any dataservice object, you may set
+# parameters in the DATASERVICE_CONFIG_BASE which is used by dataservice
+# app. Detailed config is documented in each dataservice object imported
+# by the app.
+#
+# Below is an example of changing the api_whitelist for the Bugs service
+# We convert the dict to a string, as configman prefers a string here.
+#import json
+#DATASERVICE_CONFIG_BASE.update({
+#    'services': {
+#        'Bugs': {
+#            'api_whitelist': json.dumps({
+#                'hits': ('id','signature',)
+#            })
+#        }
+#    }
+#})

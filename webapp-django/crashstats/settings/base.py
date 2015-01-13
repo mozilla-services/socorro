@@ -3,6 +3,7 @@
 
 from funfactory.settings_base import *
 
+
 # This unset DATABASE_ROUTERS from funfactory because we're not
 # interested in using multiple database for the webapp part.
 DATABASE_ROUTERS = ()
@@ -31,6 +32,7 @@ INSTALLED_APPS = (
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
+    '%s.dataservice' % PROJECT_MODULE,
     '%s.crashstats' % PROJECT_MODULE,
     '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,
@@ -349,3 +351,20 @@ DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
 # When this is true, every 400 Bad Request error we get from the middleware
 # is propagated onto the client who caused the request in the webapp.
 PROPAGATE_MIDDLEWARE_400_ERRORS = True
+
+DATASERVICE_CONFIG_BASE = {
+    'resource': {
+        'postgresql': {
+            'transaction_executor_class':
+                'socorro.database.transaction_executor'
+                '.TransactionExecutorWithLimitedBackoff',
+            'backoff_delays': "0, 3",
+        },
+    },
+    'secrets': {
+        'postgresql': {
+            'database_password': 'aPassword',
+            'database_username': 'test',
+        },
+    }
+}

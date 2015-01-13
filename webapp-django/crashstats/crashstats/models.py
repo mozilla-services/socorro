@@ -161,7 +161,86 @@ def measure_fetches(method):
     return inner
 
 
+def memoize(function):
+    """Decorator for model methods to cache in memory or the filesystem
+    using CACHE_MIDDLEWARE and/or CACHE_MIDDLEWARE_FILES Django config"""
+
+    @functools.wraps(function)
+    def memoizer(instance, *args, **kwargs):
+
+        def get_cached_result(key, instance, stringified_args):
+            result = cache.get(key)
+            if result is not None:
+                logger.debug("CACHE HIT %s" % stringified_args)
+                return result
+
+            # Didn't find key in middleware_cache, so try filecache
+            cache_file = get_cache_filename(key, instance)
+            if settings.CACHE_MIDDLEWARE_FILES and os.path.isfile(cache_file):
+                # but is it fresh enough?
+                age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
+                if age > instance.cache_seconds:
+                    logger.debug("CACHE FILE TOO OLD")
+                    os.remove(cache_file)
+                else:
+                    logger.debug("CACHE FILE HIT %s" % stringified_args)
+                    if instance.expect_json:
+                        return json.load(open(cache_file))
+                    else:
+                        return open(cache_file).read()
+
+            # Didn't find our values in the cache
+            return None
+
+        def get_cache_filename(key, instance):
+            root = settings.CACHE_MIDDLEWARE_FILES
+            if isinstance(root, bool):
+                cache_file = os.path.join(
+                    settings.ROOT,
+                    'models-cache'
+                )
+            else:
+                cache_file = root
+
+            cache_file = os.path.join(cache_file, classname, key)
+            cache_file += instance.expect_json and '.json' or '.dump'
+            return cache_file
+
+        def refresh_caches(key, instance, result):
+            cache.set(key, result, instance.cache_seconds)
+            cache_file = get_cache_filename(key, instance)
+            if cache_file and settings.CACHE_MIDDLEWARE_FILES:
+                if not os.path.isdir(os.path.dirname(cache_file)):
+                    os.makedirs(os.path.dirname(cache_file))
+                with open(cache_file, 'w') as f:
+                    if instance.expect_json:
+                        json.dump(result, f, indent=2)
+                    else:
+                        f.write(result)
+
+        # Check if item is in the cache and call the decorated method if needed
+        do_cache = settings.CACHE_MIDDLEWARE and instance.cache_seconds
+        if do_cache:
+            classname = instance.__class__.__name__
+            stringified_args = classname + " " + str(kwargs)
+            key = hashlib.md5(stringified_args).hexdigest()
+            result = get_cached_result(key, instance, stringified_args)
+            if result is not None:
+                return result
+
+        # Didn't find it in the cache or not using a cache, so run our function
+        result = function(instance, *args, **kwargs)
+
+        if do_cache:
+            refresh_caches(key, instance, result)
+        return result
+
+    return memoizer
+
+
 class SocorroCommon(object):
+    """ Soon to be deprecated by classes using socorro dataservice classes
+    and memoize decorator """
 
     # by default, we don't need username and password
     username = password = None
@@ -185,6 +264,7 @@ class SocorroCommon(object):
         retries=None,
         retry_sleeptime=None
     ):
+
         if retries is None:
             retries = settings.MIDDLEWARE_RETRIES
         if retry_sleeptime is None:
@@ -344,6 +424,8 @@ class SocorroCommon(object):
 
 
 class SocorroMiddleware(SocorroCommon):
+    """ Soon to be deprecated by classes using socorro dataservice classes
+    and memoize decorator """
 
     base_url = settings.MWARE_BASE_URL
     http_host = settings.MWARE_HTTP_HOST
@@ -1224,44 +1306,39 @@ class Search(SocorroMiddleware):
 
 class Bugs(SocorroMiddleware):
 
-    required_params = (
-        'signatures',
-    )
+    required_params = settings.DATASERVICE_CONFIG.services.Bugs.required_params
+    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
 
-    API_WHITELIST = {
-        'hits': (
-            'id',
-            'signature',
-        )
-    }
+    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
 
+    @memoize
     def get(self, **kwargs):
-        url = '/bugs/'
+        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
+        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
+
         if not kwargs.get('signatures'):
             raise ValueError("'signatures' can not be empty")
-        payload = {'signatures': kwargs['signatures']}
-        return self.post(url, payload)
+        return bugs.post(**kwargs)
 
 
 class SignaturesByBugs(SocorroMiddleware):
 
-    required_params = (
+    settings.DATASERVICE_CONFIG.services.Bugs.required_params = (
         'bug_ids',
     )
+    required_params = settings.\
+        DATASERVICE_CONFIG.services.Bugs.required_params
+    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
 
-    API_WHITELIST = {
-        'hits': (
-            'id',
-            'signature',
-        )
-    }
+    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
 
     def get(self, **kwargs):
-        url = '/bugs/'
+        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
+        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
+
         if not kwargs.get('bug_ids'):
             raise ValueError("'bug_ids' can not be empty")
-        payload = {'bug_ids': kwargs['bug_ids']}
-        return self.post(url, payload)
+        return bugs.post(**kwargs)
 
 
 class SignatureTrend(SocorroMiddleware):
