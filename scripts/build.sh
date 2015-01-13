@@ -14,8 +14,6 @@
 
 ./scripts/integration-test.sh
 
-./scripts/analysis.sh
-
 ./scripts/install.sh
 
 ./scripts/package.sh
