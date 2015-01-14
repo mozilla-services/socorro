@@ -4,8 +4,8 @@
 
 from nose.tools import eq_, ok_
 
-from socorro.external.rabbitmq.rmq_new_crash_source import (
-    RMQNewCrashSource
+from socorro.external.fs.fs_new_crash_source import (
+    FSNewCrashSource
 )
 from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
@@ -28,7 +28,7 @@ class FakeCrashStore(object):
 
 #==============================================================================
 class TestConnection(TestCase):
-    """Test RMQNewCrashSource class. """
+    """Test FSNewCrashSource class. """
 
     #--------------------------------------------------------------------------
     def _setup_config(self):
@@ -39,16 +39,16 @@ class TestConnection(TestCase):
     #--------------------------------------------------------------------------
     def test_constructor(self):
         config = self._setup_config()
-        ncs = RMQNewCrashSource(config, "ignored_processor_name")
+        ncs = FSNewCrashSource(config, "ignored_processor_name")
         ok_(isinstance(ncs.crash_store, FakeCrashStore))
         ok_(ncs.crash_store.config is config)
 
     #--------------------------------------------------------------------------
     def test__iter__(self):
         config = self._setup_config()
-        ncs = RMQNewCrashSource(config, "ignored_processor_name")
+        ncs = FSNewCrashSource(config, "ignored_processor_name")
         for i, (args, kwargs) in zip(range(10), ncs()):
             crash_id = args[0]
             eq_(str(i), crash_id)
-            eq_(crash_id, kwargs['finished_func']())
+            eq_(kwargs, {})
         eq_(i, 9)
