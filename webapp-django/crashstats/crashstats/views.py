@@ -35,7 +35,7 @@ def robots_txt(request):
     return http.HttpResponse(
         'User-agent: *\n'
         '%s: /' % ('Allow' if settings.ENGAGE_ROBOTS else 'Disallow'),
-        mimetype='text/plain',
+        content_type='text/plain',
     )
 
 
@@ -49,7 +49,8 @@ def favicon_ico(request):
     this up and running.
     """
     filename = os.path.join(settings.STATIC_ROOT, 'img', 'favicon.ico')
-    return http.HttpResponse(open(filename).read(), mimetype='image/x-icon')
+    with open(filename) as f:
+        return http.HttpResponse(f.read(), content_type='image/x-icon')
 
 
 def has_builds(product, versions):
@@ -546,7 +547,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
 
 
 def _render_topcrasher_csv(request, context, product):
-    response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
+    response = http.HttpResponse(content_type='text/csv')
     filedate = datetime.datetime.utcnow().strftime('%Y-%m-%d')
     response['Content-Disposition'] = ('attachment; filename="%s_%s_%s.csv"' %
                                        (product, context['version'], filedate))
@@ -764,7 +765,7 @@ def daily(request, default_context=None):
 
 def _render_daily_csv(request, data, product, versions, platforms, os_names,
                       form_selection):
-    response = http.HttpResponse(mimetype='text/csv', content_type='text/csv')
+    response = http.HttpResponse('text/csv', content_type='text/csv')
     title = 'ADI_' + product + '_' + '_'.join(versions) + '_' + form_selection
     response['Content-Disposition'] = (
         'attachment; filename="%s.csv"' % title

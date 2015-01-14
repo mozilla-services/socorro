@@ -12,7 +12,7 @@ def json_forbidden_response(msg):
     body = json.dumps({'error': msg})
     return http.HttpResponseForbidden(
         body + '\n',
-        mimetype='application/json; charset=UTF-8'
+        content_type='application/json; charset=UTF-8'
     )
 
 

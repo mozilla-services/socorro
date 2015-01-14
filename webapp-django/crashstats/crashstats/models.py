@@ -18,7 +18,6 @@ import ujson
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
-from django.utils.hashcompat import md5_constructor
 from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
@@ -305,7 +304,7 @@ class SocorroCommon(object):
                 data=data,
                 params=params,
             ).prepare()
-            cache_key = md5_constructor(iri_to_uri(req.url)).hexdigest()
+            cache_key = hashlib.md5(iri_to_uri(req.url)).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)

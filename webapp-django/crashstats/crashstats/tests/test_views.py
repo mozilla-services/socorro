@@ -524,8 +524,9 @@ class TestViews(BaseTestViews):
     def test_contribute_json(self):
         response = self.client.get('/contribute.json')
         eq_(response.status_code, 200)
-        # should be valid JSON
-        ok_(json.loads(response.content))
+        # Should be valid JSON, but it's a streaming content because
+        # it comes from django.views.static.serve
+        ok_(json.loads(''.join(response.streaming_content)))
         eq_(response['Content-Type'], 'application/json')
 
     @mock.patch('requests.get')

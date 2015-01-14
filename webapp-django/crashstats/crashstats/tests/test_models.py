@@ -1638,6 +1638,17 @@ class TestModelsWithFileCaching(TestCase):
               """)
         rget.side_effect = mocked_get
 
+        # Because we're mock patching time.time, it becomes impossible
+        # to do something like `some_time > time.time()` which is exactly
+        # what the django.core.cache.backends.locmem.LocMemCache class
+        # does inside its get() method.
+        # So we need to hijack that mock specifically for the "less than"
+        # operator.
+        def mocked_time_lt(other):
+            return False
+
+        mocked_time().__lt__.side_effect = mocked_time_lt
+
         assert not self._get_cached_file(self.tempdir)
 
         # the first time, we rely on the mocket request.get
@@ -1650,7 +1661,6 @@ class TestModelsWithFileCaching(TestCase):
         assert 'hits' in json.loads(open(json_file).read())
 
         # if we now loose the memcache/locmem
-        from django.core.cache import cache
         cache.clear()
 
         info = api.get()

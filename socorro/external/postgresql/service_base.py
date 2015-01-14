@@ -89,6 +89,7 @@ class PostgreSQLWebServiceBase(DataserviceWebServiceBase):
             )
             return result
         except psycopg2.Error, x:
+            raise
             self.config.logger.error(
                 error_message if error_message else str(x),
                 exc_info=True
