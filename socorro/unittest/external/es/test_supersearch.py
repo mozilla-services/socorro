@@ -561,7 +561,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _facets=['unkownfield']
         )
 
-    def test_get_missing_index(self):
+    def test_get_against_nonexistent_index(self):
         config = self.get_mware_config(es_index='socorro_test_reports_%W')
         api = SuperSearch(config=config)
         params = {
