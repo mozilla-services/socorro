@@ -74,7 +74,7 @@ static bool mkdirs(const string& file) {
   }
   for (auto d = dirs.rbegin(); d != dirs.rend(); d++) {
     if (mkdir(d->c_str(), 0755) != 0) {
-      BPLOG(ERROR) << "Error creating " << dir << ": " << errno;
+      BPLOG(ERROR) << "Error creating " << d << ": " << errno;
       return false;
     }
   }
