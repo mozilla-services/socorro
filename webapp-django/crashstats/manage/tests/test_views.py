@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Group, Permission
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.utils.timezone import utc
+from django.utils import timezone
 
 import mock
 from nose.tools import eq_, ok_
@@ -549,7 +549,7 @@ class TestViews(BaseTestViews):
         self._login()
         self.user.last_login -= datetime.timedelta(days=365)
         self.user.save()
-        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         for i in range(1, 101):  # 100 times, 1-100
             User.objects.create(
                 username='user%03d' % i,
@@ -1442,7 +1442,7 @@ class TestViews(BaseTestViews):
             username='third',
             email='third@user.com',
         )
-        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         for i in range(settings.EVENTS_ADMIN_BATCH_SIZE * 2):
             Log.objects.create(
                 user=third_user,

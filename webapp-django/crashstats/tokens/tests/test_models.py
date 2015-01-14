@@ -2,7 +2,7 @@ import datetime
 
 from nose.tools import eq_, ok_
 
-from django.utils.timezone import utc
+from django.utils import timezone
 from django.contrib.auth.models import User
 from django.conf import settings
 
@@ -20,7 +20,7 @@ class TestModels(DjangoTestCase):
         )
         eq_(len(token.key), 32)
 
-        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         future = now + datetime.timedelta(
             days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
         )
@@ -39,7 +39,7 @@ class TestModels(DjangoTestCase):
             notes='Second one'
         )
 
-        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         models.Token.objects.create(
             user=bob,
             notes='First one',
@@ -55,7 +55,7 @@ class TestModels(DjangoTestCase):
             notes='Some notes'
         )
         ok_(not token.is_expired)
-        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         yesterday = now - datetime.timedelta(days=1)
         token.expires = yesterday
         token.save()

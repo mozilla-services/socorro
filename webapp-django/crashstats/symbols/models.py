@@ -5,8 +5,7 @@ import unicodedata
 
 from django.db import models
 from django.contrib.auth.models import User
-
-from crashstats.base.utils import get_now
+from django.utils import timezone
 
 
 def uploader(instance, filename):
@@ -31,7 +30,7 @@ class SymbolsUpload(models.Model):
     filename = models.CharField(max_length=100)
     file = models.FileField(null=True, upload_to=uploader)
     size = models.IntegerField()
-    created = models.DateTimeField(default=get_now)
+    created = models.DateTimeField(default=timezone.now)
 
     def __repr__(self):
         return '<%s: %r...>' % (self.__class__.__name__, self.content[:100])
