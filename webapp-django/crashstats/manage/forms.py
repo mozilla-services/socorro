@@ -2,8 +2,10 @@ import datetime
 
 from django.contrib.auth.models import User, Group, Permission
 from django import forms
+from django.utils import timezone
 
 from crashstats.crashstats.forms import BaseForm, BaseModelForm
+from crashstats.tokens.models import Token
 
 
 class SkipListForm(BaseForm):
@@ -38,6 +40,82 @@ class FilterEventsForm(BaseForm):
 
     user = forms.CharField(required=False)
     action = forms.CharField(required=False)
+
+
+class FilterAPITokensForm(BaseForm):
+
+    user = forms.CharField(required=False)
+    key = forms.CharField(required=False)
+    expired = forms.ChoiceField(required=False, choices=(
+        ('', 'All'),
+        ('yes', 'Expired'),
+        ('no', 'Not expired'),
+    ))
+
+
+class APITokenForm(BaseModelForm):
+
+    user = forms.CharField(required=True)
+    expires = forms.ChoiceField(required=True)
+
+    class Meta:
+        model = Token
+        fields = ('user', 'expires', 'notes', 'permissions')
+
+    def __init__(self, *args, **kwargs):
+        self.possible_permissions = kwargs.pop('possible_permissions', [])
+        expires_choices = kwargs.pop('expires_choices', [])
+        super(APITokenForm, self).__init__(*args, **kwargs)
+        self.fields['permissions'].choices = (
+            (x.pk, x.name) for x in self.possible_permissions
+        )
+        self.fields['user'].widget = forms.widgets.TextInput()
+        self.fields['user'].label = 'User (by email)'
+        self.fields['expires'].choices = expires_choices
+
+    def clean_user(self):
+        value = self.cleaned_data['user']
+        try:
+            user = User.objects.get(email__istartswith=value.strip())
+            if not user.is_active:
+                raise forms.ValidationError(
+                    '%s is not an active user' % user.email
+                )
+            return user
+        except User.DoesNotExist:
+            raise forms.ValidationError('No user found by that email address')
+        except User.MultipleObjectsReturned:
+            raise forms.ValidationError(
+                'More than one user found by that email address'
+            )
+
+    def clean_expires(self):
+        value = self.cleaned_data['expires']
+        return timezone.now() + datetime.timedelta(days=int(value))
+
+    def clean(self):
+        cleaned_data = super(APITokenForm, self).clean()
+        if 'user' in cleaned_data and 'permissions' in cleaned_data:
+            user = cleaned_data['user']
+            for permission in cleaned_data['permissions']:
+                if not user.has_perm('crashstats.' + permission.codename):
+                    only = [
+                        p.name for p in self.possible_permissions
+                        if user.has_perm('crashstats.' + p.codename)
+                    ]
+                    msg = (
+                        '%s does not have the permission "%s". ' % (
+                            user.email,
+                            permission.name
+                        )
+                    )
+                    if only:
+                        msg += ' Only permissions possible are: '
+                        msg += ', '.join(only)
+                    else:
+                        msg += ' %s has no permissions!' % user.email
+                    raise forms.ValidationError(msg)
+        return cleaned_data
 
 
 class GroupForm(BaseModelForm):

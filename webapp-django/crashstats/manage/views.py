@@ -3,6 +3,7 @@ import datetime
 import functools
 import copy
 import urllib
+import collections
 
 from django import http
 from django.conf import settings
@@ -14,6 +15,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
 from django.core.paginator import Paginator
+from django.utils import timezone
 
 from eventlog.models import log, Log
 
@@ -31,6 +33,7 @@ from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchMissingFields,
 )
+from crashstats.tokens.models import Token
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from . import forms
@@ -785,6 +788,144 @@ def events_data(request):
 
     return {
         'events': items,
+        'count': count,
+        'batch_size': batch_size,
+        'page': page,
+    }
+
+
+@superuser_required
+def api_tokens(request):
+    all_possible_permissions = (
+        Permission.objects.filter(content_type__model='')
+        .order_by('name')
+    )
+    possible_permissions = []
+    for permission in all_possible_permissions:
+        possible_permissions.append(permission)
+
+    expires_choices = (
+        (1, '1 day'),
+        (7, '1 week'),
+        (30, '1 month'),
+        (30 * 3, '3 months'),
+        (365, '1 year'),
+        (365 * 10, '10 years'),
+    )
+
+    if request.method == 'POST':
+        form = forms.APITokenForm(
+            request.POST,
+            possible_permissions=possible_permissions,
+            expires_choices=expires_choices,
+        )
+        if form.is_valid():
+            data = form.cleaned_data
+            token = Token.objects.create(
+                user=data['user'],
+                notes=data['notes'],
+                expires=data['expires'],
+            )
+            for permission in data['permissions']:
+                token.permissions.add(permission)
+
+            messages.success(
+                request,
+                'API Token for %s created. ' % token.user.email
+            )
+            return redirect('manage:api_tokens')
+    else:
+        form = forms.APITokenForm(
+            possible_permissions=possible_permissions,
+            expires_choices=expires_choices,
+            initial={
+                'expires': settings.TOKENS_DEFAULT_EXPIRATION_DAYS,
+            }
+        )
+    context = {
+        'form': form,
+        'filter_form': forms.FilterAPITokensForm(request.GET),
+    }
+    return render(request, 'manage/api_tokens.html', context)
+
+
+@require_POST
+@json_view
+@superuser_required
+def api_tokens_delete(request):
+    if not request.POST.get('id'):
+        return http.HttpResponseBadRequest('No id')
+    token = get_object_or_404(Token, id=request.POST['id'])
+    token.delete()
+    return True
+
+
+@json_view
+@superuser_required
+def api_tokens_data(request):
+    form = forms.FilterAPITokensForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    tokens = Token.objects.all().order_by('-created')
+    if form.cleaned_data['user']:
+        tokens = tokens.filter(
+            user__email__icontains=form.cleaned_data['user']
+        )
+    if form.cleaned_data['key']:
+        tokens = tokens.filter(
+            key__startswith=form.cleaned_data['key']
+        )
+    if form.cleaned_data['expired'] == 'yes':
+        tokens = tokens.filter(
+            expires__lt=timezone.now()
+        )
+    elif form.cleaned_data['expired'] == 'no':
+        tokens = tokens.filter(
+            expires__gte=timezone.now()
+        )
+    count = tokens.count()
+    try:
+        page = int(request.GET.get('page', 1))
+        assert page >= 1
+    except (ValueError, AssertionError):
+        return http.HttpResponseBadRequest('invalid page')
+
+    items = []
+    batch_size = settings.API_TOKENS_ADMIN_BATCH_SIZE
+    batch = Paginator(tokens.select_related('user'), batch_size)
+    batch_page = batch.page(page)
+
+    # build up a dict of permission id -> permission name
+    _permissions_names = {}
+    for permission in Permission.objects.filter(content_type__model=''):
+        _permissions_names[permission.id] = permission.name
+
+    # build up a dict of token id -> permission names
+    _permissions_map = collections.defaultdict(list)
+    # ...but only do it for the subset of tokens we'll look at
+    token_permissions = (
+        Token.permissions.through.objects.filter(token__in=tokens)
+    )
+    for x in token_permissions:
+        _permissions_map[x.token_id].append(
+            _permissions_names[x.permission_id]
+        )
+
+    for token in batch_page.object_list:
+        items.append({
+            'id': token.id,
+            'user': token.user.email,
+            'key': token.key,
+            'expires': token.expires,
+            'expired': token.is_expired,
+            'permissions': sorted(_permissions_map.get(token.id, [])),
+            'notes': token.notes,
+            'created': token.created,
+        })
+
+    return {
+        'tokens': items,
         'count': count,
         'batch_size': batch_size,
         'page': page,

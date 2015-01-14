@@ -1,4 +1,4 @@
-/*global alert:true location:true */
+/*global alert:true location:true PaginationUtils:true */
 (function ($, document) {
     'use strict';
 
@@ -17,31 +17,6 @@
                 return item.name;
             });
             return names.join(', ');
-        }
-
-        function show_pagination_links(count, batch_size, page) {
-            var $pagination = $('.pagination').hide();
-            $('.page-wrapper').hide();
-            $pagination.find('a').hide();
-            var show = false;
-            if (count > batch_size) {
-                $('.page-wrapper').show();
-                // there's more to show possible
-                if (batch_size * page < count) {
-                    // there is more to show
-                    $pagination.find('.next').show();
-                    show = true;
-                }
-                if (batch_size * (page - 1) > 0) {
-                    // there is stuff in the past to show
-                    $pagination.find('.previous').show();
-                    $pagination.show();
-                }
-            }
-            if (show) {
-                $pagination.show();
-
-            }
         }
 
         start_loading();
@@ -69,7 +44,7 @@
                     .appendTo($tbody);
             });
             $('.page').text(response.page);
-            show_pagination_links(
+            PaginationUtils.show_pagination_links(
                 response.count,
                 response.batch_size,
                 response.page
