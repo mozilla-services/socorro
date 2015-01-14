@@ -23,6 +23,13 @@ from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
+# The reason to import this is if this file is, for some reason, imported
+# before django's had a chance to register all models.py in the
+# settings.INSTALLED_APPS list.
+# This can happen if you use django-nose on a specific file.
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1121749
+from crashstats.dataservice import models
+models = models  # silence pyflakes
 
 
 logger = logging.getLogger('crashstats_models')
