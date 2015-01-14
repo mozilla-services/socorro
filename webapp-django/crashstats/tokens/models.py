@@ -4,13 +4,12 @@ import uuid
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User, Permission
-
-from crashstats.base.utils import get_now
+from django.utils import timezone
 
 
 def get_future():
     delta = datetime.timedelta(days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS)
-    return get_now() + delta
+    return timezone.now() + delta
 
 
 def make_key():
@@ -20,7 +19,7 @@ def make_key():
 class TokenManager(models.Manager):
 
     def active(self):
-        return self.get_query_set().filter(expires__gt=get_now())
+        return self.get_query_set().filter(expires__gt=timezone.now())
 
 
 class Token(models.Model):
@@ -29,7 +28,7 @@ class Token(models.Model):
     expires = models.DateTimeField(default=get_future)
     permissions = models.ManyToManyField(Permission)
     notes = models.TextField(blank=True)
-    created = models.DateTimeField(default=get_now)
+    created = models.DateTimeField(default=timezone.now)
 
     objects = TokenManager()
 
@@ -38,4 +37,4 @@ class Token(models.Model):
 
     @property
     def is_expired(self):
-        return self.expires < get_now()
+        return self.expires < timezone.now()

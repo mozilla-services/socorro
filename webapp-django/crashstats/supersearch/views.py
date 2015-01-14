@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
-from django.utils.timezone import utc
+from django.utils import timezone
 
 from waffle.decorators import waffle_switch
 
@@ -299,7 +299,7 @@ def get_report_list_parameters(source):
                     params['date'] = upper
                 else:
                     params['date'] = (
-                        datetime.datetime.utcnow().replace(tzinfo=utc)
+                        timezone.now()
                     )
                     params['range_value'] = to_hours(params['date'] - upper)
                     params['range_unit'] = 'hours'
@@ -335,7 +335,7 @@ def search_custom(request, default_context=None):
             error = e
 
     schema = settings.ELASTICSEARCH_INDEX_SCHEMA
-    now = datetime.datetime.utcnow().replace(tzinfo=utc)
+    now = timezone.now()
 
     possible_indices = []
     for i in range(26):
