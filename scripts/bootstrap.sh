@@ -14,7 +14,7 @@ fi
 source "$VIRTUAL_ENV/bin/activate"
 
 # install dev + prod dependencies
-${VIRTUAL_ENV}/bin/pip install tools/peep-2.0.tar.gz
+${VIRTUAL_ENV}/bin/pip install tools/peep-2.1.1.tar.gz
 ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
 # install socorro in local virtualenv
