@@ -52,12 +52,15 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.CorrelationsCoreCronApp|1d|07:30
   socorro.cron.jobs.matviews.CorrelationsModuleCronApp|1d|08:00
   socorro.cron.jobs.drop_old_partitions.DropOldPartitionsCronApp|7d
+  socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d
 '''
 
 
 # this class is for eventual support of CronTabber with the universal
 # socorro app.
 from socorro.app.socorro_app import App as App
+
+
 #==============================================================================
 class CronTabberApp(CronTabberBase, App):
     #--------------------------------------------------------------------------
