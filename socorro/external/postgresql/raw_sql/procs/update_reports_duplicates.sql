@@ -1,7 +1,13 @@
-CREATE OR REPLACE FUNCTION update_reports_duplicates(start_time timestamp with time zone, end_time timestamp with time zone) RETURNS integer
+CREATE OR REPLACE FUNCTION update_reports_duplicates 
+(
+    start_time timestamp with time zone, 
+    end_time timestamp with time zone
+) 
+    RETURNS integer
     LANGUAGE plpgsql
     AS $$
-declare new_dups INT;
+DECLARE 
+    new_dups INT;
 begin
 
 -- create a temporary table with the new duplicates
@@ -12,51 +18,71 @@ begin
 create temporary table new_reports_duplicates
 on commit drop
 as
-select follower.uuid as uuid,
-	leader.uuid as duplicate_of,
-	follower.date_processed
-from
-(
-select uuid,
-    install_age,
-    uptime,
-    client_crash_date,
-    date_processed,
-  first_value(uuid)
-  over ( partition by
-            product,
-            version,
-            build,
-            signature,
-            cpu_name,
-            cpu_info,
-            os_name,
-            os_version,
-            address,
-            topmost_filenames,
-            reason,
-            app_notes,
-            url
-         order by
-            client_crash_date,
-            uuid
+with follower as (
+select 
+    uuid
+    , install_age
+    , uptime
+    , client_crash_date
+    , date_processed
+    , first_value(uuid) over ( partition by
+        product,
+        version,
+        build,
+        signature,
+        cpu_name,
+        cpu_info,
+        os_name,
+        os_version,
+        address,
+        topmost_filenames,
+        reason,
+        app_notes,
+        url
+        order by
+            client_crash_date
+            , uuid
         ) as leader_uuid
-   from reports
-   where date_processed BETWEEN start_time AND end_time
- ) as follower
-JOIN
-  ( select uuid, install_age, uptime, client_crash_date
     FROM reports
-    where date_processed BETWEEN start_time AND end_time ) as leader
-  ON follower.leader_uuid = leader.uuid
-WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
-                  leader.uptime, follower.uptime)
-		  OR follower.uptime < 60
-  	  )
-  AND
-	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
-                  leader.install_age, follower.install_age)
-  AND follower.uuid <> leader.uuid;
+    where date_processed BETWEEN start_time AND end_time
+),
+leader as (
+        select 
+        uuid
+        , install_age
+        , uptime
+        , client_crash_date
+    FROM reports
+    WHERE 
+        date_processed BETWEEN start_time AND end_time 
+)
+select 
+    follower.uuid as uuid
+	, leader.uuid as duplicate_of
+	, follower.date_processed
+from
+follower
+JOIN leader
+    ON follower.leader_uuid = leader.uuid
+WHERE ( 
+    same_time_fuzzy(
+        leader.client_crash_date
+        , follower.client_crash_date
+        , leader.uptime
+        , follower.uptime
+    )
+    OR 
+    follower.uptime < 60
+)
+AND
+    same_time_fuzzy(
+        leader.client_crash_date
+        , follower.client_crash_date
+        , leader.install_age
+        , follower.install_age
+    )
+AND 
+    follower.uuid <> leader.uuid;
 
 -- insert a copy of the leaders
 
@@ -86,5 +112,3 @@ where reports_duplicates.uuid IS NULL;
 DROP TABLE new_reports_duplicates;
 RETURN new_dups;
 end;$$;
-
-
