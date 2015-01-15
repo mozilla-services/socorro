@@ -99,10 +99,6 @@ class APIWhitelistError(Exception):
 class MultipleStringField(forms.TypedMultipleChoiceField):
     """Field that do not validate if the field values are in self.choices"""
 
-    # def to_python(self, value):
-    #     """Override checking method"""
-    #     return map(self.coerce, value)
-
     def validate(self, value):
         """Nothing to do here"""
         if self.required and not value:
