@@ -99,10 +99,6 @@ class APIWhitelistError(Exception):
 class MultipleStringField(forms.TypedMultipleChoiceField):
     """Field that do not validate if the field values are in self.choices"""
 
-    def to_python(self, value):
-        """Override checking method"""
-        return map(self.coerce, value)
-
     def validate(self, value):
         """Nothing to do here"""
         if self.required and not value:
@@ -249,7 +245,7 @@ def model_wrapper(request, model_name):
                     return http.HttpResponse(
                         message,
                         status=error_code,
-                        mimetype='application/json; charset=UTF-8'
+                        content_type='application/json; charset=UTF-8'
                     )
                 except ValueError:
                     # The error from the middleware was not a JSON error.
@@ -265,7 +261,7 @@ def model_wrapper(request, model_name):
                 return http.HttpResponse(
                     reason,
                     status=424,
-                    mimetype='text/plain'
+                    content_type='text/plain'
                 )
             raise
         except ValueError as e:
