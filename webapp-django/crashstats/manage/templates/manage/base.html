@@ -35,6 +35,8 @@
                  {% if url('manage:releases') in request.path_info  %}class="selected"{% endif %}>Releases</a></li>
             <li><a href="{{ url('manage:events') }}"
                  {% if url('manage:events') in request.path_info  %}class="selected"{% endif %}>Events</a></li>
+            <li><a href="{{ url('manage:api_tokens') }}"
+                 {% if url('manage:api_tokens') in request.path_info  %}class="selected"{% endif %}>API Tokens</a></li>
         </ul>
     </div>
     {% block mainbody %}

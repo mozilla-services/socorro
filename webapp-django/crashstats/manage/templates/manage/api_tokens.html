@@ -1,6 +1,6 @@
 {% extends "manage/base.html" %}
 
-{% block page_title %}{{ super() }} - Events{% endblock %}
+{% block page_title %}{{ super() }} - API Tokens{% endblock %}
 
 {% block site_js %}
   {{ super() }}
@@ -9,47 +9,18 @@
   <script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
   {% endcompress %}
   {% compress js %}
-  <script type="text/javascript" src="{{ static('manage/js/events.js') }}"></script>
+  <script type="text/javascript" src="{{ static('manage/js/api_tokens.js') }}"></script>
   {% endcompress %}
 {% endblock %}
 
 {% block site_css %}
   {{ super() }}
-  <style type="text/css">
-  .count {
-      display: none;
-      margin-bottom: 0;
-  }
-  p.pleasewait {
-      display: none;
-      float: right;
-      margin-right: 10px;
-  }
-  input[name="email"] {
-      width: 100%;
-  }
-  form.edit {
-      display: none;
-  }
-  form#filter {
-      margin-top: 30px;
-  }
-  .page-wrapper {
-      color: #666;
-      font-size: 80%;
-  }
-  .pagination {
-      display: none;
-      float: right;
-      margin: 0 10px;
-  }
-  td pre {
-      display:none;
-  }
-  </style>
+  {% compress css %}
+  <link rel="stylesheet" type="text/css" href="{{ static('manage/css/api_tokens.css') }}">
+  {% endcompress %}
 {% endblock %}
 
-{% block admin_title %}{{ super() }} - Events{% endblock %}
+{% block admin_title %}{{ super() }} - API Tokens{% endblock %}
 
 {% block mainbody %}
 
@@ -61,7 +32,7 @@
         Loading...
       </p>
 
-      <h3 class="count"><b></b> Events found
+      <h3 class="count"><b></b> API Tokens found
         <span class="page-wrapper">(page <span class="page"></span>)</span>
       </h3>
 
@@ -70,28 +41,27 @@
         <a href="" class="next">Next &rarr;</a>
       </p>
 
-      <form action="" id="filter" data-dataurl="{{ url('manage:events_data') }}">
+      <form action="" id="tokens"
+        data-data-url="{{ url('manage:api_tokens_data') }}"
+        data-delete-url="{{ url('manage:api_tokens_delete') }}">
         <input type="hidden" name="page">
         <table class="data-table vertical">
           <thead>
             <tr>
               <th>User</th>
-              <th>Action</th>
-              <th>When</th>
-              <th>URL</th>
-              <th>Extra Details</th>
+              <th style="width:260px">Key</th>
+              <th>Expires</th>
+              <th>Permissions</th>
+              <th class="notes">Notes</th>
+              <th>&nbsp;</th>
             </tr>
           </thead>
           <tfoot>
             <tr>
               <td><input type="text" name="user" placeholder="Filter by email"></td>
+              <td><input type="text" name="key" placeholder="Filter by key"></td>
               <td>
-                <select name="action">
-                    <option value="">All</option>
-                  {% for action in all_actions %}
-                    <option value="{{ action }}">{{ action }}</option>
-                  {% endfor %}
-                </select>
+                {{ filter_form.expired }}
               </td>
               <td>&nbsp;</td>
               <td>&nbsp;</td>
@@ -102,6 +72,24 @@
           </tfoot>
           <tbody>
           </tbody>
+        </table>
+      </form>
+
+      <hr>
+
+      <h3>
+        Create new API Token
+      </h3>
+
+      <form action="{{ url('manage:api_tokens') }}" id="create" method="post"
+            data-users-url="{{ url('manage:users_data') }}">
+        {{ csrf() }}
+        <table class="data-table">
+          {{ form }}
+          <tr>
+            <th>&nbsp;</th>
+            <td><input type="submit" value="Save"></td>
+          </tr>
         </table>
       </form>
 

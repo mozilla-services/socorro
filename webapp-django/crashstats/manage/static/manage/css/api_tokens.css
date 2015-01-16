@@ -1,0 +1,41 @@
+.count {
+      display: none;
+      margin-bottom: 0;
+}
+p.pleasewait {
+    display: none;
+    float: right;
+    margin-right: 10px;
+}
+input[name="email"] {
+    width: 100%;
+}
+form#tokens {
+  margin-top: 30px;
+}
+.page-wrapper {
+    color: #666;
+    font-size: 80%;
+}
+.pagination {
+    display: none;
+    float: right;
+    margin: 0 10px;
+}
+#id_user {
+    width: 500px;
+}
+#id_notes {
+    width: 500px;
+    height: 50px;
+}
+code.redacted, span.redacted {
+    cursor: pointer;
+}
+th.notes, td.notes {
+    max-width: 350px;
+}
+td.expired {
+    color: darkred;
+    font-weight: bold;
+}

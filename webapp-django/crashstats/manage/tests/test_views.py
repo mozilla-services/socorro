@@ -15,6 +15,7 @@ from nose.tools import eq_, ok_
 from eventlog.models import Log
 
 from crashstats.symbols.models import SymbolsUpload
+from crashstats.tokens.models import Token
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
@@ -71,6 +72,17 @@ class TestViews(BaseTestViews):
         self.user.is_superuser = is_superuser
         self.user.save()
         assert self.client.login(username='kairo', password='secret')
+
+    def _create_permission(self, name='Mess Around', codename='mess_around'):
+        ct, __ = ContentType.objects.get_or_create(
+            model='',
+            app_label='crashstats',
+        )
+        return Permission.objects.create(
+            name=name,
+            codename=codename,
+            content_type=ct
+        )
 
     def test_home_page_not_signed_in(self):
         home_url = reverse('manage:home')
@@ -723,18 +735,9 @@ class TestViews(BaseTestViews):
 
         wackos = Group.objects.create(name='Wackos')
         # Attach a known permission to it
-        ct = ContentType.objects.create(
-            model='',
-            app_label='crashstats.crashstats',
-        )
-        Permission.objects.create(
-            name='Mess Around',
-            codename='mess_around',
-            content_type=ct
-        )
-        wackos.permissions.add(
-            Permission.objects.get(codename='mess_around')
-        )
+        permission = self._create_permission()
+        wackos.permissions.add(permission)
+
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('Wackos' in response.content)
@@ -1528,3 +1531,259 @@ class TestViews(BaseTestViews):
         eq_(three['url'], reverse('manage:group', args=(group.id,)))
         eq_(four['url'], reverse('manage:supersearch_field') + '?name=sig1')
         eq_(five['url'], reverse('manage:supersearch_field') + '?name=sig2')
+
+    def test_api_tokens(self):
+        permission = self._create_permission()
+        url = reverse('manage:api_tokens')
+        response = self.client.get(url)
+        # because we're not logged in
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # expects some permissions to be available as dropdowns
+        ok_(
+            '<option value="%s">%s</option>' % (
+                permission.id,
+                permission.name
+            ) in response.content
+        )
+
+    def test_create_api_token(self):
+        self._login()
+        user = User.objects.create_user(
+            'user',
+            'user@example.com',
+            'secret'
+        )
+        permission = self._create_permission()
+        # the user must belong to a group that has this permission
+        wackos = Group.objects.create(name='Wackos')
+        wackos.permissions.add(permission)
+        user.groups.add(wackos)
+        assert user.has_perm('crashstats.' + permission.codename)
+
+        url = reverse('manage:api_tokens')
+        response = self.client.post(url, {
+            'user': user.email.upper(),
+            'permissions': [permission.id],
+            'notes': 'Some notes',
+            'expires': 7
+        })
+        eq_(response.status_code, 302)
+        token = Token.objects.get(
+            user=user,
+            notes='Some notes',
+        )
+        eq_(list(token.permissions.all()), [permission])
+        lasting = (token.expires - timezone.now()).days
+        # the 7 - 1 is because the rounding due to microseconds
+        eq_(lasting, 7 - 1)
+
+    def test_create_api_token_rejected(self):
+        self._login()
+        user = User.objects.create_user(
+            'koala',
+            'koala@example.com',
+            'secret'
+        )
+        permission = self._create_permission()
+        url = reverse('manage:api_tokens')
+        response = self.client.post(url, {
+            'user': 'xxx',
+            'permissions': [permission.id],
+            'notes': '',
+            'expires': 7
+        })
+        eq_(response.status_code, 200)
+        ok_('No user found by that email address' in response.content)
+        response = self.client.post(url, {
+            'user': 'k',  # there will be two users whose email starts with k
+            'permissions': [permission.id],
+            'notes': '',
+            'expires': 7
+        })
+        eq_(response.status_code, 200)
+        ok_(
+            'More than one user found by that email address'
+            in response.content
+        )
+        response = self.client.post(url, {
+            'user': 'koala@example',
+            'permissions': [permission.id],
+            'notes': '',
+            'expires': 7
+        })
+        eq_(response.status_code, 200)
+        ok_(
+            'koala@example.com does not have the permission '
+            '&quot;Mess Around&quot;'
+            in response.content
+        )
+        ok_(
+            'koala@example.com has no permissions!'
+            in response.content
+        )
+        # suppose the user has some other permission, only
+        permission2 = self._create_permission(
+            'Do Things',
+            'do_things'
+        )
+        group = Group.objects.create(name='Noobs')
+        group.permissions.add(permission2)
+        user.groups.add(group)
+        assert user.has_perm('crashstats.do_things')
+        response = self.client.post(url, {
+            'user': 'koala@example',
+            'permissions': [permission.id],
+            'notes': '',
+            'expires': 7
+        })
+        eq_(response.status_code, 200)
+        ok_(
+            'koala@example.com does not have the permission '
+            '&quot;Mess Around&quot;'
+            in response.content
+        )
+        ok_(
+            'Only permissions possible are: Do Things'
+            in response.content
+        )
+
+        # you can't create a token for an inactive user
+        user.is_active = False
+        user.save()
+        response = self.client.post(url, {
+            'user': 'koala',
+            'permissions': [permission.id],
+            'notes': '',
+            'expires': 7
+        })
+        eq_(response.status_code, 200)
+        ok_(
+            'koala@example.com is not an active user'
+            in response.content
+        )
+
+    def test_api_tokens_data(self):
+        url = reverse('manage:api_tokens_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [])
+        eq_(result['count'], 0)
+        eq_(result['page'], 1)
+        eq_(result['batch_size'], settings.API_TOKENS_ADMIN_BATCH_SIZE)
+
+        expires = timezone.now()
+        expires += datetime.timedelta(
+            days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
+        )
+        token = Token.objects.create(
+            user=self.user,
+            notes='Some notes',
+            expires=expires
+        )
+        assert token.key  # automatically generated
+        permission = self._create_permission()
+        token.permissions.add(permission)
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        expected_token = {
+            'created': token.created.isoformat(),
+            'notes': 'Some notes',
+            'expires': expires.isoformat(),
+            'id': token.id,
+            'expired': False,
+            'permissions': [permission.name],
+            'user': self.user.email,
+            'key': token.key,
+        }
+        eq_(result['tokens'], [expected_token])
+        eq_(result['count'], 1)
+
+        # mess with the page parameter
+        response = self.client.get(url, {'page': '0'})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'expired': 'junk'})
+        eq_(response.status_code, 400)
+
+        # filter by email
+        response = self.client.get(url, {'email': self.user.email[:5]})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [expected_token])
+        eq_(result['count'], 1)
+        response = self.client.get(url, {'user': 'junk'})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [])
+        eq_(result['count'], 0)
+
+        # filter by key
+        response = self.client.get(url, {'key': token.key[:5]})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [expected_token])
+        eq_(result['count'], 1)
+        response = self.client.get(url, {'key': 'junk'})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [])
+        eq_(result['count'], 0)
+
+        # filter by expired
+        response = self.client.get(url, {'expired': 'no'})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [expected_token])
+        eq_(result['count'], 1)
+        response = self.client.get(url, {'expired': 'yes'})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        eq_(result['tokens'], [])
+        eq_(result['count'], 0)
+        token.expires = timezone.now() - datetime.timedelta(days=1)
+        token.save()
+        response = self.client.get(url, {'expired': 'yes'})
+        eq_(response.status_code, 200)
+        result = json.loads(response.content)
+        expected_token['expires'] = token.expires.isoformat()
+        expected_token['expired'] = True
+        eq_(result['tokens'], [expected_token])
+        eq_(result['count'], 1)
+
+    def test_api_tokens_delete(self):
+        url = reverse('manage:api_tokens_delete')
+        response = self.client.get(url)
+        eq_(response.status_code, 405)
+        response = self.client.post(url)
+        eq_(response.status_code, 302)
+        self._login()
+        response = self.client.post(url)
+        eq_(response.status_code, 400)
+        response = self.client.post(url, {'id': '99999'})
+        eq_(response.status_code, 404)
+
+        expires = timezone.now()
+        expires += datetime.timedelta(
+            days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
+        )
+        token = Token.objects.create(
+            user=self.user,
+            notes='Some notes',
+            expires=expires
+        )
+        assert token.key  # automatically generated
+        permission = self._create_permission()
+        token.permissions.add(permission)
+
+        response = self.client.post(url, {'id': token.id})
+        eq_(response.status_code, 200)  # it's AJAX
+
+        ok_(not Token.objects.all())

@@ -30,7 +30,6 @@ from crashstats.api.cleaner import Cleaner
 from crashstats.dataservice import models
 models = models  # silence pyflakes
 
-
 logger = logging.getLogger('crashstats_models')
 
 

@@ -89,4 +89,14 @@ urlpatterns = patterns(
     url('^events/data/$',
         views.events_data,
         name='events_data'),
+    url('^api-tokens/$',
+        views.api_tokens,
+        name='api_tokens'),
+    url('^api-tokens/delete/$',
+        views.api_tokens_delete,
+        name='api_tokens_delete'),
+    url('^api-tokens/data/$',
+        views.api_tokens_data,
+        name='api_tokens_data'),
+
 )
