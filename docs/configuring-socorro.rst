@@ -77,3 +77,65 @@ The source of this data is going to be very specific to your application,
 you can see how we automate this for crash-stats.mozilla.com in this job:
 
 https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/fetch_adi_from_hive.py
+
+Partitioning and data expiration
+--------------------------------
+
+Collecting crashes can generate a lot of data. We have a few tools for
+automatically partitioning and discarding data in our data stores.
+
+*PostgreSQL*
+
+For automatic, date-based partitioning, we have crontabber jobs that create
+partitions weekly based on data in the table:
+::
+  reports_partition_info
+
+We currently manage which tables are partitioned manually by inserting rows into
+the production PostgreSQL database.
+::
+    psql breakpad
+    -- Add reports_duplicates table to automatic partitioning
+    WITH bo AS (
+       SELECT COALESCE(max(build_order) + 1, 1) as number
+       FROM report_partition_info
+    )
+    INSERT into report_partition_info
+       (table_name, build_order, keys, indexes, fkeys, partition_column, timetype)
+       SELECT 'reports_duplicates', bo.number, '{uuid}',
+           '{"date_processed, uuid"}', '{}', 'date_processed', 'TIMESTAMPTZ'
+       FROM bo
+
+Tables commonly partitioned include:
+::
+   reports
+   reports_clean
+   raw_crashes
+   processed_crashes
+
+The partitions are created by the crontabber job WeeklyReportsPartitionsCronApp:
+
+https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/weekly_reports_partitions.py
+
+This tool can partition based on TIMESTAMPTZ or DATE. The latter is useful for aggregate
+reports that become very large over time, like our signature_summary_* reports.
+
+To drop old partitions, the crontabber job DropOldPartitionsCronApp is available:
+
+https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/drop_old_partitions.py
+
+DropOldPartitionsCronApp currently defaults to dropping old partitions after 1 year.
+
+To truncate old partitions (leave the tables present, but remove data), TruncatePartitionsCronApp
+is available:
+
+https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/truncate_partitions.py
+
+The TruncatePartitionsCronApp is currently written to only truncate data from raw_crashes
+and procesesd_crashes, tables that commonly are extremely large. The default is expiration
+at 6 months, and this can be overridden easily in configuration.
+
+All of these jobs can be enabled or disabled in crontabber configuration or by modifying
+DEFAULT_JOBS in:
+
+https://github.com/mozilla/socorro/blob/master/socorro/cron/crontabber_app.py
