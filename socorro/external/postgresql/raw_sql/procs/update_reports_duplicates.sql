@@ -19,35 +19,39 @@ create temporary table new_reports_duplicates
 on commit drop
 as
 with follower as (
-select 
-    uuid
-    , install_age
-    , uptime
-    , client_crash_date
-    , date_processed
-    , first_value(uuid) over ( partition by
-        product,
-        version,
-        build,
-        signature,
-        cpu_name,
-        cpu_info,
-        os_name,
-        os_version,
-        address,
-        topmost_filenames,
-        reason,
-        app_notes,
-        url
-        order by
-            client_crash_date
-            , uuid
-        ) as leader_uuid
+    select 
+        uuid
+        , install_age
+        , uptime
+        , client_crash_date
+        , date_processed
+        -- Find the first report by date and uuid order
+        -- that matches this list of crash attributes
+        , first_value(uuid) over ( partition by
+            product,
+            version,
+            build,
+            signature,
+            cpu_name,
+            cpu_info,
+            os_name,
+            os_version,
+            address,
+            topmost_filenames,
+            reason,
+            app_notes,
+            url
+            order by
+                client_crash_date
+                , uuid
+            ) as leader_uuid
     FROM reports
     where date_processed BETWEEN start_time AND end_time
 ),
 leader as (
-        select 
+    -- List of all uuids and timestamp info
+    -- for a self-join to reveal duplicates
+    select 
         uuid
         , install_age
         , uptime
@@ -64,7 +68,11 @@ from
 follower
 JOIN leader
     ON follower.leader_uuid = leader.uuid
-WHERE ( 
+WHERE 
+-- Match crashes that are "close enough"
+-- by having crash dates and uptimes within
+-- 60 seconds
+( 
     same_time_fuzzy(
         leader.client_crash_date
         , follower.client_crash_date
