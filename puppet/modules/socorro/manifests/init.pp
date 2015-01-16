@@ -85,6 +85,7 @@ class socorro::vagrant {
       'httpd',
       'java-1.7.0-openjdk',
       'java-1.7.0-openjdk-devel',
+      'libcurl-devel',
       'libxml2-devel',
       'libxslt-devel',
       'make',

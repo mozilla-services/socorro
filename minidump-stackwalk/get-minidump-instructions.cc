@@ -54,6 +54,10 @@
 using namespace google_breakpad;
 using std::vector;
 
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ < 6)
+#define nullptr __null
+#endif
+
 CURL* curl;
 std::set<string> error_symbols;
 
@@ -86,7 +90,7 @@ enum UnmangleType {
 string unmangle_source_file(const string& source_file, int line,
                             UnmangleType type)
 {
-  string source_and_line = source_file + ":" + std::to_string(line);
+  string source_and_line = source_file + ":" + std::to_string((long long)line);
   if (source_file.compare(0, 3, "hg:") != 0) {
     if (type != Annotate) {
       return "";
