@@ -48,6 +48,14 @@ if [ $? != 0 ]; then
     echo "See /var/log/socorro/django-syncdb.log for more info"
 fi
 
+/data/socorro/socorro-virtualenv/bin/python \
+    /data/socorro/webapp-django/manage.py migrate --noinput \
+    &> /var/log/socorro/django-migrate.log
+if [ $? != 0 ]; then
+    echo "WARN could not run django migration"
+    echo "See /var/log/socorro/django-migrate.log for more info"
+fi
+
 # create ElasticSearch indexes
 echo "Creating ElasticSearch indexes"
 pushd /data/socorro/application/scripts > /dev/null
