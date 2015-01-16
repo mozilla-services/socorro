@@ -296,7 +296,7 @@ of tables and views.
 weekly_report_partitions
 ------------------------
 
-Purpose: to create new paritions for the reports table and its child
+Purpose: to create new partitions for the reports table and its child
 tables every week.
 
 Called By: weekly cron job
