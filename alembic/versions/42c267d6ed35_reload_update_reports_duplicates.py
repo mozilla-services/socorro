@@ -23,8 +23,8 @@ from sqlalchemy.sql import table, column
 
 
 def upgrade():
-    load_stored_proc(op, 'update_reports_duplicates.sql')
+    load_stored_proc(op, ['update_reports_duplicates.sql'])
 
 
 def downgrade():
-    load_stored_proc(op, 'update_reports_duplicates.sql')
+    load_stored_proc(op, ['update_reports_duplicates.sql'])
