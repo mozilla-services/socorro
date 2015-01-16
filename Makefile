@@ -9,6 +9,9 @@ all: test
 test: bootstrap
 	./scripts/test.sh
 
+dev:
+	SOCORRO_DEVELOPMENT_ENV=1 ./scripts/bootstrap.sh
+
 bootstrap:
 	./scripts/bootstrap.sh
 

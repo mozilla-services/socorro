@@ -20,7 +20,7 @@ Socorro can install python dependencies into a virtualenv for you.
 You only need to run this once:
 ::
   export PATH=$PATH:/usr/pgsql-9.3/bin/
-  make bootstrap
+  make dev
 
 Before running any Socorro components, always make sure that the virtualenv 
 is activated:
