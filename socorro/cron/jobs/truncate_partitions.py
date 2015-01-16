@@ -23,7 +23,7 @@ class TruncatePartitionsCronApp(BaseCronApp):
     required_config = Namespace()
     required_config.add_option(
         'weeks_to_keep',
-        default=2,
+        default=26, # default to 6 months
         doc='Number of weeks of raw crash data to keep in Postgres')
 
     def run(self, connection):
