@@ -7,10 +7,7 @@ import socorro.unittest.testlib.expectations as exp
 
 import re
 
-try:
-  import json as js
-except ImportError:
-  import simplejson as js
+import json as js
 
 class ValueObject(object):
   def __init__(self, value):
