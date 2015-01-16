@@ -4,13 +4,10 @@
 
 import datetime
 import errno
+import json
 import os
 import time
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
 
 import socorro.external.filesystem.json_dump_storage as JDS
 from socorro.lib.datetimeutil import utc_now, UTC

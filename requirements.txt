@@ -66,8 +66,6 @@ elasticutils==0.7
 raven==3.4.1
 # sha256: FWvz7Ce6nsfgz4--AoCHGAmdIY3kA-tkpxTXO6GimrE
 requests==1.2.3
-# sha256: K89b7bUyilYzBFp9RnhNM5POlAyUnAkMr111ttMWNGY
-simplejson==2.5.0
 # sha256: M4j8GiynpdQmG00ePYtzQsv0vxz7NwIxHGCTIUMs7Xg
 # sha256: eoQsn4gsCyqxBk1We7n_9qIcnvvD2Zkgg61hk3h-05M
 six==1.7.3

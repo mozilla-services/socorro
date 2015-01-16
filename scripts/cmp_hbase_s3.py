@@ -17,7 +17,6 @@ import signal
 import random
 
 from collections import deque
-import simplejson as json
 import hashlib
 
 
@@ -38,7 +37,7 @@ class HBaseSource:
 
     if (self.stop_after_nrows > 0) and (stop_after_nrows < max_rows):
       self.max_rows = self.stop_after_nrows + 1
-      
+
   def items(self):
     prev_last_read_key = None
     curr_last_read_key = self.start_row
@@ -56,12 +55,12 @@ class HBaseSource:
 
         # scan fetches rows with key in the range [row_start, row_stop)
         # this necessitates the check for repeating keys as stopping condition
-        # 
+        #
         logger.info("scan start")
-        data = deque(src_tbl.scan(row_start = curr_last_read_key, 
+        data = deque(src_tbl.scan(row_start = curr_last_read_key,
                                   row_stop = end_row,
                                   columns = ['raw_data', 'processed_data', 'meta_data'],
-                                  limit = self.max_rows, 
+                                  limit = self.max_rows,
                                   batch_size = self.batch_size))
         logger.info("scan end %d rows starting at %s", len(data), data[0][0])
         while True:
@@ -79,10 +78,10 @@ class HBaseSource:
 
           if (stop_after_nrows > 0) and (stop_after_nrows == total_read_rows):
             break
-          
+
           prev_last_read_key = curr_last_read_key
           curr_last_read_key = key
-          
+
         logger.debug('read %d rows of data from hbase ending at %s; total %s', nrows, curr_last_read_key, total_read_rows)
         if nrows < self.max_rows:
           print >> sys.stderr, "end of range. exiting"
@@ -122,7 +121,7 @@ class SourceWorker(TaskClass):
 
         # crashstats/stage/v1/
         # format  {{bucket}}/{{prefix}}/{{version}}/{{crash_type}}/{{crash_id}}
-        skey = s3_path_tmpl.format(env = env, 
+        skey = s3_path_tmpl.format(env = env,
                                    uuid = key[7:],
                                    ftype = suffix)
 
@@ -148,7 +147,7 @@ class S3Worker(TaskClass):
     self.s3_region = s3_region
     self.s3_bucket = s3_bucket
     self.num_rows = 0
-    
+
   def setup_s3(self):
     self.s3 = s3_connect(self.s3_region)
     self.bucket = self.s3.get_bucket(self.s3_bucket)
@@ -158,16 +157,16 @@ class S3Worker(TaskClass):
     s3_md5 = k.etag[1:-1]
     hbase_md5 = hashlib.md5(val).hexdigest()
     self.num_rows += 1
-    
+
     if s3_md5 != hbase_md5:
       print >> sys.stderr, "MISMATCH", k, key, s3_md5, hbase_md5
-    
+
   def run(self):
     self.setup_s3()
 
     while True:
       kv = self.task_queue.get()
-      
+
       if kv is None:
         print >> sys.stderr, '%s: Exiting' % self.name
         self.task_queue.task_done()
@@ -210,7 +209,7 @@ def main(num_workers = 64):
   queue = Queue(TASK_QUEUE_SIZE)
 
   # start s3 workers
-  workers = [S3Worker('us-west-2', 'org.mozilla.crash-stats.production.crashes', queue, None) 
+  workers = [S3Worker('us-west-2', 'org.mozilla.crash-stats.production.crashes', queue, None)
              for i in xrange(num_workers)]
 
   for i in workers:
@@ -244,11 +243,11 @@ def main(num_workers = 64):
     queue.put(None)
 
   queue.join()
-  
+
 def show_usage_and_quit():
   print >> sys.stderr, "Usage: %s hosts('host1,host2,host3') date(YYMMDD)" % (sys.argv[0])
   sys.exit(2)
-  
+
 
 if __name__ == '__main__':
     logging.basicConfig(format = '%(asctime)s %(name)s:%(levelname)s: %(message)s',
