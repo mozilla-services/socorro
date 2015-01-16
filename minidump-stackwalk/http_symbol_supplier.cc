@@ -263,7 +263,6 @@ bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
   BPLOG(INFO) << "HTTPSymbolSupplier: querying " << url;
 
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip");
   curl_easy_setopt(curl, CURLOPT_ENCODING, "");
   curl_easy_setopt(curl, CURLOPT_STDERR, stderr);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, f);
