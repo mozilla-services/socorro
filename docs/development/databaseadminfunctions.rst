@@ -296,7 +296,7 @@ of tables and views.
 weekly_report_partitions
 ------------------------
 
-Purpose: to create new paritions for the reports table and its  child
+Purpose: to create new paritions for the reports table and its child
 tables every week.
 
 Called By: weekly cron job
@@ -549,3 +549,16 @@ release_throttle
 	If throttling back the number of release crashes processed, set here
 
 Notes: add_new_product will return FALSE rather than erroring if the product already exists.
+
+truncate_partitions
+-------------------
+
+Purpose: Truncates crash report partitions for raw_crashes and processed_crashes
+
+Called By: crontabber job TruncatePartitionsCronApp on a weekly basis
+
+::
+     truncate_partitions(weeks_to_keep INTEGER) RETURNS BOOLEAN
+
+weeks_to_keep
+    Number of weeks of data to preserve
