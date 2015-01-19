@@ -43,16 +43,16 @@ class socorro::vagrant {
 
   yumrepo {
     'dchen':
-      baseurl  => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/';
+      baseurl => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/';
     'devtools':
-      baseurl  => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
+      baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
     'elasticsearch':
-      baseurl  => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos';
+      baseurl => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos';
     'EPEL':
-      baseurl  => 'http://dl.fedoraproject.org/pub/epel/$releasever/$basearch',
-      timeout  => 60;
+      baseurl => 'http://dl.fedoraproject.org/pub/epel/$releasever/$basearch',
+      timeout => 60;
     'PGDG':
-      baseurl  => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch';
+      baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch';
   }
 
   Yumrepo['dchen', 'devtools', 'elasticsearch', 'EPEL', 'PGDG'] {
@@ -62,11 +62,9 @@ class socorro::vagrant {
   }
 
   package {
-    [
-      'apache-maven',
-    ]:
-    ensure  => latest,
-    require => Yumrepo['dchen'];
+    'apache-maven':
+      ensure  => latest,
+      require => Yumrepo['dchen'];
   }
 
   package {
@@ -144,7 +142,10 @@ class socorro::vagrant {
   package {
     'elasticsearch':
       ensure  => latest,
-      require => [ Yumrepo['elasticsearch'], Package['java-1.7.0-openjdk'] ]
+      require => [
+        Yumrepo['elasticsearch'],
+        Package['java-1.7.0-openjdk']
+      ]
   }
 
   package {
@@ -182,12 +183,12 @@ class socorro::vagrant {
       owner  => 'vagrant';
 
     'elasticsearch.yml':
-      ensure => file,
-      path   => '/etc/elasticsearch/elasticsearch.yml',
-      source => 'puppet:///modules/socorro/etc_elasticsearch/elasticsearch.yml',
-      owner  => 'root',
+      ensure  => file,
+      path    => '/etc/elasticsearch/elasticsearch.yml',
+      source  => 'puppet:///modules/socorro/etc_elasticsearch/elasticsearch.yml',
+      owner   => 'root',
       require => Package['elasticsearch'],
-      notify => Service['elasticsearch'];
+      notify  => Service['elasticsearch'];
   }
 
 }
