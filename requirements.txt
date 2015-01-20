@@ -6,10 +6,10 @@ Mako==0.7.3
 MarkupSafe==0.15
 # sha256: EWRYQrqOyYaujPvkxsrP9cNfD0Unq_T1WBrotK1JwLY
 Paste==1.7.5.1
-# sha256: vIdnT1rJli4O_pbwYLoioH4sYfvr9THvw4O4LbWykew
-SQLAlchemy==0.9.4
-# sha256: Wgo2x0fCj1A2asBG2kP1AFXITR2djtPAm5tbmmxRaDI
-alembic==0.6.4
+# sha256: 3jrATsqwp-CvZO7jCnHnI7pYhrlYIF9zVN1iQ52mA4k
+SQLAlchemy==0.9.8
+# sha256: VQ8QsiZvaJd47O0v7Ymb_QV1VzdHhFS5f7mThfLngOU
+alembic==0.7.4
 # sha256: 3a9LCmGDNaMrZmTUrgOKHej7raOyUDP5AhUQ7Ss5QaQ
 argparse==1.2.1
 
