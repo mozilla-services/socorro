@@ -241,18 +241,23 @@ update_product_versions
 -----------------------
 
 Purpose: updates the list of product_versions and product_version_builds
-based on the contents of releases_raw.
+based on the contents of releases_raw, products, release_repositories, special_product_platforms, 
+and for B2G: update_channel_map, raw_update_channels.
 
 Called By: daily cron job
 
 ::
 
 	update_product_versions (
+        product_window INTEGER Default 30
 		)
 
 	SELECT update_product_versions ( );
 
-Notes: takes no parameters as the product update is always cumulative.  As of 2.3.5, only looks at product_versions with build dates in the last 30 days.  There is no backfill function because it is always a cumulative update.
+Notes: takes no parameters as the product update is always cumulative and by default is run daily.  As of 2.3.5, only looks at product_versions with build dates in the last 30 days.  There is no backfill function because it is always a cumulative update.
+
+This function is complex. If implementing this outside of Mozilla, a user may wish to create a simpler function that just inserts
+data into products and product_versions. 
 
 
 update_rank_compare, backfill_rank_compare

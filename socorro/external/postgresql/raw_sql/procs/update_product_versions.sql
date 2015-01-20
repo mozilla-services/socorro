@@ -7,23 +7,26 @@ CREATE OR REPLACE FUNCTION update_product_versions(
     SET maintenance_work_mem TO '512MB'
 AS $$
 BEGIN
--- daily batch update function for new products and versions
--- reads data from releases_raw, cleans it
--- and puts data corresponding to the new versions into
--- product_versions and related tables
 
--- is cumulative and can be run repeatedly without issues
+-- Daily batch update function for new products and versions
+-- Reads data from releases_raw, cleans it
+-- and puts the new versions into product_versions 
+-- and product_version_builds
+
+-- Cumulative and can be run repeatedly without issues
 -- * covers FennecAndroid and ESR releases
--- * now only compares releases from the last 30 days
--- * restricts to only the canonical "repositories"
--- * covers webRT
--- * covers rapid betas
--- * covers final betas
+-- * Compares releases from the last 30 days
+-- * Restricts to only the defined "repositories" in 
+--   release_repositories
+-- * covers WebRT
+-- * covers Rapid betas
+-- * covers Final betas
 
--- create temporary table, required because
--- all of the special cases
-
-
+-- Create a temporary table of products and raw release data
+-- * Rename products described in special_product_platforms
+-- * Detect rapid beta products
+-- * Filter out any products not coming from release_repositories
+--   or not defined in products table
 create temporary table releases_recent
 ON commit drop
 AS
@@ -62,9 +65,8 @@ SET update_channel = 'esr'
 WHERE update_channel ILIKE 'release'
     AND version ILIKE '%esr';
 
--- insert WebRT "releases", which are copies of Firefox releases
--- insert them only if the FF release is greater than the first
--- release for WebRT
+-- Insert WebRT "releases", which are copies of Firefox releases,
+-- only if the FF release is greater than the first release for WebRT
 
 INSERT INTO releases_recent (
     product_name,
@@ -93,9 +95,8 @@ WHERE releases_recent.product_name = 'Firefox'
     AND major_version_sort(releases_recent.version)
         >= major_version_sort(products.rapid_release_version);
 
--- insert WebRTmobile "releases", which are copies of Fennec releases
--- insert them only if the Fennec release is greater than the first
--- release for WebRTmobile
+-- Insert WebRTmobile "releases", which are copies of Fennec releases,
+-- only if the Fennec release is greater than the first release for WebRTmobile
 
 INSERT INTO releases_recent (
     product_name,
@@ -124,9 +125,8 @@ WHERE releases_recent.product_name = 'Fennec'
     AND major_version_sort(releases_recent.version)
         >= major_version_sort(products.rapid_release_version);
 
--- insert MetroFirefox "releases", which are copies of Firefox releases
--- insert them only if the FF release is greater than the first
--- release for WebRT
+-- Insert MetroFirefox "releases", which are copies of Firefox releases,
+-- only if the FF release is greater than the first release for MetroFirefox
 
 INSERT INTO releases_recent (
     product_name,
@@ -157,7 +157,7 @@ WHERE releases_recent.product_name = 'Firefox'
         >= major_version_sort(products.rapid_release_version);
 
 -- Release metadata for B2G does not come from releases_raw
--- Partner data is inserted into update_channel_map, instead
+-- Partner data is inserted into update_channel_map instead
 
 INSERT INTO releases_recent (
     product_name,
@@ -187,8 +187,8 @@ WHERE build IN
      FROM json_array_elements(rewrite->'BuildID'))
 AND first_report > (current_date - product_window);
 
--- now put it in product_versions
--- first releases, aurora and nightly and non-rapid betas
+-- Put collected data into product_versions
+-- First releases, aurora and nightly and non-rapid betas
 
 insert into product_versions (
     product_name,
@@ -227,8 +227,8 @@ group by releases_recent.product_name, version,
     releases_recent.beta_number,
     releases_recent.update_channel::citext, releases_recent.update_channel;
 
--- insert rapid betas "parent" products
--- these will have a product, but no builds
+-- Insert rapid betas "parent" products
+-- These will have a product, but no builds
 
 insert into product_versions (
     product_name,
@@ -267,8 +267,8 @@ where is_rapid
     and product_versions.product_name IS NULL
 group by products.product_name, version;
 
--- finally, add individual betas for rapid_betas
--- these need to get linked to their master rapid_beta
+-- Add individual betas for rapid_betas
+-- These need to get linked to their master rapid_beta
 
 insert into product_versions (
     product_name,
@@ -310,8 +310,8 @@ where is_rapid
 group by products.product_name, version, rapid_parent.product_version_id,
     releases_recent.beta_number, rapid_parent.sunset_date;
 
--- add build ids
--- note that rapid beta parent records will have no buildids of their own
+-- Insert product build ids
+-- * Rapid beta parent records will have no buildids of their own
 
 insert into product_version_builds
 (product_version_id, build_id, platform, repository)
