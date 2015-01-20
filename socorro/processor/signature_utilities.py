@@ -366,6 +366,7 @@ class CSignatureTool(CSignatureToolBase):
           'PORT_.*',
           '_PR_.*',
           'PR_.*',
+          '.*ProcessNextEvent.*',
           'pthread_mutex_lock',
           '_purecall',
           'raise',
@@ -823,17 +824,6 @@ class StackwalkerErrorSignatureRule(Rule):
 #==============================================================================
 class SignatureRunWatchDog(SignatureGenerationRule):
     """ensure that the signature contains the stackwalker error message"""
-    required_config = Namespace()
-    required_config.namespace('c_signature')
-    required_config.c_signature.irrelevant_signature_re = change_default(
-        CSignatureTool,
-        'irrelevant_signature_re',
-        "\"%s|%s\"" % (
-            eval(CSignatureTool.get_required_config()
-                .irrelevant_signature_re.default),
-            '.*ProcessNextEvent.*'
-        )
-    )
 
     #--------------------------------------------------------------------------
     def version(self):
