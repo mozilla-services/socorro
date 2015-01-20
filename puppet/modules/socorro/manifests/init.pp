@@ -25,10 +25,10 @@ class socorro::vagrant {
       ensure  => running,
       enable  => true,
       require => [
-          Package['postgresql93-server'],
-          Exec['postgres-initdb'],
-          File['pg_hba.conf'],
-        ];
+        Package['postgresql93-server'],
+        Exec['postgres-initdb'],
+        File['pg_hba.conf'],
+      ];
 
     'elasticsearch':
       ensure  => running,
@@ -42,8 +42,6 @@ class socorro::vagrant {
   }
 
   yumrepo {
-    'dchen':
-      baseurl => 'https://repos.fedorapeople.org/repos/dchen/apache-maven/epel-$releasever/$basearch/';
     'devtools':
       baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
     'elasticsearch':
@@ -55,16 +53,10 @@ class socorro::vagrant {
       baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch';
   }
 
-  Yumrepo['dchen', 'devtools', 'elasticsearch', 'EPEL', 'PGDG'] {
+  Yumrepo['devtools', 'elasticsearch', 'EPEL', 'PGDG'] {
     enabled  => 1,
     gpgcheck => 0,
     require  => Package['ca-certificates', 'yum-plugin-fastestmirror']
-  }
-
-  package {
-    'apache-maven':
-      ensure  => latest,
-      require => Yumrepo['dchen'];
   }
 
   package {
