@@ -41,8 +41,8 @@ configobj==4.7.2
 hbase-thrift==0.20.4
 # sha256: YjGaw0shgNRQpNknhzyyYA88E7zmsgd83XcMd7Oph-E
 isodate==0.4.7
-# sha256: un_il03Cdt0bg-HEB9ZsetPuZDOPdT1PZXr8qWxJumw
-lxml==2.3.4
+# sha256: BpWUg30DdqG6z1zEKqmhvi4cE5bcYvfQf3NYr-zTSt8
+lxml==3.4.1
 # sha256: jjAivJYKpdX8fUxWR4YIdpOhqZ8V4CWtkg_AqjeOHWc
 pgxnclient==1.2.1
 # sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
@@ -64,10 +64,11 @@ urllib3==1.9.1
 elasticutils==0.7
 # sha256: wn5AqzzPN_MKn3estJFzcNk0HiWr2o6Uub1IxxJ_fUg
 raven==3.4.1
-# sha256: FWvz7Ce6nsfgz4--AoCHGAmdIY3kA-tkpxTXO6GimrE
-requests==1.2.3
 # sha256: KjGJ950ce4ohSaDng8C0IX-tmzCm59YEUPJVPcLA5X4
 simplejson==3.6.5
+# sha256: HwRtz17HEu076GhLnzPJW3bijNHIJdsPXhVXv9h7N0U
+# sha256: e3c179Ox4jI9yfzvBgs4DQX18YvQ8kf16edKYoJ53mY
+requests==2.5.1
 # sha256: M4j8GiynpdQmG00ePYtzQsv0vxz7NwIxHGCTIUMs7Xg
 # sha256: eoQsn4gsCyqxBk1We7n_9qIcnvvD2Zkgg61hk3h-05M
 six==1.7.3
