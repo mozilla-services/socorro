@@ -5,7 +5,7 @@
 import copy
 import ujson
 
-from mock import Mock, patch
+from mock import Mock, patch, call
 from nose.tools import eq_, ok_
 from contextlib import contextmanager
 
@@ -15,7 +15,9 @@ from socorro.unittest.testbase import TestCase
 from socorro.lib.util import DotDict
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule,
-    CrashingThreadRule
+    CrashingThreadRule,
+    ExternalProcessRule,
+    DumpLookupExternalRule,
 )
 
 canonical_standard_raw_crash = DotDict({
@@ -404,4 +406,177 @@ class TestCrashingThreadRule(TestCase):
         eq_(
             processor_meta.processor_notes,
             ['MDSW did not identify the crashing thread']
+        )
+
+
+cannonical_external_output = {
+    "key": "value"
+}
+cannonical_external_output_str = ujson.dumps(cannonical_external_output)
+
+#==============================================================================
+class TestExternalProcessRule(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = True
+        config.dump_field = 'upload_file_minidump'
+        config.command_line = (
+            'timeout -s KILL 30 %(command_pathname)s '
+            '%%(dump_file_pathname)s '
+            '%(processor_symbols_pathname_list)s 2>/dev/null'
+        )
+        config.command_pathname = 'bogus_command'
+        config.processor_symbols_pathname_list = (
+            '/mnt/socorro/symbols/symbols_ffx,'
+            '/mnt/socorro/symbols/symbols_sea,'
+            '/mnt/socorro/symbols/symbols_tbrd,'
+            '/mnt/socorro/symbols/symbols_sbrd,'
+            '/mnt/socorro/symbols/symbols_os'
+        )
+        config.symbol_cache_path = '/mnt/socorro/symbols'
+        config.result_key = 'bogus_command_result'
+        config.return_code_key = 'bogus_command_return_code'
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+        processor_meta.quit_check = lambda: False
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_everything_we_hoped_for(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            cannonical_external_output_str
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = ExternalProcessRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        mocked_subprocess_module.Popen.assert_called_with(
+            'timeout -s KILL 30 bogus_command a_fake_dump.dump '
+            '/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/'
+            'symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/'
+            'symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os'
+            ' 2>/dev/null',
+            shell=True,
+            stdout=mocked_subprocess_module.PIPE
+        )
+
+        eq_(
+            processed_crash.bogus_command_result,
+            cannonical_external_output
+        )
+        eq_(processed_crash.bogus_command_return_code, 0)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_external_fails(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = \
+            mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = '{}'
+        mocked_subprocess_handle.wait.return_value = 124
+
+        rule = ExternalProcessRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processed_crash.bogus_command_result, {})
+        eq_(processed_crash.bogus_command_return_code, 124)
+        eq_(processor_meta.processor_notes, [])
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_external_fails_2(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = int
+        mocked_subprocess_handle.wait.return_value = -1
+
+        rule = ExternalProcessRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processed_crash.bogus_command_result, {})
+        eq_(processed_crash.bogus_command_return_code, -1)
+        eq_(
+            processor_meta.processor_notes,
+            [
+                'bogus_command output failed in '
+                'json conversion: Expected String or Unicode',
+            ]
+        )
+
+
+#==============================================================================
+class TestDumpLookupExternalRule(TestCase):
+
+    #--------------------------------------------------------------------------
+    def test_default_parameters(self):
+        eq_(
+            DumpLookupExternalRule.required_config.dump_field.default,
+            'upload_file_minidump'
+        )
+        ok_(
+            DumpLookupExternalRule.required_config.dump_field is not
+            ExternalProcessRule.required_config.dump_field
+        )
+        eq_(
+            DumpLookupExternalRule.required_config.command_pathname.default,
+            '/data/socorro/stackwalk/bin/dump-lookup'
+        )
+        ok_(
+            DumpLookupExternalRule.required_config.command_pathname is not
+            ExternalProcessRule.required_config.command_pathname
+        )
+        eq_(
+            DumpLookupExternalRule.required_config.result_key.default,
+            'dump_lookup'
+        )
+        ok_(
+            DumpLookupExternalRule.required_config.result_key is not
+            ExternalProcessRule.required_config.result_key
+        )
+        eq_(
+            DumpLookupExternalRule.required_config.return_code_key.default,
+            'dump_lookup_return_code'
+        )
+        ok_(
+            DumpLookupExternalRule.required_config.return_code_key is not
+            ExternalProcessRule.required_config.return_code_key
         )
