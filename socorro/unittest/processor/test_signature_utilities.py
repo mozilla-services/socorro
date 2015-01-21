@@ -19,6 +19,7 @@ from socorro.processor.signature_utilities import (
     OOMSignature,
     SigTrunc,
     StackwalkerErrorSignatureRule,
+    SignatureRunWatchDog,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -1278,3 +1279,93 @@ class TestStackwalkerErrorSignatureRule(TestCase):
             "EMPTY: like my soul; catastrophic stackwalker failure"
         )
 
+
+#==============================================================================
+class TestSignatureWatchDogRule(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        config = DotDict({
+            'c_signature': {
+                'c_signature_tool_class': CSignatureTool,
+                'maximum_frames_to_consider': 40,
+                'signature_sentinels': eval(
+                    CSignatureTool.required_config.signature_sentinels
+                    .default
+                ),
+                'irrelevant_signature_re': eval(
+                    CSignatureTool.required_config.irrelevant_signature_re
+                    .default
+                ),
+                'prefix_signature_re': eval(
+                    CSignatureTool.required_config.prefix_signature_re
+                    .default
+                ),
+                'signatures_with_line_numbers_re': (
+                    CSignatureTool.required_config
+                    .signatures_with_line_numbers_re.default
+                ),
+            },
+            'java_signature': {
+                'java_signature_tool_class': JavaSignatureTool,
+            }
+        })
+        config.logger = sutil.FakeLogger()
+
+        return CDotDict(config)
+
+    #--------------------------------------------------------------------------
+    def test_instantiation(self):
+        config = self.get_config()
+        srwd = SignatureRunWatchDog(config)
+
+        ok_(isinstance(srwd.c_signature_tool, CSignatureTool))
+        ok_(isinstance(srwd.java_signature_tool, JavaSignatureTool))
+
+        eq_(srwd._get_crashing_thread({}), 0)
+
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        srwd = SignatureRunWatchDog(config)
+
+        fake_processed_crash = {
+            'signature': "I'm not real",
+        }
+        ok_(not srwd.predicate({}, {}, fake_processed_crash, {}))
+
+        fake_processed_crash = {
+            'signature': "mozilla::`anonymous namespace''::RunWatchdog(void*)",
+        }
+        ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
+
+        fake_processed_crash = {
+            'signature': "mozilla::(anonymous namespace)::RunWatchdog(void*)",
+        }
+        ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
+
+
+    #--------------------------------------------------------------------------
+    def test_action(self):
+        config = self.get_config()
+        sgr = SignatureRunWatchDog(config)
+
+        raw_crash = CDotDict()
+        raw_dumps = {}
+        processed_crash = CDotDict(sample_json_dump)
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        # the call to be tested
+        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+
+        eq_(
+            processed_crash.signature,
+            'shutdownhang | '
+            'WaitForMultipleObjectsEx | RealMsgWaitForMultipleObjectsEx '
+            '| MsgWaitForMultipleObjects | F_1152915508_________________'
+            '_________________'
+        )
+        eq_(processor_meta.processor_notes, [])

@@ -366,6 +366,7 @@ class CSignatureTool(CSignatureToolBase):
           'PORT_.*',
           '_PR_.*',
           'PR_.*',
+          '.*ProcessNextEvent.*',
           'pthread_mutex_lock',
           '_purecall',
           'raise',
@@ -683,6 +684,10 @@ class SignatureGenerationRule(Rule):
         return frame_signatures_list
 
     #--------------------------------------------------------------------------
+    def _get_crashing_thread(self, processed_crash):
+        return processed_crash.json_dump['crash_info']['crashing_thread']
+
+    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'JavaStackTrace' in raw_crash and raw_crash.JavaStackTrace:
             # generate a Java signature
@@ -696,9 +701,7 @@ class SignatureGenerationRule(Rule):
             return True
 
         try:
-            crashed_thread = (
-                processed_crash.json_dump['crash_info']['crashing_thread']
-            )
+            crashed_thread = self._get_crashing_thread(processed_crash)
         except KeyError:
             crashed_thread = None
         try:
@@ -816,3 +819,33 @@ class StackwalkerErrorSignatureRule(Rule):
             processed_crash.mdsw_status_string
         )
         return True
+
+
+#==============================================================================
+class SignatureRunWatchDog(SignatureGenerationRule):
+    """ensure that the signature contains the stackwalker error message"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return '::RunWatchdog(void*)' in processed_crash['signature']
+
+    #--------------------------------------------------------------------------
+    def _get_crashing_thread(self, processed_crash):
+        return 0
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        result = super(SignatureRunWatchDog, self)._action(
+            raw_crash,
+            raw_dumps,
+            processed_crash,
+            processor_meta
+        )
+        processed_crash['signature'] = (
+            "shutdownhang | %s" % processed_crash['signature']
+        )
+        return result
