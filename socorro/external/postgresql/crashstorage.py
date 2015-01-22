@@ -4,6 +4,7 @@
 
 import datetime
 import json
+from psycopg2 import ProgrammingError
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -163,12 +164,17 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def _get_raw_crash_transaction(self, connection, crash_id):
         raw_crash_table_name = (
-            'raw_crash_%s' % self._table_suffix_for_crash_id(crash_id)
+            'raw_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
         )
         fetch_sql = 'select raw_crash from %s where uuid = %%s' % \
                     raw_crash_table_name
         try:
             return single_value_sql(connection, fetch_sql, (crash_id,))
+        except ProgrammingError, e:
+            err = 'relation "%s" does not exist' % raw_crash_table_name
+            if err in str(e):
+                raise CrashIDNotFound(crash_id)
+            raise
         except SQLDidNotReturnSingleValue:
             raise CrashIDNotFound(crash_id)
 
@@ -362,7 +368,6 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             table_suffix = self._table_suffix_for_crash_id(crash_id)
             plugin_reports_table_name = 'plugins_reports_%s' % table_suffix
 
-
             # why are we deleting first?  This might be a reprocessing job and
             # the plugins_reports data might already be in the table: a
             # straight insert might fail.  Why not check to see if there is
@@ -439,6 +444,34 @@ class PostgreSQLCrashStorage(CrashStorageBase):
                     '"%s" is deficient as a name and version for an addon',
                     str(x[0])
                 )
+
+    def get_unredacted_processed(self, crash_id):
+        """this method returns an unredacted processed crash
+
+        parameters:
+           crash_id - the id of a crash to fetch"""
+        return self.transaction(
+            self._get_processed_crash_transaction,
+            crash_id
+        )
+
+    #--------------------------------------------------------------------------
+    def _get_processed_crash_transaction(self, connection, crash_id):
+        processed_crash_table_name = (
+            'processed_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
+        )
+        fetch_sql = 'select processed_crash from %s where uuid = %%s' % \
+                    processed_crash_table_name
+        try:
+            crash = single_value_sql(connection, fetch_sql, (crash_id,))
+            return json.loads(crash)
+        except ProgrammingError, e:
+            err = 'relation "%s" does not exist' % processed_crash_table_name
+            if err in str(e):
+                raise CrashIDNotFound(crash_id)
+            raise
+        except SQLDidNotReturnSingleValue:
+            raise CrashIDNotFound(crash_id)
 
     #--------------------------------------------------------------------------
     @staticmethod

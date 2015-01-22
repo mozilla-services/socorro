@@ -45,7 +45,6 @@ SERVICES_LIST = (
     (r'/bugs/(.*)', 'bugs.Bugs'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
-    (r'/crash/(.*)', 'crash.Crash'),
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (
         r'/crashes/'
@@ -173,6 +172,12 @@ class MiddlewareApp(App):
         'database_class',
         default='socorro.external.postgresql.connection_context.'
                 'ConnectionContext',
+        from_string_converter=class_converter
+    )
+    required_config.database.add_option(
+        'crashstorage_class',
+        default='socorro.external.postgresql.crashstorage.'
+                'PostgreSQLCrashStorage',
         from_string_converter=class_converter
     )
 
