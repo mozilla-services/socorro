@@ -21,10 +21,12 @@ Also see: https://developer.mozilla.org/en/Environment_variables_affecting_crash
 You can use the "curl" command to submit a test crash. If you don't
 have a minidump available, you can download a test dump from the
 Socorro repo:
+
 .. code-block:: bash
   curl -o test.dump https://raw.githubusercontent.com/mozilla/socorro/master/testcrash/raw/7d381dc5-51e2-4887-956b-1ae9c2130109.dump
 
 Then submit it using curl's multipart-form POST support:
+
 .. code-block:: bash
   curl -X POST -F ProductName=TestProduct \
                -F Version=1.0 \
