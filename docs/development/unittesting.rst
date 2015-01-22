@@ -51,9 +51,8 @@ Settings before testing
 
 Setting up the virtual environment and dependencies::
 
-  make bootstrap
+  make dev
   . socorro-virtualenv/bin/activate
-  python setup.py develop
 
 Testing
 --------
