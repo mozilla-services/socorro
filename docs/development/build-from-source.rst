@@ -27,11 +27,6 @@ is activated:
 ::
   . socorro-virtualenv/bin/activate
 
-The Socorro package should be installed into the virtualenv too,
-in "develop" mode so you only need to run this once:
-::
-  python setup.py develop
-
 Add a new superuser account to PostgreSQL
 -----------------------------------------
 
