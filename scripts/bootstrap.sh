@@ -20,6 +20,9 @@ ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 if [ ! -n "${SOCORRO_DEVELOPMENT_ENV+1}" ]; then
     # install socorro in local virtualenv
     ${VIRTUAL_ENV}/bin/python setup.py install
+else
+    # install development egg in local virtualenv
+    ${VIRTUAL_ENV}/bin/python setup.py develop
 fi
 
 if [ "`uname -sm`" == "Linux x86_64" ]; then
