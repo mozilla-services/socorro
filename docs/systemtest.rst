@@ -23,11 +23,13 @@ have a minidump available, you can download a test dump from the
 Socorro repo:
 
 .. code-block:: bash
+
   curl -o test.dump https://raw.githubusercontent.com/mozilla/socorro/master/testcrash/raw/7d381dc5-51e2-4887-956b-1ae9c2130109.dump
 
 Then submit it using curl's multipart-form POST support:
 
 .. code-block:: bash
+
   curl -X POST -F ProductName=TestProduct \
                -F Version=1.0 \
                -F upload_file_minidump=@test.dump \
