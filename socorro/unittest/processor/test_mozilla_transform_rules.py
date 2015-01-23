@@ -594,7 +594,7 @@ class TestDatesAndTimesRule(TestCase):
             processor_notes,
             [
                 "WARNING: raw_crash[submitted_timestamp] contains unexpected "
-                "value: 17; 'int' object is unsubscriptable"
+                "value: 17; 'int' object has no attribute '__getitem__'"
             ]
         )
 

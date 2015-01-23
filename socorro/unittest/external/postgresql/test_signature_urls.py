@@ -212,10 +212,10 @@ class IntegrationTestSignatureURLs(PostgreSQLTestCase):
         super(IntegrationTestSignatureURLs, self).tearDown()
 
     #--------------------------------------------------------------------------
-    def test_python_version_is_26(self):
+    def test_python_version_is_27(self):
         import sys
-        # These tests require python version 2.6
-        eq_(sys.version_info[:2], (2,6))
+        # These tests require python version 2.7
+        eq_(sys.version_info[:2], (2,7))
 
     #--------------------------------------------------------------------------
     def test_get(self):
