@@ -6,6 +6,11 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # User specific aliases and functions
+SCL_PY="/opt/rh/python27/enable"
+if [ -f $SCL_PY ] && [ -r $SCL_PY ]; then
+    source $SCL_PY
+fi
+
 VENV="${HOME}/socorro/socorro-virtualenv/bin/activate"
 if [ -f $VENV ] && [ -r $VENV ]; then
     . $VENV

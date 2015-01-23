@@ -1,5 +1,10 @@
 #! /bin/bash -ex
 
+SCL_PY="/opt/rh/python27/enable"
+if [ -f $SCL_PY ] && [ -r $SCL_PY ]; then
+    source $SCL_PY
+fi
+
 source scripts/defaults
 
 git submodule update --init --recursive
@@ -9,7 +14,7 @@ if [[ ! "$(type -p lessc)" ]]; then
 fi
 
 if [ ! -d "$VIRTUAL_ENV" ]; then
-    virtualenv -p python2.6 ${VIRTUAL_ENV}
+    virtualenv -p python ${VIRTUAL_ENV}
 fi
 source "$VIRTUAL_ENV/bin/activate"
 
