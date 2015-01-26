@@ -246,6 +246,12 @@ echo "Running Django syncdb"
     &> /var/log/socorro/django-syncdb.log
 error $? "django syncdb failed `cat /var/log/socorro/django-syncdb.log`"
 
+echo "Running Django migrate tokens"
+/data/socorro/socorro-virtualenv/bin/python \
+    /data/socorro/webapp-django/manage.py migrate --noinput \
+    &> /var/log/socorro/django-migrate.log
+error $? "OperationalError `cat /var/log/socorro/django-migrate.log`"
+
 # move new socorro.tar.gz over old now that the installation was
 # succesful.
 mv socorro-new.tar.gz socorro.tar.gz

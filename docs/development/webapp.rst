@@ -56,6 +56,7 @@ This file is executed when you run:
 ::
   cd webapp-django
   ./manage.py syncdb --noinput
+  ./manage.py migrate
 
 This should be done automatically on every release. Because it's idempotent
 it can be run repeatedly without creating any duplicates.
@@ -119,3 +120,38 @@ This works for both production and development. If you're running in
 production you might not be using ``localhost:8000`` so all you need
 to remember is to go to ``/_debug_login`` on whichever domain you
 will use in production.
+
+
+Slow tests
+----------
+
+If you write and run tests locally a lot you might want to make the
+tests be as fast as possible.
+
+Instead of taking ~50 seconds you can make it take about ~5 seconds.
+
+The difference is that it takes a long time to compile the ``.less``
+files to ``.css``. This happens automatically during runtime but there
+is a way to just do it ones before you run the tests and then all
+the tests load much faster.
+
+The disadvantage with this is that you'll end up having a ``./static/``
+directory which is what gets used when running the development server
+but it's not the ``.js``, ``.css`` and ``.less`` files you might be
+editing when you're doing development.
+
+To make the tests run much faster you'll first need to edit your
+``crashstats/settings/local.py`` and add these two lines::
+
+    COMPRESS_ENABLED = True
+    COMPRESS_OFFLINE = True
+
+Now, before you run the tests you need to manually compress all
+static assets. To do that, run this command::
+
+    ./manage.py collectstatic --noinput && ./manage.py compress --engine=jinja2 --force
+
+This will create a directory called ``./static/`` which gets used
+both by the tests and the development server (in run-time).
+If you want to edit and work on any of the static files, you'll need to
+delete this directory and run the above mentioned command again.

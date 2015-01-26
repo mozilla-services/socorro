@@ -22,7 +22,7 @@ You only need to run this once:
   export PATH=$PATH:/usr/pgsql-9.3/bin/
   make dev
 
-Before running any Socorro components, always make sure that the virtualenv 
+Before running any Socorro components, always make sure that the virtualenv
 is activated:
 ::
   . socorro-virtualenv/bin/activate
@@ -88,6 +88,7 @@ Django needs to write its ORM tables:
 ::
   cd webapp-django
   ./manage.py syncdb --noinput
+  ./manage.py migrate
 
 Run Socorro in dev mode
 -----------------------

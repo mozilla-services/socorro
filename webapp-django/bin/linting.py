@@ -31,6 +31,9 @@ EXCEPTIONS = (
     # has a well known `...import *` trick that we like
     'settings/__init__.py',
 
+    # ignore south migrations
+    '/migrations/',
+
     # all downloaded libs to be ignored
     '/js/lib/',
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=997270

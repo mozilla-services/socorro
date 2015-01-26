@@ -26,6 +26,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'commonware.response.cookies',
+    'south',  # important that django_nose comes AFTER this one
     'django_nose',
     'session_csrf',
 
@@ -369,3 +370,8 @@ DATASERVICE_CONFIG_BASE = {
         },
     }
 }
+
+# We don't want to test the migrations when we run tests.
+# We trust that syncdb matches what you'd get if you install
+# all the migrations.
+SOUTH_TESTS_MIGRATE = False
