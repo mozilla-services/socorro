@@ -11,6 +11,12 @@ if [ -f $SCL_PY ] && [ -r $SCL_PY ]; then
     source $SCL_PY
 fi
 
+NODE_SCL="/opt/rh/nodejs010/enable"
+if [ -f $NODE_SCL ] && [ -r $NODE_SCL ]; then
+    # Suppress warning about v8314 package.
+    source $NODE_SCL > /dev/null
+fi
+
 VENV="${HOME}/socorro/socorro-virtualenv/bin/activate"
 if [ -f $VENV ] && [ -r $VENV ]; then
     . $VENV
