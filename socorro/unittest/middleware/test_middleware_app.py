@@ -750,13 +750,6 @@ class IntegrationTestMiddlewareApp(TestCase):
 
             response = self.get(
                 server,
-                '/crashes/paireduuid/',
-                {'uuid': self.uuid}
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
-            response = self.get(
-                server,
                 '/crashes/signatures/',
                 {'product': 'Firefox', 'version': '9.0a1'}
             )
@@ -1274,14 +1267,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.status, 400)
             ok_('versions' in response.body)
-
-            response = self.get(
-                server,
-                '/crashes/paireduuid/',
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('uuid' in response.body)
 
             response = self.post(
                 server,

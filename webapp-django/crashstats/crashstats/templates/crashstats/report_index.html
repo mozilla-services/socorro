@@ -34,17 +34,6 @@
     <div class="body">
       <div id="sumo-link"><a href="http://support.mozilla.org/search?q={{ report.signature|urlencode }}" title="Find more answers at support.mozilla.org!">Search Mozilla Support for Help</a></div>
 
-      {% if hang_id %}
-      <div class="oopp-hang">
-        <div class="current">Hang Minidump <span class="type">({{ process_type }})</span></div>
-        {% if crash_pairs.total == 0 %}
-        <div class="pair">Hang ID {{ hang_id }} but no other UUID pair found</div>
-        {% else %}
-        <div class="pair">Hang ID <a href="{{ hang_id }}">{{ hang_id }}</a></div>
-        {% endif%}
-      </div>
-      {% endif %}
-
       <div id="report-header-details">ID: <span>{{ report.uuid }}</span><br/> Signature: <span>{{ report.signature }}</span></div>
       <div id="report-index" class="no-border ui-tabs ui-widget ui-widget-content ui-corner-all">
 

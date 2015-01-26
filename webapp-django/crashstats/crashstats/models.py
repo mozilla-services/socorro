@@ -1202,20 +1202,6 @@ class CommentsBySignature(SocorroMiddleware):
     )
 
 
-class CrashPairsByCrashId(SocorroMiddleware):
-
-    URL_PREFIX = '/crashes/paireduuid/'
-
-    required_params = (
-        'uuid',
-        'hang_id',
-    )
-
-    # because it just returns something like
-    #  {"hits": ["uuid1", "uuid2", ...]}
-    API_WHITELIST = None
-
-
 class ExplosiveCrashes(SocorroMiddleware):
     """Queries explosive crash signatures.
 

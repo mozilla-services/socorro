@@ -1130,14 +1130,6 @@ def report_index(request, crash_id, default_context=None):
                 context['raw']['InstallTime']
             )
 
-    if 'HangID' in context['raw']:
-        context['hang_id'] = context['raw']['HangID']
-        crash_pair_api = models.CrashPairsByCrashId()
-        context['crash_pairs'] = crash_pair_api.get(
-            uuid=context['report']['uuid'],
-            hang_id=context['hang_id']
-        )
-
     if request.user.has_perm('crashstats.view_rawdump'):
         context['raw_dump_urls'] = [
             reverse('crashstats:raw_data', args=(crash_id, 'dmp')),

@@ -1042,34 +1042,6 @@ class TestViews(BaseTestViews):
         eq_(hit['email'], 'some@emailaddress.com')
 
     @mock.patch('requests.get')
-    def test_CrashPairsByCrashId(self, rget):
-        url = reverse('api:model_wrapper', args=('CrashPairsByCrashId',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['uuid'])
-        ok_(dump['errors']['hang_id'])
-
-        def mocked_get(url, params, **options):
-            return Response("""
-              {
-                "hits": [{"guess": "work"}],
-                "total": 1
-              }
-            """)
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url, {
-            'uuid': '123',
-            'hang_id': '987'
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['hits'])
-        ok_(dump['total'])
-
-    @mock.patch('requests.get')
     def test_Search(self, rget):
 
         def mocked_get(url, params, **options):

@@ -393,7 +393,7 @@ class Crashes(PostgreSQLBase):
                 COUNT(r.id) AS total
         """]
 
-        ## Adding count for each OS
+        # Adding count for each OS
         if hasattr(self.context, 'webapi'):
             context = self.context.webapi
         else:
@@ -446,75 +446,6 @@ class Crashes(PostgreSQLBase):
         return {
             "hits": frequencies,
             "total": len(frequencies)
-        }
-
-    def get_paireduuid(self, **kwargs):
-        """Return paired uuid given a uuid and an optional hangid.
-
-        If a hangid is passed, then return only one result. Otherwise, return
-        all found paired uuids.
-
-        """
-        filters = [
-            ("uuid", None, "str"),
-            ("hangid", None, "str"),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        if not params.uuid:
-            raise MissingArgumentError('uuid')
-
-        try:
-            crash_date = datetimeutil.uuid_to_date(params.uuid)
-        except ValueError:
-            raise BadArgumentError(
-                'uuid',
-                'Date could not be converted extract from %s' % (params.uuid,)
-            )
-
-        sql = """
-            /* socorro.external.postgresql.crashes.Crashes.get_paireduuid */
-            SELECT uuid
-            FROM reports r
-            WHERE r.uuid != %(uuid)s
-            AND r.date_processed BETWEEN
-                TIMESTAMP %(crash_date)s - CAST('1 day' AS INTERVAL) AND
-                TIMESTAMP %(crash_date)s + CAST('1 day' AS INTERVAL)
-        """
-        sql_params = {
-            "uuid": params.uuid,
-            "crash_date": crash_date
-        }
-
-        if params.hangid is not None:
-            sql = """%s
-                AND r.hangid = %%(hangid)s
-                LIMIT 1
-            """ % sql
-            sql_params["hangid"] = params.hangid
-        else:
-            sql = """%s
-                AND r.hangid IN (
-                    SELECT hangid
-                    FROM reports r2
-                    WHERE r2.date_processed BETWEEN
-                        TIMESTAMP %%(crash_date)s - CAST('1 day' AS INTERVAL)
-                        AND
-                        TIMESTAMP %%(crash_date)s + CAST('1 day' AS INTERVAL)
-                    AND r2.uuid = %%(uuid)s
-                )
-            """ % sql
-
-        # Query the database
-        error_message = "Failed to retrieve paired uuids from PostgreSQL"
-        results = self.query(sql, sql_params, error_message=error_message)
-
-        # Transforming the results into what we want
-        uuids = [dict(zip(("uuid",), row)) for row in results]
-
-        return {
-            "hits": uuids,
-            "total": len(uuids)
         }
 
     def get_signatures(self, **kwargs):

@@ -18,11 +18,11 @@ from socorro.unittest.testbase import TestCase
 from unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
+# =============================================================================
 class TestCrashes(TestCase):
     """Test socorro.external.postgresql.crashes.Crashes class. """
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
         context = util.DotDict()
@@ -50,7 +50,7 @@ class TestCrashes(TestCase):
         )
         return context
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_instance(self, config=None):
         """Return an instance of Crashes with the config parameter as
         a context or the default one if config is None.
@@ -60,7 +60,7 @@ class TestCrashes(TestCase):
         }
         return Crashes(**args)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_prepare_search_params(self):
         """Test Crashes.prepare_search_params()."""
         crashes = self.get_instance()
@@ -130,12 +130,12 @@ class TestCrashes(TestCase):
         )
 
 
-#==============================================================================
+# =============================================================================
 @attr(integration='postgres')  # for nosetests
 class IntegrationTestCrashes(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crashes.Crashes class. """
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
@@ -143,32 +143,11 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Insert data for paireduuid test
         self.now = datetimeutil.utc_now()
         yesterday = self.now - datetime.timedelta(days=1)
-        uuid = "%%s-%s" % self.now.strftime("%y%m%d")
-        yesterday_uuid = "%%s-%s" % yesterday.strftime("%y%m%d")
 
         build_date = self.now - datetime.timedelta(days=30)
         sunset_date = self.now + datetime.timedelta(days=30)
-
-        cursor.execute("""
-            TRUNCATE reports;
-            INSERT INTO reports (id, date_processed, uuid, hangid)
-            VALUES
-            (101, '%s', '%s', '%s'),
-            (102, '%s', '%s', '%s'),
-            (103, '%s', '%s', '%s'),
-            (104, '%s', '%s', '%s'),
-            (105, '%s', '%s', '%s'),
-            (106, '%s', '%s', '%s')
-            ;
-        """ % (self.now, uuid % "a1", "ab1",
-               self.now, uuid % "a2", "ab1",
-               self.now, uuid % "a3", "ab1",
-               self.now, uuid % "b1", "xxx",
-               self.now, uuid % "c1", "cb1",
-               self.now, yesterday_uuid % "c2", "cb1"))
 
         # Insert data for frequency test
         cursor.execute("""
@@ -533,7 +512,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.connection.commit()
         cursor.close()
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
@@ -550,7 +529,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         cursor.close()
         super(IntegrationTestCrashes, self).tearDown()
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_get_comments(self):
         crashes = Crashes(config=self.config)
         today = datetimeutil.date_to_string(self.now)
@@ -634,7 +613,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         eq_(len(res['hits']), 1)
         eq_(res['total'], 2)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_get_daily(self):
         crashes = Crashes(config=self.config)
         now = self.now.date()
@@ -876,7 +855,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_count_by_day(**params)
         eq_(res, expected)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_get_frequency(self):
         self.config.webapi = util.DotDict()
         self.config.webapi.platforms = (
@@ -891,7 +870,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         )
         crashes = Crashes(config=self.config)
 
-        #......................................................................
+        # .....................................................................
         # Test 1
         params = {
             "signature": "js"
@@ -925,7 +904,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         eq_(res, res_expected)
 
-        #......................................................................
+        # .....................................................................
         # Test 2
         params = {
             "signature": "blah"
@@ -949,7 +928,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         eq_(res, res_expected)
 
-        #......................................................................
+        # .....................................................................
         # Verify that it is not possible to break the query.
         params = {
             "signature": "sig'"
@@ -957,87 +936,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_frequency(**params)
         eq_(res["total"], 0)
 
-    #--------------------------------------------------------------------------
-    def test_get_paireduuid(self):
-        crashes = Crashes(config=self.config)
-        yesterday = self.now - datetime.timedelta(days=1)
-        uuid = "%%s-%s" % self.now.strftime("%y%m%d")
-        yesterday_uuid = "%%s-%s" % yesterday.strftime("%y%m%d")
-
-        #......................................................................
-        # Test 1: a uuid and a hangid
-        params = {
-            "uuid": uuid % "a1",
-            "hangid": "ab1"
-        }
-        res = crashes.get_paireduuid(**params)
-        res_expected = {
-            "hits": [
-                {
-                    "uuid": uuid % "a2"
-                }
-            ],
-            "total": 1
-        }
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 2: a uuid only
-        params = {
-            "uuid": uuid % "a1"
-        }
-        res = crashes.get_paireduuid(**params)
-        res_expected = {
-            "hits": [
-                {
-                    "uuid": uuid % "a2"
-                },
-                {
-                    "uuid": uuid % "a3"
-                }
-            ],
-            "total": 2
-        }
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 3: a query with no result
-        params = {
-            "uuid": uuid % "b1"
-        }
-        res = crashes.get_paireduuid(**params)
-        res_expected = {
-            "hits": [],
-            "total": 0
-        }
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 4: one result that was yesterday
-        params = {
-            "uuid": uuid % "c1"
-        }
-        res = crashes.get_paireduuid(**params)
-        res_expected = {
-            "hits": [
-                {
-                    "uuid": yesterday_uuid % "c2"
-                }
-            ],
-            "total": 1
-        }
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 5: missing argument
-        params = {
-            "hangid": "c1"
-        }
-        assert_raises(MissingArgumentError,
-                      crashes.get_paireduuid,
-                      **params)
-
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_get_exploitibility(self):
         crashes = Crashes(config=self.config)
 
@@ -1240,7 +1139,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             min(med_or_highs)
         )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_get_adu_by_signature(self):
         crashes = Crashes(config=self.config)
 

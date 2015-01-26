@@ -3592,117 +3592,6 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
-    def test_report_index_with_hangid_in_raw_data(self, rget, rpost):
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
-        comment0 = "This is a comment"
-        email0 = "some@emailaddress.com"
-        url0 = "someaddress.com"
-        email1 = "some@otheremailaddress.com"
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response("""
-                {
-                  "InstallTime": "1339289895",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s",
-                  "HangID": "123456789"
-                }
-                """ % (email0, url0))
-            if '/crashes/paireduuid' in url:
-                return Response("""
-                {
-                  "hits": [{
-                      "uuid": "e8820616-1462-49b6-9784-e99a32120201"
-                  }],
-                  "total": 1
-                }
-                """)
-            if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
-            if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
-
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
-
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
-
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
-        response = self.client.get(url)
-        ok_('Hang Minidump' in response.content)
-        # the HangID in the fixture above
-        ok_('123456789' in response.content)
-
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
     def test_report_index_with_invalid_InstallTime(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
@@ -3730,15 +3619,6 @@ class TestViews(BaseTestViews):
                   "HangID": "123456789"
                 }
                 """ % (email0, url0))
-            if '/crashes/paireduuid' in url:
-                return Response("""
-                {
-                  "hits": [{
-                      "uuid": "e8820616-1462-49b6-9784-e99a32120201"
-                  }],
-                  "total": 1
-                }
-                """)
             if 'crashes/comments' in url:
                 return Response("""
                 {
@@ -3866,15 +3746,6 @@ class TestViews(BaseTestViews):
                   "HangID": "123456789"
                 }
                 """ % (email0, url0))
-            if '/crashes/paireduuid' in url:
-                return Response("""
-                {
-                  "hits": [{
-                      "uuid": "e8820616-1462-49b6-9784-e99a32120201"
-                  }],
-                  "total": 1
-                }
-                """)
             if 'crashes/comments' in url:
                 return Response("""
                 {
@@ -3976,15 +3847,6 @@ class TestViews(BaseTestViews):
                   "HangID": "123456789"
                 }
                 """ % (email0, url0))
-            if '/crashes/paireduuid' in url:
-                return Response("""
-                {
-                  "hits": [{
-                      "uuid": "e8820616-1462-49b6-9784-e99a32120201"
-                  }],
-                  "total": 1
-                }
-                """)
             if 'crashes/comments' in url:
                 return Response("""
                 {
@@ -4087,15 +3949,6 @@ class TestViews(BaseTestViews):
                   "HangID": "123456789"
                 }
                 """ % (email0, url0))
-            if '/crashes/paireduuid' in url:
-                return Response("""
-                {
-                  "hits": [{
-                      "uuid": "e8820616-1462-49b6-9784-e99a32120201"
-                  }],
-                  "total": 1
-                }
-                """)
             if '/crashes/comments' in url:
                 return Response("""
                 {
