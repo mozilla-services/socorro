@@ -182,15 +182,6 @@ class SignatureSummaryForm(BaseForm):
         self.fields['version'].choices = versions
 
 
-class QueryForm(ReportListForm):
-    signature = form_fields.SignatureField(required=False)
-    query = forms.CharField(required=False)
-    query_type = forms.ChoiceField(
-        required=False,
-        choices=make_choices(settings.QUERY_TYPES)
-    )
-
-
 class DailyFormBase(BaseForm):
     p = forms.ChoiceField(required=True)
     v = forms.MultipleChoiceField(required=False)

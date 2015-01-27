@@ -145,15 +145,6 @@ urlpatterns = patterns(
     url(r'^search/quick/$',
         views.quick_search,
         name='quick_search'),
-    url(r'^query/$',
-        views.query,
-        name='query'),
-    url(r'^query/query$',
-        RedirectView.as_view(
-            permanent=perm_legacy_redirect,
-            query_string=True,
-            url='/query/'
-        )),
     url(r'^buginfo/bug', views.buginfo,
         name='buginfo'),
     url(r'^topcrasher/plot_signature/(?P<product>\w+)/(?P<versions>[;\w\.()]+)'

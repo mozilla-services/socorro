@@ -1022,29 +1022,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, {'hits': [], 'total': 0})
 
-    def test_search(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/search/crashes/',
-                {
-                    'for': 'libflash.so',
-                    'in': 'signature',
-                    'products': 'Firefox',
-                    'versions': 'Firefox:4.0.1',
-                    'from': '2011-05-01',
-                    'to': '2011-05-05',
-                    'os': 'Windows',
-                }
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
     def test_server_status(self):
         breakpad_revision = '1.0'
         socorro_revision = '19.5'

@@ -123,33 +123,35 @@ class TestModels(TestCase):
 
     @mock.patch('requests.get')
     def test_middleware_url_building(self, rget):
-        model = models.Search
+        model = models.ReportList
         api = model()
 
         def mocked_get(url, params, **options):
-            assert '/search/signatures' in url
+            assert '/report/list' in url
 
-            ok_('for' in params)
+            ok_('signature' in params)
             ok_('products' in params)
             ok_('versions' in params)
             ok_('build_ids' in params)
             ok_('from' in params)
+            ok_('to' in params)
             ok_('reasons' in params)
-            ok_('search_mode' in params)
 
-            eq_(params['for'], 'sig with / and + and &')
+            eq_(params['signature'], 'sig with / and + and &')
             eq_(params['products'], ['WaterWolf', 'NightTrain'])
             eq_(params['from'], '2000-01-01T01:01:00')
+            eq_(params['to'], '2001-01-01T01:01:00')
 
             return Response('{"hits": [], "total": 0}')
 
         rget.side_effect = mocked_get
         api.get(
-            terms='sig with / and + and &',
+            signature='sig with / and + and &',
             products=['WaterWolf', 'NightTrain'],
             versions=['WaterWolf:11.1', 'NightTrain:42.0a1'],
             build_ids=1234567890,
             start_date=datetime.datetime(2000, 1, 1, 1, 1),
+            end_date=datetime.datetime(2001, 1, 1, 1, 1),
             reasons='some\nreason\0',
             search_mode='unsafe/search/mode'
         )
@@ -842,45 +844,6 @@ class TestModels(TestCase):
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
         ok_(r['product'])
         ok_(r['exploitability'])
-
-    @mock.patch('requests.get')
-    def test_search(self, rget):
-        model = models.Search
-        api = model()
-
-        def mocked_get(**options):
-            assert 'search/signatures' in options['url'], options['url']
-            return Response("""
-            {"hits": [
-                  {
-                  "count": 586,
-                  "signature": "nsASDOMWindowEnumerator::GetNext()",
-                  "numcontent": 0,
-                  "is_windows": 586,
-                  "is_linux": 0,
-                  "numplugin": 0,
-                  "is_mac": 0,
-                  "numhang": 0
-                }],
-              "total": 123
-              }
-            """)
-
-        rget.side_effect = mocked_get
-        r = api.get()
-        ok_(r['hits'])
-        ok_(r['total'])
-
-        now = datetime.datetime.utcnow()
-        lastweek = now - datetime.timedelta(days=7)
-        r = api.get(
-            products=['WaterWolf'],
-            versions=['WaterWolf:1.0a1'],
-            start_date=lastweek,
-            end_date=now
-        )
-        ok_(r['hits'])
-        ok_(r['total'])
 
     @mock.patch('crashstats.crashstats.models.settings'
                 '.DATASERVICE_CONFIG.services.Bugs')

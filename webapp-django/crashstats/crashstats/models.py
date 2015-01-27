@@ -1250,51 +1250,6 @@ class CrashesByExploitability(SocorroMiddleware):
     API_WHITELIST = None
 
 
-class Search(SocorroMiddleware):
-
-    URL_PREFIX = '/search/signatures/'
-
-    possible_params = (
-        'terms',
-        ('products', list),
-        ('versions', list),
-        ('os', list),
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
-        'search_mode',
-        'build_ids',
-        'reasons',
-        'release_channels',
-        'report_process',
-        'report_type',
-        'plugin_in',
-        'plugin_search_mode',
-        'plugin_terms',
-        'result_number',
-        'result_offset',
-        '_force_api_impl'
-    )
-
-    aliases = {
-        'terms': 'for',
-        'start_date': 'from',
-        'end_date': 'to'
-    }
-
-    API_WHITELIST = {
-        'hits': (
-            'count',
-            'is_linux',
-            'is_mac',
-            'is_windows',
-            'numcontent',
-            'numhang',
-            'numplugin',
-            'signature',
-        )
-    }
-
-
 class Bugs(SocorroMiddleware):
 
     required_params = settings.DATASERVICE_CONFIG.services.Bugs.required_params
