@@ -36,27 +36,25 @@ class socorro::vagrant {
       require => Package['elasticsearch'];
   }
 
-  exec {
-    'postgres-initdb':
-      command => '/sbin/service postgresql-9.3 initdb'
-  }
-
   yumrepo {
     'devtools':
       baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
     'elasticsearch':
-      baseurl => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos';
-    'EPEL':
-      baseurl => 'http://dl.fedoraproject.org/pub/epel/$releasever/$basearch',
-      timeout => 60;
+      baseurl => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos',
+      gpgkey  => 'https://packages.elasticsearch.org/GPG-KEY-elasticsearch';
     'PGDG':
-      baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch';
+      baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
+      gpgkey  => 'http://yum.postgresql.org/RPM-GPG-KEY-PGDG';
   }
 
-  Yumrepo['devtools', 'elasticsearch', 'EPEL', 'PGDG'] {
+  Yumrepo['devtools'] {
     enabled  => 1,
-    gpgcheck => 0,
-    require  => Package['ca-certificates', 'yum-plugin-fastestmirror']
+    gpgcheck => 0
+  }
+
+  Yumrepo['elasticsearch', 'PGDG'] {
+    enabled  => 1,
+    gpgcheck => 1
   }
 
   package {
@@ -67,9 +65,20 @@ class socorro::vagrant {
   }
 
   package {
+    'ca-certificates':
+      ensure => latest
+  }
+
+  package {
+    'yum-plugin-fastestmirror':
+      ensure  => latest,
+      require => Package['ca-certificates']
+  }
+
+  package {
     [
-      'ca-certificates',
       'daemonize',
+      'epel-release',
       'gcc-c++',
       'git',
       'httpd',
@@ -89,9 +98,9 @@ class socorro::vagrant {
       'subversion',
       'time',
       'unzip',
-      'yum-plugin-fastestmirror',
     ]:
-    ensure => latest
+    ensure  => latest,
+    require => Package['yum-plugin-fastestmirror']
   }
 
   package {
@@ -102,7 +111,15 @@ class socorro::vagrant {
       'postgresql93-server',
     ]:
     ensure  => latest,
-    require => Yumrepo['PGDG']
+    require => [
+      Yumrepo['PGDG'],
+      Package['ca-certificates']
+    ]
+  }
+
+  exec {
+    'postgres-initdb':
+      command => '/sbin/service postgresql-9.3 initdb'
   }
 
   exec {
@@ -128,7 +145,7 @@ class socorro::vagrant {
       'nodejs-less',
     ]:
     ensure  => latest,
-    require => Yumrepo['EPEL']
+    require => Package['epel-release', 'yum-plugin-fastestmirror']
   }
 
   package {
