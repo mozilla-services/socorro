@@ -8,8 +8,8 @@ MarkupSafe==0.15
 Paste==1.7.5.1
 # sha256: 3jrATsqwp-CvZO7jCnHnI7pYhrlYIF9zVN1iQ52mA4k
 SQLAlchemy==0.9.8
-# sha256: VQ8QsiZvaJd47O0v7Ymb_QV1VzdHhFS5f7mThfLngOU
-alembic==0.7.4
+# sha256: rk_or-4TTLChyGRMxN-DSvaGWkHEy6xxM-VfB0cHimQ
+https://bitbucket.org/zzzeek/alembic/get/56d56f55bde13214359222db46e2da61f0438a10.zip#egg=alembic-0.7.5alpha
 # sha256: 3a9LCmGDNaMrZmTUrgOKHej7raOyUDP5AhUQ7Ss5QaQ
 argparse==1.2.1
 
