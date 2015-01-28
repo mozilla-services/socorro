@@ -963,94 +963,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, {'hits': [], 'total': 0})
 
-    def test_products_builds(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/products/builds/',
-                {'product': 'Firefox', 'version': ':9.0a1'}
-            )
-            eq_(response.data, [])
-
-    def test_products_builds_post(self):
-        config_manager = self._setup_config_manager()
-
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO products
-            (product_name, sort, release_name)
-            VALUES
-            (
-                'Firefox',
-                1,
-                'firefox'
-            ),
-            (
-                'FennecAndroid',
-                2,
-                'fennecandroid'
-            ),
-            (
-                'Thunderbird',
-                3,
-                'thunderbird'
-            );
-        """)
-
-        cursor.execute("""
-            INSERT INTO release_channels
-            (release_channel, sort)
-            VALUES
-            ('Nightly', 1),
-            ('Aurora', 2),
-            ('Beta', 3),
-            ('Release', 4);
-        """)
-
-        cursor.execute("""
-            INSERT INTO product_release_channels
-            (product_name, release_channel, throttle)
-            VALUES
-            ('Firefox', 'Nightly', 1),
-            ('Firefox', 'Aurora', 1),
-            ('Firefox', 'Beta', 1),
-            ('Firefox', 'Release', 1),
-            ('Thunderbird', 'Nightly', 1),
-            ('Thunderbird', 'Aurora', 1),
-            ('Thunderbird', 'Beta', 1),
-            ('Thunderbird', 'Release', 1),
-            ('FennecAndroid', 'Nightly', 1),
-            ('FennecAndroid', 'Aurora', 1),
-            ('FennecAndroid', 'Beta', 1),
-            ('FennecAndroid', 'Release', 1);
-        """)
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.post(
-                server,
-                '/products/builds/',
-                {"product": "Firefox",
-                 "version": "20.0",
-                 "build_id": 20120417012345,
-                 "build_type": "Release",
-                 "platform": "macosx",
-                 "repository": "mozilla-central"
-                 }
-            )
-            eq_(response.status, 200)
-            eq_(response.body, 'Firefox')
-
     def test_releases_channels(self):
         config_manager = self._setup_config_manager()
 
@@ -1401,15 +1313,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.status, 200)
 
-            response = self.post(
-                server,
-                '/products/builds/',
-                {'xxx': ''},
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('product' in response.body)
-
             response = self.get(
                 server,
                 '/signatureurls/',
@@ -1554,7 +1457,7 @@ class IntegrationTestMiddlewareApp(TestCase):
                     'channel': 'aurora',
                 }
             )
-            eq_(response.data, {'hits': [], 'total':0})
+            eq_(response.data, {'hits': [], 'total': 0})
 
     def test_post_product(self):
         config_manager = self._setup_config_manager()

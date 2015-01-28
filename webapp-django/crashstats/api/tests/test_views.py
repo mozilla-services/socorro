@@ -1417,53 +1417,6 @@ class TestViews(BaseTestViews):
         ok_(dump['state'])
 
     @mock.patch('requests.get')
-    def test_DailyBuilds(self, rget):
-        def mocked_get(url, params, **options):
-            if '/products/builds' in url:
-                return Response("""
-                    [
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000001,
-                        "beta_number": null,
-                        "platform": "Mac OS X",
-                        "version": "19.0",
-                        "date": "2012-06-25",
-                        "build_type": "Nightly"
-                      },
-                      {
-                        "product": "WaterWolf",
-                        "repository": "dev",
-                        "buildid": 20120625000003,
-                        "beta_number": null,
-                        "platform": "BeOS",
-                        "version": "5.0a1",
-                        "date": "2012-06-25",
-                        "build_type": "Beta"
-                      }
-                    ]
-                """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('DailyBuilds',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['product'])
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump)
-        ok_(dump[0]['buildid'])
-
-    @mock.patch('requests.get')
     def test_CrashTrends(self, rget):
         def mocked_get(url, params, **options):
             if '/crashtrends' in url:
