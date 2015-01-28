@@ -8,7 +8,7 @@ Create Date: 2015-01-15 15:31:14.012678
 
 # revision identifiers, used by Alembic.
 revision = '42c267d6ed35'
-down_revision = '5387d590bc45'
+down_revision = 'e4ea2ae3413'
 
 from alembic import op
 from socorro.lib import citexttype, jsontype, buildtype
