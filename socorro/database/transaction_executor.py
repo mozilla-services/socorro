@@ -163,11 +163,12 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
 #==============================================================================
 class TransactionExecutorWithLimitedBackoff(
                                        TransactionExecutorWithInfiniteBackoff):
+    # the `is_infinite` flag is informative for uses of this class
+    is_infinite = False
+
     #--------------------------------------------------------------------------
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
         between retries."""
         for x in self.config.backoff_delays:
             yield x
-
-
