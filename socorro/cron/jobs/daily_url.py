@@ -39,7 +39,7 @@ select
   r.user_comments, --15
   r.uptime as uptime_seconds, --16
   case when (r.email is NULL OR r.email='') then '' else r.email end as email, --17
-  (select sum(adu_count) from raw_adi adu
+  (select sum(adi_count) from raw_adi adu
      where adu.date = '%(now_str)s'
        and r.product = adu.product_name and r.version = adu.product_version
        and substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
