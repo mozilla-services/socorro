@@ -42,11 +42,11 @@ sql = """
         r.user_comments, --15
         r.uptime as uptime_seconds, --16
         case when (r.email is NULL OR r.email='') then '' else r.email end as email, --17
-        (select sum(adu_count) from raw_adu adu
-           where adu.date = '%(now_str)s'
-             and r.product = adu.product_name and r.version = adu.product_version
-             and substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
-             and r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count, --18
+        (select sum(adi_count) from raw_adi adi
+           where adi.date = '%(now_str)s'
+             and r.product = adi.product_name and r.version = adi.product_version
+             and substring(r.os_name from 1 for 3) = substring(adi.product_os_platform from 1 for 3)
+             and r.os_version LIKE '%%'||adi.product_os_version||'%%') as adu_count, --18
         r.topmost_filenames, --19
         case when (r.addons_checked is NULL) then '[unknown]'when (r.addons_checked) then 'checked' else 'not' end as addons_checked, --20
         r.flash_version, --21

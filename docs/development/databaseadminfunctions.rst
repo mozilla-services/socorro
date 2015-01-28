@@ -76,7 +76,7 @@ FALSE
 	no changes to data made, and warning returned.
 
 ERROR
-	underlying data is missing (i.e. no crashes, no raw_adu, etc.)
+	underlying data is missing (i.e. no crashes, no raw_adi, etc.)
 	or some unexpected error condition
 
 IF checkdata=FALSE:
@@ -153,8 +153,8 @@ all of them depend on all of the hourly functions having completed for the day.
 	:header: "Matview","Update Function","Backfill Function","Depends On","Notes"
 	:widths: 20,30,30,30,20
 
-	"build_adu","update_build_adu","backfill_build_adu","raw_adu fill",
-	"product_adu","update_adu","backfill_adu","raw_adu fill",
+	"build_adu","update_build_adu","backfill_build_adu","raw_adi fill",
+	"product_adu","update_adu","backfill_adu","raw_adi fill",
 	"crashes_by_user","update_crashes_by_user","backfill_crashes_by_user","update_adu",
 	"crashes_by_user_build","update_crashes_by_user_build","backfill_crashes_by_user_build","update_build_adu",
 	"correlations","update_correlations","backfill_correlations","NA","Last Day Only"

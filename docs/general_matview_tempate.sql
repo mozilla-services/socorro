@@ -105,10 +105,10 @@ DECLARE
 	lastday DATE;
 BEGIN
 
-	-- set backfill to the last day we have ADU for
+	-- set backfill to the last day we have ADI for
 	SELECT max("date") 
 	INTO lastday
-	FROM raw_adu;
+	FROM raw_adi;
 	
 	WHILE thisday <= lastday LOOP
 	

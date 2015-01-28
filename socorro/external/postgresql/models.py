@@ -409,28 +409,6 @@ class RawAdi(DeclarativeBase):
     )
 
 
-class RawAdu(DeclarativeBase):
-    __tablename__ = 'raw_adu'
-
-    #column definitions
-    adu_count = Column(u'adu_count', INTEGER())
-    date = Column(u'date', DATE())
-    product_name = Column(u'product_name', TEXT())
-    product_os_platform = Column(u'product_os_platform', TEXT())
-    product_os_version = Column(u'product_os_version', TEXT())
-    product_version = Column(u'product_version', TEXT())
-    build = Column(u'build', TEXT())
-    build_channel = Column(u'build_channel', TEXT())  # DEPRECATED
-    product_guid = Column(u'product_guid', TEXT())
-    received_at = Column(u'received_at', TIMESTAMP(timezone=True), server_default=text('NOW()'))
-    update_channel = Column(u'update_channel', TEXT())
-
-    __mapper_args__ = {"primary_key": (adu_count, date, product_name, product_version, product_os_platform, product_os_version, build, build_channel, product_guid, update_channel)}
-    __table_args__ = (
-        Index(u'raw_adu_1_idx', date, product_name, product_version, product_os_platform, product_os_version),
-    )
-
-
 class ReplicationTest(DeclarativeBase):
     __tablename__ = 'replication_test'
 
@@ -1232,14 +1210,14 @@ class SignatureSummaryArchitecture(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
 class SignatureSummaryDevice(DeclarativeBase):
     __tablename__ = 'signature_summary_device'
 
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT())
@@ -1256,7 +1234,7 @@ class SignatureSummaryFlashVersion(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1266,7 +1244,7 @@ class SignatureSummaryInstallations(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), primary_key=True, nullable=False)
     version_string = Column(u'version_string', TEXT(), primary_key=True, nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False)
     install_count = Column(u'install_count', INTEGER(), nullable=False)
 
@@ -1279,7 +1257,7 @@ class SignatureSummaryOS(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1291,7 +1269,7 @@ class SignatureSummaryProcessType(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1302,7 +1280,7 @@ class SignatureSummaryProducts(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1314,14 +1292,14 @@ class SignatureSummaryUptime(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
 class SignatureSummaryGraphics(DeclarativeBase):
     __tablename__ = 'signature_summary_graphics'
 
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT())
     version_string = Column(u'version_string', TEXT())

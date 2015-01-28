@@ -48,7 +48,7 @@ Contains lists of bugs thought to be related to crash reports, for linking to cr
 
 Links bugs from the bugs table to crash signatures.  Populated by daily cronjob.
 
-*raw_adu*
+*raw_adi*
 
 Contains counts of estimated Average Daily Users as calculated by the Metrics department, grouped by product, version, build, os, and UTC date.  Populated by a daily cronjob.
 
@@ -156,7 +156,7 @@ Updated by update_reports_clean().
 
 *product_adu*
 
-The normalized version of raw_adu, contains summarized estimated counts of users for each product-version since Rapid Release began.  Populated by daily cronjob.
+The normalized version of raw_adi, contains summarized estimated counts of users for each product-version since Rapid Release began.  Populated by daily cronjob.
 
 Updated by update_adu().
 

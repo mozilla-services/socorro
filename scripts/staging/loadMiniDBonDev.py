@@ -44,7 +44,7 @@ def runload(load_command):
     if load_result != 0:
         sys.exit(load_result)
 
-matviews = ['raw_adu',
+matviews = ['raw_adi',
     'releases_raw',
     'product_adu',
     'tcbs',

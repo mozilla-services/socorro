@@ -80,18 +80,18 @@ cur.execute("""
 
 print "top_crashes_by_signature truncated"
 
-# truncate raw_adu
+# truncate raw_adi
 
 cur.execute("""
-	DELETE FROM raw_adu
+	DELETE FROM raw_adi
 	WHERE "date" < ( now() - interval '60 days')
 	""")
 
 cur.execute("""
-	VACUUM FULL raw_adu
+	VACUUM FULL raw_adi
 	""")
 
-print "raw_adu truncated"
+print "raw_adi truncated"
 
 # analyze
 

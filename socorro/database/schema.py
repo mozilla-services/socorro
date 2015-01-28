@@ -647,28 +647,6 @@ class PluginsReportsTable(PartitionedTable):
 databaseDependenciesForPartition[PluginsReportsTable] = [ReportsTable]
 databaseDependenciesForSetup[PluginsReportsTable] = [PluginsTable]
 
-class RawAduTable(Table):
-  """Define the table raw_adu"""
-  def __init__(self, logger, **kwargs):
-    super(RawAduTable,self).__init__(name='raw_adu', logger=logger,
-                                     creationSql = """
-                                       CREATE TABLE raw_adu (
-                                         adu_count integer,
-                                         date timestamp with time zone,
-                                         product_name text,
-                                         product_os_platform text,
-                                         product_os_version text,
-                                         product_version text
-                                         );
-                                         CREATE INDEX raw_adu_1_idx ON raw_adu (date,
-                                         product_name,
-                                         product_version,
-                                         product_os_platform,
-                                         product_os_version);
-                                       """
-                                    )
-databaseDependenciesForSetup[RawAduTable] = []
-
 
 #=================================================================================================================
 class ReleasesRawTable(Table):
