@@ -62,7 +62,6 @@ SERVICES_LIST = (
     (r'/laglog/(.*)', 'laglog.LagLog'),
     (r'/platforms/(.*)', 'platforms.Platforms'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
-    (r'/products/builds/(.*)', 'products_builds.ProductsBuilds'),
     (r'/products/(.*)', 'products.Products'),
     (r'/query/', 'query.Query'),
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),

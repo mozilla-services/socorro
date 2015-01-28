@@ -1048,44 +1048,6 @@ class TestModels(TestCase):
         ok_(response['hits'])
 
     @mock.patch('requests.get')
-    def test_daily_builds(self, rget):
-        model = models.DailyBuilds
-        api = model()
-
-        def mocked_get(**options):
-            assert '/product' in options['url']
-            return Response("""
-                [
-                  {
-                    "product": "SeaMonkey",
-                    "repository": "dev",
-                    "buildid": 20120625000007,
-                    "beta_number": null,
-                    "platform": "Mac OS X",
-                    "version": "5.0a1",
-                    "date": "2012-06-25",
-                    "build_type": "Nightly"
-                  },
-                  {
-                    "product": "SeaMonkey",
-                    "repository": "dev",
-                    "buildid": 20120625000007,
-                    "beta_number": null,
-                    "platform": "Windows",
-                    "version": "5.0a1",
-                    "date": "2012-06-25",
-                    "build_type": "Nightly"
-                  }
-                ]
-            """)
-
-        rget.side_effect = mocked_get
-        r = api.get(product='SeaMonkey')
-        eq_(r[0]['product'], 'SeaMonkey')
-        ok_(r[0]['date'])
-        ok_(r[0]['version'])
-
-    @mock.patch('requests.get')
     def test_paireduuid_crashes(self, rget):
         model = models.CrashPairsByCrashId
         api = model()

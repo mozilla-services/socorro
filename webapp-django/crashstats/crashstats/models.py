@@ -1420,29 +1420,6 @@ class CrontabberState(SocorroMiddleware):
     API_WHITELIST = None
 
 
-class DailyBuilds(SocorroMiddleware):
-
-    URL_PREFIX = '/products/builds/'
-
-    required_params = (
-        'product',
-    )
-    possible_params = (
-        'version',
-    )
-
-    API_WHITELIST = (
-        'beta_number',
-        'build_type',
-        'buildid',
-        'date',
-        'platform',
-        'product',
-        'repository',
-        'version',
-    )
-
-
 class CrashTrends(SocorroMiddleware):
 
     URL_PREFIX = '/crashtrends/'
@@ -1471,9 +1448,6 @@ class CrashTrends(SocorroMiddleware):
 class BugzillaAPI(SocorroCommon):
     base_url = settings.BZAPI_BASE_URL
     username = password = None
-
-#    def get(self, *args, **kwargs):
-#        raise NotImplementedError("You're supposed to override this")
 
 
 class BugzillaBugInfo(BugzillaAPI):
