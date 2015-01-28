@@ -197,7 +197,7 @@ else
     error $? "Could not pushd /data/socorro"
     PYTHONPATH=. ../socorro-virtualenv/bin/python \
         ../socorro-virtualenv/bin/alembic \
-        -c config/alembic.ini upgrade heads &> /var/log/socorro/alembic.log
+        -c config/alembic.ini upgrade heads 2&>1 | tee /var/log/socorro/alembic.log
     error $? "Could not run migrations with alembic"
     popd > /dev/null
     error $? "Could not popd"
