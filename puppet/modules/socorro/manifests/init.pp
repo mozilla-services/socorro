@@ -69,6 +69,7 @@ class socorro::vagrant {
   package {
     [
       'ca-certificates',
+      'centos-release-SCL',
       'daemonize',
       'gcc-c++',
       'git',
@@ -103,6 +104,12 @@ class socorro::vagrant {
     ]:
     ensure  => latest,
     require => Yumrepo['PGDG']
+  }
+
+  package {
+    'python27':
+      ensure  => latest,
+      require => Package['centos-release-SCL']
   }
 
   exec {
