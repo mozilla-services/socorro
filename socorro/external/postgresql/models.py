@@ -1210,14 +1210,14 @@ class SignatureSummaryArchitecture(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
 class SignatureSummaryDevice(DeclarativeBase):
     __tablename__ = 'signature_summary_device'
 
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT())
@@ -1234,7 +1234,7 @@ class SignatureSummaryFlashVersion(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1244,7 +1244,7 @@ class SignatureSummaryInstallations(DeclarativeBase):
     signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), primary_key=True, nullable=False)
     version_string = Column(u'version_string', TEXT(), primary_key=True, nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     crash_count = Column(u'crash_count', INTEGER(), nullable=False)
     install_count = Column(u'install_count', INTEGER(), nullable=False)
 
@@ -1257,7 +1257,7 @@ class SignatureSummaryOS(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1269,7 +1269,7 @@ class SignatureSummaryProcessType(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1280,7 +1280,7 @@ class SignatureSummaryProducts(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
@@ -1292,14 +1292,14 @@ class SignatureSummaryUptime(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT(), nullable=False)
     version_string = Column(u'version_string', TEXT(), nullable=False)
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
 class SignatureSummaryGraphics(DeclarativeBase):
     __tablename__ = 'signature_summary_graphics'
 
-    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
+    report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False, index=True)
     product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False)
     product_name = Column(u'product_name', TEXT())
     version_string = Column(u'version_string', TEXT())
