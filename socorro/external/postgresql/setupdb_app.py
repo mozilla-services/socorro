@@ -329,7 +329,7 @@ class SocorroDBApp(App):
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
-            command.stamp(alembic_cfg, "head")
+            command.stamp(alembic_cfg, "heads")
             db.set_default_owner(self.database_name)
             db.session.close()
 
