@@ -22,7 +22,7 @@ Now you can modify it to meet your needs.
 
 Then, to apply the migration:
 
-    PYTHONPATH=. alembic upgrade head
+    PYTHONPATH=. alembic upgrade heads
 
 Downgrade to previous revision:
 
