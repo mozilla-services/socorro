@@ -10,21 +10,22 @@ defined in SQLAlchemy yet.
 """
 
 import os
+import warnings
+
 
 def get_local_filepath(filename):
     """
     Helper for finding our raw SQL files locally.
 
     Expects files to be in:
-        $CWD/socorro/external/postgresql/raw_sql/procs/
+        $SOCORRO_PATH/socorro/external/postgresql/raw_sql/procs/
     """
-    app_path=os.getcwd()
-    return (app_path + '/socorro/external/postgresql/raw_sql/procs/' + filename)
-
-
-def local_file_exists(filename):
-    sqlfile = get_local_filepath(filename)
-    return os.path.isfile(sqlfile)
+    procs_dir = os.path.normpath(os.path.join(
+        __file__,
+        '../../',
+        'external/postgresql/raw_sql/procs'
+    ))
+    return os.path.join(procs_dir, filename)
 
 
 def load_stored_proc(op, filelist):
@@ -38,8 +39,12 @@ def load_stored_proc(op, filelist):
         # an exception to be thrown. Some of the rollback scripts
         # would otherwise throw unhelpful exceptions when a SQL
         # file is removed from the repo.
-        if local_file_exists(sqlfile) == False:
-            print "Did not find %s. Continuing." % sqlfile
+        if not os.path.isfile(sqlfile):
+            warnings.warn(
+                "Did not find %r. Continuing migration." % sqlfile,
+                UserWarning,
+                2
+            )
             continue
         with open(sqlfile, 'r') as stored_proc:
             op.execute(stored_proc.read())
