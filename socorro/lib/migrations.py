@@ -10,18 +10,42 @@ defined in SQLAlchemy yet.
 """
 
 import os
+import warnings
+
+
+def get_local_filepath(filename):
+    """
+    Helper for finding our raw SQL files locally.
+
+    Expects files to be in:
+        $SOCORRO_PATH/socorro/external/postgresql/raw_sql/procs/
+    """
+    procs_dir = os.path.normpath(os.path.join(
+        __file__,
+        '../../',
+        'external/postgresql/raw_sql/procs'
+    ))
+    return os.path.join(procs_dir, filename)
 
 
 def load_stored_proc(op, filelist):
     """
-    Takes a list of files and the alembic op object as arguments
+    Takes the alembic op object as arguments and a list of files as arguments
     Load and run CREATE OR REPLACE function commands from files
-    Expects files to be in:
-        $CWD/socorro/external/postgresql/raw_sql/procs/
     """
-    app_path=os.getcwd()
     for filename in filelist:
-        sqlfile = app_path + '/socorro/external/postgresql/raw_sql/procs/' + filename
+        sqlfile = get_local_filepath(filename)
+        # Capturing "file not exists" here rather than allowing
+        # an exception to be thrown. Some of the rollback scripts
+        # would otherwise throw unhelpful exceptions when a SQL
+        # file is removed from the repo.
+        if not os.path.isfile(sqlfile):
+            warnings.warn(
+                "Did not find %r. Continuing migration." % sqlfile,
+                UserWarning,
+                2
+            )
+            continue
         with open(sqlfile, 'r') as stored_proc:
             op.execute(stored_proc.read())
 
