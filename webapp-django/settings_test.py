@@ -43,3 +43,12 @@ SENTRY_DSN = None
 
 
 BROWSERID_AUDIENCES = ['http://testserver']
+
+# Make sure these have something but something not right
+# so the tests never accidentally manage to connect to AWS
+# for realz.
+AWS_ACCESS_KEY = 'something'
+AWS_SECRET_ACCESS_KEY = 'anything'
+SYMBOLS_BUCKET_DEFAULT_NAME = 'my-lovely-bucket'
+SYMBOLS_FILE_PREFIX = 'v99'
+SYMBOLS_BUCKET_DEFAULT_LOCATION = 'us-west-2'

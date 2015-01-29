@@ -47,12 +47,7 @@
             <td><a href="{{ url('manage:user', upload.user.pk) }}">{{ upload.user.email }}</a></td>
             <td>{{ upload.filename }}</td>
             <td>
-              <a href="{{ url('symbols:preview', upload.pk) }}">List content</a>
-              {% if upload.file_exists %}
-                <a href="{{ url('symbols:download', upload.pk) }}">Download</a>
-              {% else %}
-                <em>File no longer exists</em>
-              {% endif %}
+              <a href="{{ url('symbols:content', upload.pk) }}">List content</a>
             </td>
             <td>{{ upload.size | filesizeformat }}</td>
             <td><time class="ago" data-date="{{ upload.created.isoformat() }}">{{ upload.created.isoformat() }}</time></td>

@@ -152,3 +152,58 @@ All of these jobs can be enabled or disabled in crontabber configuration or by m
 DEFAULT_JOBS in:
 
 https://github.com/mozilla/socorro/blob/master/socorro/cron/crontabber_app.py
+
+
+Symbols S3 uploads
+------------------
+
+The webapp has support for uploading symbols. This can be done by the user
+either using an upload form or you can HTTP POST directly in. E.g. with curl.
+
+For this to work you need to configure the S3 bucket details. The file
+``webapp-django/crashstats/settings/base.py`` specifies the defaults which
+are all pretty much empty.
+
+First of all, you need to configure the AWS credentials. This is done by
+overriding the following keys::
+
+    AWS_ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY
+
+These settings can not be empty.
+
+Next you have to set up the bucket name. When doing so, if you haven't already
+created the bucket over on the AWS console or other management tools you
+also have to define the location. The bucket name is set by setting the
+following key::
+
+    SYMBOLS_BUCKET_DEFAULT_NAME
+
+And the location is set by setting the following key::
+
+    SYMBOLS_BUCKET_DEFAULT_LOCATION
+
+If you're wondering what the format of the location should be,
+you can see `a list of the constants here <http://boto.readthedocs.org/en/latest/ref/s3.html#boto.s3.connection.Location>`_.
+For example ``us-west-2``.
+
+If you want to have a different bucket name for different user you can
+populate the following setting as per this example:
+
+.. code-block:: python
+
+    SYMBOLS_BUCKET_EXCEPTIONS = {
+        'joe.bloggs@example.com': 'private-crashes.my-bucket',
+    }
+
+That means that when ``joe.bloggs@example.com`` uploads symbols they are
+stored in a different bucket called ``private-crashes.my-bucket``.
+
+If you additionally want to use a different location for this user you
+can enter it as a tuple like this:
+
+.. code-block:: python
+
+    SYMBOLS_BUCKET_EXCEPTIONS = {
+        'joe.bloggs@example.com': ('private-crashes.my-bucket', 'us-east-1'),
+    }
