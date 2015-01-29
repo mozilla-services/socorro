@@ -16,10 +16,10 @@ import psycopg2.extras
 csd = psycopg2.connect("dbname=breakpad user=postgres port=5432")
 csd_cur = csd.cursor()
 # check if we already have ADU for the day
-csd_cur.execute("""SELECT COUNT(*) FROM raw_adu WHERE "date" = 'yesterday'::date""")
+csd_cur.execute("""SELECT COUNT(*) FROM raw_adi WHERE "date" = 'yesterday'::date""")
 
 if (csd_cur.fetchone()[0]) > 0:
-    sys.stderr.write('raw_adu has already been exported for yesterday')
+    sys.stderr.write('raw_adi has already been exported for yesterday')
     sys.exit(-1)
 
 #connect to replayDB
@@ -27,22 +27,22 @@ replay = psycopg2.connect("dbname=breakpad user=postgres port=5499")
 rep_cur = replay.cursor()
 
 # check if we already have ADU for the day
-rep_cur.execute("""SELECT count(*) FROM raw_adu WHERE "date" = 'yesterday'::date""")
+rep_cur.execute("""SELECT count(*) FROM raw_adi WHERE "date" = 'yesterday'::date""")
 
 if (rep_cur.fetchone()[0]) == 0:
-    sys.stderr.write('no raw_adu in replayDB for yesterday')
+    sys.stderr.write('no raw_adi in replayDB for yesterday')
     sys.exit(-2)
 
-#dump raw_adu to file
-rep_cur.execute("""COPY ( SELECT * FROM raw_adu WHERE "date" = 'yesterday'::date ) 
-TO '/tmp/raw_adu_update.csv' with csv;""")
+#dump raw_adi to file
+rep_cur.execute("""COPY ( SELECT * FROM raw_adi WHERE "date" = 'yesterday'::date )
+TO '/tmp/raw_adi_update.csv' with csv;""")
 replay.close()
 
-#import raw_adu into CSD
-csd_cur.execute("""COPY raw_adu FROM '/tmp/raw_adu_update.csv' with csv;""")
+#import raw_adi into CSD
+csd_cur.execute("""COPY raw_adi FROM '/tmp/raw_adi_update.csv' with csv;""")
 csd.commit()
 csd.close()
 
-print 'raw_adu successfully updated'
+print 'raw_adi successfully updated'
 
 sys.exit(0)

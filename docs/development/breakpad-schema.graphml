@@ -324,7 +324,7 @@
               <y:Geometry height="234.0" width="183.92930751680797" x="-569.8657894852925" y="1654.0371559500581"/>
               <y:Fill color="#FF99CC" color2="#B7C9E3" transparent="false"/>
               <y:BorderStyle color="#000000" type="line" width="1.0"/>
-              <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.1328125" modelName="internal" modelPosition="t" textColor="#000000" visible="true" width="91.84375" x="46.04277875840398" y="4.0">public.raw_adu</y:NodeLabel>
+              <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.1328125" modelName="internal" modelPosition="t" textColor="#000000" visible="true" width="91.84375" x="46.04277875840398" y="4.0">public.raw_adi</y:NodeLabel>
               <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="193.0" modelName="custom" textColor="#000000" visible="true" width="175.0" x="2.0" y="30.1328125">&lt;html&gt;&lt;table&gt;
 &lt;tr&gt;&lt;td&gt;&lt;i&gt;adu_count&lt;/i&gt;&lt;/td&gt;&lt;td&gt;integer&lt;/td&gt;&lt;/tr&gt;
 &lt;tr&gt;&lt;td&gt;&lt;i&gt;date&lt;/i&gt;&lt;/td&gt;&lt;td&gt;date&lt;/td&gt;&lt;/tr&gt;
@@ -333,7 +333,7 @@
 &lt;tr&gt;&lt;td&gt;&lt;i&gt;product_os_version&lt;/i&gt;&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;&lt;/tr&gt;
 &lt;tr&gt;&lt;td&gt;&lt;i&gt;product_version&lt;/i&gt;&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;&lt;/tr&gt;
 &lt;tr&gt;&lt;td&gt;&lt;i&gt;build&lt;/i&gt;&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td&gt;&lt;i&gt;build_channel&lt;/i&gt;&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;i&gt;update_channel&lt;/i&gt;&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;&lt;/tr&gt;
 &lt;tr&gt;&lt;td&gt;&lt;i&gt;product_guid&lt;/i&gt;&lt;/td&gt;&lt;td&gt;text&lt;/td&gt;&lt;/tr&gt;
 &lt;/table&gt;<y:LabelModel>
                   <y:ErdAttributesNodeLabelModel/>

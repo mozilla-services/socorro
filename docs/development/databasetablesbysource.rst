@@ -42,8 +42,8 @@ plugins
   populated by processors based on crash data
 plugins_reports
 	populated by processors
-raw_adu
-	populated by daily batch job from metrics
+raw_adi
+	populated by daily batch job that selects ADI from Hive system backed by SEQ files from load balancers
 releases_raw
 	populated by daily FTP-scraper
 reports
@@ -85,11 +85,11 @@ Reporting tables, designed to be called directly by the mware/UI/reports.  Popul
 bug_associations
   not sure
 build_adu
-  daily adu based on raw_adu for builds
+  daily adu based on raw_adi for builds
 daily_hangs
   update_hang_report based on reports
 product_adu
-  daily adu based on raw_adu for products
+  daily adu based on raw_adi for products
 reports_clean
   update_reports_clean based on reports
 reports_user_info

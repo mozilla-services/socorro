@@ -71,8 +71,8 @@ cutoff_date = str(cur.fetchone()[0])
 # and tables with data that needs to be cleaned
 # dump those with no data
 
-matviews = {'raw_adu'
-    : """SELECT * FROM raw_adu WHERE raw_adu.date >= '%s'""" % cutoff_date,
+matviews = {'raw_adi'
+    : """SELECT * FROM raw_adi WHERE raw_adi.date >= '%s'""" % cutoff_date,
     'releases_raw'
     : """SELECT releases_raw.* FROM releases_raw WHERE build_date(build_id)
         >= ( DATE '%s' - 180 ) """ % cutoff_date,
