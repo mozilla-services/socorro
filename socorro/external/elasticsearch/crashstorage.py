@@ -68,7 +68,7 @@ class ElasticSearchCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'use_mapping_file',
-        default=True,
+        default=False,
         doc='load the mapping from a file if true, load it from the database '
             'otherwise',
         reference_value_from='resource.elasticsearch',
