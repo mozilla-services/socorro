@@ -74,8 +74,6 @@ requests==2.5.1
 six==1.7.3
 # sha256: RdsWgxKmgg_XhpfHtv0BlvOvkiyOvIhUDt0Nb6_tVU0
 statsd==2.1.2
-# sha256: 1VJK5SO7ngnFe829HvriwofSBgNojqMfYCDtGApImvA
-suds==0.4
 # sha256: gLPAyGSc5ZC9JYcVUPZnDqvi6YpdHvXkD5K4hZfYCB0
 thrift==0.8.0
 # sha256: xF7Ftf6qulO7rmndlxwoGDLxMy1ZSc1uXKJ3R_6SJWo

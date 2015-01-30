@@ -34,11 +34,6 @@ Web app. Here is a list of those features:
     * a very simple page based on Super Search that shows the recent crash
       reports that contain the user's email address.
     * *example*: https://crash-stats.mozilla.com/your-crashes/
-* Automatic emails
-    * this feature is very specific to Mozilla's needs. It is a cron job that
-      regularly send emails to users that crashed. It is based on ExactTarget,
-      an emailing service. You will probably need to do some code changes if
-      you intend to use it.
 
 Supported versions
 ------------------
