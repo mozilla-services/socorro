@@ -770,7 +770,9 @@ class ElasticsearchTestCase(TestCase):
             config=self.config.elasticsearch
         )
 
-        self.index_creator = IndexCreator(self.config)
+        creator_config = self.get_tuned_config(IndexCreator)
+
+        self.index_creator = IndexCreator(creator_config)
         self.index_client = self.index_creator.get_index_client()
 
         with es_context() as conn:
