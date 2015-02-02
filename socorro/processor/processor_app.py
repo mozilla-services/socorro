@@ -27,7 +27,7 @@ class ProcessorApp(FetchTransformSaveApp):
 
     required_config = Namespace()
     # configuration is broken into three namespaces: processor,
-    # new_crash_source, and registrar
+    # new_crash_source, and companion_process
     #--------------------------------------------------------------------------
     # processor namespace
     #     this namespace is for config parameter having to do with the
@@ -56,16 +56,16 @@ class ProcessorApp(FetchTransformSaveApp):
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
-    # registrar namespace
+    # companion_process namespace
     #     this namespace is for config parameters having to do with registering
-    #     the processor so that the monitor is aware of it.
+    #     a companion process that runs alongside processor
     #--------------------------------------------------------------------------
-    required_config.namespace('registrar')
-    required_config.registrar.add_option(
-      'registrar_class',
-      doc='the class that registers and tracks processors',
-      default='socorro.processor.registration_client.'
-              'ProcessorAppNullRegistrationClient',
+    required_config.namespace('companion_process')
+    required_config.companion_process.add_option(
+      'companion_class',
+      doc='a classname that runs a process in parallel with the processor',
+      default='',      
+      #default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
       from_string_converter=class_converter
     )
 
@@ -90,7 +90,7 @@ class ProcessorApp(FetchTransformSaveApp):
         crashstorage class's 'new_crash_ids' method."""
         self.iterator = self.config.new_crash_source.new_crash_source_class(
           self.config.new_crash_source,
-          self.registrar.processor_name,
+          self.processor_name,
           self.quit_check
         )
         while True:  # loop forever and never raise StopIteration
@@ -199,14 +199,24 @@ class ProcessorApp(FetchTransformSaveApp):
         """this method simply instatiates the source, destination,
         new_crash_source, and the processor algorithm implementation."""
         super(ProcessorApp, self)._setup_source_and_destination()
-        self.registrar = self.config.registrar.registrar_class(
-          self.config.registrar,
-          self.quit_check
+        if self.config.companion_process.companion_class:
+            self.companion_process = \
+                self.config.companion_process.companion_class(
+                    self.config.companion_process,
+                    self.quit_check
+                )
+        else:
+            self.companion_process = None
+
+        self.processor_name = "%s.%d:2015" % (
+            os.uname()[1].replace('.', '_'),
+            os.getpid()
         )
-        self.config.processor_name = "%s:2012" % self.registrar.processor_name
+        self.config.processor_name = self.processor_name
+
         # this function will be called by the MainThread periodically
         # while the threaded_task_manager processes crashes.
-        self.waiting_func = self.registrar.checkin
+        self.waiting_func = None
 
         self.processor = self.config.processor.processor_class(
           self.config.processor,
@@ -216,7 +226,8 @@ class ProcessorApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     def _cleanup(self):
         """when  the processor shutsdown, this function cleans up"""
-        self.registrar.unregister()
+        if self.companion_process:
+            self.companion_process.close()
         self.iterator.close()
 
 

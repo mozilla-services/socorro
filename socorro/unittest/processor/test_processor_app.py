@@ -56,14 +56,10 @@ class TestProcessorApp(TestCase):
           return_value=mocked_new_crash_source
         )
 
-        config.registrar = DotDict()
-        mocked_registrar = mock.Mock()
-        mocked_registrar.id = 'mocked_registrar'
-        mocked_registrar.checkin = mock.Mock()
-        mocked_registrar.checkin.id = 'mocked_registrar.checkin'
-        mocked_registrar.processor_name = 'dwight'
-        config.registrar.registrar_class = mock.Mock(
-          return_value=mocked_registrar
+        config.companion_process = DotDict()
+        mocked_companion_process = mock.Mock()
+        config.companion_process.companion_class = mock.Mock(
+          return_value=mocked_companion_process
         )
 
         config.logger = mock.MagicMock()
@@ -74,10 +70,6 @@ class TestProcessorApp(TestCase):
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
-        eq_(pa.registrar.id, 'mocked_registrar')
-        eq_(pa.processor.id, 'mocked_processor')
-        eq_(pa.waiting_func.id, 'mocked_registrar.checkin')
-        eq_(pa.processor.id, 'mocked_processor')
 
     def test_source_iterator(self):
         config = self.get_standard_config()
