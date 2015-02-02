@@ -10,7 +10,7 @@ from socorro.lib.util import DotDict
 from socorro.collector.throttler import DISCARD, IGNORE
 from socorro.lib.datetimeutil import utc_now
 
-from configman import RequiredConfig, Namespace
+from configman import RequiredConfig, Namespace, class_converter
 
 
 #==============================================================================
@@ -40,6 +40,13 @@ class BreakpadCollector(RequiredConfig):
             'flag submitted with the crash',
         default=False
     )
+    required_config.add_option(
+        'checksum_method',
+        doc='a reference to method that accepts a string and calculates a'
+            'hash value',
+        default='hashlib.md5',
+        from_string_converter=class_converter
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
@@ -58,11 +65,16 @@ class BreakpadCollector(RequiredConfig):
     def _make_raw_crash_and_dumps(self, form):
         dumps = DotDict()
         raw_crash = DotDict()
+        raw_crash.dump_checksums = DotDict()
         for name, value in form.iteritems():
             if isinstance(value, basestring):
                 raw_crash[name] = value
             elif hasattr(value, 'file') and hasattr(value, 'value'):
                 dumps[name] = value.value
+                raw_crash.dump_checksums[name] = \
+                    self.config.collector.checksum_method(
+                        value.value
+                    ).hexdigest()
             elif isinstance(value, int):
                 raw_crash[name] = value
             else:
