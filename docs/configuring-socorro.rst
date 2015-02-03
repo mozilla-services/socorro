@@ -8,6 +8,19 @@ Socorro produces graphs and reports, most are updated once per day.
 You must enter information about your releases into Socorro in order
 for this to work, and this information must match the incoming crashes.
 
+Configure Elasticsearch
+-----------------------
+
+Some key features of Socorro (like Super Search) depend on Elasticsearch.
+This service needs to be initialized before it can be used:
+
+.. code-block:: bash
+
+    cd scripts && python ./setup_supersearch_app.py
+
+For more comprehensive information about our use of Elasticsearch, head to
+our :ref:`elasticsearch-chapter` documentation page.
+
 Becoming a superuser
 --------------------
 
