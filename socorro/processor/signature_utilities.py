@@ -372,6 +372,7 @@ class CSignatureTool(CSignatureToolBase):
           'raise',
           'realloc',
           'recv',
+          '.*ReentrantMonitor::Wait.*',
           '_RTC_Terminate',
           'Rtl.*',
           '_Rtl.*',
