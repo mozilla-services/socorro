@@ -8,23 +8,18 @@ Database Schema
 Introduction
 ------------
 
-Socorro is married to the PostgreSQL database: It makes use of a
-significant number of PostgreSQL and psycopg2 (python) features and
-extensions. Making a database-neutral API has been explored, and for
-now is not being pursued.
+Socorro operation is deeply connected to the PostgreSQL database: It makes use of a significant number of PostgreSQL and psycopg2 (python) features and extensions. Making a database-neutral API has been explored, and for now is not being pursued.
 
-The tables can be divided into three major categories: crash data,
-aggregate reporting and process control.
+The tables can be divided into three major categories: crash data, aggregate reporting and process control.
 
 
 Core crash data diagram
-=======================
+-----------------------
 
 .. image:: core-socorro.png
 	:width: 600px
 
-reports
--------
+**reports**
 
 This table participates in DatabasePartitioning
 
@@ -91,8 +86,7 @@ Indexes and FKs from a child table:
         TABLE "plugins_reports_20121015" CONSTRAINT "plugins_reports_20121015_report_id_fkey" FOREIGN KEY (report_id) REFERENCES reports_20121015(id) ON DELETE CASCADE
     Inherits: reports
 
-extensions
-----------
+**extensions**
 
 This table participates in [[DatabasePartitioning]].
 
@@ -121,21 +115,23 @@ Partitioned Child Table
 
 
 Materialized View Reporting
-===========================
+---------------------------
 
  .. image:: matviews-socorro.png
 	:width: 600px
 
 
 Monitor, Processors and crontabber tables
-=========================================
+------------------------------------------
+
+Needs significant update (2015/02/04)
 
 .. image:: helper-socorro.png
 	:width: 600px
 
 
 Admin tables
-============
+------------
 
 .. image:: admin-socorro.png
 	:width: 600px
