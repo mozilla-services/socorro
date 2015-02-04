@@ -8,6 +8,7 @@ PostgreSQL Database
 .. toctree::
    :maxdepth: 1
 
+   databasesetup
    databaseschema
    databasetablesbysource
    databasetabledesc
@@ -15,4 +16,3 @@ PostgreSQL Database
    databaseadminfunctions
    databasedatetimefunctions
    databasemiscfunctions
-   databasescripts
