@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import hashlib
+
 import mock
 from nose.tools import eq_, ok_
 from datetime import datetime
@@ -33,6 +35,7 @@ class TestCollectorApp(TestCase):
         config.collector.dump_field = 'dump'
         config.collector.accept_submitted_crash_id = False
         config.collector.accept_submitted_legacy_processing = False
+        config.collector.checksum_method = hashlib.md5
 
         config.crash_storage = mock.MagicMock()
 
@@ -64,7 +67,11 @@ class TestCollectorApp(TestCase):
         eq_(rc.some_field, '23')
         eq_(rc.some_other_field, 'XYZ')
 
-    def test_POST(self):
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web')
+    def test_POST(self, mocked_web, mocked_webapi, mocked_utc_now, mocked_time):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
@@ -87,33 +94,38 @@ class TestCollectorApp(TestCase):
         erc.timestamp = 3.0
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc.throttle_rate = 100
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
-            mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = (ACCEPT, 100)
-                        r = c.POST()
-                        ok_(r.startswith('CrashID=bp-'))
-                        ok_(r.endswith('120504\n'))
-                        erc['uuid'] = r[11:-1]
-                        c.crash_storage.save_raw_crash.assert_called_with(
-                          erc,
-                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
-                          r[11:-1]
-                        )
+        mocked_web.input.return_value = form
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (ACCEPT, 100)
+        r = c.POST()
+        ok_(r.startswith('CrashID=bp-'))
+        ok_(r.endswith('120504\n'))
+        erc['uuid'] = r[11:-1]
+        c.crash_storage.save_raw_crash.assert_called_with(
+            erc,
+            {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            r[11:-1]
+        )
 
-    def test_POST_reject_browser_with_hangid(self):
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web')
+    def test_POST_reject_browser_with_hangid(
+        self,
+        mocked_web,
+        mocked_webapi,
+        mocked_utc_now,
+        mocked_time
+    ):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
@@ -139,27 +151,27 @@ class TestCollectorApp(TestCase):
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
-            mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = (IGNORE, None)
-                        r = c.POST()
-                        eq_(r, "Unsupported=1\n")
-                        ok_(not
-                          c.crash_storage.save_raw_crash.call_count
-                        )
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (IGNORE, None)
+        r = c.POST()
+        eq_(r, "Unsupported=1\n")
+        ok_(not
+            c.crash_storage.save_raw_crash.call_count
+        )
 
-    def test_POST_with_existing_crash_id(self):
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web')
+    def test_POST_with_existing_crash_id(
+        self,
+        mocked_web,
+        mocked_webapi,
+        mocked_utc_now,
+        mocked_time
+    ):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
@@ -183,33 +195,38 @@ class TestCollectorApp(TestCase):
         erc.timestamp = 3.0
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc.throttle_rate = 100
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
-            mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = (ACCEPT, 100)
-                        r = c.POST()
-                        ok_(r.startswith('CrashID=bp-'))
-                        ok_(r.endswith('120504\n'))
-                        erc['uuid'] = r[11:-1]
-                        c.crash_storage.save_raw_crash.assert_called_with(
-                          erc,
-                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
-                          r[11:-1]
-                        )
+        mocked_web.input.return_value = form
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (ACCEPT, 100)
+        r = c.POST()
+        ok_(r.startswith('CrashID=bp-'))
+        ok_(r.endswith('120504\n'))
+        erc['uuid'] = r[11:-1]
+        c.crash_storage.save_raw_crash.assert_called_with(
+            erc,
+            {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            r[11:-1]
+        )
 
-    def test_POST_with_existing_crash_id_and_use_it(self):
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web')
+    def test_POST_with_existing_crash_id_and_use_it(
+        self,
+        mocked_web,
+        mocked_webapi,
+        mocked_utc_now,
+        mocked_time
+    ):
         config = self.get_standard_config()
         config.collector.accept_submitted_crash_id = True
         c = BreakpadCollector(config)
@@ -238,32 +255,37 @@ class TestCollectorApp(TestCase):
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc.throttle_rate = 100
         erc.uuid = '332d798f-3c42-47a5-843f-a0f892140107'
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
-            mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = (DEFER, 100)
-                        r = c.POST()
-                        ok_(r.startswith('CrashID=bp-'))
-                        ok_(r.endswith('140107\n'))
-                        c.crash_storage.save_raw_crash.assert_called_with(
-                          erc,
-                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
-                          r[11:-1]
-                        )
+        mocked_web.input.return_value = form
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (DEFER, 100)
+        r = c.POST()
+        ok_(r.startswith('CrashID=bp-'))
+        ok_(r.endswith('140107\n'))
+        c.crash_storage.save_raw_crash.assert_called_with(
+            erc,
+            {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            r[11:-1]
+        )
 
-    def test_POST_with_existing_legacy_processing(self):
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web')
+    def test_POST_with_existing_legacy_processing(
+        self,
+        mocked_web,
+        mocked_webapi,
+        mocked_utc_now,
+        mocked_time
+    ):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
@@ -288,33 +310,38 @@ class TestCollectorApp(TestCase):
         erc.timestamp = 3.0
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc.throttle_rate = 100
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
-            mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = (ACCEPT, 100)
-                        r = c.POST()
-                        ok_(r.startswith('CrashID=bp-'))
-                        ok_(r.endswith('120504\n'))
-                        erc['uuid'] = r[11:-1]
-                        c.crash_storage.save_raw_crash.assert_called_with(
-                          erc,
-                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
-                          r[11:-1]
-                        )
+        mocked_web.input.return_value = form
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (ACCEPT, 100)
+        r = c.POST()
+        ok_(r.startswith('CrashID=bp-'))
+        ok_(r.endswith('120504\n'))
+        erc['uuid'] = r[11:-1]
+        c.crash_storage.save_raw_crash.assert_called_with(
+            erc,
+            {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            r[11:-1]
+        )
 
-    def test_POST_with_existing_legacy_processing_and_use_it(self):
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web')
+    def test_POST_with_existing_legacy_processing_and_use_it(
+        self,
+        mocked_web,
+        mocked_webapi,
+        mocked_utc_now,
+        mocked_time
+    ):
         config = self.get_standard_config()
         config.collector.accept_submitted_crash_id = True
         config.collector.accept_submitted_legacy_processing = True
@@ -344,27 +371,22 @@ class TestCollectorApp(TestCase):
         erc.submitted_timestamp = '2012-05-04T15:10:00'
         erc.throttle_rate = 100
         erc.uuid = '332d798f-3c42-47a5-843f-a0f892140107'
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
         erc = dict(erc)
 
-        with mock.patch('socorro.collector.wsgi_breakpad_collector.web') as mocked_web:
-            mocked_web.input.return_value = form
-            with mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi') \
-                    as mocked_webapi:
-                mocked_webapi.rawinput.return_value = rawform
-                with mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now') \
-                        as mocked_utc_now:
-                    mocked_utc_now.return_value = datetime(
-                        2012, 5, 4, 15, 10
-                        )
-                    with mock.patch('socorro.collector.wsgi_breakpad_collector.time') \
-                            as mocked_time:
-                        mocked_time.time.return_value = 3.0
-                        c.throttler.throttle.return_value = (DEFER, 100)
-                        r = c.POST()
-                        ok_(r.startswith('CrashID=bp-'))
-                        ok_(r.endswith('140107\n'))
-                        c.crash_storage.save_raw_crash.assert_called_with(
-                          erc,
-                          {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
-                          r[11:-1]
-                        )
+        mocked_web.input.return_value = form
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (DEFER, 100)
+        r = c.POST()
+        ok_(r.startswith('CrashID=bp-'))
+        ok_(r.endswith('140107\n'))
+        c.crash_storage.save_raw_crash.assert_called_with(
+            erc,
+            {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            r[11:-1]
+        )
