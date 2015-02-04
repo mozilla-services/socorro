@@ -56,7 +56,7 @@
               <td>
                 {{ report.signature }}
                 <a href="{{ url('crashstats:report_list') }}?product={{ report.product }}&amp;signature={{ report.signature|urlencode }}" class="sig-overview" title="View more reports of this type">More Reports</a>
-                <a href="{{ url('crashstats:query') }}?signature={{ report.signature|urlencode }}#advanced" class="sig-search" title="Search for more reports of this type">Search</a>
+                <a href="{{ url('supersearch.search') }}?product={{ report.product }}&amp;signature=%3D{{ report.signature|urlencode }}" class="sig-search" title="Search for more reports of this type">Search</a>
               </td>
             </tr>
             <tr>
