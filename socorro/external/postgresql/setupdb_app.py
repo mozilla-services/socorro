@@ -315,14 +315,18 @@ class SocorroDBApp(App):
             if self.no_schema:
                 db.commit()
                 return 0
+            # Order matters with what follows
             db.create_types()
+
             db.create_procs()
             db.set_sequence_owner('breakpad_rw')
             db.commit()
+
             db.create_tables()
             db.set_table_owner('breakpad_rw')
             db.create_views()
             db.commit()
+
             db.set_grants(self.config)  # config has user lists
             if not self.config['no_staticdata']:
                 self.import_staticdata(db)

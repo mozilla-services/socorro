@@ -62,7 +62,9 @@ class PostgreSQLAlchemyManager(object):
     def create_types(self):
         types_dir = os.path.normpath(os.path.join(
             __file__,
-            'raw_sql/types'
+            '..',
+            'raw_sql/types',
+            '*.sql'
         ))
         for myfile in sorted(glob(types_dir)):
             custom_type = open(myfile).read()
@@ -80,7 +82,9 @@ class PostgreSQLAlchemyManager(object):
     def create_procs(self):
         procs_dir = os.path.normpath(os.path.join(
             __file__,
-            'raw_sql/procs'
+            '..',
+            'raw_sql/procs',
+            '*.sql'
         ))
         for file in sorted(glob(procs_dir)):
             procedure = open(file).read()
@@ -94,7 +98,9 @@ class PostgreSQLAlchemyManager(object):
     def create_views(self):
         views_dir = os.path.normpath(os.path.join(
             __file__,
-            'raw_sql/views'
+            '..',
+            'raw_sql/views',
+            '*.sql'
         ))
         for file in sorted(glob(views_dir)):
             procedure = open(file).read()
