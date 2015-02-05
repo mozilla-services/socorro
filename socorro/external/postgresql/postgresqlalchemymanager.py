@@ -60,11 +60,13 @@ class PostgreSQLAlchemyManager(object):
         self.session.execute('SET check_function_bodies = false')
 
     def create_types(self):
-        # read files from 'raw_sql' directory
-        app_path = os.getcwd()
-        full_path = app_path + \
-            '/socorro/external/postgresql/raw_sql/types/*.sql'
-        for myfile in sorted(glob(full_path)):
+        types_dir = os.path.normpath(os.path.join(
+            __file__,
+            '..',
+            'raw_sql/types',
+            '*.sql'
+        ))
+        for myfile in sorted(glob(types_dir)):
             custom_type = open(myfile).read()
             try:
                 self.session.execute(custom_type)
@@ -78,11 +80,13 @@ class PostgreSQLAlchemyManager(object):
         return status
 
     def create_procs(self):
-        # read files from 'raw_sql' directory
-        app_path = os.getcwd()
-        full_path = app_path + \
-            '/socorro/external/postgresql/raw_sql/procs/*.sql'
-        for file in sorted(glob(full_path)):
+        procs_dir = os.path.normpath(os.path.join(
+            __file__,
+            '..',
+            'raw_sql/procs',
+            '*.sql'
+        ))
+        for file in sorted(glob(procs_dir)):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)
@@ -92,10 +96,13 @@ class PostgreSQLAlchemyManager(object):
         return True
 
     def create_views(self):
-        app_path = os.getcwd()
-        full_path = app_path + \
-            '/socorro/external/postgresql/raw_sql/views/*.sql'
-        for file in sorted(glob(full_path)):
+        views_dir = os.path.normpath(os.path.join(
+            __file__,
+            '..',
+            'raw_sql/views',
+            '*.sql'
+        ))
+        for file in sorted(glob(views_dir)):
             procedure = open(file).read()
             try:
                 self.session.execute(procedure)

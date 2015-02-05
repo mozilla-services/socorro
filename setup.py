@@ -1,4 +1,5 @@
 import codecs
+import glob
 import os
 from setuptools import setup, find_packages
 
@@ -46,4 +47,12 @@ setup(
         },
     test_suite='nose.collector',
     zip_safe=False,
+    data_files=[
+        ('socorro/external/postgresql/raw_sql/procs',
+            glob.glob('socorro/external/postgresql/raw_sql/procs/*.sql')),
+        ('socorro/external/postgresql/raw_sql/views',
+            glob.glob('socorro/external/postgresql/raw_sql/views/*.sql')),
+        ('socorro/external/postgresql/raw_sql/types',
+            glob.glob('socorro/external/postgresql/raw_sql/types/*.sql')),
+    ],
 ),
