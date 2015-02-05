@@ -35,16 +35,16 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
-        ],
+    ],
     keywords=['socorro', 'breakpad', 'crash', 'reporting', 'minidump',
               'stacktrace'],
     packages=find_packages(),
-    install_requires=[], # use peep -r requirements.txt instead
+    install_requires=[],  # use peep -r requirements.txt instead
     entry_points={
         'console_scripts': [
-                'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'
-            ],
-        },
+            'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'
+        ],
+    },
     test_suite='nose.collector',
     zip_safe=False,
     data_files=[
@@ -54,5 +54,9 @@ setup(
             glob.glob('socorro/external/postgresql/raw_sql/views/*.sql')),
         ('socorro/external/postgresql/raw_sql/types',
             glob.glob('socorro/external/postgresql/raw_sql/types/*.sql')),
+        ('socorro/external/elasticsearch/mappings/', [
+            'socorro/external/elasticsearch/mappings/'
+            'socorro_index_settings.json',
+        ])
     ],
 ),
