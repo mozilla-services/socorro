@@ -124,6 +124,10 @@ pyflakes==0.8.1
 pyhs2==0.6.0
 # sha256: TzJCJuHuhaxBUgV5up3nAylAEmAuU2IX_Q50VuFH2IY
 sasl==0.1.3
+# this is a temporary fork until https://github.com/seb-m/pyinotify/pull/92 
+# is merged and a new pyinotify release is available
+# sha256: 6nj05rvk7z_4OHM6mUIsl7GjE2plb4N3PqnJWaSRRlw
+https://github.com/rhelmer/pyinotify/archive/9ff352f.zip#egg=pyinotify
 
 # things needed specifically for the webapp
 

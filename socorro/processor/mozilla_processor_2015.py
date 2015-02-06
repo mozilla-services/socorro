@@ -26,7 +26,8 @@ mozilla_processor_rule_sets = [
         "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.general_transform_rules.IdentifierRule, "
-        "socorro.processor.breakpad_transform_rules.BreakpadStackwalkerRule, "
+        "socorro.processor.breakpad_transform_rules"
+            ".BreakpadStackwalkerRule2015, "
         "socorro.processor.mozilla_transform_rules.ProductRule, "
         "socorro.processor.mozilla_transform_rules.UserDataRule, "
         "socorro.processor.mozilla_transform_rules.EnvironmentRule, "

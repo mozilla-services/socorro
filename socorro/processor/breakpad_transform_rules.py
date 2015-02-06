@@ -3,11 +3,13 @@ import os
 import subprocess
 import threading
 import ujson
+import tempfile
 
 from contextlib import contextmanager, closing
 from collections import Mapping
 
 from configman import Namespace
+from configman.dotdict import DotDict as ConfigmanDotDict
 
 from socorro.lib.converters import change_default
 
@@ -67,7 +69,7 @@ class BreakpadStackwalkerRule(Rule):
     required_config.add_option(
         'temporary_file_system_storage_path',
         doc='a path where temporary files may be written',
-        default='/tmp',
+        default=tempfile.gettempdir(),
     )
 
 
@@ -317,7 +319,7 @@ class ExternalProcessRule(Rule):
         'command_line',
         doc='the template for the command to invoke the external program',
         default=(
-            'timeout -s KILL 30 %(command_pathname)s 2>/dev/null'
+            'timeout -s KILL 30 {command_pathname} 2>/dev/null'
         ),
     )
     required_config.add_option(
@@ -345,7 +347,6 @@ class ExternalProcessRule(Rule):
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ExternalProcessRule, self).__init__(config)
-        self.command_line = config.command_line % config
 
     #--------------------------------------------------------------------------
     def version(self):
@@ -353,6 +354,11 @@ class ExternalProcessRule(Rule):
 
     #--------------------------------------------------------------------------
     def _execute_external_process(self, command_line, processor_meta):
+        if self.config.get('chatty', False):
+            self.config.logger.debug(
+                "External Command: %s",
+                command_line
+            )
         subprocess_handle = subprocess.Popen(
             command_line,
             shell=True,
@@ -363,7 +369,7 @@ class ExternalProcessRule(Rule):
                 external_command_output = ujson.load(subprocess_handle.stdout)
             except Exception, x:
                 processor_meta.processor_notes.append(
-                    "%s output failed in json conversion: %s" % (
+                    "%s output failed in json: %s" % (
                         self.config.command_pathname,
                         x
                     )
@@ -374,6 +380,22 @@ class ExternalProcessRule(Rule):
         return external_command_output, return_code
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def dot_save(a_mapping, key, value):
+        if '.' not in key or isinstance(a_mapping, ConfigmanDotDict):
+            a_mapping[key] = value
+            return
+        current_mapping = a_mapping
+        key_parts = key.split('.')
+        for key_fragment in key_parts[:-1]:
+            try:
+                current_mapping = current_mapping[key_fragment]
+            except KeyError:
+                current_mapping[key_fragment] = {}
+                current_mapping = current_mapping[key_fragment]
+        current_mapping[key_parts[-1]] = value
+
+    #--------------------------------------------------------------------------
     def _save_results(
         self,
         external_command_output,
@@ -382,14 +404,24 @@ class ExternalProcessRule(Rule):
         processed_crash,
         processor_meta
     ):
-        processed_crash[self.config.result_key] = external_command_output
-        processed_crash[self.config.return_code_key] = return_code
+        self.dot_save(
+            processed_crash,
+            self.config.result_key,
+            external_command_output
+        )
+        self.dot_save(
+            processed_crash,
+            self.config.return_code_key,
+            return_code
+        )
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        command_line = self.command_line % {
-            "dump_file_pathname": raw_dumps[self.config['dump_field']]
-        }
+        command_parameters = dict(self.config)
+        command_parameters['dump_file_pathname'] = raw_dumps[
+            self.config['dump_field']
+        ]
+        command_line = self.config.command_line.format(**command_parameters)
 
         external_command_output, external_process_return_code = \
             self._execute_external_process(command_line, processor_meta)
@@ -401,7 +433,6 @@ class ExternalProcessRule(Rule):
             processed_crash,
             processor_meta
         )
-
         return True
 
 
@@ -433,9 +464,10 @@ class DumpLookupExternalRule(ExternalProcessRule):
     required_config.command_line = change_default(
         ExternalProcessRule,
         'command_line',
-        'timeout -s KILL 30 %(command_pathname)s '
-        '%%(dumpfile_pathname)s '
-        '%(processor_symbols_pathname_list)s 2>/dev/null'
+        'timeout -s KILL 30 {command_pathname} '
+        '{dumpfile_pathname} '
+        '{processor_symbols_pathname_list} '
+        '2>/dev/null'
     )
     required_config.result_key = change_default(
         ExternalProcessRule,
@@ -458,4 +490,160 @@ class DumpLookupExternalRule(ExternalProcessRule):
     ):
         return 'create_dump_lookup' in raw_crash
 
+
+#==============================================================================
+class BreakpadStackwalkerRule2015(ExternalProcessRule):
+
+    required_config = Namespace()
+    required_config.add_option(
+        name='public_symbols_url',
+        doc='url of the public symbol server',
+        default="https://localhost",
+        likely_to_be_changed=True
+    )
+    required_config.add_option(
+        name='private_symbols_url',
+        doc='url of the private symbol server',
+        default="https://localhost",
+        likely_to_be_changed=True
+    )
+    required_config.command_line = change_default(
+        ExternalProcessRule,
+        'command_line',
+        'timeout -s KILL 30 {command_pathname} '
+        '--raw-json {raw_crash_pathname} '
+        '--symbols-url {public_symbols_url} '
+        '--symbols-url {private_symbols_url} '
+        '--symbols-cache {symbol_cache_path} '
+        '{dump_file_pathname} '
+        '2>/dev/null'
+    )
+    required_config.command_pathname = change_default(
+        ExternalProcessRule,
+        'command_pathname',
+        '/data/socorro/stackwalk/bin/stackwalker',
+    )
+    required_config.add_option(
+        'symbol_cache_path',
+        doc='the path where the symbol cache is found, this location must be '
+        'readable and writeable (quote path with embedded spaces)',
+        default=os.path.join(tempfile.gettempdir(), 'symbols'),
+    )
+    required_config.add_option(
+        'temporary_file_system_storage_path',
+        doc='a path where temporary files may be written',
+        default=tempfile.gettempdir(),
+    )
+
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    @contextmanager
+    def _temp_raw_crash_json_file(self, raw_crash, crash_id):
+        file_pathname = os.path.join(
+            self.config.temporary_file_system_storage_path,
+            "%s.%s.TEMPORARY.json" % (
+                crash_id,
+                threading.currentThread().getName()
+            )
+        )
+        with open(file_pathname, "w") as f:
+            ujson.dump(raw_crash, f)
+        try:
+            yield file_pathname
+        finally:
+            os.unlink(file_pathname)
+
+    #--------------------------------------------------------------------------
+    def _execute_external_process(self, command_line, processor_meta):
+        stackwalker_output, return_code = super(
+            BreakpadStackwalkerRule2015,
+            self
+        )._execute_external_process(command_line, processor_meta)
+
+        if not isinstance(stackwalker_output, Mapping):
+            processor_notes.append(
+                "MDSW produced unexpected output: %s..." %
+                str(stackwalker_output)[:10]
+            )
+            stackwalker_output = {}
+
+        stackwalker_data = DotDict()
+        stackwalker_data.json_dump = stackwalker_output
+        stackwalker_data.mdsw_return_code = return_code
+
+        stackwalker_data.mdsw_status_string = stackwalker_output.get(
+            'status',
+            'unknown error'
+        )
+        stackwalker_data.success = stackwalker_data.mdsw_status_string == 'OK'
+
+        if return_code == 124:
+            processor_meta.processor_notes.append(
+                "MDSW terminated with SIGKILL due to timeout"
+            )
+        elif return_code != 0 or not stackwalker_data.success:
+            processor_meta.processor_notes.append(
+                "MDSW failed on '%s': %s" % (
+                    command_line,
+                    stackwalker_data.mdsw_status_string
+                )
+            )
+
+        return stackwalker_data, return_code
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        if 'additional_minidumps' not in processed_crash:
+            processed_crash.additional_minidumps = []
+        with self._temp_raw_crash_json_file(
+            raw_crash,
+            raw_crash.uuid
+        ) as raw_crash_pathname:
+            for dump_name in raw_dumps.iterkeys():
+
+                if processor_meta.quit_check:
+                    processor_meta.quit_check()
+
+                # this rule is only interested in dumps targeted for the
+                # minidump stackwalker external program.  As of the writing
+                # of this code, there is one other dump type.  The only way
+                # to differentiate these dump types is by the name of the
+                # dump.  All minidumps targeted for the stackwalker will have
+                # a name with a prefix specified in configuration:
+                if not dump_name.startswith(self.config.dump_field):
+                    # dumps not intended for the stackwalker are ignored
+                    continue
+
+                dump_pathname = raw_dumps[dump_name]
+
+                if self.config.chatty:
+                    self.config.logger.debug(
+                        "BreakpadStackwalkerRule: %s, %s",
+                        dump_name,
+                        dump_pathname
+                    )
+
+
+                command_line = self.config.command_line.format(
+                    **dict(
+                        self.config,
+                        dump_file_pathname=dump_pathname,
+                        raw_crash_pathname=raw_crash_pathname
+                    )
+                )
+
+                stackwalker_data, return_code = \
+                    self._execute_external_process(command_line, processor_meta)
+
+                if dump_name == self.config.dump_field:
+                    processed_crash.update(stackwalker_data)
+                else:
+                    processed_crash.additional_minidumps.append(dump_name)
+                    processed_crash[dump_name] = stackwalker_data
+
+        return True
 

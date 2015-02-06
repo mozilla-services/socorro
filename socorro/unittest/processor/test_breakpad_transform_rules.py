@@ -15,6 +15,7 @@ from socorro.unittest.testbase import TestCase
 from socorro.lib.util import DotDict
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule,
+    BreakpadStackwalkerRule2015,
     CrashingThreadRule,
     ExternalProcessRule,
     DumpLookupExternalRule,
@@ -192,6 +193,13 @@ cannonical_stackwalker_output_str = ujson.dumps(cannonical_stackwalker_output)
 
 #==============================================================================
 class MyBreakpadStackwalkerRule(BreakpadStackwalkerRule):
+    @contextmanager
+    def _temp_raw_crash_json_file(self, raw_crash, crash_id):
+        yield "%s.json" % raw_crash.uuid
+
+
+#==============================================================================
+class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         yield "%s.json" % raw_crash.uuid
@@ -424,9 +432,9 @@ class TestExternalProcessRule(TestCase):
         config.chatty = True
         config.dump_field = 'upload_file_minidump'
         config.command_line = (
-            'timeout -s KILL 30 %(command_pathname)s '
-            '%%(dump_file_pathname)s '
-            '%(processor_symbols_pathname_list)s 2>/dev/null'
+            'timeout -s KILL 30 {command_pathname} '
+            '{dump_file_pathname} '
+            '{processor_symbols_pathname_list} 2>/dev/null'
         )
         config.command_pathname = 'bogus_command'
         config.processor_symbols_pathname_list = (
@@ -448,6 +456,24 @@ class TestExternalProcessRule(TestCase):
         processor_meta.quit_check = lambda: False
 
         return processor_meta
+
+    #--------------------------------------------------------------------------
+    def test_dot_save(self):
+        d = {}
+        ExternalProcessRule.dot_save(d, 'x', 1)
+        ok_(d['x'], 1)
+
+        ExternalProcessRule.dot_save(d, 'z.y', 10)
+        ok_(d['z']['y'], 10)
+
+        d['a'] = {}
+        d['a']['b'] = {}
+        ExternalProcessRule.dot_save(d, 'a.b.c', 100)
+        ok_(d['a']['b']['c'], 100)
+
+        dd = CDotDict()
+        ExternalProcessRule.dot_save(dd, 'a.b.c.d.e.f', 1000)
+        ok_(dd.a.b.c.d.e.f, 1000)
 
     #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
@@ -538,7 +564,7 @@ class TestExternalProcessRule(TestCase):
             processor_meta.processor_notes,
             [
                 'bogus_command output failed in '
-                'json conversion: Expected String or Unicode',
+                'json: Expected String or Unicode',
             ]
         )
 
@@ -580,3 +606,130 @@ class TestDumpLookupExternalRule(TestCase):
             DumpLookupExternalRule.required_config.return_code_key is not
             ExternalProcessRule.required_config.return_code_key
         )
+
+
+#==============================================================================
+class TestBreakpadTransformRule2015(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = True
+        config.dump_field = 'upload_file_minidump'
+        config.command_line = (
+            BreakpadStackwalkerRule2015.required_config .command_line.default
+        )
+        config.command_pathname = '/bin/stackwalker'
+        config.public_symbols_url = 'https://localhost'
+        config.private_symbols_url = 'https://localhost'
+        config.symbol_cache_path = '/mnt/socorro/symbols'
+        config.temporary_file_system_storage_path = '/tmp'
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+        processor_meta.quit_check = lambda: False
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_everything_we_hoped_for(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            cannonical_stackwalker_output_str
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = BreakpadStackwalkerRule2015(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processed_crash.json_dump, cannonical_stackwalker_output)
+        eq_(processed_crash.mdsw_return_code, 0)
+        eq_(processed_crash.mdsw_status_string, "OK")
+        ok_(processed_crash.success)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_stackwalker_fails(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = \
+            mocked_subprocess_module.Popen.return_value
+        mocked_subprocess_handle.stdout.read.return_value = '{}'
+        mocked_subprocess_handle.wait.return_value = 124
+
+        rule = BreakpadStackwalkerRule2015(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processed_crash.json_dump, {})
+        eq_(processed_crash.mdsw_return_code, 124)
+        eq_(processed_crash.mdsw_status_string, "unknown error")
+        ok_(not processed_crash.success)
+        eq_(
+            processor_meta.processor_notes,
+            ["MDSW terminated with SIGKILL due to timeout", ]
+        )
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_stackwalker_fails_2(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = int
+        mocked_subprocess_handle.wait.return_value = -1
+
+        rule = BreakpadStackwalkerRule2015(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processed_crash.json_dump, {})
+        eq_(processed_crash.mdsw_return_code, -1)
+        eq_(processed_crash.mdsw_status_string, "unknown error")
+        ok_(not processed_crash.success)
+        eq_(
+            processor_meta.processor_notes,
+            [
+                "{command_pathname} output failed in json: Expected String "
+                "or Unicode".format(
+                    **config
+                ),
+                "MDSW failed on 'timeout -s KILL 30 /bin/stackwalker "
+                "--raw-json /tmp/00000000-0000-0000-0000-000002140504."
+                "MainThread.TEMPORARY.json --symbols-url https://localhost "
+                "--symbols-url https://localhost "
+                "--symbols-cache /mnt/socorro/symbols a_fake_dump.dump "
+                "2>/dev/null': unknown error"
+            ]
+        )
+
