@@ -322,36 +322,6 @@ class TestForms(DjangoTestCase):
         # Testing valid form
         ok_(form.is_valid())
 
-    def test_query(self):
-
-        def get_new_form(data):
-            return forms.QueryForm(
-                self.current_products,
-                self.current_versions,
-                self.current_platforms,
-                data
-            )
-
-        form = get_new_form({
-            'signature': 'sig',
-            'product': ['WaterWolf', 'SeaMonkey', 'NightTrain'],
-            'version': ['WaterWolf:20.0'],
-            'platform': ['linux', 'mac'],
-            'date': '01/02/2012 12:23:34',
-            'range_unit': 'weeks',
-            'range_value': 12,
-            'reason': 'some reason',
-            'build_id': '201000998765',
-            'process_type': 'any',
-            'hang_type': 'any',
-            'plugin_field': 'name',
-            'plugin_query_type': 'is_exactly',
-            'plugin_query': 'plugin name',
-            'query_type': 'simple',
-            'query': u'some %^*@# \xe9 \xf9 chars'
-        })
-        ok_(form.is_valid())
-
     def test_daily_forms(self):
 
         def get_new_form(cls, data):
