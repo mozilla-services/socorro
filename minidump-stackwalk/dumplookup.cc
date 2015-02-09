@@ -27,12 +27,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <getopt.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "common/scoped_ptr.h"
 #include "google_breakpad/processor/basic_source_line_resolver.h"
 #include "google_breakpad/processor/minidump.h"
 #include "google_breakpad/processor/minidump_processor.h"
@@ -41,7 +43,10 @@
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
 
+#include "http_symbol_supplier.h"
+
 using namespace google_breakpad;
+using breakpad_extra::HTTPSymbolSupplier;
 
 void error(const char* fmt, ...)
 {
@@ -106,33 +111,95 @@ u_int64_t GetStackPointer(const MinidumpContext* context) {
   return 0;
 }
 
+void usage()
+{
+  fprintf(stderr, "Usage: dumplookup [options] <minidump> [<symbol paths]\n");
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "\t--all\tShow all values on the stack.\n");
+  fprintf(stderr, "\t--symbols-url\tA base URL from which URLs to symbol files can be constructed\n");
+  fprintf(stderr, "\t--symbols-cache\tA directory in which downloaded symbols can be stored\n");
+  fprintf(stderr, "\t--help\tDisplay this help text.\n");
+}
+
 int main(int argc, char** argv)
 {
-  if (argc < 3 || argc > 5) {
-    error("Usage: %s [-a] <minidump> <symbol paths>\n"
-          "  Default start address is the top of the stack from the exception record"
-          , argv[0]);
-  }
+  static struct option long_options[] = {
+    {"all", no_argument, nullptr, 'a'},
+    {"symbols-url", required_argument, nullptr, 's'},
+    {"symbols-cache", required_argument, nullptr, 'c'},
+    {"help", no_argument, nullptr, 'h'},
+    {nullptr, 0, nullptr, 0}
+  };
 
+  // Yeah, this is ugly.
+  vector<char*> symbols_urls;
+  char* symbols_cache = nullptr;
   bool show_all = false;
-  int current_arg = 1;
-  if (strcmp(argv[current_arg], "-a") == 0) {
-    show_all = true;
-    ++current_arg;
+
+  int arg;
+  int option_index = 0;
+  while((arg = getopt_long(argc, argv, "", long_options, &option_index))
+        != -1) {
+    switch(arg) {
+    case 0:
+      if (long_options[option_index].flag != 0)
+          break;
+      break;
+    case 'a':
+      show_all = true;
+      break;
+    case 's':
+      symbols_urls.push_back(optarg);
+      break;
+    case 'c':
+      symbols_cache = optarg;
+      break;
+    case 'h':
+      usage();
+      return 0;
+    case '?':
+      break;
+    default:
+      fprintf(stderr, "Unknown option: -%c\n", (char)arg);
+      usage();
+      return 1;
+    }
   }
 
-  Minidump dump(argv[current_arg]);
-  if (!dump.Read()) {
-    error("Couldn't read minidump %s", argv[current_arg]);
+  if (optind >= argc) {
+    usage();
+    return 1;
   }
-  ++current_arg;
 
+  if ((!symbols_urls.empty() || symbols_cache) &&
+      !(!symbols_urls.empty() && symbols_cache)) {
+    fprintf(stderr, "You must specify both --symbols-url and --symbols-cache "
+            "when using one of these options\n");
+    usage();
+    return 1;
+  }
+
+  Minidump minidump(argv[optind]);
   vector<string> symbol_paths;
   // allow symbol paths to be passed on the commandline.
-  for (; current_arg < argc; current_arg++) {
-    symbol_paths.push_back(argv[current_arg]);
+  for (int i = optind + 1; i < argc; i++) {
+    symbol_paths.push_back(argv[i]);
   }
-  SimpleSymbolSupplier supplier(symbol_paths);
+
+  Minidump dump(argv[optind]);
+  if (!dump.Read()) {
+    error("Couldn't read minidump %s", argv[optind]);
+  }
+
+  scoped_ptr<SymbolSupplier> symbol_supplier;
+  if (!symbols_urls.empty()) {
+    vector<string> server_paths(symbols_urls.begin(), symbols_urls.end());
+    symbol_supplier.reset(new HTTPSymbolSupplier(server_paths,
+                                                 symbols_cache,
+                                                 symbol_paths));
+  } else if (!symbol_paths.empty()) {
+    symbol_supplier.reset(new SimpleSymbolSupplier(symbol_paths));
+  }
   BasicSourceLineResolver resolver;
 
   SystemInfo system_info;
@@ -200,11 +267,11 @@ int main(int argc, char** argv)
         char *symbol_data = NULL;
         size_t symbol_data_size = 0;
         SymbolSupplier::SymbolResult symbol_result =
-          supplier.GetCStringSymbolData(module,
-                                        &system_info,
-                                        &symbol_file,
-                                        &symbol_data,
-                                        &symbol_data_size);
+          symbol_supplier->GetCStringSymbolData(module,
+                                                &system_info,
+                                                &symbol_file,
+                                                &symbol_data,
+                                                &symbol_data_size);
 
         switch (symbol_result) {
         case SymbolSupplier::FOUND:
@@ -219,7 +286,7 @@ int main(int argc, char** argv)
         }
         // Inform symbol supplier to free the unused data memory buffer.
         if (resolver.ShouldDeleteMemoryBufferAfterLoadModule())
-          supplier.FreeSymbolData(module);
+          symbol_supplier->FreeSymbolData(module);
       }
       resolver.FillSourceLineInfo(frame);
       if (!frame->function_name.empty() || show_all) {

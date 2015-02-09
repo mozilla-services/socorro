@@ -42,6 +42,8 @@
 #include <vector>
 
 #include <curl/curl.h>
+
+#include "common/scoped_ptr.h"
 #include "google_breakpad/processor/basic_source_line_resolver.h"
 #include "google_breakpad/processor/minidump.h"
 #include "google_breakpad/processor/minidump_processor.h"
@@ -51,7 +53,10 @@
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
 
+#include "http_symbol_supplier.h"
+
 using namespace google_breakpad;
+using breakpad_extra::HTTPSymbolSupplier;
 using std::vector;
 
 #if (__GNUC__ == 4) && (__GNUC_MINOR__ < 6)
@@ -78,6 +83,8 @@ void usage()
   fprintf(stderr, "Options:\n");
   fprintf(stderr, "\t--disassemble\tAttempt to disassemble the instructions using objdump\n");
   fprintf(stderr, "\t--address=ADDRESS\tShow instructions at ADDRESS\n");
+  fprintf(stderr, "\t--symbols-url\tA base URL from which URLs to symbol files can be constructed\n");
+  fprintf(stderr, "\t--symbols-cache\tA directory in which downloaded symbols can be stored\n");
   fprintf(stderr, "\t--help\tDisplay this help text.\n");
 }
 
@@ -250,12 +257,18 @@ int main(int argc, char** argv)
   static struct option long_options[] = {
     {"address", required_argument, nullptr, 'a'},
     {"disassemble", no_argument, nullptr, 'd'},
+    {"symbols-url", required_argument, nullptr, 's'},
+    {"symbols-cache", required_argument, nullptr, 'c'},
     {"help", no_argument, nullptr, 'h'},
     {nullptr, 0, nullptr, 0}
   };
 
+  // Yeah, this is ugly.
+  vector<char*> symbols_urls;
+  char* symbols_cache = nullptr;
   bool disassemble = false;
   char* address_arg = nullptr;
+
   int arg;
   int option_index = 0;
   while((arg = getopt_long(argc, argv, "", long_options, &option_index))
@@ -271,6 +284,12 @@ int main(int argc, char** argv)
     case 'a':
       address_arg = optarg;
       break;
+    case 's':
+      symbols_urls.push_back(optarg);
+      break;
+    case 'c':
+      symbols_cache = optarg;
+      break;
     case 'h':
       usage();
       return 0;
@@ -284,6 +303,14 @@ int main(int argc, char** argv)
   }
 
   if (optind >= argc) {
+    usage();
+    return 1;
+  }
+
+  if ((!symbols_urls.empty() || symbols_cache) &&
+      !(!symbols_urls.empty() && symbols_cache)) {
+    fprintf(stderr, "You must specify both --symbols-url and --symbols-cache "
+            "when using one of these options\n");
     usage();
     return 1;
   }
@@ -370,9 +397,17 @@ int main(int argc, char** argv)
     if (!fp) {
       error("Couldn't launch objdump");
     }
-    SimpleSymbolSupplier supplier(symbol_paths);
+    scoped_ptr<SymbolSupplier> symbol_supplier;
+    if (!symbols_urls.empty()) {
+      vector<string> server_paths(symbols_urls.begin(), symbols_urls.end());
+      symbol_supplier.reset(new HTTPSymbolSupplier(server_paths,
+                                                   symbols_cache,
+                                                   symbol_paths));
+    } else if (!symbol_paths.empty()) {
+      symbol_supplier.reset(new SimpleSymbolSupplier(symbol_paths));
+    }
     BasicSourceLineResolver resolver;
-    StackFrameSymbolizer symbolizer(&supplier, &resolver);
+    StackFrameSymbolizer symbolizer(symbol_supplier.get(), &resolver);
     SystemInfo system_info;
     MinidumpProcessor::GetCPUInfo(&minidump, &system_info);
     MinidumpProcessor::GetOSInfo(&minidump, &system_info);
