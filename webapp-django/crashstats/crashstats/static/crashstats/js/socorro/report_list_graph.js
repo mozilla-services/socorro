@@ -240,12 +240,13 @@ var Plot = (function() {
 
                     tooltipContentContainer.append([buildId, aduCount, crashCount]);
 
-                    // using event.pageX as apposed to pos[0] gives a more accurate
-                    // positioning for the x coordinate.
-                    var calcX = parseInt(d3.event.pageX, 16) - 55;
+                    // event.pageX gives you the position of the point relative
+                    // to the whole chrome window.
+                    // The -55 so that the tooltip sits nicely next to the dot.
+                    var posX = d3.event.pageX - 55;
                     tooltip.style('display', 'block')
                         .style('top', pos[1] + 'px')
-                        .style('left', calcX + 'px')
+                        .style('left', posX + 'px')
                         .style('opacity', 1)
                         .html(tooltipContentContainer.html());
                 })
