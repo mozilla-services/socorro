@@ -68,6 +68,7 @@ class SuperSearch(models.SocorroMiddleware):
             ('_results_offset', int),
             ('_results_number', int),
             '_return_query',
+            ('_sort', list),
         )
 
 
@@ -95,6 +96,7 @@ class SuperSearchUnredacted(SuperSearch):
             ('_results_offset', int),
             ('_results_number', int),
             '_return_query',
+            ('_sort', list),
         )
 
         permissions = {}
