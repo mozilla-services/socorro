@@ -111,7 +111,7 @@ Panels.register('reports', function() {
 
 var Columns = (function() {
     var COLUMNS = null;
-    var KEY = 'report-list-report-columns';
+    var KEY = 'report-list-reports-columns';
 
     // New API, new object || Where the polyfill lives
     var storage = navigator.storage || navigator.alsPolyfillStorage;

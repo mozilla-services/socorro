@@ -50,23 +50,6 @@
             "type": "boolean"
         }
     },
-    "InstallTime": {
-        "data_validation_type": "enum",
-        "default_value": null,
-        "form_field_choices": null,
-        "has_full_version": false,
-        "in_database_name": "InstallTime",
-        "is_exposed": false,
-        "is_mandatory": false,
-        "is_returned": false,
-        "name": "InstallTime",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {
-            "type": "long"
-        }
-    },
     "Notes": {
         "data_validation_type": "enum",
         "default_value": null,
@@ -1041,6 +1024,23 @@
         "is_returned": true,
         "name": "install_age",
         "namespace": "processed_crash",
+        "permissions_needed": [],
+        "query_type": "number",
+        "storage_mapping": {
+            "type": "long"
+        }
+    },
+    "install_time": {
+        "data_validation_type": "int",
+        "default_value": null,
+        "form_field_choices": null,
+        "has_full_version": false,
+        "in_database_name": "InstallTime",
+        "is_exposed": true,
+        "is_mandatory": false,
+        "is_returned": true,
+        "name": "install_time",
+        "namespace": "raw_crash",
         "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {
