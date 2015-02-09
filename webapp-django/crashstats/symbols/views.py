@@ -1,4 +1,5 @@
 import os
+from functools import wraps
 from cStringIO import StringIO
 
 from django import http
@@ -16,6 +17,21 @@ from crashstats.tokens.models import Token
 from . import models
 from . import forms
 from . import utils
+
+
+def api_login_required(view_func):
+    """similar to django.contrib.auth.decorators.login_required
+    except instead of redirecting it returns a 403 message if not
+    authenticated."""
+    @wraps(view_func)
+    def inner(request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            return http.HttpResponseForbidden(
+                "This requires an Auth-Token to authenticate the request"
+            )
+        return view_func(request, *args, **kwargs)
+
+    return inner
 
 
 def check_symbols_archive_content(content, header_length=2):
@@ -103,6 +119,7 @@ def web_upload(request):
 @login_required
 @permission_required('crashstats.upload_symbols')
 def api_upload(request):
+    """The page about doing an upload via things like curl"""
     context = {}
     has_possible_token = False
     required_permission = Permission.objects.get(codename='upload_symbols')
@@ -122,6 +139,7 @@ def api_upload(request):
 
 @require_POST
 @csrf_exempt
+@api_login_required
 @permission_required('crashstats.upload_symbols')
 @transaction.commit_on_success
 def upload(request):

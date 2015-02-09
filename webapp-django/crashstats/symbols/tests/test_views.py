@@ -306,15 +306,39 @@ class TestViews(BaseTestViews):
                 response = self.client.post(
                     url,
                     {'file.zip': file_object},
+                    # note! No HTTP_AUTH_TOKEN
+                )
+                eq_(response.status_code, 403)
+
+            with open(ZIP_FILE, 'rb') as file_object:
+                response = self.client.post(
+                    url,
+                    {'file.zip': file_object},
+                    HTTP_AUTH_TOKEN=''
+                )
+                eq_(response.status_code, 403)
+
+            with open(ZIP_FILE, 'rb') as file_object:
+                response = self.client.post(
+                    url,
+                    {'file.zip': file_object},
+                    HTTP_AUTH_TOKEN='somejunk'
+                )
+                eq_(response.status_code, 403)
+
+            with open(ZIP_FILE, 'rb') as file_object:
+                response = self.client.post(
+                    url,
+                    {'file.zip': file_object},
                     HTTP_AUTH_TOKEN=token.key
                 )
-            eq_(response.status_code, 201)
-            symbol_upload = models.SymbolsUpload.objects.get(user=user)
-            eq_(symbol_upload.filename, 'file.zip')
-            ok_(symbol_upload.size)
-            ok_(symbol_upload.file)
-            ok_(symbol_upload.file_exists)
-            ok_(symbol_upload.content)
+                eq_(response.status_code, 201)
+                symbol_upload = models.SymbolsUpload.objects.get(user=user)
+                eq_(symbol_upload.filename, 'file.zip')
+                ok_(symbol_upload.size)
+                ok_(symbol_upload.file)
+                ok_(symbol_upload.file_exists)
+                ok_(symbol_upload.content)
 
     def test_upload_disallowed_content(self):
         user = User.objects.create(username='user')
