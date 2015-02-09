@@ -29,6 +29,10 @@ from django.contrib.contenttypes.models import ContentType
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
+from crashstats.supersearch.models import SuperSearch
+from crashstats.supersearch.tests.common import (
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS
+)
 
 from .test_models import Response
 
@@ -3803,11 +3807,11 @@ class TestViews(BaseTestViews):
         # The "user_comments" field is a choice
         ok_('<option value="user_comments">' in response.content)
         # The "URL" field is not a choice
-        ok_('<option value="URL">' not in response.content)
+        ok_('<option value="url">' not in response.content)
 
         # also, all fields in models.RawCrash.API_WHITELIST should
         # be there
-        for field in models.RawCrash.API_WHITELIST:
+        for field in SuperSearch.API_WHITELIST['hits']:
             html = '<option value="%s">' % field
             ok_(html in response.content)
 
@@ -3818,17 +3822,20 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
         ok_('<option value="user_comments">' in response.content)
-        ok_('<option value="URL">' in response.content)
+        ok_('<option value="url">' in response.content)
         # and a column from the Raw Crash
-        ok_('<option value="Accessibility">' in response.content)
+        ok_('<option value="accessibility">' in response.content)
         # and it's only supposed to appear once
-        eq_(response.content.count('<option value="Accessibility">'), 1)
+        eq_(response.content.count('<option value="accessibility">'), 1)
 
     @mock.patch('requests.get')
     def test_report_list_partial_correlations(self, rget):
 
         def mocked_get(url, params, **options):
-            if 'report/list' in url:
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch/' in url:
                 # Note that the key `install_time` was removed from the
                 # second dict here. The reason for that is the install_time
                 # is not a depdendable field from the breakpad client.
@@ -3838,12 +3845,12 @@ class TestViews(BaseTestViews):
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Linux",
+                      "platform": "Linux",
                       "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "release_channel": "Release",
@@ -3851,23 +3858,22 @@ class TestViews(BaseTestViews):
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:0",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     },
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Mac OS X",
+                      "platform": "Mac OS X",
                       "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "release_channel": "Release",
@@ -3875,17 +3881,17 @@ class TestViews(BaseTestViews):
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     }
                     ],
                     "total": 2
                     }
                 """)
+
             if 'correlations/signatures' in url:
                 return Response("""
                 {
@@ -3960,7 +3966,7 @@ class TestViews(BaseTestViews):
     def test_report_list_partial_correlations_no_data(self, rget):
 
         def mocked_get(url, params, **options):
-            if 'report/list' in url:
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [],
@@ -4078,6 +4084,9 @@ class TestViews(BaseTestViews):
     def test_report_list_partial_comments(self, rget):
 
         def mocked_get(url, params, **options):
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             if '/crashes/comments' in url:
                 return Response("""
                 {
@@ -4127,6 +4136,9 @@ class TestViews(BaseTestViews):
         called_with_params = []
 
         def mocked_get(url, params, **options):
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
             if '/crashes/comments' in url:
                 called_with_params.append(params)
                 if params.get('result_offset'):
@@ -4178,55 +4190,56 @@ class TestViews(BaseTestViews):
     def test_report_list_partial_reports(self, rget):
 
         def mocked_get(url, params, **options):
-            if 'report/list' in url:
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Linux",
+                      "platform": "Linux",
                       "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     },
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Mac OS X",
+                      "platform": "Mac OS X",
                       "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     }
                     ],
                     "total": 2
@@ -4252,55 +4265,56 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             mock_calls.append(params)
 
-            if 'report/list' in url:
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Linux",
+                      "platform": "Linux",
                       "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     },
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Mac OS X",
+                      "platform": "Mac OS X",
                       "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T22:19:59+00:00",
+                      "date": "2012-09-05T22:19:59+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     }
                     ],
                     "total": 2
@@ -4318,7 +4332,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, data)
         eq_(response.status_code, 200)
         assert len(mock_calls) == 1
-        eq_(mock_calls[-1]['sort'], 'date_processed')
+        eq_(mock_calls[-1]['_sort'], ['date'])
         ok_('reverse' not in mock_calls[-1])
 
         response = self.client.get(url, dict(
@@ -4327,7 +4341,7 @@ class TestViews(BaseTestViews):
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 2
-        eq_(mock_calls[-1]['sort'], 'build')
+        eq_(mock_calls[-1]['_sort'], ['build_id'])
         ok_('reverse' not in mock_calls[-1])
 
         response = self.client.get(url, dict(
@@ -4337,62 +4351,63 @@ class TestViews(BaseTestViews):
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 3
-        eq_(mock_calls[-1]['sort'], 'build')
-        eq_(mock_calls[-1]['reverse'], True)
+        eq_(mock_calls[-1]['_sort'], ['-build_id'])
+        ok_('reverse' not in mock_calls[-1])
 
     @mock.patch('requests.get')
     def test_report_list_partial_reports_columns_override(self, rget):
 
         def mocked_get(url, params, **options):
-            if 'report/list' in url:
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Linux",
+                      "platform": "Linux",
                       "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     },
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Mac OS X",
+                      "platform": "Mac OS X",
                       "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     }
                     ],
                     "total": 2
@@ -4422,60 +4437,58 @@ class TestViews(BaseTestViews):
     def test_report_list_partial_reports_with_rawcrash(self, rget):
 
         def mocked_get(url, params, **options):
-            if 'report/list' in url:
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Linux",
+                      "platform": "Linux",
                       "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null,
-                      "raw_crash": {
-                          "Winsock_LSP": "Peter",
-                          "SecondsSinceLastCrash": "Bengtsson"
-                      }
+                      "winsock_lsp": "Peter",
+                      "SecondsSinceLastCrash": "Bengtsson"
                     },
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Mac OS X",
+                      "platform": "Mac OS X",
                       "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null,
-                      "raw_crash": null
                     }
                     ],
                     "total": 2
@@ -4489,14 +4502,14 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {
             'signature': 'sig',
             'range_value': 3,
-            'c': ['date_processed', 'Winsock_LSP', 'SecondsSinceLastCrash']
+            'c': ['date_processed', 'winsock_lsp', 'SecondsSinceLastCrash']
         })
         eq_(response.status_code, 200)
         ok_('Peter' in response.content)
         ok_('Bengtsson' in response.content)
         # and also the table headers should be there
-        ok_('Winsock_LSP*' in response.content)
-        ok_('SecondsSinceLastCrash*' in response.content)
+        ok_('Winsock lsp' in response.content)
+        ok_('SecondsSinceLastCrash' in response.content)
 
     @mock.patch('requests.get')
     def test_report_list_partial_reports_page_2(self, rget):
@@ -4512,35 +4525,37 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
 
-            if 'report/list' in url:
-                result_number = int(params['result_number'])
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch' in url:
+                result_number = int(params['_results_number'])
                 try:
-                    result_offset = int(params['result_offset'])
+                    result_offset = int(params['_results_offset'])
                 except KeyError:
                     result_offset = 0
 
                 first = {
                     "user_comments": None,
                     "product": "WaterWolf",
-                    "os_name": "Linux",
+                    "platform": "Linux",
                     "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                     "cpu_info": "...",
                     "url": "http://example.com/116",
                     "last_crash": 1234,
-                    "date_processed": "2012-09-05T21:18:58+00:00",
+                    "date": "2012-09-05T21:18:58+00:00",
                     "cpu_name": "x86",
                     "uptime": 1234,
                     "process_type": "browser",
                     "hangid": None,
                     "reason": "reason7",
                     "version": "5.0a1",
-                    "os_version": "1.2.3.4",
-                    "build": "20120901000007",
+                    "platform_version": "1.2.3.4",
+                    "build_id": "20120901000007",
                     "install_age": 1234,
                     "signature": "FakeSignature",
                     "install_time": "2012-09-05T20:58:24+00:00",
                     "address": "0xdeadbeef",
-                    "duplicate_of": None
                 }
                 hits = []
 
@@ -4604,55 +4619,56 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
 
-            if 'report/list' in url:
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Linux",
+                      "platform": "Linux",
                       "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
                       "cpu_info": "...",
                       "url": "http://example.com/116",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     },
                     {
                       "user_comments": null,
                       "product": "WaterWolf",
-                      "os_name": "Mac OS X",
+                      "platform": "Mac OS X",
                       "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
                       "cpu_info": "...",
                       "url": "http://example.com/60053",
                       "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
+                      "date": "2012-09-05T21:18:58+00:00",
                       "cpu_name": "x86",
                       "uptime": 1234,
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
                       "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
+                      "platform_version": "1.2.3.4",
+                      "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
                       "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
-                      "duplicate_of": null
                     }
                     ],
                     "total": 2
@@ -4920,7 +4936,7 @@ class TestViews(BaseTestViews):
     def test_report_list_with_no_data(self, rget):
 
         def mocked_get(url, params, **options):
-            if 'report/list' in url:
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [],

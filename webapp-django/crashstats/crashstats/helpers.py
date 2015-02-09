@@ -89,6 +89,9 @@ def human_readable_iso_date(dt):
 
 @register.filter
 def scrub_pii(content):
+    if not content:
+        return content
+
     content = scrubber.scrub_string(content, scrubber.EMAIL, '(email removed)')
     content = scrubber.scrub_string(content, scrubber.URL, '(URL removed)')
     return content
@@ -126,11 +129,3 @@ def show_bug_link(bug_id):
     )
     data['class'] = ' '.join(data['class'])
     return jinja2.Markup(tmpl) % data
-
-
-@register.function
-def read_crash_column(crash, column_key):
-    if 'raw_crash' in crash:
-        raw_crash = crash['raw_crash'] or {}
-        return raw_crash.get(column_key, crash.get(column_key, ''))
-    return crash.get(column_key, '')
