@@ -206,6 +206,14 @@ urlpatterns = patterns(
             permanent=False  # this is not a legacy URL
         )),
 
+    # redirect deceased Advanced Search URLs to Super Search
+    url(r'^query/$',
+        RedirectView.as_view(
+            url='/search/',
+            query_string=True,
+            permanent=True
+        )),
+
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',
         RedirectView.as_view(
