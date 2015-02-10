@@ -412,9 +412,9 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         extensions_table_name = 'extensions_%s' % table_suffix
         extensions_insert_sql = (
             "insert into %s "
-            "    (report_id, date_processed, extension_key, extension_id, "
-            "     extension_version)"
-            "values (%%s, %%s, %%s, %%s, %%s)" % extensions_table_name
+            "    (report_id, uuid, date_processed, extension_key, "
+            "     extension_id, extension_version)"
+            "values (%%s, %%s, %%s, %%s, %%s, %%s)" % extensions_table_name
         )
         # why are we deleting first?  This might be a reprocessing job and
         # the extensions data might already be in the table: a straight insert
@@ -435,6 +435,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             try:
                 execute_no_results(connection, extensions_insert_sql,
                                    (report_id,
+                                    crash_id,
                                     processed_crash['date_processed'],
                                     i,
                                     x[0][:100],
