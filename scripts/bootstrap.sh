@@ -27,6 +27,7 @@ fi
 
 if [ "`uname -sm`" == "Linux x86_64" ]; then
   # pull pre-built, known version of breakpad
+  rm -f breakpad.tar.gz
   wget -N --quiet 'https://ci.mozilla.org/job/breakpad/lastSuccessfulBuild/artifact/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
   rm -rf stackwalk
