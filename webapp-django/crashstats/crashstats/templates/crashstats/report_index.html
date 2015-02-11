@@ -370,7 +370,11 @@
               </tbody>
             </table>
 
-            <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
+            <p>
+              <a href="#allthreads" data-show="Show other threads" data-hide="Hide other threads"
+               >Show other threads</a>
+            </p>
+
             <div id="allthreads">
             {% for thread in parsed_dump.threads %}
               {%if thread.thread != parsed_dump.crash_info.crashing_thread %}

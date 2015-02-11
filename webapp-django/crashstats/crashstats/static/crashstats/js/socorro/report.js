@@ -29,10 +29,23 @@ $(document).ready(function () {
         });
     });
 
-    $('#showallthreads').removeClass('hidden').click(function () {
+    $('a[href="#allthreads"]').on('click', function () {
+        var element = $(this);
         $('#allthreads').toggle(400);
-        return false;
+        if (element.text() === element.data('show')) {
+            element.text(element.data('hide'));
+            return true;
+        } else {
+            element.text(element.data('show'));
+            location.hash = 'frames';
+            return false;
+        }
     });
+    // if the page is loaded with #allthreads, then pretend we immediately
+    // click the toggle switch.
+    if (location.hash === '#allthreads') {
+        $('a[href="#allthreads"]').click();
+    }
 
     var tbls = $("#frames").find("table"),
     addExpand = function(sigColumn) {
