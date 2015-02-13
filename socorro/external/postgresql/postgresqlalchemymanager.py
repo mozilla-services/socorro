@@ -33,7 +33,7 @@ class PostgreSQLAlchemyManager(object):
     """
         Connection management for PostgreSQL using SQLAlchemy
     """
-    def __init__(self, sa_url, logger, autocommit=False):
+    def __init__(self, sa_url, logger, autocommit=False, on_heroku=False):
         self.engine = create_engine(sa_url,
                                     implicit_returning=False,
                                     isolation_level="READ COMMITTED")
@@ -43,8 +43,19 @@ class PostgreSQLAlchemyManager(object):
         self.metadata.bind = self.engine
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
+        self.on_heroku = on_heroku
 
-    def setup_admin(self, heroku=False):
+    # decorator for heroku stuff
+    def ignore_if_on_heroku(func):
+        def ignored(f_arg, *args, **kwargs):
+            if f_arg.on_heroku:
+                return
+            else:
+                func(f_arg, *args, **kwargs)
+        return ignored
+
+
+    def setup_admin(self):
         self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
@@ -53,7 +64,7 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
         self.session.execute('CREATE SCHEMA IF NOT EXISTS bixie')
-        if not heroku:
+        if not self.on_heroku:
             self.session.execute(
                 'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
@@ -109,7 +120,7 @@ class PostgreSQLAlchemyManager(object):
             try:
                 self.session.execute(procedure)
             except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong: %s" % e
+                print "Something went horribly wrong with %s: %s" % (procedure, e)
                 raise
         return True
 
@@ -119,17 +130,20 @@ class PostgreSQLAlchemyManager(object):
         cursor.copy_from(data, table, columns=columns, sep=sep)
         connection.commit()
 
+    @ignore_if_on_heroku
     def set_default_owner(self, database_name):
         self.session.execute("""
                 ALTER DATABASE %s OWNER TO breakpad_rw
             """ % database_name)
 
+    @ignore_if_on_heroku
     def set_table_owner(self, owner):
         for table in self.metadata.sorted_tables:
             self.session.execute("""
                     ALTER TABLE %s OWNER TO %s
                 """ % (table, owner))
 
+    @ignore_if_on_heroku
     def set_sequence_owner(self, owner):
         sequences = self.session.execute("""
                 SELECT n.nspname || '.' || c.relname
@@ -145,6 +159,7 @@ class PostgreSQLAlchemyManager(object):
                     ALTER SEQUENCE %s OWNER TO %s
                 """ % (sequence, owner))
 
+    @ignore_if_on_heroku
     def set_type_owner(self, owner):
         types = self.session.execute("""
                 SELECT
@@ -166,6 +181,7 @@ class PostgreSQLAlchemyManager(object):
                     ALTER TYPE %s OWNER to %s
                 """ % (types, owner))
 
+    @ignore_if_on_heroku
     def set_grants(self, config):
         """
         Grant access to configurable roles to all database tables
@@ -293,6 +309,7 @@ class PostgreSQLAlchemyManager(object):
     def min_ver_check(self, version_required):
         return self.version_number() >= version_required
 
+    @ignore_if_on_heroku
     def create_roles(self, config):
         """
             This function creates two roles: breakpad_ro, breakpad_rw
@@ -348,6 +365,7 @@ class PostgreSQLAlchemyManager(object):
     def __exit__(self, *exc_info):
         self.conn.close()
 
+    @ignore_if_on_heroku
     def drop_database(self, database_name):
         connection = self.engine.connect()
         try:
@@ -361,6 +379,7 @@ class PostgreSQLAlchemyManager(object):
                 # already done, no need to rerun
                 print "The DB %s doesn't exist" % database_name
 
+    @ignore_if_on_heroku
     def create_database(self, database_name):
         connection = self.engine.connect()
         try:
