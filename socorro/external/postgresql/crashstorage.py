@@ -186,7 +186,6 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     def _save_processed_transaction(self, connection, processed_crash):
         report_id = self._save_processed_report(connection, processed_crash)
         self._save_plugins(connection, processed_crash, report_id)
-        self._save_extensions(connection, processed_crash, report_id)
         self._save_processed_crash(connection, processed_crash)
 
     #--------------------------------------------------------------------------
@@ -401,49 +400,6 @@ class PostgreSQLCrashStorage(CrashStorageBase):
             execute_no_results(connection,
                                plugins_reports_insert_sql,
                                values_tuple)
-
-    #--------------------------------------------------------------------------
-    def _save_extensions(self, connection, processed_crash, report_id):
-        extensions = processed_crash['addons']
-        if not extensions:
-            return
-        crash_id = processed_crash['uuid']
-        table_suffix = self._table_suffix_for_crash_id(crash_id)
-        extensions_table_name = 'extensions_%s' % table_suffix
-        extensions_insert_sql = (
-            "insert into %s "
-            "    (report_id, date_processed, extension_key, extension_id, "
-            "     extension_version)"
-            "values (%%s, %%s, %%s, %%s, %%s)" % extensions_table_name
-        )
-        # why are we deleting first?  This might be a reprocessing job and
-        # the extensions data might already be in the table: a straight insert
-        # might fail.  Why not check to see if there is data already there
-        # and then just not insert if data is there?  We may be reprocessing
-        # to deal with missing extensions data, so just because there is
-        # already data there doesn't mean that we can skip this.
-        # What about using "upsert" sql - that would be fine and result in one
-        # fewer round trip between client and database, but "upsert" sql is
-        # opaque and not easy to understand at a glance.  This was faster to
-        # implement.  What about using "transaction check points"?
-        # too many round trips between the client and the server.
-        clear_extensions_sql = (
-            "delete from %s where report_id = %%s" % extensions_table_name
-        )
-        execute_no_results(connection, clear_extensions_sql, (report_id,))
-        for i, x in enumerate(extensions):
-            try:
-                execute_no_results(connection, extensions_insert_sql,
-                                   (report_id,
-                                    processed_crash['date_processed'],
-                                    i,
-                                    x[0][:100],
-                                    x[1]))
-            except IndexError:
-                self.config.logger.warning(
-                    '"%s" is deficient as a name and version for an addon',
-                    str(x[0])
-                )
 
     def get_unredacted_processed(self, crash_id):
         """this method returns an unredacted processed crash

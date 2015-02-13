@@ -495,7 +495,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             TRUNCATE
                 bugs,
                 bug_associations,
-                extensions,
                 reports,
                 products,
                 releases_raw,
@@ -800,73 +799,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data['total'], 1)
             eq_(response.data['hits'][0]['user_comments'], 'crap')
-
-    def test_extensions(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/extensions/',
-                {'uuid': self.uuid, 'date': '2012-02-29T01:23:45+00:00'}
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
-            now = datetimeutil.utc_now()
-            uuid = "%%s-%s" % now.strftime("%y%m%d")
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                INSERT INTO reports
-                (id, date_processed, uuid)
-                VALUES
-                (
-                    1,
-                    '%s',
-                    '%s'
-                ),
-                (
-                    2,
-                    '%s',
-                    '%s'
-                );
-            """ % (now, uuid % "a1", now, uuid % "a2"))
-
-            cursor.execute("""
-                INSERT INTO extensions VALUES
-                (
-                    1,
-                    '%s',
-                    10,
-                    'id1',
-                    'version1'
-                ),
-                (
-                    1,
-                    '%s',
-                    11,
-                    'id2',
-                    'version2'
-                ),
-                (
-                    1,
-                    '%s',
-                    12,
-                    'id3',
-                    'version3'
-                );
-            """ % (now, now, now))
-            self.conn.commit()
-
-            response = self.get(
-                server,
-                '/extensions/',
-                {'uuid': uuid % 'a1', 'date': now.isoformat()}
-            )
-            eq_(response.data['total'], 3)
 
     def test_field(self):
         config_manager = self._setup_config_manager()
