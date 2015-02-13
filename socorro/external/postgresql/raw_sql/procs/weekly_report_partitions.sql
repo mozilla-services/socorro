@@ -1,5 +1,6 @@
 CREATE OR REPLACE FUNCTION weekly_report_partitions(numweeks integer DEFAULT 2, targetdate timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS boolean
     LANGUAGE plpgsql
+    SECURITY DEFINER
     AS $$
 -- this function checks that we have partitions two weeks into
 -- the future for each of the tables associated with
