@@ -345,3 +345,32 @@ class PostgreSQLAlchemyManager(object):
 
     def __exit__(self, *exc_info):
         self.conn.close()
+
+    def drop_database(self, database_name):
+        connection = self.engine.connect()
+        try:
+            # work around for autocommit behavior
+            connection.execute('commit')
+            connection.execute('DROP DATABASE %s' % database_name)
+        except exc.ProgrammingError, e:
+            if re.search(
+                'database "%s" does not exist' % database_name,
+                e.orig.pgerror.strip()):
+                # already done, no need to rerun
+                print "The DB %s doesn't exist" % database_name
+
+    def create_database(self, database_name):
+        connection = self.engine.connect()
+        try:
+            # work around for autocommit behavior
+            connection.execute('commit')
+            connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
+                               database_name)
+        except exc.ProgrammingError, e:
+            if re.search(
+                'database "%s" already exists' % database_name,
+                e.orig.pgerror.strip()):
+                # already done, no need to rerun
+                print "The DB %s already exists" % database_name
+                return 0
+            raise

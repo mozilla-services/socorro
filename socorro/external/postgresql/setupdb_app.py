@@ -51,6 +51,12 @@ class SocorroDBApp(App):
     required_config = Namespace()
 
     required_config.add_option(
+        name='database_url',
+        default=None,
+        doc='URL of database to connect to',
+    )
+
+    required_config.add_option(
         name='database_name',
         default='socorro_integration_test',
         doc='Name of database to manage',
@@ -98,6 +104,14 @@ class SocorroDBApp(App):
         name='dropdb',
         default=False,
         doc='Whether or not to drop database_name',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+
+    required_config.add_option(
+        name='createdb',
+        default=False,
+        doc='Whether or not to create database_name',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True
     )
@@ -219,16 +233,12 @@ class SocorroDBApp(App):
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
 
-    def main(self):
 
+    def create_connection_url(self, database_name=None):
         self.database_name = self.config['database_name']
         if not self.database_name:
             print "Syntax error: --database_name required"
             return 1
-
-        self.no_schema = self.config.get('no_schema')
-
-        self.force = self.config.get('force')
 
         def connection_url():
             url_template = 'postgresql://'
@@ -249,7 +259,25 @@ class SocorroDBApp(App):
         self.database_port = self.config.get('database_port')
 
         url_template = connection_url()
-        sa_url = url_template + '/%s' % 'postgres'
+        sa_url = url_template + '/%s' % database_name
+        return sa_url
+
+
+
+    def main(self):
+
+        connection_url = ''
+
+        # If we've got a database_url, use that instead of separate args
+        self.database_url = self.config.database_url
+        if self.database_url:
+            connection_url = self.database_url
+        else:
+            connection_url = self.create_connection_url('postgres')
+
+        self.no_schema = self.config.no_schema
+
+        self.force = self.config.force
 
         if self.config.unlogged:
             @compiles(CreateTable)
@@ -260,7 +288,9 @@ class SocorroDBApp(App):
                               m.group(1), text)
                 return text
 
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger,
+        print connection_url
+        # Verify we've got the right version of Postgres
+        with PostgreSQLAlchemyManager(connection_url, self.config.logger,
                                       autocommit=False) as db:
             if not db.min_ver_check(90200):
                 print 'ERROR - unrecognized PostgreSQL version: %s' % \
@@ -268,49 +298,28 @@ class SocorroDBApp(App):
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
-            connection = db.engine.connect()
-            if self.config.get('dropdb'):
+        if self.config.dropdb:
+            with PostgreSQLAlchemyManager(connection_url, self.config.logger,
+                                          autocommit=False) as db:
                 if 'test' not in self.database_name and not self.force:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
                         logging.warn('NOT dropping table')
                         return 2
+                db.drop_database(self.database_name)
 
-                try:
-                    # work around for autocommit behavior
-                    connection.execute('commit')
-                    connection.execute('DROP DATABASE %s' % self.database_name)
-                except exc.ProgrammingError, e:
-                    if re.search(
-                        'database "%s" does not exist' % self.database_name,
-                        e.orig.pgerror.strip()):
-                        # already done, no need to rerun
-                        print "The DB %s doesn't exist" % self.database_name
+        if self.config.createdb:
+            db.create_database(self.database_name)
 
-            try:
-                # work around for autocommit behavior
-                connection.execute('commit')
-                connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
-                                   self.database_name)
-            except exc.ProgrammingError, e:
-                if re.search(
-                    'database "%s" already exists' % self.database_name,
-                    e.orig.pgerror.strip()):
-                    # already done, no need to rerun
-                    print "The DB %s already exists" % self.database_name
-                    return 0
-                raise
-
-            db.create_roles(self.config)
-            connection.close()
-
-        # Reconnect to set up bixie schema, types and procs
-        sa_url = url_template + '/%s' % self.database_name
+        # Reconnect to set up schema, types and procs
+        connection_url = self.create_connection_url(self.database_name)
         alembic_cfg = Config(self.config.alembic_config)
-        alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
+        alembic_cfg.set_main_option('sqlalchemy.url', connection_url)
+
+        with PostgreSQLAlchemyManager(connection_url, self.config.logger) as db:
             connection = db.engine.connect()
+            db.create_roles(self.config)
             db.setup_admin()
             if self.no_schema:
                 db.commit()
