@@ -55,7 +55,11 @@ class SocorroDBApp(App):
         default=None,
         doc='URL of database to connect to',
     )
-
+    required_config.add_option(
+        name='heroku',
+        default=False,
+        doc='Setup on a Heroku Postgres instance',
+    )
     required_config.add_option(
         name='database_name',
         default='socorro_integration_test',
@@ -235,7 +239,6 @@ class SocorroDBApp(App):
 
 
     def create_connection_url(self, database_name=None):
-        self.database_name = self.config['database_name']
         if not self.database_name:
             print "Syntax error: --database_name required"
             return 1
@@ -275,9 +278,10 @@ class SocorroDBApp(App):
         else:
             connection_url = self.create_connection_url('postgres')
 
+        self.database_name = self.config.database_name
         self.no_schema = self.config.no_schema
-
         self.force = self.config.force
+        self.heroku = self.config.heroku
 
         if self.config.unlogged:
             @compiles(CreateTable)
@@ -298,6 +302,7 @@ class SocorroDBApp(App):
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
+        # We can only really do the following if the DB is not Heroku
         if self.config.dropdb:
             with PostgreSQLAlchemyManager(connection_url, self.config.logger,
                                           autocommit=False) as db:
@@ -313,14 +318,17 @@ class SocorroDBApp(App):
             db.create_database(self.database_name)
 
         # Reconnect to set up schema, types and procs
-        connection_url = self.create_connection_url(self.database_name)
+        if not self.heroku:
+            connection_url = self.create_connection_url(self.database_name)
+
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option('sqlalchemy.url', connection_url)
 
         with PostgreSQLAlchemyManager(connection_url, self.config.logger) as db:
             connection = db.engine.connect()
-            db.create_roles(self.config)
-            db.setup_admin()
+            if not self.heroku:
+                db.create_roles(self.config)
+            db.setup_admin(self.heroku)
             if self.no_schema:
                 db.commit()
                 return 0
@@ -328,22 +336,22 @@ class SocorroDBApp(App):
             db.create_types()
 
             db.create_procs()
-            db.set_sequence_owner('breakpad_rw')
+            # db.set_sequence_owner('breakpad_rw')
             db.commit()
 
             db.create_tables()
-            db.set_table_owner('breakpad_rw')
+            # db.set_table_owner('breakpad_rw')
             db.create_views()
             db.commit()
 
-            db.set_grants(self.config)  # config has user lists
+            # db.set_grants(self.config)  # config has user lists
             if not self.config['no_staticdata']:
                 self.import_staticdata(db)
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
             command.stamp(alembic_cfg, "heads")
-            db.set_default_owner(self.database_name)
+            # db.set_default_owner(self.database_name)
             db.session.close()
 
         return 0

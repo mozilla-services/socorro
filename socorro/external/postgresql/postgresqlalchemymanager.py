@@ -44,7 +44,7 @@ class PostgreSQLAlchemyManager(object):
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
 
-    def setup_admin(self):
+    def setup_admin(self, heroku=False):
         self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
@@ -52,9 +52,10 @@ class PostgreSQLAlchemyManager(object):
         if not self.min_ver_check(90300):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
-        self.session.execute('CREATE SCHEMA bixie')
-        self.session.execute(
-            'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
+        self.session.execute('CREATE SCHEMA IF NOT EXISTS bixie')
+        if not heroku:
+            self.session.execute(
+                'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
 
     def setup(self):
         self.session.execute('SET check_function_bodies = false')
@@ -86,8 +87,9 @@ class PostgreSQLAlchemyManager(object):
             'raw_sql/procs',
             '*.sql'
         ))
-        for file in sorted(glob(procs_dir)):
-            procedure = open(file).read()
+        for filename in sorted(glob(procs_dir)):
+            print filename
+            procedure = open(filename).read()
             try:
                 self.session.execute(procedure)
             except exc.SQLAlchemyError, e:
