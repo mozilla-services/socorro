@@ -54,7 +54,6 @@ SERVICES_LIST = (
     ),
     (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
-    (r'/extensions/(.*)', 'extensions.Extensions'),
     (r'/field/(.*)', 'field.Field'),
     (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
     (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
