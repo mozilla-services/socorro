@@ -154,9 +154,9 @@ https://github.com/jsocol/commonware/archive/b554418.zip#egg=commonware
 cef==0.5
 # sha256: -fUE8yboUH-tNZdMGuX5HUpzX7M-VWtu2PXsEGBUpHM
 https://github.com/mozilla/nuggets/archive/ce50688.zip#egg=nuggets
-# sha256: 53T3tTehlADKaH9I01KrdGFzKsQThd2I_a1Hie-tKcU
-# sha256: qI7Y-5I6U8cMLEb75FCLX4Fka0sBQB8VaKghZxszIVw
-django-appconf==0.6
+# sha256: uhN1-xAk6OkVR1BNQ5IyF5XJif3lALluvHyTiE94bmA
+# sha256: PZvJY9gAiuFR1sZk-f1VRCcF6puebXznfN1Av5LZHzo
+django-appconf==1.0.1
 # sha256: UE5EGWeseGBKs18DABj8mm-icOam6YRx0jEf139wZ0s
 # sha256: smA0Iw78731g5SZ4kO2mVt_EnFZ_JxJdkH7uT-f5puw
 django-compressor==1.4
