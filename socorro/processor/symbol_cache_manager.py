@@ -189,7 +189,14 @@ class SymbolLRUCacheManager(RequiredConfig):
             update_size = True
 
         if update_size:
-            size = os.stat(path).st_size
+            try:
+                size = os.stat(path).st_size
+            except OSError:
+                self.config.logger.warning(
+                    'file was not found while cleaning cache: %s', path
+                )
+                return
+
             self.total_size += size
             # If we're out of space, remove items from the cache until
             # we fit again.
