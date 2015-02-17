@@ -82,7 +82,7 @@ class PostgreSQLAlchemyManager(object):
             try:
                 self.session.execute(custom_type)
             except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong: %s" % e
+                logging.error("Something went horribly wrong: %s" % e)
                 raise
         return True
 
@@ -98,12 +98,11 @@ class PostgreSQLAlchemyManager(object):
             '*.sql'
         ))
         for filename in sorted(glob(procs_dir)):
-            print filename
             procedure = open(filename).read()
             try:
                 self.session.execute(procedure)
             except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong: %s" % e
+                logging.error("Something went horribly wrong: %s" % e)
                 raise
         return True
 
@@ -119,7 +118,7 @@ class PostgreSQLAlchemyManager(object):
             try:
                 self.session.execute(procedure)
             except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong with %s: %s" % (procedure, e)
+                logging.error("Something went horribly wrong with %s: %s" % (procedure, e))
                 raise
         return True
 
@@ -376,7 +375,7 @@ class PostgreSQLAlchemyManager(object):
                 'database "%s" does not exist' % database_name,
                 e.orig.pgerror.strip()):
                 # already done, no need to rerun
-                print "The DB %s doesn't exist" % database_name
+                logging.warn("The DB %s doesn't exist" % database_name)
 
     @ignore_if_on_heroku
     def create_database(self, database_name):
@@ -391,6 +390,6 @@ class PostgreSQLAlchemyManager(object):
                 'database "%s" already exists' % database_name,
                 e.orig.pgerror.strip()):
                 # already done, no need to rerun
-                print "The DB %s already exists" % database_name
+                logging.warn("The DB %s already exists" % database_name)
                 return 0
             raise
