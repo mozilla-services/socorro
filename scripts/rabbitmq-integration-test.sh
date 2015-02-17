@@ -53,6 +53,7 @@ function fatal() {
   message=$2
 
   echo "ERROR: $message"
+  cat setupdb.log
 
   cleanup
 
