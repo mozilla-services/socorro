@@ -370,7 +370,7 @@ class PostgreSQLAlchemyManager(object):
             # work around for autocommit behavior
             connection.execute('commit')
             connection.execute('DROP DATABASE %s' % database_name)
-        except exc.OperationalError, e:
+        except (exc.OperationalError, exc.ProgrammingError), e:
             if re.search(
                 'database "%s" does not exist' % database_name,
                 e.orig.pgerror.strip()):
@@ -385,7 +385,7 @@ class PostgreSQLAlchemyManager(object):
             connection.execute('commit')
             connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
                                database_name)
-        except exc.OperationalError, e:
+        except (exc.OperationalError, exc.ProgrammingError), e:
             if re.search(
                 'database "%s" already exists' % database_name,
                 e.orig.pgerror.strip()):

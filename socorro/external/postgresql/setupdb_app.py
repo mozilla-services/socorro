@@ -325,8 +325,9 @@ class SocorroDBApp(App):
         if not self.database_url:
             connection_url = self.create_connection_url(
                 self.config.get('database_name'),
-                self.config.get('database_username'),
-                self.config.get('database_password')
+                # Needs super user permissions for extensions
+                self.config.get('database_superusername'),
+                self.config.get('database_superuserpassword')
             )
 
         alembic_cfg = Config(self.config.alembic_config)
