@@ -56,7 +56,6 @@ class PostgreSQLAlchemyManager(object):
 
 
     def setup_admin(self):
-        self.session.execute('SET check_function_bodies = false')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         # we only need to create the json extension for pg9.2.*
@@ -67,7 +66,7 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute(
                 'GRANT ALL ON SCHEMA public TO breakpad_rw')
 
-    def setup(self):
+    def setup_checks(self):
         self.session.execute('SET check_function_bodies = false')
 
     def create_types(self):

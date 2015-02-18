@@ -321,7 +321,7 @@ class SocorroDBApp(App):
             db.create_database(self.database_name)
             db.create_roles(self.config)
 
-        # Reconnect to set up schema, types and procs
+        # Reconnect to set up extensions and other things requiring superuser privs
         if not self.database_url:
             connection_url = self.create_connection_url(
                 self.config.get('database_name'),
@@ -333,23 +333,34 @@ class SocorroDBApp(App):
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option('sqlalchemy.url', connection_url)
 
-        with PostgreSQLAlchemyManager(connection_url, self.config.logger, False, self.on_heroku) as db:
-            connection = db.engine.connect()
+        with PostgreSQLAlchemyManager(connection_url, self.config.logger,
+                                      False, self.on_heroku) as db:
             db.setup_admin()
             db.set_sequence_owner('breakpad_rw')
-            if self.no_schema:
-                db.commit()
-                return 0
-            # Order matters with what follows
-            db.create_types()
+            db.commit()
 
+        if self.no_schema:
+            return 0
+
+        # Reconnect to set up schema, types and procs
+        if not self.database_url:
+            connection_url = self.create_connection_url(
+                self.config.get('database_name'),
+                # Needs super user permissions for extensions
+                self.config.get('database_username'),
+                self.config.get('database_password')
+            )
+
+        with PostgreSQLAlchemyManager(connection_url, self.config.logger,
+                                      False, self.on_heroku) as db:
+            # Order matters with what follows
+            db.setup_checks()
+            db.create_types()
             db.create_procs()
             db.commit()
 
             db.create_tables()
-            db.set_table_owner('breakpad_rw')
             db.create_views()
-            db.set_grants(self.config)  # config has user lists
             db.commit()
 
             if not self.config['no_staticdata']:
@@ -358,8 +369,22 @@ class SocorroDBApp(App):
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
             command.stamp(alembic_cfg, "heads")
-            db.set_default_owner(self.database_name)
             db.session.close()
+
+        # Reconnect to set up extensions and other things requiring superuser privs
+        if not self.database_url:
+            connection_url = self.create_connection_url(
+                self.config.get('database_name'),
+                # Needs super user permissions for extensions
+                self.config.get('database_superusername'),
+                self.config.get('database_superuserpassword')
+            )
+
+        with PostgreSQLAlchemyManager(connection_url, self.config.logger,
+                                      False, self.on_heroku) as db:
+            db.set_table_owner('breakpad_rw')
+            db.set_default_owner(self.database_name)
+            db.set_grants(self.config)  # config has user lists
 
         return 0
 
