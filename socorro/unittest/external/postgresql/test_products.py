@@ -18,15 +18,16 @@ class IntegrationTestProducts(PostgreSQLTestCase):
     """Test socorro.external.postgresql.products.Products class. """
 
     #--------------------------------------------------------------------------
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """ Populate product_info table with fake data """
-        super(IntegrationTestProducts, self).setUp()
+        super(IntegrationTestProducts, cls).setUpClass()
 
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
 
         # Insert data
-        self.now = datetimeutil.utc_now()
-        now = self.now.date()
+        cls.now = datetimeutil.utc_now()
+        now = cls.now.date()
         lastweek = now - datetime.timedelta(days=7)
 
         cursor.execute("""
@@ -147,20 +148,21 @@ class IntegrationTestProducts(PostgreSQLTestCase):
             );
         """ % {'now': now, 'lastweek': lastweek})
 
-        self.connection.commit()
+        cls.connection.commit()
 
     #--------------------------------------------------------------------------
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         """ Cleanup the database, delete tables and functions """
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
         cursor.execute("""
             TRUNCATE products, product_version_builds, product_versions,
                      product_release_channels, release_channels,
                      product_versions
             CASCADE
         """)
-        self.connection.commit()
-        super(IntegrationTestProducts, self).tearDown()
+        cls.connection.commit()
+        super(IntegrationTestProducts, cls).tearDownClass()
 
     #--------------------------------------------------------------------------
     def test_get(self):
@@ -251,56 +253,56 @@ class IntegrationTestProducts(PostgreSQLTestCase):
         params = {}
         res = products.get(**params)
         res_expected = {
-                "products": ["Firefox", "Thunderbird", "Fennec"],
-                "hits": {
-                    "Firefox": [
-                        {
-                            "product": "Firefox",
-                            "version": "8.0",
-                            "start_date": now_str,
-                            "end_date": now_str,
-                            "throttle": 10.00,
-                            "featured": False,
-                            "release": "Release",
-                            "has_builds": False
-                        }
-                    ],
-                    "Thunderbird": [
-                        {
-                            "product": "Thunderbird",
-                            "version": "10.0.2b",
-                            "start_date": now_str,
-                            "end_date": now_str,
-                            "throttle": 10.00,
-                            "featured": False,
-                            "release": "Release",
-                            "has_builds": False,
-                        }
-                    ],
-                    "Fennec": [
-                        {
-                            "product": "Fennec",
-                            "version": "12.0b1",
-                            "start_date": now_str,
-                            "end_date": now_str,
-                            "throttle": 100.00,
-                            "featured": False,
-                            "release": "Beta",
-                            "has_builds": False
-                        },
-                        {
-                            "product": "Fennec",
-                            "version": "11.0.1",
-                            "start_date": now_str,
-                            "end_date": now_str,
-                            "throttle": 10.00,
-                            "featured": False,
-                            "release": "Release",
-                            "has_builds": False
-                        }
-                    ]
-                },
-                "total": 4
+            "products": ["Firefox", "Thunderbird", "Fennec"],
+            "hits": {
+                "Firefox": [
+                    {
+                        "product": "Firefox",
+                        "version": "8.0",
+                        "start_date": now_str,
+                        "end_date": now_str,
+                        "throttle": 10.00,
+                        "featured": False,
+                        "release": "Release",
+                        "has_builds": False
+                    }
+                ],
+                "Thunderbird": [
+                    {
+                        "product": "Thunderbird",
+                        "version": "10.0.2b",
+                        "start_date": now_str,
+                        "end_date": now_str,
+                        "throttle": 10.00,
+                        "featured": False,
+                        "release": "Release",
+                        "has_builds": False,
+                    }
+                ],
+                "Fennec": [
+                    {
+                        "product": "Fennec",
+                        "version": "12.0b1",
+                        "start_date": now_str,
+                        "end_date": now_str,
+                        "throttle": 100.00,
+                        "featured": False,
+                        "release": "Beta",
+                        "has_builds": False
+                    },
+                    {
+                        "product": "Fennec",
+                        "version": "11.0.1",
+                        "start_date": now_str,
+                        "end_date": now_str,
+                        "throttle": 10.00,
+                        "featured": False,
+                        "release": "Release",
+                        "has_builds": False
+                    }
+                ]
+            },
+            "total": 4
         }
 
         eq_(res['total'], res_expected['total'])
@@ -369,7 +371,6 @@ class IntegrationTestProducts(PostgreSQLTestCase):
     def test_post(self):
         products = Products(config=self.config)
 
-        build_id = self.now.strftime('%Y%m%d%H%M')
         ok_(products.post(
             product='KillerApp',
             version='1.0',
@@ -392,7 +393,6 @@ class IntegrationTestProducts(PostgreSQLTestCase):
     def test_post_bad_product_name(self):
         products = Products(config=self.config)
 
-        build_id = self.now.strftime('%Y%m%d%H%M')
         ok_(not products.post(
             product='Spaces not allowed',
             version='',
