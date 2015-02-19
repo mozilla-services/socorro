@@ -17,16 +17,17 @@ from unittestbase import PostgreSQLTestCase
 class IntegrationTestReport(PostgreSQLTestCase):
     """Test socorro.external.postgresql.report.Report class. """
 
-    def setUp(self):
+    @classmethod
+    def setUp(cls):
         """Set up this test class by populating the reports table with fake
         data. """
-        super(IntegrationTestReport, self).setUp()
+        super(IntegrationTestReport, cls).setUpClass()
 
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
 
         # Insert data
-        self.now = datetimeutil.utc_now()
-        yesterday = self.now - datetime.timedelta(days=1)
+        cls.now = datetimeutil.utc_now()
+        yesterday = cls.now - datetime.timedelta(days=1)
 
         cursor.execute("""
             INSERT INTO reports
@@ -272,11 +273,12 @@ class IntegrationTestReport(PostgreSQLTestCase):
         """ % {
             'yesterday': yesterday
         })
-        self.connection.commit()
+        cls.connection.commit()
 
-    def tearDown(self):
+    @classmethod
+    def tearDown(cls):
         """Clean up the database, delete tables and functions. """
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
         cursor.execute("""
             TRUNCATE
               reports_duplicates,
@@ -286,8 +288,8 @@ class IntegrationTestReport(PostgreSQLTestCase):
               raw_crashes
             CASCADE
         """)
-        self.connection.commit()
-        super(IntegrationTestReport, self).tearDown()
+        cls.connection.commit()
+        super(IntegrationTestReport, cls).tearDownClass()
 
     def test_get_list(self):
         now = self.now
@@ -496,7 +498,6 @@ class IntegrationTestReport(PostgreSQLTestCase):
     def test_get_list_with_raw_crash(self):
         now = self.now
         yesterday = now - datetime.timedelta(days=1)
-        #yesterday = datetimeutil.date_to_string(yesterday)
         report = Report(config=self.config)
         base_params = {
             'signature': 'sig1',
