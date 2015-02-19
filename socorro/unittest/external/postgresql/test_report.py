@@ -18,7 +18,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
     """Test socorro.external.postgresql.report.Report class. """
 
     @classmethod
-    def setUp(cls):
+    def setUpClass(cls):
         """Set up this test class by populating the reports table with fake
         data. """
         super(IntegrationTestReport, cls).setUpClass()
@@ -276,7 +276,7 @@ class IntegrationTestReport(PostgreSQLTestCase):
         cls.connection.commit()
 
     @classmethod
-    def tearDown(cls):
+    def tearDownClass(cls):
         """Clean up the database, delete tables and functions. """
         cursor = cls.connection.cursor()
         cursor.execute("""
