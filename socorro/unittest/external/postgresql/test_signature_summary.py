@@ -13,21 +13,22 @@ from socorro.external import BadArgumentError
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
+# =============================================================================
 @attr(integration='postgres')  # for nosetests
 class IntegrationTestSignatureSummary(PostgreSQLTestCase):
     """Simple test of SignatureSummary class get() function"""
 
-    #--------------------------------------------------------------------------
-    def setUp(self):
+    # -------------------------------------------------------------------------
+    @classmethod
+    def setUpClass(cls):
         """ Populate product_info table with fake data """
-        super(IntegrationTestSignatureSummary, self).setUp()
+        super(IntegrationTestSignatureSummary, cls).setUpClass()
 
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
 
         # Insert data
-        self.now = datetimeutil.utc_now()
-        now = self.now.date()
+        cls.now = datetimeutil.utc_now()
+        now = cls.now.date()
         yesterday = now - datetime.timedelta(days=1)
         lastweek = now - datetime.timedelta(days=7)
 
@@ -381,7 +382,7 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                'device_id': graphics_device_id,
                'product_version_id': product_version_id})
 
-        self.connection.commit()
+        cls.connection.commit()
 
         def add_product_version_builds(self):
             cursor = self.connection.cursor()
@@ -402,10 +403,11 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
 
             self.connection.commit()
 
-    #--------------------------------------------------------------------------
-    def tearDown(self):
+    # -------------------------------------------------------------------------
+    @classmethod
+    def tearDownClass(cls):
         """ Cleanup the database, delete tables and functions """
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
         cursor.execute("""
             TRUNCATE products,
                      product_version_builds,
@@ -426,8 +428,8 @@ class IntegrationTestSignatureSummary(PostgreSQLTestCase):
                      graphics_device
             CASCADE
         """)
-        self.connection.commit()
-        super(IntegrationTestSignatureSummary, self).tearDown()
+        cls.connection.commit()
+        super(IntegrationTestSignatureSummary, cls).tearDownClass()
 
     def setup_data(self):
         now = self.now.date()
