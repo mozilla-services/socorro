@@ -15,12 +15,18 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crontabbers_state.CrontabberState
     class """
 
+    def setUp(self):
+        self.truncate()
+        super(IntegrationTestCrontabberStatus, self).setUp()
+
     def tearDown(self):
-        """Clean up the database. """
+        self.truncate()
+        super(IntegrationTestCrontabberStatus, self).tearDown()
+
+    def truncate(self):
         cursor = self.connection.cursor()
         cursor.execute("TRUNCATE crontabber")
         self.connection.commit()
-        super(IntegrationTestCrontabberStatus, self).tearDown()
 
     def test_get(self):
         cursor = self.connection.cursor()

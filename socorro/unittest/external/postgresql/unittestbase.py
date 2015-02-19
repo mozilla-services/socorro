@@ -97,10 +97,11 @@ class PostgreSQLTestCase(TestCase):
         from_string_converter=list_converter
     )
 
-    def get_standard_config(self):
+    @classmethod
+    def get_standard_config(cls):
 
         config_manager = ConfigurationManager(
-            [self.required_config,
+            [cls.required_config,
              ],
             app_name='PostgreSQLTestCase',
             app_description=__doc__,
@@ -110,13 +111,18 @@ class PostgreSQLTestCase(TestCase):
         with config_manager.context() as config:
             return config
 
-    def setUp(self):
-        """Create a configuration context and a database connection. """
-        self.config = self.get_standard_config()
+    @classmethod
+    def setUpClass(cls):
+        """Create a configuration context and a database connection.
 
-        self.database = db.Database(self.config)
-        self.connection = self.database.connection()
+        This will create (and later destroy) one connection per test
+        case (aka. test class).
+        """
+        cls.config = cls.get_standard_config()
+        cls.database = db.Database(cls.config)
+        cls.connection = cls.database.connection()
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         """Close the database connection. """
-        self.connection.close()
+        cls.connection.close()
