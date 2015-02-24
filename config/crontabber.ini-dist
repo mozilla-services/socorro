@@ -170,7 +170,7 @@
         #database_password=aPassword
 
         # the name of the user within the database
-        #database_username=breakpad_rw
+        database_username=test
 
     [[rabbitmq]]
 
@@ -213,7 +213,7 @@
 
     # the name of the user within the database
     # see "secrets.postgresql.database_username" for the default or override it here
-    #database_username=breakpad_rw
+    database_username=test
 
     # number of seconds to re-attempt a job that failed
     #error_retry_time=300
