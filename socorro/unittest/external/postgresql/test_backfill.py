@@ -23,9 +23,9 @@ class TestBackfill(PostgreSQLTestCase):
         """ Populate tables with fake data """
         super(TestBackfill, self).setUp()
 
-        cursor = self.connection.cursor()
+        self.truncate_tables()
 
-        self.tables = []
+        cursor = self.connection.cursor()
 
         for table in staticdata.tables + fakedata.tables:
             # staticdata has no concept of duration
@@ -70,12 +70,10 @@ class TestBackfill(PostgreSQLTestCase):
                 }
             }
 
-
             table_name = table.table
             table_columns = table.columns
             values = str(tuple(["%(" + i + ")s" for i in table_columns]))
             columns = str(tuple(table_columns))
-            self.tables.append(table_name)
 
             # TODO: backfill_reports_clean() sometimes tries to insert a
             # os_version_id that already exists
@@ -93,15 +91,19 @@ class TestBackfill(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def tearDown(self):
         """ Cleanup the database, delete tables and functions """
+        self.truncate_tables()
+        super(TestBackfill, self).tearDown()
+
+    #--------------------------------------------------------------------------
+    def truncate_tables(self):
+        tables = []
+        for table_class in staticdata.tables + fakedata.tables:
+            tables.append(table_class().table)
 
         cursor = self.connection.cursor()
-        tables = str(self.tables).replace("[", "").replace("]", "")
+        tables = str(tables).replace("[", "").replace("]", "")
         cursor.execute("TRUNCATE " + tables.replace("'", "") + " CASCADE;")
-
         self.connection.commit()
-        self.connection.close()
-
-        super(TestBackfill, self).tearDown()
 
     #--------------------------------------------------------------------------
     def setup_data(self):
@@ -329,7 +331,7 @@ class TestBackfill(PostgreSQLTestCase):
             #},
         }
 
-   #--------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def test_get(self):
 
         backfill = Backfill(config=self.config)

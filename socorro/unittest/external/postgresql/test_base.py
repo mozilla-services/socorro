@@ -668,7 +668,7 @@ class IntegrationTestBase(PostgreSQLTestCase):
         ok_('http://mywebsite.com' in results[0])
 
         # A failing query
-        sql = 'SELECT FROM reports'
+        sql = 'SELECT FROM reports LIMIT notanumber'
         assert_raises(DatabaseError, base.query, sql)
 
     #--------------------------------------------------------------------------

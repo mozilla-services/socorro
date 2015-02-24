@@ -136,18 +136,19 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crashes.Crashes class. """
 
     # -------------------------------------------------------------------------
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """Set up this test class by populating the reports table with fake
         data. """
-        super(IntegrationTestCrashes, self).setUp()
+        super(IntegrationTestCrashes, cls).setUpClass()
 
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
 
-        self.now = datetimeutil.utc_now()
-        yesterday = self.now - datetime.timedelta(days=1)
+        cls.now = datetimeutil.utc_now()
+        yesterday = cls.now - datetime.timedelta(days=1)
 
-        build_date = self.now - datetime.timedelta(days=30)
-        sunset_date = self.now + datetime.timedelta(days=30)
+        build_date = cls.now - datetime.timedelta(days=30)
+        sunset_date = cls.now + datetime.timedelta(days=30)
 
         # Insert data for frequency test
         cursor.execute("""
@@ -237,7 +238,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                 '2.0b',
                 'Beta'
             )
-        """ % {"now": self.now})
+        """ % {"now": cls.now})
 
         # Insert data for daily crashes test
 
@@ -397,7 +398,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             VALUES
             (1, '%(now)s', 5, 20, 0.12),
             (2, '%(yesterday)s', 2, 14, 0.12)
-        """ % {"now": self.now, "yesterday": yesterday})
+        """ % {"now": cls.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO home_page_graph_build
@@ -406,7 +407,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (1, '%(now)s', '%(now)s', 5, 200),
             (1, '%(now)s', '%(yesterday)s', 3, 274),
             (2, '%(yesterday)s', '%(now)s', 3, 109)
-        """ % {"now": self.now, "yesterday": yesterday})
+        """ % {"now": cls.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO crashes_by_user
@@ -423,7 +424,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (3, 'lin', 2, '%(now)s', 3, 4000),
             (3, 'mac', 1, '%(now)s', 2, 6000),
             (3, 'mac', 2, '%(now)s', 1, 6000)
-        """ % {"now": self.now, "yesterday": yesterday})
+        """ % {"now": cls.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO crashes_by_user_build
@@ -436,7 +437,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (1, 'lin', 2, '%(now)s', '%(yesterday)s', 4, 5000),
             (1, 'mac', 1, '%(yesterday)s', '%(now)s', 5, 4000),
             (2, 'lin', 1, '%(yesterday)s', '%(now)s', 1, 1000)
-        """ % {"now": self.now, "yesterday": yesterday})
+        """ % {"now": cls.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO signatures
@@ -444,7 +445,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             VALUES
             (1, 'canIhaveYourSignature()', 2008120122, '%(now)s'),
             (2, 'ofCourseYouCan()', 2008120122, '%(now)s')
-        """ % {"now": self.now.date()})
+        """ % {"now": cls.now.date()})
 
         # Remember your product versions...
         #   1) Firefox:11.0
@@ -460,7 +461,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (2, 1, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0),
             (2, 4, 'ofCourseYouCan()', '%(now)s', 1, 4, 0, 1, 0),
             (2, 6, 'canIhaveYourSignature()', '%(yesterday)s', 2, 2, 2, 2, 2)
-        """ % {"now": self.now, "yesterday": yesterday})
+        """ % {"now": cls.now, "yesterday": yesterday})
 
         cursor.execute("""
             INSERT INTO signatures
@@ -490,7 +491,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
             (5, '{yesterday}', 'this-is-suppose-to-be-a-uuid5',
              'Beta', 245, 'Browser', 71, 'Windows', 215, 631719, 11427500)
-        """.format(now=self.now, yesterday=yesterday))
+        """.format(now=cls.now, yesterday=yesterday))
 
         cursor.execute("""
             INSERT INTO crash_adu_by_build_signature
@@ -509,13 +510,14 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
              '201404010101', 4, 1024, 'Windows NT', 'release', 'WaterWolf')
         """.format(yesterday=yesterday))
 
-        self.connection.commit()
+        cls.connection.commit()
         cursor.close()
 
     # -------------------------------------------------------------------------
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         """Clean up the database, delete tables and functions. """
-        cursor = self.connection.cursor()
+        cursor = cls.connection.cursor()
         cursor.execute("""
             TRUNCATE reports, home_page_graph_build, home_page_graph,
                      crashes_by_user, crashes_by_user_build, crash_types,
@@ -525,9 +527,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                      reports_clean, crash_adu_by_build_signature
             CASCADE
         """)
-        self.connection.commit()
+        cls.connection.commit()
         cursor.close()
-        super(IntegrationTestCrashes, self).tearDown()
+        super(IntegrationTestCrashes, cls).tearDownClass()
 
     # -------------------------------------------------------------------------
     def test_get_comments(self):
