@@ -178,7 +178,7 @@ class PostgreSQLAlchemyManager(object):
             config.read_write_users
             config.read_only_users
 
-        Here's our production hierarchy of roles:
+        Our production hierarchy of roles:
 
             breakpad
                 breakpad_metrics

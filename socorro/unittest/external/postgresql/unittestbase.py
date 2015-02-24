@@ -32,7 +32,7 @@ class PostgreSQLTestCase(TestCase):
 
     required_config.add_option(
         name='database_username',
-        default='breakpad_rw',
+        default='test',
         doc='Username to connect to database',
     )
 
