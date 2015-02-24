@@ -129,6 +129,7 @@ function retry() {
       grep 'ERROR' ${name}.log
       if [ $? != 1 ]
       then
+        cat ${name}.log
         fatal 1 "errors found in $name.log"
       fi
       echo "INFO: $name test passed"
