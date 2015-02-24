@@ -100,7 +100,7 @@ class SocorroDBApp(App):
 
     required_config.add_option(
         name='database_port',
-        default='',
+        default=5432,
         doc='Port to connect to database',
     )
 
@@ -238,31 +238,14 @@ class SocorroDBApp(App):
                       list(fakedata.featured_versions))))
 
 
-    def create_connection_url(self, database_name=None, username=None, password=None):
-        if not self.database_name:
-            print "Syntax error: --database_name required"
-            return 1
+    def create_connection_url(self, database_name, username, password):
+        """ helper method to manage superuser and regular user db access """
+        hostname = self.config.get('database_hostname')
+        port = self.config.get('database_port')
 
-        def connection_url():
-            url_template = 'postgresql://'
-            if self.database_username:
-                url_template += '%s' % self.database_username
-            if self.database_password:
-                url_template += ':%s' % self.database_password
-            url_template += '@'
-            if self.database_hostname:
-                url_template += '%s' % self.database_hostname
-            if self.database_port:
-                url_template += ':%s' % self.database_port
-            return url_template
+        sa_url = 'postgresql://%s:%s@%s:%s/%s' % (
+                username, password, hostname, port, database_name)
 
-        self.database_username = username
-        self.database_password = password
-        self.database_hostname = self.config.get('database_hostname')
-        self.database_port = self.config.get('database_port')
-
-        url_template = connection_url()
-        sa_url = url_template + '/%s' % database_name
         return sa_url
 
 
@@ -277,6 +260,9 @@ class SocorroDBApp(App):
         if self.database_url:
             connection_url = self.database_url
         else:
+            if not self.database_name:
+                print "Syntax error: --database_name required"
+                return 1
             connection_url = self.create_connection_url(
                 'postgres',
                 self.config.get('database_superusername'),
@@ -284,8 +270,10 @@ class SocorroDBApp(App):
             )
 
         self.no_schema = self.config.no_schema
-        self.force = self.config.force
         self.on_heroku = self.config.on_heroku
+        database_name = self.config.database_name
+        database_username = self.config.database_username
+        database_password = self.config.database_password
 
         if self.config.unlogged:
             @compiles(CreateTable)
@@ -305,11 +293,12 @@ class SocorroDBApp(App):
                 print 'Only 9.2+ is supported at this time'
                 return 1
 
-        # We can only really do the following if the DB is not Heroku
-        if self.config.dropdb:
+        # We can only do the following if the DB is not Heroku
+        # XXX Might add the heroku commands for resetting a DB here
+        if self.config.dropdb and not self.on_heroku:
             with PostgreSQLAlchemyManager(connection_url, self.config.logger,
                                           autocommit=False) as db:
-                if 'test' not in self.database_name and not self.force:
+                if 'test' not in self.database_name and not self.config.force:
                     confirm = raw_input(
                         'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
@@ -318,14 +307,15 @@ class SocorroDBApp(App):
                 db.drop_database(self.database_name)
 
         if self.config.createdb:
-            db.create_database(self.database_name)
-            db.create_roles(self.config)
+            with PostgreSQLAlchemyManager(connection_url, self.config.logger,
+                                          autocommit=False) as db:
+                db.create_database(self.database_name)
+                db.create_roles(self.config)
 
         # Reconnect to set up extensions and other things requiring superuser privs
         if not self.database_url:
             connection_url = self.create_connection_url(
-                self.config.get('database_name'),
-                # Needs super user permissions for extensions
+                database_name,
                 self.config.get('database_superusername'),
                 self.config.get('database_superuserpassword')
             )
@@ -335,55 +325,54 @@ class SocorroDBApp(App):
 
         with PostgreSQLAlchemyManager(connection_url, self.config.logger,
                                       False, self.on_heroku) as db:
-            db.setup_admin()
-            db.set_sequence_owner('breakpad_rw')
+            db.setup_extensions()
+            db.grant_public_schema_ownership(database_username)
             db.commit()
 
         if self.no_schema:
             return 0
 
-        # Reconnect to set up schema, types and procs
+        # Reconnect as a regular user to set up schema, types and procs
         if not self.database_url:
             connection_url = self.create_connection_url(
-                self.config.get('database_name'),
-                # Needs super user permissions for extensions
-                self.config.get('database_username'),
-                self.config.get('database_password')
+                database_name,
+                database_username,
+                database_password
             )
 
         with PostgreSQLAlchemyManager(connection_url, self.config.logger,
                                       False, self.on_heroku) as db:
-            # Order matters with what follows
-            db.setup_checks()
-            db.create_types()
-            db.create_procs()
+            # Order matters below
+            db.turn_function_body_checks_off()
+            db.load_raw_sql('types')
+            db.load_raw_sql('procs')
+            # We need to commit to make a type visible for table creation
             db.commit()
 
             db.create_tables()
-            db.create_views()
+            db.load_raw_sql('views')
             db.commit()
 
-            if not self.config['no_staticdata']:
+            if not self.config.get('no_staticdata'):
                 self.import_staticdata(db)
-            if self.config['fakedata']:
-                self.generate_fakedata(db, self.config['fakedata_days'])
+            if self.config.get('fakedata'):
+                self.generate_fakedata(db, self.config.get('fakedata_days'))
             db.commit()
             command.stamp(alembic_cfg, "heads")
             db.session.close()
 
-        # Reconnect to set up extensions and other things requiring superuser privs
+        # Reconnect to clean up permissions
         if not self.database_url:
             connection_url = self.create_connection_url(
-                self.config.get('database_name'),
-                # Needs super user permissions for extensions
+                database_name,
                 self.config.get('database_superusername'),
                 self.config.get('database_superuserpassword')
             )
 
         with PostgreSQLAlchemyManager(connection_url, self.config.logger,
                                       False, self.on_heroku) as db:
-            db.set_table_owner('breakpad_rw')
-            db.set_default_owner(self.database_name)
+            db.set_table_owner(database_username)
+            db.set_default_owner(self.database_name, database_username)
             db.set_grants(self.config)  # config has user lists
 
         return 0
