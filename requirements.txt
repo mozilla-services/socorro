@@ -1,9 +1,9 @@
 # dev requirements
 
 # sha256: SYQkQdJNiNDs_DhobQIcs7G-56v8VB6fxzReRiDe6rY
-Mako==0.7.3
+Mako==1.0.1
 # sha256: M57ATSCtnNzL_p843OYYLMUEznieXQ-WR-qnUvD5UwA
-MarkupSafe==0.15
+MarkupSafe==0.23
 # sha256: EWRYQrqOyYaujPvkxsrP9cNfD0Unq_T1WBrotK1JwLY
 Paste==1.7.5.1
 # sha256: 3jrATsqwp-CvZO7jCnHnI7pYhrlYIF9zVN1iQ52mA4k
@@ -11,112 +11,112 @@ SQLAlchemy==0.9.8
 # sha256: rk_or-4TTLChyGRMxN-DSvaGWkHEy6xxM-VfB0cHimQ
 https://bitbucket.org/zzzeek/alembic/get/56d56f55bde13214359222db46e2da61f0438a10.zip#egg=alembic-0.7.5alpha
 # sha256: 3a9LCmGDNaMrZmTUrgOKHej7raOyUDP5AhUQ7Ss5QaQ
-argparse==1.2.1
+argparse==1.3.0
 
 # mock has both a zip and a tarball available, and which one we get is random.
 # sha256: lvpN706AIAvoJ8P1EUfdez-ohzuSB-MyXUe6Rb8ppcE
 # sha256: 6QTt-5DahBKcBiUs06BfkLTuvBu1uF7pblb_bPaUONU
-mock==0.8.0
+mock==1.0.1
 
 # sha256: TmPMMyXedc-Y_61AvnL6aXU96CRpUXMXj3TANP5PUmA
-nose==1.3.0
+nose==1.3.4
 # sha256: r1v0XaSpFtsrY4z_2enWZoszAg4rjKn4ZNt5tJMxxv8
 poster==0.8.1
 # sha256: nPgCbuv2CxrIy3j0q_87DfYNM3Co2ZHCrArz4F8lRgg
-sqlalchemy-citext==1.0-2
+sqlalchemy-citext==1.2-0
 # sha256: hHK_EwLbFb3yxDk6XpGAzb8ps_jtWwbAa_XGuo9DNYg
-mercurial==2.7.1
+mercurial==3.3
 # sha256: Yj_jJZOSGfYbQathJMV_SWDOT0hlFoRqqvfUd10qLto
-honcho==0.5.0
+honcho==0.6.4
 # sha256: th84eGr2uNZEtTBVIBLWacdBX89YUt4yDykIANuXmD0
-gunicorn==18.0
+gunicorn==19.2.1
 
 # prod requirements
 # sha256: G4jdtVszwrmhMAnW9W-j8JcjtAqgxIF2D_jfh1tqA2s
 # sha256: HvSGayima8gi3CSoXzrGfGjaeUhPAsZqCyBSNMKEQ-4
 configman==1.2.8
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
-configobj==4.7.2
+configobj==5.0.6
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
 hbase-thrift==0.20.4
 # sha256: YjGaw0shgNRQpNknhzyyYA88E7zmsgd83XcMd7Oph-E
-isodate==0.4.7
+isodate==0.5.1
 # sha256: BpWUg30DdqG6z1zEKqmhvi4cE5bcYvfQf3NYr-zTSt8
-lxml==3.4.1
+lxml==3.4.2
 # sha256: jjAivJYKpdX8fUxWR4YIdpOhqZ8V4CWtkg_AqjeOHWc
 pgxnclient==1.2.1
 # sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
-pika==0.9.8
+pika==0.9.14
 # sha256: SLcCp8pHnhvCwae4GHWgfUdCmBMmBZk-LLl59eCCd9c
-psycopg2==2.4.5
+psycopg2==2.6
 # sha256: U6gisBsElN-WWMBOhyFhgOXsvoWxeGc92Eix-AnVwQA
 # sha256: u5PYXKflDWjkGXhSu226YJi7dyUA-C9dsv9KgHEVBck
-elasticsearch==1.2
+elasticsearch==1.4.0
 # sha256: atb_lGMjAnslXevLZuPgNeVF1fhCe7Vji2LjskbU2Io
 # sha256: jEZclknV3j4XtGOFcipJBRERC2A8o8E62cdxMqRnxCw
-elasticsearch-dsl==0.0.2
+elasticsearch-dsl==0.0.3
 # sha256: 2upIE6eJSfnxlBvixW1aviyZqFgjUMrwWYBPtleIrKU
-pyelasticsearch==0.6.1
+pyelasticsearch==1.1
 # sha256: QQvqlt8kefozmGxAw-76nB57qVp_cHEcMVhgu-LWbH8
 # sha256: 2Fg3nvWYjUU0u4kJQy1pdCIQCq_ycimdZhM5g2ttrps
-urllib3==1.9.1
+urllib3==1.10.1
 # sha256: cHay6ATFKumO3svU3B-8qBMYb-f1_dYlR4OgClWntEI
-elasticutils==0.7
+elasticutils==0.10.2
 # sha256: wn5AqzzPN_MKn3estJFzcNk0HiWr2o6Uub1IxxJ_fUg
-raven==3.4.1
+raven==5.2.0
 # sha256: KjGJ950ce4ohSaDng8C0IX-tmzCm59YEUPJVPcLA5X4
 simplejson==3.6.5
 # sha256: HwRtz17HEu076GhLnzPJW3bijNHIJdsPXhVXv9h7N0U
 # sha256: e3c179Ox4jI9yfzvBgs4DQX18YvQ8kf16edKYoJ53mY
-requests==2.5.1
+requests==2.5.2
 # sha256: M4j8GiynpdQmG00ePYtzQsv0vxz7NwIxHGCTIUMs7Xg
 # sha256: eoQsn4gsCyqxBk1We7n_9qIcnvvD2Zkgg61hk3h-05M
-six==1.7.3
+six==1.9.0
 # sha256: RdsWgxKmgg_XhpfHtv0BlvOvkiyOvIhUDt0Nb6_tVU0
-statsd==2.1.2
+statsd==3.0.1
 # sha256: gLPAyGSc5ZC9JYcVUPZnDqvi6YpdHvXkD5K4hZfYCB0
-thrift==0.8.0
+thrift==0.9.2
 # sha256: xF7Ftf6qulO7rmndlxwoGDLxMy1ZSc1uXKJ3R_6SJWo
-web.py==0.36
+web.py==0.37
 # sha256: x-YQyACVcEbATIAUqrjM6PC58ElcjNNJ5XwffKv0Dnk
 wsgiref==0.1.2
 # sha256: aM-CXyJ8guGsYeQjz8rZI_9zTCe1vdcXRJXRYsQsYCs
 ujson==1.33
 # sha256: TETsP5_wV7jHtMeL7KX92HEGAOqaHfQvMb_Lri8Fne4
-python-dateutil==2.1
+python-dateutil==2.4.0
 # sha256: HDW0rCBs7y0kgWyJ-Jzyid09OM98RJuz-re_bUPwGx8
 ordereddict==1.1
 # sha256: lYZcSuutNwxTiQcnhSD-4T52C-Z8ceuYmnqfsNJm_pA
-happybase==0.7
+happybase==0.9
 # sha256: 44gt0em6ljTu9e602O_Ml64V1IKWqGFEtRTJwQxslxw
 # sha256: 5dFhnMcB4H5GhM-hUsM4RKf3noEAQB1B_Z4MBV-PYjg
-crontabber==0.15
+crontabber==0.16.0
 
 # sometimes you get the tarball, sometimes you get the wheel
 # sha256: vP9eVeRaj-DDdx6AVgIdSHFN6WQh0e3uw20S9zdQOZc
 # sha256: wVmeZhdKbKtjPLa_XsJZDM4QTCPRY5XAK9pe2T6nlHw
-boto==2.28.0
+boto==2.36.0
 # sha256: cyu7F1hQihKEtT_Nzp2WqlPLY86T1Us40ob0KBoSrCQ
-pyquery==1.2.6
+pyquery==1.2.9
 # sha256: ZrvGLZUZ-dUxsfd-aH2fL15SHLkG8f1yMfQDmX4BEMQ
-python-memcached==1.48
+python-memcached==1.53
 # sha256: aoy0QBER4BG1ecjFKlHNq5cAQcxUOBS72Vd6RSn-HNs
 BeautifulSoup==3.2.1
 # sha256: eMMXu8KuFpoT6MW9MarmEau3bCZKZMPf1xOR5nZ5Jd8
-django-ratelimit==0.3.0
+django-ratelimit==0.5.0
 # sha256: nrxAU2-bxTW8IhTg8Kbxfm6ylrHh2OxNKOqeAyIPA0Q
-django-waffle==0.9.1
+django-waffle==0.10.1
 # sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
-Jinja2==2.5.5
+Jinja2==2.7.3
 # sha256: BTWn4nAUh0snrjpNM-h0njRb36YnZhlSCLeZa_EQBoI
 cssselect==0.9.1
 # sha256: 1ugIz8yalSg5O269fnT23pd4f22syV4o9cg2d7YAdRc
 https://github.com/jbalogh/check/archive/9c314d7c16408f876ee89f06a62e40dea4c98a02.zip#egg=check
 # sha256: l2sTklJ8dzg-uCfef9RNrK8Sl6Y6oN9Sb0evMC9HnVQ
-path.py==5.1
+path.py==7.2
 # sha256: FbQhMbJfN2Fl0ZX-ThewooMRGCqvkzDV61dbvtpaaYk
 # sha256: Yuh_1UU1-5MrSk2Uho21IyV6EDHIvGvTWMIBVDPmRts
-pep8==1.5.7
+pep8==1.6.2
 # sha256: P6gKELNtUWhr93RPXcmWIs1cmM6O1kAi5imGiq_Bd2k
 # sha256: rEVxaVwQzhU2vNuhopS58tPmzJ0OoXG2fVCghkzj4EI
 pyflakes==0.8.1
@@ -133,9 +133,9 @@ https://github.com/rhelmer/pyinotify/archive/9ff352f.zip#egg=pyinotify
 
 # sha256: zu6D_0xPoUYSif4HpYeehEAIn63eFQ1AdTaRzdjJQsE
 # sha256: VOtZznhUAcfR_e7SRe_OWX6Q-BHWog9rXGkxwASdY6Y
-Django==1.6.10
+Django==1.7.4
 # sha256: 1BuH0etCTRi6Lb5zMTHp2HPnCcwR63PaJIw07sHV7W4
-django-browserid==0.10.1
+django-browserid==0.11.1
 # sha256: akF58qKszaKyc7_Ybeb3AkzuIDBDzJp8BA_nswa74SA
 fancy-tag==0.2.0
 # sha256: uDA8a2lQGB1uEg_sdygAueYurQsQAD6-utf81kFmE9g
@@ -163,13 +163,13 @@ django-compressor==1.4
 # sha256: Eq491FQ_jcXMX0vdf2_RaPTRYkQU11OkQVc8zBh6jkM
 django-jsonfield==0.9.13
 # sha256: iTXjRYmmVJstzm7v-uQNInOetVtqmUow9mpCjW-YuBM
-eventlog==0.8.0
+eventlog==0.10.0
 # sha256: qZ245ZwSATitinLuztzCS0UQ0u7TzkghO34y8izE7m4
 pyOpenSSL==0.14
 # sha256: 0P40ymJSUdKblkxDRxQBWjBj6MLXTKMLL5ZPXzHTTbM
 # sha256: 2-Wqhni1PbnhU_7u3jiNxfvaVnvik8Pk8UEqNgEvHvA
 # sha256: zIBtQ_Pnm-QPkj2U9ULyOpTG3buaYyWLC_h18yVQiXM
-ndg-httpsclient==0.3.2
+ndg-httpsclient==0.3.3
 # sha256: CuAd0p4lO-IS1LAsueyWfPb0I6G43ow-ZVBZHKDVowk
 # sha256: bTs1EQn0GQzZdA12M4RpkIGl8uuNc9qn5IUAn7ZGGMA
 # sha256: 5PgdU8Uz9r2VJrBH8Ef3sQHCSrFzOcGnrY-YslwQHqs
