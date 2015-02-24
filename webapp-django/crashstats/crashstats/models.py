@@ -58,7 +58,10 @@ def get_api_whitelist(*args, **kwargs):
 
     def get_from_es(namespace, baseline=None):
         # @namespace is something like 'raw_crash' or 'processed_crash'
-        fields = cache.get('api_supersearch_fields_%s' % namespace)
+
+        cache_key = 'api_supersearch_fields_%s' % namespace
+        fields = cache.get(cache_key)
+
         if fields is None:
             # This needs to be imported in runtime because otherwise you'll
             # get a circular import.
@@ -78,6 +81,9 @@ def get_api_whitelist(*args, **kwargs):
                     if meta['in_database_name'] not in fields:
                         fields.append(meta['in_database_name'])
             fields = tuple(fields)
+
+            # Cache for 1 hour.
+            cache.set(cache_key, fields, 60 * 60)
         return fields
 
     return Lazy(

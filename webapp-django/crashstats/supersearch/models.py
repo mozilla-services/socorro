@@ -1,101 +1,38 @@
+import functools
 import json
+
+from django.core.cache import cache
 
 from crashstats import scrubber
 from crashstats.crashstats import models
 
 
-SUPERSEARCH_HITS_WHITELIST = (
-    'additional_minidumps',
-    'addons',
-    'addons_checked',
-    'address',
-    'app_notes',
-    'build_id',
-    'client_crash_date',
-    'completeddatetime',
-    'cpu_info',
-    'cpu_name',
-    'crashedThread',
-    'crash_time',
-    'date',
-    'distributor',
-    'distributor_version',
-    'flash_version',
-    'hangid',
-    'hang_type',
-    'id',
-    'install_age',
-    'java_stack_trace',
-    'last_crash',
-    'platform',
-    'platform_version',
-    'plugin_filename',
-    'plugin_name',
-    'plugin_version',
-    'processor_notes',
-    'process_type',
-    'product',
-    'productid',
-    'reason',
-    'release_channel',
-    'ReleaseChannel',
-    'signature',
-    'startedDateTime',
-    'success',
-    'topmost_filenames',
-    'truncated',
-    'uptime',
-    'user_comments',
-    'uuid',
-    'version',
-    'winsock_lsp',
-    'accessibility',
-    'adapter_device_id',
-    'adapter_vendor_id',
-    'android_board',
-    'android_brand',
-    'android_cpu_abi',
-    'android_cpu_abi2',
-    'android_device',
-    'android_display',
-    'android_fingerprint',
-    'android_hardware',
-    'android_manufacturer',
-    'android_model',
-    'android_version',
-    'async_shutdown_timeout',
-    'available_page_file',
-    'available_physical_memory',
-    'available_virtual_memory',
-    'b2g_os_version',
-    'bios_manufacturer',
-    'cpu_usage_flash_process1',
-    'cpu_usage_flash_process2',
-    'dom_ipc_enabled',
-    'em_check_compatibility',
-    'frame_poison_base',
-    'frame_poison_size',
-    'is_garbage_collecting',
-    'min_arm_version',
-    'number_of_processors',
-    'oom_allocation_size',
-    'plugin_cpu_usage',
-    'plugin_hang',
-    'plugin_hang_ui_duration',
-    'startup_time',
-    'system_memory_use_percentage',
-    'theme',
-    'throttleable',
-    'total_virtual_memory',
-    'vendor',
-    'additional_minidumps',
-    'throttle_rate',
-    'useragent_locale',
-    # deliberately not including:
-    #    email
-    #    url
-    #    exploitability
-)
+def get_api_whitelist(include_all_fields=False):
+
+    def get_from_es(include_all_fields):
+        cache_key = 'api_supersearch_fields'
+        fields = cache.get(cache_key)
+        if fields is None:
+            all = SuperSearchFields().get()
+            fields = []
+            for meta in all.itervalues():
+                if (
+                    meta['name'] not in fields and
+                    meta['is_returned'] and (
+                        include_all_fields or
+                        not meta['permissions_needed']
+                    )
+                ):
+                    fields.append(meta['name'])
+            fields = tuple(fields)
+
+            # Cache for 1 hour.
+            cache.set(cache_key, fields, 60 * 60)
+        return fields
+
+    return models.Lazy(
+        functools.partial(get_from_es, include_all_fields)
+    )
 
 
 class SuperSearch(models.SocorroMiddleware):
@@ -103,7 +40,7 @@ class SuperSearch(models.SocorroMiddleware):
     URL_PREFIX = '/supersearch/'
 
     API_WHITELIST = {
-        'hits': SUPERSEARCH_HITS_WHITELIST
+        'hits': get_api_whitelist()
     }
 
     API_CLEAN_SCRUB = (
@@ -137,11 +74,7 @@ class SuperSearch(models.SocorroMiddleware):
 class SuperSearchUnredacted(SuperSearch):
 
     API_WHITELIST = {
-        'hits': SUPERSEARCH_HITS_WHITELIST + (
-            'email',
-            'exploitability',
-            'url',
-        )
+        'hits': get_api_whitelist(include_all_fields=True)
     }
 
     API_CLEAN_SCRUB = None
