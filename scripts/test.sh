@@ -12,9 +12,7 @@ PYTHONPATH=.
 
 PG_RESOURCES=""
 if [ -n "$database_url" ]; then
-    echo database_url supercedes database environment variables for nosetests
-    echo database environment variables are still in effect for setupdb_app
-    # PG_RESOURCES="resource.postgresql.database_url=$database_url"
+    echo database_url exists - explicit setting of PG parameters is unecessary
 else
     # This clause is all legacy and can be removed once we switch to use database_url in config
     if [ -n "$database_hostname" ]; then
@@ -91,11 +89,11 @@ for file in *.py.dist; do
 done
 popd
 
-PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_integration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
+PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_integration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata  --createdb
 
-PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
+PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata --createdb
 
-PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged
+PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --createdb
 
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrade -1
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade heads
