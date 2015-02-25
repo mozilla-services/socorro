@@ -96,7 +96,7 @@ def get_config_manager_for_crontabber(
         #'resource.redactor.redactor_class': Mock(),
         'resource.postgresql.database_name': 'socorro_integration_test',
         'resource.postgresql.database_hostname': 'localhost',
-        'secrets.postgresql.database_username': 'breakpad_rw',
+        'secrets.postgresql.database_username': 'test',
         'secrets.postgresql.database_password': 'aPassword',
     }
     if jobs:

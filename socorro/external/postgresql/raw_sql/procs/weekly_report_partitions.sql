@@ -25,7 +25,7 @@ BEGIN
                 uniques := tabinfo.keys,
                 indexes := tabinfo.indexes,
                 fkeys := tabinfo.fkeys,
-                tableowner := 'breakpad_rw',
+                tableowner := '',
                 partcol := tabinfo.partition_column,
                 timetype := tabinfo.timetype
             );

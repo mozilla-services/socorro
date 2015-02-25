@@ -51,7 +51,6 @@ class TestIntegrationPostgresCrashData(TestCase):
         """
         cursor.executemany(query, table_data)
         connection.commit()
-
         cursor.execute("SELECT weekly_report_partitions(2, '2012-03-14');")
         cursor.execute("SELECT weekly_report_partitions(2, '2012-08-20');")
         connection.commit()
@@ -131,7 +130,7 @@ class TestIntegrationPostgresCrashData(TestCase):
             'logger': mock_logging,
             'database_name': 'socorro_integration_test',
             'database_hostname': 'localhost',
-            'database_username': 'breakpad_rw',
+            'database_username': 'test',
             'database_password': 'aPassword',
           }}]
         )

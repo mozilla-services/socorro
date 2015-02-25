@@ -187,6 +187,7 @@ if [ $? != 0 ]; then
         ./socorro/external/postgresql/setupdb_app.py \
         --database_name=breakpad --fakedata \
         --database_superusername=postgres \
+        --createdb \
         &> /var/log/socorro/setupdb.log
     error $? "Could not create new fakedata DB `cat /var/log/socorro/setupdb.log`"
     popd > /dev/null
