@@ -33,7 +33,7 @@ class PostgreSQLAlchemyManager(object):
     """
         Connection management for PostgreSQL using SQLAlchemy
     """
-    def __init__(self, sa_url, logger, autocommit=False):
+    def __init__(self, sa_url, logger, autocommit=False, on_heroku=False):
         self.engine = create_engine(sa_url,
                                     implicit_returning=False,
                                     isolation_level="READ COMMITTED")
@@ -43,91 +43,91 @@ class PostgreSQLAlchemyManager(object):
         self.metadata.bind = self.engine
         self.session = sessionmaker(bind=self.engine)()
         self.logger = logger
+        self.on_heroku = on_heroku
 
-    def setup_admin(self):
-        self.session.execute('SET check_function_bodies = false')
+    # decorator for heroku stuff
+    def ignore_if_on_heroku(func):
+        def ignored(f_arg, *args, **kwargs):
+            if f_arg.on_heroku:
+                return
+            else:
+                func(f_arg, *args, **kwargs)
+        return ignored
+
+
+    def setup_extensions(self):
+        logging.debug('creating extensions')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         # we only need to create the json extension for pg9.2.*
         if not self.min_ver_check(90300):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
-        self.session.execute(
-            'GRANT ALL ON SCHEMA public TO breakpad_rw')
 
-    def setup(self):
+
+    @ignore_if_on_heroku
+    def grant_public_schema_ownership(self, username):
+        logging.debug('granting ownership of public schema')
+        self.session.execute(
+            'GRANT ALL ON SCHEMA public TO %s' % username)
+
+
+    def turn_function_body_checks_off(self):
+        logging.debug('setting body checks off')
         self.session.execute('SET check_function_bodies = false')
 
-    def create_types(self):
-        types_dir = os.path.normpath(os.path.join(
+
+    def load_raw_sql(self, directory):
+        logging.debug('trying to load raw sql with dir %s' % directory)
+        sqlfile_path = os.path.normpath(os.path.join(
             __file__,
             '..',
-            'raw_sql/types',
+            'raw_sql',
+            directory,
             '*.sql'
         ))
-        for myfile in sorted(glob(types_dir)):
-            custom_type = open(myfile).read()
+        for myfile in sorted(glob(sqlfile_path)):
+            logging.debug('trying to load file %s' % myfile)
+            raw_sql = open(myfile).read()
             try:
-                self.session.execute(custom_type)
+                self.session.execute(raw_sql)
             except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong: %s" % e
+                logging.error("Something went horribly wrong: %s" % e)
                 raise
         return True
 
+
     def create_tables(self):
+        logging.debug('creating all tables')
         status = self.metadata.create_all()
         return status
 
-    def create_procs(self):
-        procs_dir = os.path.normpath(os.path.join(
-            __file__,
-            '..',
-            'raw_sql/procs',
-            '*.sql'
-        ))
-        for file in sorted(glob(procs_dir)):
-            procedure = open(file).read()
-            try:
-                self.session.execute(procedure)
-            except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong: %s" % e
-                raise
-        return True
-
-    def create_views(self):
-        views_dir = os.path.normpath(os.path.join(
-            __file__,
-            '..',
-            'raw_sql/views',
-            '*.sql'
-        ))
-        for file in sorted(glob(views_dir)):
-            procedure = open(file).read()
-            try:
-                self.session.execute(procedure)
-            except exc.SQLAlchemyError, e:
-                print "Something went horribly wrong: %s" % e
-                raise
-        return True
 
     def bulk_load(self, data, table, columns, sep):
+        logging.debug('bulk loading data')
         connection = self.engine.raw_connection()
         cursor = connection.cursor()
         cursor.copy_from(data, table, columns=columns, sep=sep)
         connection.commit()
 
-    def set_default_owner(self, database_name):
+    @ignore_if_on_heroku
+    def set_default_owner(self, database_name, username):
+        logging.debug('setting database %s owner to %s' % (database_name, username))
         self.session.execute("""
-                ALTER DATABASE %s OWNER TO breakpad_rw
-            """ % database_name)
+                ALTER DATABASE %s OWNER TO %s
+            """ % (database_name, username))
 
+    @ignore_if_on_heroku
     def set_table_owner(self, owner):
+        logging.debug('setting all tables owner to %s' % (owner))
         for table in self.metadata.sorted_tables:
             self.session.execute("""
                     ALTER TABLE %s OWNER TO %s
                 """ % (table, owner))
 
+    @ignore_if_on_heroku
     def set_sequence_owner(self, owner):
+        logging.debug('setting all sequences owner to %s' % (owner))
         sequences = self.session.execute("""
                 SELECT n.nspname || '.' || c.relname
                 FROM pg_catalog.pg_class c
@@ -142,7 +142,9 @@ class PostgreSQLAlchemyManager(object):
                     ALTER SEQUENCE %s OWNER TO %s
                 """ % (sequence, owner))
 
+    @ignore_if_on_heroku
     def set_type_owner(self, owner):
+        logging.debug('setting all types owner to %s' % (owner))
         types = self.session.execute("""
                 SELECT
                   n.nspname || '.' || pg_catalog.format_type(t.oid, NULL)
@@ -163,6 +165,7 @@ class PostgreSQLAlchemyManager(object):
                     ALTER TYPE %s OWNER to %s
                 """ % (types, owner))
 
+    @ignore_if_on_heroku
     def set_grants(self, config):
         """
         Grant access to configurable roles to all database tables
@@ -176,7 +179,7 @@ class PostgreSQLAlchemyManager(object):
             config.read_write_users
             config.read_only_users
 
-        Here's our production hierarchy of roles:
+        Our production hierarchy of roles:
 
             breakpad
                 breakpad_metrics
@@ -197,11 +200,13 @@ class PostgreSQLAlchemyManager(object):
             postgres -- superuser
         """
 
+        logging.debug('revoking all grants')
         # REVOKE everything to start
         self.session.execute("""
                 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM %s
             """ % "PUBLIC")
 
+        logging.debug('granting ALL to configured roles')
         # set GRANTS for roles based on configuration
         roles = []
         roles.append("""
@@ -290,6 +295,7 @@ class PostgreSQLAlchemyManager(object):
     def min_ver_check(self, version_required):
         return self.version_number() >= version_required
 
+    @ignore_if_on_heroku
     def create_roles(self, config):
         """
             This function creates two roles: breakpad_ro, breakpad_rw
@@ -300,6 +306,7 @@ class PostgreSQLAlchemyManager(object):
 
             Which all inherit from the two base roles.
         """
+        logging.debug('creating roles from config')
         roles = []
         roles.append("""
             CREATE ROLE breakpad_ro WITH NOSUPERUSER
@@ -344,3 +351,36 @@ class PostgreSQLAlchemyManager(object):
 
     def __exit__(self, *exc_info):
         self.conn.close()
+
+    @ignore_if_on_heroku
+    def drop_database(self, database_name):
+        logging.debug('dropping database %s' % database_name)
+        connection = self.engine.connect()
+        try:
+            # work around for autocommit behavior
+            connection.execute('commit')
+            connection.execute('DROP DATABASE %s' % database_name)
+        except (exc.OperationalError, exc.ProgrammingError), e:
+            if re.search(
+                'database "%s" does not exist' % database_name,
+                e.orig.pgerror.strip()):
+                # already done, no need to rerun
+                logging.warn("The DB %s doesn't exist" % database_name)
+
+    @ignore_if_on_heroku
+    def create_database(self, database_name):
+        logging.debug('creating database %s' % database_name)
+        connection = self.engine.connect()
+        try:
+            # work around for autocommit behavior
+            connection.execute('commit')
+            connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
+                               database_name)
+        except (exc.OperationalError, exc.ProgrammingError), e:
+            if re.search(
+                'database "%s" already exists' % database_name,
+                e.orig.pgerror.strip()):
+                # already done, no need to rerun
+                logging.warn("The DB %s already exists" % database_name)
+                return 0
+            raise
