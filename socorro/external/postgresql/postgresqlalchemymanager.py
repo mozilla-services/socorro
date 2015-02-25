@@ -52,9 +52,8 @@ class PostgreSQLAlchemyManager(object):
         if not self.min_ver_check(90300):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
-        self.session.execute('CREATE SCHEMA bixie')
         self.session.execute(
-            'GRANT ALL ON SCHEMA bixie, public TO breakpad_rw')
+            'GRANT ALL ON SCHEMA public TO breakpad_rw')
 
     def setup(self):
         self.session.execute('SET check_function_bodies = false')
@@ -134,7 +133,7 @@ class PostgreSQLAlchemyManager(object):
                 FROM pg_catalog.pg_class c
                 LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
                 WHERE c.relkind IN ('S')
-                AND n.nspname IN ('public', 'bixie')
+                AND n.nspname IN ('public')
                 AND pg_catalog.pg_table_is_visible(c.oid);
             """).fetchall()
 
@@ -155,7 +154,7 @@ class PostgreSQLAlchemyManager(object):
                     WHERE c.oid = t.typrelid))
                 AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_type el
                     WHERE el.oid = t.typelem AND el.typarray = t.oid)
-                AND n.nspname IN ('public', 'bixie')
+                AND n.nspname IN ('public')
                 AND pg_catalog.pg_type_is_visible(t.oid)
             """).fetchall()
 
@@ -200,17 +199,17 @@ class PostgreSQLAlchemyManager(object):
 
         # REVOKE everything to start
         self.session.execute("""
-                REVOKE ALL ON ALL TABLES IN SCHEMA bixie, public FROM %s
+                REVOKE ALL ON ALL TABLES IN SCHEMA public FROM %s
             """ % "PUBLIC")
 
         # set GRANTS for roles based on configuration
         roles = []
         roles.append("""
-                GRANT ALL ON ALL TABLES IN SCHEMA bixie, public
+                GRANT ALL ON ALL TABLES IN SCHEMA public
                 TO breakpad_rw
             """)
         roles.append("""
-                GRANT SELECT ON ALL TABLES IN SCHEMA bixie, public
+                GRANT SELECT ON ALL TABLES IN SCHEMA public
                 TO breakpad_ro
             """)
 
@@ -253,7 +252,7 @@ class PostgreSQLAlchemyManager(object):
                 FROM pg_catalog.pg_class c
                 LEFT JOIN pg_catalog.pg_namespace n on n.oid = c.relnamespace
                 WHERE c.relkind IN ('S')
-                AND n.nspname IN ('public', 'bixie')
+                AND n.nspname IN ('public')
                 AND pg_catalog.pg_table_is_visible(c.oid);
             """).fetchall()
 

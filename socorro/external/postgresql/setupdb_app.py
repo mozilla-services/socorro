@@ -305,7 +305,7 @@ class SocorroDBApp(App):
             db.create_roles(self.config)
             connection.close()
 
-        # Reconnect to set up bixie schema, types and procs
+        # Reconnect to set up schema, types and procs
         sa_url = url_template + '/%s' % self.database_name
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
