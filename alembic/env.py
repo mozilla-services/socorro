@@ -27,10 +27,10 @@ import re
 
 def include_symbol(tablename, schema):
     """Return True to include this tablename in the schema reflection, only if:
-        * is in the default or bixie schema,
+        * is in the default schema,
         * table is not a partitioned table (ending in '_20130601' for example)
     """
-    return schema in (None, "bixie") and re.search(r'_\d{8}$', tablename) is None
+    return schema in (None, 'bixie') and re.search(r'_\d{8}$', tablename) is None
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
