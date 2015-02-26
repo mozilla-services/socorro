@@ -131,7 +131,7 @@ class TestIntegrationPostgresCrashData(TestCase):
             'logger': mock_logging,
             'database_name': 'socorro_integration_test',
             'database_hostname': 'localhost',
-            'database_username': 'breakpad_rw',
+            'database_username': 'test',
             'database_password': 'aPassword',
           }}]
         )
