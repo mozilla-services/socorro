@@ -8,24 +8,14 @@ Create, prepare and load schema for Socorro PostgreSQL database.
 """
 from __future__ import unicode_literals
 
-import cStringIO
 import logging
 import os
 import re
-import sys
 from glob import glob
 
-from alembic import command
-from alembic.config import Config
-from configman import Namespace
-from psycopg2 import ProgrammingError
 from sqlalchemy import create_engine, exc
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.schema import CreateTable
 
-from socorro.app.generic_app import App, main as configman_main
-from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.models import *
 
 
@@ -54,7 +44,6 @@ class PostgreSQLAlchemyManager(object):
                 func(f_arg, *args, **kwargs)
         return ignored
 
-
     def setup_extensions(self):
         logging.debug('creating extensions')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
@@ -64,18 +53,15 @@ class PostgreSQLAlchemyManager(object):
             self.session.execute(
                 'CREATE EXTENSION IF NOT EXISTS json_enhancements')
 
-
     @ignore_if_on_heroku
     def grant_public_schema_ownership(self, username):
         logging.debug('granting ownership of public schema')
         self.session.execute(
             'GRANT ALL ON SCHEMA public TO %s' % username)
 
-
     def turn_function_body_checks_off(self):
         logging.debug('setting body checks off')
         self.session.execute('SET check_function_bodies = false')
-
 
     def load_raw_sql(self, directory):
         logging.debug('trying to load raw sql with dir %s' % directory)
@@ -96,12 +82,10 @@ class PostgreSQLAlchemyManager(object):
                 raise
         return True
 
-
     def create_tables(self):
         logging.debug('creating all tables')
         status = self.metadata.create_all()
         return status
-
 
     def bulk_load(self, data, table, columns, sep):
         logging.debug('bulk loading data')
@@ -112,7 +96,9 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def set_default_owner(self, database_name, username):
-        logging.debug('setting database %s owner to %s' % (database_name, username))
+        logging.debug('setting database %s owner to %s' % (
+            database_name, username
+        ))
         self.session.execute("""
                 ALTER DATABASE %s OWNER TO %s
             """ % (database_name, username))
@@ -280,18 +266,23 @@ class PostgreSQLAlchemyManager(object):
 
     # get the postgres version as a sortable integer
     def version_number(self):
-        result = self.session.execute("SELECT setting::INT as version FROM pg_settings WHERE name = 'server_version_num'")
+        result = self.session.execute("""
+            SELECT setting::INT as version FROM pg_settings
+            WHERE name = 'server_version_num'
+        """)
         version_info = result.fetchone()
         return version_info["version"]
 
     # get the version as a user-readable string
     def version_string(self):
-        result = self.session.execute("SELECT setting FROM pg_settings WHERE name = 'server_version'")
+        result = self.session.execute("""
+            SELECT setting FROM pg_settings WHERE name = 'server_version'
+        """)
         version_info = result.fetchone()
         return version_info["setting"]
 
-    # compare the actual server version number to a required server version number
-    # version required should be an integer, in the format 90300 for 9.3
+    # compare the server version number to a required server version number
+    # version required should be an integer, eg: 90300 for 9.3
     def min_ver_check(self, version_required):
         return self.version_number() >= version_required
 
@@ -363,7 +354,8 @@ class PostgreSQLAlchemyManager(object):
         except (exc.OperationalError, exc.ProgrammingError), e:
             if re.search(
                 'database "%s" does not exist' % database_name,
-                e.orig.pgerror.strip()):
+                e.orig.pgerror.strip()
+            ):
                 # already done, no need to rerun
                 logging.warn("The DB %s doesn't exist" % database_name)
 
@@ -379,7 +371,8 @@ class PostgreSQLAlchemyManager(object):
         except (exc.OperationalError, exc.ProgrammingError), e:
             if re.search(
                 'database "%s" already exists' % database_name,
-                e.orig.pgerror.strip()):
+                e.orig.pgerror.strip()
+            ):
                 # already done, no need to rerun
                 logging.warn("The DB %s already exists" % database_name)
                 return 0

@@ -13,21 +13,19 @@ import logging
 import os
 import re
 import sys
-from glob import glob
 
 from alembic import command
 from alembic.config import Config
 from configman import Namespace
-from psycopg2 import ProgrammingError
-from sqlalchemy import create_engine, exc
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateTable
 
 from socorro.app.socorro_app import App, main
 from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.models import *
-from socorro.external.postgresql.postgresqlalchemymanager import PostgreSQLAlchemyManager
+from socorro.external.postgresql.postgresqlalchemymanager import (
+    PostgreSQLAlchemyManager
+)
 
 
 ###########################################
@@ -36,10 +34,9 @@ from socorro.external.postgresql.postgresqlalchemymanager import PostgreSQLAlche
 class SocorroDBApp(App):
     """
     SocorroDBApp
-        This function creates a base PostgreSQL schema for Socorro
+        This function creates a base PostgreSQL schema
 
     Notes:
-
         All functions declared need '%' to be escaped as '%%'
 
     """
@@ -237,17 +234,16 @@ class SocorroDBApp(App):
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
 
-
     def create_connection_url(self, database_name, username, password):
         """ helper method to manage superuser and regular user db access """
         hostname = self.config.get('database_hostname')
         port = self.config.get('database_port')
 
         sa_url = 'postgresql://%s:%s@%s:%s/%s' % (
-                username, password, hostname, port, database_name)
+            username, password, hostname, port, database_name
+        )
 
         return sa_url
-
 
     def main(self):
 
@@ -312,7 +308,7 @@ class SocorroDBApp(App):
                 db.create_database(self.database_name)
                 db.create_roles(self.config)
 
-        # Reconnect to set up extensions and other things requiring superuser privs
+        # Reconnect to set up extensions and things requiring superuser privs
         if not self.database_url:
             connection_url = self.create_connection_url(
                 database_name,
