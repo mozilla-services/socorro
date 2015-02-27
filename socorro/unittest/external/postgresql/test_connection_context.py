@@ -87,3 +87,49 @@ class TestConnectionContext(TestCase):
         eq_(_closes, 3)
         eq_(_commits, 0)
         eq_(_rollbacks, 0)
+
+    def test_url_postgres_usage(self):
+
+        class Sneak(ConnectionContext):
+            def connection(self, __=None):
+                assert self.dsn
+                return MockConnection(self.dsn)
+
+        definition = Namespace()
+        local_config = {
+            'database_url': 'postgres://user:password@host:666/name'
+        }
+        postgres = Sneak(definition, local_config)
+        with postgres() as connection:
+            ok_(isinstance(connection, MockConnection))
+            eq_(connection.dsn,
+                 'host=host dbname=name port=666 user=user password=password')
+            eq_(_closes, 0)
+        # exiting the context would lastly call 'connection.close()'
+        eq_(_closes, 1)
+        eq_(_commits, 0)
+        eq_(_rollbacks, 0)
+
+        try:
+            with postgres() as connection:
+                raise NameError('crap')
+        except NameError:
+            pass
+        finally:
+            eq_(_closes, 2)  # second time
+            eq_(_commits, 0)
+            eq_(_rollbacks, 0)
+
+        try:
+            with postgres() as connection:
+                connection.transaction_status = \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                raise psycopg2.OperationalError('crap!')
+            # OperationalError's aren't bubbled up
+        except psycopg2.OperationalError:
+            pass
+
+        eq_(_closes, 3)
+        eq_(_commits, 0)
+        eq_(_rollbacks, 0)
+

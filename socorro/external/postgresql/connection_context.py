@@ -6,9 +6,13 @@ import socket
 import contextlib
 import psycopg2
 import psycopg2.extensions
+import urlparse
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
+
+urlparse.uses_netloc.append('postgres')
+urlparse.uses_netloc.append('postgresql')
 
 
 class ConnectionContext(RequiredConfig):
@@ -49,6 +53,13 @@ class ConnectionContext(RequiredConfig):
         reference_value_from='secrets.postgresql',
         secret=True,
     )
+    required_config.add_option(
+        name='database_url',
+        default=None,
+        doc='URI for connecting to the database, '
+            'format: postgres://username:pass@hostname:port/database',
+        reference_value_from='resource.postgresql',
+    )
 
     # clients of this class may need to detect Exceptions raised in the
     # underlying dbapi2 database module.  Rather that forcing them to import
@@ -68,9 +79,20 @@ class ConnectionContext(RequiredConfig):
             local_config - this is the namespace within the complete config
                            where the actual database parameters are found"""
         super(ConnectionContext, self).__init__()
+
         self.config = config
+
         if local_config is None:
             local_config = config
+
+        if local_config.get('database_url'):
+            url = urlparse.urlparse(local_config['database_url'])
+            local_config['database_username'] = url.username
+            local_config['database_password'] = url.password
+            local_config['database_hostname'] = url.hostname
+            local_config['database_port'] = url.port
+            local_config['database_name'] = url.path[1:]
+
         self.dsn = ("host=%(database_hostname)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
