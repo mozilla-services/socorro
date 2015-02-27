@@ -1,4 +1,4 @@
-from nose.tools import ok_
+from nose.tools import eq_, ok_
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
@@ -154,3 +154,32 @@ class TestForms(TestCase):
         ok_('email' in form.fields)
         ok_('url' in form.fields)
         ok_('exploitability' in form.fields)
+
+    def test_get_fields_list(self):
+
+        def get_new_form(data):
+
+            class User(object):
+                def has_perm(self, permission):
+                    return {
+                        'crashstats.view_pii': False,
+                        'crashstats.view_exploitability': False,
+                    }.get(permission, False)
+
+            return forms.SearchForm(
+                self.all_fields,
+                self.current_products,
+                self.current_versions,
+                self.current_platforms,
+                User(),
+                data
+            )
+
+        form = get_new_form({})
+        assert form.is_valid()
+
+        fields = form.get_fields_list()
+        ok_('version' in fields)
+
+        # Verify there's only one occurence of the version.
+        eq_(fields['version']['values'].count('20.0'), 1)
