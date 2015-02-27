@@ -2,17 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+import urlparse
+
 import socket
 import contextlib
 import psycopg2
 import psycopg2.extensions
-import urlparse
 
 from configman.config_manager import RequiredConfig
 from configman import Namespace
-
-urlparse.uses_netloc.append('postgres')
-urlparse.uses_netloc.append('postgresql')
 
 
 class ConnectionContext(RequiredConfig):
@@ -53,12 +52,15 @@ class ConnectionContext(RequiredConfig):
         reference_value_from='secrets.postgresql',
         secret=True,
     )
+    # Specifying database_url overrides all previously set
+    # connection info settings
     required_config.add_option(
         name='database_url',
-        default=None,
+        default=os.environ.get('database_url', 'postgres:///socorro_integration_test'),
         doc='URI for connecting to the database, '
             'format: postgres://username:pass@hostname:port/database',
         reference_value_from='resource.postgresql',
+        secret=True,
     )
 
     # clients of this class may need to detect Exceptions raised in the
@@ -85,7 +87,8 @@ class ConnectionContext(RequiredConfig):
         if local_config is None:
             local_config = config
 
-        if local_config.get('database_url'):
+        if local_config['database_url']:
+            self.database_url = local_config['database_url']
             url = urlparse.urlparse(local_config['database_url'])
             local_config['database_username'] = url.username
             local_config['database_password'] = url.password
@@ -93,18 +96,26 @@ class ConnectionContext(RequiredConfig):
             local_config['database_port'] = url.port
             local_config['database_name'] = url.path[1:]
 
+            self.db_kwargs = {
+                'host': url.hostname or 'localhost',
+                'user': url.username or os.environ.get('USER', 'test'),
+                'password': url.password or 'aPassword',
+                'port': url.port or 5432,
+                'database': url.path[1:] or 'postgres'
+            }
+
         self.dsn = ("host=%(database_hostname)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
                     "user=%(database_username)s "
                     "password=%(database_password)s") % local_config
         self.operational_exceptions = (
-          psycopg2.OperationalError,
-          psycopg2.InterfaceError,
-          socket.timeout
+            psycopg2.OperationalError,
+            psycopg2.InterfaceError,
+            socket.timeout
         )
         self.conditional_exceptions = (
-          psycopg2.ProgrammingError,
+            psycopg2.ProgrammingError,
         )
 
     #--------------------------------------------------------------------------
@@ -115,7 +126,10 @@ class ConnectionContext(RequiredConfig):
             name_unused - optional named connections.  Used by the
                           derived class
         """
-        return psycopg2.connect(self.dsn)
+        if self.db_kwargs:
+            return psycopg2.connect(**self.db_kwargs)
+        else:
+            return psycopg2.connect(self.dsn)
 
     #--------------------------------------------------------------------------
     @contextlib.contextmanager
@@ -221,7 +235,7 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         if force:
             try:
                 (super(ConnectionContextPooled, self)
-                  .close_connection(connection, force))
+                    .close_connection(connection, force))
             except self.operational_exceptions:
                 self.config.logger.error('PostgresPooled - failed closing')
             for name, conn in self.pool.iteritems():

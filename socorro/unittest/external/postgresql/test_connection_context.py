@@ -46,6 +46,7 @@ class TestConnectionContext(TestCase):
                 assert self.dsn
                 return MockConnection(self.dsn)
 
+        # test no database_url override
         definition = Namespace()
         local_config = {
           'database_hostname': 'host',
@@ -53,6 +54,7 @@ class TestConnectionContext(TestCase):
           'database_port': 'port',
           'database_username': 'user',
           'database_password': 'password',
+          'database_url': None,
         }
         postgres = Sneak(definition, local_config)
         with postgres() as connection:

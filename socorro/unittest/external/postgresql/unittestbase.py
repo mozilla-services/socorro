@@ -2,14 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import urlparse
+import os
 
 import socorro.database.database as db
 from configman import ConfigurationManager, Namespace
 from configman.converters import list_converter
 from socorro.unittest.testbase import TestCase
-
-urlparse.uses_netloc.append('postgres')
 
 
 class PostgreSQLTestCase(TestCase):
@@ -24,7 +22,7 @@ class PostgreSQLTestCase(TestCase):
     required_config.namespace('database')
     required_config.add_option(
         name='database_url',
-        default='postgres://test:aPassword@localhost:5432/socorro_integration_test',
+        default=os.environ.get('database_url', 'postgres:///socorro_integration_test'),
         doc='Name of database to manage',
     )
     required_config.add_option(
@@ -40,7 +38,7 @@ class PostgreSQLTestCase(TestCase):
 
     required_config.add_option(
         name='database_username',
-        default='xtest',
+        default='test',
         doc='Username to connect to database',
     )
 
@@ -127,14 +125,6 @@ class PostgreSQLTestCase(TestCase):
         case (aka. test class).
         """
         cls.config = cls.get_standard_config()
-        if cls.config.get('database_url'):
-            url = urlparse.urlparse(cls.config.database_url)
-            cls.config.database_username = url.username
-            cls.config.database_password = url.password
-            cls.config.database_hostname = url.hostname
-            cls.config.database_port = url.port
-            cls.config.database_name = url.path[1:]
-
         cls.database = db.Database(cls.config)
         cls.connection = cls.database.connection()
 
