@@ -1,7 +1,19 @@
-CREATE OR REPLACE FUNCTION create_weekly_partition(tablename citext, theweek date, partcol text DEFAULT 'date_processed'::text, tableowner text DEFAULT ''::text, uniques text[] DEFAULT '{}'::text[], indexes text[] DEFAULT '{}'::text[], fkeys text[] DEFAULT '{}'::text[], is_utc boolean DEFAULT false, timetype text DEFAULT 'TIMESTAMP'::text) RETURNS boolean
+CREATE OR REPLACE FUNCTION create_weekly_partition(
+    tablename citext,
+    theweek date,
+    partcol text DEFAULT 'date_processed'::text,
+    tableowner text DEFAULT ''::text,
+    uniques text[] DEFAULT '{}'::text[],
+    indexes text[] DEFAULT '{}'::text[],
+    fkeys text[] DEFAULT '{}'::text[],
+    is_utc boolean DEFAULT false,
+    timetype text DEFAULT 'TIMESTAMP'::text
+)
+    RETURNS boolean
     LANGUAGE plpgsql
-    AS $_$
-DECLARE dex INT := 1;
+AS $_$
+DECLARE
+    dex INT := 1;
     thispart TEXT;
     fkstring TEXT;
 BEGIN
@@ -63,5 +75,3 @@ BEGIN
     RETURN TRUE;
 END;
 $_$;
-
-
