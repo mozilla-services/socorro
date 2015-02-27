@@ -15,6 +15,12 @@ TYPE_TO_FIELD_MAPPING = {
 }
 
 
+# Credits: http://www.peterbe.com/plog/uniqifiers-benchmark
+def uniqify_keep_order(seq):
+    seen = set()
+    return [x for x in seq if x not in seen and not seen.add(x)]
+
+
 def make_restricted_choices(sequence, exclude=None):
     if exclude is None:
         exclude = []
@@ -44,9 +50,10 @@ class SearchForm(forms.Form):
                 current_products.keys()
 
         if 'version' in self.all_fields:
-            self.all_fields['version']['form_field_choices'] = [
+            versions = uniqify_keep_order(
                 x['version'] for x in current_versions
-            ]
+            )
+            self.all_fields['version']['form_field_choices'] = versions
 
         if 'platform' in self.all_fields:
             self.all_fields['platform']['form_field_choices'] = [
