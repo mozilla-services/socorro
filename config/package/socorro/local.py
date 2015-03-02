@@ -3,7 +3,7 @@
 
 # To extend any settings from settings/base.py here's an example:
 #from . import base
-#INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
+#INSTALLED_APPS = base.INSTALLED_APPS + ('debug_toolbar',)
 
 ALLOWED_HOSTS = ['crash-stats']
 
@@ -52,7 +52,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'breakpad',
         'USER': 'breakpad_rw',
-        'PASSWORD': '',
+        'PASSWORD': 'aPassword',
         'HOST': 'localhost',
         'PORT': '',
         'OPTIONS': {

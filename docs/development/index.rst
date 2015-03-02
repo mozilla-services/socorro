@@ -8,7 +8,7 @@ Development
 .. toctree::
     dev-services
     build-from-source
-    build-rpm-from-source
+    build-pkg-from-source
     webapp
     api/index
     crontabber
