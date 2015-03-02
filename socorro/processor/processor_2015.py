@@ -177,7 +177,7 @@ class Processor2015(RequiredConfig):
             )
 
     #--------------------------------------------------------------------------
-    def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dumps):
+    def process_crash(self, raw_crash, raw_dumps, processed_crash):
         """Take a raw_crash and its associated raw_dumps and return a
         processed_crash.
         """
@@ -193,8 +193,19 @@ class Processor2015(RequiredConfig):
         processor_meta_data.processor = self
         processor_meta_data.config = self.config
 
-        # create the empty processed crash
-        processed_crash = DotDict()
+        if "processor_notes" in processed_crash:
+            original_processor_notes = [
+                x.strip() for x in processed_crash.processor_notes.split(";")
+            ]
+            processor_meta_data.processor_notes.append(
+                "earlier processing: %s" % processed_crash.get(
+                    "started_datetime",
+                    'Unknown Date'
+                )
+            )
+        else:
+            original_processor_notes = []
+
         processed_crash.success = False
         processed_crash.started_datetime = utc_now()
         # for backwards compatibility:
@@ -242,6 +253,7 @@ class Processor2015(RequiredConfig):
 
         # the processor notes are in the form of a list.  Join them all
         # together to make a single string
+        processor_meta_data.processor_notes.extend(original_processor_notes)
         processed_crash.processor_notes = '; '.join(
             processor_meta_data.processor_notes
         )

@@ -85,15 +85,21 @@ class TestProcessorApp(TestCase):
         config = self.get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
+
         fake_raw_crash = DotDict()
         mocked_get_raw_crash = mock.Mock(return_value=fake_raw_crash)
         pa.source.get_raw_crash = mocked_get_raw_crash
+
         fake_dump = {'upload_file_minidump': 'fake_dump_TEMPORARY.dump'}
         mocked_get_raw_dumps_as_files = mock.Mock(return_value=fake_dump)
         pa.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
-        mocked_convert_raw_crash_to_processed_crash = mock.Mock(return_value=7)
-        pa.processor.convert_raw_crash_to_processed_crash = \
-            mocked_convert_raw_crash_to_processed_crash
+
+        fake_processed_crash = DotDict()
+        mocked_get_unredacted_processed = mock.Mock(return_value=fake_processed_crash)
+        pa.source.get_unredacted_processed = mocked_get_unredacted_processed
+
+        mocked_process_crash = mock.Mock(return_value=7)
+        pa.processor.process_crash = mocked_process_crash
         pa.destination.save_processed = mock.Mock()
         finished_func = mock.Mock()
         with mock.patch('socorro.processor.processor_app.os.unlink') as mocked_unlink:
@@ -102,9 +108,10 @@ class TestProcessorApp(TestCase):
         # test results
         mocked_unlink.assert_called_with('fake_dump_TEMPORARY.dump')
         pa.source.get_raw_crash.assert_called_with(17)
-        pa.processor.convert_raw_crash_to_processed_crash.assert_called_with(
+        pa.processor.process_crash.assert_called_with(
           fake_raw_crash,
-          fake_dump
+          fake_dump,
+          fake_processed_crash
         )
         pa.destination.save_raw_and_processed.assert_called_with(fake_raw_crash, None, 7, 17)
         eq_(finished_func.call_count, 1)

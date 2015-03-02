@@ -115,7 +115,6 @@ class TestProcessor2015(TestCase):
         ok_(isinstance(p.rule_system, DotDict))
         eq_(len(p.rule_system), 2)
         ok_('ruleset01' in p.rule_system)
-        print p.rule_system.ruleset01
         ok_(isinstance(p.rule_system.ruleset01, TransformRuleSystem))
         trs = p.rule_system.ruleset01
         eq_(trs.act, trs.apply_all_rules)
@@ -131,7 +130,7 @@ class TestProcessor2015(TestCase):
         ok_(isinstance(trs.rules[0], SetWindowPos))
         ok_(isinstance(trs.rules[1], UpdateWindowAttributes))
 
-    def test_convert_raw_crash_to_processed_crash_no_rules(self):
+    def test_process_crash_no_rules(self):
         cm = ConfigurationManager(
             definition_source=Processor2015.get_required_config(),
             values_source_list=[{'rule_sets': '[]'}],
@@ -145,9 +144,10 @@ class TestProcessor2015(TestCase):
         raw_dumps = {}
         with patch('socorro.processor.processor_2015.utc_now') as faked_utcnow:
             faked_utcnow.return_value = '2015-01-01T00:00:00'
-            processed_crash = p.convert_raw_crash_to_processed_crash(
+            processed_crash = p.process_crash(
                 raw_crash,
-                raw_dumps
+                raw_dumps,
+                DotDict()
             )
 
         ok_(processed_crash.success)
@@ -156,3 +156,39 @@ class TestProcessor2015(TestCase):
         eq_(processed_crash.completed_datetime, '2015-01-01T00:00:00')
         eq_(processed_crash.completeddatetime, '2015-01-01T00:00:00')
         eq_(processed_crash.processor_notes, 'dwight; Processor2015')
+
+    def test_process_crash_existing_processed_crash(self):
+        cm = ConfigurationManager(
+            definition_source=Processor2015.get_required_config(),
+            values_source_list=[{'rule_sets': '[]'}],
+        )
+        config = cm.get_config()
+        config.logger = Mock()
+        config.processor_name = 'dwight'
+
+        p = Processor2015(config)
+        raw_crash = DotDict()
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processed_crash.processor_notes = "we've been here before; yep"
+        processed_crash.started_datetime = '2014-01-01T00:00:00'
+        with patch('socorro.processor.processor_2015.utc_now') as faked_utcnow:
+            faked_utcnow.return_value = '2015-01-01T00:00:00'
+            processed_crash = p.process_crash(
+                raw_crash,
+                raw_dumps,
+                processed_crash
+            )
+
+        ok_(processed_crash.success)
+        eq_(processed_crash.started_datetime, '2015-01-01T00:00:00')
+        eq_(processed_crash.startedDateTime, '2015-01-01T00:00:00')
+        eq_(processed_crash.completed_datetime, '2015-01-01T00:00:00')
+        eq_(processed_crash.completeddatetime, '2015-01-01T00:00:00')
+        eq_(
+            processed_crash.processor_notes,
+            "dwight; Processor2015; earlier processing: 2014-01-01T00:00:00; "
+            "we've been here before; yep"
+        )
+
+

@@ -16,6 +16,7 @@ from socorro.external.crashstorage_base import (
   PolyCrashStorage,
   CrashIDNotFound,
 )
+from socorro.lib.util import DotDict
 
 
 #==============================================================================
@@ -64,7 +65,7 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.companion_process.add_option(
       'companion_class',
       doc='a classname that runs a process in parallel with the processor',
-      default='',      
+      default='',
       #default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
       from_string_converter=class_converter
     )
@@ -141,13 +142,20 @@ class ProcessorApp(FetchTransformSaveApp):
                 return
 
             try:
+                processed_crash = self.source.get_unredacted_processed(
+                    crash_id
+                )
+            except CrashIDNotFound:
+                processed_crash = DotDict()
 
+            try:
                 if 'uuid' not in raw_crash:
                     raw_crash.uuid = crash_id
                 processed_crash = (
-                    self.processor.convert_raw_crash_to_processed_crash(
+                    self.processor.process_crash(
                         raw_crash,
-                        dumps
+                        dumps,
+                        processed_crash,
                     )
                 )
                 """ bug 866973 - save_raw_and_processed() instead of just
@@ -233,3 +241,4 @@ class ProcessorApp(FetchTransformSaveApp):
 
 if __name__ == '__main__':
     main(ProcessorApp)
+
