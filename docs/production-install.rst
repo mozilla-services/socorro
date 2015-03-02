@@ -69,6 +69,11 @@ Enable RabbitMQ on startup:
   sudo service rabbitmq-server start
   sudo chkconfig rabbitmq-server on
 
+Enable RabbitMQ on startup:
+::
+  sudo service elasticsearch start
+  sudo chkconfig elasticsearch on 
+
 Initialize and enable PostgreSQL on startup:
 ::
   sudo service postgresql-9.3 initdb
