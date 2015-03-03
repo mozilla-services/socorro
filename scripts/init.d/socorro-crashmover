@@ -1,0 +1,72 @@
+#!/bin/bash
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+#
+# socorro-crashmover    Startup script for the Socorro Crashmover
+#
+# chkconfig: 2345 99 01
+# description: Socorro Crashmover service.
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+progname=socorro-crashmover
+
+# Source socorro overrides
+config=/etc/socorro/crashmover.ini
+
+script=socorro/collector/crashmover_app.py
+prefix=/data/socorro
+appdir=${prefix}/application
+python=${prefix}/socorro-virtualenv/bin/python
+pidfile=/var/run/${progname}.pid
+lockfile=/var/lock/${progname}.lock
+logfile=/var/log/socorro/${progname}.log
+user=socorro
+RETVAL=0
+
+start() {
+        echo -n $"Starting ${progname}: "
+        export PYTHONPATH=${appdir}
+        /usr/sbin/daemonize -c ${appdir} -a -e ${logfile} -o ${logfile} -p ${pidfile} -u ${user} -l ${lockfile} ${python} ${appdir}/${script} --admin.conf=${config}
+        RETVAL=$?
+        if [ $RETVAL == 0 ]
+        then
+            echo_success
+        else
+            echo_failure
+        fi
+        echo
+}
+
+stop() {
+  echo -n $"Stopping ${progname}: "
+  killproc -p ${pidfile} -d 15 ${python}
+  RETVAL=$?
+  echo
+}
+
+# See how we were called.
+case "$1" in
+  start)
+  start
+  ;;
+  stop)
+  stop
+  ;;
+  status)
+        status -p ${pidfile} ${python}
+  RETVAL=$?
+  ;;
+  restart)
+  stop
+  start
+  ;;
+  *)
+  echo $"Usage: ${progname} {start|stop|status|restart}"
+  exit 1
+esac
+
+exit $RETVAL
