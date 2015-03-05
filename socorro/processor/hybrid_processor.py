@@ -310,7 +310,7 @@ class HybridCrashProcessor(RequiredConfig):
             os.unlink(file_pathname)
 
     #--------------------------------------------------------------------------
-    def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dumps):
+    def process_crash(self, raw_crash, raw_dumps, ignored_processed_crash):
         """ This function is run only by a worker thread.
             Given a job, fetch a thread local database connection and the json
             document.  Use these to create the record in the 'reports' table,
@@ -1419,8 +1419,8 @@ class HybridCrashProcessor(RequiredConfig):
                     )
 
     #--------------------------------------------------------------------------
-    def __call__(self, raw_crash, raw_dumps):
-        self.convert_raw_crash_to_processed_crash(raw_crash, raw_dumps)
+    def __call__(self, raw_crash, raw_dumps, processed_crash):
+        self.process_crash(raw_crash, raw_dumps, processed_crash)
 
     #--------------------------------------------------------------------------
     def _log_job_start(self, crash_id):

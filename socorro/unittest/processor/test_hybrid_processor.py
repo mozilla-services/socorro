@@ -257,7 +257,7 @@ class TestHybridProcessor(TestCase):
             )
             eq_(m_transform.call_count, 4)
 
-    def test_convert_raw_crash_to_processed_crash_basic(self):
+    def test_process_crash_basic(self):
         config = setup_config_with_mocks()
         mocked_transform_rules_str = \
             'socorro.processor.hybrid_processor.TransformRuleSystem'
@@ -305,9 +305,10 @@ class TestHybridProcessor(TestCase):
 
                  # Here's the call being tested
                 processed_crash = \
-                    leg_proc.convert_raw_crash_to_processed_crash(
+                    leg_proc.process_crash(
                       raw_crash,
-                      raw_dump
+                      raw_dump,
+                      {}
                     )
 
                 # test the result
@@ -410,7 +411,7 @@ class TestHybridProcessor(TestCase):
                     any_order=True
                 )
 
-    def test_convert_raw_crash_to_processed_crash_unexpected_error(self):
+    def test_process_crash_unexpected_error(self):
         config = setup_config_with_mocks()
         mocked_transform_rules_str = \
             'socorro.processor.hybrid_processor.TransformRuleSystem'
@@ -458,9 +459,10 @@ class TestHybridProcessor(TestCase):
 
                  # Here's the call being tested
                 processed_crash = \
-                    leg_proc.convert_raw_crash_to_processed_crash(
+                    leg_proc.process_crash(
                       raw_crash,
-                      raw_dump
+                      raw_dump,
+                      {}
                     )
 
                 eq_(1, leg_proc._log_job_end.call_count)
