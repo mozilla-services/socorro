@@ -54,7 +54,9 @@ class ApplicationDefaultsProxy(object):
             'processor': 'socorro.processor.processor_app.ProcessorApp',
             'fetch': 'socorro.external.fetch_app.FetchApp',
             'copy_processed':
-                'socorro.collector.crashmover_app.ProcessedCrashCopierApp'
+                'socorro.collector.crashmover_app.ProcessedCrashCopierApp',
+            'reprocess_crashlist':
+                'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp'
         }
 
 
