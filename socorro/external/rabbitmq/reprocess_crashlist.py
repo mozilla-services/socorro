@@ -3,18 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pika
-import logging
-logging.basicConfig()
-
 
 from configman import Namespace
 from socorro.app.generic_app import App, main  # main not used here, but
 
 
-#
 # To run this script in production:
 #   export PYTHON=/data/socorro/socorro-virtualenv/bin/python
-#   $PYTHON ~/reprocessing/reprocess_crashlist.py \
+#   $PYTHON ./script/reprocess_crashlist.py \
 #       --admin.conf=/etc/socorro/reprocess_crashlist.ini
 #
 class ReprocessCrashlistApp(App):
@@ -62,7 +58,7 @@ class ReprocessCrashlistApp(App):
     )
 
     def connect(self):
-        logging.debug("connecting to rabbit")
+        self.logging.debug("connecting to rabbit")
         config = self.config.reprocesscrashlist
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -74,7 +70,7 @@ class ReprocessCrashlistApp(App):
                     config.rabbitmq_password))
             )
         except:
-            logging.error("Failed to connect")
+            self.logging.error("Failed to connect")
             raise
         self.connection = connection
 
@@ -92,7 +88,7 @@ class ReprocessCrashlistApp(App):
                     body=uuid,
                     properties=pika.BasicProperties(delivery_mode=2)
                 )
-                logging.debug('submitted %s' % uuid)
+                self.logging.debug('submitted %s' % uuid)
 
         self.connection.close()
 
