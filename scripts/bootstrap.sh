@@ -9,7 +9,7 @@ if [[ ! "$(type -p lessc)" ]]; then
 fi
 
 if [ ! -d "$VIRTUAL_ENV" ]; then
-    virtualenv -p python2.6 ${VIRTUAL_ENV}
+    virtualenv -p $PYTHON ${VIRTUAL_ENV}
 fi
 source "$VIRTUAL_ENV/bin/activate"
 
