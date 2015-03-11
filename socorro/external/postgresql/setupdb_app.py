@@ -247,18 +247,17 @@ class SocorroDBApp(App):
 
     def main(self):
 
+        # We need a database_url or a database_name defined
+        if (self.config.database_url and not self.config.database_name):
+            print "Syntax error: --database_name or --database_url required"
+            return 1
+
         connection_url = ''
 
-        # If we've got a database_url, use that instead of separate args
-        self.database_url = self.config.database_url
-        self.database_name = self.config.database_name
-
-        if self.database_url:
-            connection_url = self.database_url
+        if self.config.database_url:
+            connection_url = self.database_url = self.config.database_url
         else:
-            if not self.database_name:
-                print "Syntax error: --database_name required"
-                return 1
+            self.database_name = self.config.database_name
             connection_url = self.create_connection_url(
                 'postgres',
                 self.config.get('database_superusername'),

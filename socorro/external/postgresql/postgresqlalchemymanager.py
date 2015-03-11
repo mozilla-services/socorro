@@ -37,11 +37,9 @@ class PostgreSQLAlchemyManager(object):
 
     # decorator for heroku stuff
     def ignore_if_on_heroku(func):
-        def ignored(f_arg, *args, **kwargs):
-            if f_arg.on_heroku:
-                return
-            else:
-                func(f_arg, *args, **kwargs)
+        def ignored(self, *args, **kwargs):
+            if not self.on_heroku:
+                return func(self, *args, **kwargs)
         return ignored
 
     def setup_extensions(self):
