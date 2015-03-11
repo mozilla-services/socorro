@@ -67,13 +67,17 @@ then
   exit 1
 fi
 
+# jenkins requires a different alembic default
+if [ $WORKSPACE ]; then
+    sed -i 's:localhost:jenkins-pg92:' config/alembic.ini-dist
+fi
+
 # jenkins only settings for the pre-configman components
 # can be removed when all tests are updated to use configman
 pushd socorro/unittest/config
 for file in *.py.dist; do
   if [ $WORKSPACE ]; then
     cp $JENKINS_CONF commonconfig.py
-    sed -i 's:localhost:jenkins-pg92:' config/alembic.ini-dist
   else
     cp $file `basename $file .dist`
   fi
