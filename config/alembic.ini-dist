@@ -11,7 +11,7 @@ file_template = %%(rev)s_%%(slug)s
 # the 'revision' command, regardless of autogenerate
 # revision_environment = false
 
-sqlalchemy.url = postgresql://test:aPassword@jenkins-pg92/socorro_migration_test
+sqlalchemy.url = postgresql://test:aPassword@localhost/socorro_migration_test
 
 # Logging configuration
 [loggers]

@@ -73,6 +73,7 @@ pushd socorro/unittest/config
 for file in *.py.dist; do
   if [ $WORKSPACE ]; then
     cp $JENKINS_CONF commonconfig.py
+    sed -i 's:localhost:jenkins-pg92:' config/alembic.ini-dist
   else
     cp $file `basename $file .dist`
   fi
