@@ -1,3 +1,4 @@
+export PYTHON=${PYTHON:-"python2.6"}
 export VIRTUAL_ENV=${VIRTUAL_ENV:-"$PWD/socorro-virtualenv"}
 export BUILD_TYPE=${BUILD_TYPE:-"tar"}
 export BUILD_DIR=${BUILD_DIR:-"build/$BUILD_TYPE/socorro"}
