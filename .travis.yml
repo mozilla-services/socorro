@@ -15,7 +15,6 @@ services:
 
 before_install:
   - npm install -g less
-  - sed -i 's:jenkins-pg92:localhost:' config/alembic.ini-dist
   - gem install puppet puppet-lint
   - wget 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.10.tar.gz'
   - tar zxf elasticsearch-0.90.10.tar.gz
