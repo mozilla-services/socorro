@@ -48,6 +48,10 @@
 using namespace google_breakpad;
 using breakpad_extra::HTTPSymbolSupplier;
 
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ < 6)
+#define nullptr __null
+#endif
+
 void error(const char* fmt, ...)
 {
   va_list args;
