@@ -8,7 +8,10 @@ from nose.tools import eq_, ok_
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib.datetimeutil import utc_now
-from .unittestbase import ElasticSearchTestCase
+from .unittestbase import (
+    ElasticSearchTestCase,
+    maximum_es_version
+)
 from .test_supersearch import (
     SUPERSEARCH_FIELDS
 )

@@ -4,12 +4,39 @@
 
 import mock
 import os
+from functools import wraps
+from distutils.version import LooseVersion
 
 from configman import ConfigurationManager
+from nose import SkipTest
 
 from socorro.external.elasticsearch import crashstorage
 from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.unittest.testbase import TestCase
+
+
+# bug 1142475
+def maximum_es_version(maximum_version):
+    """Skip the test if the Elasticsearch version is greater than specified.
+    :arg minimum_version: string; the maximum Elasticsearch version required.
+    """
+    def decorated(test):
+        """Decorator to only run the test if ES version is greater or
+        equal than specified.
+        """
+        @wraps(test)
+        def test_with_version(self):
+            "Only run the test if ES version is not more than specified."
+            request = self.storage.es.send_request('GET', '')
+            actual_version = request['version']['number']
+            if LooseVersion(actual_version) <= LooseVersion(maximum_version):
+                test(self)
+            else:
+                raise SkipTest
+
+        return test_with_version
+
+    return decorated
 
 
 class ElasticSearchTestCase(TestCase):
