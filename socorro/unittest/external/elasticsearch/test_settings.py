@@ -8,7 +8,10 @@ from nose.tools import eq_, ok_
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib.datetimeutil import utc_now
-from .unittestbase import ElasticSearchTestCase
+from .unittestbase import (
+    ElasticSearchTestCase,
+    maximum_es_version
+)
 from .test_supersearch import (
     SUPERSEARCH_FIELDS
 )
@@ -86,6 +89,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(dump='~Windows NT')
         eq_(res['total'], 1)
 
+    @maximum_es_version('0.90')
     def test_cpu_info_field(self):
         """Verify that the 'cpu_info' field can be queried as expected. """
         processed_crash = {
@@ -148,6 +152,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(dom_ipc_enabled='false')
         eq_(res['total'], 2)
 
+    @maximum_es_version('0.90')
     def test_platform_field(self):
         """Verify that the 'platform' field can be queried as expected. """
         processed_crash = {
@@ -163,6 +168,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         eq_(res['total'], 1)
         eq_(res['hits'][0]['platform'], 'Mac OS X')
 
+    @maximum_es_version('0.90')
     def test_app_notes_field(self):
         """Verify that the 'app_notes' field can be queried as expected. """
         processed_crash = {
@@ -211,6 +217,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(process_type=['plugin', 'browser'])
         eq_(res['total'], 2)
 
+    @maximum_es_version('0.90')
     def test_hang_type_field(self):
         """Verify that the 'hang_type' field can be queried as expected. """
         processed_crash = {
@@ -242,6 +249,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(hang_type=['crash', 'hang'])
         eq_(res['total'], 2)
 
+    @maximum_es_version('0.90')
     def test_exploitability_field(self):
         """Verify that the 'exploitability' field can be queried as expected.
         """
@@ -270,6 +278,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(exploitability=['high', 'unknown'])
         eq_(res['total'], 2)
 
+    @maximum_es_version('0.90')
     def test_platform_version_field(self):
         """Verify that the 'platform_version' field can be queried as expected.
         """
