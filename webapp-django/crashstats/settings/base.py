@@ -375,3 +375,21 @@ DATASERVICE_CONFIG_BASE = {
 # We trust that syncdb matches what you'd get if you install
 # all the migrations.
 SOUTH_TESTS_MIGRATE = False
+
+# Credentials for being able to make an S3 connection
+AWS_ACCESS_KEY = ''
+AWS_SECRET_ACCESS_KEY = ''
+
+# Information for uploading symbols to S3
+SYMBOLS_BUCKET_DEFAULT_NAME = ''
+# To set overriding exceptions by email, use:
+SYMBOLS_BUCKET_EXCEPTIONS = {
+    # e.g.
+    # 'joe.bloggs@example.com': 'private-crashes.my-bucket'
+    # or you can specify it as a tuple of (name, location)
+    # 'joe@example.com': ('my-bucket', 'USWest1')
+}
+SYMBOLS_FILE_PREFIX = 'v1'
+# e.g. "us-west-2" see boto.s3.connection.Location
+# Only needed if the bucket has never been created
+SYMBOLS_BUCKET_DEFAULT_LOCATION = None
