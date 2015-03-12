@@ -12,10 +12,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.db import transaction
-from django.core.exceptions import ImproperlyConfigured
-
-import boto
-import boto.exception
 
 from crashstats.tokens.models import Token
 from . import models
@@ -38,89 +34,18 @@ def api_login_required(view_func):
     return inner
 
 
-def check_symbols_archive_content(content):
+def check_symbols_archive_content(content, header_length=2):
     """return an error if there was something wrong"""
     for i, line in enumerate(content.splitlines()):
+        # the first two lines of the `content` is just headers
+        if i <= (header_length - 1):
+            continue
         for snippet in settings.DISALLOWED_SYMBOLS_SNIPPETS:
             if snippet in line:
                 return (
                     "Content of archive file contains the snippet "
                     "'%s' which is not allowed\n" % snippet
                 )
-
-
-def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
-    necessary_setting_keys = (
-        'AWS_ACCESS_KEY',
-        'AWS_SECRET_ACCESS_KEY',
-        'SYMBOLS_BUCKET_DEFAULT_LOCATION',
-        'SYMBOLS_BUCKET_DEFAULT_NAME',
-        'SYMBOLS_FILE_PREFIX',
-    )
-    for key in necessary_setting_keys:
-        if not getattr(settings, key):
-            raise ImproperlyConfigured(
-                "Setting %s must be set" % key
-            )
-
-    conn = boto.connect_s3(
-        settings.AWS_ACCESS_KEY,
-        settings.AWS_SECRET_ACCESS_KEY
-    )
-    assert bucket_name
-    try:
-        bucket = conn.get_bucket(bucket_name)
-    except boto.exception.S3ResponseError:
-        bucket = conn.create_bucket(bucket_name, bucket_location)
-
-    total_uploaded = 0
-    for member in iterator:
-        key_name = os.path.join(
-            settings.SYMBOLS_FILE_PREFIX, member.name
-        )
-        key = bucket.get_key(key_name)
-
-        # let's assume first that we need to add a new key
-        prefix = "+"
-        if key:
-            # key already exists, but is it the same size?
-            if key.size != member.size:
-                # file size in S3 is different, upload the new one
-                key = None
-            else:
-                prefix = '='
-
-        if not key:
-            key = bucket.new_key(key_name)
-
-            file = StringIO()
-            file.write(member.extractor().read())
-            uploaded = key.set_contents_from_string(file.getvalue())
-            total_uploaded += uploaded
-
-        symbols_upload.content += '%s%s,%s\n' % (
-            prefix,
-            key.bucket.name,
-            key.key
-        )
-        symbols_upload.save()
-
-    return total_uploaded
-
-
-def get_bucket_name_and_location(user):
-    """return a tuple of (name, location) that might depend on the
-    user."""
-    name = settings.SYMBOLS_BUCKET_DEFAULT_NAME
-    location = settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
-    exception = settings.SYMBOLS_BUCKET_EXCEPTIONS.get(user.email)
-    if isinstance(exception, (list, tuple)):
-        # the exception was a 2-items tuple of name and location
-        name, location = exception
-    elif exception:
-        # then it was just a string
-        name = exception
-    return name, location
 
 
 @login_required
@@ -170,22 +95,10 @@ def web_upload(request):
 
             symbols_upload = models.SymbolsUpload.objects.create(
                 user=request.user,
-                content='',
+                content=content,
                 size=form.cleaned_data['file'].size,
                 filename=os.path.basename(form.cleaned_data['file'].name),
-            )
-            form.cleaned_data['file'].file.seek(0)
-            bucket_name, bucket_location = get_bucket_name_and_location(
-                request.user
-            )
-            unpack_and_upload(
-                utils.get_archive_members(
-                    form.cleaned_data['file'].file,
-                    content_type
-                ),
-                symbols_upload,
-                bucket_name,
-                bucket_location
+                file=form.cleaned_data['file'],
             )
             messages.success(
                 request,
@@ -233,15 +146,12 @@ def upload(request):
     for name in request.FILES:
         upload = request.FILES[name]
         size = upload.size
-        if name.endswith('.tar.gz') or name.endswith('.tgz'):
-            content_type = 'application/x-gzip'
-        elif name.endswith('.zip'):
-            content_type = 'application/zip'
         break
     else:
-        return http.HttpResponseBadRequest(
-            "Must be multipart form data with key 'file'"
-        )
+        name = 'temp.zip'
+        body = request.body
+        size = len(body)
+        upload = StringIO(body)
 
     if not size:
         return http.HttpResponseBadRequest('File size 0')
@@ -254,30 +164,38 @@ def upload(request):
     if error:
         return http.HttpResponseBadRequest(error)
 
-    symbols_upload = models.SymbolsUpload.objects.create(
+    models.SymbolsUpload.objects.create(
         user=request.user,
         size=size,
-        content='',
+        content=content,
         filename=name,
-    )
-    bucket_name, bucket_location = get_bucket_name_and_location(
-        request.user
-    )
-    unpack_and_upload(
-        utils.get_archive_members(
-            upload,
-            content_type
-        ),
-        symbols_upload,
-        bucket_name,
-        bucket_location
+        file=upload,
     )
 
     return http.HttpResponse('OK', status=201)
 
 
 @login_required
-def content(request, pk):
+def download(request, pk):
+    symbols_upload = get_object_or_404(
+        models.SymbolsUpload,
+        pk=pk
+    )
+    if not request.user.is_superuser:
+        if symbols_upload.user != request.user:
+            return http.HttpResponseForbidden('Not yours')
+    response = http.HttpResponse(
+        symbols_upload.file.read(),
+        content_type=utils.filename_to_mimetype(symbols_upload.filename)
+    )
+    response['Content-Disposition'] = (
+        'attachment; filename="%s"' % (symbols_upload.filename,)
+    )
+    return response
+
+
+@login_required
+def preview(request, pk):
     symbols_upload = get_object_or_404(
         models.SymbolsUpload,
         pk=pk

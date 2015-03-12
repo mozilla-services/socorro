@@ -57,7 +57,7 @@ curl -X POST -H "Auth-Token: XXXYOURAPITOKENXXX" --form myfile.zip=@path/to/myfi
         <h4>Example using <b>Python</b> and <a href="http://requests.readthedocs.org/">requests</a></h4>
         <pre>
 >>> url = '{{ absolute_base_url }}{{ url('symbols:upload') }}'
->>> files = {'myfile.zip': open('path/to/myfile.zip', 'rb')}
+>>> files = {'myfile.zip': open('path/to/myfile.zip', 'rb').read()}
 >>> response = requests.post(url, files=files, headers={'Auth-token': 'XXXYOURAPITOKENXXX'})
 >>> request.status_code
 201</pre>
