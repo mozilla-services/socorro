@@ -18,7 +18,10 @@ from socorro.external import (
 from socorro.external.elasticsearch import crashstorage
 from socorro.external.elasticsearch.supersearch import SuperSearch
 from socorro.lib import datetimeutil, search_common
-from .unittestbase import ElasticSearchTestCase
+from .unittestbase import (
+    ElasticSearchTestCase,
+    maximum_es_version
+)
 
 # Remove debugging noise during development
 import logging
@@ -1040,6 +1043,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # processed_crash.json_dump.write_combine_size
         ok_('write_combine_size' in res['hits'][0])
 
+    @maximum_es_version('0.90')
     def test_get_individual_filters(self):
         """Test a search with single filters returns expected results. """
         # Test signature
@@ -1201,6 +1205,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res['total'], 1)
         eq_(res['hits'][0]['useragent_locale'], 'fr')
 
+    @maximum_es_version('0.90')
     def test_get_with_range_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
@@ -1261,6 +1266,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res['total'], 1)
         eq_(res['hits'][0]['available_virtual_memory'], 0)
 
+    @maximum_es_version('0.90')
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
@@ -1527,6 +1533,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res['total'], 21)
         eq_(len(res['hits']), 0)
 
+    @maximum_es_version('0.90')
     def test_get_with_not_operator(self):
         """Test a search with a few NOT operators. """
         # Test signature
@@ -1722,6 +1729,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             {u'type': u'long'},
         )
 
+    @maximum_es_version('0.90')
     def test_update_field(self):
         es = self.storage.es
         config = self.get_config_context()
@@ -1802,6 +1810,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             id='product',
         )
 
+    @maximum_es_version('0.90')
     def test_get_missing_fields(self):
         config = self.get_config_context(
             es_index='socorro_integration_test_%W'
