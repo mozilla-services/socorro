@@ -15,7 +15,7 @@ from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.unittest.testbase import TestCase
 
 
-# bug 1142475
+# bug 1142475; for legacy purposes only.
 def maximum_es_version(maximum_version):
     """Skip the test if the Elasticsearch version is greater than specified.
     :arg minimum_version: string; the maximum Elasticsearch version required.
