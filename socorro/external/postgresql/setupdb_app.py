@@ -253,8 +253,9 @@ class SocorroDBApp(App):
             return 1
 
         connection_url = ''
+        has_database_url = False
 
-        if self.config.database_url:
+        if self.config.database_url is not None:
             connection_url = self.database_url = self.config.database_url
         else:
             self.database_name = self.config.database_name
@@ -263,6 +264,7 @@ class SocorroDBApp(App):
                 self.config.get('database_superusername'),
                 self.config.get('database_superuserpassword')
             )
+            has_database_url = True
 
         self.no_schema = self.config.no_schema
         self.on_heroku = self.config.on_heroku
@@ -308,7 +310,7 @@ class SocorroDBApp(App):
                 db.create_roles(self.config)
 
         # Reconnect to set up extensions and things requiring superuser privs
-        if not self.database_url:
+        if has_database_url:
             connection_url = self.create_connection_url(
                 database_name,
                 self.config.get('database_superusername'),
@@ -328,7 +330,7 @@ class SocorroDBApp(App):
             return 0
 
         # Reconnect as a regular user to set up schema, types and procs
-        if not self.database_url:
+        if has_database_url:
             connection_url = self.create_connection_url(
                 database_name,
                 database_username,
@@ -357,7 +359,7 @@ class SocorroDBApp(App):
             db.session.close()
 
         # Reconnect to clean up permissions
-        if not self.database_url:
+        if has_database_url:
             connection_url = self.create_connection_url(
                 database_name,
                 self.config.get('database_superusername'),

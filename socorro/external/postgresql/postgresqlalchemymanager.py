@@ -43,7 +43,7 @@ class PostgreSQLAlchemyManager(object):
         return ignored
 
     def setup_extensions(self):
-        logging.debug('creating extensions')
+        self.logger.debug('creating extensions')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS citext')
         self.session.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         # we only need to create the json extension for pg9.2.*
@@ -53,16 +53,16 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def grant_public_schema_ownership(self, username):
-        logging.debug('granting ownership of public schema')
+        self.logger.debug('granting ownership of public schema')
         self.session.execute(
             'GRANT ALL ON SCHEMA public TO %s' % username)
 
     def turn_function_body_checks_off(self):
-        logging.debug('setting body checks off')
+        self.logger.debug('setting body checks off')
         self.session.execute('SET check_function_bodies = false')
 
     def load_raw_sql(self, directory):
-        logging.debug('trying to load raw sql with dir %s' % directory)
+        self.logger.debug('trying to load raw sql with dir %s' % directory)
         sqlfile_path = os.path.normpath(os.path.join(
             __file__,
             '..',
@@ -71,22 +71,22 @@ class PostgreSQLAlchemyManager(object):
             '*.sql'
         ))
         for myfile in sorted(glob(sqlfile_path)):
-            logging.debug('trying to load file %s' % myfile)
+            self.logger.debug('trying to load file %s' % myfile)
             raw_sql = open(myfile).read()
             try:
                 self.session.execute(raw_sql)
             except exc.SQLAlchemyError, e:
-                logging.error("Something went horribly wrong: %s" % e)
+                self.logger.error("Something went horribly wrong: %s" % e)
                 raise
         return True
 
     def create_tables(self):
-        logging.debug('creating all tables')
+        self.logger.debug('creating all tables')
         status = self.metadata.create_all()
         return status
 
     def bulk_load(self, data, table, columns, sep):
-        logging.debug('bulk loading data')
+        self.logger.debug('bulk loading data')
         connection = self.engine.raw_connection()
         cursor = connection.cursor()
         cursor.copy_from(data, table, columns=columns, sep=sep)
@@ -94,7 +94,7 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def set_default_owner(self, database_name, username):
-        logging.debug('setting database %s owner to %s' % (
+        self.logger.debug('setting database %s owner to %s' % (
             database_name, username
         ))
         self.session.execute("""
@@ -103,7 +103,7 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def set_table_owner(self, owner):
-        logging.debug('setting all tables owner to %s' % (owner))
+        self.logger.debug('setting all tables owner to %s' % (owner))
         for table in self.metadata.sorted_tables:
             self.session.execute("""
                     ALTER TABLE %s OWNER TO %s
@@ -111,7 +111,7 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def set_sequence_owner(self, owner):
-        logging.debug('setting all sequences owner to %s' % (owner))
+        self.logger.debug('setting all sequences owner to %s' % (owner))
         sequences = self.session.execute("""
                 SELECT n.nspname || '.' || c.relname
                 FROM pg_catalog.pg_class c
@@ -128,7 +128,7 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def set_type_owner(self, owner):
-        logging.debug('setting all types owner to %s' % (owner))
+        self.logger.debug('setting all types owner to %s' % (owner))
         types = self.session.execute("""
                 SELECT
                   n.nspname || '.' || pg_catalog.format_type(t.oid, NULL)
@@ -184,13 +184,13 @@ class PostgreSQLAlchemyManager(object):
             postgres -- superuser
         """
 
-        logging.debug('revoking all grants')
+        self.logger.debug('revoking all grants')
         # REVOKE everything to start
         self.session.execute("""
                 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM %s
             """ % "PUBLIC")
 
-        logging.debug('granting ALL to configured roles')
+        self.logger.debug('granting ALL to configured roles')
         # set GRANTS for roles based on configuration
         roles = []
         roles.append("""
@@ -295,7 +295,7 @@ class PostgreSQLAlchemyManager(object):
 
             Which all inherit from the two base roles.
         """
-        logging.debug('creating roles from config')
+        self.logger.debug('creating roles from config')
         roles = []
         roles.append("""
             CREATE ROLE breakpad_ro WITH NOSUPERUSER
@@ -343,7 +343,7 @@ class PostgreSQLAlchemyManager(object):
 
     @ignore_if_on_heroku
     def drop_database(self, database_name):
-        logging.debug('dropping database %s' % database_name)
+        self.logger.debug('dropping database %s' % database_name)
         connection = self.engine.connect()
         try:
             # work around for autocommit behavior
@@ -355,11 +355,11 @@ class PostgreSQLAlchemyManager(object):
                 e.orig.pgerror.strip()
             ):
                 # already done, no need to rerun
-                logging.warn("The DB %s doesn't exist" % database_name)
+                self.logger.warning("The DB %s doesn't exist" % database_name)
 
     @ignore_if_on_heroku
     def create_database(self, database_name):
-        logging.debug('creating database %s' % database_name)
+        self.logger.debug('creating database %s' % database_name)
         connection = self.engine.connect()
         try:
             # work around for autocommit behavior
@@ -372,6 +372,6 @@ class PostgreSQLAlchemyManager(object):
                 e.orig.pgerror.strip()
             ):
                 # already done, no need to rerun
-                logging.warn("The DB %s already exists" % database_name)
+                self.logger.warning("The DB %s already exists" % database_name)
                 return 0
             raise
