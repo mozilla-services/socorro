@@ -13,7 +13,7 @@ from nose.tools import eq_, ok_, assert_raises
 from django.core.cache import cache
 from django.conf import settings
 
-from crashstats.base.tests.testbase import TestCase
+from crashstats.base.tests.testbase import DjangoTestCase, TestCase
 from crashstats.crashstats import models
 
 
@@ -35,7 +35,7 @@ class TestExceptions(TestCase):
             eq_(exp.status, 500)
 
 
-class TestModels(TestCase):
+class TestModels(DjangoTestCase):
 
     def setUp(self):
         super(TestModels, self).setUp()
@@ -553,6 +553,36 @@ class TestModels(TestCase):
             date_range_type='report',
             limit=336
         )
+
+    @mock.patch('requests.get')
+    def test_tcbs_with_analyze_model_fetches_on(self, rget):
+        # doesn't actually matter so much which model we're executing
+        model = models.TCBS
+        api = model()
+
+        def mocked_get(**options):
+            return Response("""
+               {"crashes": [],
+                "totalPercentage": 0,
+                "start_date": "2012-05-10",
+                "end_date": "2012-05-24",
+                "totalNumberOfCrashes": 0}
+              """)
+
+        rget.side_effect = mocked_get
+
+        # before this shouldn't cache anything
+        assert not cache.get('all_urls')
+        with self.settings(ANALYZE_MODEL_FETCHES=True):
+            api.get(
+                product='Thunderbird',
+                version='12.0',
+                crash_type='plugin',
+                end_date=datetime.datetime.utcnow(),
+                date_range_type='report',
+                limit=336
+            )
+        ok_(cache.get('all_urls'))
 
     def test_tcbs_parameter_type_error(self):
         model = models.TCBS
