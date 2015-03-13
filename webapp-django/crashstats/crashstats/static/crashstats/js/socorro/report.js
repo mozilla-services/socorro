@@ -1,7 +1,17 @@
 /*jslint browser:true, regexp:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
-    $('#report-index').tabs({ selected: 0 });
+    $('#report-index').tabs({
+        selected: 0,
+        activate: function(event, ui) {
+            if (typeof ga !== 'undefined') {
+                // google analytics
+                // the last `true` is to tell GA this is non-interactive
+                var panelID = ui.newPanel.attr('id');
+                ga('send', 'event', 'tab', 'report_index', panelID, true);
+            }
+        }
+    });
     // See also correlation.js which uses these tabs
     var shouldLoadCPU = true,
         t;
