@@ -166,7 +166,7 @@ def has_permissions(user, permissions):
     return True
 
 
-@waffle_switch('app_api_all')
+@waffle_switch('!app_api_all_disabled')
 @ratelimit(
     method=['GET', 'POST', 'PUT'],
     rate=settings.API_RATE_LIMIT,
@@ -354,7 +354,7 @@ def model_wrapper(request, model_name):
     return result
 
 
-@waffle_switch('app_api_all')
+@waffle_switch('!app_api_all_disabled')
 def documentation(request):
     endpoints = [
     ]

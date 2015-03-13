@@ -8,7 +8,6 @@ from django.conf import settings
 
 import mock
 from nose.tools import eq_, ok_
-from waffle import Switch
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import (
@@ -39,17 +38,6 @@ class TestDedentLeft(TestCase):
 
 class TestDocumentationViews(BaseTestViews):
 
-    @staticmethod
-    def setUpClass():
-        TestDocumentationViews.switch = Switch.objects.create(
-            name='app_api_all',
-            active=True,
-        )
-
-    @staticmethod
-    def tearDownClass():
-        TestDocumentationViews.switch.delete()
-
     @mock.patch('requests.get')
     def test_documentation_home_page(self, rget):
         def mocked_get(url, params, **options):
@@ -68,17 +56,6 @@ class TestDocumentationViews(BaseTestViews):
 
 
 class TestViews(BaseTestViews):
-
-    @staticmethod
-    def setUpClass():
-        TestViews.switch = Switch.objects.create(
-            name='app_api_all',
-            active=True,
-        )
-
-    @staticmethod
-    def tearDownClass():
-        TestViews.switch.delete()
 
     def setUp(self):
         super(TestViews, self).setUp()
