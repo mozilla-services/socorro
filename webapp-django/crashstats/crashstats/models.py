@@ -156,10 +156,10 @@ def measure_fetches(method):
                 if value not in all:
                     all.append(value)
                     cache.set(key, all, 60 * 60 * 24)
+
+                valuekey = hashlib.md5(value.encode('utf-8')).hexdigest()
                 for prefix, incr in (('times', msecs), ('uses', 1)):
-                    key = '%s_%s_%s' % (prefix, hit_or_miss, value)
-                    # memcache is max 250 but raises warnings >240
-                    key = key[:240]
+                    key = '%s_%s_%s' % (prefix, hit_or_miss, valuekey)
                     try:
                         cache.incr(key, incr)
                     except ValueError:

@@ -4,6 +4,7 @@ import functools
 import copy
 import urllib
 import collections
+import hashlib
 
 from django import http
 from django.conf import settings
@@ -409,17 +410,18 @@ def analyze_model_fetches(request):
         all = cache.get('all_%s' % value_type) or []
         records = []
         for item in all:
-            item = item[:220]
+            itemkey = hashlib.md5(item.encode('utf-8')).hexdigest()
+
             data = {}
             data['times'] = {}
-            data['times']['hits'] = cache.get('times_HIT_%s' % item, 0)
-            data['times']['misses'] = cache.get('times_MISS_%s' % item, 0)
+            data['times']['hits'] = cache.get('times_HIT_%s' % itemkey, 0)
+            data['times']['misses'] = cache.get('times_MISS_%s' % itemkey, 0)
             data['times']['both'] = (
                 data['times']['hits'] + data['times']['misses']
             )
             data['uses'] = {}
-            data['uses']['hits'] = cache.get('uses_HIT_%s' % item, 0)
-            data['uses']['misses'] = cache.get('uses_MISS_%s' % item, 0)
+            data['uses']['hits'] = cache.get('uses_HIT_%s' % itemkey, 0)
+            data['uses']['misses'] = cache.get('uses_MISS_%s' % itemkey, 0)
             data['uses']['both'] = (
                 data['uses']['hits'] + data['uses']['misses']
             )
