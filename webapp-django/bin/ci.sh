@@ -11,7 +11,7 @@ source ${VIRTUAL_ENV:-"../socorro-virtualenv"}/bin/activate
 find . -name '*.pyc' -exec rm {} \;
 
 echo "Linting..."
-git ls-files crashstats | xargs check.py | bin/linting.py
+git ls-files crashstats | grep '\.py$' | xargs flake8 | bin/linting.py
 
 echo "Starting tests..."
 FORCE_DB=true python manage.py test --noinput

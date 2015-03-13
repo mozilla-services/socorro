@@ -2,11 +2,11 @@
 """
 Use like this:
 
-    find somedir | xargs check.py | python linting.py
+    find somedir | xargs flake8 | python linting.py
 
 or:
 
-    check.py somedir | python linting.py
+    flake8 somedir | python linting.py
 
 or:
 
