@@ -24,9 +24,10 @@ from socorro.lib.datetimeutil import UTC, datetimeFromISOdateString
 from socorro.lib.context_tools import temp_file_context
 
 from socorro.external.postgresql.dbapi2_util import (
-        execute_query_fetchall,
-        execute_no_results
+    execute_query_fetchall,
+    execute_no_results
 )
+
 
 #==============================================================================
 class ProductRule(Rule):
@@ -390,6 +391,7 @@ class OutOfMemoryBinaryRule(Rule):
             )
         return True
 
+
 #--------------------------------------------------------------------------
 def setup_product_id_map(config, local_config, args_unused):
     database_connection = local_config.database_class(local_config)
@@ -412,6 +414,7 @@ def setup_product_id_map(config, local_config, args_unused):
             'rewrite': rewrite
         }
     return product_id_map
+
 
 #==============================================================================
 class ProductRewrite(Rule):
@@ -439,13 +442,22 @@ class ProductRewrite(Rule):
     )
 
     #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(ProductRewrite, self).__init__(config)
+        self.product_id_map = setup_product_id_map(
+            config,
+            config,
+            None
+        )
+
+    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
-            return raw_crash['ProductID'] in self.config.product_id_map
+            return raw_crash['ProductID'] in self.product_id_map
         except KeyError:
             # no ProductID
             return False
@@ -459,7 +471,7 @@ class ProductRewrite(Rule):
             return False
         old_product_name = raw_crash['ProductName']
         new_product_name = (
-            self.config.product_id_map[product_id]['product_name']
+            self.product_id_map[product_id]['product_name']
         )
         raw_crash['ProductName'] = new_product_name
         self.config.logger.debug(
