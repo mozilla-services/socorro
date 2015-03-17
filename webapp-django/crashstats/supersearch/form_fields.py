@@ -97,8 +97,9 @@ class MultiplePrefixedValueField(PrefixedField):
                 *args,
                 **kwargs
             )
-            cleaned_values.append(cleaned_value)
-            prefixed_values.append(self.prefixed_value)
+            if cleaned_value is not None:
+                cleaned_values.append(cleaned_value)
+                prefixed_values.append(self.prefixed_value)
 
         self.prefixed_value = prefixed_values
         return cleaned_values

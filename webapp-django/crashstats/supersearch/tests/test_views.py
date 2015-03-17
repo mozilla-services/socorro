@@ -541,6 +541,13 @@ class TestViews(BaseTestViews):
         ok_('1.0' not in response.content)
         ok_('2017' not in response.content)
 
+        # Test missing parameters don't raise an exception.
+        response = self.client.get(
+            url,
+            {'product': 'WaterWolf', 'date': '', 'build_id': ''}
+        )
+        eq_(response.status_code, 200)
+
     @mock.patch('requests.post')
     @mock.patch('requests.get')
     def test_search_results_admin_mode(self, rget, rpost):
