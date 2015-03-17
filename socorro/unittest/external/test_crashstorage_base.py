@@ -10,6 +10,7 @@ from socorro.external.crashstorage_base import (
     PolyStorageError,
     PolyCrashStorage,
     FallbackCrashStorage,
+    MigrationCrashStorage,
     PrimaryDeferredStorage,
     PrimaryDeferredProcessedStorage,
     Redactor,
@@ -349,6 +350,107 @@ class TestBase(TestCase):
                               fb_store.close)
             fb_store.primary_store.close.assert_called_with()
             fb_store.fallback_store.close.assert_called_with()
+
+    def test_migration_crash_storage(self):
+        n = Namespace()
+        n.add_option(
+          'storage',
+          default=MigrationCrashStorage,
+        )
+        n.add_option(
+          'logger',
+          default=mock.Mock(),
+        )
+        value = {'primary.storage_class':
+                    'socorro.unittest.external.test_crashstorage_base.A',
+                 'fallback.storage_class':
+                    'socorro.unittest.external.test_crashstorage_base.B',
+                 'date_threshold': '150315'
+                }
+        cm = ConfigurationManager(
+            n,
+            values_source_list=[value],
+            argv_source=[]
+        )
+        with cm.context() as config:
+            raw_crash = {'ooid': ''}
+            before_crash_id = '1498dee9-9a45-45cc-8ec8-71bb62150314'
+            after_crash_id = '1498dee9-9a45-45cc-8ec8-71bb62150315'
+            dump = '12345'
+            processed_crash = {'ooid': '', 'product': 17}
+            migration_store = config.storage(config)
+
+            # save_raw tests
+            # save to primary
+            migration_store.primary_store.save_raw_crash = Mock()
+            migration_store.fallback_store.save_raw_crash = Mock()
+            migration_store.save_raw_crash(raw_crash, dump, after_crash_id)
+            migration_store.primary_store.save_raw_crash.assert_called_with(
+              raw_crash,
+              dump,
+              after_crash_id
+            )
+            eq_(migration_store.fallback_store.save_raw_crash.call_count, 0)
+
+            # save to fallback
+            migration_store.primary_store.save_raw_crash = Mock()
+            migration_store.fallback_store.save_raw_crash = Mock()
+            migration_store.save_raw_crash(raw_crash, dump, before_crash_id)
+            eq_(migration_store.primary_store.save_raw_crash.call_count, 0)
+            migration_store.fallback_store.save_raw_crash.assert_called_with(
+              raw_crash,
+              dump,
+              before_crash_id
+            )
+
+            # save_processed tests
+            # save to primary
+            processed_crash['crash_id'] = after_crash_id
+            migration_store.primary_store.save_processed = Mock()
+            migration_store.fallback_store.save_processed = Mock()
+            migration_store.save_processed(processed_crash)
+            migration_store.primary_store.save_processed.assert_called_with(
+              processed_crash
+            )
+            eq_(migration_store.fallback_store.save_processed.call_count, 0)
+
+            # save to fallback
+            processed_crash['crash_id'] = before_crash_id
+            migration_store.primary_store.save_processed = Mock()
+            migration_store.fallback_store.save_processed = Mock()
+            migration_store.save_processed(processed_crash)
+            eq_(migration_store.primary_store.save_processed.call_count, 0)
+            migration_store.fallback_store.save_processed.assert_called_with(
+              processed_crash
+            )
+
+            # close tests
+            migration_store.primary_store.close = Mock()
+            migration_store.fallback_store.close = Mock()
+            migration_store.close()
+            migration_store.primary_store.close.assert_called_with()
+            migration_store.fallback_store.close.assert_called_with()
+
+            migration_store.primary_store.close = Mock()
+            migration_store.fallback_store.close = Mock()
+            migration_store.fallback_store.close.side_effect = NotImplementedError()
+            migration_store.close()
+            migration_store.primary_store.close.assert_called_with()
+            migration_store.fallback_store.close.assert_called_with()
+
+            migration_store.primary_store.close = Mock()
+            migration_store.primary_store.close.side_effect = Exception('!')
+            migration_store.close()
+            migration_store.primary_store.close.assert_called_with()
+            migration_store.fallback_store.close.assert_called_with()
+
+            migration_store.fallback_store.close = Mock()
+            migration_store.fallback_store.close.side_effect = Exception('!')
+            assert_raises(PolyStorageError,
+                              migration_store.close)
+            migration_store.primary_store.close.assert_called_with()
+            migration_store.fallback_store.close.assert_called_with()
+
 
     def test_deferred_crash_storage(self):
         n = Namespace()
