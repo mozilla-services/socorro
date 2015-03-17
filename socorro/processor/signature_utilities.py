@@ -220,6 +220,7 @@ class CSignatureTool(CSignatureToolBase):
         default="""'|'.join([
           '@0x[0-9a-fA-F]{2,}',
           '@0x[1-9a-fA-F]',
+          '__aeabi_fcmpgt.*',
           'ashmem',
           'app_process@0x.*',
           'core\.odex@0x.*',
