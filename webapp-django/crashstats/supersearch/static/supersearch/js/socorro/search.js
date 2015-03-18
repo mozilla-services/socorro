@@ -411,7 +411,7 @@ $(function () {
     submitButton.click(function (e) {
         e.preventDefault();
 
-        var params = form.dynamicForm('getParams');
+        var params = currentMode.getParams();
         var url = prepareResultsQueryString(params);
 
         updatePublicApiUrl(params);
