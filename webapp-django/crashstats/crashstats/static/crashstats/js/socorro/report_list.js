@@ -51,12 +51,7 @@ $(document).ready(function () {
                 $element.attr('href', href + '#tab-' + id);
             });
             Panels.trigger(id);
-            // inform google analytics
-            if (typeof ga !== 'undefined') {
-                // google analytics
-                // the last `true` is to tell GA this is non-interactive
-                ga('send', 'event', 'tab', 'report_list', id, true);
-            }
+            Analytics.trackTabSwitch('report_list', id);
         },
         create: function(event, ui) {
             Panels.trigger($(ui.panel[0]).attr('id'));
