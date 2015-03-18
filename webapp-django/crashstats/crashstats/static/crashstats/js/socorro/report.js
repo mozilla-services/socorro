@@ -1,7 +1,12 @@
 /*jslint browser:true, regexp:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
-    $('#report-index').tabs({ selected: 0 });
+    $('#report-index').tabs({
+        selected: 0,
+        activate: function(event, ui) {
+            Analytics.trackTabSwitch('report_index', ui.newPanel.attr('id'));
+        }
+    });
     // See also correlation.js which uses these tabs
     var shouldLoadCPU = true,
         t;

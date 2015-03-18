@@ -51,6 +51,7 @@ $(document).ready(function () {
                 $element.attr('href', href + '#tab-' + id);
             });
             Panels.trigger(id);
+            Analytics.trackTabSwitch('report_list', id);
         },
         create: function(event, ui) {
             Panels.trigger($(ui.panel[0]).attr('id'));

@@ -1,3 +1,5 @@
+/*global $ window Analytics */
+
 $(function () {
     'use strict';
 
@@ -27,7 +29,7 @@ $(function () {
         contentElt.empty().append($('<div>', {'class': 'loader'}));
 
         // If a tracker is available, track that AJAX call.
-        window.socorroTrackUse(url);
+        Analytics.trackPageview(url);
 
         $.ajax({
             url: url,
