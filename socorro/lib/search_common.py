@@ -75,6 +75,7 @@ class SearchBase(object):
         SearchFilter('_results_number', data_type='int', default=100),
         SearchFilter('_results_offset', data_type='int', default=0),
         SearchFilter('_return_query', data_type='bool', default=False),
+        SearchFilter('_sort', default=''),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -157,7 +158,7 @@ class SearchBase(object):
                             (param.name, value, param.data_type)
                         )
 
-                    if not param.name in parameters:
+                    if param.name not in parameters:
                         parameters[param.name] = []
 
                     if not operator:
@@ -199,7 +200,7 @@ class SearchBase(object):
             days=self.config.search_maximum_date_range
         )
 
-        if not 'date' in parameters:
+        if 'date' not in parameters:
             now = datetimeutil.utc_now()
             lastweek = now - default_date_range
 

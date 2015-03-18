@@ -24,11 +24,11 @@ from .unittestbase import (
 )
 
 # Remove debugging noise during development
-import logging
-logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
-logging.getLogger('elasticutils').setLevel(logging.ERROR)
-logging.getLogger('requests.packages.urllib3.connectionpool')\
-       .setLevel(logging.ERROR)
+# import logging
+# logging.getLogger('pyelasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('elasticutils').setLevel(logging.ERROR)
+# logging.getLogger('requests.packages.urllib3.connectionpool')\
+#        .setLevel(logging.ERROR)
 
 
 SUPERSEARCH_FIELDS = {
@@ -1532,6 +1532,48 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         res = self.api.get(**kwargs)
         eq_(res['total'], 21)
         eq_(len(res['hits']), 0)
+
+    def test_get_with_sorting(self):
+        """Test a search with sort returns expected results. """
+        res = self.api.get(_sort='product')
+        ok_(res['total'] > 0)
+
+        last_item = ''
+        for hit in res['hits']:
+            ok_(last_item <= hit['product'], (last_item, hit['product']))
+            last_item = hit['product']
+
+        # Descending order.
+        res = self.api.get(_sort='-product')
+        ok_(res['total'] > 0)
+
+        last_item = 'zzzzz'
+        for hit in res['hits']:
+            ok_(last_item >= hit['product'], (last_item, hit['product']))
+            last_item = hit['product']
+
+        # Several fields.
+        res = self.api.get(_sort=['product', 'email'])
+        ok_(res['total'] > 0)
+
+        last_product = ''
+        last_email = ''
+        for hit in res['hits']:
+            if hit['product'] != last_product:
+                last_email = ''
+
+            ok_(last_product <= hit['product'], (last_product, hit['product']))
+            last_product = hit['product']
+
+            ok_(last_email <= hit['email'], (last_email, hit['email']))
+            last_email = hit['email']
+
+        # Invalid field.
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            _sort='something',
+        )  # `something` is invalid
 
     @maximum_es_version('0.90')
     def test_get_with_not_operator(self):

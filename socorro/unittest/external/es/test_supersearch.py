@@ -455,6 +455,66 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(len(res['hits']), 0)
 
     @minimum_es_version('1.0')
+    def test_get_with_sorting(self):
+        """Test a search with sort returns expected results. """
+        self.index_crash({
+            'product': 'WaterWolf',
+            'os_name': 'Windows NT',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'product': 'WaterWolf',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'product': 'NightTrain',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.refresh_index()
+
+        res = self.api.get(_sort='product')
+        ok_(res['total'] > 0)
+
+        last_item = ''
+        for hit in res['hits']:
+            ok_(last_item <= hit['product'], (last_item, hit['product']))
+            last_item = hit['product']
+
+        # Descending order.
+        res = self.api.get(_sort='-product')
+        ok_(res['total'] > 0)
+
+        last_item = 'zzzzz'
+        for hit in res['hits']:
+            ok_(last_item >= hit['product'], (last_item, hit['product']))
+            last_item = hit['product']
+
+        # Several fields.
+        res = self.api.get(_sort=['product', 'platform'])
+        ok_(res['total'] > 0)
+
+        last_product = ''
+        last_platform = ''
+        for hit in res['hits']:
+            if hit['product'] != last_product:
+                last_platform = ''
+
+            ok_(last_product <= hit['product'], (last_product, hit['product']))
+            last_product = hit['product']
+
+            ok_(last_platform <= hit['platform'], (last_platform, hit['platform']))
+            last_platform = hit['platform']
+
+        # Invalid field.
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            _sort='something',
+        )  # `something` is invalid
+
+    @minimum_es_version('1.0')
     def test_get_with_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',

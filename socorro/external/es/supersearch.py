@@ -296,6 +296,46 @@ class SuperSearch(SearchBase):
 
         search = search.filter(filters)
 
+        # Sorting.
+        sort_fields = []
+        for param in params['_sort']:
+            for value in param.value:
+                if not value:
+                    continue
+
+                # Values starting with a '-' are sorted in descending order.
+                # In order to retrieve the database name of the field, we
+                # must first remove the '-' part and add it back later.
+                # Example: given ['product', '-version'], the results will be
+                # sorted by ascending product and descending version.
+                desc = False
+                if value.startswith('-'):
+                    desc = True
+                    value = value[1:]
+
+                try:
+                    field_ = self.all_fields[value]
+                except KeyError:
+                    # That is not a known field, we can't sort on it.
+                    raise BadArgumentError(
+                        value,
+                        msg='Unknown field "%s", cannot sort on it' % value
+                    )
+
+                field_name = '%s.%s' % (
+                    field_['namespace'],
+                    field_['in_database_name']
+                )
+
+                if desc:
+                    # The underlying library understands that '-' means
+                    # sorting in descending order.
+                    field_name = '-' + field_name
+
+                sort_fields.append(field_name)
+
+        search = search.sort(*sort_fields)
+
         # Pagination.
         results_to = results_from + results_number
         search = search[results_from:results_to]
@@ -336,7 +376,7 @@ class SuperSearch(SearchBase):
             for x in self.all_fields.values()
             if x['is_returned']
         ]
-        search = search.fields(*fields)
+        search = search.fields(fields)
 
         if params['_return_query'][0].value[0]:
             # Return only the JSON query that would be sent to elasticsearch.
