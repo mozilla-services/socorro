@@ -1,1 +1,0 @@
-*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh

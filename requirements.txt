@@ -30,6 +30,7 @@ mercurial==2.7.1
 honcho==0.5.0
 # sha256: th84eGr2uNZEtTBVIBLWacdBX89YUt4yDykIANuXmD0
 gunicorn==18.0
+# sha256: wLOB1sItqTHoXj7-YSYp_jOgGsJbDwKKpjG4XYbVAos
 uWSGI==2.0.10
 
 # prod requirements

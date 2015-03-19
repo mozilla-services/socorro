@@ -1,25 +1,69 @@
 .. index:: configuring-socorro
 
-Configuring Socorro
-===================
+Configure and run Socorro
+=========================
+
+Initial setup
+-------------
+
+Socorro provides a setup script which attempts to initialize everything::
+
+    sudo setup-socorro.sh
+
+Start services
+--------------
+
+A full Socorro install requires the following to be running::
+
+    sudo systemctl enable socorro-collector
+    sudo systemctl enable socorro-processor
+    sudo systemctl enable socorro-middleware
+    sudo systemctl enable socorro-webapp
+
+Configure Nginx
+---------------
+
+Public-facing services like socorro-collector and socorro-webapp
+should be fronted by a webserver like Nginx.
+
+The default systemd service files expect a /var/run/uwsgi/ directory
+to exist and be writable by the socorro user.
+
+For instance socorro-collector can be exposed via its uwsgi socket::
+    
+        location / {
+                uwsgi_pass unix:/var/run/uwsgi/socorro-collector.sock;
+                include uwsgi_params;
+        }
+
+The socorro-webapp service needs static files to be exposed as well::
+
+
+        location / {
+                uwsgi_pass unix:/var/run/uwsgi/socorro-webapp.sock;
+                include uwsgi_params;
+        }
+
+        location /static {
+                alias /data/socorro/webapp-django/static/;
+        }
+
+Cron jobs
+---------
+
+Socorro uses a crontab manager called Crontabber. This needs
+to be in /etc/cron.d/socorro on a single host (generally referred to
+as the "admin host")::
+
+    */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+
+Set up crash-stats web site
+===========================
 
 Socorro produces graphs and reports, most are updated once per day.
 
 You must enter information about your releases into Socorro in order
 for this to work, and this information must match the incoming crashes.
-
-Configure Elasticsearch
------------------------
-
-Some key features of Socorro (like Super Search) depend on Elasticsearch.
-This service needs to be initialized before it can be used:
-
-.. code-block:: bash
-
-    cd scripts && python ./setup_supersearch_app.py
-
-For more comprehensive information about our use of Elasticsearch, head to
-our :ref:`elasticsearch-chapter` documentation page.
 
 Becoming a superuser
 --------------------
@@ -31,7 +75,8 @@ least once** using the email address you want to identify as a
 superuser. Once you've done that, run the following command::
 
     cd /data/socorro
-    ./socorro-virtualenv/bin/python webapp-django/manage.py makesuperuser theemail@address.com
+    ./socorro-virtualenv/bin/python webapp-django/manage.py \
+        makesuperuser theemail@address.com
 
 Now the user with this email address should see a link to "Admin" in
 the footer.
@@ -58,7 +103,7 @@ http://crash-stats/admin/featured-versions/
 
 Make sure to restart memcached so you see your changes right away:
 ::
-  sudo /etc/init.d/memcached restart
+  sudo systemctl restart memcached
 
 Now go to the front page for your application. For example, if your application
 was named "KillerApp" then it will appear at:
