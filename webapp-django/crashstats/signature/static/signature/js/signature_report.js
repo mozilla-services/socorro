@@ -32,6 +32,8 @@ $(function () {
         $('.selected', panelsNavSection).removeClass('selected');
         $('.' + tabName, panelsNavSection).addClass('selected');
 
+        Analytics.trackTabSwitch('signature_report', tabName);
+
         loadTab(tabName);
 
         // Hide all main panels.

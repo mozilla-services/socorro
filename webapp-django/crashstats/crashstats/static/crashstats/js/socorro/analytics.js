@@ -10,7 +10,7 @@ var Analytics = (function() {
     }
 
     return {
-        trackTab: function(page, id) {
+        trackTabSwitch: function(page, id) {
             wrap('send', 'event', 'tab', page, id);
         },
         trackPageview: function(url) {
