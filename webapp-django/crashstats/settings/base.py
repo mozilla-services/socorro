@@ -82,6 +82,7 @@ MIDDLEWARE_CLASSES = (
     'commonware.middleware.FrameOptionsHeader',
 
     'waffle.middleware.WaffleMiddleware',
+    'ratelimit.middleware.RatelimitMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
     '%s.crashstats.middleware.Propagate400Errors' % PROJECT_MODULE,
 )
@@ -345,6 +346,12 @@ DISALLOWED_SYMBOLS_SNIPPETS = (
 
 # Rate limit for when using the Web API for anonymous hits
 API_RATE_LIMIT = '10/m'
+
+# Rate limit when using the supersearch web interface
+RATELIMIT_SUPERSEARCH = '10/m'
+
+# Path to the view that gets executed if you hit upon a ratelimit block
+RATELIMIT_VIEW = 'crashstats.crashstats.views.ratelimit_blocked'
 
 # When we pull platforms from the Platforms API we later decide which of
 # these to display at various points in the UI.

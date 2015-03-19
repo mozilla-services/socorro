@@ -30,6 +30,30 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
 
 
+def ratelimit_blocked(request, exception):
+    # http://tools.ietf.org/html/rfc6585#page-3
+    status = 429
+
+    # If the request is an AJAX on, we return a plain short string.
+    # Also, if the request is coming from something like curl, it will
+    # send the header `Accept: */*`. But if you take the same URL and open
+    # it in the browser it'll look something like:
+    # `Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8`
+    if (
+        request.is_ajax() or
+        'text/html' not in request.META.get('HTTP_ACCEPT', '')
+    ):
+        # Return a super spartan message.
+        # We could also do something like `{"error": "Too Many Requests"}`
+        return http.HttpResponse(
+            'Too Many Requests',
+            status=status,
+            content_type='text/plain'
+        )
+
+    return render(request, 'crashstats/ratelimit_blocked.html', status=status)
+
+
 def robots_txt(request):
     return http.HttpResponse(
         'User-agent: *\n'

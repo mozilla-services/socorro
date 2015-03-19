@@ -348,3 +348,17 @@ def add_CORS_header(f):
         response['Access-Control-Allow-Origin'] = '*'
         return response
     return wrapper
+
+
+def ratelimit_rate(group, request):
+    """return None if we don't want to set any rate limit.
+    Otherwise return a number according to
+    https://django-ratelimit.readthedocs.org/en/latest/rates.html#rates-chapter
+    """
+    if not request.user.is_authenticated():
+        if group == 'crashstats.api.views.model_wrapper':
+            return settings.API_RATE_LIMIT
+        elif group.startswith('crashstats.supersearch.views.search'):
+            # this applies to both the web view and ajax views
+            return settings.RATELIMIT_SUPERSEARCH
+        raise NotImplementedError(group)

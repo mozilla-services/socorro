@@ -1,0 +1,32 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}
+Ratelimit blocked
+{% endblock %}
+
+{% block product_nav_filter %}&nbsp;{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+<div class="page-heading">
+    <h2>Hold your horses!</h2>
+    <h3>Ratelimit blocked</h3>
+</div>
+
+<div class="panel">
+    <div class="body">
+      <p>
+        You have been temporarily blocked due to excessive
+        use that we can't handle at the moment.
+      </p>
+      {% if not request.user.is_authenticated() %}
+      <p>
+        If you can, consider signing in.
+      </p>
+      {% endif %}
+    </div>
+</div>
+
+
+</div>
+{% endblock %}

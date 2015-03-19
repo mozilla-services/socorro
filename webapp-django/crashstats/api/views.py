@@ -155,10 +155,6 @@ BLACKLIST = (
 )
 
 
-def _skip_ratelimit(request):
-    return request.user.is_authenticated()
-
-
 def has_permissions(user, permissions):
     for permission in permissions:
         if not user.has_perm(permission):
@@ -168,9 +164,10 @@ def has_permissions(user, permissions):
 
 @waffle_switch('!app_api_all_disabled')
 @ratelimit(
+    key='ip',
     method=['GET', 'POST', 'PUT'],
-    rate=settings.API_RATE_LIMIT,
-    skip_if=_skip_ratelimit
+    rate=utils.ratelimit_rate,
+    block=True
 )
 @utils.add_CORS_header  # must be before `utils.json_view`
 @utils.json_view
@@ -210,12 +207,6 @@ def model_wrapper(request, model_name):
             "Use of this endpoint requires the '%s' permission\n" %
             (', '.join(permission_names))
         )
-
-    # XXX use RatelimitMiddleware instead of this in case
-    # we ratelimit multiple views
-    if getattr(request, 'limited', False):
-        # http://tools.ietf.org/html/rfc6585#page-3
-        return http.HttpResponse('Too Many Requests', status=429)
 
     # it being set to None means it's been deliberately disabled
     if getattr(model, 'API_WHITELIST', False) is False:
