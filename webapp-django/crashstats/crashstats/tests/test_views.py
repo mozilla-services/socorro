@@ -3,7 +3,10 @@ import csv
 import datetime
 import json
 import mock
+import os
 import re
+import shutil
+import tempfile
 import urllib
 
 import pyquery
@@ -264,9 +267,20 @@ class RobotsTestViews(DjangoTestCase):
 class FaviconTestViews(DjangoTestCase):
 
     def test_favicon(self):
-        response = self.client.get('/favicon.ico')
-        eq_(response.status_code, 200)
-        eq_(response['Content-Type'], 'image/x-icon')
+        tmp_static_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp_static_root)
+
+        favicon_dir = os.path.join(tmp_static_root, 'img')
+        os.makedirs(favicon_dir)
+
+        favicon_path = os.path.join(favicon_dir, 'favicon.ico')
+        with open(favicon_path, 'wb') as icon:
+            icon.write('totally fake')
+
+        with self.settings(STATIC_ROOT=tmp_static_root):
+            response = self.client.get('/favicon.ico')
+            eq_(response.status_code, 200)
+            ok_('image/x-icon' in response['Content-Type'])
 
 
 class BaseTestViews(DjangoTestCase):
