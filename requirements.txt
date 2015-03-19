@@ -129,9 +129,9 @@ https://github.com/rhelmer/pyinotify/archive/9ff352f.zip#egg=pyinotify
 
 # things needed specifically for the webapp
 
-# sha256: zu6D_0xPoUYSif4HpYeehEAIn63eFQ1AdTaRzdjJQsE
-# sha256: VOtZznhUAcfR_e7SRe_OWX6Q-BHWog9rXGkxwASdY6Y
-Django==1.6.10
+# sha256: byzISLK3Kt9TpvPyG-BJxHfoLECLznzttX7-sJhL3iQ
+# sha256: flDlc-SEQ1hzs1FdeYLYAJOyaVq6F_0P8CQwdFTcOlY
+Django==1.6.11
 # sha256: 1BuH0etCTRi6Lb5zMTHp2HPnCcwR63PaJIw07sHV7W4
 django-browserid==0.10.1
 # sha256: akF58qKszaKyc7_Ybeb3AkzuIDBDzJp8BA_nswa74SA
