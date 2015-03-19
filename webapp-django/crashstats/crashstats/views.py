@@ -1,4 +1,3 @@
-import os
 import json
 import datetime
 import logging
@@ -37,20 +36,6 @@ def robots_txt(request):
         '%s: /' % ('Allow' if settings.ENGAGE_ROBOTS else 'Disallow'),
         content_type='text/plain',
     )
-
-
-def favicon_ico(request):
-    """return the favicon with the content type forced so we don't have to
-    rely on `mimetypes` to guess it non-deterministically per OS.
-
-    The reason for doing /favicon.ico in django instead of setting up
-    an Apache rewrite rule is to reduce complexity. Having it here means
-    it's predictable and means fewer things to go wrong outside just getting
-    this up and running.
-    """
-    filename = os.path.join(settings.STATIC_ROOT, 'img', 'favicon.ico')
-    with open(filename) as f:
-        return http.HttpResponse(f.read(), content_type='image/x-icon')
 
 
 def has_builds(product, versions):
@@ -469,7 +454,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
 
     os_api = models.Platforms()
     operating_systems = os_api.get()
-    if os_name not in (os['name'] for os in operating_systems):
+    if os_name not in (os_['name'] for os_ in operating_systems):
         os_name = None
 
     context['os_name'] = os_name
