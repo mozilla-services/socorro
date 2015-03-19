@@ -19,10 +19,6 @@ urlpatterns = patterns(
     '',
     (r'^(?P<path>contribute\.json)$', 'django.views.static.serve',
      {'document_root': os.path.join(settings.ROOT, '..')}),
-    (r'^(?P<path>favicon\.ico)$', 'django.views.static.serve',
-     {'document_root': os.path.join(
-         settings.ROOT, 'crashstats', 'base', 'static', 'img'
-     )}),
     (r'', include(urls, namespace='crashstats')),
     (r'', include(supersearch_urls)),
     (r'^signature/', include(

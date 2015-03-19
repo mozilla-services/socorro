@@ -23,6 +23,9 @@ report_list_partials = (
 
 urlpatterns = patterns(
     '',  # prefix
+    url('^favicon\.ico$',
+        views.favicon_ico,
+        name='favicon_ico'),
     url('^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
