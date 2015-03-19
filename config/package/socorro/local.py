@@ -13,11 +13,11 @@ CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False
 
 # Socorro middleware instance to use
-MWARE_BASE_URL = 'http://localhost/bpapi'
+MWARE_BASE_URL = 'http://localhost'
 MWARE_USERNAME = None
 MWARE_PASSWORD = None
 # HTTP/1.1 Host header to pass - in case this is a VHost
-MWARE_HTTP_HOST = 'socorro-api'
+MWARE_HTTP_HOST = 'socorro-middleware'
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
