@@ -875,45 +875,43 @@ class TestModels(DjangoTestCase):
         ok_(r['product'])
         ok_(r['exploitability'])
 
-    @mock.patch('crashstats.crashstats.models.settings'
-                '.DATASERVICE_CONFIG.services.Bugs')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     def test_bugs(self, rpost):
         model = models.Bugs
         api = model()
 
         def mocked_post(**options):
-            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
+            assert options == {'signatures': 'Pickle::ReadBytes'}
             return {"hits": ["123456789"]}
         rpost.side_effect = mocked_post
 
-        r = api.get(signatures='Pickle::ReadBytes')
-        ok_(r['hits'])
+        r = api.bug_ids(signatures='Pickle::ReadBytes')
+        ok_(r)
 
     def test_bugs_called_without_signatures(self):
         model = models.Bugs
         api = model()
 
-        assert_raises(ValueError, api.get)
+        assert_raises(TypeError, api.signatures)
 
-    @mock.patch('crashstats.crashstats.models.settings'
-                '.DATASERVICE_CONFIG.services.Bugs')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     def test_signatures_by_bugs(self, rpost):
-        model = models.SignaturesByBugs
+        model = models.Bugs
         api = model()
 
         def mocked_post(**options):
-            assert options['data'] == {'bug_ids': '123456789'}
+            assert options == {'bug_ids': '123456789'}
             return {"hits": {"signatures": "Pickle::ReadBytes"}}
 
         rpost.side_effect = mocked_post
-        r = api.get(bug_ids='123456789')
-        ok_(r['hits'])
+        r = api.signatures(bug_ids='123456789')
+        ok_(r)
 
     def test_sigs_by_bugs_called_without_bug_ids(self):
-        model = models.SignaturesByBugs
+        model = models.Bugs
         api = model()
 
-        assert_raises(ValueError, api.get)
+        assert_raises(TypeError, api.bug_ids)
 
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):

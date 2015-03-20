@@ -5,7 +5,7 @@
 from nose.tools import eq_, ok_
 from unittest import TestCase
 
-from socorro.dataservice.util import (
+from socorro.models.util import (
     string_to_list,
     classes_in_namespaces_converter,
 )
