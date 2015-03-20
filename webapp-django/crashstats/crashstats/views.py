@@ -374,8 +374,8 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
         if len(bin(bug_number)[2:]) > 32:
             return http.HttpResponseBadRequest('invalid bug number')
 
-        sig_by_bugs_api = models.SignaturesByBugs()
-        signatures = sig_by_bugs_api.get(bug_ids=bug_number)['hits']
+        sig_by_bugs_api = models.Bugs()
+        signatures = sig_by_bugs_api.signatures(bug_ids=bug_number)
         context['signatures'] = signatures
         context['bug_number'] = bug_number
 
@@ -511,9 +511,9 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         context['numberOfCrashes'] += crash['count']
 
     bugs = defaultdict(list)
-    api = models.Bugs()
+    bugs_model_impl = models.Bugs()
     if signatures:
-        for b in api.get(signatures=signatures)['hits']:
+        for b in bugs_model_impl.signatures(signatures=signatures):
             bugs[b['signature']].append(b['id'])
 
     for crash in tcbs['crashes']:
@@ -989,8 +989,8 @@ def exploitable_crashes(
     bugs = defaultdict(list)
     signatures = [x['signature'] for x in exploitable['hits']]
     if signatures:
-        api = models.Bugs()
-        for b in api.get(signatures=signatures)['hits']:
+        bugs_model_impl = models.Bugs()
+        for b in bugs_model_impl.bug_ids(signatures=signatures):
             bugs[b['signature']].append(b['id'])
     for crash in exploitable['hits']:
         crash['bugs'] = sorted(bugs.get(crash['signature'], []), reverse=True)
@@ -1093,9 +1093,9 @@ def report_index(request, crash_id, default_context=None):
         process_type = 'content'
     context['process_type'] = process_type
 
-    bugs_api = models.Bugs()
-    hits = bugs_api.get(signatures=[context['report']['signature']])['hits']
-    # bugs_api.get(signatures=...) will return all signatures associated
+    bugs_model = models.Bugs()
+    hits = bugs_model.bug_ids(signatures=[context['report']['signature']])
+    # bugs_model.bug_ids(signatures=...) will return all signatures associated
     # with the bugs found, but we only want those with matching signature
     context['bug_associations'] = [
         x for x in hits
@@ -1599,10 +1599,10 @@ def report_list(request, partial=None, default_context=None):
         context['comments']['total_count'] = context['comments']['total']
 
     if partial == 'bugzilla':
-        bugs_api = models.Bugs()
-        context['bug_associations'] = bugs_api.get(
+        bugs_model = models.Bugs()
+        context['bug_associations'] = bugs_model.bug_ids(
             signatures=[context['signature']]
-        )['hits']
+        )
 
         context['bug_associations'].sort(key=lambda x: x['id'], reverse=True)
 

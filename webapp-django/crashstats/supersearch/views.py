@@ -209,7 +209,7 @@ def search_results(request):
         if signatures:
             bugs = defaultdict(list)
             bugs_api = models.Bugs()
-            for b in bugs_api.get(signatures=signatures)['hits']:
+            for b in bugs_api.signatures(signatures=signatures):
                 bugs[b['signature']].append(b['id'])
 
             for hit in search_results['facets']['signature']:

@@ -119,13 +119,12 @@ SAMPLE_UNREDACTED = """ {
     }
 } """
 
-BUG_STATUS = {
-    "hits": [
-        {"id": "222222", "signature": "FakeSignature1"},
-        {"id": "333333", "signature": "FakeSignature1"},
-        {"id": "444444", "signature": "Other FakeSignature"}
-    ]
-}
+BUG_STATUS = [
+    {"id": "222222", "signature": "FakeSignature1"},
+    {"id": "333333", "signature": "FakeSignature1"},
+    {"id": "444444", "signature": "Other FakeSignature"}
+]
+
 
 SAMPLE_SIGNATURE_SUMMARY = {
     "reports": {
@@ -216,22 +215,18 @@ SAMPLE_SIGNATURE_SUMMARY = {
 
 # Helper mocks for several tests
 def mocked_post_123(**options):
-    return {
-        "hits": [{
-            "id": "123456789",
-            "signature": "Something"
-        }]
-    }
+    return [{
+        "id": "123456789",
+        "signature": "Something"
+    }]
 
 
 def mocked_post_threesigs(**options):
-    return {
-        "hits": [
-            {"id": "111111111", "signature": "FakeSignature 1"},
-            {"id": "222222222", "signature": "FakeSignature 3"},
-            {"id": "101010101", "signature": "FakeSignature"}
-        ]
-    }
+    return [
+        {"id": "111111111", "signature": "FakeSignature 1"},
+        {"id": "222222222", "signature": "FakeSignature 3"},
+        {"id": "101010101", "signature": "FakeSignature"}
+    ]
 
 
 def mocked_post_nohits(**options):
@@ -1178,7 +1173,7 @@ class TestViews(BaseTestViews):
             in response.content
         )
 
-    @mock.patch('crashstats.crashstats.models.SignaturesByBugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     @mock.patch('requests.get')
     def test_topcrasher_ranks_bybug(self, rget, rpost):
         url = reverse('crashstats:topcrasher_ranks_bybug')
@@ -1304,7 +1299,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'bug_number': '1234564654564646'})
         eq_(response.status_code, 400)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     @mock.patch('requests.get')
     def test_topcrasher(self, rget, rpost):
         # first without a version
@@ -1323,16 +1318,20 @@ class TestViews(BaseTestViews):
         ok_(url in response['Location'])
 
         def mocked_post(**options):
-            return {
-                "hits": [
-                   {"id": 123456789,
-                    "signature": "Something"},
-                    {"id": 22222,
-                     "signature": u"FakeSignature1 \u7684 Japanese"},
-                    {"id": 33333,
-                     "signature": u"FakeSignature1 \u7684 Japanese"}
-                ]
-            }
+            return [
+                {
+                    "id": 123456789,
+                    "signature": "Something"
+                },
+                {
+                    "id": 22222,
+                    "signature": u"FakeSignature1 \u7684 Japanese"
+                },
+                {
+                    "id": 33333,
+                    "signature": u"FakeSignature1 \u7684 Japanese"
+                }
+            ]
         rpost.side_effect = mocked_post
 
         def mocked_get(url, params, **options):
@@ -1452,7 +1451,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     @mock.patch('requests.get')
     def test_topcrasher_without_any_signatures(self, rget, rpost):
         # first without a version
@@ -1544,7 +1543,7 @@ class TestViews(BaseTestViews):
         )
         ok_(response['location'].endswith(correct_url))
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget, rpost):
         url = reverse(
@@ -1604,7 +1603,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'page': 'meow'})
         ok_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_exploitable_crashes_by_product_and_version(self, rget, rpost):
         url = reverse(
@@ -2250,7 +2249,7 @@ class TestViews(BaseTestViews):
         eq_(resp['counts'][-1][0], now)
         eq_(resp['counts'][-1][1], 100)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     @mock.patch('requests.get')
     def test_topchangers(self, rget, rpost):
         url = reverse('crashstats:topchangers',
@@ -2698,7 +2697,7 @@ class TestViews(BaseTestViews):
         ok_('test@mozilla.com' in response.content)
         ok_('no crash report' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -2784,7 +2783,7 @@ class TestViews(BaseTestViews):
         ok_('&#34;exploitability&#34;' in response.content)
         eq_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_with_additional_raw_dump_links(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -2893,7 +2892,7 @@ class TestViews(BaseTestViews):
         )
         ok_(bar_dmp_url in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_fennecandroid_report(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -2955,7 +2954,7 @@ class TestViews(BaseTestViews):
             link = doc('a.sig-overview').eq(0)
             ok_('product=WinterSun' in link.attr('href'))
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_odd_product_and_version(self, rget, rpost):
         """If the processed JSON references an unfamiliar product and
@@ -3018,7 +3017,7 @@ class TestViews(BaseTestViews):
         bad_url = reverse('crashstats:home', args=('SummerWolf',))
         ok_(bad_url not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_correlations_failed(self, rget, rpost):
         # using \\n because it goes into the JSON string
@@ -3052,7 +3051,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_no_dump(self, rget, rpost):
         dump = ""
@@ -3127,7 +3126,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_with_invalid_InstallTime(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
@@ -3227,7 +3226,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         ok_('<th>Install Time</th>' not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_with_invalid_parsed_dump(self, rget, rpost):
         json_dump = {
@@ -3354,7 +3353,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         ok_('<th>Install Time</th>' not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_with_sparse_json_dump(self, rget, rpost):
         json_dump = {u'status': u'ERROR_NO_MINIDUMP_HEADER', u'sensitive': {}}
@@ -3455,7 +3454,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_with_crash_exploitability(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
@@ -3588,7 +3587,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_("Crash Not Found" in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_raw_crash_not_found(self, rget, rpost):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -4702,18 +4701,17 @@ class TestViews(BaseTestViews):
         ))
         eq_(response.status_code, 400)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     def test_report_list_partial_bugzilla(self, rpost):
 
         def mocked_post(**options):
-            return {
-                "hits": [
-                    {"id": 111111,
-                     "signature": "Something"},
-                    {"id": 123456789,
-                     "signature": "Something"}
-                ]
-            }
+            return [
+                {"id": 111111,
+                 "signature": "Something"},
+                {"id": 123456789,
+                 "signature": "Something"}
+            ]
+
         rpost.side_effect = mocked_post
 
         url = reverse('crashstats:report_list_partial', args=('bugzilla',))
@@ -4811,7 +4809,7 @@ class TestViews(BaseTestViews):
         ok_('1150 - 100.0%' in response.content)
         ok_('1250 - 100.0%' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.bug_ids')
     @mock.patch('requests.get')
     def test_report_index_redirect_by_prefix(self, rget, rpost):
 
@@ -4997,7 +4995,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('bla bla bla' in response.content)  # still. good.
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     @mock.patch('requests.get')
     def test_remembered_date_range_type(self, rget, rpost):
         # if you visit the home page, the default date_range_type will be

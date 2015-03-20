@@ -1018,49 +1018,6 @@ class TestViews(BaseTestViews):
         ok_('https://url.com/path?thing=bob' in hit['user_comments'])
         eq_(hit['email'], 'some@emailaddress.com')
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_Bugs(self, rpost):
-        url = reverse('api:model_wrapper', args=('Bugs',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['signatures'])
-
-        def mocked_get(**options):
-            return {"hits": [{"id": "123456789",
-                    "signature": "Something"}]}
-        rpost.side_effect = mocked_get
-
-        response = self.client.get(url, {
-            'signatures': 'one & two',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['hits'])
-
-    @mock.patch('crashstats.crashstats.models.SignaturesByBugs.get')
-    def test_SignaturesForBugs(self, rpost):
-        url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['bug_ids'])
-
-        def mocked_post(**options):
-            return {
-                "hits": [
-                    {"id": "123456789", "signature": "Something"}
-                ]
-            }
-        rpost.side_effect = mocked_post
-
-        response = self.client.get(url, {
-            'bug_ids': '123456789',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['hits'])
-
     @mock.patch('requests.get')
     def test_SignatureTrend(self, rget):
 

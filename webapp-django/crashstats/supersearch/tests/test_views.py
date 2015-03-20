@@ -346,19 +346,16 @@ class TestViews(BaseTestViews):
 
         ok_('exploitability' in content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('crashstats.crashstats.models.Bugs.signatures')
     @mock.patch('requests.get')
     def test_search_results(self, rget, cpost):
         def mocked_post(**options):
-            return {
-                "hits": [
-                    {
-                        "id": "123456",
-                        "signature": u"nsASDOMWindowEnumerator::GetNext()"
-                    }
-                ],
-                "total": 1
-            }
+            return [
+                {
+                    "id": "123456",
+                    "signature": u"nsASDOMWindowEnumerator::GetNext()"
+                }
+            ]
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url

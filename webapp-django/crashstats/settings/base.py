@@ -37,7 +37,6 @@ INSTALLED_APPS = (
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
-    '%s.dataservice' % PROJECT_MODULE,
     '%s.crashstats' % PROJECT_MODULE,
     '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,

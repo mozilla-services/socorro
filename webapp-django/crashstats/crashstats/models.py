@@ -8,7 +8,6 @@ import hashlib
 import os
 import urlparse
 import json
-import logging
 import requests
 import stat
 import time
@@ -22,15 +21,81 @@ from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
-# The reason to import this is if this file is, for some reason, imported
-# before django's had a chance to register all models.py in the
-# settings.INSTALLED_APPS list.
-# This can happen if you use django-nose on a specific file.
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1121749
-from crashstats.dataservice import models
-models = models  # silence pyflakes
 
-logger = logging.getLogger('crashstats_models')
+from configman import Namespace, configuration, environment
+from configman.dotdict import DotDict
+
+from socorro.models.util import classes_in_namespaces_converter
+from socorro.app.socorro_app import App
+
+
+EXTERNAL_MODELS_LIST = (
+    'socorro.external.postgresql.bugs_model.Bugs',
+)
+
+# Allow configman to dynamically load the configuration and classes
+# for our API dataservice objects
+def_source = Namespace()
+def_source.namespace('services')
+def_source.services.add_option(
+    'service_list',
+    doc='a list of classes that represent services to expose',
+    default=','.join(EXTERNAL_MODELS_LIST),
+    from_string_converter=classes_in_namespaces_converter('model_class')
+)
+
+# setup configman to create all the configuration information for the
+# dataservices classes.  Save that confguration in the key
+# "DATASERVICE_CONFIG" within the settings imported from django.conf
+settings.DATASERVICE_CONFIG = configuration(
+    definition_source=[
+        def_source,
+        App.get_required_config()  # just to setup a proper logger
+    ],
+    values_source_list=[
+        settings.DATASERVICE_CONFIG_BASE,
+        # ConfigFileFutureProxy,  # for config files, not currently used
+        environment
+    ]
+)
+
+# get the logger setup by configman
+logger = settings.DATASERVICE_CONFIG.logger
+
+# we need to create model classes for each of the external models found in
+# the EXTERNAL_MODELS_LIST.  That list, however, may have been changed by
+# configman during the initialization process.  So we iterate over the
+# settings to create a model each of the services that configman has given
+# in configuration.
+
+# settings.DATASERVICE_CONFIG came from confgiman. It defines a set of nested
+# namespaces that define a dataservice.  Here, we loop over the configuration
+# looking for namespaces - for each one found, we create a ModelForDataService
+# class for that service and save it.
+for key in settings.DATASERVICE_CONFIG.keys_breadth_first(include_dicts=True):
+    if (
+        key.startswith('services')
+        and '.' in key
+        and isinstance(settings.DATASERVICE_CONFIG[key], DotDict)
+    ):
+        local_config = settings.DATASERVICE_CONFIG[key]
+        model_impl_class = local_config.model_class
+        model_class_name = model_impl_class.__name__
+
+        # This class is the template for all the model classes that represent
+        # the dataservice classes.  We populate it with class level attributes
+        # and the appropriate methods.
+        class ModelForDataService(model_impl_class):
+
+            def __init__(self):
+                super(ModelForDataService, self).__init__(local_config)
+
+        # rename the template class with the same name as the dataservice
+        # class
+        ModelForDataService.__name__ = model_impl_class.__name__
+
+        # introduce the newly created class into the scope of this module
+        globals()[model_class_name] = ModelForDataService
 
 
 class Lazy(object):
@@ -1281,43 +1346,6 @@ class CrashesByExploitability(SocorroMiddleware):
     )
 
     API_WHITELIST = None
-
-
-class Bugs(SocorroMiddleware):
-
-    required_params = settings.DATASERVICE_CONFIG.services.Bugs.required_params
-    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
-
-    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
-
-    @memoize
-    def get(self, **kwargs):
-        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
-        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
-
-        if not kwargs.get('signatures'):
-            raise ValueError("'signatures' can not be empty")
-        return bugs.post(**kwargs)
-
-
-class SignaturesByBugs(SocorroMiddleware):
-
-    settings.DATASERVICE_CONFIG.services.Bugs.required_params = (
-        'bug_ids',
-    )
-    required_params = settings.\
-        DATASERVICE_CONFIG.services.Bugs.required_params
-    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
-
-    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
-
-    def get(self, **kwargs):
-        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
-        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
-
-        if not kwargs.get('bug_ids'):
-            raise ValueError("'bug_ids' can not be empty")
-        return bugs.post(**kwargs)
 
 
 class SignatureTrend(SocorroMiddleware):
