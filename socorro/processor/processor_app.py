@@ -11,12 +11,15 @@ from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
-from socorro.external.filesystem.crashstorage import FileSystemRawCrashStorage
 from socorro.external.crashstorage_base import (
   PolyCrashStorage,
   CrashIDNotFound,
 )
 from socorro.lib.util import DotDict
+from socorro.external.fs.fs_new_crash_source import (
+  FSNewCrashSource
+)
+from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 
 #==============================================================================
@@ -40,7 +43,8 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.processor.add_option(
       'processor_class',
       doc='the class that transforms raw crashes into processed crashes',
-      default='socorro.processor.hybrid_processor.HybridCrashProcessor',
+      default='socorro.processor.socorrolite_processor_2015'
+              '.SocorroLiteProcessorAlgorithm2015',
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
@@ -52,8 +56,8 @@ class ProcessorApp(FetchTransformSaveApp):
     required_config.new_crash_source.add_option(
       'new_crash_source_class',
       doc='an iterable that will stream crash_ids needing processing',
-      default='socorro.external.rabbitmq.rmq_new_crash_source'
-              '.RMQNewCrashSource',
+      default='socorro.external.fs.fs_new_crash_source'
+              '.FSNewCrashSource',
       from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
@@ -81,8 +85,8 @@ class ProcessorApp(FetchTransformSaveApp):
     @staticmethod
     def get_application_defaults():
         return {
-            "source.crashstorage_class": FileSystemRawCrashStorage,
-            "destination.crashstorage_class": PolyCrashStorage,
+            "source.crashstorage_class": FSDatedPermanentStorage,
+            "destination.crashstorage_class": FSDatedPermanentStorage,
         }
 
     #--------------------------------------------------------------------------
