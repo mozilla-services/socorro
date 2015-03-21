@@ -14,5 +14,8 @@ echo "Linting..."
 git ls-files crashstats | grep '\.py$' | xargs flake8 | bin/linting.py
 
 echo "Starting tests..."
+export SECRET_KEY="doesn't matter, tests"
+export CACHE_BACKEND="django.core.cache.backends.locmem.LocMemCache"
+export CACHE_LOCATION="crashstats"
 FORCE_DB=true python manage.py test --noinput
 echo "Tests finished."
