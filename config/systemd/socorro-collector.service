@@ -1,0 +1,10 @@
+[Unit]
+Description=Socorro Collector
+
+[Service]
+WorkingDirectory=/home/socorro
+Environment=VENV=/data/socorro/socorro-virtualenv
+ExecStart=/bin/bash -c "envconsul -once -upcase=false -prefix socorro/common -prefix socorro/collector $VENV/bin/uwsgi -H $VENV -M --need-app -w wsgi.collector -s /var/run/uwsgi/socorro-collector.sock --chmod-socket=664 --uid=socorro --gid=nginx"
+
+[Install]
+WantedBy=multi-user.target

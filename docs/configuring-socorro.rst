@@ -10,6 +10,16 @@ Socorro provides a setup script which attempts to initialize everything::
 
     sudo setup-socorro.sh
 
+Configuring Socorro
+-------------------
+
+Socorro uses a distributed configuration service called Consul to hold
+configuration - https://consul.io/intro/getting-started/install.html
+
+This must be running in order for Socorro apps to start up and access
+their configuration. Socorro will work in the default configuration, but
+all features may not be available.
+
 Start services
 --------------
 
