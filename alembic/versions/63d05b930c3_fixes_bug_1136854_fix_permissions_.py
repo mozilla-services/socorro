@@ -27,6 +27,7 @@ def upgrade():
         'reports_clean_weekly_partition.sql',
     ])
 
+    op.execute('DROP VIEW IF EXISTS pg_stat_statements')
     op.execute('DROP FUNCTION IF EXISTS pg_stat_statements()')
     op.execute('DROP FUNCTION IF EXISTS pg_stat_statements_reset()')
 

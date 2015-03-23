@@ -38,12 +38,12 @@ def upgrade():
     op.drop_table('crashes_normalized', schema='bixie')
     op.drop_table('user_agents', schema='bixie')
     op.drop_table('error_message_products', schema='bixie')
-    op.drop_table('products', schema='bixie')
     op.drop_table('product_release_channels', schema='bixie')
     op.drop_table('release_channels', schema='bixie')
     op.drop_table('error_messages', schema='bixie')
     op.drop_table('raw_product_releases', schema='bixie')
     op.drop_table('full_urls', schema='bixie')
+    op.drop_table('products', schema='bixie')
     op.execute('DROP SCHEMA bixie')
     ### end Alembic commands ###
 
