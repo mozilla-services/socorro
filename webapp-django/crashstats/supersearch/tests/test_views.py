@@ -1,5 +1,7 @@
 import datetime
 import json
+import re
+
 import mock
 import pyquery
 from nose.tools import eq_, ok_
@@ -285,6 +287,27 @@ class TestViews(BaseTestViews):
         ok_('browser' in str(options))
 
     @mock.patch('requests.get')
+    def test_search_ratelimited(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+
+            if 'supersearch/fields' in url:
+                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('supersearch.search')
+        limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
+        for i in range(limit):
+            self.client.get(url)
+        # make it realistic like a browser sends this header
+        response = self.client.get(url, HTTP_ACCEPT='text/html')
+        eq_(response.status_code, 429)
+        ok_('Hold your horses!' in response.content)
+        eq_(response['content-type'], 'text/html; charset=utf-8')
+
+    @mock.patch('requests.get')
     def test_search_fields(self, rget):
 
         def mocked_get(url, params, **options):
@@ -547,6 +570,29 @@ class TestViews(BaseTestViews):
             {'product': 'WaterWolf', 'date': '', 'build_id': ''}
         )
         eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_search_results_ratelimited(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'supersearch' in url
+            return Response({"hits": [], "facets": [], "total": 0})
+
+        rget.side_effect = mocked_get
+
+        url = reverse('supersearch.search_results')
+        limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
+        params = {'product': 'WaterWolf'}
+        for i in range(limit):
+            self.client.get(url, params)
+        response = self.client.get(
+            url,
+            params,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        eq_(response.status_code, 429)
+        eq_(response.content, 'Too Many Requests')
+        eq_(response['content-type'], 'text/plain')
 
     @mock.patch('requests.post')
     @mock.patch('requests.get')

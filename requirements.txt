@@ -102,8 +102,8 @@ pyquery==1.2.6
 python-memcached==1.48
 # sha256: aoy0QBER4BG1ecjFKlHNq5cAQcxUOBS72Vd6RSn-HNs
 BeautifulSoup==3.2.1
-# sha256: eMMXu8KuFpoT6MW9MarmEau3bCZKZMPf1xOR5nZ5Jd8
-django-ratelimit==0.3.0
+# sha256: LdDg3DiUhqLUpi7ZFKEMYpe1raEX0e0_lP96usjonbA
+django-ratelimit==0.5.0
 # sha256: nrxAU2-bxTW8IhTg8Kbxfm6ylrHh2OxNKOqeAyIPA0Q
 django-waffle==0.9.1
 # sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10

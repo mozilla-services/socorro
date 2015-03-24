@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 
 from waffle.decorators import waffle_switch
+from ratelimit.decorators import ratelimit
 
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
@@ -97,6 +98,12 @@ def get_params(request):
     return params
 
 
+@ratelimit(
+    key='ip',
+    rate=utils.ratelimit_rate,
+    method=ratelimit.ALL,
+    block=True
+)
 @pass_default_context
 def search(request, default_context=None):
     allowed_fields = get_allowed_fields(request.user)
@@ -126,6 +133,12 @@ def search(request, default_context=None):
     return render(request, 'supersearch/search.html', context)
 
 
+@ratelimit(
+    key='ip',
+    rate=utils.ratelimit_rate,
+    method=ratelimit.ALL,
+    block=True
+)
 def search_results(request):
     '''Return the results of a search. '''
     params = get_params(request)
