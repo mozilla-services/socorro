@@ -1675,8 +1675,9 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        # the rate limit is currently 10/min so it's easy to hit the limit
-        for __ in range(10):
+        # the rate limit is currently X/min so it's easy to hit the limit
+        current_limit = int(re.findall('\d+', settings.API_RATE_LIMIT)[0])
+        for __ in range(current_limit):
             response = self.client.get(url)
         eq_(response.status_code, 429)
 
@@ -1693,7 +1694,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
         eq_(response.status_code, 200)
 
-        for __ in range(10):
+        for __ in range(current_limit):
             response = self.client.get(url)
         eq_(response.status_code, 200)
 

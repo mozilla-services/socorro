@@ -345,7 +345,7 @@ DISALLOWED_SYMBOLS_SNIPPETS = (
 )
 
 # Rate limit for when using the Web API for anonymous hits
-API_RATE_LIMIT = '10/m'
+API_RATE_LIMIT = '100/m'
 
 # Rate limit when using the supersearch web interface
 RATELIMIT_SUPERSEARCH = '10/m'
