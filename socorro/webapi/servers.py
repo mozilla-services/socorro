@@ -52,12 +52,13 @@ class WebServerBase(RequiredConfig):
 
 
 #==============================================================================
-class ApacheModWSGI(WebServerBase):
-    """When running Apache, modwsgi requires a reference to a "wsgifunc" In
-    this varient of the WebServer class, the run function returns the result of
-    the webpy framework's wsgifunc.  Applications that use this class must
-    provide a module level variable 'application' in the module given to Apache
-    modwsgi configuration.  The value of the variable must be the _wsgi_func.
+class ModWSGIServer(WebServerBase):
+    """When running under a modwsgi compatible Web server, modwsgi requires a
+    reference to a "wsgifunc" In this varient of the WebServer class, the run
+    function returns the result of the webpy framework's wsgifunc.
+    Applications that use this class must provide a module level variable
+    'application' in the module given to the Web server modwsgi configuration.
+    The value of the variable must be the _wsgi_func.
     """
 
     #--------------------------------------------------------------------------
@@ -66,7 +67,7 @@ class ApacheModWSGI(WebServerBase):
 
     #--------------------------------------------------------------------------
     def _identify(self):
-        self.config.logger.info('this is ApacheModWSGI')
+        self.config.logger.info('this is ModWSGIServer')
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -74,6 +75,8 @@ class ApacheModWSGI(WebServerBase):
         wsgi_path = os.path.dirname(os.path.realpath(wsgi_file))
         config_path = os.path.join(wsgi_path, '..', 'config')
         return os.path.abspath(config_path)
+
+ApacheModWSGI = ModWSGIServer  # for backwards compatiblity
 
 
 #==============================================================================

@@ -1,7 +1,7 @@
 import os
 from socorro.app.generic_app import main
 from socorro.middleware.middleware_app import MiddlewareApp
-from socorro.webapi.servers import ApacheModWSGI
+from socorro.webapi.servers import ModWSGIServer
 import socorro.middleware.middleware_app
 
 from configman import (
@@ -12,7 +12,7 @@ from configman import (
 if os.path.isfile('/etc/socorro/middleware.ini'):
     config_path = '/etc/socorro'
 else:
-    config_path = ApacheModWSGI.get_socorro_config_path(__file__)
+    config_path = ModWSGIServer.get_socorro_config_path(__file__)
 
 # invoke the generic main function to create the configman app class and which
 # will then create the wsgi app object.

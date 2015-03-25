@@ -84,7 +84,7 @@ DONT_TERM_SPLIT = re.compile("""
 
 # an app running under modwsgi needs to have a name at the module level called
 # application.  The value is set in the App's 'main' function below.  Only the
-# modwsgi Apache version actually makes use of this variable.
+# modwsgi version actually makes use of this variable.
 application = None
 
 
@@ -430,7 +430,7 @@ class MiddlewareApp(App):
 
     #--------------------------------------------------------------------------
     def main(self):
-        # Apache modwsgi requireds a module level name 'application'
+        # modwsgi requires a module level name 'application'
         global application
 
         # 1 turn these names of classes into real references to classes
@@ -494,7 +494,7 @@ class MiddlewareApp(App):
             services_list
         )
 
-        # for modwsgi the 'run' method returns the wsgi function that Apache
+        # for modwsgi the 'run' method returns the wsgi function that
         # will use.  For other webservers, the 'run' method actually starts
         # the standalone web server.
         application = self.web_server.run()
