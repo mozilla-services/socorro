@@ -166,6 +166,14 @@ class SocorroDBApp(App):
         doc='Create all tables with UNLOGGED for running tests',
     )
 
+    required_config.add_option(
+        name='no_roles',
+        default=False,
+        doc='Whether or not to set up roles',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+
     @staticmethod
     def get_application_defaults():
         """since this app is more of an interactive app than the others, the
@@ -227,6 +235,7 @@ class SocorroDBApp(App):
             return 1
 
         self.no_schema = self.config.get('no_schema')
+        self.no_roles = self.config.get('no_roles')
 
         self.force = self.config.get('force')
 
@@ -302,7 +311,10 @@ class SocorroDBApp(App):
                     return 0
                 raise
 
-            db.create_roles(self.config)
+            if self.no_roles:
+                print "Skipping role creation"
+            else:
+                db.create_roles(self.config)
             connection.close()
 
         # Reconnect to set up schema, types and procs
