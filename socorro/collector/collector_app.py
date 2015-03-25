@@ -18,7 +18,7 @@ from configman.converters import class_converter
 
 # an app running under modwsgi needs to have a name at the module level called
 # application.  The value is set in the App's 'main' function below.  Only the
-# modwsgi Apache version actually makes use of this variable.
+# wsgi version actually makes use of this variable.
 application = None
 
 
@@ -83,7 +83,7 @@ class CollectorApp(App):
 
     #--------------------------------------------------------------------------
     def main(self):
-        # Apache modwsgi requireds a module level name 'application'
+        # modwsgi requireds a module level name 'application'
         global application
 
         services_list = (
@@ -101,9 +101,9 @@ class CollectorApp(App):
         )
 
 
-        # for modwsgi the 'run' method returns the wsgi function that Apache
-        # will use.  For other webservers, the 'run' method actually starts
-        # the standalone web server.
+        # for modwsgi the 'run' method returns the wsgi function that the web
+        # server will use.  For other webservers, the 'run' method actually
+        # starts the standalone web server.
         application = self.web_server.run()
 
 
