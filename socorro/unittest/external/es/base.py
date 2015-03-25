@@ -27,7 +27,7 @@ DEFAULT_VALUES = {
     'resource.elasticsearch.elasticsearch_index': (
         'socorro_integration_test_reports'
     ),
-    'resource.elasticsearch.elasticsearch_timeout': 5,
+    'resource.elasticsearch.elasticsearch_timeout': 10,
 }
 
 
