@@ -3,40 +3,26 @@
 source scripts/defaults
 
 if [ "$BUILD_TYPE" != "tar" ]; then
-    if [ "$BUILD_TYPE" == "deb" ]; then
-        HTTPD_NAME=apache2
-    else
-        HTTPD_NAME=httpd
-    fi
-    
     # create base directories
-    mkdir -p $BUILD_DIR/etc/init.d
-    mkdir -p $BUILD_DIR/etc/cron.d
-    mkdir -p $BUILD_DIR/etc/$HTTPD_NAME/conf.d
-
+    mkdir -p $BUILD_DIR/usr/bin
     mkdir -p $BUILD_DIR/etc/socorro
     mkdir -p $BUILD_DIR/var/log/socorro
     mkdir -p $BUILD_DIR/var/lock/socorro
+    mkdir -p $BUILD_DIR/var/run/uwsgi
+    mkdir -p $BUILD_DIR/usr/lib/systemd/system/
 
-    # copy default config files
-    for file in scripts/config/*.py.dist; do
-      cp $file $BUILD_DIR/etc/socorro/`basename $file .dist`
-    done
-
-    for file in config/*.ini-dist; do
-      cp $file $BUILD_DIR/etc/socorro/`basename $file -dist`
-    done
-
+    # Copy rc file for Socorro
+    # FIXME could we replace w/ consul?
     cp scripts/crons/socorrorc $BUILD_DIR/etc/socorro/
-    for service in processor
-    do
-        cp scripts/init.d/${BUILD_TYPE}-socorro-${service} $BUILD_DIR/etc/init.d/socorro-${service}
-    done
-    cp config/crontab-dist $BUILD_DIR/etc/cron.d/socorro
-    cp config/apache.conf-dist $BUILD_DIR/etc/$HTTPD_NAME/conf.d/socorro.conf
+
+    # Copy systemd service files into place
+    cp config/systemd/* $BUILD_DIR/usr/lib/systemd/system/
 
     # Copy in production-style defaults
     cp -rp config/package/* $BUILD_DIR/etc/
+
+    # Copy in Socorro setup script
+    cp scripts/setup-socorro.sh $BUILD_DIR/usr/bin
 
     # Update BUILD_DIR for rest of install, not package.
     BUILD_DIR=$BUILD_DIR/data/socorro

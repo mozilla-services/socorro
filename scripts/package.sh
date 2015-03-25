@@ -36,16 +36,15 @@ if [ "$BUILD_TYPE" != "tar" ]; then
         --config-files /etc/socorro \
         --exclude *.pyc \
         --exclude *.swp \
-        --depends 'libc6 > 2.3' \
-        --depends 'libgcc1 > 1:4.1.0' \
-        --depends 'libsasl2-2 > 2.1.23' \
-        --depends 'libssl1.0.0' \
-        --depends 'libstdc++6 > 4.4' \
+        --depends 'libgcc > 4.1.0' \
+        --depends 'cyrus-sasl > 2.1.23' \
+        --depends 'libstdc++ > 4.4' \
         --depends 'libxml2 > 2.7.3' \
-        --depends 'libxslt1.1 > 1.1.25' \
-        --depends 'zlib1g > 1:1.1.9' \
-        --depends 'nodejs' \
-        --depends 'node-less' \
+        --depends 'libxslt > 1.1.25' \
+        --depends 'zlib > 1.1.9' \
+        --depends 'nodejs-less' \
+        --depends 'consul > 0-0.5.0' \
+        --depends 'envconsul > 0-0.5.0' \
         --deb-suggests 'libpq5' \
         --deb-suggests 'openjdk-7-jre-headless' \
         --deb-suggests 'python-virtualenv' \
@@ -58,7 +57,7 @@ if [ "$BUILD_TYPE" != "tar" ]; then
         --deb-suggests 'memcached' \
         --deb-suggests 'apache2' \
         --deb-suggests 'libapache2-mod-wsgi' \
-        data etc var
+        data etc var usr
 else
     tar -C ${BUILD_DIR%%socorro} --mode 755 --exclude-vcs --owner 0 --group 0 -zcf socorro.tar.gz socorro/
 fi

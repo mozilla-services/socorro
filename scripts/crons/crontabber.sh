@@ -8,7 +8,13 @@
 
 NAME=`basename $0 .sh`
 lock --ignore-existing $NAME
-${PYTHON} ${APPDIR}/socorro/cron/crontabber_app.py --admin.conf=/etc/socorro/crontabber.ini >> /var/log/socorro/crontabber.log 2>&1
+CMD="${PYTHON} ${APPDIR}/socorro/cron/crontabber_app.py"
+LOG=/var/log/socorro/crontabber.log
+if [ -f "/etc/socorro/crontabber.ini" ]; then
+    $CMD --admin.conf=/etc/socorro/crontabber.ini >> $LOG 2>&1
+else
+    $CMD >> $LOG 2>&1
+fi
 EXIT_CODE=$?
 unlock $NAME
 

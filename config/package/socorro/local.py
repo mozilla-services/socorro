@@ -13,11 +13,11 @@ CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False
 
 # Socorro middleware instance to use
-MWARE_BASE_URL = 'http://localhost/bpapi'
+MWARE_BASE_URL = 'http://localhost'
 MWARE_USERNAME = None
 MWARE_PASSWORD = None
 # HTTP/1.1 Host header to pass - in case this is a VHost
-MWARE_HTTP_HOST = 'socorro-api'
+MWARE_HTTP_HOST = 'socorro-middleware'
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
@@ -158,3 +158,45 @@ BROWSERID_AUDIENCES = ['http://crash-stats']
 # https://docs.djangoproject.com/en/dev/topics/http/\
 #  file-uploads/#changing-upload-handler-behavior
 #FILE_UPLOAD_PERMISSIONS = 0664
+
+DATASERVICE_CONFIG_BASE = {
+    'resource': {
+        'postgresql': {
+            'transaction_executor_class':
+                'socorro.database.transaction_executor'
+                '.TransactionExecutorWithLimitedBackoff',
+            'backoff_delays': "0, 3",
+        },
+    },
+    'secrets': {
+        'postgresql': {
+            'database_password': 'aPassword',
+            'database_username': 'breakpad_rw',
+        },
+    }
+}
+
+# We don't want to test the migrations when we run tests.
+# We trust that syncdb matches what you'd get if you install
+# all the migrations.
+SOUTH_TESTS_MIGRATE = False
+
+# Credentials for being able to make an S3 connection
+AWS_ACCESS_KEY = ''
+AWS_SECRET_ACCESS_KEY = ''
+
+# Information for uploading symbols to S3
+SYMBOLS_BUCKET_DEFAULT_NAME = ''
+# To set overriding exceptions by email, use:
+SYMBOLS_BUCKET_EXCEPTIONS = {
+    # e.g.
+    # 'joe.bloggs@example.com': 'private-crashes.my-bucket'
+    # or you can specify it as a tuple of (name, location)
+    # 'joe@example.com': ('my-bucket', 'USWest1')
+}
+SYMBOLS_FILE_PREFIX = 'v1'
+# e.g. "us-west-2" see boto.s3.connection.Location
+# Only needed if the bucket has never been created
+SYMBOLS_BUCKET_DEFAULT_LOCATION = None
+
+

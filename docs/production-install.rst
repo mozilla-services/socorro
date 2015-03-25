@@ -5,7 +5,7 @@
 Production Install
 ==================
 
-Currently Socorro is supported on RedHat Linux 6 (and clones like CentOS)
+Currently Socorro is supported on CentOS 7
 
 For any other platform, you must build from source. See
 :ref:`development-chapter` for more information.
@@ -21,16 +21,13 @@ For any other platform, you must build from source. See
 Installing services
 -------------------
 
-Install the `EPEL repository <http://fedoraproject.org/wiki/EPEL>`_ (note that
-while the EPEL package is from an `i386` tree it will work on `x86_64`):
+Install the EPEL repository.
 ::
-  sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+  sudo yum install epel-release
 
-Install the `PostgreSQL repository <http://yum.pgrpms.org/repopackages.php>`_. 
-This package will vary depending on your distribution and environment.
-For example if you are running RHEL 6 on i386, you would do this:
+Install the PostgreSQL repository.
 ::
-  sudo rpm -ivh http://yum.postgresql.org/9.3/redhat/rhel-6-i386/pgdg-centos93-9.3-1.noarch.rpm
+  sudo rpm -ivh http://yum.postgresql.org/9.3/redhat/rhel-7-x86_64/pgdg-centos93-9.3-1.noarch.rpm
 
 Install the `Elasticsearch repository <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html>`_.
 First the key:
@@ -48,37 +45,40 @@ Then the repository definition:
   enabled=1
   EOF
 
+Ensure yum cache is up to date.
+::
+  sudo yum makecache
+
+Install the Socorro repository.
+::
+  sudo rpm -ivh https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.packages-public/el/7/noarch/socorro-public-repo-1-1.el7.centos.noarch.rpm
+
 Now you can actually install the packages:
 ::
   sudo yum install postgresql93-server postgresql93-plperl \
     postgresql93-contrib java-1.7.0-openjdk python-virtualenv \
-    rabbitmq-server elasticsearch httpd mod_wsgi memcached daemonize
-
-Enable Apache on startup:
-::
-  sudo service httpd start
-  sudo chkconfig httpd on
+    rabbitmq-server elasticsearch nginx envconsul consul memcached socorro
 
 Enable Memcached on startup:
 ::
-  sudo service memcached start
-  sudo chkconfig memcached on
+  sudo systemctl enable nginx
+
+Enable Memcached on startup:
+::
+  sudo systemctl enable memcached
 
 Enable RabbitMQ on startup:
 ::
-  sudo service rabbitmq-server start
-  sudo chkconfig rabbitmq-server on
+  sudo systemctl enable rabbitmq-server
 
-Enable RabbitMQ on startup:
+Enable Elasticsearch on startup:
 ::
-  sudo service elasticsearch start
-  sudo chkconfig elasticsearch on 
+  sudo systemctl enable elasticsearch
 
 Initialize and enable PostgreSQL on startup:
 ::
   sudo service postgresql-9.3 initdb
-  sudo service postgresql-9.3 start
-  sudo chkconfig postgresql-9.3 on
+  sudo systemctl enable postgresql-9.3
 
 Modify postgresql config
 ::
@@ -105,7 +105,7 @@ for more information on this file.
 
 You'll need to restart postgresql if the configuration was updated:
 ::
-  sudo service postgresql-9.3 restart
+  sudo systemctl restart postgresql-9.3
 
 Disable SELinux
 ---------------
@@ -121,16 +121,3 @@ Ensure that SELINUX is set to permissive:
 Reboot the system if the above was changed:
 ::
   sudo shutdown -r now
-
-
-Install Socorro RPM
--------------------
-
-Installing an RPM:
-
-.. code-block:: bash
-
-  $ curl -O https://ci.mozilla.org/job/socorro-release/lastSuccessfulBuild/artifact/socorro-latest.x86_64.rpm
-  $ sudo rpm -i --nofiledigest socorro-latest.x86_64.rpm
-
-This will install the very latest version of Socorro.
