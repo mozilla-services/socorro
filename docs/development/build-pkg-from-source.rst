@@ -2,7 +2,7 @@
 
 .. _build-pkg-from-source-chapter:
 
-Build pacakge from source
+Build package from source
 =====================
 
 RHEL (or clones e.g. CentOS)
