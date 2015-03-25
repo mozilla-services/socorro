@@ -84,7 +84,7 @@ DONT_TERM_SPLIT = re.compile("""
 
 # an app running under modwsgi needs to have a name at the module level called
 # application.  The value is set in the App's 'main' function below.  Only the
-# modwsgi version actually makes use of this variable.
+# wsgi version actually makes use of this variable.
 application = None
 
 
