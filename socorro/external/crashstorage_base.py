@@ -652,6 +652,120 @@ class FallbackCrashStorage(CrashStorageBase):
 
 
 #==============================================================================
+class MigrationCrashStorage(FallbackCrashStorage):
+    required_config = Namespace()
+    required_config.add_option(
+        'date_threshold',
+        default="150401",
+        doc="a date before which seconday storage is to "
+            "be used (YYYMMDD)",
+    )
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        """save raw crash data to the primary storage iff the date embedded
+        in the crash_id is greater or equal to the threshold, otherwise save
+        to the fallback storage
+
+        parameters:
+            raw_crash - the meta data mapping
+            dumps - a mapping of dump name keys to dump binary values
+            crash_id - the id of the crash to use"""
+
+        if crash_id[-6:] >= self.config.date_threshold:
+            self.primary_store.save_raw_crash(raw_crash, dumps, crash_id)
+        else:
+            self.fallback_store.save_raw_crash(raw_crash, dumps, crash_id)
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        """save processed crash data to the primary storage iff the date
+        embedded in the crash_id is greater or equal to the threshold,
+        otherwise save to the fallback storage
+
+        parameters:
+            processed_crash - a mapping containing the processed crash"""
+        if processed_crash['crash_id'][-6:] >= self.config.date_threshold:
+            self.primary_store.save_processed(processed_crash)
+        else:
+            self.fallback_store.save_processed(processed_crash)
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, crash_id):
+        """get a raw crash from the primary if the crash_id embedded date is
+        greater than or equal to the threshold, otherwise use the fallback
+
+        parameters:
+           crash_id - the id of a raw crash to fetch"""
+        if crash_id[-6:] >= self.config.date_threshold:
+            return self.primary_store.get_raw_crash(crash_id)
+        else:
+            return self.fallback_store.get_raw_crash(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, crash_id, name=None):
+        """get a named crash dump 1from the primary if the crash_id embedded
+        date is greater than or equal to the threshold, otherwise use the
+        fallback
+
+        parameters:
+           crash_id - the id of a dump to fetch"""
+        if crash_id[-6:] >= self.config.date_threshold:
+            return self.primary_store.get_raw_dump(crash_id, name)
+        else:
+            return self.fallback_store.get_raw_dump(crash_id, name)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        """get all crash dumps from the primary if the crash_id embedded date
+        is greater than or equal to the threshold, otherwise use the fallback
+
+        parameters:
+           crash_id - the id of a dump to fetch"""
+        if crash_id[-6:] >= self.config.date_threshold:
+            return self.primary_store.get_raw_dumps(crash_id)
+        else:
+            return self.fallback_store.get_raw_dumps(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        """get all crash dump pathnames from the primary if the crash_id
+        embedded date is greater than or equal to the threshold, otherwise
+        use the fallback
+
+        parameters:
+           crash_id - the id of a dump to fetch"""
+        if crash_id[-6:] >= self.config.date_threshold:
+            return self.primary_store.get_raw_dumps_as_files(crash_id)
+        else:
+            return self.fallback_store.get_raw_dumps_as_files(crash_id)
+
+    #--------------------------------------------------------------------------
+    def get_unredacted_processed(self, crash_id):
+        """fetch an unredacted processed_crash from the primary if the crash_id
+        embedded date is greater than or equal to the threshold, otherwise use
+        the fallback
+
+        parameters:
+           crash_id - the id of a processed_crash to fetch"""
+        if crash_id[-6:] >= self.config.date_threshold:
+            return self.primary_store.get_unredacted_processed(crash_id)
+        else:
+            return self.fallback_store.get_unredacted_processed(crash_id)
+
+    #--------------------------------------------------------------------------
+    def remove(self, crash_id):
+        """delete a crash from storage
+
+        parameters:
+           crash_id - the id of a crash to fetch"""
+        if crash_id[-6:] >= self.config.date_threshold:
+            self.primary_store.remove(crash_id)
+        else:
+            self.fallback_store.remove(crash_id)
+
+
+#==============================================================================
 class PrimaryDeferredStorage(CrashStorageBase):
     """
     PrimaryDeferredStorage reads information from a raw crash and, based on a
@@ -846,6 +960,8 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
         """fetch an unredacted processed crash from the underlying
         storage implementation"""
         return self.processed_store.get_unredacted_processed(crash_id)
+
+
 
 #==============================================================================
 class BenchmarkingCrashStorage(CrashStorageBase):
