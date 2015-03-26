@@ -8,12 +8,15 @@
 # 1. Run this script as the 'postgres' user on PHX1 stage
 # 2. Export PGPASSWORD and HEROKU_STAGE_APP
 # 3. Set up ~/.netrc 
-#
+
+set -e
+set -u
 
 ###############################################################################
 # BEGIN CONFIG
 ###############################################################################
-VENV=/data/socorro/socorro-virtualenv
+VENV="${VIRTUAL_ENV:-/data/socorro/socorro-virtualenv}"
+PYTHON="${VIRTUAL_ENV}/bin/python"
 
 # Local files
 SLIM_DUMP=slim_socorro_db.dump
@@ -24,26 +27,58 @@ SOURCE_DATABASE=${database:-'breakpad'}
 TEMP_DATABASE=${temp_database:-'socorro_stage_temp'}
 
 # Heroku toolbelt can output STDERR
-HEROKU_STAGE_APP=${heroku_stage_app}
+HEROKU_STAGE_APP="${heroku_stage_app}"
 HEROKU_STAGE_DB_URL="$(heroku config:get DATABASE_URL -a ${HEROKU_STAGE_APP} 2>/dev/null)"
 
-STAGE_PASSWORD=${PGPASSWORD:-}
+STAGE_PASSWORD="${PGPASSWORD:-}"
 
-PSQL="psql -U postgres"
+export PGUSER=${PGUSER:-'postgres'}
+PSQL="psql -U ${PGUSER}"
 
-export PGUSER=postgres 
+# Set production deploy directory
+APPLICATION_DIR=${application_dir:-'/data/socorro/application'}
 
 # Set up some helper variables like $PYTHON
-source /etc/socorro/socorrorc
+if [ -e /etc/socorro/socorrorc ]
+then
+    source /etc/socorro/socorrorc
+fi
 
 # Enable access to installed prod python modules
-source ${VENV}/bin/activate
+if [ -z ${VIRTUAL_ENV} ]
+then
+    source ${VENV}/bin/activate
+fi
 
 ###############################################################################
 # END CONFIG
 ###############################################################################
 
-echo date
+function log() {
+    message=$1$
+    echo -n `date`
+    echo " ${message}"
+}
+
+###############################################################################
+# ERROR HANDLING
+###############################################################################
+function cleanup() {
+    echo "INFO: Removing backup files"
+    rm "${SLIM_DUMP}" "${FULL_DUMP}"
+
+    echo "INFO: cleaning up temp database"
+    $PSQL $PGUSER -c "DROP DATABASE ${TEMP_DATABASE}"
+
+    exit
+}
+
+trap 'cleanup' INT TERM
+###############################################################################
+# END ERROR HANDLING
+###############################################################################
+
+log "INFO: Using database ${SOURCE_DATABASE}: writing a slim pg dump to ${SLIM_DUMP}"
 # make a slim dump
 pg_dump \
         -a \
@@ -86,34 +121,54 @@ pg_dump \
         -f ${SLIM_DUMP} \
         ${SOURCE_DATABASE}
 
-echo date 
 
 # Move directories so that we get the alembic environment configuration
-pushd /data/socorro/application
+pushd ${APPLICATION_DIR}
+
+log "INFO: Setting up a local temp database: ${TEMP_DATABASE}"
 # Setup a fresh database from our repo
 # The hostname is set to '' so that psycopg2 uses a local socket, thereby avoiding ACLs
-$PYTHON ${VENV}/bin/socorro setupdb --database_name=${TEMP_DATABASE} --no_staticdata --dropdb --no_roles\
-	--database_hostname='' \
-	--database_superusername=postgres --database_superuserpassword="${STAGE_PASSWORD}" \
-	--database_username=postgres --database_password="${STAGE_PASSWORD}"
+$PYTHON ${VENV}/bin/socorro setupdb \
+    --database_name=${TEMP_DATABASE} \
+    --no_staticdata \
+    --dropdb \
+    --no_roles \
+    --database_hostname='' \
+    --database_superusername=$PGUSER \
+    --database_superuserpassword="${STAGE_PASSWORD}" \
+    --database_username=$PGUSER \
+    --database_password="${STAGE_PASSWORD}"
 popd
 
-echo date
-
+log "INFO: Removing old ADI to speed up restore"
 # Remove old ADI to help make restore time finite
 $PSQL ${TEMP_DATABASE} -c "DELETE FROM raw_adi where date < now() - '7 days'::interval" 
 $PSQL ${TEMP_DATABASE} -c "DELETE FROM raw_adi_logs where report_date < now() - '7 days'::interval"
 
+log "INFO: Creating a full dump of ${TEMP_DATABASE} for restore into Heroku into file ${FULL_DUMP}"
 # Do a full dump
-pg_dump -U postgres ${TEMP_DATABASE} -F c --no-owner --no-acl -v -f ${FULL_DUMP}
+pg_dump \
+    ${TEMP_DATABASE} \
+    -U $PGUSER \
+    -F c \
+    --no-owner \
+    --no-acl \
+    -v \
+    -f ${FULL_DUMP}
 
+log "INFO: Resetting Heroku database for app: ${HEROKU_STAGE_APP}"
 # Reset our stage database
-heroku pg:reset ${HEROKU_STAGE_APP} --confirm ${HEROKU_STAGE_APP}
+heroku pg:reset DATABASE_URL --confirm ${HEROKU_STAGE_APP}
 
+log "INFO: Restoring full dump into Heroku using HEROKU_STAGE_DB_URL"
 # Restore to heroku
-pg_restore --no-owner --no-acl -v -d ${HEROKU_STAGE_DB_URL} ${FULL_DUMP}
+pg_restore \
+    -d ${HEROKU_STAGE_DB_URL} \
+    --no-owner \
+    --no-acl \
+    -v \
+    ${FULL_DUMP}
 
-# Cleanup our temp database
-$PSQL postgres -c "DROP DATABASE ${TEMP_DATABASE}"
-
-
+log "INFO: Cleaning up"
+# Cleanup our temp database and backup files
+cleanup
