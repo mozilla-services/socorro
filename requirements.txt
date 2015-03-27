@@ -32,11 +32,9 @@ honcho==0.5.0
 gunicorn==18.0
 # sha256: wLOB1sItqTHoXj7-YSYp_jOgGsJbDwKKpjG4XYbVAos
 uWSGI==2.0.10
-
-# prod requirements
-# sha256: G4jdtVszwrmhMAnW9W-j8JcjtAqgxIF2D_jfh1tqA2s
-# sha256: HvSGayima8gi3CSoXzrGfGjaeUhPAsZqCyBSNMKEQ-4
-configman==1.2.8
+# sha256: RsjrEON7PfBBeJVwaZ6bRgyiLm39JWyiDkIE2wz7K8U
+# sha256: FnmOimdGf1D4-bCAyOcKQfD_fS3QYedEI-U7x-2S-40
+configman==1.2.11
 # sha256: UV_5I0YlkugyHfi0jEfjQo-NQG7iK43ne--WnRrxEXE
 configobj==4.7.2
 # sha256: oz42dZy6Gowxw8AelDtO4gRgTW_xPdooH484k7I5EOY
