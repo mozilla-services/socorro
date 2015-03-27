@@ -207,8 +207,8 @@ class TestViews(BaseTestViews):
 
         rate_limit = settings.API_RATE_LIMIT
         rate_limit_times = int(re.findall('\d+', rate_limit)[0])
-
-        for i in range(rate_limit_times + 1):
+        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
+        for i in range(rate_limit_times * 2):
             response = self.client.get(url, {
                 'product': 'WaterWolf',
                 'versions': ['10.0', '11.1'],
@@ -1677,7 +1677,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         # the rate limit is currently X/min so it's easy to hit the limit
         current_limit = int(re.findall('\d+', settings.API_RATE_LIMIT)[0])
-        for __ in range(current_limit):
+        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
+        for __ in range(current_limit * 2):
             response = self.client.get(url)
         eq_(response.status_code, 429)
 

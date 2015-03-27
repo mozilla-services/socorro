@@ -299,7 +299,8 @@ class TestViews(BaseTestViews):
 
         url = reverse('supersearch.search')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
-        for i in range(limit):
+        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
+        for i in range(limit * 2):
             self.client.get(url)
         # make it realistic like a browser sends this header
         response = self.client.get(url, HTTP_ACCEPT='text/html')
@@ -583,7 +584,8 @@ class TestViews(BaseTestViews):
         url = reverse('supersearch.search_results')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
         params = {'product': 'WaterWolf'}
-        for i in range(limit):
+        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
+        for i in range(limit * 2):
             self.client.get(url, params)
         response = self.client.get(
             url,
