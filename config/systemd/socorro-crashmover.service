@@ -5,6 +5,7 @@ Description=Socorro Crashmover
 WorkingDirectory=/home/socorro
 Environment=VENV=/data/socorro/socorro-virtualenv
 ExecStart=/bin/bash -c "/usr/bin/envconsul -upcase=false -prefix socorro/common -prefix socorro/crashmover $VENV/bin/socorro crashmover"
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

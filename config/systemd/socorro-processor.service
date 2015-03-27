@@ -5,6 +5,7 @@ Description=Socorro Processor
 WorkingDirectory=/home/socorro
 Environment=VENV=/data/socorro/socorro-virtualenv
 ExecStart=/bin/bash -c "envconsul -upcase=false -prefix socorro/common -prefix socorro/processor $VENV/bin/socorro processor"
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
