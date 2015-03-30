@@ -716,68 +716,6 @@ class TestViews(BaseTestViews):
         eq_(response['Content-Disposition'], 'attachment; filename="abc.dmp"')
         eq_(response['Content-Type'], 'application/octet-stream')
 
-    @mock.patch('requests.get')
-    def test_CommentsBySignature(self, rget):
-        url = reverse('api:model_wrapper', args=('CommentsBySignature',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['signature'])
-
-        def mocked_get(url, params, **options):
-            sample_user_comment = (
-                "This comment contains an "
-                "email@address.com and it also contains "
-                "https://url.com/path?thing=bob"
-            )
-            hits = {
-                "hits": [{
-                    "user_comments": sample_user_comment,
-                    "date_processed": "2012-08-21T11:17:28-07:00",
-                    "email": "some@emailaddress.com",
-                    "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                }],
-                "total": 1
-            }
-            if 'crashes/comments' in url:
-                return Response(hits)
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url, {
-            'signature': 'one & two',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['hits'])
-        ok_(dump['total'])
-        hit = dump['hits'][0]
-        ok_('date_processed' in hit)
-        ok_('uuid' in hit)
-        ok_('user_comments' in hit)
-        ok_('email@address.com' not in hit['user_comments'])
-        ok_('https://url.com/path?thing=bob' not in hit['user_comments'])
-        ok_('email' not in hit)
-
-        user = self._login()
-        self._add_permission(user, 'view_pii')
-        response = self.client.get(url, {
-            'signature': 'one & two',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['hits'])
-        ok_(dump['total'])
-        hit = dump['hits'][0]
-        ok_('date_processed' in hit)
-        ok_('uuid' in hit)
-        ok_('user_comments' in hit)
-        # following is the difference of being signed in and having permissions
-        ok_('email@address.com' in hit['user_comments'])
-        ok_('https://url.com/path?thing=bob' in hit['user_comments'])
-        eq_(hit['email'], 'some@emailaddress.com')
-
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_Bugs(self, rpost):
         url = reverse('api:model_wrapper', args=('Bugs',))
