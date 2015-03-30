@@ -1509,9 +1509,12 @@ def report_list(request, partial=None, default_context=None):
                 report['date']
             ).strftime('%b %d, %Y %H:%M')
 
-            report['install_time'] = isodate.parse_datetime(
-                report['install_time']
-            ).strftime('%Y-%m-%d %H:%M:%S')
+            report['install_time'] = datetime.datetime.fromtimestamp(
+                float(report['install_time'])
+            )
+            report['install_time'] = report['install_time'].strftime(
+                '%Y-%m-%d %H:%M:%S'
+            )
 
         if os_count:
             correlation_os = max(os_count.iterkeys(),
