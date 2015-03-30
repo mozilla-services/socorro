@@ -1591,7 +1591,8 @@ class TestModelsWithFileCaching(TestCase):
         eq_(info[0]['product'], 'SeaMonkey')
 
         json_file = self._get_cached_file(self.tempdir)[0]
-        assert 'hits' in json.loads(open(json_file).read())
+        with open(json_file) as f:
+            assert 'hits' in json.loads(f.read())
 
         # if we now loose the memcache/locmem
         cache.clear()
@@ -1612,6 +1613,66 @@ class TestModelsWithFileCaching(TestCase):
         mocked_time.side_effect = my_time
         info = api.get()
         eq_(info[0]['product'], 'SeaMonkey')
+
+    @mock.patch('requests.get')
+    def test_get_current_version_by_file_cache(self, rget):
+        calls = []
+
+        def mocked_get(**options):
+            calls.append(options)
+            assert '/products/' in options['url']
+            return Response("""
+                {"hits": {
+                   "SeaMonkey": [{
+                     "product": "SeaMonkey",
+                     "throttle": "100.00",
+                     "end_date": "2012-05-10 00:00:00",
+                     "start_date": "2012-03-08 00:00:00",
+                     "featured": true,
+                     "version": "2.1.3pre",
+                     "release": "Beta",
+                     "id": 922}]
+                  },
+                  "products": ["SeaMonkey"]
+                }
+              """)
+        rget.side_effect = mocked_get
+
+        assert not self._get_cached_file(self.tempdir)
+
+        # the first time, we rely on the mocket request.get
+        model = models.CurrentVersions
+        api = model()
+        info = api.get()
+        eq_(info[0]['product'], 'SeaMonkey')
+        eq_(len(calls), 1)
+
+        json_file = self._get_cached_file(self.tempdir)[0]
+        with open(json_file) as f:
+            json_file_content = f.read()
+        assert 'hits' in json.loads(json_file_content)
+
+        # if we now loose the memcache/locmem
+        cache.clear()
+
+        info_second_time = api.get()
+        eq_(info_second_time, info)
+        eq_(len(calls), 1)
+
+        # now let's mess with the file
+        with open(json_file, 'w') as f:
+            f.write(json_file_content.replace('}', '!'))
+
+        info_third_time = api.get()
+        # The JSON file was broken, so it had to do another network
+        # request.
+        eq_(len(calls), 2)
+        eq_(info_third_time, info)
+        eq_(info_second_time, info_third_time)
+        # file gets recreated and should now be valid JSON again
+        assert os.path.isfile(json_file)
+        with open(json_file) as f:
+            json.load(f)  # should work
 
     @mock.patch('requests.get')
     def test_signature_urls(self, rget):

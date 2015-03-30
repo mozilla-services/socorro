@@ -195,10 +195,23 @@ def memoize(function):
                     os.remove(cache_file)
                 else:
                     logger.debug("CACHE FILE HIT %s" % stringified_args)
-                    if instance.expect_json:
-                        return json.load(open(cache_file))
-                    else:
-                        return open(cache_file).read()
+                    delete_cache_file = False
+                    with open(cache_file) as f:
+                        if instance.expect_json:
+                            try:
+                                return json.load(f)
+                            except ValueError:
+                                logger.warn(
+                                    "%s is not a valid JSON file and will "
+                                    "be deleted" % (
+                                        cache_file,
+                                    )
+                                )
+                                delete_cache_file = True
+                        else:
+                            return f.read()
+                    if delete_cache_file:
+                        os.remove(cache_file)
 
             # Didn't find our values in the cache
             return None
@@ -357,10 +370,24 @@ class SocorroCommon(object):
                             os.remove(cache_file)
                         else:
                             logger.debug("CACHE FILE HIT %s" % url)
-                            if expect_json:
-                                return json.load(open(cache_file)), True
-                            else:
-                                return open(cache_file).read(), True
+                            delete_cache_file = False
+                            with open(cache_file) as f:
+                                if expect_json:
+                                    try:
+                                        return json.load(f), True
+                                    except ValueError:
+                                        logger.warn(
+                                            "%s is not a valid JSON file and "
+                                            "will be deleted" % (
+                                                cache_file,
+                                            ),
+                                            exc_info=True
+                                        )
+                                        delete_cache_file = True
+                                else:
+                                    return f.read(), True
+                            if delete_cache_file:
+                                os.remove(cache_file)
 
         if method == 'post':
             request_method = requests.post
