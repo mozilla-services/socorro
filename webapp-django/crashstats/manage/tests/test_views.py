@@ -927,13 +927,13 @@ class TestViews(BaseTestViews):
             eq_(
                 data[0],
                 {
-                    'vendor_hex': '0x33',
-                    'adapter_hex': '0x2f',
+                    'vendor_hex': '0x0033',
+                    'adapter_hex': '0x002f',
                     'vendor_name': 'Paradyne Corp.',
                     'adapter_name': '.43 ieee 1394 controller'
                 }
             )
-            eq_(len(data), 6)
+            eq_(len(data), 7)
             return Response('true')
 
         rpost.side_effect = mocked_post

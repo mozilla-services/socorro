@@ -43,12 +43,15 @@
 	002F	.43 ieee 1394 controller
 	00333	1ACPI\GenuineIntel_-_x86_Family_6_Model_23\_0 1ACPI\GenuineIntel_-_x86_Family_6_Model_23\_0
 	6800	n/a
-	08b2	123abc logitech QuickCam® Pro 4000
+	08b2	123abc logitech QuickCamï¿½ Pro 4000
 	08f0	n/a n/a
 0553	 Aiptek USA
 	0200, 0x0201	DS38xx Oregon Scientific
 	6128_	USB\VID_0C45&PID_6148&REV_0101 USB PC Camera Plus
 	X0X0	Some rubbish
+0407	Lava Computer MFG Inc.
+	0221	LavaPort Quad-650 PCI C/D
+
 ;
 ;============
 ; END OF LIST
