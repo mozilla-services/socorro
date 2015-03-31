@@ -24,31 +24,31 @@ class ConnectionContext(RequiredConfig):
     required_config.add_option(
         name='database_hostname',
         default='localhost',
-        doc='the hostname of the database',
+        doc='the hostname of the database (deprecated)',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_name',
         default='breakpad',
-        doc='the name of the database',
+        doc='the name of the database (deprecated)',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_port',
         default=5432,
-        doc='the port for the database',
+        doc='the port for the database (deprecated)',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_username',
         default='breakpad_rw',
-        doc='the name of the user within the database',
+        doc='the name of the user within the database (deprecated)',
         reference_value_from='secrets.postgresql',
     )
     required_config.add_option(
         name='database_password',
         default='aPassword',
-        doc="the user's database password",
+        doc="the user's database password (deprecated)",
         reference_value_from='secrets.postgresql',
         secret=True,
     )
@@ -104,6 +104,7 @@ class ConnectionContext(RequiredConfig):
                 'database': url.path[1:] or 'postgres'
             }
 
+        # DEPRECATED use self.db_kwargs and --database_url instead
         self.dsn = ("host=%(database_hostname)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
@@ -126,9 +127,11 @@ class ConnectionContext(RequiredConfig):
             name_unused - optional named connections.  Used by the
                           derived class
         """
+        # Transition for supporting kwargs instead of a string
         if self.db_kwargs:
             return psycopg2.connect(**self.db_kwargs)
         else:
+            # Deprecated way of handling parameters
             return psycopg2.connect(self.dsn)
 
     #--------------------------------------------------------------------------

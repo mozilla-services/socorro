@@ -8,12 +8,13 @@ JENKINS_CONF=jenkins.py.dist
 
 ENV=env
 
-PYTHONPATH='.'
+PYTHONPATH=.
 
 PG_RESOURCES=""
 if [ -n "$database_url" ]; then
     PG_RESOURCES="resource.postgresql.database_url=$database_url"
 else
+    # This clause is all legacy and can be removed once we switch to use database_url in config
     if [ -n "$database_hostname" ]; then
         PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_hostname=$database_hostname"
     fi
