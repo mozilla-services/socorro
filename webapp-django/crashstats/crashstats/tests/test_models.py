@@ -21,7 +21,7 @@ class Response(object):
     def __init__(self, content=None, status_code=200):
         if not isinstance(content, basestring):
             content = json.dumps(content)
-        self.content = content
+        self.content = content.strip()
         self.status_code = status_code
 
 
