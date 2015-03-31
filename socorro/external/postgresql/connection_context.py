@@ -87,7 +87,7 @@ class ConnectionContext(RequiredConfig):
         if local_config is None:
             local_config = config
 
-        if local_config['database_url']:
+        if local_config.get('database_url'):
             self.database_url = local_config['database_url']
             url = urlparse.urlparse(local_config['database_url'])
             local_config['database_username'] = url.username
