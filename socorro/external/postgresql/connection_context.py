@@ -87,22 +87,15 @@ class ConnectionContext(RequiredConfig):
         if local_config is None:
             local_config = config
 
+        self.db_kwargs = {}
         if local_config.get('database_url'):
             self.database_url = local_config['database_url']
             url = urlparse.urlparse(local_config['database_url'])
-            local_config['database_username'] = url.username
-            local_config['database_password'] = url.password
-            local_config['database_hostname'] = url.hostname
-            local_config['database_port'] = url.port
-            local_config['database_name'] = url.path[1:]
-
-            self.db_kwargs = {
-                'host': url.hostname or 'localhost',
-                'user': url.username or os.environ.get('USER', 'test'),
-                'password': url.password or 'aPassword',
-                'port': url.port or 5432,
-                'database': url.path[1:] or 'postgres'
-            }
+            self.db_kwargs['database_username'] = url.username
+            self.db_kwargs['database_password'] = url.password
+            self.db_kwargs['database_hostname'] = url.hostname
+            self.db_kwargs['database_port'] = url.port
+            self.db_kwargs['database_name'] = url.path[1:]
 
         # DEPRECATED use self.db_kwargs and --database_url instead
         self.dsn = ("host=%(database_hostname)s "
