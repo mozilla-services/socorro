@@ -20,7 +20,11 @@ from configman.converters import (
 
 from socorro.lib.ooid import dateFromOoid
 from socorro.lib.transform_rules import Rule
-from socorro.lib.datetimeutil import UTC, datetimeFromISOdateString
+from socorro.lib.datetimeutil import (
+    UTC,
+    datetimeFromISOdateString,
+    datestring_to_weekly_partition
+)
 from socorro.lib.context_tools import temp_file_context
 
 from socorro.external.postgresql.dbapi2_util import (
@@ -776,8 +780,8 @@ class MissingSymbolsRule(Rule):
             self.database,
         )
         self.sql = (
-            "INSERT INTO missing_symbols(date_processed, debug_file, debug_id)"
-            " VALUES (%s, %s, %s)"
+            "INSERT INTO missing_symbols_%s (date_processed, debug_file, debug_id)"
+            " VALUES (%%s, %%s, %%s)"
         )
 
     #--------------------------------------------------------------------------
@@ -788,6 +792,8 @@ class MissingSymbolsRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             date = processed_crash['date_processed']
+            # update partition information based on date processed
+            self.sql = self.sql % datestring_to_weekly_partition(date)
             for module in processed_crash['json_dump']['modules']:
                 try:
                     if module['missing_symbols']:
