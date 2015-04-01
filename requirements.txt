@@ -182,3 +182,5 @@ flake8==2.4.0
 # sha256: ic9r9P9kT_i5EuL6fiq7aNV6jn6Rjjk8coQNMNLrzws
 # sha256: PYypv2XFAU9GkYBUTR3Vu1ud9wmq1jBPnC5DcK4Ke3w
 mccabe==0.3
+# sha256: Qe3TI-mz8cZzF-Ix1GDaaLPTjGUzLAOD7etvu996wh0
+astral==0.8.1
