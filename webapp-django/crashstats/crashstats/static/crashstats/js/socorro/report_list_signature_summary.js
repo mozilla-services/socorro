@@ -71,20 +71,20 @@ var SignatureSummary = (function() {
                    if (data.canViewExploitability) {
                        exploitabilityScoreHtml = Mustache.to_html(Templates.exploitabilityScore, data);
                    } else {
-                       $("#exploitabilityScore").remove();
+                       $("#exploitability-score").remove();
                    }
 
-                   $(percentageByOsHtml).appendTo("#percentageByOsBody");
-                   $(uptimeRangeHtml).appendTo("#uptimeRangeBody");
-                   $(productVersionsHtml).appendTo("#productVersionsBody");
-                   $(architectureHtml).appendTo("#architectureBody");
-                   $(processTypeHtml).appendTo("#processTypeBody");
-                   $(flashVersionHtml).appendTo("#flashVersionBody");
-                   $(distinctInstallHtml).appendTo("#distinctInstallBody");
+                   $(percentageByOsHtml).appendTo("#percentage-by-os-body");
+                   $(uptimeRangeHtml).appendTo("#uptime-range-body");
+                   $(productVersionsHtml).appendTo("#product-versions-body");
+                   $(architectureHtml).appendTo("#architecture-body");
+                   $(processTypeHtml).appendTo("#process-typeBody");
+                   $(flashVersionHtml).appendTo("#flash-version-body");
+                   $(distinctInstallHtml).appendTo("#distinct-install-body");
                    $(devicesHtml).appendTo("#devices");
                    $(graphicsHtml).appendTo("#graphics");
                    if (data.canViewExploitability) {
-                       $(exploitabilityScoreHtml).appendTo("#exploitabilityScore tbody");
+                       $(exploitabilityScoreHtml).appendTo("#exploitability-score tbody");
                    }
 
                    $(".sig-dashboard-tbl", $wrapper).show();
