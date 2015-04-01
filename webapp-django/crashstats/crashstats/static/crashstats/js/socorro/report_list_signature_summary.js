@@ -11,7 +11,7 @@ Templates.flashVersion = "{{#flashVersions}} <tr><td> {{flashVersion}} </td> <td
 Templates.distinctInstall = "{{#distinctInstall}} <tr><td> {{product}} </td> <td> {{version}} </td> <td> {{crashes}}</td><td> {{installations}} </td></tr> {{/distinctInstall}}";
 Templates.deviceTmpl = "{{#devices}} <tr><td> {{manufacturer}} </td> <td> {{model}}</td><td> {{version}} </td><td> {{cpu_abi}} </td><td> {{report_count}} </td><td> {{percentage}} %</td></tr> {{/devices}}";
 Templates.graphicsTmpl = "{{#graphics}} <tr><td> {{vendor}} </td> <td> {{adapter}}</td><td> {{report_count}} </td><td> {{percentage}} %</td></tr> {{/graphics}}";
-Templates.exploitabilityScore = "{{#exploitabilityScore}} <tr><td> {{report_date}} </td> <td> {{null_count}} </td> <td> {{low_count}}</td><td> {{medium_count}} </td> <td> {{high_count}}</td></tr> {{/exploitabilityScore}}";
+Templates.exploitabilityScore = "{{#exploitability-score}} <tr><td> {{report_date}} </td> <td> {{null_count}} </td> <td> {{low_count}}</td><td> {{medium_count}} </td> <td> {{high_count}}</td></tr> {{/exploitabilityScore}}";
 
 
 var SignatureSummary = (function() {

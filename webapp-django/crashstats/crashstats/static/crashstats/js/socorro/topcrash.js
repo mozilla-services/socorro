@@ -143,7 +143,7 @@ $(document).ready(function () {
         perosTbl = $("#peros-tbl")
         ;
 
-    $("#signatureList").tablesorter({
+    $("#signature-list").tablesorter({
         headers: {
             0: { sorter: 'digit' },
             1: { sorter: false },
@@ -168,7 +168,7 @@ $(document).ready(function () {
         }
     });
 
-    $("#signatureList tr, #peros-tbl tr").each(function() {
+    $("#signature-list tr, #peros-tbl tr").each(function() {
         $.data(this, 'graphable', true);
     });
 
@@ -243,7 +243,7 @@ $(document).ready(function () {
         }
     }
 
-    $("#signatureList .graph-icon, #peros-tbl .graph-icon").click(function (event) {
+    $("#signature-list .graph-icon, #peros-tbl .graph-icon").click(function (event) {
         event.preventDefault();
 
         var ctx = $(this).parents('.signature-column'),
@@ -302,7 +302,7 @@ $(document).ready(function () {
     });
 
     // on click close the current graph
-    $("#signatureList, #peros-tbl").on('click', '.graph-close', function(event) {
+    $("#signature-list, #peros-tbl").on('click', '.graph-close', function(event) {
         event.preventDefault();
         $(this).parents(".sig-history-container").addClass("hide");
     });
