@@ -262,7 +262,6 @@
   socorro.cron.jobs.matviews.SignatureSummaryGraphicsCronApp|1d|05:00
   #socorro.cron.jobs.modulelist.ModulelistCronApp|1d
   socorro.cron.jobs.matviews.GCCrashes|1d|05:00
-  socorro.cron.jobs.symbolsunpack.SymbolsUnpackCronApp|10m
   socorro.cron.jobs.elasticsearch_cleanup.ElasticsearchCleanupCronApp|30d
   socorro.cron.jobs.matviews.CorrelationsAddonCronApp|1d|07:00
   socorro.cron.jobs.matviews.CorrelationsCoreCronApp|1d|07:30
@@ -2051,20 +2050,6 @@
             # see "secrets.postgresql.database_username" for the default or override it here
             #database_username=breakpad_rw
 
-    [[class-SymbolsUnpackCronApp]]
-
-        # Directory where the archive files are unpacked to
-        #destination_directory=
-
-        # frequency
-        #frequency=10m
-
-        # Directory where the archive files are located
-        #source_directory=
-
-        # time
-        #time=
-
     [[class-TCBSBuildCronApp]]
 
         # frequency
@@ -2214,4 +2199,3 @@
     # DSN for Sentry via raven
     # see "secrets.sentry.dsn" for the default or override it here
     #dsn=
-
