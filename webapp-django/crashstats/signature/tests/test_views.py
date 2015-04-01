@@ -8,7 +8,8 @@ from waffle import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+    SuperSearchResponse,
 )
 
 DUMB_SIGNATURE = 'mozilla::wow::such_signature(smth*)'
@@ -73,11 +74,13 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             ok_('signature' in params)
             eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
             if 'product' in params:
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "date": "2017-01-31T23:12:57",
@@ -113,7 +116,7 @@ class TestViews(BaseTestViews):
                         }
                     ],
                     "total": 4
-                })
+                }, columns=params['_columns'])
 
             return Response({"hits": [], "total": 0})
 
@@ -223,6 +226,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
             ok_('_results_offset' not in params)
@@ -238,11 +243,11 @@ class TestViews(BaseTestViews):
                     "platform": "Linux",
                     "build_id": 888981
                 })
-            return Response({
+            return SuperSearchResponse({
                 "hits": hits,
                 "facets": "",
                 "total": len(hits)
-            })
+            }, columns=params['_columns'])
 
         rget.side_effect = mocked_get
 
@@ -353,6 +358,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             ok_('signature' in params)
             eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
@@ -360,7 +367,7 @@ class TestViews(BaseTestViews):
             eq_(params['user_comments'], ['!__null__'])
 
             if 'product' in params:
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "date": "2017-01-31T23:12:57",
@@ -396,7 +403,7 @@ class TestViews(BaseTestViews):
                         }
                     ],
                     "total": 4
-                })
+                }, columns=params['_columns'])
 
             return Response({"hits": [], "total": 0})
 
@@ -433,6 +440,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             if '_results_offset' in params:
                 hits_range = range(100, 140)
             else:
@@ -446,10 +455,10 @@ class TestViews(BaseTestViews):
                     "user_comments": "hi",
                 })
 
-            return Response({
+            return SuperSearchResponse({
                 "hits": hits,
                 "total": 140
-            })
+            }, columns=params['_columns'])
 
         rget.side_effect = mocked_get
 

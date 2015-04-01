@@ -19,7 +19,7 @@
               {% set value = crash.get(column.key, '') %}
               {% if column.key == 'date' %}
                 <td class="report-date_processed">
-                  <a href="{{ url('crashstats:report_index', crash.uuid) }}">{{ crash.date_processed }}</a>
+                  <a href="{{ url('crashstats:report_index', crash.uuid) }}">{{ crash.date }}</a>
                   <div class="hang-pair"></div>
                 </td>
               {% elif column.key == 'os_and_version' %}
