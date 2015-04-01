@@ -16,7 +16,8 @@ from crashstats.supersearch.views import (
     get_report_list_parameters,
 )
 from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+    SuperSearchResponse,
 )
 
 
@@ -159,8 +160,10 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             if 'product' in params and 'WaterWolf' in params['product']:
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -220,9 +223,9 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 4
-                })
+                }, columns=params['_columns'])
             elif 'product' in params and 'SeaMonkey' in params['product']:
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -252,12 +255,12 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 2
-                })
+                }, columns=params['_columns'])
             elif (
                 'signature' in params and
                 '~nsASDOMWindowEnumerator' in params['signature']
             ):
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -278,7 +281,7 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 1
-                })
+                }, columns=params['_columns'])
             else:
                 return Response({"hits": [], "facets": [], "total": 0})
 
@@ -404,6 +407,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             if '_facets' in params and 'url' in params['_facets']:
                 facets = {
                     "platform": [
@@ -429,7 +434,7 @@ class TestViews(BaseTestViews):
                     ]
                 }
 
-            return Response({
+            return SuperSearchResponse({
                 "hits": [
                     {
                         "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -470,7 +475,7 @@ class TestViews(BaseTestViews):
                 ],
                 "facets": facets,
                 "total": 3
-            })
+            }, columns=params['_columns'])
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -605,6 +610,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
             ok_('_results_offset' not in params)
@@ -620,11 +627,11 @@ class TestViews(BaseTestViews):
                     "platform": "Linux",
                     "build_id": 888981
                 })
-            return Response({
+            return SuperSearchResponse({
                 "hits": hits,
                 "facets": "",
                 "total": len(hits)
-            })
+            }, columns=params['_columns'])
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get

@@ -200,6 +200,11 @@ def get_report_list_from_super_search(**kwargs):
         params['_sort'] = '-' + params['_sort']
     del params['_reverse']
 
+    # Correct the 'os_and_version' column name.
+    if 'os_and_version' in params['_columns']:
+        params['_columns'].remove('os_and_version')
+        params['_columns'].extend(['platform', 'platform_version'])
+
     api = SuperSearchUnredacted()
     return api.get(**params)
 
@@ -1440,6 +1445,14 @@ def report_list(request, partial=None, default_context=None):
                 include_raw_crash = True
                 break
 
+        api_columns = [x['key'] for x in context['columns']]
+        # The correlations tab requires some keys to always be there. Since
+        # they are low cost, we add them here, to keep the advantages of the
+        # shared cache between the two tabs.
+        api_columns += [
+            'platform', 'version', 'release_channel', 'install_time', 'date'
+        ]
+
         context['include_raw_crash'] = include_raw_crash
 
         # some column keys have ids that aren't real fields,
@@ -1461,6 +1474,7 @@ def report_list(request, partial=None, default_context=None):
             release_channel=form.cleaned_data['release_channels'],
             process_type=process_type,
             hang_type=hang_type,
+            _columns=api_columns,
             _sort=sort_,
             _reverse=context['reverse'],
             _results_number=results_per_page,
@@ -1482,8 +1496,6 @@ def report_list(request, partial=None, default_context=None):
                 context
             )
 
-        context['signature'] = context['report_list']['hits'][0]['signature']
-
         context['report_list']['total_pages'] = int(math.ceil(
             context['report_list']['total'] / float(results_per_page)))
 
@@ -1499,7 +1511,7 @@ def report_list(request, partial=None, default_context=None):
 
             # report_list does not contain beta identifier, but the correlation
             # form needs it for validation
-            if report['release_channel'] == 'beta':
+            if report['release_channel'].lower() == 'beta':
                 version = version + 'b'
 
             os_count[os_name] += 1
@@ -1837,6 +1849,7 @@ def your_crashes(request, default_context=None):
     results = api.get(
         email=request.user.email,
         date='>%s' % one_month_ago,
+        _columns=['date', 'uuid'],
     )
 
     context['crashes_list'] = [
