@@ -144,6 +144,7 @@ $(document).ready(function () {
         ;
 
     $("#signatureList").tablesorter({
+        sortInitialOrder: "desc",
         headers: {
             0: { sorter: 'digit' },
             1: { sorter: false },
