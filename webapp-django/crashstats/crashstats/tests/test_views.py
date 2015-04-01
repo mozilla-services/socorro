@@ -29,6 +29,10 @@ from django.contrib.contenttypes.models import ContentType
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
+from crashstats.supersearch.tests.common import (
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+    SuperSearchResponse,
+)
 
 from .test_models import Response
 
@@ -406,9 +410,6 @@ class BaseTestViews(DjangoTestCase):
                       """ % {'end_date': now.strftime('%Y-%m-%d'),
                              'yesterday': yesterday.strftime('%Y-%m-%d')})
             if '/supersearch/fields/' in url:
-                from crashstats.supersearch.tests.test_views import (
-                    SUPERSEARCH_FIELDS_MOCKED_RESULTS
-                )
                 results = copy.copy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
                 # to be realistic we want to introduce some dupes
                 # that have a different key but its `in_database_name`
@@ -2624,10 +2625,11 @@ class TestViews(BaseTestViews):
                     }
                 })
 
+            assert '_columns' in params
             assert 'email' in params
             assert params['email'] == ['test@mozilla.com']
 
-            return Response({
+            return SuperSearchResponse({
                 'hits': [
                     {
                         'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
@@ -2639,7 +2641,7 @@ class TestViews(BaseTestViews):
                     }
                 ],
                 'total': 2
-            })
+            }, columns=params['_columns'])
 
         rget.side_effect = mocked_get
 
