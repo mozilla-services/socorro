@@ -197,6 +197,11 @@ class SocorroDBApp(App):
             self.bulk_load_table(db, table)
 
     def generate_fakedata(self, db, fakedata_days):
+        # Set up partitions before loading report data
+        db.session.execute("""
+                SELECT weekly_report_partitions(4, now()-'2 weeks'::interval)
+        """)
+
         start_date = end_date = None
         for table in fakedata.tables:
             table = table(days=fakedata_days)
@@ -214,6 +219,7 @@ class SocorroDBApp(App):
                 end_date = table.end_date
 
             self.bulk_load_table(db, table)
+
 
         db.session.execute("""
                 SELECT backfill_matviews(cast(:start as DATE),

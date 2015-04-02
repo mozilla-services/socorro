@@ -161,3 +161,17 @@ def test_uuid_to_date():
     date_exp = datetime.date(year=1118, month=12, day=23)
     date = datetimeutil.uuid_to_date(uuid, century=11)
     eq_(date, date_exp)
+
+def test_date_to_weekly_partition():
+    datestring = '2015-01-09'
+    partition_exp = '20150105'
+
+    partition = datetimeutil.datestring_to_weekly_partition(datestring)
+    eq_(partition, partition_exp)
+
+    # Is there a better way of testing that we handle 'now' as a date value?
+    datestring = 'now'
+    date_now = datetime.datetime.now().date()
+    partition_exp = (date_now + datetime.timedelta(0 - date_now.weekday())).strftime('%Y%m%d')
+    partition = datetimeutil.datestring_to_weekly_partition(datestring)
+    eq_(partition, partition_exp)
