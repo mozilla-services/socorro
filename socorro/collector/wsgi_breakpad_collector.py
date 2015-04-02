@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import astral
+import datetime
 import web
 import time
 
@@ -46,6 +48,11 @@ class BreakpadCollector(RequiredConfig):
             'hash value',
         default='hashlib.md5',
         from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'reject_crash_on_rahukaalam',
+        doc='reject crashes during Rahukaalam',
+        default=False
     )
 
     #--------------------------------------------------------------------------
@@ -116,6 +123,18 @@ class BreakpadCollector(RequiredConfig):
         if raw_crash.legacy_processing == IGNORE:
             self.logger.info('%s ignored', crash_id)
             return "Unsupported=1\n"
+        if self.config.collector.reject_crash_on_rahukaalam:
+            # only accept crash if not currently Rahukaalam
+            # http://en.wikipedia.org/wiki/Rahukaalam
+            a = astral.Astral()
+            latitude_mountain_view = '37.3894'
+            longitude_mountain_view = '122.0819'
+            now = datetime.datetime.utcnow()
+            try:
+                a.rahukaalam_utc(now, latitude_mountain_view, longitude_mountain_view)
+            except astral.AstralError:
+                # throw crash away, for now is an inauspicious time
+                return "Rahukaalam=1\n"
 
         self.config.crash_storage.save_raw_crash(
           raw_crash,

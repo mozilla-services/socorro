@@ -36,6 +36,7 @@ class TestCollectorApp(TestCase):
         config.collector.accept_submitted_crash_id = False
         config.collector.accept_submitted_legacy_processing = False
         config.collector.checksum_method = hashlib.md5
+        config.collector.reject_crash_on_rahukaalam = False
 
         config.crash_storage = mock.MagicMock()
 
