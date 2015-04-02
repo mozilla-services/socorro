@@ -20,6 +20,7 @@ def dsToWeeklyPartition(ds):
     last_monday = d + datetime.timedelta(0 - d.weekday())
     return last_monday.strftime('%Y%m%d')
 
+
 if len(sys.argv) != 2:
     print "usage: %s [psql dump filename]" % sys.argv[0]
     exit
@@ -31,6 +32,9 @@ partition_dir = os.path.join("partitions", tablename)
 mkdir_p(partition_dir)
 
 open_files = {}
+
+date_reg_exp = re.compile('\d{4}[-/]\d{2}[-/]\d{2}')
+
 with open(filename, "r") as sql:
     for line in sql:
         # if line starts with COPY, save it for later
@@ -38,9 +42,9 @@ with open(filename, "r") as sql:
             copy_line = line
             continue
         try:
-            stuff = line.split("\t")
-            ds = datetime.datetime.strptime(stuff[0], '%Y-%m-%d').date()
-            partition = dsToWeeklyPartition(stuff[0])
+            dates = date_reg_exp.findall(line)
+            ds = datetime.datetime.strptime(dates[0], '%Y-%m-%d').date()
+            partition = dsToWeeklyPartition(dates[0])
         except:
             # Skip non-data lines
             continue

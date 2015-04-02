@@ -6,10 +6,14 @@ set -o xtrace
 tablename=$1
 # dump the table
 
-pg_dump breakpad \
-    -a \
-    -t ${tablename} \
-    -f ${tablename}.dump 
+
+if [ ! -e "${tablename}.dump" ]
+then
+    pg_dump breakpad \
+        -a \
+        -t ${tablename} \
+        -f ${tablename}.dump
+fi
 
 # break up the files
 python partition_dump.py ${tablename}.dump

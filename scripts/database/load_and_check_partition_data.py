@@ -5,6 +5,7 @@ import glob
 import os
 import os.path
 import subprocess
+import sys
 
 if len(sys.argv) != 2:
     print "USAGE: %s [parent table]"
@@ -13,6 +14,7 @@ if len(sys.argv) != 2:
 parent_table = sys.argv[1]
 partition_dir = os.path.join("partitions", parent_table)
 
+errors = []
 # Iterate through all split up dump files
 for filename in glob.glob(os.path.join(partition_dir, "*")):
     print "INFO: processing", filename
@@ -39,5 +41,13 @@ for filename in glob.glob(os.path.join(partition_dir, "*")):
         print "INFO: before:", before_count, "after:", after_count
         if int(before_count) != int(after_count):
             print "ERROR: counts did not match for file", filename
+            errors.append(filename)
     else:
         print "ERROR: before count is %i" % before_count
+        errors.append(filename)
+
+if len(errors) > 1:
+    print "FAILED: some files returned errors:", str(errors)
+    return 1
+
+return 0

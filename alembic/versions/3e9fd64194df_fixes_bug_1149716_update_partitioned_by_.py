@@ -36,6 +36,25 @@ def upgrade():
         'update_signature_summary_uptime.sql',
         'find_weekly_partition.sql'
     ])
+    # Insert partitioning for device as well
+    op.execute("""
+        INSERT INTO report_partition_info
+        (table_name, build_order, keys, indexes, fkeys, partition_column, timetype)
+        VALUES (
+            'signature_summary_device',
+            '14',
+            '{"signature_id, android_device_id, product_version_id, report_date"}',
+            '{report_date}',
+            '{}',
+            'report_date',
+            'DATE'
+        )
+    """)
+    op.execute("""
+        UPDATE report_partition_info
+        SET timetype = 'DATE'
+        WHERE table_name = 'missing_symbols'
+    """)
     ### end Alembic commands ###
 
 
@@ -53,4 +72,10 @@ def downgrade():
         'update_signature_summary_uptime.sql'
     ])
     op.execute(""" DROP FUNCTION find_weekly_partition(date, text) """)
+    op.execute(""" delete from report_partition_info where table_name = 'signature_summary_device' """)
+    op.execute("""
+        UPDATE report_partition_info
+        SET timetype = 'TIMESTAMPTZ'
+        WHERE table_name = 'missing_symbols'
+    """)
     ### end Alembic commands ###
