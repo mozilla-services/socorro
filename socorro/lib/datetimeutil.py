@@ -150,3 +150,23 @@ class JsonDTEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime):
             return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
         return json.JSONEncoder.default(self, obj)
+
+
+def datestring_to_weekly_partition(date_str):
+    """Return a string representing a weekly partition from a date.
+
+    Our partitions start on Mondays.
+
+    Example:
+        date = '2015-01-09'
+        weekly_partition = '2014-01-05'
+    """
+
+    if date_str == 'now':
+        d = datetime.datetime.now().date()
+    else:
+        d = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+
+    last_monday = d + datetime.timedelta(0 - d.weekday())
+
+    return last_monday.strftime('%Y%m%d')

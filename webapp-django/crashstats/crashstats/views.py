@@ -194,11 +194,17 @@ def get_report_list_from_super_search(**kwargs):
             params[param] = None
 
     # Convert the sorting parameters.
-    assert isinstance(params['_sort'], basestring)
-    params['_sort'] = old_names_map.get(params['_sort'], params['_sort'])
-    if params['_reverse']:
-        params['_sort'] = '-' + params['_sort']
-    del params['_reverse']
+    if params.get('_sort'):
+        assert isinstance(params['_sort'], basestring)
+        params['_sort'] = old_names_map.get(params['_sort'], params['_sort'])
+        if params.get('_reverse'):
+            params['_sort'] = '-' + params['_sort']
+        del params['_reverse']
+
+    # Correct the 'os_and_version' column name.
+    if 'os_and_version' in params['_columns']:
+        params['_columns'].remove('os_and_version')
+        params['_columns'].extend(['platform', 'platform_version'])
 
     api = SuperSearchUnredacted()
     return api.get(**params)
@@ -1410,7 +1416,7 @@ def report_list(request, partial=None, default_context=None):
         # of the fact that the ReportList() data gets cached.
 
         context['sort'] = request.GET.get('sort', 'date_processed')
-        context['reverse'] = request.GET.get('reverse', 'false').lower()
+        context['reverse'] = request.GET.get('reverse', 'true').lower()
         context['reverse'] = context['reverse'] != 'false'
 
         columns = request.GET.getlist('c')
@@ -1440,6 +1446,14 @@ def report_list(request, partial=None, default_context=None):
                 include_raw_crash = True
                 break
 
+        api_columns = [x['key'] for x in context['columns']]
+        # The correlations tab requires some keys to always be there. Since
+        # they are low cost, we add them here, to keep the advantages of the
+        # shared cache between the two tabs.
+        api_columns += [
+            'platform', 'version', 'release_channel', 'install_time', 'date'
+        ]
+
         context['include_raw_crash'] = include_raw_crash
 
         # some column keys have ids that aren't real fields,
@@ -1461,6 +1475,7 @@ def report_list(request, partial=None, default_context=None):
             release_channel=form.cleaned_data['release_channels'],
             process_type=process_type,
             hang_type=hang_type,
+            _columns=api_columns,
             _sort=sort_,
             _reverse=context['reverse'],
             _results_number=results_per_page,
@@ -1482,8 +1497,6 @@ def report_list(request, partial=None, default_context=None):
                 context
             )
 
-        context['signature'] = context['report_list']['hits'][0]['signature']
-
         context['report_list']['total_pages'] = int(math.ceil(
             context['report_list']['total'] / float(results_per_page)))
 
@@ -1499,7 +1512,7 @@ def report_list(request, partial=None, default_context=None):
 
             # report_list does not contain beta identifier, but the correlation
             # form needs it for validation
-            if report['release_channel'] == 'beta':
+            if report['release_channel'].lower() == 'beta':
                 version = version + 'b'
 
             os_count[os_name] += 1
@@ -1601,26 +1614,22 @@ def report_list(request, partial=None, default_context=None):
             context['signature_urls'] = None
 
     if partial == 'comments':
-        context['comments'] = []
-        comments_api = models.CommentsBySignature()
-
-        context['comments'] = comments_api.get(
+        context['comments'] = get_report_list_from_super_search(
             signature=context['signature'],
-            products=form.cleaned_data['product'],
-            versions=context['product_versions'],
-            os=form.cleaned_data['platform'],
+            product=context['selected_products'],
+            version=context['product_versions'],
             start_date=start_date,
             end_date=end_date,
-            build_ids=form.cleaned_data['build_id'],
-            reasons=form.cleaned_data['reason'],
-            release_channels=form.cleaned_data['release_channels'],
-            report_process=form.cleaned_data['process_type'],
-            report_type=form.cleaned_data['hang_type'],
-            plugin_in=form.cleaned_data['plugin_field'],
-            plugin_search_mode=form.cleaned_data['plugin_query_type'],
-            plugin_terms=form.cleaned_data['plugin_query'],
-            result_number=results_per_page,
-            result_offset=result_offset
+            platform=form.cleaned_data['platform'],
+            build_id=form.cleaned_data['build_id'],
+            reason=form.cleaned_data['reason'],
+            release_channel=form.cleaned_data['release_channels'],
+            process_type=process_type,
+            hang_type=hang_type,
+            user_comments='!__null__',
+            _columns=['user_comments', 'date', 'uuid', 'email'],
+            _results_number=results_per_page,
+            _results_offset=result_offset,
         )
 
         current_query = request.GET.copy()
@@ -1827,6 +1836,7 @@ def your_crashes(request, default_context=None):
     results = api.get(
         email=request.user.email,
         date='>%s' % one_month_ago,
+        _columns=['date', 'uuid'],
     )
 
     context['crashes_list'] = [

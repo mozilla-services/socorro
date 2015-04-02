@@ -31,7 +31,8 @@ from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.models import SuperSearch
 from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+    SuperSearchResponse,
 )
 
 from .test_models import Response
@@ -2628,10 +2629,11 @@ class TestViews(BaseTestViews):
                     }
                 })
 
+            assert '_columns' in params
             assert 'email' in params
             assert params['email'] == ['test@mozilla.com']
 
-            return Response({
+            return SuperSearchResponse({
                 'hits': [
                     {
                         'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
@@ -2643,7 +2645,7 @@ class TestViews(BaseTestViews):
                     }
                 ],
                 'total': 2
-            })
+            }, columns=params['_columns'])
 
         rget.side_effect = mocked_get
 
@@ -3836,10 +3838,12 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch/' in url:
+                assert '_columns' in params
+
                 # Note that the key `install_time` was removed from the
                 # second dict here. The reason for that is the install_time
                 # is not a depdendable field from the breakpad client.
-                return Response("""
+                return SuperSearchResponse("""
                 {
                   "hits": [
                     {
@@ -3890,7 +3894,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                """, columns=params['_columns'])
 
             if 'correlations/signatures' in url:
                 return Response("""
@@ -4087,13 +4091,13 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if '/crashes/comments' in url:
+            if 'supersearch' in url:
                 return Response("""
                 {
                   "hits": [
                    {
                      "user_comments": "I LOVE CHEESE cheese@email.com",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
+                     "date": "2012-08-21T11:17:28-07:00",
                      "email": "bob@uncle.com",
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
@@ -4139,13 +4143,13 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if '/crashes/comments' in url:
+            if 'supersearch' in url:
                 called_with_params.append(params)
-                if params.get('result_offset'):
+                if params.get('_results_offset'):
                     return Response({
                         "hits": [{
                             "user_comments": "I LOVE HAM",
-                            "date_processed": "2012-08-21T11:17:28-07:00",
+                            "date": "2012-08-21T11:17:28-07:00",
                             "email": "bob@uncle.com",
                             "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                         }],
@@ -4155,7 +4159,7 @@ class TestViews(BaseTestViews):
                     return Response({
                         "hits": [{
                             "user_comments": "I LOVE CHEESE",
-                            "date_processed": "2011-08-21T11:17:28-07:00",
+                            "date": "2011-08-21T11:17:28-07:00",
                             "email": "bob@uncle.com",
                             "uuid": "469bde48-0e8f-3586-d486-b98810120829"
                         }],
@@ -4194,7 +4198,8 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch' in url:
-                return Response("""
+                assert '_columns' in params
+                return SuperSearchResponse("""
                 {
                   "hits": [
                     {
@@ -4244,7 +4249,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                """, columns=params['_columns'])
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4269,7 +4274,8 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch' in url:
-                return Response("""
+                assert '_columns' in params
+                return SuperSearchResponse("""
                 {
                   "hits": [
                     {
@@ -4319,7 +4325,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                """, columns=params['_columns'])
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4332,7 +4338,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, data)
         eq_(response.status_code, 200)
         assert len(mock_calls) == 1
-        eq_(mock_calls[-1]['_sort'], ['date'])
+        eq_(mock_calls[-1]['_sort'], ['-date'])
         ok_('reverse' not in mock_calls[-1])
 
         response = self.client.get(url, dict(
@@ -4341,17 +4347,17 @@ class TestViews(BaseTestViews):
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 2
-        eq_(mock_calls[-1]['_sort'], ['build_id'])
+        eq_(mock_calls[-1]['_sort'], ['-build_id'])
         ok_('reverse' not in mock_calls[-1])
 
         response = self.client.get(url, dict(
             data,
             sort='build',
-            reverse='True'
+            reverse='False'
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 3
-        eq_(mock_calls[-1]['_sort'], ['-build_id'])
+        eq_(mock_calls[-1]['_sort'], ['build_id'])
         ok_('reverse' not in mock_calls[-1])
 
     @mock.patch('requests.get')
@@ -4362,7 +4368,8 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch' in url:
-                return Response("""
+                assert '_columns' in params
+                return SuperSearchResponse("""
                 {
                   "hits": [
                     {
@@ -4412,7 +4419,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                """, columns=params['_columns'])
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4441,7 +4448,8 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch' in url:
-                return Response("""
+                assert '_columns' in params
+                return SuperSearchResponse("""
                 {
                   "hits": [
                     {
@@ -4493,7 +4501,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                """, columns=params['_columns'])
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4623,7 +4631,8 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch' in url:
-                return Response("""
+                assert '_columns' in params
+                return SuperSearchResponse("""
                 {
                   "hits": [
                     {
@@ -4673,7 +4682,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                """, columns=params['_columns'])
 
             raise NotImplementedError(url)
 

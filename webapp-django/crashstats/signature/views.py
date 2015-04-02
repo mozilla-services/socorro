@@ -129,6 +129,13 @@ def signature_reports(request):
         x for x in data['columns'] if x in allowed_fields
     ]
 
+    params['_columns'] = data['columns']
+
+    # The uuid is always displayed in the UI so we need to make sure it is
+    # always returned by the model.
+    if 'uuid' not in params['_columns']:
+        params['_columns'].append('uuid')
+
     try:
         current_page = int(request.GET.get('page', 1))
     except ValueError:
@@ -261,6 +268,7 @@ def signature_comments(request):
 
     params['signature'] = '=' + signature
     params['user_comments'] = '!__null__'
+    params['_columns'] = ['uuid', 'user_comments']
     params['_results_number'] = results_per_page
     params['_results_offset'] = data['results_offset']
     params['_facets'] = []  # We don't need no facets.

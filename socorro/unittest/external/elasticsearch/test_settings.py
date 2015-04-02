@@ -89,7 +89,7 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         res = self.api.get(dump='~Windows NT')
         eq_(res['total'], 1)
 
-    @maximum_es_version('0.90')
+    @maximum_es_version('0.90.99')
     def test_cpu_info_field(self):
         """Verify that the 'cpu_info' field can be queried as expected. """
         processed_crash = {
@@ -101,12 +101,18 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         # Simple test with one word, no upper case.
-        res = self.api.get(cpu_info='~model')
+        res = self.api.get(
+            cpu_info='~model',
+            _columns=['cpu_info'],
+        )
         eq_(res['total'], 1)
         ok_('model' in res['hits'][0]['cpu_info'])
 
         # Several words, with upper case, 'starts with' mode.
-        res = self.api.get(cpu_info='$GenuineIntel family')
+        res = self.api.get(
+            cpu_info='$GenuineIntel family',
+            _columns=['cpu_info'],
+        )
         eq_(res['total'], 1)
         ok_('GenuineIntel family' in res['hits'][0]['cpu_info'])
 
@@ -145,14 +151,20 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         )
         self.storage.es.refresh()
 
-        res = self.api.get(dom_ipc_enabled='true')
+        res = self.api.get(
+            dom_ipc_enabled='true',
+            _columns=['uuid', 'dom_ipc_enabled'],
+        )
         eq_(res['total'], 1)
         ok_(res['hits'][0]['dom_ipc_enabled'])
 
-        res = self.api.get(dom_ipc_enabled='false')
+        res = self.api.get(
+            dom_ipc_enabled='false',
+            _columns=['uuid', 'dom_ipc_enabled'],
+        )
         eq_(res['total'], 2)
 
-    @maximum_es_version('0.90')
+    @maximum_es_version('0.90.99')
     def test_platform_field(self):
         """Verify that the 'platform' field can be queried as expected. """
         processed_crash = {
@@ -164,11 +176,14 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         # Testing the phrase mode, when a term query contains white spaces.
-        res = self.api.get(platform='Mac OS X')
+        res = self.api.get(
+            platform='Mac OS X',
+            _columns=['platform'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['platform'], 'Mac OS X')
 
-    @maximum_es_version('0.90')
+    @maximum_es_version('0.90.99')
     def test_app_notes_field(self):
         """Verify that the 'app_notes' field can be queried as expected. """
         processed_crash = {
@@ -180,7 +195,10 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.es.refresh()
 
         # Testing the phrase mode, when a term query contains white spaces.
-        res = self.api.get(app_notes='cycle collector fault')
+        res = self.api.get(
+            app_notes='cycle collector fault',
+            _columns=['app_notes'],
+        )
         eq_(res['total'], 1)
         ok_('cycle collector fault' in res['hits'][0]['app_notes'])
 
@@ -200,24 +218,36 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.save_processed(processed_crash)
         self.storage.es.refresh()
 
-        res = self.api.get(process_type='plugin')
+        res = self.api.get(
+            process_type='plugin',
+            _columns=['uuid', 'process_type'],
+        )
         eq_(res['total'], 1)
         ok_('plugin' in res['hits'][0]['process_type'])
 
-        res = self.api.get(process_type='browser')
+        res = self.api.get(
+            process_type='browser',
+            _columns=['uuid', 'process_type'],
+        )
         eq_(res['total'], 1)
         # In the case of a 'browser' crash, the process_type is None and thus
         # is not returned.
         ok_('process_type' not in res['hits'][0])
 
-        res = self.api.get(process_type='!browser')
+        res = self.api.get(
+            process_type='!browser',
+            _columns=['uuid', 'process_type'],
+        )
         eq_(res['total'], 1)
         ok_('plugin' in res['hits'][0]['process_type'])
 
-        res = self.api.get(process_type=['plugin', 'browser'])
+        res = self.api.get(
+            process_type=['plugin', 'browser'],
+            _columns=['uuid', 'process_type'],
+        )
         eq_(res['total'], 2)
 
-    @maximum_es_version('0.90')
+    @maximum_es_version('0.90.99')
     def test_hang_type_field(self):
         """Verify that the 'hang_type' field can be queried as expected. """
         processed_crash = {
@@ -234,22 +264,34 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.save_processed(processed_crash)
         self.storage.es.refresh()
 
-        res = self.api.get(hang_type='hang')
+        res = self.api.get(
+            hang_type='hang',
+            _columns=['hang_type'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['hang_type'], 1)
 
-        res = self.api.get(hang_type='crash')
+        res = self.api.get(
+            hang_type='crash',
+            _columns=['hang_type'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['hang_type'], 0)
 
-        res = self.api.get(hang_type='!crash')
+        res = self.api.get(
+            hang_type='!crash',
+            _columns=['hang_type'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['hang_type'], 1)
 
-        res = self.api.get(hang_type=['crash', 'hang'])
+        res = self.api.get(
+            hang_type=['crash', 'hang'],
+            _columns=['hang_type'],
+        )
         eq_(res['total'], 2)
 
-    @maximum_es_version('0.90')
+    @maximum_es_version('0.90.99')
     def test_exploitability_field(self):
         """Verify that the 'exploitability' field can be queried as expected.
         """
@@ -267,18 +309,27 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.save_processed(processed_crash)
         self.storage.es.refresh()
 
-        res = self.api.get(exploitability='high')
+        res = self.api.get(
+            exploitability='high',
+            _columns=['exploitability'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['exploitability'], 'high')
 
-        res = self.api.get(exploitability='unknown')
+        res = self.api.get(
+            exploitability='unknown',
+            _columns=['exploitability'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['exploitability'], 'unknown')
 
-        res = self.api.get(exploitability=['high', 'unknown'])
+        res = self.api.get(
+            exploitability=['high', 'unknown'],
+            _columns=['exploitability'],
+        )
         eq_(res['total'], 2)
 
-    @maximum_es_version('0.90')
+    @maximum_es_version('0.90.99')
     def test_platform_version_field(self):
         """Verify that the 'platform_version' field can be queried as expected.
         """
@@ -296,16 +347,25 @@ class IntegrationTestSettings(ElasticSearchTestCase):
         self.storage.save_processed(processed_crash)
         self.storage.es.refresh()
 
-        res = self.api.get(platform_version='6.0.001')
+        res = self.api.get(
+            platform_version='6.0.001',
+            _columns=['platform_version'],
+        )
         eq_(res['total'], 2)
         ok_('6.0.001' in res['hits'][0]['platform_version'])
         ok_('6.0.001' in res['hits'][1]['platform_version'])
 
-        res = self.api.get(platform_version='6.0.001 Service Pack 1')
+        res = self.api.get(
+            platform_version='6.0.001 Service Pack 1',
+            _columns=['platform_version'],
+        )
         eq_(res['total'], 1)
         eq_(res['hits'][0]['platform_version'], '6.0.001 Service Pack 1')
 
-        res = self.api.get(platform_version='$6.0')
+        res = self.api.get(
+            platform_version='$6.0',
+            _columns=['platform_version'],
+        )
         eq_(res['total'], 2)
         ok_('6.0' in res['hits'][0]['platform_version'])
         ok_('6.0' in res['hits'][1]['platform_version'])
