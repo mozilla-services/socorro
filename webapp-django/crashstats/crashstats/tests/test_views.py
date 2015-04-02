@@ -3836,6 +3836,9 @@ class TestViews(BaseTestViews):
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
             if 'supersearch/' in url:
+                # Note that the key `install_time` was removed from the
+                # second dict here. The reason for that is the install_time
+                # is not a depdendable field from the breakpad client.
                 return Response("""
                 {
                   "hits": [
@@ -3859,7 +3862,7 @@ class TestViews(BaseTestViews):
                       "build_id": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "install_time": "1346907504",
                       "address": "0xdeadbeef",
                     },
                     {
@@ -3882,7 +3885,6 @@ class TestViews(BaseTestViews):
                       "build_id": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
                       "address": "0xdeadbeef",
                     }
                     ],
@@ -3938,7 +3940,7 @@ class TestViews(BaseTestViews):
                       "build": "20120822000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
+                      "install_time": "2012-09-05T20:58:24+00:0",
                       "address": "0xdeadbeef",
                       "duplicate_of": null
                     }

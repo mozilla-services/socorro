@@ -21,7 +21,7 @@ class Response(object):
     def __init__(self, content=None, status_code=200):
         if not isinstance(content, basestring):
             content = json.dumps(content)
-        self.content = content
+        self.content = content.strip()
         self.status_code = status_code
 
 
@@ -123,11 +123,11 @@ class TestModels(DjangoTestCase):
 
     @mock.patch('requests.get')
     def test_middleware_url_building(self, rget):
-        model = models.ReportList
+        model = models.CrashesFrequency
         api = model()
 
         def mocked_get(url, params, **options):
-            assert '/report/list' in url
+            assert '/crashes/frequency' in url
 
             ok_('signature' in params)
             ok_('products' in params)
@@ -139,22 +139,23 @@ class TestModels(DjangoTestCase):
 
             eq_(params['signature'], 'sig with / and + and &')
             eq_(params['products'], ['WaterWolf', 'NightTrain'])
-            eq_(params['from'], '2000-01-01T01:01:00')
-            eq_(params['to'], '2001-01-01T01:01:00')
+            eq_(params['from'], '2000-01-01')
+            eq_(params['to'], '2001-01-01')
 
             return Response('{"hits": [], "total": 0}')
 
         rget.side_effect = mocked_get
-        api.get(
-            signature='sig with / and + and &',
-            products=['WaterWolf', 'NightTrain'],
-            versions=['WaterWolf:11.1', 'NightTrain:42.0a1'],
-            build_ids=1234567890,
-            start_date=datetime.datetime(2000, 1, 1, 1, 1),
-            end_date=datetime.datetime(2001, 1, 1, 1, 1),
-            reasons='some\nreason\0',
-            search_mode='unsafe/search/mode'
-        )
+        args = {
+            'signature': 'sig with / and + and &',
+            'products': ['WaterWolf', 'NightTrain'],
+            'versions': ['WaterWolf:11.1', 'NightTrain:42.0a1'],
+            'build_ids': [1234567890],
+            'from': datetime.datetime(2000, 1, 1, 1, 1),
+            'to': datetime.datetime(2001, 1, 1, 1, 1),
+            'reasons': 'some\nreason\0',
+            'search_mode': 'unsafe/search/mode'
+        }
+        api.get(**args)
 
     @mock.patch('requests.get')
     def test_bugzilla_api(self, rget):
@@ -672,86 +673,6 @@ class TestModels(DjangoTestCase):
             date_range_type='report',
             limit=336,
             os='Win95',
-        )
-
-    @mock.patch('requests.get')
-    def test_report_list(self, rget):
-        model = models.ReportList
-        api = model()
-        today = datetime.datetime.utcnow()
-
-        def mocked_get(url, params, **options):
-            assert '/report/list' in url
-
-            ok_('from' in params)
-            ok_(today.strftime('%Y-%m-%dT%H:%M:%S') in params['from'])
-
-            return Response("""
-                {
-          "hits": [
-            {
-              "product": "Fennec",
-              "os_name": "Linux",
-              "uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
-              "many_others": "snipped out"
-            }],
-          "total": 333
-          }
-              """)
-
-        rget.side_effect = mocked_get
-
-        # Missing signature param
-        assert_raises(
-            models.RequiredParameterError,
-            api.get,
-            products='Fennec',
-            start_day=today,
-            result_number=250,
-            result_offset=0,
-            start_date=today,
-            end_date=today,
-        )
-
-        # Missing signature param
-        assert_raises(
-            models.RequiredParameterError,
-            api.get,
-            signature='Pickle::ReadBytes',
-            products='Fennec',
-            start_day=today,
-            result_number=250,
-            result_offset=0,
-        )
-
-        r = api.get(
-            signature='Pickle::ReadBytes',
-            products='Fennec',
-            start_day=today,
-            result_number=250,
-            result_offset=0,
-            start_date=today,
-            end_date=today,
-        )
-        ok_(r['total'])
-        ok_(r['hits'])
-
-    def test_report_list_parameter_type_error(self):
-        model = models.ReportList
-        api = model()
-
-        today = datetime.date.today()
-        # start_date and end_date are datetime.date instances,
-        # not datetime.datetime
-        assert_raises(
-            models.RequiredParameterError,
-            api.get,
-            products='Fennec',
-            start_day=today,
-            result_number=250,
-            result_offset=0,
-            start_date=today,
-            end_date=today,
         )
 
     @mock.patch('requests.get')
@@ -1591,7 +1512,8 @@ class TestModelsWithFileCaching(TestCase):
         eq_(info[0]['product'], 'SeaMonkey')
 
         json_file = self._get_cached_file(self.tempdir)[0]
-        assert 'hits' in json.loads(open(json_file).read())
+        with open(json_file) as f:
+            assert 'hits' in json.loads(f.read())
 
         # if we now loose the memcache/locmem
         cache.clear()
@@ -1612,6 +1534,66 @@ class TestModelsWithFileCaching(TestCase):
         mocked_time.side_effect = my_time
         info = api.get()
         eq_(info[0]['product'], 'SeaMonkey')
+
+    @mock.patch('requests.get')
+    def test_get_current_version_by_file_cache(self, rget):
+        calls = []
+
+        def mocked_get(**options):
+            calls.append(options)
+            assert '/products/' in options['url']
+            return Response("""
+                {"hits": {
+                   "SeaMonkey": [{
+                     "product": "SeaMonkey",
+                     "throttle": "100.00",
+                     "end_date": "2012-05-10 00:00:00",
+                     "start_date": "2012-03-08 00:00:00",
+                     "featured": true,
+                     "version": "2.1.3pre",
+                     "release": "Beta",
+                     "id": 922}]
+                  },
+                  "products": ["SeaMonkey"]
+                }
+              """)
+        rget.side_effect = mocked_get
+
+        assert not self._get_cached_file(self.tempdir)
+
+        # the first time, we rely on the mocket request.get
+        model = models.CurrentVersions
+        api = model()
+        info = api.get()
+        eq_(info[0]['product'], 'SeaMonkey')
+        eq_(len(calls), 1)
+
+        json_file = self._get_cached_file(self.tempdir)[0]
+        with open(json_file) as f:
+            json_file_content = f.read()
+        assert 'hits' in json.loads(json_file_content)
+
+        # if we now loose the memcache/locmem
+        cache.clear()
+
+        info_second_time = api.get()
+        eq_(info_second_time, info)
+        eq_(len(calls), 1)
+
+        # now let's mess with the file
+        with open(json_file, 'w') as f:
+            f.write(json_file_content.replace('}', '!'))
+
+        info_third_time = api.get()
+        # The JSON file was broken, so it had to do another network
+        # request.
+        eq_(len(calls), 2)
+        eq_(info_third_time, info)
+        eq_(info_second_time, info_third_time)
+        # file gets recreated and should now be valid JSON again
+        assert os.path.isfile(json_file)
+        with open(json_file) as f:
+            json.load(f)  # should work
 
     @mock.patch('requests.get')
     def test_signature_urls(self, rget):

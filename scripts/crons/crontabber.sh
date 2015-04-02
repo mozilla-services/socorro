@@ -7,13 +7,14 @@
 . /etc/socorro/socorrorc
 
 NAME=`basename $0 .sh`
+CT_INI="/etc/socorro/crontabber.ini"
 lock --ignore-existing $NAME
-CMD="${PYTHON} ${APPDIR}/socorro/cron/crontabber_app.py"
+export CMD="${PYTHON} ${APPDIR}/socorro/cron/crontabber_app.py"
 LOG=/var/log/socorro/crontabber.log
-if [ -f "/etc/socorro/crontabber.ini" ]; then
-    $CMD --admin.conf=/etc/socorro/crontabber.ini >> $LOG 2>&1
+if [ -f $CT_INI ] && [ -r $CT_INI ]; then
+    $CMD --admin.conf=$CT_INI >> $LOG 2>&1
 else
-    $CMD >> $LOG 2>&1
+    envconsul -prefix socorro/common -prefix socorro/crontabber bash -c "$CMD" >> $LOG 2>&1
 fi
 EXIT_CODE=$?
 unlock $NAME

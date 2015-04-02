@@ -195,10 +195,23 @@ def memoize(function):
                     os.remove(cache_file)
                 else:
                     logger.debug("CACHE FILE HIT %s" % stringified_args)
-                    if instance.expect_json:
-                        return json.load(open(cache_file))
-                    else:
-                        return open(cache_file).read()
+                    delete_cache_file = False
+                    with open(cache_file) as f:
+                        if instance.expect_json:
+                            try:
+                                return json.load(f)
+                            except ValueError:
+                                logger.warn(
+                                    "%s is not a valid JSON file and will "
+                                    "be deleted" % (
+                                        cache_file,
+                                    )
+                                )
+                                delete_cache_file = True
+                        else:
+                            return f.read()
+                    if delete_cache_file:
+                        os.remove(cache_file)
 
             # Didn't find our values in the cache
             return None
@@ -357,10 +370,24 @@ class SocorroCommon(object):
                             os.remove(cache_file)
                         else:
                             logger.debug("CACHE FILE HIT %s" % url)
-                            if expect_json:
-                                return json.load(open(cache_file)), True
-                            else:
-                                return open(cache_file).read(), True
+                            delete_cache_file = False
+                            with open(cache_file) as f:
+                                if expect_json:
+                                    try:
+                                        return json.load(f), True
+                                    except ValueError:
+                                        logger.warn(
+                                            "%s is not a valid JSON file and "
+                                            "will be deleted" % (
+                                                cache_file,
+                                            ),
+                                            exc_info=True
+                                        )
+                                        delete_cache_file = True
+                                else:
+                                    return f.read(), True
+                            if delete_cache_file:
+                                os.remove(cache_file)
 
         if method == 'post':
             request_method = requests.post
@@ -853,76 +880,6 @@ class TCBS(SocorroMiddleware):
             'is_gc_count',
         )
     }
-
-
-class ReportList(SocorroMiddleware):
-    """
-    The `start_date` and `end_date` are both required and its span
-    can not be more than 30 days.
-    """
-    URL_PREFIX = '/report/list/'
-
-    required_params = (
-        'signature',
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
-    )
-
-    possible_params = (
-        ('products', list),
-        ('versions', list),
-        ('os', list),
-        'build_ids',
-        'reasons',
-        'release_channels',
-        'report_process',
-        'report_type',
-        'plugin_in',
-        'plugin_search_mode',
-        'plugin_terms',
-        'result_number',
-        'result_offset',
-        'include_raw_crash',
-        'sort',
-        'reverse',
-    )
-
-    aliases = {
-        'start_date': 'from',
-        'end_date': 'to',
-    }
-
-    API_WHITELIST = {
-        'hits': (
-            'product',
-            'os_name',
-            'uuid',
-            'hangid',
-            'last_crash',
-            'date_processed',
-            'cpu_name',
-            'uptime',
-            'process_type',
-            'cpu_info',
-            'reason',
-            'version',
-            'os_version',
-            'build',
-            'install_age',
-            'signature',
-            'install_time',
-            'duplicate_of',
-            'address',
-            'user_comments',
-            'release_channel',
-            # deliberately avoiding 'raw_crash' here
-        )
-    }
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL),
-        ('user_comments', scrubber.URL),
-    )
 
 
 class ProcessedCrash(SocorroMiddleware):
