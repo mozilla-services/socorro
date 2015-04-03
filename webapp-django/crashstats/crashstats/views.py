@@ -1456,12 +1456,22 @@ def report_list(request, partial=None, default_context=None):
                 report['date_processed']
             ).strftime('%b %d, %Y %H:%M')
 
-            if report.get('install_time'):
-                # re-format it to be human-friendly
-                report['install_time'] = datetime.datetime.fromtimestamp(
-                    float(report['install_time'])
-                )
-                report['install_time'] = report['install_time'].strftime(
+            # re-format it to be human-friendly
+            install_time = report.get('install_time')
+            if install_time:
+                if isinstance(install_time, basestring):
+                    if install_time.isdigit():
+                        # new-style as a timestamp
+                        install_time = datetime.datetime.fromtimestamp(
+                            float(install_time)
+                        )
+                    else:
+                        # old style, middleware returned a formatted string
+                        install_time = isodate.parse_datetime(
+                            install_time
+                        )
+                # put it back into the report
+                report['install_time'] = install_time.strftime(
                     '%Y-%m-%d %H:%M:%S'
                 )
 
