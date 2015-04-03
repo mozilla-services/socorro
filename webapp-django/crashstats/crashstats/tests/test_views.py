@@ -3855,7 +3855,7 @@ class TestViews(BaseTestViews):
                       "build": "20120901000007",
                       "install_age": 1234,
                       "signature": "FakeSignature2",
-                      "install_time": "1346907504",
+                      "install_time": "2012-09-05T20:58:24+00:0",
                       "address": "0xdeadbeef",
                       "duplicate_of": null
                     },
