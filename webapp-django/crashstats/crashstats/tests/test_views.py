@@ -4091,13 +4091,13 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if 'supersearch' in url:
+            if '/crashes/comments' in url:
                 return Response("""
                 {
                   "hits": [
                    {
                      "user_comments": "I LOVE CHEESE cheese@email.com",
-                     "date": "2012-08-21T11:17:28-07:00",
+                     "date_processed": "2012-08-21T11:17:28-07:00",
                      "email": "bob@uncle.com",
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
@@ -4143,13 +4143,13 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if 'supersearch' in url:
+            if '/crashes/comments' in url:
                 called_with_params.append(params)
-                if params.get('_results_offset'):
+                if params.get('result_offset'):
                     return Response({
                         "hits": [{
                             "user_comments": "I LOVE HAM",
-                            "date": "2012-08-21T11:17:28-07:00",
+                            "date_processed": "2012-08-21T11:17:28-07:00",
                             "email": "bob@uncle.com",
                             "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                         }],
@@ -4159,7 +4159,7 @@ class TestViews(BaseTestViews):
                     return Response({
                         "hits": [{
                             "user_comments": "I LOVE CHEESE",
-                            "date": "2011-08-21T11:17:28-07:00",
+                            "date_processed": "2011-08-21T11:17:28-07:00",
                             "email": "bob@uncle.com",
                             "uuid": "469bde48-0e8f-3586-d486-b98810120829"
                         }],

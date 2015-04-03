@@ -71,6 +71,87 @@ class Crashes(PostgreSQLBase):
 
         return params
 
+    def get_comments(self, **kwargs):
+        """Return a list of comments on crash reports, filtered by
+        signatures and other fields.
+
+        See socorro.lib.search_common.get_parameters() for all filters.
+        """
+        params = self.prepare_search_params(**kwargs)
+
+        # Creating the parameters for the sql query
+        sql_params = {}
+
+        # Preparing the different parts of the sql query
+
+        # WARNING: sensitive data is returned here (email). When there is
+        # an authentication mecanism, a verification should be done here.
+        sql_select = """
+            SELECT
+                r.date_processed,
+                r.user_comments,
+                r.uuid,
+                CASE
+                    WHEN r.email = '' THEN null
+                    WHEN r.email IS NULL THEN null
+                    ELSE r.email
+                END
+        """
+
+        sql_count = """
+            SELECT
+                COUNT(r.uuid)
+        """
+
+        sql_from = self.build_reports_sql_from(params)
+        (sql_where, sql_params) = self.build_reports_sql_where(params,
+                                                               sql_params,
+                                                               self.context)
+        sql_where = "%s AND r.user_comments IS NOT NULL" % sql_where
+
+        sql_order = "ORDER BY email ASC, r.date_processed ASC"
+
+        sql_limit, sql_params = self.build_reports_sql_limit(
+            params,
+            sql_params
+        )
+        sql_count = " ".join((
+            "/* external.postgresql.crashes.Crashes.get_comments */",
+            sql_count, sql_from, sql_where)
+        )
+        count = self.count(sql_count, sql_params)
+
+        comments = []
+        if count:
+
+            # Assembling the query
+            sql_query = " ".join((
+                "/* external.postgresql.crashes.Crashes.get_comments */",
+                sql_select, sql_from, sql_where, sql_order, sql_limit)
+            )
+
+            error_message = "Failed to retrieve comments from PostgreSQL"
+            results = self.query(sql_query, sql_params,
+                                 error_message=error_message)
+
+            # Transforming the results into what we want
+            for row in results:
+                comment = dict(zip((
+                    "date_processed",
+                    "user_comments",
+                    "uuid",
+                    "email",
+                ), row))
+                comment["date_processed"] = datetimeutil.date_to_string(
+                    comment["date_processed"]
+                )
+                comments.append(comment)
+
+        return {
+            "hits": comments,
+            "total": count
+        }
+
     def get_daily(self, **kwargs):
         """Return crashes by active daily users. """
         now = datetimeutil.utc_now().date()
