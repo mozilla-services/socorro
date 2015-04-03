@@ -174,13 +174,6 @@ def search_results(request):
         x for x in data['columns'] if x in allowed_fields
     ]
 
-    params['_columns'] = data['columns']
-
-    # The uuid is always displayed in the UI so we need to make sure it is
-    # always returned by the model.
-    if 'uuid' not in params['_columns']:
-        params['_columns'].append('uuid')
-
     try:
         current_page = int(request.GET.get('page', 1))
     except ValueError:
