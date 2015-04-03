@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse
 from waffle import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.supersearch.tests.common import (
+from crashstats.supersearch.tests.test_views import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
 
