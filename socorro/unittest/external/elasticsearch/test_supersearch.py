@@ -258,7 +258,7 @@ SUPERSEARCH_FIELDS = {
         'in_database_name': 'uuid',
         'is_exposed': False,
         'is_mandatory': False,
-        'is_returned': True,
+        'is_returned': False,
         'name': 'uuid',
         'namespace': 'processed_crash',
         'permissions_needed': [],
@@ -722,7 +722,7 @@ SUPERSEARCH_FIELDS = {
         'in_database_name': 'fake_field',
         'is_exposed': True,
         'is_mandatory': False,
-        'is_returned': False,
+        'is_returned': True,
         'name': 'fake_field',
         'namespace': 'raw_crash',
         'permissions_needed': [],
@@ -1017,9 +1017,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
     def test_get(self):
         """Test a search with default values returns the right structure. """
-        res = self.api.get(
-            _columns=['date', 'build_id', 'platform', 'write_combine_size'],
-        )
+        res = self.api.get()
 
         ok_('total' in res)
         eq_(res['total'], 21)
@@ -1045,7 +1043,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # processed_crash.json_dump.write_combine_size
         ok_('write_combine_size' in res['hits'][0])
 
-    @maximum_es_version('0.90.99')
+    @maximum_es_version('0.90')
     def test_get_individual_filters(self):
         """Test a search with single filters returns expected results. """
         # Test signature
@@ -1077,7 +1075,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test release_channel
         kwargs = {
             'release_channel': 'aurora',
-            '_columns': ['signature', 'release_channel'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1087,7 +1084,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test platform
         kwargs = {
             'platform': 'Windows',
-            '_columns': ['signature', 'platform'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1097,7 +1093,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test build_id
         kwargs = {
             'build_id': '987654321',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1107,7 +1102,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test reason
         kwargs = {
             'reason': 'MOZALLOC_WENT_WRONG',
-            '_columns': ['signature', 'reason'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 20)
@@ -1115,7 +1109,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'reason': ['very_bad_exception'],
-            '_columns': ['signature', 'reason'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1125,7 +1118,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test process_type
         kwargs = {
             'process_type': 'plugin',
-            '_columns': ['signature', 'process_type'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 3)
@@ -1135,7 +1127,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test url
         kwargs = {
             'url': 'https://mozilla.org',
-            '_columns': ['signature', 'url'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 19)
@@ -1145,7 +1136,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test user_comments
         kwargs = {
             'user_comments': 'WaterWolf',
-            '_columns': ['signature', 'user_comments'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 2)
@@ -1155,7 +1145,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test address
         kwargs = {
             'address': '0x0',
-            '_columns': ['signature', 'address'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 20)
@@ -1164,7 +1153,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test accessibility
         kwargs = {
             'accessibility': False,
-            '_columns': ['signature', 'accessibility'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1172,7 +1160,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'accessibility': 'True',
-            '_columns': ['signature', 'accessibility'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 8)
@@ -1181,7 +1168,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test b2g_os_version
         kwargs = {
             'b2g_os_version': '1.3',
-            '_columns': ['signature', 'b2g_os_version'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1190,7 +1176,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test bios_manufacturer
         kwargs = {
             'bios_manufacturer': 'aidivn',
-            '_columns': ['signature', 'bios_manufacturer'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1199,7 +1184,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test is_garbage_collecting
         kwargs = {
             'is_garbage_collecting': True,
-            '_columns': ['signature', 'is_garbage_collecting'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1208,7 +1192,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test vendor
         kwargs = {
             'vendor': 'gnusmas',
-            '_columns': ['signature', 'vendor'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1217,13 +1200,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test useragent_locale
         kwargs = {
             'useragent_locale': 'fr',
-            '_columns': ['signature', 'useragent_locale'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
         eq_(res['hits'][0]['useragent_locale'], 'fr')
 
-    @maximum_es_version('0.90.99')
+    @maximum_es_version('0.90')
     def test_get_with_range_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
@@ -1244,7 +1226,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test build id
         kwargs = {
             'build_id': '<1234567890',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1253,7 +1234,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'build_id': '>1234567889',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 20)
@@ -1263,7 +1243,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'build_id': '<=1234567890',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 21)
@@ -1274,7 +1253,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test available_virtual_memory
         kwargs = {
             'available_virtual_memory': '>=1',
-            '_columns': ['signature', 'available_virtual_memory'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 8)
@@ -1283,13 +1261,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'available_virtual_memory': '<1',
-            '_columns': ['signature', 'available_virtual_memory'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
         eq_(res['hits'][0]['available_virtual_memory'], 0)
 
-    @maximum_es_version('0.90.99')
+    @maximum_es_version('0.90')
     def test_get_with_string_operators(self):
         """Test a search with several filters and operators returns expected
         results. """
@@ -1360,7 +1337,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test email
         kwargs = {
             'email': 'sauron@mordor.info',
-            '_columns': ['signature', 'email'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1369,7 +1345,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'email': '~mail.com',
-            '_columns': ['signature', 'email'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 19)
@@ -1380,7 +1355,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'email': '$sauron@',
-            '_columns': ['signature', 'email'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 2)
@@ -1391,14 +1365,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test url
         kwargs = {
             'url': 'https://mozilla.org',
-            '_columns': ['signature', 'url'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 19)
 
         kwargs = {
             'url': '~mozilla.org',
-            '_columns': ['signature', 'url'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 20)
@@ -1408,7 +1380,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'url': '^.com',
-            '_columns': ['signature', 'url'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1418,7 +1389,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test user_comments
         kwargs = {
             'user_comments': '~love',
-            '_columns': ['signature', 'user_comments'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1427,7 +1397,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'user_comments': '$WaterWolf',
-            '_columns': ['signature', 'user_comments'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1439,7 +1408,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'user_comments': '__null__',
-            '_columns': ['signature', 'user_comments'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 19)
@@ -1450,13 +1418,11 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test address
         kwargs = {
             'address': '^0',
-            '_columns': ['signature', 'address'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 21)
         kwargs = {
             'address': '~a2',
-            '_columns': ['signature', 'address'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1464,14 +1430,12 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test android_model
         kwargs = {
             'android_model': '~PediaMad',
-            '_columns': ['signature', 'android_model'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
 
         kwargs = {
             'android_model': '=PediaMad 17 Heavy',
-            '_columns': ['signature', 'android_model'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1569,29 +1533,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         eq_(res['total'], 21)
         eq_(len(res['hits']), 0)
 
-    def test_get_with_columns(self):
-        # Test several facets
-        kwargs = {
-            '_columns': ['signature', 'platform']
-        }
-        res = self.api.get(**kwargs)
-
-        ok_('signature' in res['hits'][0])
-        ok_('platform' in res['hits'][0])
-        ok_('date' not in res['hits'][0])
-
-        # Test errors
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _columns=['unkownfield']
-        )
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _columns=['fake_field']
-        )
-
     def test_get_with_sorting(self):
         """Test a search with sort returns expected results. """
         res = self.api.get(_sort='product')
@@ -1612,10 +1553,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             last_item = hit['product']
 
         # Several fields.
-        res = self.api.get(
-            _sort=['product', 'email'],
-            _columns=['product', 'email'],
-        )
+        res = self.api.get(_sort=['product', 'email'])
         ok_(res['total'] > 0)
 
         last_product = ''
@@ -1637,7 +1575,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             _sort='something',
         )  # `something` is invalid
 
-    @maximum_es_version('0.90.99')
+    @maximum_es_version('0.90')
     def test_get_with_not_operator(self):
         """Test a search with a few NOT operators. """
         # Test signature
@@ -1684,7 +1622,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
         # Test build id
         kwargs = {
             'build_id': '!<1234567890',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 20)
@@ -1694,7 +1631,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'build_id': '!>1234567889',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 1)
@@ -1703,7 +1639,6 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
 
         kwargs = {
             'build_id': '!<=1234567890',
-            '_columns': ['signature', 'build_id'],
         }
         res = self.api.get(**kwargs)
         eq_(res['total'], 0)
@@ -1836,7 +1771,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             {u'type': u'long'},
         )
 
-    @maximum_es_version('0.90.99')
+    @maximum_es_version('0.90')
     def test_update_field(self):
         es = self.storage.es
         config = self.get_config_context()
@@ -1917,7 +1852,7 @@ class IntegrationTestSuperSearch(ElasticSearchTestCase):
             id='product',
         )
 
-    @maximum_es_version('0.90.99')
+    @maximum_es_version('0.90')
     def test_get_missing_fields(self):
         config = self.get_config_context(
             es_index='socorro_integration_test_%W'

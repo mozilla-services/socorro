@@ -1,8 +1,3 @@
-import ujson
-
-from crashstats.crashstats.tests.test_models import Response
-
-
 SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'signature': {
         'name': 'signature',
@@ -235,22 +230,3 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'in_database_name': 'a_test_field',
     },
 }
-
-
-class SuperSearchResponse(Response):
-    def __init__(self, content=None, status_code=200, columns=None):
-        if isinstance(content, basestring):
-            content = ujson.loads(content)
-
-        if columns is None:
-            columns = []
-
-        assert 'hits' in content
-        for i, hit in enumerate(content['hits']):
-            content['hits'][i] = dict(
-                (key, val)
-                for key, val in hit.items()
-                if key in columns
-            )
-
-        super(SuperSearchResponse, self).__init__(content, status_code)
