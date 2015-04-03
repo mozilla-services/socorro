@@ -162,7 +162,7 @@ def test_uuid_to_date():
     date = datetimeutil.uuid_to_date(uuid, century=11)
     eq_(date, date_exp)
 
-def test_date_to_weekly_partition():
+def test_date_to_weekly_partition_with_string():
     datestring = '2015-01-09'
     partition_exp = '20150105'
 
@@ -175,3 +175,22 @@ def test_date_to_weekly_partition():
     partition_exp = (date_now + datetime.timedelta(0 - date_now.weekday())).strftime('%Y%m%d')
     partition = datetimeutil.datestring_to_weekly_partition(datestring)
     eq_(partition, partition_exp)
+
+def test_date_to_weekly_partition_with_datetime():
+    proposed_and_expected = (
+        (datetime.datetime(2014, 12, 29), '20141229'),
+        (datetime.datetime(2014, 12, 30), '20141229'),
+        (datetime.datetime(2014, 12, 31), '20141229'),
+        (datetime.datetime(2015,  1,  1), '20141229'),
+        (datetime.datetime(2015,  1,  2), '20141229'),
+        (datetime.datetime(2015,  1,  3), '20141229'),
+        (datetime.datetime(2015,  1,  4), '20141229'),
+        (datetime.datetime(2015,  1,  5), '20150105'),
+        (datetime.datetime(2015,  1,  6), '20150105'),
+        (datetime.datetime(2015,  1,  7), '20150105'),
+        (datetime.datetime(2015,  1,  8), '20150105'),
+        (datetime.datetime(2015,  1,  9), '20150105'),
+    )
+    for to_be_tested, expected in proposed_and_expected:
+        result = datetimeutil.datestring_to_weekly_partition(to_be_tested)
+        eq_(result, expected)

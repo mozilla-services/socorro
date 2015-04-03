@@ -162,7 +162,9 @@ def datestring_to_weekly_partition(date_str):
         weekly_partition = '2014-01-05'
     """
 
-    if date_str == 'now':
+    if isinstance(date_str, datetime.datetime):
+        d = date_str
+    elif date_str == 'now':
         d = datetime.datetime.now().date()
     else:
         d = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
