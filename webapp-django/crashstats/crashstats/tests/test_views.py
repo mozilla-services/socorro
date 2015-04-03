@@ -4332,7 +4332,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, data)
         eq_(response.status_code, 200)
         assert len(mock_calls) == 1
-        eq_(mock_calls[-1]['_sort'], ['-date'])
+        eq_(mock_calls[-1]['_sort'], ['date'])
         ok_('reverse' not in mock_calls[-1])
 
         response = self.client.get(url, dict(
@@ -4341,17 +4341,17 @@ class TestViews(BaseTestViews):
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 2
-        eq_(mock_calls[-1]['_sort'], ['-build_id'])
+        eq_(mock_calls[-1]['_sort'], ['build_id'])
         ok_('reverse' not in mock_calls[-1])
 
         response = self.client.get(url, dict(
             data,
             sort='build',
-            reverse='False'
+            reverse='True'
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 3
-        eq_(mock_calls[-1]['_sort'], ['build_id'])
+        eq_(mock_calls[-1]['_sort'], ['-build_id'])
         ok_('reverse' not in mock_calls[-1])
 
     @mock.patch('requests.get')
