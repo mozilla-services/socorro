@@ -123,11 +123,11 @@ class TestModels(DjangoTestCase):
 
     @mock.patch('requests.get')
     def test_middleware_url_building(self, rget):
-        model = models.CrashesFrequency
+        model = models.ReportList
         api = model()
 
         def mocked_get(url, params, **options):
-            assert '/crashes/frequency' in url
+            assert '/report/list' in url
 
             ok_('signature' in params)
             ok_('products' in params)
@@ -139,23 +139,22 @@ class TestModels(DjangoTestCase):
 
             eq_(params['signature'], 'sig with / and + and &')
             eq_(params['products'], ['WaterWolf', 'NightTrain'])
-            eq_(params['from'], '2000-01-01')
-            eq_(params['to'], '2001-01-01')
+            eq_(params['from'], '2000-01-01T01:01:00')
+            eq_(params['to'], '2001-01-01T01:01:00')
 
             return Response('{"hits": [], "total": 0}')
 
         rget.side_effect = mocked_get
-        args = {
-            'signature': 'sig with / and + and &',
-            'products': ['WaterWolf', 'NightTrain'],
-            'versions': ['WaterWolf:11.1', 'NightTrain:42.0a1'],
-            'build_ids': [1234567890],
-            'from': datetime.datetime(2000, 1, 1, 1, 1),
-            'to': datetime.datetime(2001, 1, 1, 1, 1),
-            'reasons': 'some\nreason\0',
-            'search_mode': 'unsafe/search/mode'
-        }
-        api.get(**args)
+        api.get(
+            signature='sig with / and + and &',
+            products=['WaterWolf', 'NightTrain'],
+            versions=['WaterWolf:11.1', 'NightTrain:42.0a1'],
+            build_ids=1234567890,
+            start_date=datetime.datetime(2000, 1, 1, 1, 1),
+            end_date=datetime.datetime(2001, 1, 1, 1, 1),
+            reasons='some\nreason\0',
+            search_mode='unsafe/search/mode'
+        )
 
     @mock.patch('requests.get')
     def test_bugzilla_api(self, rget):
@@ -673,6 +672,86 @@ class TestModels(DjangoTestCase):
             date_range_type='report',
             limit=336,
             os='Win95',
+        )
+
+    @mock.patch('requests.get')
+    def test_report_list(self, rget):
+        model = models.ReportList
+        api = model()
+        today = datetime.datetime.utcnow()
+
+        def mocked_get(url, params, **options):
+            assert '/report/list' in url
+
+            ok_('from' in params)
+            ok_(today.strftime('%Y-%m-%dT%H:%M:%S') in params['from'])
+
+            return Response("""
+                {
+          "hits": [
+            {
+              "product": "Fennec",
+              "os_name": "Linux",
+              "uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
+              "many_others": "snipped out"
+            }],
+          "total": 333
+          }
+              """)
+
+        rget.side_effect = mocked_get
+
+        # Missing signature param
+        assert_raises(
+            models.RequiredParameterError,
+            api.get,
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
+            start_date=today,
+            end_date=today,
+        )
+
+        # Missing signature param
+        assert_raises(
+            models.RequiredParameterError,
+            api.get,
+            signature='Pickle::ReadBytes',
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
+        )
+
+        r = api.get(
+            signature='Pickle::ReadBytes',
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
+            start_date=today,
+            end_date=today,
+        )
+        ok_(r['total'])
+        ok_(r['hits'])
+
+    def test_report_list_parameter_type_error(self):
+        model = models.ReportList
+        api = model()
+
+        today = datetime.date.today()
+        # start_date and end_date are datetime.date instances,
+        # not datetime.datetime
+        assert_raises(
+            models.RequiredParameterError,
+            api.get,
+            products='Fennec',
+            start_day=today,
+            result_number=250,
+            result_offset=0,
+            start_date=today,
+            end_date=today,
         )
 
     @mock.patch('requests.get')
