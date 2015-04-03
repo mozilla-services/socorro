@@ -793,13 +793,13 @@ class MissingSymbolsRule(Rule):
         try:
             date = processed_crash['date_processed']
             # update partition information based on date processed
-            self.sql = self.sql % datestring_to_weekly_partition(date)
+            sql = self.sql % datestring_to_weekly_partition(date)
             for module in processed_crash['json_dump']['modules']:
                 try:
                     if module['missing_symbols']:
                         self.transaction(
                             execute_no_results,
-                            self.sql,
+                            sql,
                             (
                                 date,
                                 module['debug_file'],

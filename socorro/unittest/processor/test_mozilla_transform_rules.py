@@ -1864,7 +1864,7 @@ class TestMissingSymbols(TestCase):
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {}
         processed_crash = DotDict()
-        processed_crash.date_processed = 'now'
+        processed_crash.date_processed = '2014-12-31'
         processed_crash.json_dump = {
             'modules': [
                 {
@@ -1889,16 +1889,36 @@ class TestMissingSymbols(TestCase):
 
         rule = MissingSymbolsRule(config)
 
+        expected_sql = rule.sql % '20141229'
+
         # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         from socorro.external.postgresql.dbapi2_util import execute_no_results
         eq_(config.transaction_executor_class.return_value.call_count, 2)
         expected_execute_args = [
-                call(execute_no_results, rule.sql,
-                    ('now', 'some-file.pdb', 'ABCDEFG')),
-                call(execute_no_results, rule.sql,
-                    ('now', 'yet-another-file.pdb', 'CDEFGHI'))
+            call(execute_no_results, expected_sql,
+                ('2014-12-31', 'some-file.pdb', 'ABCDEFG')),
+            call(execute_no_results, expected_sql,
+                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI'))
+        ]
+        config.transaction_executor_class.return_value.assert_has_calls(
+                expected_execute_args
+        )
+
+        # make sure it works a second time
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(config.transaction_executor_class.return_value.call_count, 4)
+        expected_execute_args = [
+            call(execute_no_results, expected_sql,
+                ('2014-12-31', 'some-file.pdb', 'ABCDEFG')),
+            call(execute_no_results, expected_sql,
+                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI')),
+            call(execute_no_results, expected_sql,
+                ('2014-12-31', 'some-file.pdb', 'ABCDEFG')),
+            call(execute_no_results, expected_sql,
+                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI')),
         ]
         config.transaction_executor_class.return_value.assert_has_calls(
                 expected_execute_args
