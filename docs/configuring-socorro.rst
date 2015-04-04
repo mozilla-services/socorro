@@ -157,7 +157,7 @@ automatically partitioning and discarding data in our data stores.
 For automatic, date-based partitioning, we have crontabber jobs that create
 partitions weekly based on data in the table:
 ::
-  reports_partition_info
+  report_partition_info
 
 We currently manage which tables are partitioned manually by inserting rows into
 the production PostgreSQL database.
