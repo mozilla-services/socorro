@@ -66,7 +66,7 @@ EXECUTE format(
     GROUP BY
         report_date, signature_id, graphics_device_id, product_name, product_version_id, version_string
     ',
-    partition_name, vendorid, devicdeid, updateday, updateday, updateday
+    partition_name, vendorid, deviceid, updateday, updateday, updateday
 );
 
 RETURN TRUE;
