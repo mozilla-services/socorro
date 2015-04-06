@@ -39,6 +39,10 @@ databaseSuperUserPassword = cm.Option()
 databaseSuperUserPassword.doc = 'the super user password for the database user'
 databaseSuperUserPassword.default = 'aPassword'
 
+databaseURL = cm.Option()
+databaseURL.doc = 'the super user password for the database user'
+databaseURL.default = 'postgres://test:aPassword@localhost:5432/socorro_integration_test',
+
 #---------------------------------------------------------------------------
 # RabbitMQ config
 

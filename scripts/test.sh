@@ -8,23 +8,28 @@ JENKINS_CONF=jenkins.py.dist
 
 ENV=env
 
-PYTHONPATH="."
+PYTHONPATH=.
 
 PG_RESOURCES=""
-if [ -n "$database_hostname" ]; then
-    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_hostname=$database_hostname"
-fi
-if [ -n "$database_username" ]; then
-    PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_username=$database_username"
-fi
-if [ -n "$database_password" ]; then
-    PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_password=$database_password"
-fi
-if [ -n "$database_port" ]; then
-    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_port=$database_port"
-fi
-if [ -n "$database_name" ]; then
-    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_name=$database_name"
+if [ -n "$database_url" ]; then
+    PG_RESOURCES="resource.postgresql.database_url=$database_url"
+else
+    # This clause is all legacy and can be removed once we switch to use database_url in config
+    if [ -n "$database_hostname" ]; then
+        PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_hostname=$database_hostname"
+    fi
+    if [ -n "$database_username" ]; then
+        PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_username=$database_username"
+    fi
+    if [ -n "$database_password" ]; then
+        PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_password=$database_password"
+    fi
+    if [ -n "$database_port" ]; then
+        PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_port=$database_port"
+    fi
+    if [ -n "$database_name" ]; then
+        PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_name=$database_name"
+    fi
 fi
 
 RMQ_RESOURCES=""

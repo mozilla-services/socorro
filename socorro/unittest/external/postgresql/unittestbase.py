@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+
 import socorro.database.database as db
 from configman import ConfigurationManager, Namespace
 from configman.converters import list_converter
@@ -18,6 +20,11 @@ class PostgreSQLTestCase(TestCase):
 
     required_config = Namespace()
     required_config.namespace('database')
+    required_config.add_option(
+        name='database_url',
+        default=os.environ.get('database_url', 'postgres:///socorro_integration_test'),
+        doc='Name of database to manage',
+    )
     required_config.add_option(
         name='database_name',
         default='socorro_integration_test',
