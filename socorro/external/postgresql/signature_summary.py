@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
@@ -63,8 +64,8 @@ class SignatureSummary(PostgreSQLBase):
             ("report_types", None, ["list", "str"]),
             ("report_type", None, "str"),
             ("signature", None, "str"),
-            ("start_date", None, "datetime"),
-            ("end_date", None, "datetime"),
+            ("start_date", None, "date"),
+            ("end_date", None, "date"),
             ("versions", None, ["list", "str"]),
         ]
 
@@ -109,6 +110,9 @@ class SignatureSummary(PostgreSQLBase):
         params['version'] = tuple(versions)
 
         all_results = {}
+        assert isinstance(params['start_date'], datetime.date)
+        assert isinstance(params['end_date'], datetime.date)
+
         with self.get_connection() as connection:
             for report_type in report_types:
                 result_cols, query_string, query_parameters = self._get_query(
