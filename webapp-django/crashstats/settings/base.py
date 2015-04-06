@@ -400,3 +400,7 @@ SYMBOLS_FILE_PREFIX = 'v1'
 # e.g. "us-west-2" see boto.s3.connection.Location
 # Only needed if the bucket has never been created
 SYMBOLS_BUCKET_DEFAULT_LOCATION = None
+# to override the content-type of specific file extensinos:
+SYMBOLS_MIME_OVERRIDES = {
+    'sym': 'text/plain'
+}

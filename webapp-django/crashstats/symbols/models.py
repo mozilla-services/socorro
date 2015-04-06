@@ -9,6 +9,7 @@ class SymbolsUpload(models.Model):
     filename = models.CharField(max_length=100)
     size = models.IntegerField()
     created = models.DateTimeField(default=timezone.now)
+    content_type = models.TextField(null=True)
 
     def __repr__(self):
         return '<%s: %s (%d)...>' % (
