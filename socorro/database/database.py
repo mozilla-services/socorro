@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import urlparse
 
 import psycopg2
 import psycopg2.extensions
@@ -154,6 +155,14 @@ class Database(object):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config, logger=None):
     super(Database, self).__init__()
+    if config.get('database_url'):
+        url = urlparse.urlparse(config.database_url)
+        config.database_username = url.username
+        config.database_password = url.password
+        config.database_hostname = url.hostname
+        config.database_port = url.port
+        config.database_name = url.path[1:]
+
     if 'database_port' not in config or config.get('database_port') == '':
       config['database_port'] = 5432
     self.dsn = "host=%(database_hostname)s port=%(database_port)s dbname=%(database_name)s user=%(database_username)s password=%(database_password)s" % config
