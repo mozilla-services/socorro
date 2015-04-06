@@ -17,7 +17,7 @@ from glob import glob
 
 from alembic import command
 from alembic.config import Config
-from configman import Namespace
+from configman import Namespace, class_converter
 from psycopg2 import ProgrammingError
 from sqlalchemy import create_engine, exc
 from sqlalchemy.ext.compiler import compiles
@@ -26,6 +26,7 @@ from sqlalchemy.schema import CreateTable
 
 from socorro.app.socorro_app import App, main
 from socorro.external.postgresql import staticdata, fakedata
+from socorro.external.postgresql.connection_context import default_from_url
 from socorro.external.postgresql.models import *
 from socorro.external.postgresql.postgresqlalchemymanager import PostgreSQLAlchemyManager
 
@@ -51,47 +52,25 @@ class SocorroDBApp(App):
     required_config = Namespace()
 
     required_config.add_option(
-        name='database_name',
-        default='socorro_integration_test',
-        doc='Name of database to manage',
-    )
-
-    required_config.add_option(
-        name='database_hostname',
-        default='localhost',
-        doc='Hostname to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_username',
-        default='breakpad_rw',
-        doc='Username to connect to database',
-    )
-
-    required_config.add_option(
-        name='database_password',
-        default='aPassword',
-        doc='Password to connect to database',
-        secret=True,
+        'database_class',
+        default=
+            'socorro.external.postgresql.connection_context.ConnectionContext',
+        doc='the class responsible for connecting to Postgres',
+        reference_value_from='resource.postgresql',
+        from_string_converter=class_converter
     )
 
     required_config.add_option(
         name='database_superusername',
-        default='test',
+        default=default_from_url('username', 'test'),
         doc='Username to connect to database',
     )
 
     required_config.add_option(
         name='database_superuserpassword',
-        default='aPassword',
+        default=default_from_url('password', 'aPassword'),
         doc='Password to connect to database',
         secret=True,
-    )
-
-    required_config.add_option(
-        name='database_port',
-        default='',
-        doc='Port to connect to database',
     )
 
     required_config.add_option(
@@ -233,9 +212,35 @@ class SocorroDBApp(App):
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
 
-    def main(self):
+    def construct_db_url(self, dbname=None, superuser=False):
+        """Takes a URL to connect to Postgres and updates database name
+            or superuser name/password as indicated"""
+        database_username = self.config.get('database_username')
+        database_password = self.config.get('database_password')
+        database_hostname = self.config.get('database_hostname')
+        database_port = self.config.get('database_port')
+        database_name = dbname
 
-        self.database_name = self.config['database_name']
+        if superuser:
+            database_username = self.config.get('database_superusername')
+            database_password = self.config.get('database_superuserpassword')
+
+        # construct a URL
+        url = 'postgresql://'
+        if database_username:
+            url += '%s' % database_username
+        if database_password:
+            url += ':%s' % database_password
+        url += '@'
+        if database_hostname:
+            url += '%s' % database_hostname
+        if database_port:
+            url += ':%s' % database_port
+        url += '/%s' % dbname
+        return url
+
+    def main(self):
+        self.database_name = self.config.get('database_name')
         if not self.database_name:
             print "Syntax error: --database_name required"
             return 1
@@ -245,26 +250,9 @@ class SocorroDBApp(App):
 
         self.force = self.config.get('force')
 
-        def connection_url():
-            url_template = 'postgresql://'
-            if self.database_username:
-                url_template += '%s' % self.database_username
-            if self.database_password:
-                url_template += ':%s' % self.database_password
-            url_template += '@'
-            if self.database_hostname:
-                url_template += '%s' % self.database_hostname
-            if self.database_port:
-                url_template += ':%s' % self.database_port
-            return url_template
+        # self.database_url = self.config.get('database_url')
 
-        self.database_username = self.config.get('database_superusername')
-        self.database_password = self.config.get('database_superuserpassword')
-        self.database_hostname = self.config.get('database_hostname')
-        self.database_port = self.config.get('database_port')
-
-        url_template = connection_url()
-        sa_url = url_template + '/%s' % 'postgres'
+        sa_url = self.construct_db_url('postgres', True)
 
         if self.config.unlogged:
             @compiles(CreateTable)
@@ -324,7 +312,7 @@ class SocorroDBApp(App):
             connection.close()
 
         # Reconnect to set up schema, types and procs
-        sa_url = url_template + '/%s' % self.database_name
+        sa_url = self.construct_db_url(self.database_name, False)
         alembic_cfg = Config(self.config.alembic_config)
         alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
         with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:

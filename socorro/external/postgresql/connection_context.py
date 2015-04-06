@@ -2,15 +2,32 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 import socket
 import contextlib
 import psycopg2
 import psycopg2.extensions
+from urlparse import urlparse
 
-from configman.config_manager import RequiredConfig
-from configman import Namespace
+from configman import RequiredConfig, Namespace
+from configman.memoize import memoize
+
+#------------------------------------------------------------------------------
+# we're going to end up parsing the same url several times, there's no need to
+# actually do it more than once, so we wrap the method with a memoizer to speed
+# things along.
+@memoize()
+def parse_url(*args):
+    return urlparse(*args)
+
+#------------------------------------------------------------------------------
+def default_from_url(field, default):
+    if 'database_url' in os.environ:
+        return getattr(parse_url(os.environ['database_url']), field, default)
+    return default
 
 
+#==============================================================================
 class ConnectionContext(RequiredConfig):
     """a configman compliant class for setup of Postgres connections"""
     #--------------------------------------------------------------------------
@@ -20,31 +37,31 @@ class ConnectionContext(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         name='database_hostname',
-        default='localhost',
+        default=default_from_url('hostname', 'localhost'),
         doc='the hostname of the database',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_name',
-        default='breakpad',
+        default=default_from_url('path', ' breakpad')[1:],
         doc='the name of the database',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_port',
-        default=5432,
+        default=default_from_url('port', 5432),
         doc='the port for the database',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_username',
-        default='breakpad_rw',
+        default=default_from_url('username', 'breakpad_rw'),
         doc='the name of the user within the database',
         reference_value_from='secrets.postgresql',
     )
     required_config.add_option(
         name='database_password',
-        default='aPassword',
+        default=default_from_url('password', 'aPassword'),
         doc="the user's database password",
         reference_value_from='secrets.postgresql',
         secret=True,
