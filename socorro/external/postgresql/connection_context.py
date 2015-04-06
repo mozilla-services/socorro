@@ -41,7 +41,7 @@ class ConnectionContext(RequiredConfig):
     )
     required_config.add_option(
         name='database_port',
-        default=default_from_url(port, 5432),
+        default=default_from_url('port', 5432),
         doc='the port for the database',
         reference_value_from='resource.postgresql',
     )
