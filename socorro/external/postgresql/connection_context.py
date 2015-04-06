@@ -15,7 +15,7 @@ from configman import Namespace
 #------------------------------------------------------------------------------
 def default_from_url(field, default):
     if 'database_url' in os.environ:
-        return getattr(urlparse(os.environ), field, default)
+        return getattr(urlparse(os.environ['database_url']), field, default)
     return default
 
 
