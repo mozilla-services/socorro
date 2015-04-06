@@ -95,6 +95,12 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
 
             file = StringIO()
             file.write(member.extractor().read())
+
+            for ext in settings.SYMBOLS_MIME_OVERRIDES:
+                if key_name.endswith('.{0}'.format(ext)):
+                    key.content_type = settings.SYMBOLS_MIME_OVERRIDES[ext]
+                    symbols_upload.content_type = key.content_type
+
             uploaded = key.set_contents_from_string(file.getvalue())
             total_uploaded += uploaded
 

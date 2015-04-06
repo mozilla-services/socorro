@@ -43,6 +43,7 @@ class TestViews(BaseTestViews):
         self.uploaded_keys = {}
         self.known_bucket_keys = {}
         self.created_buckets = []
+        self.created_keys = []
         mocked_connect_s3 = self.patcher.start()
 
         def mocked_get_bucket(*a, **k):
@@ -60,6 +61,7 @@ class TestViews(BaseTestViews):
                 mocked_key.set_contents_from_string.side_effect = mocked_set
                 mocked_key.key = key_name
                 mocked_key.bucket = mocked_bucket
+                self.created_keys.append(mocked_key)
                 return mocked_key
 
             def mocked_get_key(key_name):
@@ -67,6 +69,7 @@ class TestViews(BaseTestViews):
                 if key_name in self.known_bucket_keys:
                     mocked_key = mock.Mock()
                     mocked_key.key = key_name
+                    mocked_key.content_type = 'application/binary-octet-stream'
                     mocked_key.size = self.known_bucket_keys[key_name]
                     mocked_key.bucket = mocked_bucket
                     return mocked_key
@@ -199,12 +202,13 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         # now we can post
-        with open(ZIP_FILE) as file_object:
-            response = self.client.post(
-                url,
-                {'file': file_object}
-            )
-            eq_(response.status_code, 302)
+        with self.settings(SYMBOLS_MIME_OVERRIDES={'jpeg': 'text/plain'}):
+            with open(ZIP_FILE) as file_object:
+                response = self.client.post(
+                    url,
+                    {'file': file_object}
+                )
+                eq_(response.status_code, 302)
 
         symbol_upload = models.SymbolsUpload.objects.get(user=user)
         eq_(symbol_upload.filename, os.path.basename(ZIP_FILE))
@@ -218,7 +222,10 @@ class TestViews(BaseTestViews):
             'south-africa-flag.jpeg'
         )
         eq_(symbol_upload.content, line)
+        eq_(symbol_upload.content_type, 'text/plain')
         ok_(self.uploaded_keys)
+        # the mocked key object should have its content_type set too
+        eq_(self.created_keys[0].content_type, 'text/plain')
         eq_(self.created_buckets, [
             (
                 settings.SYMBOLS_BUCKET_DEFAULT_NAME,
