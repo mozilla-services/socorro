@@ -8,6 +8,7 @@ from nose.tools import eq_, ok_, assert_raises
 from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import search_common, util
+from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.unittest.testbase import TestCase
 
 from .unittestbase import PostgreSQLTestCase
@@ -20,8 +21,8 @@ class TestPostgreSQLBase(TestCase):
     #--------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
-        context = util.DotDict()
-        context.database = util.DotDict({
+        context = util.DotDict({
+            'database_class': ConnectionContext,
             'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',

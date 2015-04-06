@@ -8,23 +8,28 @@ JENKINS_CONF=jenkins.py.dist
 
 ENV=env
 
-PYTHONPATH="."
+PYTHONPATH=.
 
 PG_RESOURCES=""
-if [ -n "$database_hostname" ]; then
-    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_hostname=$database_hostname"
-fi
-if [ -n "$database_username" ]; then
-    PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_username=$database_username"
-fi
-if [ -n "$database_password" ]; then
-    PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_password=$database_password"
-fi
-if [ -n "$database_port" ]; then
-    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_port=$database_port"
-fi
-if [ -n "$database_name" ]; then
-    PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_name=$database_name"
+if [ -n "$database_url" ]; then
+    echo database_url is present, specifying parameters on the command line is not necessary
+else
+    # This clause is all legacy and can be removed once we switch to use database_url in config
+    if [ -n "$database_hostname" ]; then
+        PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_hostname=$database_hostname"
+    fi
+    if [ -n "$database_username" ]; then
+        PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_username=$database_username"
+    fi
+    if [ -n "$database_password" ]; then
+        PG_RESOURCES="$PG_RESOURCES secrets.postgresql.database_password=$database_password"
+    fi
+    if [ -n "$database_port" ]; then
+        PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_port=$database_port"
+    fi
+    if [ -n "$database_name" ]; then
+        PG_RESOURCES="$PG_RESOURCES resource.postgresql.database_name=$database_name"
+    fi
 fi
 
 RMQ_RESOURCES=""
@@ -84,11 +89,11 @@ for file in *.py.dist; do
 done
 popd
 
-PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_integration_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
+PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_integration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
 
-PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
+PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata
 
-PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --database_username=$database_username --database_hostname=$database_hostname --database_password=$database_password --database_port=$database_port --database_superusername=$database_superusername --database_superuserpassword=$database_superuserpassword --dropdb --logging.stderr_error_logging_level=40 --unlogged
+PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_migration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged
 
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrade -1
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade heads

@@ -11,6 +11,7 @@ from socorro.external import MissingArgumentError
 from socorro.external.postgresql.gccrashes import GCCrashes
 from socorro.lib import datetimeutil, util
 from socorro.unittest.testbase import TestCase
+from socorro.external.postgresql.connection_context import ConnectionContext
 
 from unittestbase import PostgreSQLTestCase
 
@@ -22,8 +23,8 @@ class TestGCCrashes(TestCase):
     #--------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
-        context = util.DotDict()
-        context.database = util.DotDict({
+        context = util.DotDict({
+            'database_class': ConnectionContext,
             'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',
