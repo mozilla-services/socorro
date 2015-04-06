@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+import urlparse
+
 import socket
 import contextlib
 import psycopg2
@@ -21,32 +24,42 @@ class ConnectionContext(RequiredConfig):
     required_config.add_option(
         name='database_hostname',
         default='localhost',
-        doc='the hostname of the database',
+        doc='the hostname of the database (deprecated)',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_name',
         default='breakpad',
-        doc='the name of the database',
+        doc='the name of the database (deprecated)',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_port',
         default=5432,
-        doc='the port for the database',
+        doc='the port for the database (deprecated)',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_username',
         default='breakpad_rw',
-        doc='the name of the user within the database',
+        doc='the name of the user within the database (deprecated)',
         reference_value_from='secrets.postgresql',
     )
     required_config.add_option(
         name='database_password',
         default='aPassword',
-        doc="the user's database password",
+        doc="the user's database password (deprecated)",
         reference_value_from='secrets.postgresql',
+        secret=True,
+    )
+    # Specifying database_url overrides all previously set
+    # connection info settings
+    required_config.add_option(
+        name='database_url',
+        default=os.environ.get('database_url', 'postgres:///socorro_integration_test'),
+        doc='URI for connecting to the database, '
+            'format: postgres://username:pass@hostname:port/database',
+        reference_value_from='resource.postgresql',
         secret=True,
     )
 
@@ -68,21 +81,35 @@ class ConnectionContext(RequiredConfig):
             local_config - this is the namespace within the complete config
                            where the actual database parameters are found"""
         super(ConnectionContext, self).__init__()
+
         self.config = config
+
         if local_config is None:
             local_config = config
+
+        self.db_kwargs = {}
+        if local_config.get('database_url'):
+            self.database_url = local_config['database_url']
+            url = urlparse.urlparse(local_config['database_url'])
+            self.db_kwargs['database_username'] = url.username
+            self.db_kwargs['database_password'] = url.password
+            self.db_kwargs['database_hostname'] = url.hostname
+            self.db_kwargs['database_port'] = url.port
+            self.db_kwargs['database_name'] = url.path[1:]
+
+        # DEPRECATED use self.db_kwargs and --database_url instead
         self.dsn = ("host=%(database_hostname)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
                     "user=%(database_username)s "
                     "password=%(database_password)s") % local_config
         self.operational_exceptions = (
-          psycopg2.OperationalError,
-          psycopg2.InterfaceError,
-          socket.timeout
+            psycopg2.OperationalError,
+            psycopg2.InterfaceError,
+            socket.timeout
         )
         self.conditional_exceptions = (
-          psycopg2.ProgrammingError,
+            psycopg2.ProgrammingError,
         )
 
     #--------------------------------------------------------------------------
@@ -93,7 +120,12 @@ class ConnectionContext(RequiredConfig):
             name_unused - optional named connections.  Used by the
                           derived class
         """
-        return psycopg2.connect(self.dsn)
+        # Transition for supporting kwargs instead of a string
+        if self.db_kwargs:
+            return psycopg2.connect(**self.db_kwargs)
+        else:
+            # Deprecated way of handling parameters
+            return psycopg2.connect(self.dsn)
 
     #--------------------------------------------------------------------------
     @contextlib.contextmanager
@@ -199,7 +231,7 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         if force:
             try:
                 (super(ConnectionContextPooled, self)
-                  .close_connection(connection, force))
+                    .close_connection(connection, force))
             except self.operational_exceptions:
                 self.config.logger.error('PostgresPooled - failed closing')
             for name, conn in self.pool.iteritems():
