@@ -114,13 +114,13 @@ const unsigned kTailFramesWhenTruncating = 10;
 
 static string ToHex(uint64_t value) {
   char buffer[17];
-  sprintf(buffer, "0x%lx", value);
+  sprintf(buffer, "0x%llx", value);
   return buffer;
 }
 
 static string ToInt(uint64_t value) {
   char buffer[17];
-  sprintf(buffer, "%ld", value);
+  sprintf(buffer, "%lld", value);
   return buffer;
 }
 
@@ -202,7 +202,7 @@ void AddRegister(Json::Value& registers, const char* reg,
 void AddRegister(Json::Value& registers, const char* reg,
                  uint64_t value) {
   char buf[19];
-  snprintf(buf, sizeof(buf), "0x%016lx", value);
+  snprintf(buf, sizeof(buf), "0x%016llx", value);
   registers[reg] = buf;
 }
 
