@@ -52,7 +52,7 @@
                         {% else %}
                             href="{{ url('crashstats:report_list') }}?signature={{ crash.signature | urlencode }}&amp;{{ report_list_query_string }}"
                         {% endif %}
-                            class="external-link"
+                            title="Click to leave this search and go to this signature report"
                         >
                             Signature report
                         </a>
@@ -90,22 +90,24 @@
                 <td>
                     <a href="#" class="term" data-field="{{ facet }}" title="Add this term to the search form">{{ hit.term }}</a>
                     {% if facet == 'signature' %}
-                        <a
-                        {% if waffle.switch('signature-report') %}
-                            href="{{ url('signature:signature_report') }}{{ change_query_string(
-                                _no_base=True,
-                                signature=hit.term,
-                                page=None,
-                                _columns=None,
-                                _facets=None
-                            ) }}"
-                        {% else %}
-                            href="{{ url('crashstats:report_list') }}?signature={{ hit.term | urlencode }}&amp;{{ report_list_query_string }}"
-                        {% endif %}
-                            class="external-link"
-                        >
-                            Signature report
-                        </a>
+                        <em>
+                            <a
+                            {% if waffle.switch('signature-report') %}
+                                href="{{ url('signature:signature_report') }}{{ change_query_string(
+                                    _no_base=True,
+                                    signature=hit.term,
+                                    page=None,
+                                    _columns=None,
+                                    _facets=None
+                                ) }}"
+                            {% else %}
+                                href="{{ url('crashstats:report_list') }}?signature={{ hit.term | urlencode }}&amp;{{ report_list_query_string }}"
+                            {% endif %}
+                                title="Click to leave this search and go to this signature report"
+                            >
+                                Signature report
+                            </a>
+                        </em>
                     {% endif %}
                 </td>
                 <td>{{ hit.count }}</td>
