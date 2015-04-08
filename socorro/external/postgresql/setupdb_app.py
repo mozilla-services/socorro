@@ -21,6 +21,9 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
 
 from socorro.app.socorro_app import App, main
+from socorro.external.postgresql.connection_context import (
+    default_from_url
+)
 from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.models import *
 from socorro.external.postgresql.postgresqlalchemymanager import (
