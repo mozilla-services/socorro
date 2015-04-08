@@ -86,6 +86,7 @@ Sync Django database
 
 Django needs to write its ORM tables:
 ::
+  export SECRET_KEY="..."
   cd webapp-django
   ./manage.py syncdb --noinput
   ./manage.py migrate
@@ -99,24 +100,14 @@ Copy default config files
   cp config/collector.ini-dist config/collector.ini
   cp config/processor.ini-dist config/processor.ini
   cp config/middleware.ini-dist config/middleware.ini
-  cp webapp-django/crashstats/settings/local.py-dist \
-    webapp-django/crashstats/settings/local.py
 
 You may need to edit these config files - for example collector (which is
 generally a public service) might need listen on the correct IP address.
 
 In particular, for login to work you want to modify the following
-in webapp-django/crashstats/settings/local.py:
+either as environment variables or in a ./webapp-django/.env file:
 ::
   SESSION_COOKIE_SECURE = False
-  # Make sure to comment out the CACHES section so the default (memcached)
-  # is used - NOTE login will not work until this is done
-  #CACHES = {
-  #    'default': {
-  #        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-  #        'LOCATION': 'crashstats'
-  #    }
-  #}
 
 Run Socorro services using Honcho (configured in Procfile)
 ::
