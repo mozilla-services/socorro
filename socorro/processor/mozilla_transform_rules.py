@@ -816,3 +816,109 @@ class MissingSymbolsRule(Rule):
         except KeyError:
             return False
         return True
+
+
+#==============================================================================
+class BetaVersionRule(Rule):
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        doc="the class of the database",
+        default=
+        'socorro.external.postgresql.connection_context.ConnectionContext',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(BetaVersionRule, self).__init__(config)
+        database = config.database_class(config)
+        self.transaction = config.transaction_executor_class(
+            config,
+            database,
+        )
+        self._versions_data_cache = {}
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _get_version_data(self, product, version, release_channel, build_id):
+        key = '%s:%s:%s:%s' % (product, version, release_channel, build_id)
+
+        if key in self._versions_data_cache:
+            return self._versions_data_cache[key]
+
+        sql = """
+            SELECT
+                pv.version_string
+            FROM product_versions pv
+                LEFT JOIN product_version_builds pvb ON
+                    (pv.product_version_id = pvb.product_version_id)
+            WHERE pv.product_name = %(product)s
+            AND pv.release_version = %(version)s
+            AND pv.build_type ILIKE %(release_channel)s
+            AND pvb.build_id = %(build_id)s
+        """
+        params = {
+            'product': product,
+            'version': version,
+            'release_channel': release_channel,
+            'build_id': build_id,
+        }
+        results = self.transaction(
+            execute_query_fetchall,
+            sql,
+            params
+        )
+        for real_version, in results:
+            self._versions_data_cache[key] = real_version
+
+        return self._versions_data_cache.get(key)
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        try:
+            # We apply this Rule only if the release channel is beta, because
+            # beta versions are the only ones sending an "incorrect" version
+            # number in their data.
+            return processed_crash['release_channel'].lower() == 'beta'
+        except KeyError:
+            # No release_channel.
+            return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        try:
+            real_version = self._get_version_data(
+                processed_crash['product'],
+                processed_crash['version'],
+                processed_crash['release_channel'],
+                processed_crash['build'],
+            )
+
+            if real_version:
+                processed_crash['version'] = real_version
+            else:
+                # This is a beta version but we do not have data about it. It
+                # could be because we don't have it yet (if the cron jobs are
+                # running late for example), so we mark this crash. This way,
+                # we can reprocess it later to give it the correct version.
+                processed_crash['version'] += 'b0'
+                processor_meta.processor_notes.append(
+                    'release channel is beta but no version data was found '
+                    '- added "b0" suffix to version number'
+                )
+        except KeyError:
+            return False
+        return True

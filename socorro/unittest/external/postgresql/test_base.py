@@ -351,20 +351,32 @@ class TestPostgreSQLBase(TestCase):
                     AND r.version=%(version1)s)
                 OR (r.product=%(version2)s
                     AND r.version=%(version3)s)
+                OR (r.product=%(version4)s
+                    AND r.version=%(version5)s)
+                OR (r.product=%(version6)s
+                    AND r.version=%(version7)s)
                 OR (r.release_channel ILIKE 'beta'
                     AND r.build IN ('20120101123456', '20120101098765')
-                    AND r.product=%(version4)s
-                    AND r.version=%(version5)s))
+                    AND r.product=%(version8)s
+                    AND r.version=%(version9)s)
+                OR (r.product=%(version10)s
+                    AND r.version=%(version11)s))
         """
         sql_params_exp = {
             "from_date": params.from_date,
             "to_date": params.to_date,
             "version0": "Firefox",
             "version1": "12.0",
-            "version2": "Fennec",
-            "version3": "11.0",
-            "version4": "Firefox",
-            "version5": "13.0"
+            "version2": "Firefox",
+            "version3": "12.0a1",
+            "version4": "Fennec",
+            "version5": "11.0",
+            "version6": "Fennec",
+            "version7": "11.0",
+            "version8": "Firefox",
+            "version9": "13.0",
+            "version10": "Firefox",
+            "version11": "13.0(beta)",
         }
 
         (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,

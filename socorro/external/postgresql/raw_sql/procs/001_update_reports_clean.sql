@@ -241,7 +241,7 @@ SET product_version_id = product_versions.product_version_id
 FROM product_versions, new_reports
 WHERE reports_clean_buffer.uuid = new_reports.uuid
     AND new_reports.product = product_versions.product_name
-    AND new_reports.version = product_versions.release_version
+    AND new_reports.version = product_versions.version_string
     AND reports_clean_buffer.release_channel = product_versions.build_type
     AND reports_clean_buffer.release_channel <> 'beta';
 
@@ -253,7 +253,7 @@ SET product_version_id = product_versions.product_version_id
 FROM product_versions JOIN product_version_builds USING (product_version_id), new_reports
 WHERE reports_clean_buffer.uuid = new_reports.uuid
     AND new_reports.product = product_versions.product_name
-    AND new_reports.version = product_versions.release_version
+    AND new_reports.version = product_versions.version_string
     AND reports_clean_buffer.release_channel = product_versions.build_type
     AND reports_clean_buffer.build = product_version_builds.build_id
     AND reports_clean_buffer.release_channel = 'beta';

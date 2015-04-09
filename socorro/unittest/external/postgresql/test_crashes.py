@@ -605,13 +605,27 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "signature": "cool_sig",
             "versions": "WaterWolf:2.0b",
         }
+        res_expected = {
+            'hits': [
+                {
+                    'email': None,
+                    'date_processed': today,
+                    'uuid': 'qrs',
+                    'user_comments': 'meow'
+                }
+            ],
+            'total': 1
+        }
 
         res = crashes.get_comments(**params)
-        ok_(res)
-        eq_(len(res['hits']), 2)
-        eq_(res['total'], 2)
+        eq_(res, res_expected)
 
         # use pagination
+        params = {
+            "signature": "cool_sig",
+            "result_number": 1,
+            "result_offset": 0,
+        }
         params['result_number'] = 1
         params['result_offset'] = 0
         res = crashes.get_comments(**params)

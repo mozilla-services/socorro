@@ -33,6 +33,7 @@ from socorro.processor.mozilla_transform_rules import (
     Winsock_LSPRule,
     TopMostFilesRule,
     MissingSymbolsRule,
+    BetaVersionRule,
 )
 
 canonical_standard_raw_crash = DotDict({
@@ -1923,3 +1924,80 @@ class TestMissingSymbols(TestCase):
         config.transaction_executor_class.return_value.assert_has_calls(
                 expected_execute_args
         )
+
+
+#==============================================================================
+class TestBetaVersion(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = False
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    def test_everything_we_hoped_for(self):
+        config = self.get_basic_config()
+        config.database_class = Mock()
+        config.transaction_executor_class = Mock()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processed_crash.date_processed = '2014-12-31'
+        processed_crash.product = 'WaterWolf'
+
+        processor_meta = self.get_basic_processor_meta()
+
+        transaction = Mock()
+        config.transaction_executor_class.return_value = transaction
+
+        rule = BetaVersionRule(config)
+
+        # A normal beta crash, with a know version.
+        transaction.return_value = (('3.0b1',),)
+        processed_crash.version = '3.0'
+        processed_crash.release_channel = 'beta'
+        processed_crash.build = 20001001101010
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(processed_crash['version'], '3.0b1')
+        eq_(len(processor_meta.processor_notes), 0)
+
+        # A release crash, version won't get changed.
+        transaction.return_value = tuple()
+        processed_crash.version = '2.0'
+        processed_crash.release_channel = 'release'
+        processed_crash.build = 20000801101010
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(processed_crash['version'], '2.0')
+        eq_(len(processor_meta.processor_notes), 0)
+
+        # An unkwown version.
+        transaction.return_value = tuple()
+        processed_crash.version = '5.0a1'
+        processed_crash.release_channel = 'nightly'
+        processed_crash.build = 20000105101010
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(processed_crash['version'], '5.0a1')
+        eq_(len(processor_meta.processor_notes), 0)
+
+        # A beta crash with an unknown version, gets a special mark.
+        transaction.return_value = tuple()
+        processed_crash.version = '3.0'
+        processed_crash.release_channel = 'beta'
+        processed_crash.build = 20000101101011
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(processed_crash['version'], '3.0b0')
+        eq_(len(processor_meta.processor_notes), 1)
