@@ -2,30 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 import socket
 import contextlib
 import psycopg2
 import psycopg2.extensions
-from urlparse import urlparse
 
-from configman import RequiredConfig, Namespace
-
-
-#------------------------------------------------------------------------------
-def get_field_from_pg_database_url(field, default):
-    database_url_from_enviroment = os.environ.get('database_url')
-    if not database_url_from_enviroment:
-        # either database_url is not set or it has an empty value
-        return default
-    if 'postgres' in database_url_from_enviroment:
-        # make sure we respond only to PG URLs
-        return getattr(urlparse(database_url_from_enviroment), field, default)
-    # it wasn't a PG url
-    return default
+from configman.config_manager import RequiredConfig
+from configman import Namespace
 
 
-#==============================================================================
 class ConnectionContext(RequiredConfig):
     """a configman compliant class for setup of Postgres connections"""
     #--------------------------------------------------------------------------
@@ -35,31 +20,31 @@ class ConnectionContext(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         name='database_hostname',
-        default=get_field_from_pg_database_url('hostname', 'localhost'),
+        default='localhost',
         doc='the hostname of the database',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_name',
-        default=get_field_from_pg_database_url('path', ' breakpad')[1:],
+        default='breakpad',
         doc='the name of the database',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_port',
-        default=get_field_from_pg_database_url('port', 5432),
+        default=5432,
         doc='the port for the database',
         reference_value_from='resource.postgresql',
     )
     required_config.add_option(
         name='database_username',
-        default=get_field_from_pg_database_url('username', 'breakpad_rw'),
+        default='breakpad_rw',
         doc='the name of the user within the database',
         reference_value_from='secrets.postgresql',
     )
     required_config.add_option(
         name='database_password',
-        default=get_field_from_pg_database_url('password', 'aPassword'),
+        default='aPassword',
         doc="the user's database password",
         reference_value_from='secrets.postgresql',
         secret=True,

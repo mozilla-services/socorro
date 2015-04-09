@@ -12,16 +12,19 @@ import cStringIO
 import logging
 import os
 import re
+import sys
 from glob import glob
 
 from alembic import command
 from alembic.config import Config
+from configman import Namespace
 from psycopg2 import ProgrammingError
 from sqlalchemy import create_engine, exc
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateTable
 
+from socorro.app.generic_app import App, main as configman_main
 from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.models import *
 
