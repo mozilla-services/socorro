@@ -499,7 +499,8 @@ DEBUG_PROPAGATE_EXCEPTIONS = config(
 COMPRESS_OFFLINE = config('COMPRESS_OFFLINE', True, cast=bool)
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
-SECRET_KEY = config('SECRET_KEY')
+# FIXME remove this default when we are out of PHX
+SECRET_KEY = config('SECRET_KEY', 'this must be changed!!')
 
 # Log settings
 
