@@ -9,195 +9,9 @@ import psycopg2
 from .unittestbase import PostgreSQLTestCase
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
-from nose.tools import ok_, eq_
-from socorro.external.postgresql.setupdb_app import SocorroDBApp
-from socorro.unittest.testbase import TestCase
+from nose.tools import ok_
+from socorro.external.postgresql import setupdb_app
 from configman import ConfigurationManager
-from configman.dotdict import DotDict
-
-
-class NoInheritanceCheatSocorroDBApp(SocorroDBApp):
-    def __init__(self, config):
-        self.config = config
-
-
-class TestConnectionContext(TestCase):
-
-    def test_construct_db_url_no_super(self):
-        """from PG Docs:
-        postgresql://[user[:password]@][netloc][:port][/dbname]"""
-        test_cases_no_super = (
-            (
-                {
-                    'database_hostname': 'host01',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_password': 'password',
-                },
-                "postgresql://user:password@host01:port/name"
-            ),
-            (
-                {
-                    'database_hostname': 'host02',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_password': '',
-                },
-                "postgresql://user@host02:port/name"
-            ),
-            (
-                {
-                    'database_hostname': 'host03',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                },
-                "postgresql://user@host03:port/name"
-            ),
-            (
-                {
-                    'database_hostname': 'host04',
-                    'database_name': '',
-                    'database_port': 5432,
-                    'database_username': 'user',
-                },
-                "postgresql://user@host04:5432"
-            ),
-            (
-                {
-                    'database_hostname': 'host04',
-                    'database_name': '',
-                    'database_port': 5432,
-                    'database_username': 'user',
-                },
-                "postgresql://user@host04:5432"
-            ),
-        )
-        for a_config, expected_result in test_cases_no_super:
-            setup_app = NoInheritanceCheatSocorroDBApp(a_config)
-            eq_(setup_app.construct_db_url(), expected_result)
-
-    def test_construct_db_url_with_super(self):
-        """from PG Docs:
-        postgresql://[user[:password]@][netloc][:port][/dbname]"""
-        test_cases_no_super = (
-            (
-                {
-                    'database_hostname': 'host01',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_password': 'password',
-                    'database_superusername': 'superuser',
-                    'database_superuserpassword': 'superpassword',
-                },
-                "postgresql://superuser:superpassword@host01:port/name"
-            ),
-            (
-                {
-                    'database_hostname': 'host02',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_password': '',
-                    'database_superusername': 'superuser',
-                },
-                "postgresql://superuser@host02:port/name"
-            ),
-            (
-                {
-                    'database_hostname': 'host03',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_superusername': 'superuser',
-                    'database_superuserpassword': '',
-                },
-                "postgresql://superuser@host03:port/name"
-            ),
-            (
-                {
-                    'database_hostname': 'host04',
-                    'database_name': '',
-                    'database_port': 5432,
-                    'database_username': 'user',
-                    'database_superusername': 'superuser',
-                },
-                "postgresql://superuser@host04:5432"
-            ),
-            (
-                {
-                    'database_hostname': 'host04',
-                    'database_name': '',
-                    'database_port': 5432,
-                    'database_username': 'user',
-                    'database_superusername': 'superuser',
-                },
-                "postgresql://superuser@host04:5432"
-            ),
-        )
-        for a_config, expected_result in test_cases_no_super:
-            setup_app = NoInheritanceCheatSocorroDBApp(a_config)
-            eq_(setup_app.construct_db_url(None, True), expected_result)
-
-
-    def test_construct_db_url_overriding_dbname(self):
-        """from PG Docs:
-        postgresql://[user[:password]@][netloc][:port][/dbname]"""
-        test_cases_no_super = (
-            (
-                {
-                    'database_hostname': 'host01',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_password': 'password',
-                },
-                "postgresql://user:password@host01:port/mydb"
-            ),
-            (
-                {
-                    'database_hostname': 'host02',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                    'database_password': '',
-                },
-                "postgresql://user@host02:port/mydb"
-            ),
-            (
-                {
-                    'database_hostname': 'host03',
-                    'database_name': 'name',
-                    'database_port': 'port',
-                    'database_username': 'user',
-                },
-                "postgresql://user@host03:port/mydb"
-            ),
-            (
-                {
-                    'database_hostname': 'host04',
-                    'database_name': '',
-                    'database_port': 5432,
-                    'database_username': 'user',
-                },
-                "postgresql://user@host04:5432/mydb"
-            ),
-            (
-                {
-                    'database_hostname': 'host04',
-                    'database_name': '',
-                    'database_port': 5432,
-                    'database_username': 'user',
-                },
-                "postgresql://user@host04:5432/mydb"
-            ),
-        )
-        for a_config, expected_result in test_cases_no_super:
-            setup_app = NoInheritanceCheatSocorroDBApp(a_config)
-            eq_(setup_app.construct_db_url("mydb"), expected_result)
 
 
 @attr(integration='postgres')
@@ -254,7 +68,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
             extra_value_source = {}
         mock_logging = mock.Mock()
 
-        required_config = SocorroDBApp.required_config
+        required_config = setupdb_app.SocorroDBApp.required_config
         required_config.add_option('logger', default=mock_logging)
 
         # We manually set the database_name to something deliberately
@@ -285,7 +99,7 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
         raise SkipTest
         config_manager = self._setup_config_manager({'dropdb': True})
         with config_manager.context() as config:
-            db = SocorroDBApp(config)
+            db = setupdb_app.SocorroDBApp(config)
             db.main()
 
             # we can't know exactly because it would be tedious to have to

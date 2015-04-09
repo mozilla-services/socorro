@@ -28,9 +28,23 @@ from socorro.external import (
 )
 from socorro.lib import datetimeutil
 from socorro.middleware import middleware_app
+from socorro.unittest.config.commonconfig import (
+    databaseHost,
+    databaseName,
+    databaseUserName,
+    databasePassword
+)
 from socorro.unittest.testbase import TestCase
 from socorro.webapi.servers import CherryPy
 from socorro.webapi.servers import WebServerBase
+
+
+DSN = {
+    "database.database_hostname": databaseHost.default,
+    "database.database_name": databaseName.default,
+    "database.database_username": databaseUserName.default,
+    "database.database_password": databasePassword.default
+}
 
 
 class MyWSGIServer(WebServerBase):
@@ -464,6 +478,7 @@ class IntegrationTestMiddlewareApp(TestCase):
             values_source_list=[
                 {'logger': mock_logging},
                 environment,
+                DSN,
             ],
             argv_source=[]
         )
@@ -546,6 +561,7 @@ class IntegrationTestMiddlewareApp(TestCase):
             values_source_list=[
                 {'logger': mock_logging},
                 environment,
+                DSN,
                 extra_value_source
             ],
             argv_source=[]

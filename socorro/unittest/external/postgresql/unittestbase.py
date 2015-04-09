@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.external.postgresql.connection_context import ConnectionContext
+import socorro.database.database as db
 from configman import ConfigurationManager, Namespace
-from configman.converters import list_converter, class_converter
+from configman.converters import list_converter
 from socorro.unittest.testbase import TestCase
 
 
@@ -17,14 +17,29 @@ class PostgreSQLTestCase(TestCase):
     metadata = ''
 
     required_config = Namespace()
-
-    # we use this class here because it is a convenient way to pull in
-    # both a database connection context and a transaction executor
+    required_config.namespace('database')
     required_config.add_option(
-        'crashstorage_class',
-        default='socorro.external.postgresql.crashstorage.'
-                'PostgreSQLCrashStorage',
-        from_string_converter=class_converter
+        name='database_name',
+        default='socorro_integration_test',
+        doc='Name of database to manage',
+    )
+
+    required_config.add_option(
+        name='database_hostname',
+        default='localhost',
+        doc='Hostname to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_username',
+        default='test',
+        doc='Username to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_password',
+        default='aPassword',
+        doc='Password to connect to database',
     )
 
     required_config.add_option(
@@ -37,6 +52,12 @@ class PostgreSQLTestCase(TestCase):
         name='database_superuserpassword',
         default='aPassword',
         doc='Password to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_port',
+        default='',
+        doc='Port to connect to database',
     )
 
     required_config.add_option(
@@ -98,7 +119,7 @@ class PostgreSQLTestCase(TestCase):
         case (aka. test class).
         """
         cls.config = cls.get_standard_config()
-        cls.database = ConnectionContext(cls.config)
+        cls.database = db.Database(cls.config)
         cls.connection = cls.database.connection()
 
     @classmethod

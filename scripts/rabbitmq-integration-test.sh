@@ -53,7 +53,6 @@ function fatal() {
   message=$2
 
   echo "ERROR: $message"
-  cat setupdb.log
 
   cleanup
 
@@ -70,7 +69,7 @@ export PYTHONPATH=.
 echo " Done."
 
 echo -n "INFO: setting up database..."
-python socorro/external/postgresql/setupdb_app.py --dropdb --force > setupdb.log 2>&1
+python socorro/external/postgresql/setupdb_app.py --database_username=$database_username --database_password=$database_password --database_name=breakpad --database_hostname=$database_hostname --dropdb --force > setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "setupdb_app.py failed, check setupdb.log"
@@ -82,7 +81,7 @@ popd >> setupdb.log 2>&1
 cleanup_rabbitmq
 
 echo -n "INFO: setting up 'weekly-reports-partitions' via crontabber..."
-python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force >> setupdb.log 2>&1
+python socorro/cron/crontabber_app.py --resource.postgresql.database_hostname=$database_hostname --secrets.postgresql.database_username=$database_username --secrets.postgresql.database_password=$database_password --job=weekly-reports-partitions --force >> setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "crontabber weekly-reports-partitions failed, check setupdb.log"

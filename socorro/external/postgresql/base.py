@@ -9,12 +9,11 @@ import logging
 
 import psycopg2
 
+import socorro.database.database as db
 from socorro.external import DatabaseError
 
-from socorro.external.postgresql.dbapi2_util import (
-    execute_query_fetchall,
-    single_value_sql
-)
+from .dbapi2_util import execute_query_fetchall, single_value_sql
+
 logger = logging.getLogger("webapi")
 
 
@@ -42,17 +41,22 @@ class PostgreSQLBase(object):
 
         """
         self.context = kwargs.get("config")
-        try:
-            self.database =  self.context.database_class(
-                self.context
-            )
-        except KeyError:
-            # some tests seem to put the database config parameters
-            # into a namespace called 'database', others do not
-            self.database =  self.context.database.database_class(
-                self.context.database
-            )
-
+        if hasattr(self.context, 'database'):
+            # XXX this should be replaced with connection_context instead
+            self.context.database['database_host'] = \
+                self.context.database.database_hostname
+            self.context.database['database_port'] = \
+                self.context.database.database_port
+            self.context.database['database_name'] = \
+                self.context.database.database_name
+            self.context.database['database_username'] = \
+                self.context.database.database_username
+            self.context.database['database_password'] = \
+                self.context.database.database_password
+            self.database = db.Database(self.context.database)
+        else:
+            # the old middleware
+            self.database = db.Database(self.context)
 
     @contextlib.contextmanager
     def get_connection(self):
@@ -83,13 +87,11 @@ class PostgreSQLBase(object):
                 fresh_connection = True
             # self.context.logger.debug(connection.cursor.mogrify(sql, params))
             results = execute_query_fetchall(connection, sql, params)
-            connection.commit()
         except psycopg2.Error, e:
             if error_message is None:
                 error_message = "Failed to execute query against PostgreSQL"
             error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
-            connection.rollback()
             raise DatabaseError(error_message)
         finally:
             if connection and fresh_connection:
@@ -118,13 +120,11 @@ class PostgreSQLBase(object):
                 fresh_connection = True
             # self.context.logger.debug(connection.cursor.mogrify(sql, params))
             result = single_value_sql(connection, sql, params)
-            connection.commit()
         except psycopg2.Error, e:
             if error_message is None:
                 error_message = "Failed to execute count against PostgreSQL"
             error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
-            connection.rollback()
             raise DatabaseError(error_message)
         finally:
             if connection and fresh_connection:

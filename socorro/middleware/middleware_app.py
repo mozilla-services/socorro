@@ -166,6 +166,12 @@ class MiddlewareApp(App):
     #-------------------------------------------------------------------------
     required_config.namespace('database')
     required_config.database.add_option(
+        'database_class',
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
+        from_string_converter=class_converter
+    )
+    required_config.database.add_option(
         'crashstorage_class',
         default='socorro.external.postgresql.crashstorage.'
                 'PostgreSQLCrashStorage',
