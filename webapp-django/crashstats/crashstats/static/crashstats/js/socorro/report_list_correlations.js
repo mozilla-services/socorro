@@ -43,7 +43,8 @@ var Correlations = (function() {
                 var thead = $('<thead />');
                 var headerRow = $('<tr />');
                 // a little work left to be done on the type header
-                var headers = ['All Crashes For OS', 'All Crashes For Signature', type];
+                var headers = ['All Crashes For Signature',
+                               'All Crashes For OS',type];
 
                 $(headers).each(function(index, header) {
                     headerRow.append($('<th />', {
