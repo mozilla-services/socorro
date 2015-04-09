@@ -1,11 +1,8 @@
 from .base import *
-# TODO remove this whole try/except when we can safely stop using local.py
 try:
     from .local import *
-    import warnings
-    warnings.warn(
-        "Use environment variables or a .env file instead of local.py",
-        DeprecationWarning
+except ImportError, exc:
+    exc.args = tuple(
+        ['%s (did you rename settings/local.py-dist?)' % exc.args[0]]
     )
-except ImportError:
-    pass
+    raise exc

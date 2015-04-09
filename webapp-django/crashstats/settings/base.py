@@ -3,8 +3,6 @@
 
 from funfactory.settings_base import *
 
-from decouple import config, Csv
-
 
 # This unset DATABASE_ROUTERS from funfactory because we're not
 # interested in using multiple database for the webapp part.
@@ -111,7 +109,28 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'sqlite.crashstats.db',
+    }
+}
+
 LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        # fox2mike suggest to use IP instead of localhost
+        'LOCATION': '127.0.0.1:11211',
+        'TIMEOUT': 500,
+        'KEY_PREFIX': 'crashstats',
+    }
+}
+
+# Middleware related stuff
+CACHE_MIDDLEWARE = True
+CACHE_MIDDLEWARE_FILES = False  # store on filesystem instead of cache server
 
 # Some products have a different name in bugzilla and Socorro.
 BUG_PRODUCT_MAP = {
@@ -148,6 +167,9 @@ NIGHTLY_RELEASE_TYPES = (
 # No need to load it because we don't do i18n in this project
 USE_I18N = False
 
+# by default, compression is done in runtime.
+COMPRESS_OFFLINE = False
+
 # True if old legacy URLs we handle should be permanent 301 redirects.
 # Transitionally it might be safer to set this to False as we roll out the new
 # django re-write of Socorro.
@@ -157,6 +179,11 @@ LOGIN_URL = '/login/'
 
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# The default, is to be secure. This requires that you run your socorro
+# instance over HTTPS. If you don't (e.g. local development) override
+# this in settings/local.py to False.
+SESSION_COOKIE_SECURE = True
 
 # we don't need bcrypt since we don't store real passwords
 PWD_ALGORITHM = 'sha512'
@@ -296,6 +323,9 @@ BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE
 # For a more friendly Persona pop-up
 BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}
 
+# Analyze all model fetches
+ANALYZE_MODEL_FETCHES = False
+
 # Default number of days a token lasts until it expires
 TOKENS_DEFAULT_EXPIRATION_DAYS = 90
 
@@ -353,248 +383,24 @@ DATASERVICE_CONFIG_BASE = {
 # all the migrations.
 SOUTH_TESTS_MIGRATE = False
 
-# To extend any settings from above here's an example:
-# INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
-
-# Recipients of traceback emails and other notifications.
-ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
-)
-MANAGERS = ADMINS
-
-# import logging
-# LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
-
-# If you run crashstats behind a load balancer, your `REMOTE_ADDR` header
-# will be that of the load balancer instead of the actual user.
-# The solution is to instead rely on the `X-Forwarded-For` header.
-# You ONLY want this if you know you can trust `X-Forwarded-For`.
-# (Note! Make sure you uncomment the line `from . import base` at
-# the top of this file first)
-# base.MIDDLEWARE_CLASSES += (
-#     'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
-# )
-
-# When you don't have permission to upload Symbols you might be confused
-# what to do next. On the page that explains that you don't have permission
-# there's a chance to put a link
-# SYMBOLS_PERMISSION_HINT_LINK = {
-#     'url': 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&'
-#            'component=General&groups=client-services-security',
-#     'label': 'File a bug in bugzilla'
-# }
-
-# To change the configuration for any dataservice object, you may set
-# parameters in the DATASERVICE_CONFIG_BASE which is used by dataservice
-# app. Detailed config is documented in each dataservice object imported
-# by the app.
-#
-# Below is an example of changing the api_whitelist for the Bugs service
-# We convert the dict to a string, as configman prefers a string here.
-# import json
-# DATASERVICE_CONFIG_BASE.update({
-#     'services': {
-#         'Bugs': {
-#             'api_whitelist': json.dumps({
-#                 'hits': ('id','signature',)
-#             })
-#         }
-#     }
-# })
-
-# to override the content-type of specific file extensinos:
-SYMBOLS_MIME_OVERRIDES = {
-    'sym': 'text/plain'
-}
-
-# ------------------------------------------------
-# Below are settings that can be overridden using
-# environment variables.
-
-CACHE_MIDDLEWARE = config('CACHE_MIDDLEWARE', False, cast=bool)
-# creates "./models-cache" dir
-# only applicable if CACHE_MIDDLEWARE is True
-CACHE_MIDDLEWARE_FILES = config('CACHE_MIDDLEWARE_FILES', True, cast=bool)
-
-# Socorro middleware instance to use
-MWARE_BASE_URL = config('MWARE_BASE_URL', 'http://localhost:5200')
-MWARE_USERNAME = config('MWARE_USERNAME', None)
-MWARE_PASSWORD = config('MWARE_PASSWORD', None)
-# HTTP/1.1 Host header to pass - in case this is a VHost
-MWARE_HTTP_HOST = config('MWARE_HTTP_HOST', None)
-
-DEFAULT_PRODUCT = config('DEFAULT_PRODUCT', 'WaterWolf')
-
-# can be changed from null to log to test something locally
-# or if using the debug toolbar, you might give toolbar a try
-STATSD_CLIENT = config('STATSD_CLIENT', 'django_statsd.clients.null')
-
-# for local development these don't matter
-STATSD_HOST = config('STATSD_HOST', 'localhost')
-STATSD_PORT = config('STATSD_PORT', 8125, cast=int)
-STATSD_PREFIX = config('STATSD_PREFIX', None)
-
-# Enable this to be able to run tests
-# NB: Disable this caching mechanism in production environment as
-# it will break work of anonymous CSRF if there is more than one
-# web server thread.
-# Comment out to use memcache from settings/base.py
-CACHES = {
-    'default': {
-        # use django.core.cache.backends.locmem.LocMemCache for prod
-        'BACKEND': config(
-            'CACHE_BACKEND',
-            'django.core.cache.backends.memcached.MemcachedCache',
-        ),
-        # fox2mike suggest to use IP instead of localhost
-        'LOCATION': config('CACHE_LOCATION', '127.0.0.1:11211'),
-        'TIMEOUT': config('CACHE_TIMEOUT', 500),
-        'KEY_PREFIX': config('CACHE_KEY_PREFIX', 'crashstats'),
-    }
-}
-
-TIME_ZONE = config('TIME_ZONE', 'UTC')
-
-# FIXME should support URLs here!
-DATABASES = {
-    'default': {
-        # use django.db.backends.postgresql_psycopg for production
-        'ENGINE': config('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': config('DATABASE_NAME', 'sqlite.crashstats.db'),
-        'USER': config('DATABASE_USER', ''),
-        'PASSWORD': config('DATABASE_PASSWORD', ''),
-        'HOST': config('DATABASE_HOST', ''),
-        'PORT': config('DATABASE_PORT', ''),
-        'OPTIONS': {
-        },
-        'TEST_CHARSET': 'utf8',
-        'TEST_COLLATION': 'utf8_general_ci',
-    },
-    # 'slave': {
-    #     ...
-    # },
-}
-
-
-# Uncomment this and set to all slave DBs in use on the site.
-SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
-
-# Debugging displays nice error messages, but leaks memory. Set this to False
-# on all server instances and True only for development.
-DEBUG = TEMPLATE_DEBUG = config('DEBUG', False, cast=bool)
-
-# Set this to True to make debugging AJAX requests easier; development-only!
-DEBUG_PROPAGATE_EXCEPTIONS = config(
-    'DEBUG_PROPAGATE_EXCEPTIONS',
-    False,
-    cast=bool
-)
-
-# By default compression is done in runtime, if you enable
-# offline compression, running the test suite will be 10 times faster
-# but you'll need to remember to first run:
-#     ./manage.py collectstatic --noinput
-#     ./manage.py compress --force --engine=jinja2
-# at least once every time any of the static files change.
-COMPRESS_OFFLINE = config('COMPRESS_OFFLINE', True, cast=bool)
-
-# Make this unique, and don't share it with anybody.  It cannot be blank.
-SECRET_KEY = config('SECRET_KEY')
-
-# Log settings
-
-# Make this unique to your project.
-SYSLOG_TAG = config('SYSLOG_TAG', 'http_app_playdoh')
-
-# Common Event Format logging parameters
-CEF_PRODUCT = config('CEF_PRODUCT', 'Playdoh')
-CEF_VENDOR = config('CEF_VENDOR', 'Mozilla')
-
-# If you intend to run WITHOUT HTTPS, such as local development,
-# then set this to False
-SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', True, cast=bool)
-
-# To get your Sentry key, go to https://errormill.mozilla.org/
-RAVEN_CONFIG = {
-    'dsn': config('RAVEN_DSN', '')  # see https://errormill.mozilla.org/
-}
-
-
-# Specify the middleware implementation to use in the middleware
-SEARCH_MIDDLEWARE_IMPL = config('SEARCH_MIDDLEWARE_IMPL', 'elasticsearch')
-
-# If you intend to run with DEBUG=False, this must match the URL
-# you're using
-BROWSERID_AUDIENCES = config(
-    'BROWSERID_AUDIENCES',
-    'http://localhost:8000',
-    cast=Csv()
-)
-
-# Optional Google Analytics ID (UA-XXXXX-X)
-GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
-# Root domain. Required iff you're providing an analytics ID.
-GOOGLE_ANALYTICS_DOMAIN = config('GOOGLE_ANALYTICS_DOMAIN', 'auto')
-
-# Set to True enable analysis of all model fetches
-ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
-
-
-# Dataservice API configuration
-# Extend dataservices settings from settings/base.py here
-# At a minimum, you'll probably want to change db username/password. All
-# dataservice objects inherit resource configuration and so can all
-# have their database resource configuration set once in 'secrets.postgresql'
-# and 'resource.postgresql' keys.
-DATASERVICE_CONFIG_BASE.update({
-    'secrets': {
-        'postgresql': {
-            'database_password': config(
-                'DATASERVICE_DATABASE_PASSWORD',
-                'aPassword'
-            ),
-            'database_username': config(
-                'DATASERVICE_DATABASE_PASSWORD',
-                'breakpad_rw'
-            ),
-            'database_hostname': config(
-                'DATASERVICE_DATABASE_HOSTNAME',
-                'localhost'
-            ),
-            'database_name': config(
-                'DATASERVICE_DATABASE_NAME',
-                'breakpad'
-            ),
-            'database_name': config(
-                'DATASERVICE_DATABASE_PORT',
-                '5432'
-            ),
-        }
-    }
-})
-
-
 # Credentials for being able to make an S3 connection
-AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', '')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', '')
+AWS_ACCESS_KEY = ''
+AWS_SECRET_ACCESS_KEY = ''
 
 # Information for uploading symbols to S3
-SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')
-
+SYMBOLS_BUCKET_DEFAULT_NAME = ''
 # To set overriding exceptions by email, use:
 SYMBOLS_BUCKET_EXCEPTIONS = {
     # e.g.
     # 'joe.bloggs@example.com': 'private-crashes.my-bucket'
     # or you can specify it as a tuple of (name, location)
     # 'joe@example.com': ('my-bucket', 'USWest1')
-    config('SYMBOLS_BUCKET_EXCEPTIONS_USER', ''):
-        config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
 }
-
-SYMBOLS_FILE_PREFIX = config('SYMBOLS_FILE_PREFIX', 'v1')
+SYMBOLS_FILE_PREFIX = 'v1'
 # e.g. "us-west-2" see boto.s3.connection.Location
 # Only needed if the bucket has never been created
-SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
-    'SYMBOLS_BUCKET_DEFAULT_LOCATION',
-    None
-)
+SYMBOLS_BUCKET_DEFAULT_LOCATION = None
+# to override the content-type of specific file extensinos:
+SYMBOLS_MIME_OVERRIDES = {
+    'sym': 'text/plain'
+}

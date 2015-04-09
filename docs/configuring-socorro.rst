@@ -85,8 +85,8 @@ least once** using the email address you want to identify as a
 superuser. Once you've done that, run the following command::
 
     cd /data/socorro
-    export SECRET_KEY="..."
-    ./socorro-virtualenv/bin/python webapp-django/manage.py makesuperuser theemail@address.com
+    ./socorro-virtualenv/bin/python webapp-django/manage.py \
+        makesuperuser theemail@address.com
 
 Now the user with this email address should see a link to "Admin" in
 the footer.
