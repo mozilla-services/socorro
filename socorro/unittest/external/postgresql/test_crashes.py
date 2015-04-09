@@ -14,6 +14,7 @@ from socorro.external import (
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil, util
 from socorro.unittest.testbase import TestCase
+from socorro.external.postgresql.connection_context import ConnectionContext
 
 from unittestbase import PostgreSQLTestCase
 
@@ -25,8 +26,8 @@ class TestCrashes(TestCase):
     # -------------------------------------------------------------------------
     def get_dummy_context(self):
         """Create a dummy config object to use when testing."""
-        context = util.DotDict()
-        context.database = util.DotDict({
+        context = util.DotDict({
+            'database_class': ConnectionContext,
             'database_hostname': 'somewhere',
             'database_port': '8888',
             'database_name': 'somename',
@@ -114,12 +115,14 @@ class TestCrashes(TestCase):
         # This can all be some fake crap because we're testing that
         # the implementation class throws out the request before
         # it gets to doing any queries.
-        config = {
+        config = util.DotDict({
+            'database_class': ConnectionContext,
             'database_hostname': None,
+            'database_port': None,
             'database_name': None,
             'database_username': None,
             'database_password': None,
-        }
+        })
         crashes = Crashes(config=config)
         params = {}
         params['duration'] = 31 * 24  # 31 days
