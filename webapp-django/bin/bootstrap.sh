@@ -7,15 +7,20 @@ set -e
 
 source ${VIRTUAL_ENV:-"../socorro-virtualenv"}/bin/activate
 
+if [ ! -f crashstats/settings/local.py ]
+then
+    cp crashstats/settings/local.py-dist crashstats/settings/local.py
+fi
+
 export PATH=$PATH:./node_modules/.bin/
-export SECRET_KEY="doesn't matter, tests"
 
 if [ -n "$WORKSPACE" ]
 then
-    # this means we're running jenkins, force compression
-    # FIXME we need a better way to determine if this is a release build!
-    export COMPRESS_ENABLED=True
-    export COMPRESS_OFFLINE=True
+    # this means we're running jenkins
+    cp crashstats/settings/local.py-dist crashstats/settings/local.py
+    echo "# force compression for CI" >> crashstats/settings/local.py
+    echo "COMPRESS_ENABLED = True" >> crashstats/settings/local.py
+    echo "COMPRESS_OFFLINE = True" >> crashstats/settings/local.py
 fi
 
 ./manage.py collectstatic --noinput

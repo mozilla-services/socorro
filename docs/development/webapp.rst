@@ -55,7 +55,6 @@ file also defines some default groups.
 This file is executed when you run:
 ::
   cd webapp-django
-  export SECRET_KEY="..."
   ./manage.py syncdb --noinput
   ./manage.py migrate
 
