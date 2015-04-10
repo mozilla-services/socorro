@@ -93,11 +93,6 @@ def get_config_manager_for_crontabber(
 
     local_overrides = {
         'logger': Mock(),
-        #'resource.redactor.redactor_class': Mock(),
-        'resource.postgresql.database_name': 'socorro_integration_test',
-        'resource.postgresql.database_hostname': 'localhost',
-        'secrets.postgresql.database_username': 'test',
-        'secrets.postgresql.database_password': 'aPassword',
     }
     if jobs:
         local_overrides['crontabber.jobs'] = jobs
