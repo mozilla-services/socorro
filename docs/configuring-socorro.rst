@@ -68,7 +68,7 @@ as the "admin host")::
     */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
 
 Set up crash-stats web site
-===========================
+---------------------------
 
 Socorro produces graphs and reports, most are updated once per day.
 
