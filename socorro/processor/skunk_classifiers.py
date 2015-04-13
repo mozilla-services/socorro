@@ -387,7 +387,7 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         buildid = raw_crash.get('BuildID', None)
         if buildid is None:
             log(
-                'skunk_classifier: reject - BuiltID missing'
+                'skunk_classifier: reject - BuildID missing'
             )
             return True
 
