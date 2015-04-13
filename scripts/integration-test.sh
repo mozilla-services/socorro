@@ -7,7 +7,7 @@
 #
 # This uses the same setup as http://socorro.readthedocs.org/en/latest/installation.html
 
-echo this is integration-test.sh
+echo "this is integration-test.sh"
 
 export PATH=$PATH:${VIRTUAL_ENV:-"socorro-virtualenv"}/bin:$PWD/scripts
 export PYTHONPATH=.

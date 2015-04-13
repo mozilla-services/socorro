@@ -1,4 +1,7 @@
 #! /bin/bash -ex
+
+echo "this is test.sh"
+
 source scripts/defaults
 
 NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s"
@@ -61,8 +64,13 @@ while read d
 do
   if [ ! -f "$d/__init__.py" ]
   then
-    echo "$d is missing an __init__.py file, tests will not run"
-    errors=$((errors+1))
+    if [ "$(ls -A $d/test*py)" ]
+    then
+        echo "$d is missing an __init__.py file, tests will not run"
+        errors=$((errors+1))
+    else
+        echo "$d has no tests - ignoring it"
+    fi
   fi
 done < <(find socorro/unittest/* -not -name logs -type d)
 
@@ -76,17 +84,6 @@ if [ $WORKSPACE ]; then
     sed -i 's:localhost:jenkins-pg92:' config/alembic.ini
 fi
 
-# jenkins only settings for the pre-configman components
-# can be removed when all tests are updated to use configman
-pushd socorro/unittest/config
-for file in *.py.dist; do
-  if [ $WORKSPACE ]; then
-    cp $JENKINS_CONF commonconfig.py
-  else
-    cp $file `basename $file .dist`
-  fi
-done
-popd
 
 PYTHONPATH=$PYTHONPATH $SETUPDB --database_name=socorro_integration_test --dropdb --logging.stderr_error_logging_level=40 --unlogged --no_staticdata --createdb
 
