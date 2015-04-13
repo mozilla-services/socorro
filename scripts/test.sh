@@ -1,4 +1,5 @@
 #! /bin/bash -ex
+
 source scripts/defaults
 
 NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s"
