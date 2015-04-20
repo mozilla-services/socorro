@@ -457,14 +457,17 @@ CACHES = {
 
 TIME_ZONE = config('TIME_ZONE', 'UTC')
 
-if config('DATABASE_URL', None):
-    DATABASES = {
-        'default': config(
-            'DATABASE_URL',
-            cast=dj_database_url.parse
-        )
-    }
-else:
+# Only use the old way of settings DATABASES IF you haven't fully migrated yet
+if (
+    not config('DATABASE_URL', None) and (
+        config('DATABASE_ENGINE', None) or
+        config('DATABASE_NAME', None) or
+        config('DATABASE_USER', None) or
+        config('DATABASE_PASSWORD', None) or
+        config('DATABASE_PORT', None)
+    )
+):
+    # Database credentials set up the old way
     import warnings
     warnings.warn(
         "Use DATABASE_URL instead of depending on DATABASE_* settings",
@@ -487,6 +490,14 @@ else:
         # 'slave': {
         #     ...
         # },
+    }
+else:
+    DATABASES = {
+        'default': config(
+            'DATABASE_URL',
+            'sqlite://sqlite.crashstats.db',
+            cast=dj_database_url.parse
+        )
     }
 
 # Uncomment this and set to all slave DBs in use on the site.
