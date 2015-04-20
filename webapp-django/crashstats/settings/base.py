@@ -468,8 +468,8 @@ DATABASES = {
         'PORT': config('DATABASE_PORT', ''),
         'OPTIONS': {
         },
-        'TEST_CHARSET': 'utf8',
-        'TEST_COLLATION': 'utf8_general_ci',
+        # 'TEST_CHARSET': 'utf8',
+        # 'TEST_COLLATION': 'utf8_general_ci',
     },
     # 'slave': {
     #     ...
