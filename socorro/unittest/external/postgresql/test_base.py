@@ -695,31 +695,39 @@ class IntegrationTestBase(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     @mock.patch('socorro.external.postgresql.base.logger')
     def test_query_with_bad_connection(self, p_logger):
+        before = self.config['database_name']
         # screw with it, so that it fails to make a connection
         self.config['database_name'] = 'gobblygook'
-        base = PostgreSQLBase(config=self.config)
-        assert_raises(
-            DatabaseError,
-            base.query,
-            'select * from reports'
-        )
-        p_logger.error.assert_called_with(
-            'Failed to execute query against PostgreSQL - FATAL:  '
-            'database "gobblygook" does not exist\n', exc_info=True
-        )
+        try:
+            base = PostgreSQLBase(config=self.config)
+            assert_raises(
+                DatabaseError,
+                base.query,
+                'select * from reports'
+            )
+            p_logger.error.assert_called_with(
+                'Failed to execute query against PostgreSQL - FATAL:  '
+                'database "gobblygook" does not exist\n', exc_info=True
+            )
+        finally:
+            self.config['database_name'] = before
 
     #--------------------------------------------------------------------------
     @mock.patch('socorro.external.postgresql.base.logger')
     def test_count_with_bad_connection(self, p_logger):
+        before = self.config['database_name']
         # screw with it, so that it fails to make a connection
         self.config['database_name'] = 'gobblygook'
-        base = PostgreSQLBase(config=self.config)
-        assert_raises(
-            DatabaseError,
-            base.count,
-            'select count(*) from reports'
-        )
-        p_logger.error.assert_called_with(
-            'Failed to execute count against PostgreSQL - FATAL:  '
-            'database "gobblygook" does not exist\n', exc_info=True
-        )
+        try:
+            base = PostgreSQLBase(config=self.config)
+            assert_raises(
+                DatabaseError,
+                base.count,
+                'select count(*) from reports'
+            )
+            p_logger.error.assert_called_with(
+                'Failed to execute count against PostgreSQL - FATAL:  '
+                'database "gobblygook" does not exist\n', exc_info=True
+            )
+        finally:
+            self.config['database_name'] = before
