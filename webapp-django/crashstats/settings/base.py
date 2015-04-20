@@ -3,6 +3,7 @@
 
 from funfactory.settings_base import *
 
+import dj_database_url
 from decouple import config, Csv
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
@@ -456,26 +457,37 @@ CACHES = {
 
 TIME_ZONE = config('TIME_ZONE', 'UTC')
 
-# FIXME should support URLs here!
-DATABASES = {
-    'default': {
-        # use django.db.backends.postgresql_psycopg for production
-        'ENGINE': config('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': config('DATABASE_NAME', 'sqlite.crashstats.db'),
-        'USER': config('DATABASE_USER', ''),
-        'PASSWORD': config('DATABASE_PASSWORD', ''),
-        'HOST': config('DATABASE_HOST', ''),
-        'PORT': config('DATABASE_PORT', ''),
-        'OPTIONS': {
+if config('DATABASE_URL', None):
+    DATABASES = {
+        'default': config(
+            'DATABASE_URL',
+            cast=dj_database_url.parse
+        )
+    }
+else:
+    import warnings
+    warnings.warn(
+        "Use DATABASE_URL instead of depending on DATABASE_* settings",
+        DeprecationWarning
+    )
+    DATABASES = {
+        'default': {
+            # use django.db.backends.postgresql_psycopg for production
+            'ENGINE': config('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
+            'NAME': config('DATABASE_NAME', 'sqlite.crashstats.db'),
+            'USER': config('DATABASE_USER', ''),
+            'PASSWORD': config('DATABASE_PASSWORD', ''),
+            'HOST': config('DATABASE_HOST', ''),
+            'PORT': config('DATABASE_PORT', ''),
+            'OPTIONS': {
+            },
+            # 'TEST_CHARSET': 'utf8',
+            # 'TEST_COLLATION': 'utf8_general_ci',
         },
-        # 'TEST_CHARSET': 'utf8',
-        # 'TEST_COLLATION': 'utf8_general_ci',
-    },
-    # 'slave': {
-    #     ...
-    # },
-}
-
+        # 'slave': {
+        #     ...
+        # },
+    }
 
 # Uncomment this and set to all slave DBs in use on the site.
 SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
