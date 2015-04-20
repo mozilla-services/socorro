@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import mock
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
@@ -690,3 +691,35 @@ class IntegrationTestBase(PostgreSQLTestCase):
         # A failing count
         sql = 'SELECT count(`invalid_field_name`) FROM reports'
         assert_raises(DatabaseError, base.count, sql)
+
+    #--------------------------------------------------------------------------
+    @mock.patch('socorro.external.postgresql.base.logger')
+    def test_query_with_bad_connection(self, p_logger):
+        # screw with it, so that it fails to make a connection
+        self.config['database_name'] = 'gobblygook'
+        base = PostgreSQLBase(config=self.config)
+        assert_raises(
+            DatabaseError,
+            base.query,
+            'select * from reports'
+        )
+        p_logger.error.assert_called_with(
+            'Failed to execute query against PostgreSQL - FATAL:  '
+            'database "gobblygook" does not exist\n', exc_info=True
+        )
+
+    #--------------------------------------------------------------------------
+    @mock.patch('socorro.external.postgresql.base.logger')
+    def test_count_with_bad_connection(self, p_logger):
+        # screw with it, so that it fails to make a connection
+        self.config['database_name'] = 'gobblygook'
+        base = PostgreSQLBase(config=self.config)
+        assert_raises(
+            DatabaseError,
+            base.count,
+            'select count(*) from reports'
+        )
+        p_logger.error.assert_called_with(
+            'Failed to execute count against PostgreSQL - FATAL:  '
+            'database "gobblygook" does not exist\n', exc_info=True
+        )

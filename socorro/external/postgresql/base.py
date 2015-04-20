@@ -43,16 +43,15 @@ class PostgreSQLBase(object):
         """
         self.context = kwargs.get("config")
         try:
-            self.database =  self.context.database_class(
+            self.database = self.context.database_class(
                 self.context
             )
         except KeyError:
             # some tests seem to put the database config parameters
             # into a namespace called 'database', others do not
-            self.database =  self.context.database.database_class(
+            self.database = self.context.database.database_class(
                 self.context.database
             )
-
 
     @contextlib.contextmanager
     def get_connection(self):
@@ -89,7 +88,8 @@ class PostgreSQLBase(object):
                 error_message = "Failed to execute query against PostgreSQL"
             error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
-            connection.rollback()
+            if connection:
+                connection.rollback()
             raise DatabaseError(error_message)
         finally:
             if connection and fresh_connection:
@@ -124,7 +124,8 @@ class PostgreSQLBase(object):
                 error_message = "Failed to execute count against PostgreSQL"
             error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
-            connection.rollback()
+            if connection:
+                connection.rollback()
             raise DatabaseError(error_message)
         finally:
             if connection and fresh_connection:
