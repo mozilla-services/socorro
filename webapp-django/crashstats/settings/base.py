@@ -468,8 +468,8 @@ DATABASES = {
         'PORT': config('DATABASE_PORT', ''),
         'OPTIONS': {
         },
-        'TEST_CHARSET': 'utf8',
-        'TEST_COLLATION': 'utf8_general_ci',
+        # 'TEST_CHARSET': 'utf8',
+        # 'TEST_COLLATION': 'utf8_general_ci',
     },
     # 'slave': {
     #     ...
@@ -490,6 +490,8 @@ DEBUG_PROPAGATE_EXCEPTIONS = config(
     False,
     cast=bool
 )
+
+COMPRESS_ENABLED = config('COMPRESS_ENABLED', False, cast=bool)
 
 # By default compression is done in runtime, if you enable
 # offline compression, running the test suite will be 10 times faster
