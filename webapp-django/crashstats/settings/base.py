@@ -491,6 +491,8 @@ DEBUG_PROPAGATE_EXCEPTIONS = config(
     cast=bool
 )
 
+COMPRESS_ENABLED = config('COMPRESS_ENABLED', False, cast=bool)
+
 # By default compression is done in runtime, if you enable
 # offline compression, running the test suite will be 10 times faster
 # but you'll need to remember to first run:
