@@ -14,7 +14,7 @@ fi
 source "$VIRTUAL_ENV/bin/activate"
 
 # install dev + prod dependencies
-${VIRTUAL_ENV}/bin/pip install tools/peep-2.1.1.tar.gz
+${VIRTUAL_ENV}/bin/pip install tools/peep-2.4.tar.gz
 ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
 if [ ! -n "${SOCORRO_DEVELOPMENT_ENV+1}" ]; then
