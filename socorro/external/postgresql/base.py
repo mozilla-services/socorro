@@ -43,16 +43,15 @@ class PostgreSQLBase(object):
         """
         self.context = kwargs.get("config")
         try:
-            self.database =  self.context.database_class(
+            self.database = self.context.database_class(
                 self.context
             )
         except KeyError:
             # some tests seem to put the database config parameters
             # into a namespace called 'database', others do not
-            self.database =  self.context.database.database_class(
+            self.database = self.context.database.database_class(
                 self.context.database
             )
-
 
     @contextlib.contextmanager
     def get_connection(self):
@@ -76,26 +75,13 @@ class PostgreSQLBase(object):
                       will be opened.
 
         """
-        fresh_connection = False
-        try:
-            if not connection:
-                connection = self.database.connection()
-                fresh_connection = True
-            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
-            results = execute_query_fetchall(connection, sql, params)
-            connection.commit()
-        except psycopg2.Error, e:
-            if error_message is None:
-                error_message = "Failed to execute query against PostgreSQL"
-            error_message = "%s - %s" % (error_message, str(e))
-            logger.error(error_message, exc_info=True)
-            connection.rollback()
-            raise DatabaseError(error_message)
-        finally:
-            if connection and fresh_connection:
-                connection.close()
-
-        return results
+        return self._execute(
+            execute_query_fetchall,
+            sql,
+            error_message or "Failed to execute query against PostgreSQL",
+            params=params,
+            connection=connection
+        )
 
     def count(self, sql, params=None, error_message=None, connection=None):
         """Return the result of a count SQL query executed against PostgreSQL.
@@ -111,25 +97,34 @@ class PostgreSQLBase(object):
                       will be opened.
 
         """
+        return self._execute(
+            single_value_sql,
+            sql,
+            error_message or "Failed to execute count against PostgreSQL",
+            params=params,
+            connection=connection
+        )
+
+    def _execute(
+        self, actor_function, sql, error_message, params=None, connection=None
+    ):
         fresh_connection = False
         try:
             if not connection:
                 connection = self.database.connection()
                 fresh_connection = True
             # self.context.logger.debug(connection.cursor.mogrify(sql, params))
-            result = single_value_sql(connection, sql, params)
+            result = actor_function(connection, sql, params)
             connection.commit()
         except psycopg2.Error, e:
-            if error_message is None:
-                error_message = "Failed to execute count against PostgreSQL"
             error_message = "%s - %s" % (error_message, str(e))
             logger.error(error_message, exc_info=True)
-            connection.rollback()
+            if connection:
+                connection.rollback()
             raise DatabaseError(error_message)
         finally:
             if connection and fresh_connection:
                 connection.close()
-
         return result
 
     @staticmethod
