@@ -104,7 +104,7 @@ echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
 python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --resource.rabbitmq.host=$rmq_host --secrets.rabbitmq.rabbitmq_user=$rmq_user --secrets.rabbitmq.rabbitmq_password=$rmq_password --resource.rabbitmq.virtual_host=$rmq_virtual_host --resource.rabbitmq.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > collector.log 2>&1 &
-python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --new_crash_source.new_crash_source_class='socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource' --resource.rabbitmq.host=$rmq_host --secrets.rabbitmq.rabbitmq_user=$rmq_user --secrets.rabbitmq.rabbitmq_password=$rmq_password --resource.rabbitmq.virtual_host=$rmq_virtual_host --resource.postgresql.database_hostname=$database_hostname --processor.processor_class='socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015' > processor.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --resource.rabbitmq.host=$rmq_host --secrets.rabbitmq.rabbitmq_user=$rmq_user --secrets.rabbitmq.rabbitmq_password=$rmq_password --resource.rabbitmq.virtual_host=$rmq_virtual_host --resource.postgresql.database_hostname=$database_hostname --secrets.postgresql.database_username=$database_username --secrets.postgresql.database_password=$database_password --new_crash_source.new_crash_source_class='socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource' --processor.processor_class='socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015' > processor.log 2>&1 &
 sleep 1
 python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_hostname=$database_hostname --database.database_username=$database_username --database.database_password=$database_password --rabbitmq.host=$rmq_host --rabbitmq.rabbitmq_user=$rmq_user --rabbitmq.rabbitmq_password=$rmq_password --rabbitmq.virtual_host=$rmq_virtual_host --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > middleware.log 2>&1 &
 echo " Done."
@@ -129,7 +129,7 @@ function retry() {
       grep 'ERROR' ${name}.log
       if [ $? != 1 ]
       then
-        cat $name.log
+        cat ${name}.log
         fatal 1 "errors found in $name.log"
       fi
       echo "INFO: $name test passed"
