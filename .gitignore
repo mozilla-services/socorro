@@ -38,6 +38,7 @@ minidump-stackwalk/get-minidump-instructions
 socorro.egg-info/
 dist/
 socorro-*.rpm
+webapp-django/.env
 
 # exclude filesystem storage directories
 primaryCrashStore/
