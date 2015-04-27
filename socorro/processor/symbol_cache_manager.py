@@ -10,12 +10,18 @@ from ordereddict import OrderedDict
 from configman import Namespace, RequiredConfig
 
 
-if os.uname()[0] == 'Darwin':
-    # You're on OSX! Avoid pyinotify like the plague
+if os.uname()[0] != 'Linux':
+    # You're not on Linux! Avoid pyinotify like the plague
     class ProcessEvent(object):
         # Defining a class means we can't define the EventHandler class
         # without indenting the whole thing in an if-block.
         pass
+
+    import warnings
+    warnings.warn(
+        'ProcessEvent is disabled on operating systems that does not '
+        'have inotify in its kernel.'
+    )
 else:
     import pyinotify
     from pyinotify import ProcessEvent
