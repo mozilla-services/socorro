@@ -68,7 +68,8 @@ class BreakpadCollector(RequiredConfig):
         raw_crash.dump_checksums = DotDict()
         for name, value in form.iteritems():
             if isinstance(value, basestring):
-                raw_crash[name] = value
+                if name != "dump_checksums":
+                    raw_crash[name] = value
             elif hasattr(value, 'file') and hasattr(value, 'value'):
                 dumps[name] = value.value
                 raw_crash.dump_checksums[name] = \
