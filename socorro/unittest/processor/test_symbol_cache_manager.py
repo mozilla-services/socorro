@@ -1,10 +1,13 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import functools
+import os
 from datetime import datetime, timedelta
 
 from mock import Mock
 from nose.tools import eq_, ok_, assert_raises
+from nose import SkipTest
 from socorro.unittest.testbase import TestCase
 
 from configman import ConfigurationManager
@@ -15,7 +18,21 @@ from socorro.processor.symbol_cache_manager import (
     from_string_to_parse_size,
 )
 
+
+def skip_if_no_inotify(test):
+
+    @functools.wraps(test)
+    def inner(*args, **kwargs):
+        if os.uname()[0] == 'Darwin':
+            raise SkipTest
+        else:
+            return test(*args, **kwargs)
+
+    return inner
+
+
 #==============================================================================
+@skip_if_no_inotify
 class TestEventHandler(TestCase):
 
     #--------------------------------------------------------------------------
@@ -232,4 +249,3 @@ class Test_SymbolLRUCacheManager(TestCase):
         config.symbol_cache_path = '/tmp'
         config.symbol_cache_size = 1024
         config.verbosity = 0
-

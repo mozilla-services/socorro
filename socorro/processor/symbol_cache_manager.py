@@ -14,11 +14,19 @@ from configman import Namespace, RequiredConfig
 from configman.converters import class_converter, timedelta_converter
 
 from socorro.lib.datetimeutil import utc_now, UTC
-import pyinotify
+if os.uname()[0] == 'Darwin':
+    # You're on OSX! Avoid pyinotify like the plague
+    class ProcessEvent(object):
+        # Defining a class means we can't define the EventHandler class
+        # without indenting the whole thing in an if-block.
+        pass
+else:
+    import pyinotify
+    from pyinotify import ProcessEvent
 
 
 #==============================================================================
-class EventHandler(pyinotify.ProcessEvent):
+class EventHandler(ProcessEvent):
     #--------------------------------------------------------------------------
     def __init__(self, monitor, verbosity=0):
         pyinotify.ProcessEvent.__init__(self)
