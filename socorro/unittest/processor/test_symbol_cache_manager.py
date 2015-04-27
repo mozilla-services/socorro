@@ -1,13 +1,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import functools
 import os
 
 from mock import Mock
 from nose.tools import eq_, ok_
-from nose import SkipTest
 from socorro.unittest.testbase import TestCase
+from socorro.unittest import skip_if
 
 from configman.dotdict import DotDict
 
@@ -17,20 +16,8 @@ from socorro.processor.symbol_cache_manager import (
 )
 
 
-def skip_if_no_inotify(test):
-
-    @functools.wraps(test)
-    def inner(*args, **kwargs):
-        if os.uname()[0] == 'Darwin':
-            raise SkipTest
-        else:
-            return test(*args, **kwargs)
-
-    return inner
-
-
 # =============================================================================
-@skip_if_no_inotify
+@skip_if(os.uname()[0] != 'Linux', 'Only test this if on Linux')
 class TestEventHandler(TestCase):
 
     # -------------------------------------------------------------------------
