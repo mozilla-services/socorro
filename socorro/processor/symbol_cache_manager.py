@@ -5,15 +5,11 @@
 import os
 import sys
 import tempfile
-import threading
-from datetime import datetime
-from collections import defaultdict
 from ordereddict import OrderedDict
 
 from configman import Namespace, RequiredConfig
-from configman.converters import class_converter, timedelta_converter
 
-from socorro.lib.datetimeutil import utc_now, UTC
+
 if os.uname()[0] == 'Darwin':
     # You're on OSX! Avoid pyinotify like the plague
     class ProcessEvent(object):
@@ -25,15 +21,15 @@ else:
     from pyinotify import ProcessEvent
 
 
-#==============================================================================
+# =============================================================================
 class EventHandler(ProcessEvent):
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self, monitor, verbosity=0):
         pyinotify.ProcessEvent.__init__(self)
         self.monitor = monitor
         self.verbosity = verbosity
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def process_IN_DELETE(self, event):
         if not event.dir:
             if self.verbosity == 1:
@@ -43,7 +39,7 @@ class EventHandler(ProcessEvent):
                 self.monitor.config.logger.debug('D  %s', event.pathname)
             self.monitor._remove_cached(event.pathname)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def process_IN_CREATE(self, event):
         if not event.dir:
             if self.verbosity == 1:
@@ -53,7 +49,7 @@ class EventHandler(ProcessEvent):
                 self.monitor.config.logger.debug('C  %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def process_IN_MOVED_FROM(self, event):
         if not event.dir:
             if self.verbosity == 1:
@@ -63,7 +59,7 @@ class EventHandler(ProcessEvent):
                 self.monitor.config.logger.debug('M> %s', event.pathname)
             self.monitor._remove_cached(event.pathname)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def process_IN_MOVED_TO(self, event):
         if not event.dir:
             if self.verbosity == 1:
@@ -73,7 +69,7 @@ class EventHandler(ProcessEvent):
                 self.monitor.config.logger.debug('M< %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def process_IN_OPEN(self, event):
         if not event.dir:
             if self.verbosity == 1:
@@ -83,7 +79,7 @@ class EventHandler(ProcessEvent):
                 self.monitor.config.logger.debug('O  %s', event.pathname)
             self.monitor._update_cache(event.pathname)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def process_IN_MODIFY(self, event):
         if not event.dir:
             if self.verbosity == 1:
@@ -94,7 +90,7 @@ class EventHandler(ProcessEvent):
             self.monitor._update_cache(event.pathname, update_size=True)
 
 
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def from_string_to_parse_size(size_as_string):
     '''
    Parse a size argument of the form \d+[kMG] that represents a size in
@@ -118,7 +114,7 @@ def from_string_to_parse_size(size_as_string):
     return int(size_as_string[:-1]) * suffixes[size_as_string[-1]]
 
 
-#==============================================================================
+# =============================================================================
 class SymbolLRUCacheManager(RequiredConfig):
     """for cleaning up the symbols cache"""
     required_config = Namespace()
@@ -141,7 +137,7 @@ class SymbolLRUCacheManager(RequiredConfig):
         from_string_converter=int
     )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """constructor for a registration object that runs an LRU cache
        cleaner"""
@@ -170,12 +166,12 @@ class SymbolLRUCacheManager(RequiredConfig):
         self._get_existing_files(self.directory)
         self._notifier.start()
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @property
     def num_files(self):
         return len(self._lru)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _rm_empty_dirs(self, path):
         '''
        Attempt to remove any empty directories that are parents of path
@@ -187,7 +183,7 @@ class SymbolLRUCacheManager(RequiredConfig):
                 os.rmdir(path)
             path = os.path.dirname(path)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _update_cache(self, path, update_size=False):
         if path in self._lru:
             size = self._lru.pop(path)
@@ -217,20 +213,20 @@ class SymbolLRUCacheManager(RequiredConfig):
                     self.config.logger.debug('RM %s', rm_path)
         self._lru[path] = size
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _remove_cached(self, path):
         # We might have already removed this file in _update_cache.
         if path in self._lru:
             size = self._lru.pop(path)
             self.total_size -= size
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _get_existing_files(self, path):
         for base, dirs, files in os.walk(path):
             for f in files:
                 f = os.path.join(base, f)
                 self._update_cache(f)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def close(self):
         self._notifier.stop()

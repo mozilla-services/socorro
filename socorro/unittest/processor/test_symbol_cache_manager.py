@@ -3,14 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import functools
 import os
-from datetime import datetime, timedelta
 
 from mock import Mock
-from nose.tools import eq_, ok_, assert_raises
+from nose.tools import eq_, ok_
 from nose import SkipTest
 from socorro.unittest.testbase import TestCase
 
-from configman import ConfigurationManager
 from configman.dotdict import DotDict
 
 from socorro.processor.symbol_cache_manager import (
@@ -31,11 +29,11 @@ def skip_if_no_inotify(test):
     return inner
 
 
-#==============================================================================
+# =============================================================================
 @skip_if_no_inotify
 class TestEventHandler(TestCase):
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_init(self):
         mocked_monitor = Mock()
 
@@ -45,7 +43,7 @@ class TestEventHandler(TestCase):
         eq_(handler.verbosity, 17)
         ok_(handler.monitor is mocked_monitor)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_DELETE_1(self):
         mocked_monitor = Mock()
 
@@ -59,7 +57,7 @@ class TestEventHandler(TestCase):
 
         eq_(mocked_monitor._remove_cached.call_count, 0)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_DELETE_2(self):
         mocked_monitor = Mock()
 
@@ -75,7 +73,7 @@ class TestEventHandler(TestCase):
             event.pathname
         )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_CREATE_1(self):
         mocked_monitor = Mock()
 
@@ -89,7 +87,7 @@ class TestEventHandler(TestCase):
 
         eq_(mocked_monitor._update_cache.call_count, 0)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_CREATE_2(self):
         mocked_monitor = Mock()
 
@@ -105,7 +103,7 @@ class TestEventHandler(TestCase):
             event.pathname
         )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_MOVED_TO_1(self):
         mocked_monitor = Mock()
 
@@ -119,7 +117,7 @@ class TestEventHandler(TestCase):
 
         eq_(mocked_monitor._remove_cached.call_count, 0)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_MOVED_TO_2(self):
         mocked_monitor = Mock()
 
@@ -135,7 +133,7 @@ class TestEventHandler(TestCase):
             event.pathname
         )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_OPEN_1(self):
         mocked_monitor = Mock()
 
@@ -149,7 +147,7 @@ class TestEventHandler(TestCase):
 
         eq_(mocked_monitor._remove_cached.call_count, 0)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_OPEN_2(self):
         mocked_monitor = Mock()
 
@@ -165,7 +163,7 @@ class TestEventHandler(TestCase):
             event.pathname
         )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_MODIFY_1(self):
         mocked_monitor = Mock()
 
@@ -179,7 +177,7 @@ class TestEventHandler(TestCase):
 
         eq_(mocked_monitor._remove_cached.call_count, 0)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_process_IN_MODIFY_2(self):
         mocked_monitor = Mock()
 
@@ -197,10 +195,10 @@ class TestEventHandler(TestCase):
         )
 
 
-#==============================================================================
+# =============================================================================
 class Test_from_string_to_parse_size(TestCase):
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_bad_input(self):
         self.assertRaises(
             ValueError,
@@ -230,7 +228,7 @@ class Test_from_string_to_parse_size(TestCase):
             "1g"
         )
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_ok(self):
         eq_(from_string_to_parse_size("1"), 1)
         eq_(from_string_to_parse_size("1k"), 1024)  # WHY LOWER CASE?
@@ -238,11 +236,10 @@ class Test_from_string_to_parse_size(TestCase):
         eq_(from_string_to_parse_size("1G"), 1073741824)
 
 
-#==============================================================================
+# =============================================================================
 class Test_SymbolLRUCacheManager(TestCase):
 
-
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_config(self):
         config = DotDict()
 
