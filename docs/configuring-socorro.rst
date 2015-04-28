@@ -16,9 +16,18 @@ Configuring Socorro
 Socorro uses a distributed configuration service called Consul to hold
 configuration - https://consul.io/intro/getting-started/install.html
 
-This must be running in order for Socorro apps to start up and access
-their configuration. Socorro will work in the default configuration, but
-all features may not be available.
+Consul must be running in order for Socorro apps to start up and access
+their configuration. Normally you want to run a cluster (see the docs above)
+but to start in a single node configuration::
+
+  sudo consul agent -server -bootstrap-expect 1 -data-dir /var/lib/consul
+
+The Socorro systemd service scripts use envconsul
+(https://github.com/hashicorp/envconsul) to read the configuration from Consul
+and set the environment.
+
+You can see an example of how to configure Socorro using Consul at
+https://github.com/mozilla/socorro-infra/tree/master/socorro-config
 
 Start services
 --------------
