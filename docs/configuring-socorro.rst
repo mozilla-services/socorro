@@ -112,8 +112,22 @@ Socorro has a very powerful and expressive configuration system, and can
 be configured to read from and write to a number of different data stores 
 (S3, Elasticsearch, HBase, PostgreSQL) and use queues (RabbitMQ)
 
-For instance, to have processor store crashes to both the filesystem and the
+For instance, to have processor store crashes to both to the filesystem and to
+ElasticSearch::
 
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage_classes
+  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.crashstorage_class
+  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" http://localhost:8500/v1/kv/socorro/processor/storage.crashstorage0_class=socorro.external.fs.crashstorage.FSTemporaryStorage
+  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
+
+AWS Simple Storage Service (S3)
+-------------------------------
+
+Socorro supports Amazon S3 (or compatible, like Ceph), for instance to add
+support for Processor to put both unprocessed and processed crashes into S3::
+
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage_classes
+  curl -s -X PUT -d "socorro.external.boto.crashstorage.BotoS3CrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
 
 Crash-stats and PostgreSQL
 --------------------------
