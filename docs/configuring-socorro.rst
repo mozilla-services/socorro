@@ -52,6 +52,11 @@ Configure Nginx
 
 Public-facing services like socorro-collector should be fronted by Nginx.
 
+This is so we can run Socorro components under the
+socorro user and not need to listen on privileged port 80, and also to 
+protect from slow clients. Nginx is also more efficient at handling static
+assets.
+
 You can find a working example config in
 /etc/nginx/conf.d/socorro-collector.conf.sample
 You should change server_name at minimum, the default is "crash-reports".

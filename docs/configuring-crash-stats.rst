@@ -88,7 +88,9 @@ Configure Nginx
 ---------------
 
 Both socorro-webapp and socorro-middleware should be fronted by a
-webserver like Nginx.
+webserver like Nginx. This is so we can run Socorro components under the
+socorro user and not need to listen on privileged port 80, and also to 
+protect from slow clients.
 
 You can find a working configs in
 /etc/nginx/conf.d/socorro-{webapp,middleware}.conf.sample
