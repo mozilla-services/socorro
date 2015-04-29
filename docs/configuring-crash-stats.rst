@@ -70,8 +70,8 @@ Configure Socorro Processor
 Socorro Processor must be configured to store crashes in Elasticsearch
 as well as PostgreSQL.
 
-NOTE - you must replace @@@DATABASE_HOSTNAME@@@, @@@DATABASE_USERNAME@@@ and
-@@@DATABASE_PASSWORD@@@ below with valid entries for your PostgreSQL install
+NOTE - you must replace `@@@DATABASE_HOSTNAME@@@`, `@@@DATABASE_USERNAME@@@` and
+`@@@DATABASE_PASSWORD@@@` below with valid entries for your PostgreSQL install
 above::
   curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
   curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" localhost/v1/kv/socorro/processor/destination.crashstorage_class
@@ -127,7 +127,7 @@ for instance::
 
   curl -s -X PUT -d "crash-stats.example.com" localhost:8500/v1/kv/socorro/webapp-django/ALLOWED_HOSTS
 
-All variables surrounded by @@@ are placeholders and need to be filled in 
+All variables surrounded by `@@@` are placeholders and need to be filled in 
 appropriately for your install.
 
 
