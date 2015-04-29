@@ -40,9 +40,6 @@ by invoking envconsul::
 
   envconsul -prefix socorro env
 
-Technically Consul isn't required, if you really don't want to use it you
-can simply set keys in the environment.
-
 Start services
 --------------
 
@@ -57,10 +54,9 @@ Public-facing services like socorro-collector should be fronted by Nginx.
 
 You can find a working example config in
 /etc/nginx/conf.d/socorro-collector.conf.sample
-
 You should change server_name at minimum, the default is "crash-reports".
 
-Copy these .sample files to .conf and restart Nginx to activate::
+Copy the above .sample file to .conf and restart Nginx to activate::
 
   sudo systemctl restart nginx
 
