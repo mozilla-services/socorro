@@ -108,8 +108,10 @@ Cron jobs
 ---------
 
 Socorro uses a crontab manager called Crontabber. This needs
-to be in /etc/cron.d/socorro on a single host (generally referred to
-as the "admin host")::
+to be run from system cron on a single host (generally referred to
+as the "admin host").
+
+We suggest putting the following into /etc/cron.d/socorro::
 
     */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
 
@@ -165,9 +167,6 @@ Now go to the front page for your application. For example, if your application
 was named "KillerApp" then it will appear at:
 
 http://crash-stats/home/products/KillerApp
-
-You should also change the DEFAULT_PRODUCT in local.py (/etc/socorro/local.py
-in a packaged install, ./webapp-django/crashstats/settings/local.py otherwise).
 
 Active Daily Install (ADI)
 --------------------------
