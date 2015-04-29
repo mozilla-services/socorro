@@ -92,7 +92,7 @@ Graphs and reports using Elasticsearch and Kibana
 Processor supports putting crashes into Elasticsearch, you can enable this
 via configuration by inserting these keys into Consul::
 
-  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
+  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage0.crashstorage_class
   curl -s -X PUT -d "localhost" http://localhost:8500/v1/kv/socorro/common/resource.elasticsearch.elasticSearchHostname
 
 No need to restart socorro-processor, envconsul will take care of this.
@@ -108,6 +108,13 @@ Distributed Socorro
 You can see an example of how Mozilla configures a fully distributed Socorro
 in AWS using Consul at https://github.com/mozilla/socorro-infra/
 
+Socorro has a very powerful and expressive configuration system, and can
+be configured to read from and write to a number of different data stores 
+(S3, Elasticsearch, HBase, PostgreSQL) and use queues (RabbitMQ)
+
+For instance, to have processor store crashes to both the filesystem and the
+
+
 Crash-stats and PostgreSQL
 --------------------------
 
@@ -119,5 +126,5 @@ Mozilla-specific and contains a lot of features that aren't generally useful,
 like support for Mozilla's release model and a way of redacting private info
 so crashes can be exposed to the public.
 
-You probably don't want to use it:
+These components are totally optional:
 :ref:`configuring-crashstats-chapter`

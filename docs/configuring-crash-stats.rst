@@ -58,6 +58,18 @@ Socorro provides a setup script which attempts to initialize PostgreSQL::
 This creates a new database named "breakpad" and sets up the schema
 that Socorro and crash-stats expect.
 
+Configure Socorro Processor
+---------------------------
+
+::
+  socorro processor \
+    --destination.crashstorage_class='
+      socorro.external.crashstorage_base.PolyCrashStorage' \
+    --destination.storage_classes='
+      socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage,       
+      socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+
+
 Start services
 --------------
 
