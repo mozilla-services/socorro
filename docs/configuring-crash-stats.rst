@@ -83,6 +83,54 @@ above::
   curl -s -X PUT -d "@@@DATABASE_PASSWORD@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_password
 
 
+Configure Crash-Stats
+---------------------
+
+The crash-stats app itself runs under envconsul, and expects at least the
+following environment variables to be set::
+
+  ALLOWED_HOSTS=@@@ALLOWED_HOSTS@@@
+  MWARE_BASE_URL=http://localhost
+  MWARE_HTTP_HOST=socorro-middleware
+  CACHE_MIDDLEWARE=True
+  CACHE_MIDDLEWARE_FILES=False
+  DEFAULT_PRODUCT=@@@DEFAULT_PRODUCT@@@
+  CACHE_BACKEND=django.core.cache.backends.memcached.MemcachedCache
+  CACHE_LOCATION=@@@CACHE_LOCATION@@@
+  CACHE_KEY_PREFIX=@@@CACHE_KEY_PREFIX@@@
+  BROWSERID_AUDIENCES=@@@BROWSERID_AUDIENCES@@@
+  DATABASE_ENGINE=django.db.backends.postgresql_psycopg2
+  DATABASE_NAME=@@@DATABASES_NAME@@@
+  DATABASE_USER=@@@DATABASES_USER@@@
+  DATABASE_PASSWORD=@@@DATABASES_PASSWORD@@@
+  DATABASE_HOST=@@@DATABASES_HOST@@@
+  DATABASE_PORT=@@@DATABASES_PORT@@@
+  SESSION_COOKIE_SECURE=True
+  COMPRESS_OFFLINE=True
+  SECRET_KEY=@@@SECRET_KEY@@@
+  GOOGLE_ANALYTICS_ID=@@@GOOGLE_ANALYTICS_ID@@@
+  DATASERVICE_DATABASE_USERNAME=@@@DATASERVICE_DATABASE_USERNAME@@@
+  DATASERVICE_DATABASE_PASSWORD=@@@DATASERVICE_DATABASE_PASSWORD@@@
+  DATASERVICE_DATABASE_HOSTNAME=@@@DATASERVICE_DATABASE_HOSTNAME@@@
+  DATASERVICE_DATABASE_NAME=@@@DATASERVICE_DATABASE_NAME@@@
+  DATASERVICE_DATABASE_PORT=@@@DATASERVICE_DATABASE_PORT@@@
+  AWS_ACCESS_KEY=@@@AWS_ACCESS_KEY@@@
+  AWS_SECRET_ACCESS_KEY=@@@AWS_SECRET_ACCESS_KEY@@@
+  SYMBOLS_BUCKET_DEFAULT_NAME=@@@SYMBOLS_BUCKET_DEFAULT_NAME@@@
+  SYMBOLS_BUCKET_EXCEPTIONS_USER=@@@SYMBOLS_BUCKET_EXCEPTIONS_USER@@@
+  SYMBOLS_BUCKET_EXCEPTIONS_BUCKET=@@@SYMBOLS_BUCKET_EXCEPTIONS_BUCKET@@@
+  SYMBOLS_BUCKET_DEFAULT_LOCATION=@@@SYMBOLS_BUCKET_DEFAULT_LOCATION@@@
+  ANALYZE_MODEL_FETCHES=True
+
+These should be set via Consul in the "socorro/webapp-django" prefix,
+for instance::
+
+  curl -s -X PUT -d "crash-stats.example.com" localhost:8500/v1/kv/socorro/webapp-django/ALLOWED_HOSTS
+
+All variables surrounded by @@@ are placeholders and need to be filled in 
+appropriately for your install.
+
+
 Start services
 --------------
 
