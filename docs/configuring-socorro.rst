@@ -111,8 +111,8 @@ in AWS using Consul at https://github.com/mozilla/socorro-infra/
 Crash-stats and PostgreSQL
 --------------------------
 
-Mozilla has an existing legacy install called crash-stats, hosted at
-https://crash-stats.mozilla.org
+Mozilla runs a service at https://crash-stats.mozilla.org that produces
+graphs and reports for developers.
 
 Both the crash-stats app and the PostgreSQL schema it depends on are very
 Mozilla-specific and contains a lot of features that aren't generally useful,
