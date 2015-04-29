@@ -67,13 +67,20 @@ that Socorro and crash-stats expect.
 Configure Socorro Processor
 ---------------------------
 
-::
-  socorro processor \
-    --destination.crashstorage_class='
-      socorro.external.crashstorage_base.PolyCrashStorage' \
-    --destination.storage_classes='
-      socorro.external.fs.crashstorage.FSLegacyDatedRadixTreeStorage,       
-      socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+Socorro Processor must be configured to store crashes in Elasticsearch
+as well as PostgreSQL.
+
+NOTE - you must replace @@@DATABASE_HOSTNAME@@@, @@@DATABASE_USERNAME@@@ and
+@@@DATABASE_PASSWORD@@@ below with valid entries for your PostgreSQL install
+above::
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
+  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" localhost/v1/kv/socorro/processor/destination.crashstorage_class
+  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" localhost:8500/v1/kv/socorro/processor/storage.crashstorage0_class=socorro.external.fs.crashstorage.FSTemporaryStorage
+  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
+  curl -s -X PUT -d "socorro.external.es.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
+  curl -s -X PUT -d "@@@DATABASE_HOSTNAME@@@" localhost:8500/v1/kv/socorro/processor/resource.postgresql.database_hostname
+  curl -s -X PUT -d "@@@DATABASE_USERNAME@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_username
+  curl -s -X PUT -d "@@@DATABASE_PASSWORD@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_password
 
 
 Start services
