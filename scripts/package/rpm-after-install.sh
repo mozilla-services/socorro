@@ -7,7 +7,7 @@ chown socorro /var/run/uwsgi
 
 # FIXME processor will silently fail if this does not exist :/
 mkdir /home/socorro/temp
-chown /home/socorro/temp
+chown socorro /home/socorro/temp
 
 # Link the local Django settings to the distributed settings.
 ln -fs /etc/socorro/local.py \
