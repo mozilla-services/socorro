@@ -162,13 +162,15 @@ Copy these .sample files to .conf and restart Nginx to activate::
 Cron jobs
 ---------
 
-Socorro uses a crontab manager called Crontabber. This needs
-to be run from system cron on a single host (generally referred to
-as the "admin host").
+Socorro uses a crontab manager called
+`Crontabber <https://github.com/mozilla/crontabber>`_. This needs to be run from
+system cron on a single host (generally referred to as the "admin host").
 
 We suggest putting the following into /etc/cron.d/socorro::
 
     */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+
+More documentation about Crontabber is `available here <https://crontabber.readthedocs.org/en/latest/>`_.
 
 Set up crash-stats web site
 ---------------------------
