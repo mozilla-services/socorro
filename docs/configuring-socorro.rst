@@ -30,8 +30,8 @@ and set the environment.
 Below is the minimum viable configuration to get collection and
 processing working on a single node via Consul's REST interface::
 
-    curl -s -X PUT -d "socorro.webapi.servers.WSGIServer" http://localhost:8500/v1/kv/socorro/collector/web_server.wsgi_server_class
-    curl -s -X PUT -d "/path/to/your/symbols" http://localhost:8500/v1/kv/socorro/processor/processor.raw_to_processed_transform.BreakpadStackwalkerRule.processor_symbols_pathname_list
+    curl -s -X PUT -d "socorro.webapi.servers.WSGIServer" localhost:8500/v1/kv/socorro/collector/web_server.wsgi_server_class
+    curl -s -X PUT -d "/path/to/your/symbols" localhost:8500/v1/kv/socorro/processor/processor.raw_to_processed_transform.BreakpadStackwalkerRule.processor_symbols_pathname_list
 
 Note that Consul also has a Web UI you can use to get/set keys if you prefer.
 
@@ -88,8 +88,8 @@ Graphs and reports using Elasticsearch and Kibana
 Processor supports putting crashes into Elasticsearch, you can enable this
 via configuration by inserting these keys into Consul::
 
-  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage0.crashstorage_class
-  curl -s -X PUT -d "localhost" http://localhost:8500/v1/kv/socorro/common/resource.elasticsearch.elasticSearchHostname
+  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage0.crashstorage_class
+  curl -s -X PUT -d "localhost" localhost:8500/v1/kv/socorro/common/resource.elasticsearch.elasticSearchHostname
 
 No need to restart socorro-processor, envconsul will take care of this.
 
@@ -111,10 +111,10 @@ be configured to read from and write to a number of different data stores
 For instance, to have processor store crashes to both to the filesystem and to
 ElasticSearch::
 
-  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage_classes
-  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.crashstorage_class
-  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" http://localhost:8500/v1/kv/socorro/processor/storage.crashstorage0_class=socorro.external.fs.crashstorage.FSTemporaryStorage
-  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
+  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" localhost/v1/kv/socorro/processor/destination.crashstorage_class
+  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" localhost:8500/v1/kv/socorro/processor/storage.crashstorage0_class=socorro.external.fs.crashstorage.FSTemporaryStorage
+  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
 
 AWS Simple Storage Service (S3)
 -------------------------------
@@ -122,8 +122,8 @@ AWS Simple Storage Service (S3)
 Socorro supports Amazon S3 (or compatible, like Ceph), for instance to add
 support for Processor to put both unprocessed and processed crashes into S3::
 
-  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage_classes
-  curl -s -X PUT -d "socorro.external.boto.crashstorage.BotoS3CrashStorage" http://localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
+  curl -s -X PUT -d "socorro.external.boto.crashstorage.BotoS3CrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
 
 Crash-stats and PostgreSQL
 --------------------------
