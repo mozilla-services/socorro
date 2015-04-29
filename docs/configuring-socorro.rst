@@ -106,8 +106,7 @@ Distributed Socorro
 -------------------
 
 You can see an example of how Mozilla configures a fully distributed Socorro
-in AWS using Consul at
-https://github.com/mozilla/socorro-infra/tree/master/socorro-config
+in AWS using Consul at https://github.com/mozilla/socorro-infra/
 
 Crash-stats and PostgreSQL
 --------------------------
