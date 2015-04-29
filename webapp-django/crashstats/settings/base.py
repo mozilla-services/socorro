@@ -3,6 +3,7 @@
 
 from funfactory.settings_base import *
 
+import dj_database_url
 from decouple import config, Csv
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
@@ -456,26 +457,48 @@ CACHES = {
 
 TIME_ZONE = config('TIME_ZONE', 'UTC')
 
-# FIXME should support URLs here!
-DATABASES = {
-    'default': {
-        # use django.db.backends.postgresql_psycopg for production
-        'ENGINE': config('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': config('DATABASE_NAME', 'sqlite.crashstats.db'),
-        'USER': config('DATABASE_USER', ''),
-        'PASSWORD': config('DATABASE_PASSWORD', ''),
-        'HOST': config('DATABASE_HOST', ''),
-        'PORT': config('DATABASE_PORT', ''),
-        'OPTIONS': {
+# Only use the old way of settings DATABASES IF you haven't fully migrated yet
+if (
+    not config('DATABASE_URL', None) and (
+        config('DATABASE_ENGINE', None) or
+        config('DATABASE_NAME', None) or
+        config('DATABASE_USER', None) or
+        config('DATABASE_PASSWORD', None) or
+        config('DATABASE_PORT', None)
+    )
+):
+    # Database credentials set up the old way
+    import warnings
+    warnings.warn(
+        "Use DATABASE_URL instead of depending on DATABASE_* settings",
+        DeprecationWarning
+    )
+    DATABASES = {
+        'default': {
+            # use django.db.backends.postgresql_psycopg for production
+            'ENGINE': config('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
+            'NAME': config('DATABASE_NAME', 'sqlite.crashstats.db'),
+            'USER': config('DATABASE_USER', ''),
+            'PASSWORD': config('DATABASE_PASSWORD', ''),
+            'HOST': config('DATABASE_HOST', ''),
+            'PORT': config('DATABASE_PORT', ''),
+            'OPTIONS': {
+            },
+            # 'TEST_CHARSET': 'utf8',
+            # 'TEST_COLLATION': 'utf8_general_ci',
         },
-        # 'TEST_CHARSET': 'utf8',
-        # 'TEST_COLLATION': 'utf8_general_ci',
-    },
-    # 'slave': {
-    #     ...
-    # },
-}
-
+        # 'slave': {
+        #     ...
+        # },
+    }
+else:
+    DATABASES = {
+        'default': config(
+            'DATABASE_URL',
+            'sqlite://sqlite.crashstats.db',
+            cast=dj_database_url.parse
+        )
+    }
 
 # Uncomment this and set to all slave DBs in use on the site.
 SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
