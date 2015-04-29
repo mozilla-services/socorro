@@ -136,5 +136,5 @@ Mozilla-specific and contains a lot of features that aren't generally useful,
 like support for Mozilla's release model and a way of redacting private info
 so crashes can be exposed to the public.
 
-These components are totally optional:
+You probably do not want to install this:
 :ref:`configuring-crashstats-chapter`

@@ -5,6 +5,12 @@
 Configuring Crash-Stats and PostgreSQL
 ======================================
 
+https://crash-stats.mozilla.org is Mozilla's front-end to expose crash-stats
+to developers and interested users. It is written with Mozilla's unique 
+requirements in mind, and will probably not be useful to other Socorro users.
+
+You probably do not want to use this, unless you are Mozilla.
+
 Install PostgreSQL
 ------------------
 
