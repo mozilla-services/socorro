@@ -117,7 +117,7 @@ graphs and reports for developers.
 Both the crash-stats app and the PostgreSQL schema it depends on are very
 Mozilla-specific and contains a lot of features that aren't generally useful,
 like support for Mozilla's release model and a way of redacting private info
-so crashes can be exposed to developers.
+so crashes can be exposed to the public.
 
 You probably don't want to use it, but just in case we do have it documented:
 :ref:`configuring-crashstats-chapter`
