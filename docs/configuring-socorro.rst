@@ -30,7 +30,7 @@ and set the environment.
 Below is the minimum viable configuration to get collection and
 processing working on a single node via Consul's REST interface::
 
-    curl -s -X PUT -d "socorro.webapi.servers.WSGI" http://localhost:8500/v1/kv/socorro/collector/web_server.wsgi_server_class
+    curl -s -X PUT -d "socorro.webapi.servers.WSGIServer" http://localhost:8500/v1/kv/socorro/collector/web_server.wsgi_server_class
     curl -s -X PUT -d "/path/to/your/symbols" http://localhost:8500/v1/kv/socorro/processor/processor.raw_to_processed_transform.BreakpadStackwalkerRule.processor_symbols_pathname_list
 
 Note that Consul also has a Web UI you can use to get/set keys if you prefer.
