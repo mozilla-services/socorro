@@ -48,24 +48,7 @@ should be fronted by a webserver like Nginx.
 The default systemd service files expect a /var/run/uwsgi/ directory
 to exist and be writable by the socorro user.
 
-For instance socorro-collector can be exposed via its uwsgi socket::
-    
-        location / {
-                uwsgi_pass unix:/var/run/uwsgi/socorro-collector.sock;
-                include uwsgi_params;
-        }
-
-The socorro-webapp service needs static files to be exposed as well::
-
-
-        location / {
-                uwsgi_pass unix:/var/run/uwsgi/socorro-webapp.sock;
-                include uwsgi_params;
-        }
-
-        location /static {
-                alias /data/socorro/webapp-django/static/;
-        }
+You can find example configs in /etc/nginx/conf.d/socorro-*.conf
 
 Cron jobs
 ---------

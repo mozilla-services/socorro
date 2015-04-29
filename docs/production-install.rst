@@ -59,7 +59,7 @@ Now you can actually install the packages:
     postgresql93-contrib java-1.7.0-openjdk python-virtualenv \
     rabbitmq-server elasticsearch nginx envconsul consul memcached socorro
 
-Enable Memcached on startup:
+Enable Nginx on startup:
 ::
   sudo systemctl enable nginx
 
