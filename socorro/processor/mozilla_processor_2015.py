@@ -46,6 +46,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.breakpad_transform_rules.CrashingThreadRule, "
         "socorro.processor.general_transform_rules.CPUInfoRule, "
         "socorro.processor.general_transform_rules.OSInfoRule, "
+        "socorro.processor.mozilla_transform_rules.BetaVersionRule, "
         "socorro.processor.mozilla_transform_rules.ExploitablityRule, "
         "socorro.processor.mozilla_transform_rules.FlashVersionRule, "
         "socorro.processor.mozilla_transform_rules.TopMostFilesRule, "

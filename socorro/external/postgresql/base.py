@@ -113,7 +113,7 @@ class PostgreSQLBase(object):
             if not connection:
                 connection = self.database.connection()
                 fresh_connection = True
-            # self.context.logger.debug(connection.cursor.mogrify(sql, params))
+            # logger.debug(connection.cursor().mogrify(sql, params))
             result = actor_function(connection, sql, params)
             connection.commit()
         except psycopg2.Error, e:
@@ -282,6 +282,23 @@ class PostgreSQLBase(object):
                         )
                     )
                     version_index += 2
+
+                # Bug 1000160. The logic to convert version numbers to what
+                # they should actually be has been moved to the processors.
+                # However, there will be a period of time when we will have
+                # both the "correct" version number and the "wrong" one in our
+                # database. We thus need to query for both here.
+                versions_where.append(
+                    PostgreSQLBase.build_version_where(
+                        product,
+                        version,
+                        version_index,
+                        sql_params,
+                        None,
+                        config
+                    )
+                )
+                version_index += 2
 
             if versions_where:
                 sql_where.append("(%s)" % " OR ".join(versions_where))
