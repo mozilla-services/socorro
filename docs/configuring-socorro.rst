@@ -93,7 +93,7 @@ Graphs and reports using Elasticsearch and Kibana
 Processor supports putting crashes into Elasticsearch, you can enable this
 via configuration by inserting these keys into Consul::
 
-  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage0.crashstorage_class
+  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.crashstorage_class
   curl -s -X PUT -d "localhost" localhost:8500/v1/kv/socorro/common/resource.elasticsearch.elasticSearchHostname
 
 No need to restart socorro-processor, envconsul will take care of this.
