@@ -35,11 +35,12 @@ Install the Socorro repository.
 Now you can actually install the packages:
 ::
   sudo yum install java-1.7.0-openjdk python-virtualenv \
-    elasticsearch nginx envconsul consul memcached socorro
+    elasticsearch nginx envconsul consul socorro
 
-Enable Nginx on startup:
+Enable Nginx and Elasticsearch on startup, and start them now:
 ::
-  sudo systemctl enable nginx memcached elasticsearch
+  sudo systemctl enable nginx elasticsearch
+  sudo systemctl start nginx elasticsearch
 
 Disable SELinux
 ---------------

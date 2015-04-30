@@ -46,6 +46,7 @@ Start services
 These services start up uwsgi apps running under envconsul::
 
     sudo systemctl enable socorro-collector socorro-processor
+    sudo systemctl start socorro-collector socorro-processor
 
 Configure Nginx
 ---------------
@@ -90,8 +91,13 @@ the journalctl command to see them.
 Graphs and reports using Elasticsearch and Kibana
 -------------------------------------------------
 
-Processor supports putting crashes into Elasticsearch, you can enable this
-via configuration by inserting these keys into Consul::
+Processor supports putting crashes into Elasticsearch.
+
+First, run this to create the initial Elasticsearch indexes::
+
+  sudo setup-socorro.sh elasticsearch
+
+Then, configure Socorro Processor to use Elasticsearch::
 
   curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.crashstorage_class
   curl -s -X PUT -d "localhost" localhost:8500/v1/kv/socorro/common/resource.elasticsearch.elasticSearchHostname
