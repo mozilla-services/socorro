@@ -119,7 +119,7 @@
         }).trigger('change');
 
         // Results table sorting
-        $('#signatureList').tablesorter();
+        $('#signature-list').tablesorter();
 
         // Upon submitting the form, hide the submit button and disable the
         // refresh options.
