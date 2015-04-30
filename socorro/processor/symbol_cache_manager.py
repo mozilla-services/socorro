@@ -12,16 +12,25 @@ from configman import Namespace, RequiredConfig
 
 if os.uname()[0] != 'Linux':
     # You're not on Linux! Avoid pyinotify like the plague
+
+    warning_message = (
+        'SymbolLRUCache is disabled on operating systems that does not '
+        'have inotify in its kernel.'
+    )
+
     class ProcessEvent(object):
         # Defining a class means we can't define the EventHandler class
         # without indenting the whole thing in an if-block.
-        pass
+        def __init__(self, *_, **__):
+            # Re-use the warning as a the error message in case someone
+            # missing the warning and don't understand why it's not
+            # working on their Windows or OSX.
+            raise NotImplementedError(warning_message)
 
+    # Warn about the fact that SymbolLRUCache is going to be borked
+    # just by trying to import this.
     import warnings
-    warnings.warn(
-        'ProcessEvent is disabled on operating systems that does not '
-        'have inotify in its kernel.'
-    )
+    warnings.warn(warning_message)
 else:
     import pyinotify
     from pyinotify import ProcessEvent
