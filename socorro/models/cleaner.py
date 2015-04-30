@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import re
+import json
 import warnings
 
 from configman import RequiredConfig, Namespace
@@ -18,7 +19,7 @@ URL = re.compile(
 )
 
 
-#==============================================================================
+# =============================================================================
 class Cleaner(RequiredConfig):
     """
     This class takes care of cleaning up a chunk of data that is some sort of
@@ -66,11 +67,11 @@ class Cleaner(RequiredConfig):
 
     ANY = '__any__'
 
-    def __init__(self, config, debug=False):
+    def __init__(self, config):
         self.config = config
         self.whitelist = config.whitelist
         self.clean_scrub = config.clean_scrub
-        self.debug = debug
+        self.debug = config.debug
 
     def start(self, data):
         self._scrub(data, self.whitelist)
@@ -125,36 +126,25 @@ class Cleaner(RequiredConfig):
         for i, data in enumerate(sequence):
             self._scrub_item(data, whitelist)
             sequence[i] = data
-            
+
     def _scrub_string(self, data, pattern, replace_with=''):
         """Return a copy of a string where everything that matches the pattern
         is removed.
         """
         for i in pattern.findall(data):
             data = data.replace(i[0], replace_with)
-        return data   
-    
-    def _scrub_data(self, data, **kwargs):
-        """Return a scrubbed copy of a list of dictionaries.
-    
-        See `scrub_dict` for parameters.
-        """
-        scrubbed = list(data)
-        for i, item in enumerate(scrubbed):
-            scrubbed[i] = self._scrub_dict(item, **kwargs)
-        return scrubbed
+        return data
 
     def _scrub_dict(
         self,
         data,
-        remove_fields=None,
+        # remove_fields=None,
         replace_fields=None,
         clean_fields=None,
-        make_copy=False
     ):
         """Edit a dictionary in place (or make and return a copy if passed the
         ``make_copy=True`` parameters).
-    
+
         Several options are available:
         * remove_fields
             * list or tuple of strings
@@ -163,37 +153,32 @@ class Cleaner(RequiredConfig):
         * replace_fields
             * list or tuple of 2-uples
             * replace the value of those fields with some content
-            * example: replace_fields= \ 
+            * example: replace_fields= \
                 [('email', 'scrubbed email'), ('phone', '')]
         * clean_fields
             * list or tuple of 2-uples
             * search for patterns in those fields and remove what matches
             * example: clean_fields=[('comment', EMAIL), ('comment', URL)]
-    
-        Any number of those options can be used in the same call. If none is 
+
+        Any number of those options can be used in the same call. If none is
         used, return the dictionary unchanged.
         """
-        if make_copy:
-            scrubbed = data.copy()
-        else:
-            scrubbed = data
-        for key in remove_fields or []:
-            if key in scrubbed:
-                del scrubbed[key]
-    
-        for key in scrubbed:
-            for field in replace_fields or []:
-                if field[0] == key:
-                    scrubbed[key] = field[1]
-    
+        # data = data
+        # for key in remove_fields or []:
+        #     if key in data:
+        #         del data[key]
+
+        for key in data:
+            # for field in replace_fields or []:
+            #     if field[0] == key:
+            #         data[key] = field[1]
+
             for field in clean_fields or []:
-                if field[0] == key and scrubbed[key]:
-                    scrubbed[key] = self._scrub_string(scrubbed[key], field[1])
-    
-        return scrubbed
+                if field[0] == key and data[key]:
+                    data[key] = self._scrub_string(data[key], field[1])
 
 
-#==============================================================================
+# =============================================================================
 class SmartWhitelistMatcher(object):
 
     def __init__(self, whitelist):

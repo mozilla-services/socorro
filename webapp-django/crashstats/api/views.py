@@ -19,7 +19,7 @@ import crashstats.supersearch.models
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.tokens.models import Token
-from .cleaner import Cleaner
+from socorro.models.cleaner import Cleaner
 
 
 # List of all modules that contain models we want to expose.

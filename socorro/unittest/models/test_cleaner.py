@@ -1,15 +1,28 @@
 import mock
 from nose.tools import eq_, ok_
+from configman.dotdict import DotDict
 
-from crashstats.base.tests.testbase import TestCase
-from crashstats.api.cleaner import Cleaner, SmartWhitelistMatcher
-from crashstats import scrubber
+from socorro.unittest.testbase import TestCase
+from socorro.models.cleaner import (
+    EMAIL,
+    URL,
+    Cleaner,
+    SmartWhitelistMatcher,
+)
 
 
 class TestCleaner(TestCase):
 
+    def _config(self):
+        return DotDict({
+            'whitelist': None,
+            'clean_scrub': None,
+            'debug': False
+        })
+
     def test_simplest_case(self):
-        whitelist = {'hits': ('foo', 'bar')}
+        config = self._config()
+        config.whitelist = {'hits': ('foo', 'bar')}
         data = {
             'hits': [
                 {'foo': 1,
@@ -20,7 +33,32 @@ class TestCleaner(TestCase):
                  'baz': 6},
             ]
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(config)
+        cleaner.start(data)
+        expect = {
+            'hits': [
+                {'foo': 1,
+                 'bar': 2},
+                {'foo': 4,
+                 'bar': 5},
+            ]
+        }
+        eq_(data, expect)
+
+    def test_scrub_copy(self):
+        config = self._config()
+        config.whitelist = {'hits': ('foo', 'bar')}
+        data = {
+            'hits': [
+                {'foo': 1,
+                 'bar': 2,
+                 'baz': 3},
+                {'foo': 4,
+                 'bar': 5,
+                 'baz': 6},
+            ]
+        }
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = {
             'hits': [
@@ -34,7 +72,9 @@ class TestCleaner(TestCase):
 
     @mock.patch('warnings.warn')
     def test_simplest_case_with_warning(self, p_warn):
-        whitelist = {'hits': ('foo', 'bar')}
+        config = self._config()
+        config.debug = True
+        config.whitelist = {'hits': ('foo', 'bar')}
         data = {
             'hits': [
                 {'foo': 1,
@@ -45,12 +85,13 @@ class TestCleaner(TestCase):
                  'baz': 6},
             ]
         }
-        cleaner = Cleaner(whitelist, debug=True)
+        cleaner = Cleaner(config)
         cleaner.start(data)
         p_warn.assert_called_with("Skipping 'baz'")
 
     def test_all_dict_data(self):
-        whitelist = {Cleaner.ANY: ('foo', 'bar')}
+        config = self._config()
+        config.whitelist = {Cleaner.ANY: ('foo', 'bar')}
         data = {
             'WaterWolf': {
                 'foo': 1,
@@ -63,7 +104,7 @@ class TestCleaner(TestCase):
                 'baz': 9,
             },
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = {
             'WaterWolf': {
@@ -78,7 +119,8 @@ class TestCleaner(TestCase):
         eq_(data, expect)
 
     def test_simple_list(self):
-        whitelist = ('foo', 'bar')
+        config = self._config()
+        config.whitelist = ('foo', 'bar')
         data = [
             {
                 'foo': 1,
@@ -91,7 +133,7 @@ class TestCleaner(TestCase):
                 'baz': 9,
             },
         ]
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = [
             {
@@ -106,13 +148,14 @@ class TestCleaner(TestCase):
         eq_(data, expect)
 
     def test_plain_dict(self):
-        whitelist = ('foo', 'bar')
+        config = self._config()
+        config.whitelist = ('foo', 'bar')
         data = {
             'foo': 1,
             'bar': 2,
             'baz': 3,
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = {
             'foo': 1,
@@ -121,7 +164,8 @@ class TestCleaner(TestCase):
         eq_(data, expect)
 
     def test_dict_data_with_lists(self):
-        whitelist = {
+        config = self._config()
+        config.whitelist = {
             'hits': {
                 Cleaner.ANY: ('foo', 'bar')
             }
@@ -138,7 +182,7 @@ class TestCleaner(TestCase):
                 ]
             }
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = {
             'hits': {
@@ -155,7 +199,8 @@ class TestCleaner(TestCase):
         eq_(data, expect)
 
     def test_all_dict_data_deeper(self):
-        whitelist = {Cleaner.ANY: {Cleaner.ANY: ('foo', 'bar')}}
+        config = self._config()
+        config.whitelist = {Cleaner.ANY: {Cleaner.ANY: ('foo', 'bar')}}
         data = {
             'WaterWolf': {
                 '2012': {
@@ -182,7 +227,7 @@ class TestCleaner(TestCase):
                 }
             },
         }
-        cleaner = Cleaner(whitelist)
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = {
             'WaterWolf': {
@@ -209,7 +254,8 @@ class TestCleaner(TestCase):
         eq_(data, expect)
 
     def test_with_scrubber_cleaning(self):
-        whitelist = {'hits': ('foo', 'bar', 'baz')}
+        config = self._config()
+        config.whitelist = {'hits': ('foo', 'bar', 'baz')}
         data = {
             'hits': [
                 {'foo': "Bla bla",
@@ -220,14 +266,12 @@ class TestCleaner(TestCase):
                  'baz': "talk to bill@gates.com"},
             ]
         }
-        cleaner = Cleaner(
-            whitelist,
-            clean_scrub=(
-                ('bar', scrubber.EMAIL),
-                ('bar', scrubber.URL),
-                ('baz', scrubber.URL),
-            )
+        config.clean_scrub = (
+            ('bar', EMAIL),
+            ('bar', URL),
+            ('baz', URL),
         )
+        cleaner = Cleaner(config)
         cleaner.start(data)
         expect = {
             'hits': [

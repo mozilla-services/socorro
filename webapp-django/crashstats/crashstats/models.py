@@ -20,11 +20,11 @@ from django.utils.encoding import iri_to_uri
 from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
-from crashstats.api.cleaner import Cleaner
 
 from configman import Namespace, configuration, environment
 from configman.dotdict import DotDict
 
+from socorro.models.cleaner import Cleaner
 from socorro.models.util import classes_in_namespaces_converter
 from socorro.app.socorro_app import App
 
