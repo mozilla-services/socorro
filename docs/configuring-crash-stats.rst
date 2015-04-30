@@ -11,6 +11,15 @@ requirements in mind, and will probably not be useful to other Socorro users.
 
 You probably do not want to use this, unless you are Mozilla.
 
+Install Memcached
+-----------------
+
+Crash-stats makes heavy use of memcached, you definitely want to use it::
+
+  sudo yum install memcached
+  sudo systemctl enable memcached
+  sudo systemctl start memcached
+
 Install PostgreSQL
 ------------------
 
