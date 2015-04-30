@@ -31,7 +31,7 @@ function postgres {
         echo "Creating new DB, may take a few minutes"
         pushd /data/socorro/application > /dev/null
         su postgres -c "PYTHONPATH=. /data/socorro/socorro-virtualenv/bin/python \
-            ./socorro/external/postgresql/setupdb_app.py \
+            ./socorro/external/postgresql/setupdb_app.py --createdb \
             --alembic_config=/etc/socorro/alembic.ini --database_name=breakpad \
             --database_superusername=postgres" &> /var/log/socorro/setupdb.log
         if [ $? != 0 ]; then
