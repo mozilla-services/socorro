@@ -27,7 +27,7 @@ var Reports = (function() {
 
         $wrapper = $('.wrapper', $panel);
         var columns = $wrapper.data('columns');
-        var report_list = $('#reportsList');
+        var report_list = $('#reports-list');
 
         // Make sure we have results before we continue
         if (report_list.length > 0 && typeof columns !== 'undefined') {

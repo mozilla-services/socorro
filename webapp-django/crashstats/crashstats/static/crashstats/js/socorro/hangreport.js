@@ -1,7 +1,7 @@
 /*jslint browser:true, regexp:false, plusplus:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
-    $("#signatureList").tablesorter({
+    $("#signature-list").tablesorter({
         headers: {
             0: { sorter: 'text'  },
             1: { sorter: 'text'  },
