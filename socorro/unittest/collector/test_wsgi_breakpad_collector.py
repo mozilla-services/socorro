@@ -241,6 +241,7 @@ class TestCollectorApp(TestCase):
         rawform.uuid = '332d798f-3c42-47a5-843f-a0f892140107'
         rawform.legacy_processing = str(DEFER)
         rawform.throttle_rate = 100
+        rawform.dump_checksums = "this is poised to overwrite and cause trouble"
 
         form = DotDict(rawform)
         form.dump = rawform.dump.value
