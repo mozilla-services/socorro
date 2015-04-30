@@ -37,7 +37,7 @@ file can be found in ``config/alembic.ini-dist``.
 
 **Running socorro setupdb**
 
-``socorro setupdb --database_name=mydatabasename``
+``socorro setupdb --database_name=mydatabasename --createdb``
 
 Common options listed below.::
 

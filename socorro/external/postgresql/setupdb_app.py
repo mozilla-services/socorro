@@ -23,7 +23,6 @@ from configman import Namespace, class_converter
 from psycopg2 import ProgrammingError
 from sqlalchemy import create_engine, exc
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateTable
 
 from socorro.app.socorro_app import App, main
@@ -37,13 +36,11 @@ from socorro.external.postgresql.postgresqlalchemymanager import (
 )
 
 
-###########################################
-##  Database creation object
-###########################################
+#==============================================================================
 class SocorroDBApp(App):
     """
     SocorroDBApp
-        This function creates a base PostgreSQL schema for Socorro
+        This function creates a base PostgreSQL schema
 
     Notes:
 
@@ -56,6 +53,12 @@ class SocorroDBApp(App):
     metadata = ''
 
     required_config = Namespace()
+
+    required_config.add_option(
+        name='on_heroku',
+        default=False,
+        doc='Setup on a Heroku Postgres instance',
+    )
 
     required_config.add_option(
         'database_class',
@@ -83,6 +86,14 @@ class SocorroDBApp(App):
         name='dropdb',
         default=False,
         doc='Whether or not to drop database_name',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True
+    )
+
+    required_config.add_option(
+        name='createdb',
+        default=False,
+        doc='Whether or not to create database_name',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True
     )
@@ -159,6 +170,7 @@ class SocorroDBApp(App):
         exclude_from_dump_conf=True
     )
 
+    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         """since this app is more of an interactive app than the others, the
@@ -168,6 +180,7 @@ class SocorroDBApp(App):
             'logging.stderr_error_logging_level': 40  # only ERROR or worse
         }
 
+    #--------------------------------------------------------------------------
     def bulk_load_table(self, db, table):
         io = cStringIO.StringIO()
         for line in table.generate_rows():
@@ -176,11 +189,13 @@ class SocorroDBApp(App):
         io.seek(0)
         db.bulk_load(io, table.table, table.columns, '\t')
 
+    #--------------------------------------------------------------------------
     def import_staticdata(self, db):
         for table in staticdata.tables:
             table = table()
             self.bulk_load_table(db, table)
 
+    #--------------------------------------------------------------------------
     def generate_fakedata(self, db, fakedata_days):
         # Set up partitions before loading report data
         db.session.execute("""
@@ -205,7 +220,6 @@ class SocorroDBApp(App):
 
             self.bulk_load_table(db, table)
 
-
         db.session.execute("""
                 SELECT backfill_matviews(cast(:start as DATE),
                 cast(:end as DATE))
@@ -218,49 +232,74 @@ class SocorroDBApp(App):
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
 
-    def construct_db_url(self, dbname=None, superuser=False):
+    #--------------------------------------------------------------------------
+    def create_connection_url(self, database_name, username, password):
         """Takes a URL to connect to Postgres and updates database name
             or superuser name/password as indicated
            from PG Docs:
            postgresql://[user[:password]@][netloc][:port][/dbname]"""
-        database_username = self.config.get('database_username')
-        database_password = self.config.get('database_password')
-        database_hostname = self.config.get('database_hostname')
-        database_port = self.config.get('database_port')
-        database_name = dbname if dbname else self.config.get('database_name')
 
-        if superuser:
-            database_username = self.config.get('database_superusername')
-            database_password = self.config.get('database_superuserpassword')
+        hostname = self.config.get('database_hostname')
+        port = self.config.get('database_port')
 
         # construct a URL
         url = 'postgresql://'
-        if database_username:
-            url += '%s' % database_username
-            if database_password:
-                url += ':%s' % database_password
+        if username:
+            url += '%s' % username
+            if password:
+                url += ':%s' % password
             url += '@'
-        if database_hostname:
-            url += '%s' % database_hostname
-        if database_port:
-            url += ':%s' % database_port
+        if hostname:
+            url += '%s' % hostname
+        if port:
+            url += ':%s' % port
         if database_name:
             url += '/%s' % database_name
         return url
 
+    #--------------------------------------------------------------------------
     def main(self):
-        self.database_name = self.config.get('database_name')
-        if not self.database_name:
-            print "Syntax error: --database_name required"
+
+        database_name = self.config.database_name
+        if not database_name:
+            self.config.logger.error(
+                '"database_name" cannot be an empty string'
+            )
             return 1
 
-        self.no_schema = self.config.get('no_schema')
-        self.no_roles = self.config.get('no_roles')
+        # superuser credentials for overall database
+        superuser_pg_url = self.create_connection_url(
+            'postgres',
+            self.config.database_superusername,
+            self.config.database_superuserpassword
+        )
 
-        self.force = self.config.get('force')
+        # superuser credentials for working database
+        superuser_normaldb_pg_url = self.create_connection_url(
+            database_name,
+            self.config.database_superusername,
+            self.config.database_superuserpassword
+        )
 
-        sa_url = self.construct_db_url('postgres', True)
+        # normal user credentials
+        normal_user_pg_url = self.create_connection_url(
+            database_name,
+            self.config.database_username,
+            self.config.database_password
+        )
 
+        # ensure that if on Heroku the the normal_user_pg_url and the
+        # superuser_pg_url are the same
+        if self.config.on_heroku and (normal_user_pg_url != superuser_pg_url):
+            self.config.logger.error(
+                'there is no superuser (%s) when using Heroku',
+                self.config.database_superusername
+            )
+            return 1
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # table logging section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if self.config.unlogged:
             @compiles(CreateTable)
             def create_table(element, compiler, **kw):
@@ -270,85 +309,142 @@ class SocorroDBApp(App):
                               m.group(1), text)
                 return text
 
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger,
-                                      autocommit=False) as db:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Postgres version check section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        self.config.logger.info(
+            'Postgres version check section with %s',
+            superuser_pg_url
+        )
+        with PostgreSQLAlchemyManager(
+            superuser_pg_url,
+            self.config.logger,
+            autocommit=False
+        ) as db:
             if not db.min_ver_check(90200):
-                print 'ERROR - unrecognized PostgreSQL version: %s' % \
+                self.config.logger.error(
+                    'unrecognized PostgreSQL version: %s',
                     db.version_string()
-                print 'Only 9.2+ is supported at this time'
+                )
+                self.config.logger.error('Only 9.2+ is supported at this time')
                 return 1
 
-            connection = db.engine.connect()
-            if self.config.get('dropdb'):
-                if 'test' not in self.database_name and not self.force:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # drop database section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # We can only do the following if the DB is not Heroku
+        # XXX Might add the heroku commands for resetting a DB here
+        if self.config.dropdb and not self.config.on_heroku:
+            self.config.logger.info(
+                'drop database section with %s',
+                superuser_pg_url
+            )
+            with PostgreSQLAlchemyManager(
+                superuser_pg_url,
+                self.config.logger,
+                autocommit=False
+            ) as db:
+                if 'test' not in database_name and not self.config.force:
                     confirm = raw_input(
-                        'drop database %s [y/N]: ' % self.database_name)
+                        'drop database %s [y/N]: ' % database_name)
                     if not confirm == "y":
-                        logging.warn('NOT dropping table')
+                        self.config.logger.warn('NOT dropping table')
                         return 2
-
-                try:
-                    # work around for autocommit behavior
-                    connection.execute('commit')
-                    connection.execute('DROP DATABASE %s' % self.database_name)
-                except exc.ProgrammingError, e:
-                    if re.search(
-                        'database "%s" does not exist' % self.database_name,
-                        e.orig.pgerror.strip()):
-                        # already done, no need to rerun
-                        print "The DB %s doesn't exist" % self.database_name
-
-            try:
-                # work around for autocommit behavior
-                connection.execute('commit')
-                connection.execute("CREATE DATABASE %s ENCODING 'utf8'" %
-                                   self.database_name)
-            except exc.ProgrammingError, e:
-                if re.search(
-                    'database "%s" already exists' % self.database_name,
-                    e.orig.pgerror.strip()):
-                    # already done, no need to rerun
-                    print "The DB %s already exists" % self.database_name
-                    return 0
-                raise
-
-            if self.no_roles:
-                print "Skipping role creation"
-            else:
-                db.create_roles(self.config)
-            connection.close()
-
-        # Reconnect to set up schema, types and procs
-        sa_url = self.construct_db_url(self.database_name, False)
-        alembic_cfg = Config(self.config.alembic_config)
-        alembic_cfg.set_main_option("sqlalchemy.url", sa_url)
-        with PostgreSQLAlchemyManager(sa_url, self.config.logger) as db:
-            connection = db.engine.connect()
-            db.setup_admin()
-            if self.no_schema:
+                db.drop_database(database_name)
                 db.commit()
-                return 0
-            # Order matters with what follows
-            db.create_types()
 
-            db.create_procs()
-            db.set_sequence_owner('breakpad_rw')
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # create database section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if self.config.createdb:
+            self.config.logger.info(
+                'create database section with %s',
+                superuser_pg_url
+            )
+            with PostgreSQLAlchemyManager(
+                superuser_pg_url,
+                self.config.logger,
+                autocommit=False
+            ) as db:
+                db.create_database(database_name)
+                if self.config.no_roles:
+                    self.config.logger.info("Skipping role creation")
+                else:
+                    db.create_roles(self.config)
+                db.commit()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # database extensions section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        self.config.logger.info(
+            'database extensions section with %s',
+            superuser_normaldb_pg_url
+        )
+        with PostgreSQLAlchemyManager(
+            superuser_normaldb_pg_url,
+            self.config.logger,
+            autocommit=False,
+            on_heroku=self.config.on_heroku
+        ) as db:
+            db.setup_extensions()
+            db.grant_public_schema_ownership(self.config.database_username)
+            db.commit()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # database schema section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if self.config.no_schema:
+            self.config.logger.info("not adding a schema")
+            return 0
+
+        alembic_cfg = Config(self.config.alembic_config)
+        alembic_cfg.set_main_option('sqlalchemy.url', normal_user_pg_url)
+
+        self.config.logger.info(
+            'database schema section with %s',
+            normal_user_pg_url
+        )
+        with PostgreSQLAlchemyManager(
+            normal_user_pg_url,
+            self.config.logger,
+            autocommit=False,
+            on_heroku=self.config.on_heroku
+        ) as db:
+            # Order matters below
+            db.turn_function_body_checks_off()
+            db.load_raw_sql('types')
+            db.load_raw_sql('procs')
+            # We need to commit to make a type visible for table creation
             db.commit()
 
             db.create_tables()
-            db.set_table_owner('breakpad_rw')
-            db.create_views()
+            db.load_raw_sql('views')
             db.commit()
 
-            db.set_grants(self.config)  # config has user lists
-            if not self.config['no_staticdata']:
+            if not self.config.get('no_staticdata'):
                 self.import_staticdata(db)
             if self.config['fakedata']:
                 self.generate_fakedata(db, self.config['fakedata_days'])
             db.commit()
             command.stamp(alembic_cfg, "heads")
-            db.set_default_owner(self.database_name)
             db.session.close()
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # database owner section
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        self.config.logger.info(
+            'database extensions section with %s',
+            superuser_normaldb_pg_url
+        )
+        with PostgreSQLAlchemyManager(
+            superuser_normaldb_pg_url,
+            self.config.logger,
+            autocommit=False,
+            on_heroku=self.config.on_heroku
+        ) as db:
+            db.set_table_owner(self.config.database_username)
+            db.set_default_owner(database_name, self.config.database_username)
+            db.set_grants(self.config)  # config has user lists
 
         return 0
 

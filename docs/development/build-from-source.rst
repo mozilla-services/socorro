@@ -71,7 +71,7 @@ Populate PostgreSQL Database
 
 Load Socorro schema plus test products:
 ::
-  socorro setupdb --database_name=breakpad --fakedata --dropdb
+  socorro setupdb --database_name=breakpad --fakedata --createdb
 
 Create partitioned tables
 -------------------------
