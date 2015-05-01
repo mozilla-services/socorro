@@ -15,7 +15,7 @@
         <caption>Crash Reports</caption>
         <thead>
             <tr>
-                <th scope="col" class="crash-id">Crash ID</th>
+                <th scope="col">Crash ID</th>
                 {% for column in columns %}
                 <th scope="col">{{ column | replace('_', ' ') | capitalize }}</th>
                 {% endfor %}
@@ -24,7 +24,7 @@
         <tbody>
             {% for crash in query.hits %}
             <tr>
-                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="crash-id">{{ crash.uuid }}</a></td>
+                <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link">{{ crash.uuid }}</a></td>
                 {% for column in columns %}
                 <td>
                     {% if crash[column] %}
@@ -39,7 +39,6 @@
 
                     {% if column == 'signature' %}
                     &nbsp;
-                    <br>
                     <em>
                         <a
                         {% if waffle.switch('signature-report') %}
@@ -91,7 +90,6 @@
                 <td>
                     <a href="#" class="term" data-field="{{ facet }}" title="Add this term to the search form">{{ hit.term }}</a>
                     {% if facet == 'signature' %}
-                        <br>
                         <em>
                             <a
                             {% if waffle.switch('signature-report') %}
