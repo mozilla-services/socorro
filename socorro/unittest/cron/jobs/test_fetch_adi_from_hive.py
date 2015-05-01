@@ -98,7 +98,17 @@ class TestFetchADIFromHive(IntegrationTestBase):
                  None,
                  'release',
                  '%7Ba-guid%7D',
-                 2]
+                 2],
+                ['2015-04-28',      # date
+                 'FennecAndroid',   # product name
+                 'Ginko',           # platform?
+                 '3.1415',          # platform version
+                 '38.0',            # product version
+                 '20150427090529',  # build
+                 'release',         # update channel
+                 'a-guid',    # product guid 
+                 666]                 # count
+                
             ]
             for item in test_data:
                 yield item
@@ -177,6 +187,16 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 'build_channel': 'release-cck-\\',
                 'product_guid': '{a-guid}',
                 'count': 2
+            }, {
+                'report_date': datetime.date(2015, 4, 28),
+                'product_name': 'FennecAndroid',
+                'product_os_platform': 'Ginko',
+                'product_os_version': '3.1415',
+                'product_version': '38',
+                'build': '20150427090529',
+                'build_channel': 'release',
+                'product_guid': 'a-guid',
+                'count': 666
             }
         ])
 
@@ -216,5 +236,16 @@ class TestFetchADIFromHive(IntegrationTestBase):
                 'date': (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
                 'product_os_version': '2.3.1',
                 'product_name': 'WinterWolf'
-            }
+            },
+
+            {'update_channel': 'beta',
+                'product_guid': 'a-guid',
+                'product_version': '38.0',
+                'adi_count': 666,
+                'product_os_platform': 'Ginko',
+                'build': '20150427090529',
+                'date': (datetime.datetime.utcnow() - datetime.timedelta(days=1)).date(),
+                'product_os_version': '3.1415',
+                'product_name': 'FennecAndroid'
+            },
         ])
