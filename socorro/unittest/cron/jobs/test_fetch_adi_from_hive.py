@@ -240,7 +240,7 @@ class TestFetchADIFromHive(IntegrationTestBase):
 
             {'update_channel': 'beta',
                 'product_guid': 'a-guid',
-                'product_version': '38.0',
+                'product_version': '38',  # originally "38.0" - not sure why it's without the ".0"
                 'adi_count': 666,
                 'product_os_platform': 'Ginko',
                 'build': '20150427090529',
