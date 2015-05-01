@@ -7,7 +7,7 @@ fi
 
 function help {
     echo "USAGE: ${0} <role>"
-    echo "Valid roles are: postgres, webapp, elasticsearch, admin."
+    echo "Valid roles are: postgres, webapp, elasticsearch, admin, consul."
     exit 1
 }
 
@@ -99,6 +99,23 @@ function admin {
         echo "See /var/log/socorro/crontabber.log for more info"
     fi
     popd > /dev/null
+}
+
+function consul {
+    # load existing config files into Consul
+    for conf in *.conf; do
+        echo "Bulk loading $conf"
+        cat $conf | grep -v '^#' | while read line; do
+            key=$(echo $line | cut -d= -f1)
+            value=$(echo $line | cut -d= -f2- | tr -d "'")
+            prefix="socorro/$(basename -s .conf $conf)"
+            result=$(curl -s -X PUT -d "$value" http://localhost:8500/v1/kv/$prefix/$key)
+            if [ "$result" != "true" ]; then
+                echo "ERROR loading $value into $key for $prefix"
+                exit 1
+            fi
+        done
+    done
 }
 
 # Aaaaand go!
