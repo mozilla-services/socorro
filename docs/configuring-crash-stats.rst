@@ -5,16 +5,30 @@
 Configuring Crash-Stats and PostgreSQL
 ======================================
 
-https://crash-stats.mozilla.org is Mozilla's front-end to expose crash-stats
-to developers and interested users. It is written with Mozilla's unique 
-requirements in mind, and will probably not be useful to other Socorro users.
+You probably do not want to use this, unless you have *very* similar requirements
+to Mozilla. Try using Kibana instead.
 
-You probably do not want to use this, unless you are Mozilla.
+https://crash-stats.mozilla.org is Mozilla's front-end to expose crash data
+to developers and interested users.
+
+Some of the unique features it provides are:
+
+* public view of crash reports, with private data redacted
+* ability to assign users fine-grained permissions to private data
+* graphs and reports showing crashes per Active Daily Install (ADI)
+* ability to ingest Mozilla release engineering metadata
+* Bugzilla integration
+* extensive support for the Firefox rapid release cycle
+
+All of these features are baked in and are not trivial to disable or adjust.
+
+Again, if you are not Mozilla you almost certainly would be happier without
+using the crash-stats frontend.
 
 Install Memcached
 -----------------
 
-Crash-stats makes heavy use of memcached, you definitely want to use it::
+crash-stats makes heavy use of memcached::
 
   sudo yum install memcached
   sudo systemctl enable memcached
@@ -33,7 +47,7 @@ Now you can actually install the packages:
 
 Initialize and enable PostgreSQL on startup:
 ::
-  sudo service postgresql-9.3 initdb
+  sudo /usr/pgsql-9.3/bin/postgresql93-setup initdb
   sudo systemctl enable postgresql-9.3
 
 Modify postgresql config
@@ -76,68 +90,93 @@ that Socorro and crash-stats expect.
 Configure Socorro Processor
 ---------------------------
 
-Socorro Processor must be configured to store crashes in Elasticsearch
-as well as PostgreSQL.
+The Mozilla-specific processor ruleset must be used, in order to populate PostgreSQL in a way that crash-stats expects::
 
-NOTE - you must replace `@@@DATABASE_HOSTNAME@@@`, `@@@DATABASE_USERNAME@@@` and
-`@@@DATABASE_PASSWORD@@@` below with valid entries for your PostgreSQL install
-above::
-  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
-  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" localhost/v1/kv/socorro/processor/destination.crashstorage_class
-  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" localhost:8500/v1/kv/socorro/processor/storage.crashstorage0_class=socorro.external.fs.crashstorage.FSTemporaryStorage
+  curl -s -X PUT -d "socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015" localhost:8500/v1/kv/socorro/processor/processor.processor_class
+
+Also, Socorro Processor must be configured to store crashes in Elasticsearch
+as well as PostgreSQL::
+
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.fs.crashstorage.FSTemporaryStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
+  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.crashstorage_class
+  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
   curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
-  curl -s -X PUT -d "socorro.external.es.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
-  curl -s -X PUT -d "@@@DATABASE_HOSTNAME@@@" localhost:8500/v1/kv/socorro/processor/resource.postgresql.database_hostname
-  curl -s -X PUT -d "@@@DATABASE_USERNAME@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_username
-  curl -s -X PUT -d "@@@DATABASE_PASSWORD@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_password
+  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
 
+Make sure to set these in a "common" namespace so they can be used by other apps
+later, such as the Socorro Middleware.
+
+NOTE - variables surrounded by @@@ are placeholders and need to be filled in appropriately for your install::
+
+  curl -s -X PUT -d "@@@DATABASE_HOSTNAME@@@" localhost:8500/v1/kv/socorro/common/resource.postgresql.database_hostname
+  curl -s -X PUT -d "@@@DATABASE_USERNAME@@@" localhost:8500/v1/kv/socorro/common/secrets.postgresql.database_username
+  curl -s -X PUT -d "@@@DATABASE_PASSWORD@@@" localhost:8500/v1/kv/socorro/common/secrets.postgresql.database_password
+
+
+Configure Socorro-Middleware
+----------------------------
+
+Socorro Middlware is a REST service that listens on localhost and should 
+*not* be exposed to the outside::
+
+  curl -s -X PUT -d "psql: socorro.external.postgresql, fs: socorro.external.filesystem, es: socorro.external.es, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq" localhost:8500/v1/kv/socorro/middleware/implementations.implementation_list
+  curl -s -X PUT -d "CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq, Search: es, Query: es" localhost:8500/v1/kv/socorro/middleware/implementations.service_overrides
+  curl -s -X PUT -d "socorro.external.es.connection_context.ConnectionContext" localhost:8500/v1/kv/socorro/middleware/elasticsearch.elasticsearch_class
+  curl -s -X PUT -d "socorro.webapi.servers.WSGIServer" localhost:8500/v1/kv/socorro/middleware/web_server.wsgi_server_class
 
 Configure Crash-Stats
 ---------------------
 
-The crash-stats app itself runs under envconsul, and expects at least the
-following environment variables to be set::
-
-  ALLOWED_HOSTS=@@@ALLOWED_HOSTS@@@
-  MWARE_BASE_URL=http://localhost
-  MWARE_HTTP_HOST=socorro-middleware
-  CACHE_MIDDLEWARE=True
-  CACHE_MIDDLEWARE_FILES=False
-  DEFAULT_PRODUCT=@@@DEFAULT_PRODUCT@@@
-  CACHE_BACKEND=django.core.cache.backends.memcached.MemcachedCache
-  CACHE_LOCATION=@@@CACHE_LOCATION@@@
-  CACHE_KEY_PREFIX=@@@CACHE_KEY_PREFIX@@@
-  BROWSERID_AUDIENCES=@@@BROWSERID_AUDIENCES@@@
-  DATABASE_ENGINE=django.db.backends.postgresql_psycopg2
-  DATABASE_NAME=@@@DATABASES_NAME@@@
-  DATABASE_USER=@@@DATABASES_USER@@@
-  DATABASE_PASSWORD=@@@DATABASES_PASSWORD@@@
-  DATABASE_HOST=@@@DATABASES_HOST@@@
-  DATABASE_PORT=@@@DATABASES_PORT@@@
-  SESSION_COOKIE_SECURE=True
-  COMPRESS_OFFLINE=True
-  SECRET_KEY=@@@SECRET_KEY@@@
-  GOOGLE_ANALYTICS_ID=@@@GOOGLE_ANALYTICS_ID@@@
-  DATASERVICE_DATABASE_USERNAME=@@@DATASERVICE_DATABASE_USERNAME@@@
-  DATASERVICE_DATABASE_PASSWORD=@@@DATASERVICE_DATABASE_PASSWORD@@@
-  DATASERVICE_DATABASE_HOSTNAME=@@@DATASERVICE_DATABASE_HOSTNAME@@@
-  DATASERVICE_DATABASE_NAME=@@@DATASERVICE_DATABASE_NAME@@@
-  DATASERVICE_DATABASE_PORT=@@@DATASERVICE_DATABASE_PORT@@@
-  AWS_ACCESS_KEY=@@@AWS_ACCESS_KEY@@@
-  AWS_SECRET_ACCESS_KEY=@@@AWS_SECRET_ACCESS_KEY@@@
-  SYMBOLS_BUCKET_DEFAULT_NAME=@@@SYMBOLS_BUCKET_DEFAULT_NAME@@@
-  SYMBOLS_BUCKET_EXCEPTIONS_USER=@@@SYMBOLS_BUCKET_EXCEPTIONS_USER@@@
-  SYMBOLS_BUCKET_EXCEPTIONS_BUCKET=@@@SYMBOLS_BUCKET_EXCEPTIONS_BUCKET@@@
-  SYMBOLS_BUCKET_DEFAULT_LOCATION=@@@SYMBOLS_BUCKET_DEFAULT_LOCATION@@@
-  ANALYZE_MODEL_FETCHES=True
+The crash-stats Django app runs under envconsul, and expects at least the
+following environment variables to be set.
 
 These should be set via Consul in the "socorro/webapp-django" prefix,
-for instance::
+for instance.
 
-  curl -s -X PUT -d "crash-stats.example.com" localhost:8500/v1/kv/socorro/webapp-django/ALLOWED_HOSTS
+NOTE - variables surrounded by @@@ are placeholders and need to be filled in appropriately for your install::
 
-All variables surrounded by `@@@` are placeholders and need to be filled in 
-appropriately for your install.
+  curl -s -X PUT -d "@@@ALLOWED_HOSTS@@@" localhost:8500/v1/kv/socorro/webapp-django/ALLOWED_HOSTS
+  curl -s -X PUT -d "http://localhost" localhost:8500/v1/kv/socorro/webapp-django/MWARE_BASE_URL
+  curl -s -X PUT -d "socorro-middleware" localhost:8500/v1/kv/socorro/webapp-django/MWARE_HTTP_HOST
+  curl -s -X PUT -d "True" localhost:8500/v1/kv/socorro/webapp-django/CACHE_MIDDLEWARE
+  curl -s -X PUT -d "False" localhost:8500/v1/kv/socorro/webapp-django/CACHE_MIDDLEWARE_FILES
+  curl -s -X PUT -d "@@@DEFAULT_PRODUCT@@@" localhost:8500/v1/kv/socorro/webapp-django/DEFAULT_PRODUCT
+  curl -s -X PUT -d "django.core.cache.backends.memcached.MemcachedCache" localhost:8500/v1/kv/socorro/webapp-django/CACHE_BACKEND
+  curl -s -X PUT -d "@@@CACHE_LOCATION@@@" localhost:8500/v1/kv/socorro/webapp-django/CACHE_LOCATION
+  curl -s -X PUT -d "@@@CACHE_KEY_PREFIX@@@" localhost:8500/v1/kv/socorro/webapp-django/CACHE_KEY_PREFIX
+  curl -s -X PUT -d "@@@BROWSERID_AUDIENCES@@@" localhost:8500/v1/kv/socorro/webapp-django/BROWSERID_AUDIENCES
+  curl -s -X PUT -d "django.db.backends.postgresql_psycopg2" localhost:8500/v1/kv/socorro/webapp-django/DATABASE_ENGINE
+  curl -s -X PUT -d "@@@DATABASES_NAME@@@" localhost:8500/v1/kv/socorro/webapp-django/DATABASE_NAME
+  curl -s -X PUT -d "@@@DATABASES_USER@@@" localhost:8500/v1/kv/socorro/webapp-django/DATABASE_USER
+  curl -s -X PUT -d "@@@DATABASES_PASSWORD@@@" localhost:8500/v1/kv/socorro/webapp-django/DATABASE_PASSWORD
+  curl -s -X PUT -d "@@@DATABASES_HOST@@@" localhost:8500/v1/kv/socorro/webapp-django/DATABASE_HOST
+  curl -s -X PUT -d "@@@DATABASES_PORT@@@" localhost:8500/v1/kv/socorro/webapp-django/DATABASE_PORT
+  curl -s -X PUT -d "True" localhost:8500/v1/kv/socorro/webapp-django/SESSION_COOKIE_SECURE
+  curl -s -X PUT -d "True" localhost:8500/v1/kv/socorro/webapp-django/COMPRESS_OFFLINE
+  curl -s -X PUT -d "@@@SECRET_KEY@@@" localhost:8500/v1/kv/socorro/webapp-django/SECRET_KEY
+  curl -s -X PUT -d "@@@GOOGLE_ANALYTICS_ID@@@" localhost:8500/v1/kv/socorro/webapp-django/GOOGLE_ANALYTICS_ID
+  curl -s -X PUT -d "@@@DATASERVICE_DATABASE_USERNAME@@@" localhost:8500/v1/kv/socorro/webapp-django/DATASERVICE_DATABASE_USERNAME
+  curl -s -X PUT -d "@@@DATASERVICE_DATABASE_PASSWORD@@@" localhost:8500/v1/kv/socorro/webapp-django/DATASERVICE_DATABASE_PASSWORD
+  curl -s -X PUT -d "@@@DATASERVICE_DATABASE_HOSTNAME@@@" localhost:8500/v1/kv/socorro/webapp-django/DATASERVICE_DATABASE_HOSTNAME
+  curl -s -X PUT -d "@@@DATASERVICE_DATABASE_NAME@@@" localhost:8500/v1/kv/socorro/webapp-django/DATASERVICE_DATABASE_NAME
+  curl -s -X PUT -d "@@@DATASERVICE_DATABASE_PORT@@@" localhost:8500/v1/kv/socorro/webapp-django/DATASERVICE_DATABASE_PORT
+  curl -s -X PUT -d "@@@AWS_ACCESS_KEY@@@" localhost:8500/v1/kv/socorro/webapp-django/AWS_ACCESS_KEY
+  curl -s -X PUT -d "@@@AWS_SECRET_ACCESS_KEY@@@" localhost:8500/v1/kv/socorro/webapp-django/AWS_SECRET_ACCESS_KEY
+  curl -s -X PUT -d "@@@SYMBOLS_BUCKET_DEFAULT_NAME@@@" localhost:8500/v1/kv/socorro/webapp-django/SYMBOLS_BUCKET_DEFAULT_NAME
+  curl -s -X PUT -d "@@@SYMBOLS_BUCKET_EXCEPTIONS_USER@@@" localhost:8500/v1/kv/socorro/webapp-django/SYMBOLS_BUCKET_EXCEPTIONS_USER
+  curl -s -X PUT -d "@@@SYMBOLS_BUCKET_EXCEPTIONS_BUCKET@@@" localhost:8500/v1/kv/socorro/webapp-django/SYMBOLS_BUCKET_EXCEPTIONS_BUCKET
+  curl -s -X PUT -d "@@@SYMBOLS_BUCKET_DEFAULT_LOCATION@@@" localhost:8500/v1/kv/socorro/webapp-django/SYMBOLS_BUCKET_DEFAULT_LOCATION
+  curl -s -X PUT -d "True" localhost:8500/v1/kv/socorro/webapp-django/ANALYZE_MODEL_FETCHES
+
+Create partitioned tables
+-------------------------
+
+Normally this is handled automatically by the cronjob scheduler
+:ref:`crontabber-chapter` but should be run as a one-off to create the PostgreSQL partitioned tables for processor
+to write crashes to:
+::
+  cd /data/socorro
+  ./socorro-virtualenv/bin/python application/socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
 
 
 Start services
@@ -147,6 +186,7 @@ Both the Django socorro-webapp and the socorro-middleware REST service
 must be running::
 
     sudo systemctl enable socorro-middleware socorro-webapp
+    sudo systemctl start socorro-middleware socorro-webapp
 
 Configure Nginx
 ---------------
@@ -256,14 +296,6 @@ The source of this data is going to be very specific to your application,
 you can see how we automate this for crash-stats.mozilla.com in this job:
 
 https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/fetch_adi_from_hive.py
-
-Create partitioned tables
--------------------------
-
-Normally this is handled automatically by the cronjob scheduler
-:ref:`crontabber-chapter` but can be run as a one-off:
-::
-  python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
 
 Partitioning and data expiration
 --------------------------------
