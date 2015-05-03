@@ -59,11 +59,7 @@ class BreakpadStackwalkerRule(Rule):
         'processor_symbols_pathname_list',
         doc='comma or space separated list of symbol files for '
         'minidump_stackwalk (quote paths with embedded spaces)',
-        default='/mnt/socorro/symbols/symbols_ffx,'
-        '/mnt/socorro/symbols/symbols_sea,'
-        '/mnt/socorro/symbols/symbols_tbrd,'
-        '/mnt/socorro/symbols/symbols_sbrd,'
-        '/mnt/socorro/symbols/symbols_os',
+        default='/home/socorro/symbols',
         from_string_converter=_create_symbol_path_str
     )
     required_config.add_option(
