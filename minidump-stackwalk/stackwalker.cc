@@ -748,6 +748,54 @@ static void ConvertMemoryInfoToJSON(Minidump& dump,
 
 }
 
+static vector<string> split(const string& s, char delimiter) {
+  vector<string> bits;
+  size_t prev = 0;
+  size_t pos = s.find(delimiter);
+  while (true) {
+    size_t count = pos == string::npos ? string::npos : pos - prev;
+    bits.push_back(s.substr(prev, count));
+    if (pos == string::npos) {
+      break;
+    }
+    prev = pos + 1;
+    pos = s.find(delimiter, prev);
+  }
+  return bits;
+}
+
+static bool startswith(const string& s, const string& f) {
+  return s.find(f) == 0;
+}
+
+static string lower(const string& s) {
+  string r = s;
+  std::transform(r.begin(), r.end(), r.begin(), ::tolower);
+  return r;
+}
+
+static string stripquotes(const string& s) {
+  if (s.size() > 2 && s.front() == '"' && s.back() == '"') {
+    return s.substr(1, s.size() - 2);
+  }
+  return s;
+}
+
+static void ConvertLSBReleaseToJSON(const string& lsb_release,
+                                    Json::Value& root) {
+  Json::Value lsb(Json::objectValue);
+  for (string& line : split(lsb_release, '\n')) {
+    vector<string> bits = split(line, '=');
+    if (bits.size() != 2 || !startswith(bits[0], "DISTRIB_")) {
+        continue;
+    }
+    string key = lower(bits[0].substr(8));
+    lsb[key] = stripquotes(bits[1]);
+  }
+
+  root["lsb_release"] = lsb;
+}
+
 static string ResultString(ProcessResult result) {
   string str;
   switch (result) {
@@ -1102,6 +1150,18 @@ int main(int argc, char** argv)
     ConvertProcessStateToJSON(process_state, symbolizer, root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
+
+  // See if this is a Linux dump with /etc/lsb-release in it
+  uint32_t length = 0;
+  if (process_state.system_info()->os == "Linux" &&
+      minidump.SeekToStreamType(MD_LINUX_LSB_RELEASE, &length)) {
+    string contents;
+    contents.resize(length);
+    if (minidump.ReadBytes(const_cast<char*>(contents.data()), length)) {
+      ConvertLSBReleaseToJSON(contents, root);
+    }
+  }
+
   scoped_ptr<Json::Writer> writer;
   if (pretty)
     writer.reset(new Json::StyledWriter());
