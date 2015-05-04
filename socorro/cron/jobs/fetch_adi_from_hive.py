@@ -20,6 +20,7 @@ from crontabber.mixins import (
     with_postgres_transactions,
     with_single_postgres_transaction
 )
+from socorro.external.postgresql.dbapi2_util import execute_no_results
 
 """
  Detailed documentation on columns avaiable from our Hive system at:
@@ -119,6 +120,13 @@ _RAW_ADI_QUERY = """
         build_channel
 """
 
+_FENNEC38_ADI_CHANNEL_CORRECTION_SQL = """
+    update raw_adi
+        set update_channel = 'beta'
+        where product_name = 'FennecAndroid'
+              and product_version = '38.0'
+              and build = '20150427090529'
+              and date > '2015-04-27';"""
 
 @as_backfill_cron_app
 @with_postgres_transactions()
@@ -241,6 +249,9 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                     ]
                 )
                 pgcursor.execute(_RAW_ADI_QUERY, (target_date,))
+
+            # for Bug 1159993
+            execute_no_results(connection, _FENNEC38_ADI_CHANNEL_CORRECTION_SQL)
         finally:
             if os.path.isfile(raw_adi_logs_pathname):
                 os.remove(raw_adi_logs_pathname)
