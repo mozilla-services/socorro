@@ -70,12 +70,15 @@ Test collection and processing
 ------------------------------
 
 Basic collection and processing should now be working. You can test this
-by submitting a breakpad minidump. If you don't have one, you can download a test one from https://github.com/mozilla/socorro/blob/master/testcrash/raw/7d381dc5-51e2-4887-956b-1ae9c2130109.dump and submit it with curl::
+by submitting a breakpad minidump. If you don't have one, you can download a test one from https://github.com/mozilla/socorro/blob/master/testcrash/raw/7d381dc5-51e2-4887-956b-1ae9c2130109.dump and submit it with curl.
 
-  curl -F 'ProductName=Test' \
+Be sure to use the same server_name you configured in Nginx for socorro-collector::
+
+  curl -H 'Host: crash-reports'
+       -F 'ProductName=Test' \
        -F 'Version=1.0' \
        -F upload_file_minidump=@7d381dc5-51e2-4887-956b-1ae9c2130109.dump \
-       http://crash-reports/submit
+       http://localhost/submit
 
 If collection is working, you should be see a Crash ID returned::
 
