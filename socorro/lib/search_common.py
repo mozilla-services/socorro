@@ -126,7 +126,16 @@ class SearchBase(object):
                 values = [values]
 
             if values is not None:
-                no_operator_param = None
+                # There should only be one parameter with no operator, and
+                # we want to stack all values into it. That's why we want
+                # to keep track of it.
+                # Actually, we want _two_ parameters with no operator: one
+                # for each possible value of "operator_not".
+                no_operator_param = {
+                    True: None,
+                    False: None
+                }
+
                 for value in values:
                     operator = None
                     operator_not = False
@@ -162,27 +171,27 @@ class SearchBase(object):
                         parameters[param.name] = []
 
                     if not operator:
-                        if not no_operator_param:
-                            no_operator_param = SearchParam(
+                        if not no_operator_param[operator_not]:
+                            no_operator_param[operator_not] = SearchParam(
                                 param.name, [value], operator, param.data_type,
                                 operator_not
                             )
                         else:
-                            no_operator_param.value.append(value)
+                            no_operator_param[operator_not].value.append(value)
                     else:
                         parameters[param.name].append(SearchParam(
                             param.name, value, operator, param.data_type,
                             operator_not
                         ))
 
-                if no_operator_param:
-                    parameters[no_operator_param.name].append(
-                        no_operator_param
-                    )
+                for value in no_operator_param.values():
+                    if value:
+                        parameters[value.name].append(value)
 
         self.fix_date_parameter(parameters)
         self.fix_process_type_parameter(parameters)
         self.fix_hang_type_parameter(parameters)
+        self.fix_version_parameter(parameters)
 
         return parameters
 
@@ -200,7 +209,7 @@ class SearchBase(object):
             days=self.config.search_maximum_date_range
         )
 
-        if 'date' not in parameters:
+        if not parameters.get('date'):
             now = datetimeutil.utc_now()
             lastweek = now - default_date_range
 
@@ -268,28 +277,30 @@ class SearchBase(object):
         If process_type is 'browser', replace it with a 'does not exist'
         parameter. Do nothing in all other cases.
         """
-        if 'process_type' in parameters:
-            new_params = []
-            marked_for_deletion = []
-            for index, process_type in enumerate(parameters['process_type']):
-                if 'browser' in process_type.value:
-                    process_type.value.remove('browser')
+        if not parameters.get('process_type'):
+            return
 
-                    if not process_type.value:
-                        marked_for_deletion.append(process_type)
+        new_params = []
+        marked_for_deletion = []
+        for index, process_type in enumerate(parameters['process_type']):
+            if 'browser' in process_type.value:
+                process_type.value.remove('browser')
 
-                    new_params.append(SearchParam(
-                        name='process_type',
-                        value=[''],
-                        data_type='enum',
-                        operator='__null__',
-                        operator_not=process_type.operator_not,
-                    ))
+                if not process_type.value:
+                    marked_for_deletion.append(process_type)
 
-            for param in marked_for_deletion:
-                parameters['process_type'].remove(param)
+                new_params.append(SearchParam(
+                    name='process_type',
+                    value=[''],
+                    data_type='enum',
+                    operator='__null__',
+                    operator_not=process_type.operator_not,
+                ))
 
-            parameters['process_type'].extend(new_params)
+        for param in marked_for_deletion:
+            parameters['process_type'].remove(param)
+
+        parameters['process_type'].extend(new_params)
 
     @staticmethod
     def fix_hang_type_parameter(parameters):
@@ -298,17 +309,57 @@ class SearchBase(object):
         If hang_type is 'crash', replace it with '0', if it's 'hang' replace it
         with '-1, 1'.
         """
-        if 'hang_type' in parameters:
-            for hang_type in parameters['hang_type']:
-                new_values = []
-                for val in hang_type.value:
-                    if val == 'crash':
-                        new_values.append(0)
-                    elif val == 'hang':
-                        new_values.extend([-1, 1])
+        if not parameters.get('hang_type'):
+            return
 
-                hang_type.value = new_values
-                hang_type.data_type = 'int'
+        for hang_type in parameters['hang_type']:
+            new_values = []
+            for val in hang_type.value:
+                if val == 'crash':
+                    new_values.append(0)
+                elif val == 'hang':
+                    new_values.extend([-1, 1])
+
+            hang_type.value = new_values
+            hang_type.data_type = 'int'
+
+    @staticmethod
+    def fix_version_parameter(parameters):
+        """Correct the version parameter.
+
+        If version is something finishing with a 'b' and operator is
+        'has terms', replace the operator with 'starts with' to query all
+        beta versions.
+
+        This is applicable regardless of product, only "rapid beta" versions
+        can have a trailing "b".
+        """
+        if not parameters.get('version'):
+            return
+
+        # Iterate on a copy so we can delete elements while looping.
+        for version in list(parameters['version']):
+            if version.operator:
+                # We only care about the '' operator ("has terms").
+                continue
+
+            new_values = []
+            for val in version.value:
+                if val.endswith('b'):
+                    parameters['version'].append(SearchParam(
+                        name='version',
+                        value=[val],
+                        data_type='str',
+                        operator='$',
+                        operator_not=version.operator_not,
+                    ))
+                else:
+                    new_values.append(val)
+
+            if new_values:
+                version.value = new_values
+            else:
+                parameters['version'].remove(version)
 
     def get_filter(self, field_name):
         for f in self.filters:

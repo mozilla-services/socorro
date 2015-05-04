@@ -38,7 +38,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     },
     'version': {
         'name': 'version',
-        'data_validation_type': 'enum',
+        'data_validation_type': 'str',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -143,7 +143,7 @@ class TestSearchBase(TestCase):
         args = {
             'signature': '~js',
             'product': ['WaterWolf', 'NightTrain'],
-            'version': '=1.0',
+            'process_type': '=crash',
         }
         params = search.get_parameters(**args)
         eq_(params['signature'][0].operator, '~')
@@ -154,7 +154,7 @@ class TestSearchBase(TestCase):
             params['product'][0].value,
             ['WaterWolf', 'NightTrain']
         )
-        eq_(params['version'][0].operator, '')
+        eq_(params['process_type'][0].operator, '')
 
         args = {
             'signature': ['~Mark', '$js'],
@@ -311,6 +311,43 @@ class TestSearchBase(TestCase):
         ok_('hang_type' in params)
         eq_(len(params['hang_type']), 1)
         eq_(params['hang_type'][0].value, [0])
+
+    def test_version_parameter_correction(self):
+        with _get_config_manager().context() as config:
+            search = SearchBase(
+                config=config,
+                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+            )
+
+        args = {
+            'version': ['38.0b']
+        }
+        params = search.get_parameters(**args)
+        ok_('version' in params)
+        eq_(len(params['version']), 1)
+        eq_(params['version'][0].value, ['38.0b'])
+        eq_(params['version'][0].operator, '$')
+        ok_(not params['version'][0].operator_not)
+
+        args = {
+            'version': ['1.9b2', '1.9b', '!2.9b', '^.0b']
+        }
+        params = search.get_parameters(**args)
+        ok_('version' in params)
+        eq_(len(params['version']), 4)
+        for param in params['version']:
+            assert param.operator in ('$', '^', '')
+
+            if param.operator == '$' and not param.operator_not:
+                # starts with, this one was made up.
+                eq_(param.value, ['1.9b'])
+            elif param.operator == '$' and param.operator_not:
+                # starts with, this one was made up.
+                eq_(param.value, ['2.9b'])
+            elif param.operator == '^':
+                eq_(param.value, '.0b')
+            elif param.operator == '':
+                eq_(param.value, ['1.9b2'])
 
 
 #==============================================================================
