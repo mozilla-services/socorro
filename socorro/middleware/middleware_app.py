@@ -48,7 +48,7 @@ SERVICES_LIST = (
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (
         r'/crashes/'
-        r'(comments|count_by_day|daily|frequency|signatures|'
+        r'(count_by_day|daily|frequency|signatures|'
         r'signature_history|exploitability|adu_by_signature)/(.*)',
         'crashes.Crashes'
     ),
@@ -63,7 +63,6 @@ SERVICES_LIST = (
     (r'/products/(.*)', 'products.Products'),
     (r'/query/', 'query.Query'),
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
-    (r'/report/(list)/(.*)', 'report.Report'),
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
