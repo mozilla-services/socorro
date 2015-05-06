@@ -15,11 +15,8 @@ if [ "$BUILD_TYPE" != "tar" ]; then
     # FIXME could we replace w/ consul?
     cp scripts/crons/socorrorc $BUILD_DIR/etc/socorro/
 
-    # Copy systemd service files into place
-    cp config/systemd/* $BUILD_DIR/usr/lib/systemd/system/
-
-    # Copy in production-style defaults
-    cp -rp config/package/* $BUILD_DIR/etc/
+    # Copy system configs into place
+    rsync -a config/package/ $BUILD_DIR/
 
     # Copy in Socorro setup script
     cp scripts/setup-socorro.sh $BUILD_DIR/usr/bin

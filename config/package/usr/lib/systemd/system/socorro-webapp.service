@@ -1,0 +1,10 @@
+[Unit]
+Description=Socorro Webapp
+
+[Service]
+Environment=VENV=/data/socorro/socorro-virtualenv
+ExecStart=/bin/bash -c "envconsul -upcase=false -prefix socorro/common -prefix socorro/webapp-django $VENV/bin/uwsgi --pythonpath /data/socorro/webapp-django/ -M --need-app -w webapp-django.wsgi.socorro-crashstats -s /var/run/uwsgi/socorro/socorro-webapp.sock --chmod-socket=664 --uid=socorro --gid=nginx"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
