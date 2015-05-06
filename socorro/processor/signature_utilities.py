@@ -289,6 +289,7 @@ class CSignatureTool(CSignatureToolBase):
           'CERT_.*',
           'CFRelease',
           '_chkstk',
+          'CleanupPerAppKey',
           'CrashInJS',
           '__delayLoadHelper2',
           'dlmalloc',
