@@ -195,36 +195,6 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         search = search.filter(filters)
 
-        # Restricting returned fields.
-        fields = []
-        for param in params['_columns']:
-            for value in param.value:
-                if not value:
-                    continue
-
-                try:
-                    field_ = self.all_fields[value]
-                except KeyError:
-                    # That is not a known field, we can't restrict on it.
-                    raise BadArgumentError(
-                        value,
-                        msg='Unknown field "%s", cannot return it' % value
-                    )
-
-                if not field_['is_returned']:
-                    # Returning this field is not allowed.
-                    raise BadArgumentError(
-                        value,
-                        msg='Field "%s" is not allowed to be returned' % value
-                    )
-
-                field_name = '%s.%s' % (
-                    field_['namespace'],
-                    field_['in_database_name']
-                )
-
-                fields.append(field_name)
-
         # Sorting.
         sort_fields = []
         for param in params['_sort']:
@@ -306,6 +276,11 @@ class SuperSearch(SearchBase, ElasticSearchBase):
 
         # Query and compute results.
         hits = []
+        fields = [
+            '%s.%s' % (x['namespace'], x['in_database_name'])
+            for x in self.all_fields.values()
+            if x['is_returned']
+        ]
 
         if params['_return_query'][0].value[0]:
             # Return only the JSON query that would be sent to elasticsearch.

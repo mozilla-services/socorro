@@ -20,11 +20,7 @@ from session_csrf import anonymous_csrf
 
 from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
-from crashstats.supersearch.models import (
-    SuperSearch,
-    SuperSearchFields,
-    SuperSearchUnredacted,
-)
+from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 # To prevent running in to a known Python bug
@@ -138,76 +134,6 @@ def build_data_object_for_crash_reports(response_items):
         crash_reports.append(prod_ver)
 
     return crash_reports
-
-
-def get_report_list_from_super_search(**kwargs):
-    """Return results as expected by the report_list views, but loaded
-    from Super Search.
-
-    This function converts given parameters to match what Super Search expects.
-    It changes some values (like version and _sort parameters). It then
-    queries Super Search, and maps the field names in the results to what
-    the report/list/ views and templates expect.
-    """
-    # Prepare mapping of names to in_database_names.
-    fields = SuperSearchFields().get()
-    old_names_map = {}
-    for field in fields.values():
-        if (
-            (field['is_exposed'] or field['is_returned']) and
-            field['name'] != field['in_database_name']
-        ):
-            old_names_map[field['in_database_name']] = field['name']
-
-    # Convert parameters to what Super Search accepts.
-    params = kwargs.copy()
-    if params.get('signature'):
-        params['signature'] = '=' + params['signature']
-
-    if params.get('end_date') or params.get('start_date'):
-        params['date'] = []
-        if 'start_date' in params:
-            start_date = params['start_date'].isoformat()
-            params['date'].append('>=' + start_date)
-            del params['start_date']
-        if 'end_date' in params:
-            end_date = params['end_date'].isoformat()
-            params['date'].append('<=' + end_date)
-            del params['end_date']
-
-    if params.get('version'):
-        versions = [
-            x.split(':')[-1] for x in params['version'] if x != 'ALL:ALL'
-        ]
-        params['version'] = versions
-
-    for key in ('process_type', 'hang_type'):
-        # For those keys, 'any' is not supported and should be an empty value.
-        if params.get(key) == 'any':
-            del params[key]
-
-    for param in params:
-        if param in old_names_map:
-            params[old_names_map[param]] = params[param]
-            # We're in a loop, we can't delete the object, so instead we just
-            # make it None so that it gets ignored by the model.
-            params[param] = None
-
-    # Convert the sorting parameters.
-    if params.get('_sort'):
-        assert isinstance(params['_sort'], basestring)
-        params['_sort'] = old_names_map.get(params['_sort'], params['_sort'])
-        if params.get('_reverse'):
-            params['_sort'] = '-' + params['_sort']
-        del params['_reverse']
-
-    # Correct the 'os_and_version' column name.
-    if 'os_and_version' in params['_columns']:
-        params['_columns'].remove('os_and_version')
-        params['_columns'].extend(['platform', 'platform_version'])
-
-    api = SuperSearchUnredacted()
-    return api.get(**params)
 
 
 def get_all_nightlies(context):
@@ -1332,6 +1258,18 @@ def report_list(request, partial=None, default_context=None):
     else:
         hang_type = settings.HANG_TYPES[0]
 
+    if form.cleaned_data['plugin_field']:
+        plugin_field = form.cleaned_data['plugin_field']
+    else:
+        plugin_field = settings.PLUGIN_FIELDS[0]
+
+    if form.cleaned_data['plugin_query_type']:
+        plugin_query_type = form.cleaned_data['plugin_query_type']
+        if plugin_query_type in settings.QUERY_TYPES_MAP:
+            plugin_query_type = settings.QUERY_TYPES_MAP[plugin_query_type]
+    else:
+        plugin_query_type = settings.QUERY_TYPES[0]
+
     duration = get_timedelta_from_value_and_unit(
         int(form.cleaned_data['range_value']),
         range_unit
@@ -1365,10 +1303,11 @@ def report_list(request, partial=None, default_context=None):
 
     ALL_REPORTS_COLUMNS = (
         # key, label, on by default?
-        ('date', 'Date', True),
+        ('date_processed', 'Date', True),
+        ('duplicate_of', 'Dup', True),
         ('product', 'Product', True),
         ('version', 'Version', True),
-        ('build_id', 'Build', True),
+        ('build', 'Build', True),
         ('os_and_version', 'OS', True),
         ('cpu_name', 'Build Arch', True),
         ('reason', 'Reason', True),
@@ -1379,16 +1318,16 @@ def report_list(request, partial=None, default_context=None):
     )
     # columns that should, by default, start in descending order
     DEFAULT_REVERSE_COLUMNS = (
-        'date',
+        'date_processed',
     )
 
     _default_column_keys = [x[0] for x in ALL_REPORTS_COLUMNS if x[2]]
-    raw_crash_fields = SuperSearch.API_WHITELIST['hits']
+    raw_crash_fields = models.RawCrash.API_WHITELIST
 
     if request.user.has_perm('crashstats.view_pii'):
         # add any fields to ALL_REPORTS_COLUMNS raw_crash_fields that
         # signed in people are allowed to see.
-        raw_crash_fields += ('url', 'email')
+        raw_crash_fields += ('URL',)
 
     RAW_CRASH_FIELDS = sorted(
         raw_crash_fields,
@@ -1398,11 +1337,8 @@ def report_list(request, partial=None, default_context=None):
     all_reports_columns_keys = [x[0] for x in ALL_REPORTS_COLUMNS]
     ALL_REPORTS_COLUMNS = tuple(
         list(ALL_REPORTS_COLUMNS) +
-        [
-            (x, x.replace('_', ' ').capitalize(), False)
-            for x in RAW_CRASH_FIELDS
-            if x not in all_reports_columns_keys
-        ]
+        [(x, '%s*' % x, False) for x in RAW_CRASH_FIELDS
+         if x not in all_reports_columns_keys]
     )
 
     if partial == 'reports' or partial == 'correlations':
@@ -1416,7 +1352,7 @@ def report_list(request, partial=None, default_context=None):
         # of the fact that the ReportList() data gets cached.
 
         context['sort'] = request.GET.get('sort', 'date_processed')
-        context['reverse'] = request.GET.get('reverse', 'true').lower()
+        context['reverse'] = request.GET.get('reverse', 'false').lower()
         context['reverse'] = context['reverse'] != 'false'
 
         columns = request.GET.getlist('c')
@@ -1446,14 +1382,6 @@ def report_list(request, partial=None, default_context=None):
                 include_raw_crash = True
                 break
 
-        api_columns = [x['key'] for x in context['columns']]
-        # The correlations tab requires some keys to always be there. Since
-        # they are low cost, we add them here, to keep the advantages of the
-        # shared cache between the two tabs.
-        api_columns += [
-            'platform', 'version', 'release_channel', 'install_time', 'date'
-        ]
-
         context['include_raw_crash'] = include_raw_crash
 
         # some column keys have ids that aren't real fields,
@@ -1463,23 +1391,27 @@ def report_list(request, partial=None, default_context=None):
             sort_ = 'os_name'
 
         assert start_date and end_date
-        context['report_list'] = get_report_list_from_super_search(
+        api = models.ReportList()
+        context['report_list'] = api.get(
             signature=context['signature'],
-            product=context['selected_products'],
-            version=context['product_versions'],
+            products=context['selected_products'],
+            versions=context['product_versions'],
+            os=form.cleaned_data['platform'],
             start_date=start_date,
             end_date=end_date,
-            platform=form.cleaned_data['platform'],
-            build_id=form.cleaned_data['build_id'],
-            reason=form.cleaned_data['reason'],
-            release_channel=form.cleaned_data['release_channels'],
-            process_type=process_type,
-            hang_type=hang_type,
-            _columns=api_columns,
-            _sort=sort_,
-            _reverse=context['reverse'],
-            _results_number=results_per_page,
-            _results_offset=result_offset,
+            build_ids=form.cleaned_data['build_id'],
+            reasons=form.cleaned_data['reason'],
+            release_channels=form.cleaned_data['release_channels'],
+            report_process=process_type,
+            report_type=hang_type,
+            plugin_in=plugin_field,
+            plugin_search_mode=plugin_query_type,
+            plugin_terms=form.cleaned_data['plugin_query'],
+            include_raw_crash=include_raw_crash,
+            result_number=results_per_page,
+            result_offset=result_offset,
+            sort=sort_,
+            reverse=context['reverse'],
         )
 
     if partial == 'reports':
@@ -1497,6 +1429,8 @@ def report_list(request, partial=None, default_context=None):
                 context
             )
 
+        context['signature'] = context['report_list']['hits'][0]['signature']
+
         context['report_list']['total_pages'] = int(math.ceil(
             context['report_list']['total'] / float(results_per_page)))
 
@@ -1507,19 +1441,19 @@ def report_list(request, partial=None, default_context=None):
         version_count = defaultdict(int)
 
         for report in context['report_list']['hits']:
-            os_name = report['platform']
+            os_name = report['os_name']
             version = report['version']
 
             # report_list does not contain beta identifier, but the correlation
             # form needs it for validation
-            if report['release_channel'].lower() == 'beta':
+            if report['release_channel'] == 'beta':
                 version = version + 'b'
 
             os_count[os_name] += 1
             version_count[version] += 1
 
             report['date_processed'] = isodate.parse_datetime(
-                report['date']
+                report['date_processed']
             ).strftime('%b %d, %Y %H:%M')
 
             # re-format it to be human-friendly
@@ -1624,22 +1558,26 @@ def report_list(request, partial=None, default_context=None):
             context['signature_urls'] = None
 
     if partial == 'comments':
-        context['comments'] = get_report_list_from_super_search(
+        context['comments'] = []
+        comments_api = models.CommentsBySignature()
+
+        context['comments'] = comments_api.get(
             signature=context['signature'],
-            product=context['selected_products'],
-            version=context['product_versions'],
+            products=form.cleaned_data['product'],
+            versions=context['product_versions'],
+            os=form.cleaned_data['platform'],
             start_date=start_date,
             end_date=end_date,
-            platform=form.cleaned_data['platform'],
-            build_id=form.cleaned_data['build_id'],
-            reason=form.cleaned_data['reason'],
-            release_channel=form.cleaned_data['release_channels'],
-            process_type=process_type,
-            hang_type=hang_type,
-            user_comments='!__null__',
-            _columns=['user_comments', 'date', 'uuid', 'email'],
-            _results_number=results_per_page,
-            _results_offset=result_offset,
+            build_ids=form.cleaned_data['build_id'],
+            reasons=form.cleaned_data['reason'],
+            release_channels=form.cleaned_data['release_channels'],
+            report_process=form.cleaned_data['process_type'],
+            report_type=form.cleaned_data['hang_type'],
+            plugin_in=form.cleaned_data['plugin_field'],
+            plugin_search_mode=form.cleaned_data['plugin_query_type'],
+            plugin_terms=form.cleaned_data['plugin_query'],
+            result_number=results_per_page,
+            result_offset=result_offset
         )
 
         current_query = request.GET.copy()
@@ -1846,7 +1784,6 @@ def your_crashes(request, default_context=None):
     results = api.get(
         email=request.user.email,
         date='>%s' % one_month_ago,
-        _columns=['date', 'uuid'],
     )
 
     context['crashes_list'] = [
