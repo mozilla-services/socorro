@@ -882,6 +882,76 @@ class TCBS(SocorroMiddleware):
     }
 
 
+class ReportList(SocorroMiddleware):
+    """
+    The `start_date` and `end_date` are both required and its span
+    can not be more than 30 days.
+    """
+    URL_PREFIX = '/report/list/'
+
+    required_params = (
+        'signature',
+        ('start_date', datetime.datetime),
+        ('end_date', datetime.datetime),
+    )
+
+    possible_params = (
+        ('products', list),
+        ('versions', list),
+        ('os', list),
+        'build_ids',
+        'reasons',
+        'release_channels',
+        'report_process',
+        'report_type',
+        'plugin_in',
+        'plugin_search_mode',
+        'plugin_terms',
+        'result_number',
+        'result_offset',
+        'include_raw_crash',
+        'sort',
+        'reverse',
+    )
+
+    aliases = {
+        'start_date': 'from',
+        'end_date': 'to',
+    }
+
+    API_WHITELIST = {
+        'hits': (
+            'product',
+            'os_name',
+            'uuid',
+            'hangid',
+            'last_crash',
+            'date_processed',
+            'cpu_name',
+            'uptime',
+            'process_type',
+            'cpu_info',
+            'reason',
+            'version',
+            'os_version',
+            'build',
+            'install_age',
+            'signature',
+            'install_time',
+            'duplicate_of',
+            'address',
+            'user_comments',
+            'release_channel',
+            # deliberately avoiding 'raw_crash' here
+        )
+    }
+
+    API_CLEAN_SCRUB = (
+        ('user_comments', scrubber.EMAIL),
+        ('user_comments', scrubber.URL),
+    )
+
+
 class ProcessedCrash(SocorroMiddleware):
     URL_PREFIX = '/crash_data/'
 
@@ -1117,6 +1187,52 @@ class RawCrash(SocorroMiddleware):
             format = kwargs['format'] = 'raw'
         kwargs['expect_json'] = format != 'raw'
         return super(RawCrash, self).get(**kwargs)
+
+
+class CommentsBySignature(SocorroMiddleware):
+
+    URL_PREFIX = '/crashes/comments/'
+
+    required_params = (
+        'signature',
+    )
+
+    possible_params = (
+        'products',
+        'versions',
+        'os',
+        'start_date',
+        'end_date',
+        'build_ids',
+        'reasons',
+        'report_process',
+        'report_type',
+        'plugin_in',
+        'plugin_search_mode',
+        'plugin_terms',
+        'result_number',
+        'result_offset'
+    )
+
+    aliases = {
+        'start_date': 'from',
+        'end_date': 'to'
+    }
+
+    API_WHITELIST = {
+        'hits': (
+            'user_comments',
+            'date_processed',
+            'uuid',
+        ),
+        # deliberately not including:
+        #    email
+    }
+
+    API_CLEAN_SCRUB = (
+        ('user_comments', scrubber.EMAIL, 'EMAILREMOVED'),
+        ('user_comments', scrubber.URL, 'URLREMOVED'),
+    )
 
 
 class ExplosiveCrashes(SocorroMiddleware):

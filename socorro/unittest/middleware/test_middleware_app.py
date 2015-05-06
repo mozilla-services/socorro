@@ -703,6 +703,13 @@ class IntegrationTestMiddlewareApp(TestCase):
 
             response = self.get(
                 server,
+                '/crashes/comments/',
+                {'signature': 'xxx', 'from': '2011-05-01'}
+            )
+            eq_(response.data, {'hits': [], 'total': 0})
+
+            response = self.get(
+                server,
                 '/crashes/daily/',
                 {
                     'product': 'Firefox',
@@ -736,6 +743,46 @@ class IntegrationTestMiddlewareApp(TestCase):
                 '/crashes/exploitability/'
             )
             eq_(response.data, {'hits': [], 'total': 0})
+
+    def test_crashes_comments_with_data(self):
+        config_manager = self._setup_config_manager()
+
+        now = datetimeutil.utc_now()
+        uuid = "%%s-%s" % now.strftime("%y%m%d")
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO reports
+            (id, date_processed, uuid, signature, user_comments)
+            VALUES
+            (
+                1,
+                %s,
+                %s,
+                'sig1',
+                'crap'
+            ),
+            (
+                2,
+                %s,
+                %s,
+                'sig2',
+                'great'
+            );
+        """, (now, uuid % "a1", now, uuid % "a2"))
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/crashes/comments/',
+                {'signature': 'sig1', 'from': now, 'to': now}
+            )
+            eq_(response.data['total'], 1)
+            eq_(response.data['hits'][0]['user_comments'], 'crap')
 
     def test_field(self):
         config_manager = self._setup_config_manager()
@@ -929,6 +976,25 @@ class IntegrationTestMiddlewareApp(TestCase):
         os.remove(os.path.join(self.basedir, 'socorro_revision.txt'))
         os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
 
+    def test_report_list(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.get(
+                server,
+                '/report/list/',
+                {
+                    'signature': 'SocketSend',
+                    'from': '2011-05-01',
+                    'to': '2011-05-05',
+                }
+            )
+            eq_(response.data, {'hits': [], 'total': 0})
+
     def test_util_versions_info(self):
         config_manager = self._setup_config_manager()
 
@@ -1069,6 +1135,14 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.status, 400)
             ok_('uuid' in response.body)
+
+            response = self.get(
+                server,
+                '/crashes/comments/',
+                expect_errors=True
+            )
+            eq_(response.status, 400)
+            ok_('signature' in response.body)
 
             response = self.get(
                 server,

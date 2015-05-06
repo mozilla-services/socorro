@@ -7,16 +7,6 @@ from crashstats import scrubber
 from crashstats.crashstats import models
 
 
-SUPERSEARCH_META_PARAMS = (
-    ('_columns', list),
-    ('_facets', list),
-    ('_results_offset', int),
-    ('_results_number', int),
-    '_return_query',
-    ('_sort', list),
-)
-
-
 def get_api_whitelist(include_all_fields=False):
 
     def get_from_es(include_all_fields):
@@ -73,7 +63,12 @@ class SuperSearch(models.SocorroMiddleware):
             if x['is_exposed']
             and not x['permissions_needed']
             and not x['is_mandatory']
-        ) + SUPERSEARCH_META_PARAMS
+        ) + (
+            ('_facets', list),
+            ('_results_offset', int),
+            ('_results_number', int),
+            '_return_query',
+        )
 
 
 class SuperSearchUnredacted(SuperSearch):
@@ -95,7 +90,12 @@ class SuperSearchUnredacted(SuperSearch):
         self.possible_params = tuple(
             (x['name'], list) for x in all_fields.values()
             if x['is_exposed'] and not x['is_mandatory']
-        ) + SUPERSEARCH_META_PARAMS
+        ) + (
+            ('_facets', list),
+            ('_results_offset', int),
+            ('_results_number', int),
+            '_return_query',
+        )
 
         permissions = {}
         for field_data in all_fields.values():
@@ -112,7 +112,7 @@ class SuperSearchFields(models.SocorroMiddleware):
     # The only reason this data will change is if a user changes it via the UI.
     # If that happens, the cache will be reset automatically. We can thus
     # increase the cache a lot here.
-    cache_seconds = 60 * 60 * 24  # 24 hours
+    cache_seconds = 60 * 60 * 24
 
 
 class SuperSearchMissingFields(models.SocorroMiddleware):
