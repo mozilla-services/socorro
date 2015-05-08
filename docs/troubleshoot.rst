@@ -3,12 +3,18 @@
 Troubleshooting
 ---------------
 
+Socorro
+=======
+
 journalctl is a good place to look for Socorro logs.
 
 Socorro supports syslog and raven for application-level logging of all
 services (including web services).
 
 If web services are not starting up, /var/log/httpd is a good place to look.
+
+Crash-Stats
+===========
 
 If you are not able to log in to the crash-stats UI, try hitting
 http://crash-stats/_debug_login
