@@ -3,7 +3,6 @@
 # ensure base directories owned
 chown socorro /var/log/socorro
 chown socorro /var/lock/socorro
-chown socorro /var/run/uwsgi
 
 # FIXME processor will silently fail if this does not exist :/
 mkdir /home/socorro/temp

@@ -1,0 +1,10 @@
+[Unit]
+Description=Socorro Middleware
+
+[Service]
+Environment=VENV=/data/socorro/socorro-virtualenv
+ExecStart=/bin/bash -c "envconsul -upcase=false -prefix socorro/common -prefix socorro/middleware $VENV/bin/uwsgi -H $VENV -M --need-app -w wsgi.middleware -s /var/run/uwsgi/socorro/socorro-middleware.sock --chmod-socket=664 --uid=socorro --gid=nginx"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
