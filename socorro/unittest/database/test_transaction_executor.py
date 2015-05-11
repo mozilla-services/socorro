@@ -231,7 +231,9 @@ class TestTransactionExecutor(TestCase):
                 # so after 2 + 4 + 6 + 10 + 15 seconds
                 # all will be exhausted
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    raise psycopg2.OperationalError('Arh!')
+                    o =  psycopg2.OperationalError('Arh!')
+                    o.pgerror = ''
+                    raise o
 
             def mock_sleep(n):
                 _sleep_count.append(n)
@@ -294,7 +296,9 @@ class TestTransactionExecutor(TestCase):
                 # so after 2 + 4 + 6 + 10 + 15 seconds
                 # all will be exhausted
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    raise psycopg2.OperationalError('Arh!')
+                    o =  psycopg2.OperationalError('Arh!')
+                    o.pgerror = ''
+                    raise o
 
             def mock_sleep(n):
                 _sleep_count.append(n)
