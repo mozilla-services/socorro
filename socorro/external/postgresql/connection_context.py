@@ -95,12 +95,12 @@ class ConnectionContext(RequiredConfig):
             "user=%(database_username)s "
             "password=%(database_password)s") % local_config
         self.operational_exceptions = (
-          psycopg2.OperationalError,
-          psycopg2.InterfaceError,
-          socket.timeout
+            psycopg2.InterfaceError,
+            socket.timeout
         )
         self.conditional_exceptions = (
-          psycopg2.ProgrammingError,
+            psycopg2.OperationalError,
+            psycopg2.ProgrammingError,
         )
 
     #--------------------------------------------------------------------------
@@ -162,10 +162,16 @@ class ConnectionContext(RequiredConfig):
         operational exception "labelled" wrong by the psycopg2 code error
         handler.
         """
-        if msg.pgerror in ('SSL SYSCALL error: EOF detected',):
+        if msg.pgerror in ('SSL SYSCALL error: EOF detected', ):
             # Ideally we'd like to check against msg.pgcode values
             # but certain odd ProgrammingError exceptions don't have
             # pgcodes so we have to rely on reading the pgerror :(
+            return True
+
+        if (
+            isinstance(msg, psycopg2.OperationalError) and msg.pgerror not in (
+            'out of memory',
+        )):
             return True
 
         # at the of writing, the list of exceptions is short but this would be
