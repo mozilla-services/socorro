@@ -16,7 +16,10 @@ from socorro.external.elasticsearch.crashstorage import (
     ElasticSearchCrashStorage
 )
 from socorro.lib.datetimeutil import utc_now
-from socorro.unittest.external.elasticsearch.unittestbase import ElasticSearchTestCase
+from socorro.unittest.external.elasticsearch.unittestbase import (
+    ElasticSearchTestCase,
+    maximum_es_version
+)
 
 # Remove debugging noise during development
 # import logging
@@ -66,6 +69,7 @@ class IntegrationTestIndexCleaner(ElasticSearchTestCase):
             argv_source=[]
         )
 
+    @maximum_es_version('0.90')
     def test_correct_indices_are_deleted(self):
         config_manager = self._setup_config()
         with config_manager.context() as config:
@@ -146,6 +150,7 @@ class IntegrationTestIndexCleaner(ElasticSearchTestCase):
                 'socorro200201'
             )
 
+    @maximum_es_version('0.90')
     def test_other_indices_are_not_deleted(self):
         """Verify that non-week-based indices are not removed. For example,
         the socorro_email index should not be deleted by the cron job.
