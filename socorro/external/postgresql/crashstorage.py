@@ -186,7 +186,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     def _save_processed_transaction(self, connection, processed_crash):
         report_id = self._save_processed_report(connection, processed_crash)
         self._save_plugins(connection, processed_crash, report_id)
-        self._save_processed_crash(connection, processed_crash)
+#        self._save_processed_crash(connection, processed_crash)
 
     #--------------------------------------------------------------------------
     def _save_processed_crash(self, connection, processed_crash):
