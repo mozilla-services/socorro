@@ -1576,9 +1576,17 @@ class TestViews(BaseTestViews):
             notes='Some notes',
         )
         eq_(list(token.permissions.all()), [permission])
-        lasting = (token.expires - timezone.now()).days
-        # the 7 - 1 is because the rounding due to microseconds
-        eq_(lasting, 7 - 1)
+        lasting = (timezone.now() - token.expires).days * -1
+        eq_(lasting, 7)
+
+        event, = Log.objects.all()
+
+        eq_(event.user, self.user)
+        eq_(event.action, 'api_token.create')
+        eq_(event.extra['notes'], 'Some notes')
+        ok_(event.extra['expires'])
+        eq_(event.extra['expires_days'], 7)
+        eq_(event.extra['permissions'], permission.name)
 
     def test_create_api_token_rejected(self):
         self._login()
@@ -1787,3 +1795,11 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)  # it's AJAX
 
         ok_(not Token.objects.all())
+
+        event, = Log.objects.all()
+
+        eq_(event.user, self.user)
+        eq_(event.action, 'api_token.delete')
+        eq_(event.extra['notes'], 'Some notes')
+        eq_(event.extra['user'], self.user.email)
+        eq_(event.extra['permissions'], permission.name)
