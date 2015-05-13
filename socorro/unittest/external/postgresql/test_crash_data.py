@@ -163,32 +163,32 @@ class TestIntegrationPostgresCrashData(TestCase):
             eq_(res, res_expected)
 
             # get a processed crash
-            params['datatype'] = 'processed'
-            res_expected = a_processed_crash.copy()
-            res_expected.update({
-                'name': 'Peter',
-                'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314',
-                'completeddatetime': '2012-01-01T00:00:00'
-            })
-            res = service.get(**params)
+##            params['datatype'] = 'processed'
+##            res_expected = a_processed_crash.copy()
+##            res_expected.update({
+##                'name': 'Peter',
+##                'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314',
+##                'completeddatetime': '2012-01-01T00:00:00'
+##            })
+##            res = service.get(**params)
 
-            eq_(res['name'], 'Peter')
-            ok_('url' not in res)
-            ok_('email' not in res)
-            ok_('user_id' not in res)
-            ok_('exploitability' not in res)
-
-            # get a unredacted processed crash
-            params['datatype'] = 'unredacted'
-            res = service.get(**params)
-
-            eq_(res['name'], 'Peter')
-            ok_('url' in res)
-            ok_('email' in res)
-            ok_('user_id' in res)
-            ok_('exploitability' in res)
-
-            eq_(res['email'], 'peter@fake.org')
+##            eq_(res['name'], 'Peter')
+##            ok_('url' not in res)
+##            ok_('email' not in res)
+##            ok_('user_id' not in res)
+##            ok_('exploitability' not in res)
+##
+##            # get a unredacted processed crash
+##            params['datatype'] = 'unredacted'
+##            res = service.get(**params)
+##
+##            eq_(res['name'], 'Peter')
+##            ok_('url' in res)
+##            ok_('email' in res)
+##            ok_('user_id' in res)
+##            ok_('exploitability' in res)
+##
+##            eq_(res['email'], 'peter@fake.org')
 
             # missing parameters
             assert_raises(
