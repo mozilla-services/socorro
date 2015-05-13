@@ -797,6 +797,7 @@ def events_data(request):
 
 
 @superuser_required
+@transaction.atomic
 def api_tokens(request):
     all_possible_permissions = (
         Permission.objects.filter(content_type__model='')
@@ -831,6 +832,18 @@ def api_tokens(request):
             for permission in data['permissions']:
                 token.permissions.add(permission)
 
+            log(request.user, 'api_token.create', {
+                'user': token.user.email,
+                'expires': token.expires,
+                # Do this reverse trick to avoid microseconds rounding it
+                # down to 6 days.
+                'expires_days': (timezone.now() - token.expires).days * -1,
+                'notes': token.notes,
+                'permissions': ', '.join(
+                    x.name for x in token.permissions.all()
+                ),
+            })
+
             messages.success(
                 request,
                 'API Token for %s created. ' % token.user.email
@@ -858,6 +871,15 @@ def api_tokens_delete(request):
     if not request.POST.get('id'):
         return http.HttpResponseBadRequest('No id')
     token = get_object_or_404(Token, id=request.POST['id'])
+
+    log(request.user, 'api_token.delete', {
+        'user': token.user.email,
+        'permissions': ', '.join(
+            x.name for x in token.permissions.all()
+        ),
+        'notes': token.notes,
+    })
+
     token.delete()
     return True
 
