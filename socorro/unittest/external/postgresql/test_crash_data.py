@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 from mock import Mock
@@ -152,14 +151,13 @@ class TestIntegrationPostgresCrashData(TestCase):
 
             # get a raw crash
             params['datatype'] = 'meta'
-            res_expected = json.dumps({
+            res_expected = {
                 'name': 'Peter',
                 'legacy_processing': 0,
                 'submitted_timestamp': '2012-03-15T00:00:00',
                 'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'
-            })
+            }
             res = service.get(**params)
-
             eq_(res, res_expected)
 
             # get a processed crash

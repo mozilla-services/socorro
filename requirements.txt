@@ -47,8 +47,8 @@ lxml==3.4.1
 pgxnclient==1.2.1
 # sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
 pika==0.9.8
-# sha256: SLcCp8pHnhvCwae4GHWgfUdCmBMmBZk-LLl59eCCd9c
-psycopg2==2.4.5
+# sha256: xsMwyYqwjFY58MzX4hG4Kzo58AGBPc6mu4JKmdKzT-I
+psycopg2==2.5.5
 # sha256: U6gisBsElN-WWMBOhyFhgOXsvoWxeGc92Eix-AnVwQA
 # sha256: u5PYXKflDWjkGXhSu226YJi7dyUA-C9dsv9KgHEVBck
 elasticsearch==1.2

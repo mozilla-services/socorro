@@ -48,6 +48,5 @@ class Field(PostgreSQLBase):
             return field_data
 
         field_data = dict(zip(('name', 'transforms', 'product'), results[0]))
-        field_data['transforms'] = json.loads(field_data['transforms'])
 
         return field_data

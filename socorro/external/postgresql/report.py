@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 import logging
 
 from socorro.external import MissingArgumentError, BadArgumentError
@@ -296,8 +295,6 @@ class Report(PostgreSQLBase):
         crashes = []
         for row in results:
             crash = dict(zip(fields, row))
-            if include_raw_crash and crash['raw_crash']:
-                crash['raw_crash'] = json.loads(crash['raw_crash'])
             for i in crash:
                 try:
                     crash[i] = datetimeutil.date_to_string(crash[i])

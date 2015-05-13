@@ -153,7 +153,7 @@ class ConnectionContext(RequiredConfig):
         pass
 
     #--------------------------------------------------------------------------
-    def is_operational_exception(self, msg):
+    def is_operational_exception(self, exp):
         """return True if a conditional exception is actually an operational
         error. Return False if it's a genuine error that should probably be
         raised and propagate up.
@@ -162,16 +162,17 @@ class ConnectionContext(RequiredConfig):
         operational exception "labelled" wrong by the psycopg2 code error
         handler.
         """
-        if msg.pgerror in ('SSL SYSCALL error: EOF detected', ):
-            # Ideally we'd like to check against msg.pgcode values
+        message = exp.args[0]
+        if message in ('SSL SYSCALL error: EOF detected', ):
+            # Ideally we'd like to check against exp.pgcode values
             # but certain odd ProgrammingError exceptions don't have
             # pgcodes so we have to rely on reading the pgerror :(
             return True
 
         if (
-            isinstance(msg, psycopg2.OperationalError) and msg.pgerror not in (
-            'out of memory',
-        )):
+            isinstance(exp, psycopg2.OperationalError) and
+            message not in ('out of memory',)
+        ):
             return True
 
         # at the of writing, the list of exceptions is short but this would be
