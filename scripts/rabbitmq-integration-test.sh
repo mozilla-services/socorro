@@ -184,7 +184,8 @@ fi
 count=0
 while true
 do
-  curl -s "http://localhost:8883/crash_data/?datatype=processed&uuid=${CRASHID}&_force_api_impl=psql"  | grep '"date_processed"' > /dev/null
+  # curl -s "http://localhost:8883/crash_data/?datatype=processed&uuid=${CRASHID}&_force_api_impl=psql"  | grep '"date_processed"' > /dev/null
+  curl -s "http://localhost:8883/crash_data/?datatype=processed&uuid=${CRASHID}"  | grep '"date_processed"' > /dev/null
   if [ $? != 0 ]
   then
     echo "INFO: waiting for middleware..."
