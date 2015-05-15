@@ -134,3 +134,20 @@ def read_crash_column(crash, column_key):
         raw_crash = crash['raw_crash'] or {}
         return raw_crash.get(column_key, crash.get(column_key, ''))
     return crash.get(column_key, '')
+
+
+@register.function
+def bugzilla_submit_url(**kwargs):
+    url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
+
+    # some special keys have to be truncated to make Bugzilla happy
+    limits = {
+        # the summary field in bugzilla is max 255 chars
+        'short_desc': 255,
+    }
+    for key in limits:
+        if kwargs.get(key) and len(kwargs.get(key)) > limits[key]:
+            kwargs[key] = kwargs[key][:limits[key] - 3] + '...'
+    if kwargs:
+        url += '?' + urllib.urlencode(kwargs, True)
+    return url
