@@ -419,8 +419,7 @@ class PostgreSQLCrashStorage(CrashStorageBase):
         fetch_sql = 'select processed_crash from %s where uuid = %%s' % \
                     processed_crash_table_name
         try:
-            crash = single_value_sql(connection, fetch_sql, (crash_id,))
-            return json.loads(crash)
+            return single_value_sql(connection, fetch_sql, (crash_id,))
         except ProgrammingError, e:
             err = 'relation "%s" does not exist' % processed_crash_table_name
             if err in str(e):

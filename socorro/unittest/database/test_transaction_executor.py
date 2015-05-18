@@ -231,9 +231,7 @@ class TestTransactionExecutor(TestCase):
                 # so after 2 + 4 + 6 + 10 + 15 seconds
                 # all will be exhausted
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    o =  psycopg2.OperationalError('Arh!')
-                    o.pgerror = ''
-                    raise o
+                    raise psycopg2.OperationalError('Arh!')
 
             def mock_sleep(n):
                 _sleep_count.append(n)
@@ -296,9 +294,7 @@ class TestTransactionExecutor(TestCase):
                 # so after 2 + 4 + 6 + 10 + 15 seconds
                 # all will be exhausted
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    o =  psycopg2.OperationalError('Arh!')
-                    o.pgerror = ''
-                    raise o
+                    raise psycopg2.OperationalError('Arh!')
 
             def mock_sleep(n):
                 _sleep_count.append(n)
@@ -360,9 +356,9 @@ class TestTransactionExecutor(TestCase):
                 # so after 2 + 4 + 6 + 10 + 15 seconds
                 # all will be exhausted
                 if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
-                    exp = psycopg2.ProgrammingError()
-                    exp.pgerror = 'SSL SYSCALL error: EOF detected'
-                    raise exp
+                    raise psycopg2.ProgrammingError(
+                        'SSL SYSCALL error: EOF detected'
+                    )
 
             def mock_sleep(n):
                 _sleep_count.append(n)
@@ -500,5 +496,3 @@ class TestTransactionExecutor(TestCase):
             eq_(commit_count, 0)
             eq_(rollback_count, 1)
             ok_(not mock_logging.errors)
-
-
