@@ -5,16 +5,30 @@
 Configuring Crash-Stats and PostgreSQL
 ======================================
 
-https://crash-stats.mozilla.org is Mozilla's front-end to expose crash-stats
-to developers and interested users. It is written with Mozilla's unique 
-requirements in mind, and will probably not be useful to other Socorro users.
+You probably do not want to use this, unless you have *very* similar requirements
+to Mozilla. Try using Kibana instead.
 
-You probably do not want to use this, unless you are Mozilla.
+https://crash-stats.mozilla.org is Mozilla's front-end to expose crash data
+to developers and interested users.
+
+Some of the unique features it provides are:
+
+* public view of crash reports, with private data redacted
+* ability to assign users fine-grained permissions to private data
+* graphs and reports showing crashes per Active Daily Install (ADI)
+* ability to ingest Mozilla release engineering metadata
+* Bugzilla integration
+* extensive support for the Firefox rapid release cycle
+
+All of these features are baked in and are not trivial to disable or adjust.
+
+Again, if you are not Mozilla you almost certainly would be happier without
+using the Crash-Stats frontend.
 
 Install Memcached
 -----------------
 
-Crash-stats makes heavy use of memcached, you definitely want to use it::
+Crash-Stats makes heavy use of memcached::
 
   sudo yum install memcached
   sudo systemctl enable memcached
@@ -33,7 +47,7 @@ Now you can actually install the packages:
 
 Initialize and enable PostgreSQL on startup:
 ::
-  sudo service postgresql-9.3 initdb
+  sudo /usr/pgsql-9.3/bin/postgresql93-setup initdb
   sudo systemctl enable postgresql-9.3
 
 Modify postgresql config
@@ -68,77 +82,160 @@ Create database, set up schema
 
 Socorro provides a setup script which attempts to initialize PostgreSQL::
 
-    sudo setup-socorro.sh postgresql
+    sudo setup-socorro.sh postgres
 
 This creates a new database named "breakpad" and sets up the schema
-that Socorro and crash-stats expect.
+that Socorro and Crash-Stats expect.
 
 Configure Socorro Processor
 ---------------------------
 
-Socorro Processor must be configured to store crashes in Elasticsearch
-as well as PostgreSQL.
+The Mozilla-specific processor ruleset must be used, in order to populate PostgreSQL in a way that Crash-Stats expects:
 
-NOTE - you must replace `@@@DATABASE_HOSTNAME@@@`, `@@@DATABASE_USERNAME@@@` and
-`@@@DATABASE_PASSWORD@@@` below with valid entries for your PostgreSQL install
-above::
-  curl -s -X PUT -d "socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage_classes
-  curl -s -X PUT -d "socorro.external.crashstorage_base.PolyCrashStorage" localhost/v1/kv/socorro/processor/destination.crashstorage_class
-  curl -s -X PUT -d "socorro.external.fs.crashstorage.FSTemporaryStorage" localhost:8500/v1/kv/socorro/processor/storage.crashstorage0_class=socorro.external.fs.crashstorage.FSTemporaryStorage
-  curl -s -X PUT -d "socorro.external.es.crashstorage.ESCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage1.crashstorage_class
-  curl -s -X PUT -d "socorro.external.es.crashstorage.PostgreSQLCrashStorage" localhost:8500/v1/kv/socorro/processor/destination.storage2.crashstorage_class
-  curl -s -X PUT -d "@@@DATABASE_HOSTNAME@@@" localhost:8500/v1/kv/socorro/processor/resource.postgresql.database_hostname
-  curl -s -X PUT -d "@@@DATABASE_USERNAME@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_username
-  curl -s -X PUT -d "@@@DATABASE_PASSWORD@@@" localhost:8500/v1/kv/socorro/processor/secrets.postgresql.database_password
+.. code-block:: bash
 
+  processor__processor_class='socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015'
+
+Also, Socorro Processor must be configured to store crashes in Elasticsearch
+as well as PostgreSQL:
+
+.. code-block:: bash
+
+  # Store the crash in multiple locations
+  destination__crashstorage_class='socorro.external.crashstorage_base.PolyCrashStorage'
+  # Specify crash storage types which will be used
+  destination__storage_classes='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.fs.crashstorage.FSPermanentStorage'
+  # Store in PostgreSQL first
+  destination__storage0__crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+  # Store in Elasticsearch second
+  destination__storage1__crashstorage_class='socorro.external.es.crashstorage.ESCrashStorage'
+  # Store in filesystem third (by default this is ~socorro/crashes/)
+  destination__storage2__crashstorage_class='socorro.external.fs.crashstorage.FSPermanentStorage'
+
+Put this into a file named "processor.conf" in your socorro-config folder.
+
+NOTE - variables surrounded by @@@ are placeholders and need to be filled in appropriately for your install:
+
+.. code-block:: bash
+
+  # PostgreSQL hostname (default: localhost)
+  resource__postgresql__database_hostname='@@@DATABASE_HOSTNAME@@@'
+  # PostgreSQL username (default: breakpad_rw)
+  secrets__postgresql__database_username='@@@DATABASE_USERNAME@@@'
+  # PostgreSQL username (default: aPassword)
+  secrets__postgresql__database_password='@@@DATABASE_PASSWORD@@@'
+
+Put this into a file named "common.conf" in your socorro-config folder. The
+"socorro/common" prefix is shared between apps.
+
+Now load the contents of your socorro-config directory::
+
+  cd ./socorro-config
+  sudo setup-socorro.sh consul
+
+Configure Socorro-Middleware
+----------------------------
+
+Socorro Middlware is a REST service that listens on localhost and should 
+*not* be exposed to the outside, as it provides read/write access to the
+underlying data stores:
+
+.. code-block:: bash
+  implementations__implementation_list='psql: socorro.external.postgresql, fs: socorro.external.filesystem, es: socorro.external.es, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq, hb: socorro.external.fs'
+  implementations__service_overrides='Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq, Search: es, Query: es'
+  # Pluggable Elasticsearch implementation
+  elasticsearch__elasticsearch_class='socorro.external.es.connection_context.ConnectionContext'
+  # Path to crashes on the filesystem
+  filesystem__fs_root='/home/socorro/crashes'
+  # Use WSGI server instead of the default CherryPy dev server
+  web_server__wsgi_server_class='socorro.webapi.servers.WSGIServer'
+
+Put this into a file named "middleware.conf" in your socorro-config folder.
+
+Now load the contents of your socorro-config directory into Consul::
+
+  cd ./socorro-config
+  sudo setup-socorro.sh consul
 
 Configure Crash-Stats
 ---------------------
 
-The crash-stats app itself runs under envconsul, and expects at least the
-following environment variables to be set::
-
-  ALLOWED_HOSTS=@@@ALLOWED_HOSTS@@@
-  MWARE_BASE_URL=http://localhost
-  MWARE_HTTP_HOST=socorro-middleware
-  CACHE_MIDDLEWARE=True
-  CACHE_MIDDLEWARE_FILES=False
-  DEFAULT_PRODUCT=@@@DEFAULT_PRODUCT@@@
-  CACHE_BACKEND=django.core.cache.backends.memcached.MemcachedCache
-  CACHE_LOCATION=@@@CACHE_LOCATION@@@
-  CACHE_KEY_PREFIX=@@@CACHE_KEY_PREFIX@@@
-  BROWSERID_AUDIENCES=@@@BROWSERID_AUDIENCES@@@
-  DATABASE_ENGINE=django.db.backends.postgresql_psycopg2
-  DATABASE_NAME=@@@DATABASES_NAME@@@
-  DATABASE_USER=@@@DATABASES_USER@@@
-  DATABASE_PASSWORD=@@@DATABASES_PASSWORD@@@
-  DATABASE_HOST=@@@DATABASES_HOST@@@
-  DATABASE_PORT=@@@DATABASES_PORT@@@
-  SESSION_COOKIE_SECURE=True
-  COMPRESS_OFFLINE=True
-  SECRET_KEY=@@@SECRET_KEY@@@
-  GOOGLE_ANALYTICS_ID=@@@GOOGLE_ANALYTICS_ID@@@
-  DATASERVICE_DATABASE_USERNAME=@@@DATASERVICE_DATABASE_USERNAME@@@
-  DATASERVICE_DATABASE_PASSWORD=@@@DATASERVICE_DATABASE_PASSWORD@@@
-  DATASERVICE_DATABASE_HOSTNAME=@@@DATASERVICE_DATABASE_HOSTNAME@@@
-  DATASERVICE_DATABASE_NAME=@@@DATASERVICE_DATABASE_NAME@@@
-  DATASERVICE_DATABASE_PORT=@@@DATASERVICE_DATABASE_PORT@@@
-  AWS_ACCESS_KEY=@@@AWS_ACCESS_KEY@@@
-  AWS_SECRET_ACCESS_KEY=@@@AWS_SECRET_ACCESS_KEY@@@
-  SYMBOLS_BUCKET_DEFAULT_NAME=@@@SYMBOLS_BUCKET_DEFAULT_NAME@@@
-  SYMBOLS_BUCKET_EXCEPTIONS_USER=@@@SYMBOLS_BUCKET_EXCEPTIONS_USER@@@
-  SYMBOLS_BUCKET_EXCEPTIONS_BUCKET=@@@SYMBOLS_BUCKET_EXCEPTIONS_BUCKET@@@
-  SYMBOLS_BUCKET_DEFAULT_LOCATION=@@@SYMBOLS_BUCKET_DEFAULT_LOCATION@@@
-  ANALYZE_MODEL_FETCHES=True
+The Crash-Stats Django app runs under envconsul, and expects at least the
+following environment variables to be set.
 
 These should be set via Consul in the "socorro/webapp-django" prefix,
-for instance::
+for instance.
 
-  curl -s -X PUT -d "crash-stats.example.com" localhost:8500/v1/kv/socorro/webapp-django/ALLOWED_HOSTS
+NOTE - variables surrounded by @@@ are placeholders and need to be filled in appropriately for your install:
 
-All variables surrounded by `@@@` are placeholders and need to be filled in 
-appropriately for your install.
+.. code-block:: bash
 
+  # Comma-delimited list of valid hostnames, e.g. crash-stats.example.com
+  ALLOWED_HOSTS='@@@ALLOWED_HOSTS@@@'
+  # Socorro Middleware settings.
+  # You probably don't need to change these.
+  MWARE_BASE_URL='http://localhost'
+  MWARE_HTTP_HOST='socorro-middleware'
+  CACHE_MIDDLEWARE=True
+  CACHE_MIDDLEWARE_FILES=False
+  # Your default product name, e.g. "Firefox"
+  DEFAULT_PRODUCT='@@@DEFAULT_PRODUCT@@@'
+  # You most likely want to use memcached
+  CACHE_BACKEND=django.core.cache.backends.memcached.MemcachedCache
+  # Location of your memcached server. Leave as-is for localhost.
+  CACHE_LOCATION='localhost:11211'
+  CACHE_KEY_PREFIX='socorro'
+  # Valid URLs for BrowserID/Persona authentication, e.g. http://crash-stats.example.com
+  BROWSERID_AUDIENCES='@@@BROWSERID_AUDIENCES@@@'
+  # PostgreSQL settings for Django.
+  DATABASE_ENGINE='django.db.backends.postgresql_psycopg2'
+  DATABASE_NAME='@@@DATABASE_NAME@@@'
+  DATABASE_USER='@@@DATABASE_USER@@@'
+  DATABASE_PASSWORD='@@@DATABASE_PASSWORD@@@'
+  DATABASE_HOST='@@@DATABASE_HOST@@@'
+  DATABASE_PORT=@@@DATABASE_PORT@@@
+  # Set this to True if you use HTTPS, otherwise False.
+  SESSION_COOKIE_SECURE=True
+  # Offline web asset (HTML/CSS/JS compression. Leave this on.
+  COMPRESS_OFFLINE=True
+  # Set this to something random.
+  SECRET_KEY='@@@SECRET_KEY@@@'
+  # If you use Google Analytics, put your ID here.
+  GOOGLE_ANALYTICS_ID='@@@GOOGLE_ANALYTICS_ID@@@'
+  # Dataservice is a Mozilla-specific Django middleware.
+  # You almost certainly want to reuse the settings above.
+  DATASERVICE_DATABASE_NAME='@@@DATASERVICE_DATABASE_NAME@@@'
+  DATASERVICE_DATABASE_USERNAME='@@@DATASERVICE_DATABASE_USERNAME@@@'
+  DATASERVICE_DATABASE_PASSWORD='@@@DATASERVICE_DATABASE_PASSWORD@@@'
+  DATASERVICE_DATABASE_HOST='@@@DATASERVICE_DATABASE_HOST@@@'
+  DATASERVICE_DATABASE_PORT=@@@DATASERVICE_DATABASE_PORT@@@
+  # Crash-Stats can let users upload symbols to an S3 bucket.
+  AWS_ACCESS_KEY='@@@AWS_ACCESS_KEY@@@'
+  AWS_SECRET_ACCESS_KEY='@@@AWS_SECRET_ACCESS_KEY@@@'
+  SYMBOLS_BUCKET_DEFAULT_NAME='@@@SYMBOLS_BUCKET_DEFAULT_NAME@@@'
+  SYMBOLS_BUCKET_EXCEPTIONS_USER='@@@SYMBOLS_BUCKET_EXCEPTIONS_USER@@@'
+  SYMBOLS_BUCKET_EXCEPTIONS_BUCKET='@@@SYMBOLS_BUCKET_EXCEPTIONS_BUCKET@@@'
+  SYMBOLS_BUCKET_DEFAULT_LOCATION='@@@SYMBOLS_BUCKET_DEFAULT_LOCATION@@@'
+
+Put this into a file named "webapp-django.conf" in your socorro-config folder. 
+
+Now load the contents of your socorro-config directory into Consul::
+
+  cd ./socorro-config
+  sudo setup-socorro.sh consul
+
+Finally, bring up the tables Django needs in PostgreSQL::
+
+  sudo envconsul -prefix socorro/webapp-django setup-socorro.sh webapp
+
+Create partitioned tables
+-------------------------
+
+Normally this is handled automatically by the cronjob scheduler
+:ref:`crontabber-chapter` but should be run as a one-off to create the PostgreSQL partitioned tables for processor
+to write crashes to:
+::
+  sudo setup-socorro.sh admin
 
 Start services
 --------------
@@ -147,6 +244,7 @@ Both the Django socorro-webapp and the socorro-middleware REST service
 must be running::
 
     sudo systemctl enable socorro-middleware socorro-webapp
+    sudo systemctl start socorro-middleware socorro-webapp
 
 Configure Nginx
 ---------------
@@ -181,7 +279,7 @@ We suggest putting the following into /etc/cron.d/socorro::
 
 More documentation about Crontabber is `available here <https://crontabber.readthedocs.org/en/latest/>`_.
 
-Set up crash-stats web site
+Set up Crash-Stats web site
 ---------------------------
 
 Socorro produces graphs and reports, most are updated once per day.
@@ -198,9 +296,9 @@ above starts to make sense. To do that, you first need to **sign in at
 least once** using the email address you want to identify as a
 superuser. Once you've done that, run the following command::
 
-    cd /data/socorro
-    export SECRET_KEY="..."
-    ./socorro-virtualenv/bin/python webapp-django/manage.py makesuperuser theemail@address.com
+    envconsul -prefix socorro/webapp-django \
+      /data/socorro/socorro-virtualenv/bin/python webapp-django/manage.py \
+      makesuperuser theemail@address.com
 
 Now the user with this email address should see a link to "Admin" in
 the footer.
@@ -256,14 +354,6 @@ The source of this data is going to be very specific to your application,
 you can see how we automate this for crash-stats.mozilla.com in this job:
 
 https://github.com/mozilla/socorro/blob/master/socorro/cron/jobs/fetch_adi_from_hive.py
-
-Create partitioned tables
--------------------------
-
-Normally this is handled automatically by the cronjob scheduler
-:ref:`crontabber-chapter` but can be run as a one-off:
-::
-  python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
 
 Partitioning and data expiration
 --------------------------------
@@ -327,57 +417,15 @@ DEFAULT_JOBS in:
 
 https://github.com/mozilla/socorro/blob/master/socorro/cron/crontabber_app.py
 
+Or, by setting the crontabber jobs as a comma-delimited list:
 
-Symbols S3 uploads
-------------------
+.. code-block:: bash
 
-The webapp has support for uploading symbols. This can be done by the user
-either using an upload form or you can HTTP POST directly in. E.g. with curl.
+  crontabber__jobs='socorro.cron.jobs.laglog.LagLog|5m, socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d, socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00, socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d'
 
-For this to work you need to configure the S3 bucket details. The file
-``webapp-django/crashstats/settings/base.py`` specifies the defaults which
-are all pretty much empty.
+Put this into a file named "crontabber.conf" in your socorro-config folder. 
 
-First of all, you need to configure the AWS credentials. This is done by
-overriding the following keys::
+Now load the contents of your socorro-config directory into Consul::
 
-    AWS_ACCESS_KEY
-    AWS_SECRET_ACCESS_KEY
-
-These settings can not be empty.
-
-Next you have to set up the bucket name. When doing so, if you haven't already
-created the bucket over on the AWS console or other management tools you
-also have to define the location. The bucket name is set by setting the
-following key::
-
-    SYMBOLS_BUCKET_DEFAULT_NAME
-
-And the location is set by setting the following key::
-
-    SYMBOLS_BUCKET_DEFAULT_LOCATION
-
-If you're wondering what the format of the location should be,
-you can see `a list of the constants here <http://boto.readthedocs.org/en/latest/ref/s3.html#boto.s3.connection.Location>`_.
-For example ``us-west-2``.
-
-If you want to have a different bucket name for different user you can
-populate the following setting as per this example:
-
-.. code-block:: python
-
-    SYMBOLS_BUCKET_EXCEPTIONS = {
-        'joe.bloggs@example.com': 'private-crashes.my-bucket',
-    }
-
-That means that when ``joe.bloggs@example.com`` uploads symbols they are
-stored in a different bucket called ``private-crashes.my-bucket``.
-
-If you additionally want to use a different location for this user you
-can enter it as a tuple like this:
-
-.. code-block:: python
-
-    SYMBOLS_BUCKET_EXCEPTIONS = {
-        'joe.bloggs@example.com': ('private-crashes.my-bucket', 'us-east-1'),
-    }
+  cd ./socorro-config
+  sudo setup-socorro.sh consul
