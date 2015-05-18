@@ -7,7 +7,8 @@ from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.helpers import (
     js_date,
     recursive_state_filter,
-    show_bug_link
+    show_bug_link,
+    bugzilla_submit_url,
 )
 
 
@@ -78,3 +79,22 @@ class TestBugzillaLink(TestCase):
         ok_('data-resolution="MESSEDUP"' in output)
         ok_('data-status="CONFUSED"' in output)
         ok_('data-summary="&lt;script&gt;xss()&lt;/script&gt;"' in output)
+
+
+class TestBugzillaSubmitURL(TestCase):
+
+    def test_basic_url(self):
+        url = bugzilla_submit_url()
+        eq_(url, 'https://bugzilla.mozilla.org/enter_bug.cgi')
+
+    def test_kwargs(self):
+        url = bugzilla_submit_url(foo='?&"', numbers=['one', 'two'])
+        ok_(url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?'))
+        ok_('foo=%3F%26%22' in url)
+        ok_('numbers=one' in url)
+        ok_('numbers=two' in url)
+
+    def test_truncate_certain_keys(self):
+        url = bugzilla_submit_url(short_desc='x' * 1000)
+        ok_('x' * 1000 not in url)
+        ok_('x' * (255 - 3) + '...' in url)
