@@ -15,216 +15,10 @@ from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.views import (
     get_report_list_parameters,
 )
-
-
-SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
-    'signature': {
-        'name': 'signature',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'signature',
-    },
-    'product': {
-        'name': 'product',
-        'query_type': 'enum',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'product',
-    },
-    'version': {
-        'name': 'version',
-        'query_type': 'enum',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'version',
-    },
-    'platform': {
-        'name': 'platform',
-        'query_type': 'enum',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'platform',
-    },
-    'process_type': {
-        'name': 'process_type',
-        'query_type': 'enum',
-        'namespace': 'processed_crash',
-        'form_field_choices': ['browser', 'content'],
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'process_type',
-    },
-    'dump': {
-        'name': 'dump',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': False,
-        'is_mandatory': False,
-        'in_database_name': 'dump',
-    },
-    'release_channel': {
-        'name': 'release_channel',
-        'query_type': 'enum',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'release_channel',
-    },
-    'date': {
-        'name': 'date',
-        'query_type': 'date',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'date_processed',
-    },
-    'address': {
-        'name': 'address',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'address',
-    },
-    'build_id': {
-        'name': 'build_id',
-        'query_type': 'number',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'build',
-    },
-    'reason': {
-        'name': 'reason',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'reason',
-    },
-    'java_stack_trace': {
-        'name': 'java_stack_trace',
-        'query_type': 'enum',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'java_stack_trace',
-    },
-    'email': {
-        'name': 'email',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': ['crashstats.view_pii'],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'email',
-    },
-    'url': {
-        'name': 'url',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': None,
-        'permissions_needed': ['crashstats.view_pii'],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'url',
-    },
-    'exploitability': {
-        'name': 'exploitability',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': [
-            'high', 'normal', 'low', 'none', 'unknown', 'error'
-        ],
-        'permissions_needed': ['crashstats.view_exploitability'],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'exploitability',
-    },
-    'user_comments': {
-        'name': 'user_comments',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': [],
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': True,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'user_comments',
-    },
-    'a_test_field': {
-        'name': 'a_test_field',
-        'query_type': 'string',
-        'namespace': 'processed_crash',
-        'form_field_choices': [],
-        'permissions_needed': [],
-        'default_value': None,
-        'is_exposed': False,
-        'is_returned': True,
-        'is_mandatory': False,
-        'in_database_name': 'a_test_field',
-    },
-}
+from crashstats.supersearch.tests.common import (
+    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
+    SuperSearchResponse,
+)
 
 
 class TestViews(BaseTestViews):
@@ -366,8 +160,10 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             if 'product' in params and 'WaterWolf' in params['product']:
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -427,9 +223,9 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 4
-                })
+                }, columns=params['_columns'])
             elif 'product' in params and 'SeaMonkey' in params['product']:
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -459,12 +255,12 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 2
-                })
+                }, columns=params['_columns'])
             elif (
                 'signature' in params and
                 '~nsASDOMWindowEnumerator' in params['signature']
             ):
-                return Response({
+                return SuperSearchResponse({
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -485,7 +281,7 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 1
-                })
+                }, columns=params['_columns'])
             else:
                 return Response({"hits": [], "facets": [], "total": 0})
 
@@ -611,6 +407,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             if '_facets' in params and 'url' in params['_facets']:
                 facets = {
                     "platform": [
@@ -636,7 +434,7 @@ class TestViews(BaseTestViews):
                     ]
                 }
 
-            return Response({
+            return SuperSearchResponse({
                 "hits": [
                     {
                         "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -677,7 +475,7 @@ class TestViews(BaseTestViews):
                 ],
                 "facets": facets,
                 "total": 3
-            })
+            }, columns=params['_columns'])
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
@@ -812,6 +610,8 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            assert '_columns' in params
+
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
             ok_('_results_offset' not in params)
@@ -827,11 +627,11 @@ class TestViews(BaseTestViews):
                     "platform": "Linux",
                     "build_id": 888981
                 })
-            return Response({
+            return SuperSearchResponse({
                 "hits": hits,
                 "facets": "",
                 "total": len(hits)
-            })
+            }, columns=params['_columns'])
 
         rpost.side_effect = mocked_post
         rget.side_effect = mocked_get
