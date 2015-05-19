@@ -3,33 +3,35 @@ from unittest import TestCase
 
 from nose.tools import eq_
 
-from crashstats.manage.utils import (
-    parse_graphics_devices_iterable,
-    string_hex_to_hex_string
-)
+from crashstats.manage import utils
 
 
-SAMPLE_CSV_FILE = os.path.join(
+SAMPLE_CSV_FILE_PCI_DATABASE_COM = os.path.join(
     os.path.dirname(__file__),
     'sample-graphics.csv'
+)
+SAMPLE_CSV_FILE_PCI_IDS = os.path.join(
+    os.path.dirname(__file__),
+    'sample-pci.ids'
 )
 
 
 class TestUtils(TestCase):
 
     def test_string_hex_to_hex_string(self):
-        eq_(string_hex_to_hex_string('919A'), '0x919a')
-        eq_(string_hex_to_hex_string('0x919A'), '0x919a')
+        func = utils.string_hex_to_hex_string
+        eq_(func('919A'), '0x919a')
+        eq_(func('0x919A'), '0x919a')
 
-        eq_(string_hex_to_hex_string('221'), '0x0221')
-        eq_(string_hex_to_hex_string('0221'), '0x0221')
-        eq_(string_hex_to_hex_string('0x0221'), '0x0221')
+        eq_(func('221'), '0x0221')
+        eq_(func('0221'), '0x0221')
+        eq_(func('0x0221'), '0x0221')
 
-    def test_parse_graphics_devices_iterable(self):
-        iterable = open(SAMPLE_CSV_FILE)
-        try:
+    def test_parse_graphics_devices_iterable__pcidatabase(self):
+        with open(SAMPLE_CSV_FILE_PCI_DATABASE_COM) as iterable:
             things = []
-            for thing in parse_graphics_devices_iterable(iterable):
+            function = utils.pcidatabase__parse_graphics_devices_iterable
+            for thing in function(iterable):
                 things.append(thing)
 
             # to be able to make these assertions you really need to
@@ -107,5 +109,32 @@ class TestUtils(TestCase):
             )
             eq_(len(things), 7)
 
-        finally:
-            iterable.close()
+    def test_parse_graphics_devices_iterable__pci_ids(self):
+        with open(SAMPLE_CSV_FILE_PCI_IDS) as iterable:
+            things = []
+            function = utils.pci_ids__parse_graphics_devices_iterable
+            for thing in function(iterable):
+                things.append(thing)
+
+            # to be able to make these assertions you really need to
+            # be familiar with the file sample-graphics.csv
+            # basic test
+            eq_(
+                things[0],
+                {
+                    'adapter_hex': '0x8139',
+                    'adapter_name': 'AT-2500TX V3 Ethernet',
+                    'vendor_hex': '0x0010',
+                    'vendor_name': 'Allied Telesis, Inc'
+                }
+            )
+            eq_(
+                things[1],
+                {
+                    'adapter_hex': '0x0001',
+                    'adapter_name': 'PCAN-PCI CAN-Bus controller',
+                    'vendor_hex': '0x001c',
+                    'vendor_name': 'PEAK-System Technik GmbH'
+                }
+            )
+            eq_(len(things), 6)

@@ -11,8 +11,10 @@ def string_hex_to_hex_string(snippet):
     return '0x' + format(int(snippet, 16), '04x')
 
 
-def parse_graphics_devices_iterable(iterable, delimiter='\t'):
+def pcidatabase__parse_graphics_devices_iterable(iterable, delimiter='\t'):
     """
+    This function is for parsing CSVish files from PCIDatabase.com
+
     yield dicts that contain the following keys:
         * vendor_hex
         * vendor_name
@@ -68,3 +70,58 @@ def parse_graphics_devices_iterable(iterable, delimiter='\t'):
                     # possibly a mistakenly badly formatted piece of
                     # hex string
                     pass
+
+
+def pci_ids__parse_graphics_devices_iterable(iterable):
+    """
+    This function is for parsing the CSVish files from https://pci-ids.ucw.cz/
+
+    yield dicts that contain the following keys:
+        * vendor_hex
+        * vendor_name
+        * adapter_hex
+        * adapter_name
+
+    Rows that start with a `#` are considered comments.
+    The structure is expected to be like this:
+
+        XXX \t Vendor Name 1
+        \t AAA \t Adapter Name 1
+        \t BBB \t Adapter Name 2
+        YYY \t Vendor Name 2
+        \t CCC \t Adapter Name N
+
+    """
+    for line in iterable:
+        if line.startswith('#'):
+            if 'List of known device classes' in line:
+                # There's a section at the bottom of the files which
+                # we don't need to parse.
+                break
+            continue
+        if not line.strip():
+            continue
+        if not line.startswith('\t'):
+            try:
+                vendor_hex, vendor_name = line.strip().split(None, 1)
+            except ValueError:
+                continue
+        else:
+            if (
+                line.strip().startswith(vendor_hex) and
+                len(line.strip().split()) > 2
+            ):
+                _, adapter_hex, adapter_name = line.strip().split(None, 2)
+            else:
+                adapter_hex, adapter_name = line.strip().split(None, 1)
+            try:
+                vendor_hex = string_hex_to_hex_string(vendor_hex)
+                adapter_hex = string_hex_to_hex_string(adapter_hex)
+                yield {
+                    'vendor_hex': vendor_hex,
+                    'vendor_name': vendor_name,
+                    'adapter_hex': adapter_hex,
+                    'adapter_name': adapter_name
+                }
+            except ValueError:
+                continue

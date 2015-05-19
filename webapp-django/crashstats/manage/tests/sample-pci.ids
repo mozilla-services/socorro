@@ -1,0 +1,38 @@
+#
+#	List of PCI ID's SAMPLE
+#
+
+# Vendors, devices and subsystems. Please keep sorted.
+
+# Syntax:
+# vendor  vendor_name
+#	device  device_name				<-- single tab
+#		subvendor subdevice  subsystem_name	<-- two tabs
+
+0010  Allied Telesis, Inc
+# This is a relabelled RTL-8139
+	8139  AT-2500TX V3 Ethernet
+001c  PEAK-System Technik GmbH
+	0001  PCAN-PCI CAN-Bus controller
+		001c 0004  2 Channel CAN Bus SJC1000
+		001c 0005  2 Channel CAN Bus SJC1000 (Optically Isolated)
+003d  Lockheed Martin-Marietta Corp
+# Real TJN ID is e159, but they got it wrong several times --mj
+0059  Tiger Jet Network Inc. (Wrong ID)
+0070  Hauppauge computer works Inc.
+	7801  WinTV HVR-1800 MCE
+0071  Nebula Electronics Ltd.
+0095  Silicon Image, Inc. (Wrong ID)
+	0680  Ultra ATA/133 IDE RAID CONTROLLER CARD
+
+
+# List of known device classes, subclasses and programming interfaces
+
+# Syntax:
+# C class	class_name
+#	subclass	subclass_name  		<-- single tab
+#		prog-if  prog-if_name  	<-- two tabs
+
+C 00  Unclassified device
+	00  Non-VGA unclassified device
+	01  VGA compatible unclassified device
