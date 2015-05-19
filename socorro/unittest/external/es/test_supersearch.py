@@ -84,9 +84,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         })
         self.refresh_index()
 
-        res = self.api.get(_columns=[
-            'date', 'build_id', 'platform', 'signature', 'write_combine_size'
-        ])
+        res = self.api.get()
 
         ok_('hits' in res)
         ok_('total' in res)
@@ -157,8 +155,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # A phrase instead of a term.
         res = self.api.get(
-            app_notes='that I used',  # has terms
-            _columns=['app_notes'],
+            app_notes='that I used'  # has terms
         )
 
         eq_(res['total'], 2)
@@ -317,8 +314,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "has terms" operator.
         res = self.api.get(
-            build_id='2000',  # has terms
-            _columns=['build_id'],
+            build_id='2000'  # has terms
         )
 
         eq_(res['total'], 1)
@@ -326,8 +322,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(res['hits'][0]['build_id'], 2000)
 
         res = self.api.get(
-            build_id='!2000',  # does not have terms
-            _columns=['build_id'],
+            build_id='!2000'  # does not have terms
         )
 
         eq_(res['total'], 2)
@@ -337,8 +332,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "greater than" operator.
         res = self.api.get(
-            build_id='>2000',  # greater than
-            _columns=['build_id'],
+            build_id='>2000'  # greater than
         )
 
         eq_(res['total'], 1)
@@ -347,8 +341,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "greater than or equal" operator.
         res = self.api.get(
-            build_id='>=2000',  # greater than or equal
-            _columns=['build_id'],
+            build_id='>=2000'  # greater than or equal
         )
 
         eq_(res['total'], 2)
@@ -358,8 +351,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "lower than" operator.
         res = self.api.get(
-            build_id='<2000',  # lower than
-            _columns=['build_id'],
+            build_id='<2000'  # lower than
         )
 
         eq_(res['total'], 1)
@@ -368,8 +360,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "lower than or equal" operator.
         res = self.api.get(
-            build_id='<=2000',  # lower than or equal
-            _columns=['build_id'],
+            build_id='<=2000'  # lower than or equal
         )
 
         eq_(res['total'], 2)
@@ -407,8 +398,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "has terms" operator.
         res = self.api.get(
-            accessibility='true',  # is true
-            _columns=['accessibility'],
+            accessibility='true'  # is true
         )
 
         eq_(res['total'], 2)
@@ -417,8 +407,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ok_(hit['accessibility'])
 
         res = self.api.get(
-            accessibility='f',  # is false
-            _columns=['accessibility'],
+            accessibility='f'  # is false
         )
 
         eq_(res['total'], 1)
@@ -503,10 +492,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             last_item = hit['product']
 
         # Several fields.
-        res = self.api.get(
-            _sort=['product', 'platform'],
-            _columns=['product', 'platform'],
-        )
+        res = self.api.get(_sort=['product', 'platform'])
         ok_(res['total'] > 0)
 
         last_product = ''
@@ -633,38 +619,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             BadArgumentError,
             self.api.get,
             _facets=['unkownfield']
-        )
-
-    @minimum_es_version('1.0')
-    def test_get_with_columns(self):
-        self.index_crash({
-            'signature': 'js::break_your_browser',
-            'product': 'WaterWolf',
-            'os_name': 'Windows NT',
-            'date_processed': self.now,
-        })
-        self.refresh_index()
-
-        # Test several facets
-        kwargs = {
-            '_columns': ['signature', 'platform']
-        }
-        res = self.api.get(**kwargs)
-
-        ok_('signature' in res['hits'][0])
-        ok_('platform' in res['hits'][0])
-        ok_('date' not in res['hits'][0])
-
-        # Test errors
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _columns=['unkownfield']
-        )
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            _columns=['fake_field']
         )
 
     def test_get_against_nonexistent_index(self):
