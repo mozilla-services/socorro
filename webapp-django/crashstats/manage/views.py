@@ -38,7 +38,7 @@ from crashstats.tokens.models import Token
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 from . import forms
-from .utils import parse_graphics_devices_iterable
+from . import utils
 
 
 def notice_change(before, after):
@@ -443,14 +443,19 @@ def graphics_devices(request):
             request.FILES
         )
         if upload_form.is_valid():
-            payload = list(
-                parse_graphics_devices_iterable(
-                    upload_form.cleaned_data['file']
-                )
-            )
+            if upload_form.cleaned_data['database'] == 'pcidatabase.com':
+                function = utils.pcidatabase__parse_graphics_devices_iterable
+            else:
+                function = utils.pci_ids__parse_graphics_devices_iterable
+
+            payload = list(function(upload_form.cleaned_data['file']))
             api = GraphicsDevices()
             result = api.post(json.dumps(payload))
-            log(request.user, 'graphicsdevices.post', {'success': result})
+            log(request.user, 'graphicsdevices.post', {
+                'success': result,
+                'database': upload_form.cleaned_data['database'],
+                'no_lines': len(payload),
+            })
             messages.success(
                 request,
                 'Graphics device CSV upload successfully saved.'

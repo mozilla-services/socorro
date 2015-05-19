@@ -916,7 +916,7 @@ class TestViews(BaseTestViews):
         eq_(event.extra['success'], True)
 
     @mock.patch('requests.post')
-    def test_graphics_devices_csv_upload(self, rpost):
+    def test_graphics_devices_csv_upload_pcidatabase_com(self, rpost):
         self._login()
         url = reverse('manage:graphics_devices')
 
@@ -944,7 +944,8 @@ class TestViews(BaseTestViews):
         )
         with open(sample_file) as fp:
             response = self.client.post(url, {
-                'file': fp
+                'file': fp,
+                'database': 'pcidatabase.com',
             })
             eq_(response.status_code, 302)
             ok_(url in response['location'])
@@ -953,6 +954,50 @@ class TestViews(BaseTestViews):
         eq_(event.user, self.user)
         eq_(event.action, 'graphicsdevices.post')
         eq_(event.extra['success'], True)
+        eq_(event.extra['database'], 'pcidatabase.com')
+        eq_(event.extra['no_lines'], 7)
+
+    @mock.patch('requests.post')
+    def test_graphics_devices_csv_upload_pci_ids(self, rpost):
+        self._login()
+        url = reverse('manage:graphics_devices')
+
+        def mocked_post(url, **options):
+            assert '/graphics_devices' in url
+            data = options['data']
+            data = json.loads(data)
+            eq_(
+                data[0],
+                {
+                    'vendor_hex': '0x0010',
+                    'adapter_hex': '0x8139',
+                    'vendor_name': 'Allied Telesis, Inc',
+                    'adapter_name': 'AT-2500TX V3 Ethernet'
+                }
+            )
+            eq_(len(data), 6)
+            return Response('true')
+
+        rpost.side_effect = mocked_post
+
+        sample_file = os.path.join(
+            os.path.dirname(__file__),
+            'sample-pci.ids'
+        )
+        with open(sample_file) as fp:
+            response = self.client.post(url, {
+                'file': fp,
+                'database': 'pci.ids',
+            })
+            eq_(response.status_code, 302)
+            ok_(url in response['location'])
+
+        event, = Log.objects.all()
+        eq_(event.user, self.user)
+        eq_(event.action, 'graphicsdevices.post')
+        eq_(event.extra['success'], True)
+        eq_(event.extra['database'], 'pci.ids')
+        eq_(event.extra['no_lines'], 6)
 
     def test_symbols_uploads(self):
         self._login()

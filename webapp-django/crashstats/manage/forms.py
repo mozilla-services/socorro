@@ -155,6 +155,12 @@ class GraphicsDeviceLookupForm(BaseForm):
 class GraphicsDeviceUploadForm(BaseForm):
 
     file = forms.FileField()
+    database = forms.ChoiceField(
+        choices=(
+            ('pcidatabase.com', 'PCIDatabase.com'),
+            ('pci.ids', 'The PCI ID Repository (https://pci-ids.ucw.cz/)'),
+        )
+    )
 
 
 class SuperSearchFieldForm(BaseForm):
