@@ -4,6 +4,7 @@
 
 import datetime
 import os
+import socorro
 from nose.plugins.attrib import attr
 from nose.tools import eq_
 
@@ -23,7 +24,7 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         super(IntegrationTestServerStatus, self).setUp()
 
         # Create fake revision files
-        self.basedir = os.path.dirname(server_status.__file__)
+        self.basedir = os.path.dirname(socorro.__file__)
         open(os.path.join(
             self.basedir, 'socorro_revision.txt'
         ), 'w').write('42')

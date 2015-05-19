@@ -50,16 +50,22 @@ if [ "$BUILD_TYPE" == "tar" ]; then
     popd
 fi
 
-# record current git revision in install dir
-git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
-cp $BUILD_DIR/stackwalk/revision.txt $BUILD_DIR/application/socorro/external/postgresql/breakpad_revision.txt
+# record current git revision in root of install dir
+git rev-parse HEAD > socorro_revision.txt
+cp $BUILD_DIR/stackwalk/revision.txt breakpad_revision.txt
 
 # Write down build number, if ran by Jenkins
 if [ -n "$BUILD_NUMBER" ]
 then
-  echo "$BUILD_NUMBER" > $BUILD_DIR/JENKINS_BUILD_NUMBER
+  echo "$BUILD_NUMBER" > JENKINS_BUILD_NUMBER
+else
+  echo "unknown" > JENKINS_BUILD_NUMBER
 fi
 
 if [ "$BUILD_TYPE" != "tar" ]; then
     BUILD_DIR=${BUILD_DIR%%/data/socorro}
 fi
+
+# install socorro in local virtualenv
+# this must run at the end to capture any generated files above
+${VIRTUAL_ENV}/bin/python setup.py install
