@@ -10,6 +10,8 @@ import psycopg2
 import urllib
 import re
 
+import socorro
+
 from paste.fixture import TestApp, AppError
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
@@ -945,7 +947,7 @@ class IntegrationTestMiddlewareApp(TestCase):
         from socorro.external.postgresql import server_status
 
         # Create fake revision files
-        self.basedir = os.path.dirname(server_status.__file__)
+        self.basedir = os.path.dirname(socorro.__file__)
         open(os.path.join(
             self.basedir, 'socorro_revision.txt'
         ), 'w').write(socorro_revision)

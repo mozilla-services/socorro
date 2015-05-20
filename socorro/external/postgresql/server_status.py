@@ -5,6 +5,8 @@
 import logging
 import os
 
+from pkg_resources import resource_string
+
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 
@@ -83,13 +85,8 @@ class ServerStatus(PostgreSQLBase):
             schema_revision = "Unknown"
 
         # Find the current breakpad and socorro revisions
-        basedir = os.path.dirname(__file__)
-        socorro_revision = open(
-            os.path.join(basedir, 'socorro_revision.txt')
-        ).read().strip()
-        breakpad_revision = open(
-            os.path.join(basedir, 'breakpad_revision.txt')
-        ).read().strip()
+        socorro_revision = resource_string('socorro', 'socorro_revision.txt')
+        breakpad_revision = resource_string('socorro', 'breakpad_revision.txt')
 
         return {
             "hits": stats,
