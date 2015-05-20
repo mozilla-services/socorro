@@ -64,8 +64,8 @@ class SkipList(PostgreSQLBase):
         sql_params = [params.category, params.rule]
         connection = self.database.connection()
         try:
-            cur = connection.cursor()
-            cur.execute(sql, sql_params)
+            with connection.cursor() as cur:
+                cur.execute(sql, sql_params)
             connection.commit()
         except psycopg2.Error:
             connection.rollback()

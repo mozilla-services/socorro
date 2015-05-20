@@ -21,9 +21,23 @@ from socorro.unittest.testbase import TestCase
 
 #------------------------------------------------------------------------------
 def sequencer(*args):
+    list_of_args =  list(args)
     def foo(*fargs, **fkwargs):
-        for x in args:
-            yield x
+        try:
+            return list_of_args.pop()
+        except IndexError:
+            return None
+    return foo
+
+
+#------------------------------------------------------------------------------
+def generator_for_sequence(*args):
+    list_of_args =  list(args)
+    def foo(*fargs, **fkwargs):
+        try:
+            yield list_of_args.pop()
+        except IndexError:
+            return
     return foo
 
 
@@ -93,21 +107,21 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
         eq_(raw_dumps_files, dump_names)
 
     #--------------------------------------------------------------------------
+    # this test, tests nothing
     def test_new_crashes(self):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
 
-        crash_path = sequencer('./6611a662-e70f-4ba5-a397-69a3a2121129.json',
-                               './7611a662-e70f-4ba5-a397-69a3a2121129.json',
-                               './8611a662-e70f-4ba5-a397-69a3a2121129.json',
-                               )
-        sub_walker.new_crashes = mock.Mock(side_effect=crash_path)
-        new_crashes = sub_walker.new_crashes()
+        sequence =  [
+            './6611a662-e70f-4ba5-a397-69a3a2121129.json',
+            './7611a662-e70f-4ba5-a397-69a3a2121129.json',
+            './8611a662-e70f-4ba5-a397-69a3a2121129.json',
+        ]
+        crash_path =  generator_for_sequence(*sequence)
+        sub_walker.new_crashes = crash_path
+        for a_row in sub_walker.new_crashes():
+            eq_(a_row, sequence.pop())
 
-        ok_(isinstance(new_crashes.next(), str))
-        eq_(new_crashes.next(),
-            './7611a662-e70f-4ba5-a397-69a3a2121129.json')
-        ok_(new_crashes.next().endswith(".json"))
 
 
 #==============================================================================
@@ -141,23 +155,25 @@ class TestDBSamplingCrashSource(TestCase):
         config = self.get_standard_config()
         db_sampling = DBSamplingCrashSource(config)
 
-        m_execute = mock.Mock()
-        expected = sequencer('114559a5-d8e6-428c-8b88-1c1f22120314',
-                             'c44245f4-c93b-49b8-86a2-c15dc3a695cb')
+        m_execute = mock.MagicMock()
+        sequence =  [
+            '114559a5-d8e6-428c-8b88-1c1f22120314',
+            'c44245f4-c93b-49b8-86a2-c15dc3a695cb'
+        ]
+        expected = sequencer(*tuple(sequence))
 
-        db_sampling.new_crashes = mock.Mock(side_effect=expected)
-        m_cursor = mock.Mock()
-        m_cursor.execute = m_execute
-        m_cursor.fetchone = db_sampling.new_crashes
-        conn = mock.Mock()
-        conn.cursor.return_value = m_cursor
+        conn = mock.MagicMock()
+        conn.cursor.return_value.__enter__().fetchone =  expected
 
-        r = dbapi2_util.execute_query_iter(conn, config.sql)
-        eq_(r.next().next(),
-                         '114559a5-d8e6-428c-8b88-1c1f22120314')
-        eq_(conn.cursor.call_count, 1)
-        eq_(m_cursor.execute.call_count, 1)
-        m_cursor.execute.assert_called_once_with(config.sql, None)
+        for a_row in dbapi2_util.execute_query_iter(conn, config.sql):
+            eq_(a_row, sequence.pop())
+
+        conn.cursor.assert_called_once_with()
+        conn.cursor.return_value.__enter__.return_value.execute \
+            .assert_called_once_with(
+                config.sql,
+                None
+            )
 
     #--------------------------------------------------------------------------
     def test_get_raw_crash(self):
@@ -283,10 +299,9 @@ class TestSubmitterApp(TestCase):
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
-        itera = sub.source_iterator()
 
-        sequence_generator = sequencer(1, 2, 3)
-        sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
+        sub.source.new_crashes = lambda: iter([1, 2, 3])
+        itera = sub.source_iterator()
 
         eq_(itera.next(), ((1,), {}))
         eq_(itera.next(), ((2,), {}))
@@ -301,8 +316,7 @@ class TestSubmitterApp(TestCase):
         sub._setup_source_and_destination()
         itera = sub.source_iterator()
 
-        sequence_generator = sequencer(1, 2, 3)
-        sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
+        sub.source.new_crashes = lambda: iter([1, 2, 3])
 
         eq_(itera.next(), ((1,), {}))
         eq_(itera.next(), ((2,), {}))
@@ -320,8 +334,7 @@ class TestSubmitterApp(TestCase):
         sub._setup_task_manager()
         itera = sub.source_iterator()
 
-        sequence_generator = sequencer(1, 2, 3)
-        sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
+        sub.source.new_crashes = lambda: iter([1, 2, 3])
 
         eq_(itera.next(), ((1,), {}))
         eq_(itera.next(), ((2,), {}))
@@ -339,8 +352,7 @@ class TestSubmitterApp(TestCase):
         sub._setup_task_manager()
         itera = sub.source_iterator()
 
-        sequence_generator = sequencer(1, 2, 3)
-        sub.source.new_crashes = mock.Mock(side_effect=sequence_generator)
+        sub.source.new_crashes = lambda: iter([1, 2, 3])
 
         eq_(itera.next(), ((1,), {}))
         assert_raises(StopIteration, itera.next)

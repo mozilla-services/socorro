@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from mock import Mock
+from mock import Mock, MagicMock
 from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql import dbapi2_util
@@ -14,11 +14,11 @@ class TestDBAPI2Helper(TestCase):
     def test_single_value_sql1(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17,),))
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchall = m_fetchall
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         r = dbapi2_util.single_value_sql(conn, "select 17")
         eq_(r, 17)
@@ -29,11 +29,11 @@ class TestDBAPI2Helper(TestCase):
     def test_single_value_sql2(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17,),))
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchall = m_fetchall
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         dbapi2_util.single_value_sql(conn, "select 17", (1, 2, 3))
         eq_(conn.cursor.call_count, 1)
@@ -43,11 +43,11 @@ class TestDBAPI2Helper(TestCase):
     def test_single_value_sql3(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=None)
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchall = m_fetchall
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         assert_raises(dbapi2_util.SQLDidNotReturnSingleValue,
                           dbapi2_util.single_value_sql,
@@ -61,11 +61,11 @@ class TestDBAPI2Helper(TestCase):
     def test_single_row_sql1(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17, 22),))
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchall = m_fetchall
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         r = dbapi2_util.single_row_sql(conn, "select 17, 22")
         eq_(r, (17, 22))
@@ -76,11 +76,11 @@ class TestDBAPI2Helper(TestCase):
     def test_single_value_sql5(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=((17, 22),))
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchall = m_fetchall
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         dbapi2_util.single_row_sql(conn, "select 17, 22", (1, 2, 3))
         eq_(conn.cursor.call_count, 1)
@@ -90,11 +90,11 @@ class TestDBAPI2Helper(TestCase):
     def test_single_value_sql4(self):
         m_execute = Mock()
         m_fetchall = Mock(return_value=None)
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchall = m_fetchall
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         assert_raises(dbapi2_util.SQLDidNotReturnSingleRow,
                           dbapi2_util.single_row_sql,
@@ -114,15 +114,19 @@ class TestDBAPI2Helper(TestCase):
             r = returns.pop(0)
             return r
         m_fetchone = Mock(side_effect=foo)
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchone = m_fetchone
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
-        zipped = zip(dbapi2_util.execute_query_iter(conn,
-                                               "select * from somewhere"),
-                     expected)
+        zipped = zip(
+            dbapi2_util.execute_query_iter(
+                conn,
+                "select * from somewhere"
+            ),
+            expected
+        )
         for x, y in zipped:
             eq_(x, y)
         eq_(conn.cursor.call_count, 1)
@@ -139,11 +143,11 @@ class TestDBAPI2Helper(TestCase):
             r = returns.pop(0)
             return r
         m_fetchone = Mock(side_effect=foo)
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
         m_cursor.fetchone = m_fetchone
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         zipped = zip(dbapi2_util.execute_query_iter(conn,
                                                "select * from somewhere"),
@@ -157,10 +161,10 @@ class TestDBAPI2Helper(TestCase):
 
     def test_execute_no_results(self):
         m_execute = Mock()
-        m_cursor = Mock()
+        m_cursor = MagicMock()
         m_cursor.execute = m_execute
-        conn = Mock()
-        conn.cursor.return_value = m_cursor
+        conn = MagicMock()
+        conn.cursor.return_value.__enter__.return_value = m_cursor
 
         dbapi2_util.execute_no_results(
           conn,

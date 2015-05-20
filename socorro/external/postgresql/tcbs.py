@@ -248,9 +248,9 @@ def latestEntryBeforeOrEqualTo(connection, aDate, product, version):
                     AND product_name = %s
                     AND version_string = %s
                 """
-    cursor = connection.cursor()
     try:
-        result = db.singleValueSql(cursor, sql, (aDate, product, version))
+        with connection.cursor() as cursor:
+            result = db.singleValueSql(cursor, sql, (aDate, product, version))
         connection.commit()
     except:
         result = None
