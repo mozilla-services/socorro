@@ -54,6 +54,10 @@ fi
 git rev-parse HEAD > socorro_revision.txt
 cp $BUILD_DIR/stackwalk/revision.txt breakpad_revision.txt
 
+# TODO remove these when we no longer need to support pre-RPM releases
+cp socorro_revision.txt $BUILD_DIR/application
+cp breakpad_revision.txt $BUILD_DIR/application
+
 # Write down build number, if ran by Jenkins
 if [ -n "$BUILD_NUMBER" ]
 then
