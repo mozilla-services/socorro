@@ -1,5 +1,5 @@
-Socorro
--------
+Socorro Turbo
+-------------
 
 A server for collecting, processing, and displaying crash reports from
 clients using the [Breakpad libraries](http://code.google.com/p/google-breakpad/)
