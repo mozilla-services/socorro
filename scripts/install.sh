@@ -31,11 +31,7 @@ fi
 
 # record current git revision in root of install dir
 git rev-parse HEAD > socorro_revision.txt
-cp $BUILD_DIR/stackwalk/revision.txt breakpad_revision.txt
-
-# TODO remove these when we no longer need to support pre-RPM releases
-cp socorro_revision.txt $BUILD_DIR/application/socorro
-cp breakpad_revision.txt $BUILD_DIR/application/socorro
+cp stackwalk/revision.txt breakpad_revision.txt
 
 # Write down build number, if ran by Jenkins
 if [ -n "$BUILD_NUMBER" ]
@@ -67,6 +63,11 @@ rsync -a alembic $BUILD_DIR/application
 rsync -a webapp-django $BUILD_DIR/
 # because this file is served from the parent of the `webapp-django/` directory
 cp contribute.json $BUILD_DIR/
+
+# TODO remove these when we no longer need to support pre-RPM releases
+cp socorro_revision.txt $BUILD_DIR/application/socorro
+cp breakpad_revision.txt $BUILD_DIR/application/socorro
+
 
 if [ "$BUILD_TYPE" == "tar" ]; then
     pushd $BUILD_DIR/application/scripts/config
