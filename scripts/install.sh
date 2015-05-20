@@ -41,10 +41,6 @@ else
   echo "unknown" > JENKINS_BUILD_NUMBER
 fi
 
-if [ "$BUILD_TYPE" != "tar" ]; then
-    BUILD_DIR=${BUILD_DIR%%/data/socorro}
-fi
-
 # install socorro in local virtualenv
 # this must run at the end to capture any generated files above
 ${VIRTUAL_ENV}/bin/python setup.py install
@@ -73,4 +69,6 @@ if [ "$BUILD_TYPE" == "tar" ]; then
     pushd $BUILD_DIR/application/scripts/config
     for file in *.py.dist; do cp $file `basename $file .dist`; done
     popd
+else
+    BUILD_DIR=${BUILD_DIR%%/data/socorro}
 fi
