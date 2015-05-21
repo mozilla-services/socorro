@@ -174,12 +174,17 @@ def search_results(request):
         x for x in data['columns'] if x in allowed_fields
     ]
 
-    params['_columns'] = data['columns']
+    params['_columns'] = list(data['columns'])
 
     # The uuid is always displayed in the UI so we need to make sure it is
     # always returned by the model.
     if 'uuid' not in params['_columns']:
         params['_columns'].append('uuid')
+
+    # The `uuid` field is a special case, it will not be displayed like
+    # normal columns.
+    if 'uuid' in data['columns']:
+        data['columns'].remove('uuid')
 
     try:
         current_page = int(request.GET.get('page', 1))
