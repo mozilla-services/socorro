@@ -13,6 +13,12 @@ def google_analytics(request):
     }
 
 
+def pingdom_rum(request):
+    return {
+        'PINGDOM_RUM_ID': getattr(settings, 'PINGDOM_RUM_ID', None),
+    }
+
+
 def browserid(request):
     # by making this a function, it means we only need to run this
     # when ``redirect_next()`` is called
