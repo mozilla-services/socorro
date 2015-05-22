@@ -47,7 +47,26 @@ class LagLog(BaseCronApp):
             'replication database servers: %s',
             each_server
         )
+        # print "self.config", repr(self.config)
         for now, client_addr, sent_location, replay_location in each_server:
+            if sent_location is None:
+                self.config.logger.warning(
+                    'sent_location comes back as NULL from '
+                    'pg_stat_replication (now:%s, database:%s)' % (
+                        now,
+                        self.config.database.database_name
+                    )
+                )
+                continue
+            if replay_location is None:
+                self.config.logger.warning(
+                    'replay_location comes back as NULL from '
+                    'pg_stat_replication (now:%s, database:%s)' % (
+                        now,
+                        self.config.database.database_name
+                    )
+                )
+                continue
             sent_location = self.xlog_transform(sent_location)
             replay_location = self.xlog_transform(replay_location)
             lag = sent_location - replay_location
