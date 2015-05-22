@@ -217,7 +217,7 @@ support for Processor to put both unprocessed and processed crashes into S3:
   # Store the crash in multiple locations
   destination__crashstorage_class='socorro.external.crashstorage_base.PolyCrashStorage'
   # Specify crash storage types which will be used
-  destination__storage_classes='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.boto.crashstorage.BotoS3CrashStorage'
+  destination__storage_classes='socorro.external.boto.crashstorage.BotoS3CrashStorage, socorro.external.es.crashstorage.ESCrashStorage'
   # Store in S3 first
   destination__storage0__crashstorage_class='socorro.external.boto.crashstorage.BotoS3CrashStorage'
   # Store in Elasticsearch second
