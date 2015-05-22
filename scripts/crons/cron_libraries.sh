@@ -70,7 +70,7 @@ do
   techo "Phase 1: end"
 done
 
-MANUAL_VERSION_OVERRIDE="38.0.5 39.0 40.0a2 41.0a1"
+MANUAL_VERSION_OVERRIDE="38.0.5 39.0 40.0a2 41.0a1 38.0.5b99 39.0b1"
 techo "Phase 2: start"
 for I in Firefox
 do
