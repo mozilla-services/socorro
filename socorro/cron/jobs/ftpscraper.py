@@ -387,7 +387,8 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     def _is_final_beta(self, version):
         # If this is a XX.0 version in the release channel,
         # return True otherwise, False
-        return version.endswith('.0')
+        # Make a special exception for the out-of-cycle 38.0.5
+        return version.endswith('.0') or version == '38.0.5'
 
     def scrapeJsonReleases(self, connection, product_name):
         prod_url = urljoin(self.config.base_url, product_name, '')
