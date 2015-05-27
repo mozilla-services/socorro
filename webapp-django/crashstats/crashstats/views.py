@@ -1382,14 +1382,6 @@ def report_list(request, partial=None, default_context=None):
                 include_raw_crash = True
                 break
 
-        api_columns = [x['key'] for x in context['columns']]
-        # The correlations tab requires some keys to always be there. Since
-        # they are low cost, we add them here, to keep the advantages of the
-        # shared cache between the two tabs.
-        api_columns += [
-            'platform', 'version', 'release_channel', 'install_time', 'date'
-        ]
-
         context['include_raw_crash'] = include_raw_crash
 
         # some column keys have ids that aren't real fields,
