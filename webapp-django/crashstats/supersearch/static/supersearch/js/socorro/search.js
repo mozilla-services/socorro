@@ -427,7 +427,7 @@ $(function () {
 
         currentMode.addTerm(
             $(this).data('field'),
-            $(this).text().trim()
+            $(this).data('content')
         );
 
         // And then run the new, corresponding search.
