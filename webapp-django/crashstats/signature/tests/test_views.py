@@ -375,7 +375,8 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "user_comments": "hello there people!"
+                            "user_comments": "hello there people!",
+                            "useragent_locale": "locale1"
                         },
                         {
                             "date": "2017-01-31T23:12:57",
@@ -383,7 +384,8 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "user_comments": "I love Mozilla"
+                            "user_comments": "I love Mozilla",
+                            "useragent_locale": "locale2"
                         },
                         {
                             "date": "2017-01-31T23:12:57",
@@ -391,7 +393,8 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "user_comments": "this product is awesome"
+                            "user_comments": "this product is awesome",
+                            "useragent_locale": "locale3"
                         },
                         {
                             "date": "2017-01-31T23:12:57",
@@ -399,7 +402,8 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "user_comments": "WaterWolf Y U SO GOOD?"
+                            "user_comments": "WaterWolf Y U SO GOOD?",
+                            "useragent_locale": "locale4"
                         }
                     ],
                     "total": 4
@@ -429,6 +433,7 @@ class TestViews(BaseTestViews):
         ok_('Crash ID' in response.content)
         ok_('hello there' in response.content)
         ok_('WaterWolf Y U SO GOOD' in response.content)
+        ok_('locale1' in response.content)
 
     @mock.patch('requests.get')
     def test_signature_comments_pagination(self, rget):
