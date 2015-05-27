@@ -47,18 +47,15 @@
                         >
                             {{ crash[column] }}
                         </a>
+                        &nbsp;
+                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                            Add term
+                        </a>
                         {% else %}
                         <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             {{ crash[column] }}
                         </a>
                         {% endif %}
-                    {% endif %}
-
-                    {% if column == 'signature' %}
-                    &nbsp;
-                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                        Add term
-                    </a>
                     {% endif %}
 
                 </td>
