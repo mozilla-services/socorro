@@ -900,11 +900,17 @@ class BetaVersionRule(Rule):
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
+            # Sanitize the build id to avoid errors during the SQL query.
+            try:
+                build_id = int(processed_crash['build'])
+            except ValueError:
+                build_id = None
+
             real_version = self._get_version_data(
                 processed_crash['product'],
                 processed_crash['version'],
                 processed_crash['release_channel'],
-                processed_crash['build'],
+                build_id,
             )
 
             if real_version:
