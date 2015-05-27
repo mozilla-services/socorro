@@ -9,6 +9,8 @@
             <tr>
                 <th scope="col" class="crash-id">Crash ID</th>
                 <th scope="col">Comment</th>
+                <th scope="col">Date</th>
+                <th scope="col">Locale</th>
             </tr>
         </thead>
         <tbody>
@@ -21,6 +23,12 @@
                 </td>
                 <td>
                     {{ crash.user_comments }}
+                </td>
+                <td>
+                    {{ crash.date | human_readable_iso_date }}
+                </td>
+                <td>
+                    {{ crash.useragent_locale }}
                 </td>
             </tr>
             {% endfor %}
