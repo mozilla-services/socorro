@@ -268,7 +268,7 @@ def signature_comments(request):
 
     params['signature'] = '=' + signature
     params['user_comments'] = '!__null__'
-    params['_columns'] = ['uuid', 'user_comments']
+    params['_columns'] = ['uuid', 'user_comments', 'date', 'useragent_locale']
     params['_results_number'] = results_per_page
     params['_results_offset'] = data['results_offset']
     params['_facets'] = []  # We don't need no facets.
