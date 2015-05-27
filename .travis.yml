@@ -21,7 +21,6 @@ before_install:
   # Note! bin/elasticsearch will start ES in the background automatically.
   #    # That's why this works without using a service or a trailing &
   - ./elasticsearch-0.90.10/bin/elasticsearch
-  - pip install --no-deps -r requirements.txt
 
 install: true
 
