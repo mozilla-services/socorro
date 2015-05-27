@@ -8,8 +8,16 @@ import elasticsearch
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
+from copy import deepcopy
+
+from configman.dotdict import DotDict
+
 from socorro.external import BadArgumentError
-from socorro.external.es.crashstorage import ESCrashStorage
+from socorro.external.crashstorage_base import Redactor
+from socorro.external.es.crashstorage import (
+    ESCrashStorage,
+    ESCrashStorageNoStackwalkerOutput
+)
 from socorro.external.es.connection_context import ConnectionContext
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 from socorro.lib import datetimeutil
@@ -35,6 +43,9 @@ a_processed_crash = {
     'flash_version': '[blank]',
     'hangid': None,
     'id': 361399767,
+    'json_dump': {
+        'things': 'stackwalker output',
+    },
     'install_age': 22385,
     'last_crash': None,
     'os_name': 'Linux',
@@ -59,7 +70,33 @@ a_processed_crash = {
     'user_id': None,
     'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408',
     'version': '13.0a1',
+    'upload_file_minidump_flash1':  {
+        'things':  'untouched',
+        'json_dump':  'stackwalker output',
+    },
+    'upload_file_minidump_flash2':  {
+        'things':  'untouched',
+        'json_dump':  'stackwalker output',
+    },
+    'upload_file_minidump_browser':  {
+        'things':  'untouched',
+        'json_dump':  'stackwalker output',
+    },
 }
+
+a_processed_crash_with_no_stackwalker = deepcopy(a_processed_crash)
+a_processed_crash_with_no_stackwalker['date_processed'] = \
+    '2012-04-08T10:56:41+00:00'
+del a_processed_crash_with_no_stackwalker['json_dump']
+del a_processed_crash_with_no_stackwalker['upload_file_minidump_flash1'][
+    'json_dump'
+]
+del a_processed_crash_with_no_stackwalker['upload_file_minidump_flash2'][
+    'json_dump'
+]
+del a_processed_crash_with_no_stackwalker['upload_file_minidump_browser'][
+    'json_dump'
+]
 
 a_raw_crash = {
     'foo': 'alpha',
@@ -268,6 +305,64 @@ class TestESCrashStorage(ElasticsearchTestCase):
             body=document,
             **additional
         )
+
+    #-------------------------------------------------------------------------
+    @mock.patch('socorro.external.es.connection_context.elasticsearch')
+    def test_success_with_no_stackwalker_class(self, espy_mock):
+        """Test a successful index of a crash report.
+        """
+        modified_config = deepcopy(self.config)
+        modified_config.es_redactor = DotDict()
+        modified_config.es_redactor.redactor_class = Redactor
+        modified_config.es_redactor.forbidden_keys = (
+            "json_dump, "
+            "upload_file_minidump_flash1.json_dump, "
+            "upload_file_minidump_flash2.json_dump, "
+            "upload_file_minidump_browser.json_dump"
+        )
+
+        # It's mocks all the way down.
+        sub_mock = mock.MagicMock()
+        espy_mock.Elasticsearch.return_value = sub_mock
+
+        es_storage = ESCrashStorageNoStackwalkerOutput(config=modified_config)
+
+        crash_id = a_processed_crash['uuid']
+
+        # Submit a crash like normal, except that the back-end ES object is
+        # mocked (see the decorator above).
+        es_storage.save_raw_and_processed(
+            raw_crash=a_raw_crash,
+            dumps=None,
+            processed_crash=a_processed_crash,
+            crash_id=crash_id,
+        )
+
+        # Ensure that the ES objects were instantiated by ConnectionContext.
+        ok_(espy_mock.Elasticsearch.called)
+
+        # Ensure that the IndicesClient was also instantiated (this happens in
+        # IndexCreator but is part of the crashstorage workflow).
+        ok_(espy_mock.client.IndicesClient.called)
+
+        # The actual call to index the document (crash).
+        document = {
+            'crash_id': crash_id,
+            'processed_crash': a_processed_crash_with_no_stackwalker,
+            'raw_crash': a_raw_crash
+        }
+
+        additional = {
+            'doc_type': 'crash_reports',
+            'id': crash_id,
+            'index': 'socorro_integration_test_reports'
+        }
+
+        sub_mock.index.assert_called_with(
+            body=document,
+            **additional
+        )
+
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_fatal_failure(self, espy_mock):

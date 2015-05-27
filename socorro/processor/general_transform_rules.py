@@ -68,3 +68,5 @@ class OSInfoRule(Rule):
         )
 
         return True
+
+

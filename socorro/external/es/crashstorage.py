@@ -4,7 +4,6 @@
 
 import elasticsearch
 
-from socorro.external import BadArgumentError
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.index_creator import IndexCreator
 from socorro.lib import datetimeutil
@@ -34,10 +33,9 @@ class ESCrashStorage(CrashStorageBase):
         reference_value_from='resource.elasticsearch',
     )
 
-    # This cache reduces attempts to create indices, thus lowering overhead each
-    # time a document is indexed.
+    # This cache reduces attempts to create indices, thus lowering overhead
+    # each time a document is indexed.
     indices_cache = set()
-
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -139,3 +137,54 @@ class ESCrashStorage(CrashStorageBase):
                 exc_info=True
             )
             raise
+
+
+from copy import deepcopy
+from socorro.lib.converters import change_default
+from socorro.external.crashstorage_base import Redactor
+
+
+#==============================================================================
+class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
+    required_config = Namespace()
+    required_config.namespace('es_redactor')
+    required_config.es_redactor.add_option(
+        name="redactor_class",
+        doc="the name of the class that implements a 'redact' method",
+        default='socorro.external.crashstorage_base.Redactor',
+    )
+    required_config.es_redactor.forbidden_keys = change_default(
+        Redactor,
+        "forbidden_keys",
+        "json_dump, "
+        "upload_file_minidump_flash1.json_dump, "
+        "upload_file_minidump_flash2.json_dump, "
+        "upload_file_minidump_browser.json_dump"
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        """Init, you know.
+        """
+        super(ESCrashStorageNoStackwalkerOutput, self).__init__(
+            config,
+            quit_check_callback
+        )
+        self.redactor = config.es_redactor.redactor_class(config.es_redactor)
+
+    #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
+                               crash_id):
+        """This is the only write mechanism that is actually employed in normal
+        usage.
+        """
+
+        copied_processed_crash = deepcopy(processed_crash)
+        self.redactor.redact(copied_processed_crash)
+
+        super(ESCrashStorageNoStackwalkerOutput, self).save_raw_and_processed(
+            raw_crash,
+            dumps,
+            copied_processed_crash,
+            crash_id
+        )
