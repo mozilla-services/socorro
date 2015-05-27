@@ -1992,6 +1992,16 @@ class TestBetaVersion(TestCase):
         eq_(processed_crash['version'], '5.0a1')
         eq_(len(processor_meta.processor_notes), 0)
 
+        # An incorrect build id.
+        transaction.return_value = tuple()
+        processed_crash.version = '5.0'
+        processed_crash.release_channel = 'beta'
+        processed_crash.build = '",381,,"'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        eq_(processed_crash['version'], '5.0b0')
+        eq_(len(processor_meta.processor_notes), 1)
+
         # A beta crash with an unknown version, gets a special mark.
         transaction.return_value = tuple()
         processed_crash.version = '3.0'
@@ -2000,4 +2010,4 @@ class TestBetaVersion(TestCase):
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         eq_(processed_crash['version'], '3.0b0')
-        eq_(len(processor_meta.processor_notes), 1)
+        eq_(len(processor_meta.processor_notes), 2)
