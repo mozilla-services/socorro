@@ -3,7 +3,7 @@ server {
     server_name socorro-middleware;
 
     location / {
-        uwsgi_pass unix:/var/run/uwsgi/socorro-middleware.sock;
+        uwsgi_pass unix:/var/run/uwsgi/socorro/socorro-middleware.sock;
         include uwsgi_params;
 
         # NOTE - this service has no access control and is not safe

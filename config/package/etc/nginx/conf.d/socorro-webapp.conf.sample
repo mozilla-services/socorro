@@ -6,7 +6,7 @@ server {
     client_max_body_size 1g;
 
     location / {
-        uwsgi_pass unix:/var/run/uwsgi/socorro-webapp.sock;
+        uwsgi_pass unix:/var/run/uwsgi/socorro/socorro-webapp.sock;
         include uwsgi_params;
     }
 
