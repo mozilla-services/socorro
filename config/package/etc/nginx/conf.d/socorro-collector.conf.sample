@@ -6,7 +6,7 @@ server {
     client_max_body_size 20m;
 
     location / {
-        uwsgi_pass unix:/var/run/uwsgi/socorro-collector.sock;
+        uwsgi_pass unix:/var/run/uwsgi/socorro/socorro-collector.sock;
         include uwsgi_params;
     }
 }
