@@ -87,6 +87,9 @@
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>
+                    {% if facet != 'signature' %}
+                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">{{ hit.term }}</a>
+                    {% else %}
                     <a
                     {% if waffle.switch('signature-report') %}
                         href="{{ url('signature:signature_report') }}{{ change_query_string(
@@ -103,7 +106,6 @@
                     >
                         {{ hit.term }}
                     </a>
-                    {% if facet == 'signature' %}
                     &nbsp;
                     <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">Add term</a>
                     {% endif %}
