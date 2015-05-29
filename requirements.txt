@@ -189,3 +189,5 @@ python-decouple==2.3
 dj-database-url==0.3.0
 # sha256: ajjL5icmByljPnRLWpSjWtvNDCJ3IJzPzD21yleO9cc
 toposort==1.1
+# sha256: RQlJFVzISXytrJZqgYeXSNs8GMz2QMsnMX4BSJr1hyQ
+datadog==0.5.0
