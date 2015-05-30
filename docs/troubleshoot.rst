@@ -28,7 +28,7 @@ state of the dependencies: http://crash-stats/crontabber-state/
 
 If you're seeing "Internal Server Error", you can get Django to send you
 email with stack traces by adding this to
-/data/socorro/webapp-django/crashstats/settings/local.py::
+/data/socorro/webapp-django/crashstats/settings/base.py::
 
   # Recipients of traceback emails and other notifications.
   ADMINS = ( 
