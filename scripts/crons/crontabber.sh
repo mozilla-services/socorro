@@ -14,7 +14,7 @@ LOG=/var/log/socorro/crontabber.log
 if [ -f $CT_INI ] && [ -r $CT_INI ]; then
     $CMD --admin.conf=$CT_INI >> $LOG 2>&1
 else
-    envconsul -prefix socorro/common -prefix socorro/crontabber bash -c "$CMD" >> $LOG 2>&1
+    envconsul -once -prefix socorro/common -prefix socorro/crontabber bash -c "$CMD" >> $LOG 2>&1
 fi
 EXIT_CODE=$?
 unlock $NAME
