@@ -59,7 +59,8 @@ class HTTPSymbolSupplier : public SimpleSymbolSupplier {
   // |local_paths| are directories to query for symbols before checking URLs.
   HTTPSymbolSupplier(const vector<string>& server_urls,
                      const string& cache_path,
-                     const vector<string>& local_paths);
+                     const vector<string>& local_paths,
+                     const string& tmp_path);
   virtual ~HTTPSymbolSupplier();
 
   // Returns the path to the symbol file for the given module.  See the
@@ -85,11 +86,12 @@ class HTTPSymbolSupplier : public SimpleSymbolSupplier {
  private:
   bool FetchSymbolFile(const CodeModule* module, const SystemInfo* system_info);
 
-  static bool FetchURLToFile(CURL* curl, const string& url, const string& file);
+  bool FetchURLToFile(CURL* curl, const string& url, const string& file);
   bool SymbolWasError(const CodeModule* module, const SystemInfo* system_info);
 
   vector<string> server_urls_;
   string cache_path_;
+  string tmp_path_;
   std::set<std::pair<string,string>> error_symbols_;
   CURL* curl_;
 };

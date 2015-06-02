@@ -90,15 +90,21 @@ static vector<string> vector_from(const string& front,
 
 HTTPSymbolSupplier::HTTPSymbolSupplier(const vector<string>& server_urls,
                                        const string& cache_path,
-				       const vector<string>& local_paths)
+				       const vector<string>& local_paths,
+                                       const string& tmp_path)
   : SimpleSymbolSupplier(vector_from(cache_path, local_paths)),
     server_urls_(server_urls),
     cache_path_(cache_path),
+    tmp_path_(tmp_path),
     curl_(curl_easy_init()) {
   for (auto i = server_urls_.begin(); i < server_urls_.end(); ++i) {
     if (*(i->end() - 1) != '/') {
       i->push_back('/');
     }
+  }
+  // Remove any trailing slash on tmp_path.
+  if (!tmp_path_.empty() && tmp_path_.back() == '/') {
+    tmp_path_.erase(tmp_path_.end() - 1);
   }
 }
 
@@ -253,7 +259,7 @@ bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
                                         const string& file) {
   BPLOG(INFO) << "HTTPSymbolSupplier: fetching " << url;
 
-  string tempfile = "/tmp/symbolXXXXXX";
+  string tempfile = JoinPath(tmp_path_, "symbolXXXXXX");
   int fd = mkstemp(&tempfile[0]);
   if (fd == -1) {
     return false;
