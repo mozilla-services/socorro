@@ -33,21 +33,25 @@
 #include <vector>
 
 #include <stdio.h>
+#include <sys/stat.h>
 
 // For inserting into a static struct option[]
 const struct option kHTTPCommandLineOptions[] = {
     {"symbols-url", required_argument, nullptr, 's'},
-    {"symbols-cache", required_argument, nullptr, 'c'}
+    {"symbols-cache", required_argument, nullptr, 'c'},
+    {"symbols-tmp", required_argument, nullptr, 't'}
 };
 
 #define HTTP_COMMANDLINE_OPTIONS \
   kHTTPCommandLineOptions[0], \
-  kHTTPCommandLineOptions[1],
+  kHTTPCommandLineOptions[1], \
+  kHTTPCommandLineOptions[2],
 
 // For inserting into usage()
 void http_commandline_usage() {
   fprintf(stderr, "\t--symbols-url\tA base URL from which URLs to symbol files can be constructed\n");
   fprintf(stderr, "\t--symbols-cache\tA directory in which downloaded symbols can be stored\n");
+  fprintf(stderr, "\t--symbols-tmp\tA directory to use as temp space for downloading symbols. Must be on the same filesystem as symbols-cache.\n");
 }
 
 // For inserting into the switch handling for getopt_long
@@ -57,15 +61,31 @@ void http_commandline_usage() {
       break; \
     case 'c': \
       symbols_cache = optarg; \
+      break; \
+    case 't': \
+      symbols_tmp = optarg; \
       break;
+
+bool same_filesystem(const char* a, const char* b) {
+  struct stat sta, stb;
+  return stat(a, &sta) == 0 && stat(b, &stb) == 0
+    && sta.st_dev == stb.st_dev;
+}
 
 bool check_http_commandline_options(
     const std::vector<char*>& symbols_urls,
-    const char* symbols_cache) {
+    const char* symbols_cache,
+    const char* symbols_tmp) {
   if ((!symbols_urls.empty() || symbols_cache) &&
       !(!symbols_urls.empty() && symbols_cache)) {
     fprintf(stderr, "You must specify both --symbols-url and --symbols-cache "
             "when using one of these options\n");
+    return false;
+  }
+
+  if (symbols_cache && !same_filesystem(symbols_cache, symbols_tmp)) {
+    fprintf(stderr, "Error: --symbols-cache and --symbols-tmp "
+            "paths must be on the same filesystem\n");
     return false;
   }
   return true;

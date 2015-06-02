@@ -137,6 +137,7 @@ int main(int argc, char** argv)
   // Yeah, this is ugly.
   vector<char*> symbols_urls;
   char* symbols_cache = nullptr;
+  const char* symbols_tmp = "/tmp";
   bool show_all = false;
 
   int arg;
@@ -169,7 +170,9 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  if (!check_http_commandline_options(symbols_urls, symbols_cache)) {
+  if (!check_http_commandline_options(symbols_urls,
+                                      symbols_cache,
+                                      symbols_tmp)) {
     usage();
     return 1;
   }
@@ -191,7 +194,8 @@ int main(int argc, char** argv)
     vector<string> server_paths(symbols_urls.begin(), symbols_urls.end());
     symbol_supplier.reset(new HTTPSymbolSupplier(server_paths,
                                                  symbols_cache,
-                                                 symbol_paths));
+                                                 symbol_paths,
+                                                 symbols_tmp));
   } else if (!symbol_paths.empty()) {
     symbol_supplier.reset(new SimpleSymbolSupplier(symbol_paths));
   }
