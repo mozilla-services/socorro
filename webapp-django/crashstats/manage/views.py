@@ -671,7 +671,16 @@ def products(request):
             )
             return redirect('manage:products')
     else:
+        product = request.GET.get('product')
+        if product is not None:
+            messages.error(
+                request,
+                'Product %s not found. Submit the form below to add it.' % (
+                    product
+                )
+            )
         form = forms.ProductForm(initial={
+            'product': product,
             'initial_version': '1.0'
         })
     context['form'] = form
