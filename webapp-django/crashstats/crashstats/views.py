@@ -1352,7 +1352,7 @@ def report_list(request, partial=None, default_context=None):
         # of the fact that the ReportList() data gets cached.
 
         context['sort'] = request.GET.get('sort', 'date_processed')
-        context['reverse'] = request.GET.get('reverse', 'false').lower()
+        context['reverse'] = request.GET.get('reverse', 'true').lower()
         context['reverse'] = context['reverse'] != 'false'
 
         columns = request.GET.getlist('c')
