@@ -4353,7 +4353,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         assert len(mock_calls) == 1
         eq_(mock_calls[-1]['sort'], 'date_processed')
-        ok_('reverse' not in mock_calls[-1])
+        eq_(mock_calls[-1]['reverse'], True)
 
         response = self.client.get(url, dict(
             data,
@@ -4362,17 +4362,17 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         assert len(mock_calls) == 2
         eq_(mock_calls[-1]['sort'], 'build')
-        ok_('reverse' not in mock_calls[-1])
+        eq_(mock_calls[-1]['reverse'], True)
 
         response = self.client.get(url, dict(
             data,
             sort='build',
-            reverse='True'
+            reverse='False'
         ))
         eq_(response.status_code, 200)
         assert len(mock_calls) == 3
         eq_(mock_calls[-1]['sort'], 'build')
-        eq_(mock_calls[-1]['reverse'], True)
+        ok_('reverse' not in mock_calls[-1])
 
     @mock.patch('requests.get')
     def test_report_list_partial_reports_columns_override(self, rget):
