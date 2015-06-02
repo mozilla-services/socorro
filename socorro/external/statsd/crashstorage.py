@@ -24,9 +24,9 @@ class StatsdCrashStorageBase(RequiredConfig):
 
     required_config = Namespace()
     required_config.add_option(
-        'statsd_module',
-        doc='the name of module that implements statsd client',
-        default='datadog.statsd',
+        'statsd_class',
+        doc='the fully qualified name of the statsd client',
+        default='socorro.external.statsd.dogstatsd.StatsClient',
         reference_value_from='resource.statsd',
         from_string_converter=class_converter,
     )
@@ -57,9 +57,10 @@ class StatsdCrashStorageBase(RequiredConfig):
             self.prefix = config.prefix
         else:
             self.prefix = ''
-        self.statsd = self.config.statsd_module.statsd(
+        self.statsd = self.config.statsd_class(
             config.statsd_host,
             config.statsd_port,
+            self.prefix
         )
 
     #--------------------------------------------------------------------------
@@ -78,12 +79,6 @@ class StatsdCrashStorage(StatsdCrashStorageBase):
 
     required_config = Namespace()
     required_config.add_option(
-        'statsd_module_incr_method_name',
-        doc='the name of method that implements increment',
-        default='increment',
-        reference_value_from='resource.statsd',
-    )
-    required_config.add_option(
         'active_counters_list',
         default='save_processed',
         doc='a comma delimeted list of counters',
@@ -94,10 +89,6 @@ class StatsdCrashStorage(StatsdCrashStorageBase):
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(StatsdCrashStorage, self).__init__(config, quit_check_callback)
-        self.counter_increment = getattr(
-            self.statsd,
-            config.statsd_module_incr_method_name
-        )
 
     #--------------------------------------------------------------------------
     def _incr(self, name):
@@ -106,7 +97,7 @@ class StatsdCrashStorage(StatsdCrashStorageBase):
             and name in self.config.active_counters_list
         ):
             counter_name = self._make_name(name)
-            self.counter_increment(counter_name)
+            self.statsd.incr(counter_name)
 
     #--------------------------------------------------------------------------
     def __getattr__(self, attr):

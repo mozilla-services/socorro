@@ -10,14 +10,13 @@ from socorro.external.statsd.crashstorage import (
     StatsdCrashStorage,
     StatsdBenchmarkingCrashStorage,
 )
-
+from socorro.external.statsd.dogstatsd import StatsClient
 
 class TestStatsdCrashStorage(TestCase):
 
     def setup_config(self, prefix=None):
         config =  DotDict()
-        config.statsd_module =  Mock()
-        config.statsd_module_incr_method_name =  'increment'
+        config.statsd_class =  StatsClient
         config.statsd_host = 'some_statsd_host'
         config.statsd_port =  3333
         config.prefix = prefix if prefix else ''
@@ -29,103 +28,48 @@ class TestStatsdCrashStorage(TestCase):
         config = self.setup_config()
         number_of_calls =  10
 
-        cs =  StatsdCrashStorage(config)
-        for x in range(number_of_calls):
-            cs.save_processed(x, {})
+        with patch('socorro.external.statsd.dogstatsd.statsd') as statsd_obj:
+            cs =  StatsdCrashStorage(config)
+            for x in range(number_of_calls):
+                cs.save_processed(x, {})
 
-        statsd_obj =  config.statsd_module.statsd.return_value
-        statsd_incr =  statsd_obj.increment
-
-        statsd_obj.increment.assert_has_calls(
-            [call('save_processed') for x in range(number_of_calls)]
-        )
+            statsd_obj.increment.assert_has_calls(
+                [call('save_processed') for x in range(number_of_calls)]
+            )
 
     def test_save_processed_with_prefix(self):
         config = self.setup_config()
         config.prefix = 'processor'
         number_of_calls =  10
 
-        cs =  StatsdCrashStorage(config)
-        for x in range(number_of_calls):
-            cs.save_processed(x, {})
+        with patch('socorro.external.statsd.dogstatsd.statsd') as statsd_obj:
+            cs =  StatsdCrashStorage(config)
+            for x in range(number_of_calls):
+                cs.save_processed(x, {})
 
-        statsd_obj =  config.statsd_module.statsd.return_value
-        statsd_incr =  statsd_obj.increment
-
-        statsd_obj.increment.assert_has_calls(
-            [call('processor.save_processed') for x in range(number_of_calls)]
-        )
+            statsd_obj.increment.assert_has_calls(
+                [call('processor.save_processed') for x in range(number_of_calls)]
+            )
 
     def test_arbitrary_with_prefix(self):
         config = self.setup_config()
         config.prefix = 'processor'
         number_of_calls =  10
 
-        cs =  StatsdCrashStorage(config)
-        for x in range(number_of_calls):
-            cs.some_random_method(x, {})
+        with patch('socorro.external.statsd.dogstatsd.statsd') as statsd_obj:
+            cs =  StatsdCrashStorage(config)
+            for x in range(number_of_calls):
+                cs.some_random_method(x, {})
 
-        statsd_obj =  config.statsd_module.statsd.return_value
-        statsd_incr =  statsd_obj.increment
-
-        # the method is not in the active list so should be ignored
-        statsd_obj.increment.assert_has_calls([])
-
-    def test_save_processed_other_incr_method(self):
-        config = self.setup_config()
-        config.statsd_module_incr_method_name = 'this_is_silly'
-        number_of_calls =  10
-
-        cs =  StatsdCrashStorage(config)
-        for x in range(number_of_calls):
-            cs.save_processed(x, {})
-
-        statsd_obj =  config.statsd_module.statsd.return_value
-        statsd_incr =  statsd_obj.this_is_silly
-
-        statsd_obj.this_is_silly.assert_has_calls(
-            [call('save_processed') for x in range(number_of_calls)]
-        )
-
-    def test_save_processed_with_prefix_other_incr_method(self):
-        config = self.setup_config()
-        config.statsd_module_incr_method_name = 'this_is_silly'
-        config.prefix = 'processor'
-        number_of_calls =  10
-
-        cs =  StatsdCrashStorage(config)
-        for x in range(number_of_calls):
-            cs.save_processed(x, {})
-
-        statsd_obj =  config.statsd_module.statsd.return_value
-        statsd_incr =  statsd_obj.this_is_silly
-
-        statsd_obj.this_is_silly.assert_has_calls(
-            [call('processor.save_processed') for x in range(number_of_calls)]
-        )
-
-    def test_arbitrary_with_prefix_other_incr_method(self):
-        config = self.setup_config()
-        config.statsd_module_incr_method_name = 'this_is_silly'
-        config.prefix = 'processor'
-        number_of_calls =  10
-
-        cs =  StatsdCrashStorage(config)
-        for x in range(number_of_calls):
-            cs.some_random_method(x, {})
-
-        statsd_obj =  config.statsd_module.statsd.return_value
-        statsd_incr =  statsd_obj.this_is_silly
-
-        # the method is not in the active list so should be ignored
-        statsd_obj.this_is_silly.assert_has_calls([])
+            # the method is not in the active list so should be ignored
+            statsd_obj.increment.assert_has_calls([])
 
 
 class TestStatsdBenchmarkingCrashStorage(TestCase):
 
     def setup_config(self, prefix=None):
         config =  DotDict()
-        config.statsd_module =  Mock()
+        config.statsd_class =  StatsClient
         config.statsd_host = 'some_statsd_host'
         config.statsd_port =  3333
         config.prefix = prefix if prefix else ''
@@ -134,7 +78,8 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
 
         return config
 
-    def test_save(self):
+    @patch('socorro.external.statsd.dogstatsd.statsd')
+    def test_save(self, statsd_obj):
         config = self.setup_config('timing')
         cs =  StatsdBenchmarkingCrashStorage(config)
         now_str = 'socorro.external.statsd.crashstorage.datetime'
@@ -152,7 +97,6 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
             # the call to be tested
             cs.save_raw_crash({}, [], 'some_id')
 
-            statsd_obj = config.statsd_module.statsd.return_value
             statsd_timing = statsd_obj.timing
             statsd_timing.has_calls(
                 [call(
@@ -164,7 +108,8 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                 [call({}, [], 'some_id')]
             )
 
-    def test_get(self):
+    @patch('socorro.external.statsd.dogstatsd.statsd')
+    def test_get(self, statsd_obj):
         config = self.setup_config('timing')
         cs =  StatsdBenchmarkingCrashStorage(config)
         now_str = 'socorro.external.statsd.crashstorage.datetime'
@@ -188,7 +133,6 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
             # the call to be tested
             result =  cs.get_raw_crash('some_id')
 
-            statsd_obj = config.statsd_module.statsd.return_value
             statsd_timing = statsd_obj.timing
             statsd_timing.has_calls(
                 [call(
