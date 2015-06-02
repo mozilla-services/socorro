@@ -61,6 +61,7 @@
 #include "processor/pathname_stripper.h"
 #include "processor/simple_symbol_supplier.h"
 
+#include "common.h"
 #include "http_symbol_supplier.h"
 #include "json/json.h"
 
@@ -1028,8 +1029,7 @@ void usage() {
   fprintf(stderr, "\t--pretty\tPretty-print JSON output.\n");
   fprintf(stderr, "\t--pipe-dump\tProduce pipe-delimited output in addition to JSON output\n");
   fprintf(stderr, "\t--raw-json\tAn input file with the raw annotations as JSON\n");
-  fprintf(stderr, "\t--symbols-url\tA base URL from which URLs to symbol files can be constructed\n");
-  fprintf(stderr, "\t--symbols-cache\tA directory in which downloaded symbols can be stored\n");
+  http_commandline_usage();
   fprintf(stderr, "\t--help\tDisplay this help text.\n");
 }
 
@@ -1046,8 +1046,7 @@ int main(int argc, char** argv)
     {"pretty", no_argument, nullptr, 'p'},
     {"pipe-dump", no_argument, nullptr, 'i'},
     {"raw-json", required_argument, nullptr, 'r'},
-    {"symbols-url", required_argument, nullptr, 's'},
-    {"symbols-cache", required_argument, nullptr, 'c'},
+    HTTP_COMMANDLINE_OPTIONS
     {"help", no_argument, nullptr, 'h'},
     {nullptr, 0, nullptr, 0}
   };
@@ -1069,12 +1068,7 @@ int main(int argc, char** argv)
     case 'r':
       json_path = optarg;
       break;
-    case 's':
-      symbols_urls.push_back(optarg);
-      break;
-    case 'c':
-      symbols_cache = optarg;
-      break;
+    HANDLE_HTTP_COMMANDLINE_OPTIONS
     case 'h':
       usage();
       return 0;
@@ -1092,10 +1086,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  if ((!symbols_urls.empty() || symbols_cache) &&
-      !(!symbols_urls.empty() && symbols_cache)) {
-    fprintf(stderr, "You must specify both --symbols-url and --symbols-cache "
-            "when using one of these options\n");
+  if (!check_http_commandline_options(symbols_urls, symbols_cache)) {
     usage();
     return 1;
   }
