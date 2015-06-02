@@ -47,8 +47,15 @@ lxml==3.4.1
 pgxnclient==1.2.1
 # sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
 pika==0.9.8
-# sha256: xsMwyYqwjFY58MzX4hG4Kzo58AGBPc6mu4JKmdKzT-I
-psycopg2==2.5.5
+
+# psycopg2 2.6.1 isn't out on pypi at the time of writing and we can't
+# wait so we'll point to the sha for now.
+# Once 2.6.1 on pypi (see
+# https://github.com/psycopg/psycopg2/issues/324)
+# we'll change this line back to `psycopg2==2.6.1`
+# sha256: huR8Sc3tE-S2qhy6BgyTPMY92JKAr50TCAUmsFYOysU
+https://github.com/rhelmer/psycopg2/archive/5495bf8f.zip#egg=psycopg2
+
 # sha256: U6gisBsElN-WWMBOhyFhgOXsvoWxeGc92Eix-AnVwQA
 # sha256: u5PYXKflDWjkGXhSu226YJi7dyUA-C9dsv9KgHEVBck
 elasticsearch==1.2
