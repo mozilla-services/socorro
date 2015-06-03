@@ -91,7 +91,7 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                 datetime(2015, 5, 4, 15, 10, 0),
             ]
             now_mock.now.side_effect =  lambda: times.pop()
-            config.wrapped_crashstore.return_value.__name__ =  \
+            config.wrapped_crashstore.__name__ =  \
                 'SomeWrappedCrashStoreClass'
 
             # the call to be tested
@@ -122,7 +122,7 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
             ]
             now_mock.now.side_effect =  lambda: times.pop()
             wrapped_crashstore_instance = config.wrapped_crashstore.return_value
-            wrapped_crashstore_instance.__name__ =  \
+            config.wrapped_crashstore.__name__ =  \
                 'SomeWrappedCrashStoreClass'
             raw_crash = {
                 'crash_id': 'some_id',
