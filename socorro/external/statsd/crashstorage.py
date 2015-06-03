@@ -151,7 +151,10 @@ class StatsdBenchmarkingCrashStorage(StatsdCrashStorageBase):
             self.statsd.timing(
                 self.prefixes.get(
                     attr,
-                    self._make_name(self.wrapped_crashstore.__name__, attr)
+                    self._make_name(
+                        self.config.wrapped_crashstore.__name__,
+                        attr
+                    )
                 ),
                 (end_time - start_time).microseconds
             )
