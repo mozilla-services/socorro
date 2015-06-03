@@ -114,7 +114,7 @@
   {% endblock %}
 
         <div class="search">
-            <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}">
+            <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
                 Super Search
             </a>
         </div>

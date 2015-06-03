@@ -297,9 +297,14 @@ $(function () {
                 page = initialParams.page;
             }
 
+            var dontRun = initialParams._dont_run === '1';
+
             initialParams = socorro.search.getFilteredParams(initialParams);
             var self = this;
             form.dynamicForm(fieldsURL, initialParams, '#search-params-fieldset', function () {
+                if (dontRun) {
+                    return;
+                }
                 // When the form has finished loading, we get sanitized parameters
                 // from it and show the results. This will avoid strange behaviors
                 // that can be caused by manually set parameters, for example.
