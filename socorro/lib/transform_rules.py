@@ -49,8 +49,9 @@ class Rule(RequiredConfig):
 
 
     #--------------------------------------------------------------------------
-    def __init__(self, config=None):
+    def __init__(self, config=None, quit_check_callback=None):
         self.config = config
+        self.quit_check_callback = quit_check_callback
 
     #--------------------------------------------------------------------------
     def predicate(self, *args, **kwargs):
@@ -321,7 +322,7 @@ class TransformRuleSystem(RequiredConfig):
                     self.rules.append(
                         a_rule_class(config[ns_name])
                     )
-                except KeyError:
+                except KeyError, x:
                     self.rules.append(
                         a_rule_class(config)
                     )

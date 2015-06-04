@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from mock import patch, call, Mock
 from nose.tools import eq_, ok_, assert_raises
 from socorro.unittest.testbase import TestCase
@@ -12,18 +16,21 @@ from socorro.external.statsd.crashstorage import (
 )
 from socorro.external.statsd.dogstatsd import StatsClient
 
+#==============================================================================
 class TestStatsdCrashStorage(TestCase):
 
+    #--------------------------------------------------------------------------
     def setup_config(self, prefix=None):
         config =  DotDict()
         config.statsd_class =  StatsClient
         config.statsd_host = 'some_statsd_host'
         config.statsd_port =  3333
         config.prefix = prefix if prefix else ''
-        config.active_counters_list = 'save_processed'
+        config.active_list = 'save_processed'
 
         return config
 
+    #--------------------------------------------------------------------------
     def test_save_processed(self):
         config = self.setup_config()
         number_of_calls =  10
@@ -37,6 +44,7 @@ class TestStatsdCrashStorage(TestCase):
                 [call('save_processed') for x in range(number_of_calls)]
             )
 
+    #--------------------------------------------------------------------------
     def test_save_processed_with_prefix(self):
         config = self.setup_config()
         config.prefix = 'processor'
@@ -51,6 +59,7 @@ class TestStatsdCrashStorage(TestCase):
                 [call('processor.save_processed') for x in range(number_of_calls)]
             )
 
+    #--------------------------------------------------------------------------
     def test_arbitrary_with_prefix(self):
         config = self.setup_config()
         config.prefix = 'processor'
@@ -65,24 +74,27 @@ class TestStatsdCrashStorage(TestCase):
             statsd_obj.increment.assert_has_calls([])
 
 
+#==============================================================================
 class TestStatsdBenchmarkingCrashStorage(TestCase):
 
+    #--------------------------------------------------------------------------
     def setup_config(self, prefix=None):
         config =  DotDict()
         config.statsd_class =  StatsClient
         config.statsd_host = 'some_statsd_host'
         config.statsd_port =  3333
         config.prefix = prefix if prefix else ''
-        config.active_counters_list = 'save_processed'
-        config.wrapped_crashstore =  Mock()
+        config.active_list = 'save_processed'
+        config.wrapped_object_class =  Mock()
 
         return config
 
+    #--------------------------------------------------------------------------
     @patch('socorro.external.statsd.dogstatsd.statsd')
     def test_save(self, statsd_obj):
         config = self.setup_config('timing')
         cs =  StatsdBenchmarkingCrashStorage(config)
-        now_str = 'socorro.external.statsd.crashstorage.datetime'
+        now_str = 'socorro.external.statsd.statsd_base.datetime'
         with patch(now_str) as now_mock:
             times =  [
                 datetime(2015, 5, 4, 15, 10, 3),
@@ -91,7 +103,7 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                 datetime(2015, 5, 4, 15, 10, 0),
             ]
             now_mock.now.side_effect =  lambda: times.pop()
-            config.wrapped_crashstore.__name__ =  \
+            config.wrapped_object_class.__name__ =  \
                 'SomeWrappedCrashStoreClass'
 
             # the call to be tested
@@ -104,15 +116,16 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                     1000
                 )]
             )
-            config.wrapped_crashstore.return_value.save_raw_crash.has_calls(
+            config.wrapped_object_class.return_value.save_raw_crash.has_calls(
                 [call({}, [], 'some_id')]
             )
 
+    #--------------------------------------------------------------------------
     @patch('socorro.external.statsd.dogstatsd.statsd')
     def test_get(self, statsd_obj):
         config = self.setup_config('timing')
         cs =  StatsdBenchmarkingCrashStorage(config)
-        now_str = 'socorro.external.statsd.crashstorage.datetime'
+        now_str = 'socorro.external.statsd.statsd_base.datetime'
         with patch(now_str) as now_mock:
             times =  [
                 datetime(2015, 5, 4, 15, 10, 3),
@@ -121,8 +134,8 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                 datetime(2015, 5, 4, 15, 10, 0),
             ]
             now_mock.now.side_effect =  lambda: times.pop()
-            wrapped_crashstore_instance = config.wrapped_crashstore.return_value
-            config.wrapped_crashstore.__name__ =  \
+            wrapped_crashstore_instance = config.wrapped_object_class.return_value
+            config.wrapped_object_class.__name__ =  \
                 'SomeWrappedCrashStoreClass'
             raw_crash = {
                 'crash_id': 'some_id',
@@ -140,7 +153,7 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                     1000
                 )]
             )
-            config.wrapped_crashstore.return_value.save_raw_crash.has_calls(
+            config.wrapped_object_class.return_value.save_raw_crash.has_calls(
                 [call({}, [], 'some_id')]
             )
             eq_(result, raw_crash)

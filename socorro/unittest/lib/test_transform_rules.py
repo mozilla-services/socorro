@@ -27,6 +27,7 @@ def bar(s, d):
     pass
 
 
+#==============================================================================
 class TestRuleTestLaughable(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('laughable', default='fred')
@@ -35,14 +36,13 @@ class TestRuleTestLaughable(transform_rules.Rule):
         return self.config.laughable != 'fred'
 
 
+#==============================================================================
 class TestRuleTestDangerous(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('dangerous', default='sally')
 
     def _action(self, *args, **kwargs):
         return self.config.dangerous != 'sally'
-
-
 
 
 #==============================================================================
