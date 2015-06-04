@@ -1442,11 +1442,6 @@ def report_list(request, partial=None, default_context=None):
             os_name = report['os_name']
             version = report['version']
 
-            # report_list does not contain beta identifier, but the correlation
-            # form needs it for validation
-            if report['release_channel'].lower() == 'beta':
-                version = version + 'b'
-
             os_count[os_name] += 1
             version_count[version] += 1
 
