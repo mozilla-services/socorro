@@ -48,7 +48,7 @@ class TestStatsdCounterRule(TestCase):
         config.TestRuleTestLaughable.statsd_class =  StatsClient
         config.TestRuleTestLaughable.statsd_host = 'some_statsd_host'
         config.TestRuleTestLaughable.statsd_port =  3333
-        config.TestRuleTestLaughable.prefix = prefix if prefix else ''
+        config.TestRuleTestLaughable.statsd_prefix = prefix if prefix else ''
         config.TestRuleTestLaughable.wrapped_object_class = TestRuleTestLaughable
         config.TestRuleTestLaughable.active_list = 'act'
 
@@ -57,7 +57,7 @@ class TestStatsdCounterRule(TestCase):
         config.TestRuleTestDangerous.statsd_class =  StatsClient
         config.TestRuleTestDangerous.statsd_host = 'some_statsd_host'
         config.TestRuleTestDangerous.statsd_port =  3333
-        config.TestRuleTestDangerous.prefix = prefix if prefix else ''
+        config.TestRuleTestDangerous.statsd_prefix = prefix if prefix else ''
         config.TestRuleTestDangerous.wrapped_object_class = TestRuleTestDangerous
         config.TestRuleTestDangerous.active_list = 'act'
 

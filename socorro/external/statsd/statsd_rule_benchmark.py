@@ -44,5 +44,5 @@ from socorro.external.statsd.statsd_base import (
 #
 ##    statsd_host=...  # if the default isn't correct
 ##    statsd_port=...  # if the default isn't correct
-##    prefix=processor
+##    statsd_prefix=processor
 ##    active_list=act  # <-- very important

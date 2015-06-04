@@ -42,7 +42,7 @@ class StatsdEnabledBase(RequiredConfig):
         reference_value_from='resource.statsd',
     )
     required_config.add_option(
-        'prefix',
+        'statsd_prefix',
         doc='a string to be used as the prefix for statsd names',
         default='save_processed',
         reference_value_from='resource.statsd',
@@ -59,8 +59,8 @@ class StatsdEnabledBase(RequiredConfig):
     def __init__(self, config, quit_check_callback=None):
         super(StatsdEnabledBase, self).__init__()
         self.config = config
-        if config.prefix:
-            self.prefix = config.prefix
+        if config.statsd_prefix:
+            self.prefix = config.statsd_prefix
         else:
             self.prefix = ''
         self.statsd = self.config.statsd_class(

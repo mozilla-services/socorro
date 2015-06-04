@@ -25,7 +25,7 @@ class TestStatsdCrashStorage(TestCase):
         config.statsd_class =  StatsClient
         config.statsd_host = 'some_statsd_host'
         config.statsd_port =  3333
-        config.prefix = prefix if prefix else ''
+        config.statsd_prefix = prefix if prefix else ''
         config.active_list = 'save_processed'
 
         return config
@@ -47,7 +47,7 @@ class TestStatsdCrashStorage(TestCase):
     #--------------------------------------------------------------------------
     def test_save_processed_with_prefix(self):
         config = self.setup_config()
-        config.prefix = 'processor'
+        config.statsd_prefix = 'processor'
         number_of_calls =  10
 
         with patch('socorro.external.statsd.dogstatsd.statsd') as statsd_obj:
@@ -62,7 +62,7 @@ class TestStatsdCrashStorage(TestCase):
     #--------------------------------------------------------------------------
     def test_arbitrary_with_prefix(self):
         config = self.setup_config()
-        config.prefix = 'processor'
+        config.statsd_prefix = 'processor'
         number_of_calls =  10
 
         with patch('socorro.external.statsd.dogstatsd.statsd') as statsd_obj:
@@ -83,7 +83,7 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
         config.statsd_class =  StatsClient
         config.statsd_host = 'some_statsd_host'
         config.statsd_port =  3333
-        config.prefix = prefix if prefix else ''
+        config.statsd_prefix = prefix if prefix else ''
         config.active_list = 'save_processed'
         config.wrapped_object_class =  Mock()
 
