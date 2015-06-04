@@ -69,6 +69,13 @@ class CSignatureToolBase(SignatureTool):
     breakpad C/C++ stacks.  It provides a method to normalize signatures
     and then defines its own '_do_generate' method."""
 
+    required_config = Namespace()
+    required_config.add_option(
+        'collapse_arguments',
+        default=False,
+        doc="remove function arguments during normalization",
+    )
+
     hang_prefixes = {
         -1: "hang",
         1: "chromehang"
@@ -108,23 +115,35 @@ class CSignatureToolBase(SignatureTool):
         if normalized is not None:
             return normalized
         if function:
-            template_collapsed_list = []
-            angle_bracket_counter = 0
+            target_counter = 0
 
-            def append_if_not_in_template(a_character):
-                if not angle_bracket_counter:
-                    template_collapsed_list.append(a_character)
+            collapsed_list = []
+            def append_if_not_in_collapse_mode(a_character):
+                if not target_counter:
+                    collapsed_list.append(a_character)
 
             for a_character in function:
                 if a_character == '<':
-                    append_if_not_in_template('<')
-                    angle_bracket_counter += 1
+                    append_if_not_in_collapse_mode('<')
+                    target_counter += 1
                 elif a_character == '>':
-                    angle_bracket_counter -= 1
-                    append_if_not_in_template('T>')
+                    target_counter -= 1
+                    append_if_not_in_collapse_mode('T>')
                 else:
-                    append_if_not_in_template(a_character)
-            function = ''.join(template_collapsed_list)
+                    append_if_not_in_collapse_mode(a_character)
+            function = ''.join(collapsed_list)
+
+            if self.config.collapse_arguments:
+                collapsed_list = []
+                target_counter = 0
+                for a_character in function:
+                    if a_character == '(':
+                        target_counter += 1
+                    elif a_character == ')':
+                        target_counter -= 1
+                    else:
+                        append_if_not_in_collapse_mode(a_character)
+                function = ''.join(collapsed_list)
 
             if self.signatures_with_line_numbers_re.match(function):
                 function = "%s:%s" % (function, line)
@@ -222,8 +241,6 @@ class CSignatureTool(CSignatureToolBase):
                ),
                'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash',
                'google_breakpad::ExceptionHandler::HandleInvalidParameter'
-                  '(wchar_t const*, wchar_t const*, wchar_t const*, unsigned '
-                  'int, unsigned int)'
               ]""",
         from_string_converter=eval
     )
@@ -263,7 +280,7 @@ class CSignatureTool(CSignatureToolBase):
           'MOZ_Assert',
           'MOZ_Crash',
           'mozcrt19.dll@0x.*',
-          'mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)',
+          'mozilla::ipc::RPCChannel::Call',
           '_NSRaiseError',
           '(Nt|Zw)WaitForSingleObject(Ex)?',
           '(Nt|Zw)WaitForMultipleObjects(Ex)?',
@@ -370,7 +387,7 @@ class CSignatureTool(CSignatureToolBase):
           'NS_ABORT_OOM.*',
           'NS_DebugBreak.*',
           '[-+]\[NSException raise(:format:(arguments:)?)?\]',
-          'nsObjCExceptionLogAbort(\(.*?\)){0,1}',
+          'nsObjCExceptionLogAbort',
           'nsRefPtr.*',
           'NSS.*',
           'nss.*',
@@ -379,7 +396,7 @@ class CSignatureTool(CSignatureToolBase):
           'NtUser.*',
           'objc_exception_throw',
           'objc_msgSend',
-          'operator new\([^,\)]+\)',
+          'operator new',
           'PL_.*',
           'port_.*',
           'PORT_.*',

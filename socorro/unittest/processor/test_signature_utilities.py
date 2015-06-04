@@ -57,6 +57,7 @@ class TestCSignatureTool(BaseTestClass):
         config.prefix_signature_re = pr
         config.signatures_with_line_numbers_re = si
         config.signature_sentinels = ss
+        config.collapse_arguments = True
         s = CSignatureTool(config)
         return s, config
 
@@ -160,15 +161,15 @@ class TestCSignatureTool(BaseTestClass):
             (('module', 'fn', 'source', '23', '0xFFF'), 'fn'),
             (('module', 'fnNeedNumber', 's', '23', '0xFFF'),
              'fnNeedNumber:23'),
-            (('module', 'f( *s)', 's', '23', '0xFFF'), 'f(*s)'),
-            (('module', 'f( &s)', 's', '23', '0xFFF'), 'f(&s)'),
-            (('module', 'f( *s , &n)', 's', '23', '0xFFF'), 'f(*s, &n)'),
+            (('module', 'f( *s)', 's', '23', '0xFFF'), 'f'),
+            (('module', 'f( &s)', 's', '23', '0xFFF'), 'f'),
+            (('module', 'f( *s , &n)', 's', '23', '0xFFF'), 'f'),
             # this next one looks like a bug to me, but perhaps the situation
             # never comes up
             #(('module', 'f(  *s , &n)', 's', '23', '0xFFF'), 'f(*s, &n)'),
-            (('module', 'f3(s,t,u)', 's', '23', '0xFFF'), 'f3(s, t, u)'),
+            (('module', 'f3(s,t,u)', 's', '23', '0xFFF'), 'f3'),
             (('module', 'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>', 's', '23', '0xFFF'), 'Alpha<T>::Echo<T>'),
-            (('module', 'f<3>(s,t,u)', 's', '23', '0xFFF'), 'f<T>(s, t, u)'),
+            (('module', 'f<3>(s,t,u)', 's', '23', '0xFFF'), 'f<T>'),
             (('module', '', 'source/', '23', '0xFFF'), 'source#23'),
             (('module', '', 'source\\', '23', '0xFFF'), 'source#23'),
             (('module', '', '/a/b/c/source', '23', '0xFFF'), 'source#23'),
@@ -993,6 +994,7 @@ csig_config.irrelevant_signature_re = ''
 csig_config.prefix_signature_re = ''
 csig_config.signatures_with_line_numbers_re = ''
 csig_config.signature_sentinels = []
+csig_config.collapse_arguments = True
 c_signature_tool = CSignatureTool(csig_config)
 
 
@@ -1031,6 +1033,7 @@ class TestSignatureGeneration(TestCase):
                     CSignatureTool.required_config
                     .signatures_with_line_numbers_re.default
                 ),
+                'collapse_arguments':  True,
             },
             'java_signature': {
                 'java_signature_tool_class': JavaSignatureTool,
