@@ -1,6 +1,8 @@
 import functools
 
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, Http404
+from django.shortcuts import redirect
+from django.core.urlresolvers import reverse
 
 from . import utils
 
@@ -43,7 +45,15 @@ def pass_default_context(view):
     def inner(request, *args, **kwargs):
         product = kwargs.get('product', None)
         versions = kwargs.get('versions', None)
-        kwargs['default_context'] = utils.build_default_context(product,
-                                                                versions)
+        try:
+            kwargs['default_context'] = utils.build_default_context(
+                product,
+                versions
+            )
+        except Http404:
+            if request.user.is_superuser:
+                url = '%s?product=%s' % (reverse('manage:products'), product)
+                return redirect(url)
+            raise
         return view(request, *args, **kwargs)
     return inner
