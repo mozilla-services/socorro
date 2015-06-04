@@ -66,6 +66,13 @@ mozilla_processor_rule_sets = [
         "socorro.processor.support_classifiers.BitguardClassifier, "
         "socorro.processor.support_classifiers.OutOfDateClassifier"
     ],
+##    [   # a set of classifiers to help with jit crashes
+##        "jit_classifers",
+##        "processor.jit_classifiers",
+##        "socorro.lib.transform_rules.TransformRuleSystem",
+##        "apply_all_rules",
+##        "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
+##    ],
     [   # a set of special request classifiers
         "skunk_classifiers",
         "processor.skunk_classifiers",
