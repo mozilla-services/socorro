@@ -352,6 +352,7 @@ class CSignatureTool(CSignatureToolBase):
           'mozalloc_handle_oom',
           'moz_free',
           'mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame',
+          'mozilla::ipc::MessageChannel::Send',
           'mozilla::ipc::RPCChannel::Call',
           'mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame',
           'mozilla::ipc::RPCChannel::EnteredCxxStack',
