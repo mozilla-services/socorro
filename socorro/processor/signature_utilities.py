@@ -84,7 +84,6 @@ class CSignatureToolBase(SignatureTool):
 
         self.fixup_space = re.compile(r' (?=[\*&,])')
         self.fixup_comma = re.compile(r',(?! )')
-        self.fixup_integer = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
     #--------------------------------------------------------------------------
     def normalize_signature(
@@ -109,15 +108,30 @@ class CSignatureToolBase(SignatureTool):
         if normalized is not None:
             return normalized
         if function:
+            template_collapsed_list = []
+            angle_bracket_counter = 0
+
+            def append_if_not_in_template(a_character):
+                if not angle_bracket_counter:
+                    template_collapsed_list.append(a_character)
+
+            for a_character in function:
+                if a_character == '<':
+                    append_if_not_in_template('<')
+                    angle_bracket_counter += 1
+                elif a_character == '>':
+                    angle_bracket_counter -= 1
+                    append_if_not_in_template('T>')
+                else:
+                    append_if_not_in_template(a_character)
+            function = ''.join(template_collapsed_list)
+
             if self.signatures_with_line_numbers_re.match(function):
                 function = "%s:%s" % (function, line)
             # Remove spaces before all stars, ampersands, and commas
             function = self.fixup_space.sub('', function)
             # Ensure a space after commas
             function = self.fixup_comma.sub(', ', function)
-            # normalize template signatures with manifest const integers to
-            #'int': Bug 481445
-            function = self.fixup_integer.sub(r'\1int\4', function)
             return function
         #if source is not None and source_line is not None:
         if file and line:
