@@ -113,15 +113,14 @@ class Releases(PostgreSQLBase):
 
         with self.get_connection() as connection:
             try:
-                cursor = connection.cursor()
-
-                for p in releases:
-                    query = sql % ", ".join(
-                        "%s" for i in xrange(len(releases[p]))
-                    )
-                    sql_params = [p] + releases[p]
-                    # logger.debug(cursor.mogrify(query, sql_params))
-                    cursor.execute(query, sql_params)
+                with connection.cursor() as cursor:
+                    for p in releases:
+                        query = sql % ", ".join(
+                            "%s" for i in xrange(len(releases[p]))
+                        )
+                        sql_params = [p] + releases[p]
+                        # logger.debug(cursor.mogrify(query, sql_params))
+                        cursor.execute(query, sql_params)
 
                 connection.commit()
             except psycopg2.Error:

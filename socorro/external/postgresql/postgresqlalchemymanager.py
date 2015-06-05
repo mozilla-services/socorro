@@ -89,8 +89,8 @@ class PostgreSQLAlchemyManager(object):
     def bulk_load(self, data, table, columns, sep):
         self.logger.debug('bulk loading data')
         connection = self.engine.raw_connection()
-        cursor = connection.cursor()
-        cursor.copy_from(data, table, columns=columns, sep=sep)
+        with connection.cursor() as cursor:
+            cursor.copy_from(data, table, columns=columns, sep=sep)
         connection.commit()
 
     @ignore_if_on_heroku
