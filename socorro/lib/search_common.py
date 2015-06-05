@@ -351,7 +351,7 @@ class SearchBase(object):
                 if val.endswith('b'):
                     parameters['version'].append(SearchParam(
                         name='version',
-                        value=[val],
+                        value=val,
                         data_type='str',
                         operator='$',
                         operator_not=version.operator_not,
