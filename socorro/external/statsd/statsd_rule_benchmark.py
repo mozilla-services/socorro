@@ -46,3 +46,80 @@ from socorro.external.statsd.statsd_base import (
 ##    statsd_port=...  # if the default isn't correct
 ##    statsd_prefix=processor
 ##    active_list=act  # <-- very important
+
+from socorro.lib.transform_rules import Rule
+from socorro.lib.converters import change_default
+
+from configman import Namespace, class_converter
+
+#==============================================================================
+class CountAnythingRuleBase(Rule):
+    required_config = Namespace()
+    required_config.add_option(
+        'counter_class',
+        default="socorro.external.statsd.statsd_base.StatsdCounter",
+        doc="the name of the class that implements the counter object",
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'rule_name',
+        default='target_not_named',
+        doc="the name to be used for this rule",
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(CountAnythingRuleBase, self).__init__(config)
+        self.counter =  self.config.counter_class(self.config)
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        # override me to check any condition within a raw, processed crash
+        # or even the state of the processor itself from the proc_meta
+        raise NotImplementedError()
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        self.counter._incr(self.config.rule_name)
+
+
+#==============================================================================
+class CountStackWalkerTimeoutKills(CountAnythingRuleBase):
+    required_config = Namespace()
+    required_config.rule_name = change_default(
+        CountAnythingRuleBase,
+        'rule_name',
+        'stackwalker_timeout_kills'
+    )
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        # override me to check any condition within a raw, processed crash
+        # or even the state of the processor itself from the proc_meta
+        return reduce(
+            lambda x, y: x or "SIGKILL" in y,
+            proc_meta.processor_notes,
+            False
+        )
+
+
+#==============================================================================
+class CountStackWalkerFailures(CountAnythingRuleBase):
+    required_config = Namespace()
+    required_config.rule_name = change_default(
+        CountAnythingRuleBase,
+        'rule_name',
+        'stackwalker_failures'
+    )
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        # override me to check any condition within a raw, processed crash
+        # or even the state of the processor itself from the proc_meta
+        return reduce(
+            lambda x, y: x or "MDSW failed" in y,
+            proc_meta.processor_notes,
+            False
+        )
+
+
