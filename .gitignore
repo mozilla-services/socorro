@@ -35,6 +35,7 @@ minidump-stackwalk/*.o
 minidump-stackwalk/stackwalker
 minidump-stackwalk/dumplookup
 minidump-stackwalk/get-minidump-instructions
+minidump-stackwalk/jit-crash-categorize
 socorro.egg-info/
 dist/
 socorro-*.rpm
