@@ -1,3 +1,4 @@
+import re
 import os
 from functools import wraps
 from cStringIO import StringIO
@@ -119,7 +120,27 @@ def get_bucket_name_and_location(user):
     user."""
     name = settings.SYMBOLS_BUCKET_DEFAULT_NAME
     location = settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
-    exception = settings.SYMBOLS_BUCKET_EXCEPTIONS.get(user.email)
+    exceptions = dict(
+        (x.lower(), y) for x, y in settings.SYMBOLS_BUCKET_EXCEPTIONS.items()
+    )
+    if user.email.lower() in exceptions:
+        # easy
+        exception = exceptions[user.email.lower()]
+    else:
+        # match against every possible wildcard
+        exception = None  # assume no match
+        for email_or_wildcard in settings.SYMBOLS_BUCKET_EXCEPTIONS:
+            if '*' in email_or_wildcard:
+                regex = re.compile(re.escape(email_or_wildcard).replace(
+                    '\\*',
+                    '.'
+                ), re.I)
+                if regex.findall(user.email):
+                    # a match!
+                    exception = settings.SYMBOLS_BUCKET_EXCEPTIONS[
+                        email_or_wildcard
+                    ]
+                    break
     if isinstance(exception, (list, tuple)):
         # the exception was a 2-items tuple of name and location
         name, location = exception
