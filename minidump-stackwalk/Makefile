@@ -9,7 +9,12 @@ JSON_DIR := jsoncpp-src-0.5.0
 JSON_SRCDIR := $(JSON_DIR)/src/lib_json
 JSON_INCLUDEDIR := $(JSON_DIR)/include
 
-BINS := stackwalker dumplookup get-minidump-instructions
+BINS := \
+  stackwalker \
+  dumplookup \
+  get-minidump-instructions \
+  jit-crash-categorize \
+  $(NULL)
 
 all: $(BINS)
 
@@ -40,7 +45,7 @@ LIBS := $(CURL_LIBS)
 
 .SECONDEXPANSION:
 $(BINS): %: %.cc $(BREAKPAD_LIBS) $(EXTRA_OBJS) $$($$*_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(BREAKPAD_LIBS) $(EXTRA_OBJS) $($*_OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(EXTRA_OBJS) $(BREAKPAD_LIBS) $($*_OBJS) $(LIBS)
 
 clean:
 	$(RM) $(BINS) *.o
