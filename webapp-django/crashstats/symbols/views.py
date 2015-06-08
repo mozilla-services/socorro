@@ -180,12 +180,12 @@ def get_bucket_name_and_location(user):
                         email_or_wildcard
                     ]
                     break
-    if isinstance(exception, (list, tuple)):
-        # the exception was a 2-items tuple of name and location
-        name, location = exception
-    elif exception:
-        # then it was just a string
-        name = exception
+
+    if exception:
+        if '|' in exception:
+            name, location = exception.split('|')
+        else:
+            name = exception
     return name, location
 
 

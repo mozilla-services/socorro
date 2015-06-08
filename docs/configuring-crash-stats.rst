@@ -136,7 +136,7 @@ Now load the contents of your socorro-config directory::
 Configure Socorro-Middleware
 ----------------------------
 
-Socorro Middlware is a REST service that listens on localhost and should 
+Socorro Middlware is a REST service that listens on localhost and should
 *not* be exposed to the outside, as it provides read/write access to the
 underlying data stores:
 
@@ -218,7 +218,7 @@ NOTE - variables surrounded by @@@ are placeholders and need to be filled in app
   SYMBOLS_BUCKET_EXCEPTIONS_BUCKET='@@@SYMBOLS_BUCKET_EXCEPTIONS_BUCKET@@@'
   SYMBOLS_BUCKET_DEFAULT_LOCATION='@@@SYMBOLS_BUCKET_DEFAULT_LOCATION@@@'
 
-Put this into a file named "webapp-django.conf" in your socorro-config folder. 
+Put this into a file named "webapp-django.conf" in your socorro-config folder.
 
 Now load the contents of your socorro-config directory into Consul::
 
@@ -228,6 +228,65 @@ Now load the contents of your socorro-config directory into Consul::
 Finally, bring up the tables Django needs in PostgreSQL::
 
   sudo envconsul -prefix socorro/webapp-django setup-socorro.sh webapp
+
+
+Symbols S3 uploads
+------------------
+
+The webapp has support for uploading symbols. This can be done by the user
+either using an upload form or you can HTTP POST directly in. E.g. with
+``curl``.
+
+For this to work you need to configure the S3 bucket details. The file
+``webapp-django/crashstats/settings/base.py`` specifies the defaults which
+are all pretty much empty.
+
+First of all, you need to configure the AWS credentials. This is done by
+overriding the following keys::
+
+    AWS_ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY
+
+These settings can not be empty.
+
+Next you have to set up the bucket name. When doing so, if you haven't already
+created the bucket over on the AWS console or other management tools you
+also have to define the location. The bucket name is set by setting the
+following key::
+
+    SYMBOLS_BUCKET_DEFAULT_NAME
+
+And the location is set by setting the following key::
+
+    SYMBOLS_BUCKET_DEFAULT_LOCATION
+
+If you're wondering what the format of the location should be,
+you can see `a list of the constants here <http://boto.readthedocs.org/en/latest/ref/s3.html#boto.s3.connection.Location>`_.
+For example ``us-west-2``.
+
+If you want to have a different bucket name for different users you can
+populate the following setting as per this example:
+
+    export SYMBOLS_BUCKET_EXCEPTIONS="joe.bloggs@example.com:private-crashes.my-bucket"
+
+That means that when ``joe.bloggs@example.com`` uploads symbols they are
+stored in a different bucket called ``private-crashes.my-bucket``.
+
+If you additionally want to use a different location for this user you
+can enter it as a tuple like this:
+
+    export SYMBOLS_BUCKET_EXCEPTIONS="joe.bloggs@example.com:private-crashes.my-bucket|us-east-1"
+
+Note that the format is:
+
+    EMAIL1:BUCKETNAME1, EMAIL2:BUCKETNAME2|LOCATION, ETC...
+
+
+The email address in ``SYMBOLS_BUCKET_EXCEPTIONS`` supports basic wildcards.
+For example:
+
+    export SYMBOLS_BUCKET_EXCEPTIONS="*@example.biz:examplebucket, *@domain.*:bucket2|us-west-9"
+
 
 Create partitioned tables
 -------------------------
@@ -252,7 +311,7 @@ Configure Nginx
 
 Both socorro-webapp and socorro-middleware should be fronted by a
 webserver like Nginx. This is so we can run Socorro components under the
-socorro user and not need to listen on privileged port 80, and also to 
+socorro user and not need to listen on privileged port 80, and also to
 protect from slow clients.
 
 You can find a working configs in
@@ -424,7 +483,7 @@ Or, by setting the crontabber jobs as a comma-delimited list:
 
   crontabber__jobs='socorro.cron.jobs.laglog.LagLog|5m, socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d, socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00, socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d'
 
-Put this into a file named "crontabber.conf" in your socorro-config folder. 
+Put this into a file named "crontabber.conf" in your socorro-config folder.
 
 Now load the contents of your socorro-config directory into Consul::
 
