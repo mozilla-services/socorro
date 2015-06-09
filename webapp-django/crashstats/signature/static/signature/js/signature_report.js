@@ -334,6 +334,176 @@ $(function () {
         showComments();
     };
 
+    tabsLoadFunctions.graph = function() {
+
+        // Initialize the graph tab, bind all events and start loading
+        // default data.
+        var graphPanel = $('#graph-panel');
+        var contentElt = $('.content', graphPanel);
+        var loaderElt = $('.loader', graphPanel);
+        var selectElt = $('.channels-list', graphPanel);
+        var graphElt = $('.adu-graph', graphPanel);
+
+        // Get the url from graphPanel.
+        var dataUrl = graphPanel.data('source-url');
+
+        // Set the default channel.
+        var defaultChannel = window.DEFAULT_CHANNEL;
+
+        // Puts JSON data into the correct format for the graph.
+        function formatData(data) {
+            // Nest on build IDs and sum the counts.
+            var finalData = d3.nest()
+                .key(function(d) {
+                    return d.buildid;
+                })
+                .rollup(function(dlist) {
+                    var r = {
+                        adu_count: d3.sum(dlist, function(d) {
+                            return d.adu_count;
+                        }),
+                        crash_count: d3.sum(dlist, function(d) {
+                            return d.crash_count;
+                        })
+                    };
+                    if (r.adu_count) {
+                        r.ratio = r.crash_count / r.adu_count;
+                    }
+                    return r;
+                })
+                .sortKeys()
+                .entries(data)
+                .filter(function(d) {
+                    return d.values.ratio !== undefined;
+                });
+
+            // Cut off the bottom 20% of ADU counts.
+            var adus = finalData.map(function(d) {
+                return d.values.adu_count;
+            });
+            adus.sort(d3.ascending);
+            var cutoff = d3.quantile(adus, 0.2);
+            finalData = finalData.filter(function(d) {
+                return d.values.adu_count >= cutoff;
+            });
+
+            finalData = finalData.map(function(d) {
+                return {
+                    'build_id': d.key,
+                    'date': d.key,
+                    'ratio': d.values.ratio,
+                    'adu_count': d.values.adu_count,
+                    'crash_count': d.values.crash_count
+                };
+            });
+            // Convert build IDs to dates and make the format nicer.
+            MG.convert.date(finalData, 'date', '%Y%m%d%H%M%S');
+            return finalData;
+        }
+
+        // Draws the graph.
+        function drawGraph(data) {
+            MG.data_graphic({
+                data: data,
+                chart_type: 'point',
+                full_width: true,
+                target: '#adu-graph',
+                x_accessor: 'date',
+                y_accessor: 'ratio',
+                xax_start_at_min: true,
+                decimals: 3,
+                area: false,
+                mouseover: function(d, i) {
+                    $('.mg-active-datapoint')
+                        .html('Build ID: ' + data[i].build_id +
+                            ', ADU count: ' + data[i].adu_count +
+                            ', Crash count: ' + data[i].crash_count
+                        );
+                }
+            });
+        }
+
+        // Success function for the JSON request.
+        function onJsonLoad(data) {
+            // Remove loader.
+            graphElt.empty();
+            if (data.total) {
+                drawGraph(formatData(data.hits));
+            } else {
+                $('#adu-graph').text('No results were found.');
+            }
+        }
+
+        // Error function.
+        function error(jqXHR, textStatus, errorThrown) {
+            handleError(contentElt, jqXHR, textStatus, errorThrown);
+        }
+
+        function showGraph(channel) {
+            // Remove previous results and show loader.
+            graphElt.empty();
+            addLoaderToElt(graphElt);
+
+            // Make graph options from form. Mandatory params for graph:
+            // product_name, signature, start_date, end_date, channel
+            // Dates will be processed by Django; others processed here.
+            var params = getParamsWithSignature();
+
+            // Channel and signature should be defined.
+            var graphOptions = {
+                channel: channel,
+                signature: params.signature
+            };
+
+            // Product may be undefined. If so, user must choose one.
+            if (params.product) {
+                graphOptions.product = params.product[0];
+            } else {
+                // Show the search form.
+                var elt = $('.toggle-filters');
+                elt.removeClass('show');
+                elt.html('Hide');
+                form.show();
+                // Add a new fieldset for choosing a product.
+                form.dynamicForm('newLine', {
+                    field: 'product',
+                    operator: 'has terms',
+                    value: ''
+                });
+                // Focus the value input of the new fieldset.
+                $('fieldset:last-child .value').select2('open');
+                // Prompt the user to choose a product.
+                contentElt.empty().text('Please select a product.');
+                return;
+            }
+
+            var url = dataUrl + channel + '/?' + $.param(params, true);
+            // Get graph data and draw graph.
+            $.ajax({
+                url: url,
+                success: onJsonLoad,
+                error: error,
+                dataType: 'json'
+            });
+
+        }
+
+        // Apply select2 to select element.
+        selectElt.select2({
+            'placeholder': 'Channel...',
+            'allowClear': true
+        });
+
+        // Draw a new graph whenever a new channel is chosen.
+        selectElt.on('change', function (e) {
+            selectElt.select2('val', '');
+            showGraph(e.val);
+        });
+
+        // Show graph on load with default options.
+        showGraph(defaultChannel);
+    };
+
     // Finally start the damn thing.
     bindEvents();
     startSearchForm(loadInitialTab);

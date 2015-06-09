@@ -1,9 +1,12 @@
 import math
 import urllib
+import isodate
+import datetime
 
 from django import http
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
+from django.conf import settings
 
 from waffle.decorators import waffle_switch
 
@@ -83,6 +86,9 @@ def signature_report(request, default_context=None):
     ]
 
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+
+    context['channels'] = ','.join(settings.CHANNELS).split(',')
+    context['channel'] = settings.CHANNEL
 
     context['report_list_query_string'] = urllib.urlencode(
         utils.sanitize_dict(
@@ -296,3 +302,60 @@ def signature_comments(request):
     data['query'] = search_results
 
     return render(request, 'signature/signature_comments.html', data)
+
+
+@waffle_switch('signature-report')
+@utils.json_view
+def signature_graph_data(request, channel):
+    '''Return data for the graph of crashes/ADU against build date'''
+    params = get_validated_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
+
+    signature = params['signature'][0]
+    product = params['product'][0]
+
+    # Initialise start and end dates
+    start_date = None
+    end_date = None
+
+    # Check for dates
+    if 'date' in params:
+        for date in params['date']:
+            # Set the latest given start date as the start date
+            if date.startswith('>'):
+                d = isodate.parse_date(date.strip('>'))
+                if not start_date or d < start_date:
+                    start_date = d
+            # Set the earliest given end date as the end date
+            elif date.startswith('<'):
+                d = isodate.parse_date(date.strip('<'))
+                if not end_date or d > end_date:
+                    end_date = d
+
+    # If start date wasn't given, set it to 7 days before the end date
+    # If end date wasn't given either, set it to 7 days before today
+    if not start_date:
+        if end_date:
+            start_date = end_date - datetime.timedelta(days=7)
+        else:
+            start_date = datetime.datetime.utcnow() - datetime.timedelta(
+                days=7
+            )
+
+    # If end date wasn't given, set it to today
+    if not end_date:
+        end_date = datetime.datetime.utcnow()
+
+    # Get the graph data
+    api = models.AduBySignature()
+    data = api.get(
+        signature=signature,
+        product_name=product,
+        start_date=start_date,
+        end_date=end_date,
+        channel=channel
+    )
+
+    return data
