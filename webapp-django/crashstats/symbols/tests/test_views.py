@@ -18,7 +18,10 @@ from crashstats.symbols import models
 from crashstats.symbols.views import check_symbols_archive_content
 
 from .base import ZIP_FILE, TARGZ_FILE, TGZ_FILE, TAR_FILE
-from crashstats.symbols.views import unpack_and_upload
+from crashstats.symbols.views import (
+    unpack_and_upload,
+    get_bucket_name_and_location,
+)
 
 
 class EmptyFile(object):
@@ -233,12 +236,14 @@ class TestViews(BaseTestViews):
             )
         ])
 
-    def test_web_upload_different_bucket_by_user(self):
+    def test_web_upload_different_bucket_by_wildcard(self):
         url = reverse('symbols:web_upload')
         user = self._login()
         self._add_permission(user, 'upload_symbols')
+        assert user.email.endswith('@mozilla.com')
         exception_names = {
-            user.email: 'my-special-bucket-name',
+            '*@mozilla.com': 'my-special-bucket-name',
+            '*@example.com': 'other-bucket-name',
         }
         with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exception_names):
             with open(ZIP_FILE) as file_object:
@@ -263,6 +268,65 @@ class TestViews(BaseTestViews):
                     settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
                 )
             ])
+
+    def test_get_bucket_name_and_location(self):
+
+        class _User(object):
+            def __init__(self, email):
+                self.email = email
+
+        # no exceptions set
+        result = get_bucket_name_and_location(
+            _User('user@example.com')
+        )
+        eq_(
+            result,
+            (
+                settings.SYMBOLS_BUCKET_DEFAULT_NAME,
+                settings.SYMBOLS_BUCKET_DEFAULT_LOCATION
+            )
+        )
+
+        exceptions = {'user@example.com': 'my-bucket'}
+        with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exceptions):
+            # a good regular match
+            result = get_bucket_name_and_location(
+                _User('user@example.com')
+            )
+            eq_(result[0], 'my-bucket')
+
+            # a failing match
+            result = get_bucket_name_and_location(
+                _User('other_user@example.com')
+            )
+            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+
+            # a case insensitive match
+            result = get_bucket_name_and_location(
+                _User('UsEr@example.COM')
+            )
+            eq_(result[0], 'my-bucket')
+
+        # now with wildcards
+        exceptions = {'*@example.com': 'my-bucket'}
+        with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exceptions):
+            # a good match
+            result = get_bucket_name_and_location(
+                _User('user@example.com')
+            )
+            eq_(result[0], 'my-bucket')
+
+            # a failing match
+            result = get_bucket_name_and_location(
+                _User('user@example.biz')
+            )
+            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+
+            # a case insensitive match
+            result = get_bucket_name_and_location(
+                _User('UsEr@example.COM')
+            )
+            eq_(result[0], 'my-bucket')
 
     def test_web_upload_different_bucket_by_user_different_location(self):
         url = reverse('symbols:web_upload')
