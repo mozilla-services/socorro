@@ -325,7 +325,7 @@ class TestSearchBase(TestCase):
         params = search.get_parameters(**args)
         ok_('version' in params)
         eq_(len(params['version']), 1)
-        eq_(params['version'][0].value, ['38.0b'])
+        eq_(params['version'][0].value, '38.0b')
         eq_(params['version'][0].operator, '$')
         ok_(not params['version'][0].operator_not)
 
@@ -340,17 +340,17 @@ class TestSearchBase(TestCase):
 
             if param.operator == '$' and not param.operator_not:
                 # starts with, this one was made up.
-                eq_(param.value, ['1.9b'])
+                eq_(param.value, '1.9b')
             elif param.operator == '$' and param.operator_not:
                 # starts with, this one was made up.
-                eq_(param.value, ['2.9b'])
+                eq_(param.value, '2.9b')
             elif param.operator == '^':
                 eq_(param.value, '.0b')
             elif param.operator == '':
                 eq_(param.value, ['1.9b2'])
 
 
-#==============================================================================
+# =============================================================================
 class TestSearchCommon(TestCase):
     """Test functions of the search_common module. """
 
@@ -406,7 +406,7 @@ class TestSearchCommon(TestCase):
         assert_raises(ValueError, convert_to_type, 'abds', 'int')
         assert_raises(ValueError, convert_to_type, '2013-02-32', 'date')
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_get_parameters(self):
         """
         Test search_common.get_parameters()
@@ -471,7 +471,7 @@ class TestSearchCommon(TestCase):
         eq_(params["terms"], ["some", "terms/sig"])
         eq_(params["signature"], "my/little/signature")
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def test_restrict_fields(self):
         """
         Test search_common.restrict_fields()
