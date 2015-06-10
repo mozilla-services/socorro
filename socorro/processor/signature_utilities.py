@@ -364,6 +364,7 @@ class CSignatureTool(CSignatureToolBase):
           'moz_xrealloc',
           'msvcr120\.dll@0x.*',
           'NP_Shutdown',
+          '(NS_)?(Lossy)?(Copy|Append|Convert).*UTF.*',
           'nsACString_internal::Assign.*',
           'nsAString_internal::Assign.*',
           'nsCOMPtr.*',
