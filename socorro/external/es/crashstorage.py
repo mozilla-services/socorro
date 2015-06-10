@@ -140,6 +140,7 @@ class ESCrashStorage(CrashStorageBase):
 
 
 from socorro.lib.converters import change_default
+from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 
@@ -177,12 +178,33 @@ class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
         )
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def reconstitute_datetimes(processed_crash):
+        datetime_fields =  [
+            'submitted_timestamp',
+            'date_processed',
+            'client_crash_date',
+            'started_datetime',
+            'startedDateTime',
+            'completed_datetime',
+            'completeddatetime',
+        ]
+        for a_key in datetime_fields:
+            try:
+                processed_crash[a_key] = string_to_datetime(
+                    processed_crash[a_key]
+                )
+            except KeyError:
+                # not there? we don't care
+                pass
+
+    #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
         """This is the only write mechanism that is actually employed in normal
         usage.
         """
-
+        self.reconstitute_datetimes(processed_crash)
         self.redactor.redact(processed_crash)
 
         super(ESCrashStorageNoStackwalkerOutput, self).save_raw_and_processed(
