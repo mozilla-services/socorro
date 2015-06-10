@@ -2,9 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-###!/usr/bin/python
-
-
 import datetime
 import gzip
 import csv
@@ -97,7 +94,10 @@ def setup_query_parameters(config, day):
             else:
                 prod_phrase = "and r.product = '%s'" % config.product
     except Exception, x:
-        config.logger.error(repr(x), exc_info=True)
+        config.logger.error(
+            'unable to create product phrase for query',
+            exc_info=True
+        )
     ver_phrase = ''
     try:
         if config.version != '':
@@ -107,7 +107,10 @@ def setup_query_parameters(config, day):
             else:
                 ver_phrase = "and r.version = '%s'" % config.version
     except Exception, x:
-        config.logger.error(repr(x), exc_info=True)
+        config.logger.error(
+            'unable to create product phrase for query',
+            exc_info=True
+        )
 
     return DotDict({
         'now_str': now_str,
@@ -135,8 +138,7 @@ def gzipped_csv_files(config, day, gzip=gzip, csv=csv):
         lineterminator='\n'
     )
 
-    pubic_out_filename = ("%s-pub-crashdata.csv.gz"
-                          % day.strftime('%Y%m%d'))
+    public_out_filename = "%s-pub-crashdata.csv.gz" % day.strftime('%Y%m%d')
     public_out_pathname = None
     public_out_directory = config.get('public_output_path')
     public_gzip_file_handle = None
@@ -144,7 +146,7 @@ def gzipped_csv_files(config, day, gzip=gzip, csv=csv):
     if public_out_directory:
         public_out_pathname = os.path.join(
             public_out_directory,
-            pubic_out_filename
+            public_out_filename
         )
         public_gzip_file_handle = gzip.open(public_out_pathname, "w")
         public_csv_file_handle = csv.writer(
@@ -285,7 +287,10 @@ def dailyUrlDump(
                     column_value_list = process_crash(crash_row)
                     write_row(output_context, column_value_list)
     except Exception, x:
-        config.logger.error(repr(x), exc_info=True)
+        config.logger.error(
+            'major problem running dailyUrlDump',
+            exc_info=True
+        )
         raise
 
 
