@@ -688,6 +688,11 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         ):
             # we don't want any of these
             return False
+        if processed_crash.json_dump.crashing_thread.frames[0].get(
+            'module',
+            False
+        ): # there is a module at the top of the stack, we don't want this
+            return False
         return (
             processed_crash.signature.endswith('EnterBaseline')
             or processed_crash.signature.endswith('EnterIon')
