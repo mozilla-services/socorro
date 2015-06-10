@@ -193,6 +193,7 @@ class CSignatureToolBase(SignatureTool):
                 pass
         if sentinel_locations:
             source_list = source_list[min(sentinel_locations):]
+
         new_signature_list = []
         for a_signature in source_list:
             if self.irrelevant_signature_re.match(a_signature):

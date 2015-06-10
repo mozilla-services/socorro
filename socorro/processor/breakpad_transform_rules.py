@@ -68,7 +68,6 @@ class BreakpadStackwalkerRule(Rule):
         default=tempfile.gettempdir(),
     )
 
-
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(BreakpadStackwalkerRule, self).__init__(config)
@@ -330,7 +329,7 @@ class ExternalProcessRule(Rule):
             'in the processed crash',
         default='%s_result' %
             required_config.command_pathname.default.split('/')[-1]
-            .replace('-',''),
+            .replace('-', ''),
     )
     required_config.add_option(
         'return_code_key',
@@ -531,7 +530,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         default=tempfile.gettempdir(),
     )
 
-
     #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
@@ -561,7 +559,7 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         )._execute_external_process(command_line, processor_meta)
 
         if not isinstance(stackwalker_output, Mapping):
-            processor_notes.append(
+            processor_meta.processor_notes.append(
                 "MDSW produced unexpected output: %s..." %
                 str(stackwalker_output)[:10]
             )
@@ -623,7 +621,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
                         dump_pathname
                     )
 
-
                 command_line = self.config.command_line.format(
                     **dict(
                         self.config,
@@ -632,8 +629,10 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
                     )
                 )
 
-                stackwalker_data, return_code = \
-                    self._execute_external_process(command_line, processor_meta)
+                stackwalker_data, return_code = self._execute_external_process(
+                    command_line,
+                    processor_meta
+                )
 
                 if dump_name == self.config.dump_field:
                     processed_crash.update(stackwalker_data)
@@ -643,3 +642,53 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         return True
 
+
+#==============================================================================
+class JitCrashCategorizeRule(ExternalProcessRule):
+
+    required_config = Namespace()
+    required_config.command_line = change_default(
+        ExternalProcessRule,
+        'command_line',
+        'timeout -s KILL 30 {command_pathname} '
+        '{dump_file_pathname} '
+        '2>/dev/null'
+    )
+    required_config.command_pathname = change_default(
+        ExternalProcessRule,
+        'command_pathname',
+        '/data/socorro/stackwalk/bin/jit-crash-categorize',
+    )
+    required_config.result_key = change_default(
+        ExternalProcessRule,
+        'result_key',
+        'classifications.jit.category',
+    )
+    required_config.result_key = change_default(
+        ExternalProcessRule,
+        'return_code_key',
+        'classifications.jit.category_return_code',
+    )
+    required_config.add_option(
+        'threshold',
+        doc="max number of frames until encountering target frame",
+        default=8
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(JitCrashCategorizeRule, self).__init__(config)
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        if (
+            processed_crash.product != 'Firefox'
+            or processed_crash.platform != 'Windows'
+            or processed_crash.cpu_name != 'x86'
+        ):
+            # we don't want any of these
+            return False
+        return (
+            processed_crash.signature.endswith('EnterBaseline')
+            or processed_crash.signature.endswith('EnterIon')
+        )
