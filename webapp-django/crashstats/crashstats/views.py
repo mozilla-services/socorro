@@ -2012,8 +2012,20 @@ def signature_summary(request):
             'percentage': r['percentage'],
         })
     for r in result['graphics']:
-        vendor_name = r['vendor_name'] or r['vendor_hex']
-        adapter_name = r['adapter_name'] or r['adapter_hex']
+        if r['vendor_name']:
+            vendor_name = '{0} ({1})'.format(
+                r['vendor_name'],
+                r['vendor_hex']
+            )
+        else:
+            vendor_name = r['vendor_hex']
+        if r['adapter_name']:
+            adapter_name = '{0} ({1})'.format(
+                r['adapter_name'],
+                r['adapter_hex']
+            )
+        else:
+            adapter_name = r['adapter_hex']
         signature_summary['graphics'].append({
             'vendor': vendor_name,
             'adapter': adapter_name,
