@@ -33,6 +33,7 @@
 
 #include <curl/curl.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <errno.h>
@@ -112,6 +113,31 @@ HTTPSymbolSupplier::~HTTPSymbolSupplier() {
   curl_easy_cleanup(curl_);
 }
 
+void
+HTTPSymbolSupplier::StoreSymbolStats(const CodeModule* module,
+                                     const SymbolStats& stats) {
+  const auto& key =
+    std::make_pair(module->debug_file(), module->debug_identifier());
+  if (symbol_stats_.find(key) == symbol_stats_.end()) {
+    symbol_stats_[key] = stats;
+  }
+}
+
+void
+HTTPSymbolSupplier::StoreCacheHit(const CodeModule* module)
+{
+  SymbolStats stats = {true, 0.0f};
+  StoreSymbolStats(module, stats);
+}
+
+void
+HTTPSymbolSupplier::StoreCacheMiss(const CodeModule* module,
+                                   float fetch_time)
+{
+  SymbolStats stats = {false, fetch_time};
+  StoreSymbolStats(module, stats);
+}
+
 SymbolSupplier::SymbolResult
 HTTPSymbolSupplier::GetSymbolFile(const CodeModule* module,
                                   const SystemInfo* system_info,
@@ -119,6 +145,7 @@ HTTPSymbolSupplier::GetSymbolFile(const CodeModule* module,
   SymbolSupplier::SymbolResult res =
     SimpleSymbolSupplier::GetSymbolFile(module, system_info, symbol_file);
   if (res != SymbolSupplier::NOT_FOUND) {
+    StoreCacheHit(module);
     return res;
   }
 
@@ -138,6 +165,7 @@ HTTPSymbolSupplier::GetSymbolFile(const CodeModule* module,
     SimpleSymbolSupplier::GetSymbolFile(module, system_info,
                                         symbol_file, symbol_data);
   if (res != SymbolSupplier::NOT_FOUND) {
+    StoreCacheHit(module);
     return res;
   }
 
@@ -160,6 +188,7 @@ HTTPSymbolSupplier::GetCStringSymbolData(const CodeModule *module,
                                                symbol_file, symbol_data,
                                                size);
   if (res != SymbolSupplier::NOT_FOUND) {
+    StoreCacheHit(module);
     return res;
   }
 
@@ -242,7 +271,9 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
        server_url < server_urls_.end();
        ++server_url) {
     string full_url = *server_url + url;
-    if (FetchURLToFile(curl_, full_url, full_path)) {
+    float fetch_time;
+    if (FetchURLToFile(curl_, full_url, full_path, &fetch_time)) {
+      StoreCacheMiss(module, fetch_time);
       result = true;
       break;
     }
@@ -256,8 +287,10 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
 
 bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
                                         const string& url,
-                                        const string& file) {
+                                        const string& file,
+                                        float* fetch_time) {
   BPLOG(INFO) << "HTTPSymbolSupplier: fetching " << url;
+  *fetch_time = 0.0f;
 
   string tempfile = JoinPath(tmp_path_, "symbolXXXXXX");
   int fd = mkstemp(&tempfile[0]);
@@ -274,6 +307,8 @@ bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, f);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 
+  struct timeval t1, t2;
+  gettimeofday(&t1, nullptr);
   bool result = false;
   long retcode = -1;
   if (curl_easy_perform(curl) != 0) {
@@ -289,6 +324,9 @@ bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
     BPLOG(INFO) << "HTTPSymbolSupplier: fetch succeeded, saving to " << file;
     result = true;
   }
+  gettimeofday(&t2, nullptr);
+  *fetch_time = (t2.tv_sec - t1.tv_sec) * 1000.0
+    + (t2.tv_usec - t1.tv_usec) / 1000.0;
   fclose(f);
   close(fd);
 
@@ -312,6 +350,19 @@ bool HTTPSymbolSupplier::FetchURLToFile(CURL* curl,
   }
 
   return result;
+}
+
+bool
+HTTPSymbolSupplier::GetStats(const CodeModule* module, SymbolStats* stats) const {
+  const auto& found =
+    symbol_stats_.find(std::make_pair(module->debug_file(),
+                                      module->debug_identifier()));
+  if (found == symbol_stats_.end()) {
+    return false;
+  }
+
+  *stats = found->second;
+  return true;
 }
 
 bool HTTPSymbolSupplier::SymbolWasError(const CodeModule* module,

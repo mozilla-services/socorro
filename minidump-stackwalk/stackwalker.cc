@@ -544,6 +544,7 @@ bool ConvertStackToJSON(const ProcessState& process_state,
 
 int ConvertModulesToJSON(const ProcessState& process_state,
                          const StackFrameSymbolizerForward& symbolizer,
+                         const HTTPSymbolSupplier* supplier,
                          Json::Value& json) {
   const CodeModules* modules = process_state.modules();
   const vector<const CodeModule*>* modules_without_symbols =
@@ -584,6 +585,13 @@ int ConvertModulesToJSON(const ProcessState& process_state,
     }
     if (symbolizer.SymbolsLoadedFor(module)) {
       module_data["loaded_symbols"] = true;
+      HTTPSymbolSupplier::SymbolStats stats;
+      if (supplier && supplier->GetStats(module, &stats)) {
+        module_data["symbol_disk_cache_hit"] = stats.was_cached_on_disk;
+        if (!stats.was_cached_on_disk) {
+          module_data["symbol_fetch_time"] = stats.fetch_time_ms;
+        }
+      }
     }
     json.append(module_data);
   }
@@ -623,6 +631,7 @@ static string ExploitabilityString(ExploitabilityRating exploitability) {
 
 static void ConvertProcessStateToJSON(const ProcessState& process_state,
                                       const StackFrameSymbolizerForward& symbolizer,
+                                      const HTTPSymbolSupplier* supplier,
                                       Json::Value& root) {
   // OS and CPU information.
   Json::Value system_info;
@@ -653,7 +662,8 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
   root["crash_info"] = crash_info;
 
   Json::Value modules(Json::arrayValue);
-  int main_module = ConvertModulesToJSON(process_state, symbolizer, modules);
+  int main_module = ConvertModulesToJSON(process_state, symbolizer,
+                                         supplier, modules);
   if (main_module != -1)
     root["main_module"] = main_module;
   root["modules"] = modules;
@@ -1108,12 +1118,14 @@ int main(int argc, char** argv)
   //Stackwalker::set_max_frames(UINT32_MAX);
   Json::Value root;
   scoped_ptr<SymbolSupplier> symbol_supplier;
+  HTTPSymbolSupplier* http_symbol_supplier = nullptr;
   if (!symbols_urls.empty()) {
     vector<string> server_paths(symbols_urls.begin(), symbols_urls.end());
-    symbol_supplier.reset(new HTTPSymbolSupplier(server_paths,
-                                                 symbols_cache,
-                                                 symbol_paths,
-                                                 symbols_tmp));
+    http_symbol_supplier = new HTTPSymbolSupplier(server_paths,
+                                                  symbols_cache,
+                                                  symbol_paths,
+                                                  symbols_tmp);
+    symbol_supplier.reset(http_symbol_supplier);
   } else if (!symbol_paths.empty()) {
     symbol_supplier.reset(new SimpleSymbolSupplier(symbol_paths));
   }
@@ -1142,7 +1154,8 @@ int main(int argc, char** argv)
   root["status"] = ResultString(result);
   root["sensitive"] = Json::Value(Json::objectValue);
   if (result == google_breakpad::PROCESS_OK) {
-    ConvertProcessStateToJSON(process_state, symbolizer, root);
+    ConvertProcessStateToJSON(process_state, symbolizer,
+                              http_symbol_supplier, root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
 

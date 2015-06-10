@@ -30,6 +30,7 @@
 // A SymbolSupplier that can fetch symbols via HTTP from a symbol server
 // serving them at Microsoft symbol server-compatible paths.
 
+#include <map>
 #include <set>
 #include <string>
 
@@ -83,16 +84,34 @@ class HTTPSymbolSupplier : public SimpleSymbolSupplier {
     char** symbol_data,
     size_t* size);
 
+  struct SymbolStats {
+    // true if the symbol file was already cached on disk,
+    // false if a HTTP request was made to fetch it.
+    bool was_cached_on_disk;
+    // If was_cached_on_disk is false, the time in milliseconds
+    // that the full HTTP request to fetch the symbol file took.
+    float fetch_time_ms;
+  };
+
+  // Get stats on symbols for a module.
+  // Returns true if stats were found, false if not.
+  bool GetStats(const CodeModule* module, SymbolStats* stats) const;
+
  private:
   bool FetchSymbolFile(const CodeModule* module, const SystemInfo* system_info);
 
-  bool FetchURLToFile(CURL* curl, const string& url, const string& file);
+  bool FetchURLToFile(CURL* curl, const string& url, const string& file,
+                      float* fetch_time);
   bool SymbolWasError(const CodeModule* module, const SystemInfo* system_info);
+  void StoreCacheHit(const CodeModule* Module);
+  void StoreCacheMiss(const CodeModule* module, float fetch_time);
+  void StoreSymbolStats(const CodeModule* module, const SymbolStats& stats);
 
   vector<string> server_urls_;
   string cache_path_;
   string tmp_path_;
   std::set<std::pair<string,string>> error_symbols_;
+  std::map<std::pair<string,string>, SymbolStats> symbol_stats_;
   CURL* curl_;
 };
 
