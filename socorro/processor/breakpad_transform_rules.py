@@ -683,7 +683,7 @@ class JitCrashCategorizeRule(ExternalProcessRule):
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
             processed_crash.product != 'Firefox'
-            or processed_crash.platform != 'Windows'
+            or processed_crash.os_name.startswith('Windows')
             or processed_crash.cpu_name != 'x86'
         ):
             # we don't want any of these
