@@ -139,7 +139,6 @@ class ESCrashStorage(CrashStorageBase):
             raise
 
 
-from copy import deepcopy
 from socorro.lib.converters import change_default
 from socorro.external.crashstorage_base import Redactor
 
@@ -171,6 +170,11 @@ class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
             quit_check_callback
         )
         self.redactor = config.es_redactor.redactor_class(config.es_redactor)
+        self.config.logger.warning(
+            "beware, this crashstorage class is destructive to the "
+            "processed crash - if you're using a polycrashstore you may "
+            "find the modified processed crash saved to the other crashstores"
+        )
 
     #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
@@ -179,12 +183,11 @@ class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
         usage.
         """
 
-        copied_processed_crash = deepcopy(processed_crash)
-        self.redactor.redact(copied_processed_crash)
+        self.redactor.redact(processed_crash)
 
         super(ESCrashStorageNoStackwalkerOutput, self).save_raw_and_processed(
             raw_crash,
             dumps,
-            copied_processed_crash,
+            processed_crash,
             crash_id
         )
