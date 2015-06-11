@@ -546,6 +546,26 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
 
         eq_(res, res_expected)
 
+        # And now some error handling checks
+
+        # Test 6: Limit to one OS but an unrecognized one
+        params = {
+            "product": "Firefox",
+            "version": "8.0",
+            "os": "NEVER_HEARD_OF"
+        }
+        assert_raises(ValueError, tcbs.get_signatures, **params)
+
+        # Test 7: A nasty crash_type value
+        params = {
+            "product": "Firefox",
+            "version": "8.0",
+            "crash_type": "';delete from user"
+        }
+        res = tcbs.get_signatures(**params)
+        eq_(res['crashes'], [])
+        eq_(res['totalNumberOfCrashes'], 0)
+
     def test_get_signature_history(self):
         api = Crashes(config=self.config)
         now = self.now
