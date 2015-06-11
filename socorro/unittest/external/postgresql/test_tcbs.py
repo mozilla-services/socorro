@@ -7,6 +7,7 @@ import mock
 import socorro.external.postgresql.tcbs as tcbs
 from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
+from socorro.external import BadArgumentError
 from socorro.lib import datetimeutil, util
 from .unittestbase import PostgreSQLTestCase
 
@@ -182,7 +183,7 @@ class IntegrationTestTCBS(PostgreSQLTestCase):
         # Test if raises ValueError when are passed wrong parameters
         params.product = None
         assert_raises(
-            ValueError,
+            BadArgumentError,
             tcbs.getListOfTopCrashersBySignature,
             self.connection,
             params

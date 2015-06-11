@@ -6,7 +6,7 @@ import datetime
 from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.external import MissingArgumentError
+from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.crashes import Crashes
 from socorro.lib import datetimeutil
 
@@ -545,6 +545,26 @@ class IntegrationTestCrashesSignatures(PostgreSQLTestCase):
         }
 
         eq_(res, res_expected)
+
+        # And now some error handling checks
+
+        # Test 6: Limit to one OS but an unrecognized one
+        params = {
+            "product": "Firefox",
+            "version": "8.0",
+            "os": "NEVER_HEARD_OF"
+        }
+        assert_raises(BadArgumentError, tcbs.get_signatures, **params)
+
+        # Test 7: A nasty crash_type value
+        params = {
+            "product": "Firefox",
+            "version": "8.0",
+            "crash_type": "';delete from user"
+        }
+        res = tcbs.get_signatures(**params)
+        eq_(res['crashes'], [])
+        eq_(res['totalNumberOfCrashes'], 0)
 
     def test_get_signature_history(self):
         api = Crashes(config=self.config)

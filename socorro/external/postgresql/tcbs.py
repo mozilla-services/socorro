@@ -6,7 +6,8 @@ import logging
 logger = logging.getLogger("webapi")
 
 import socorro.database.database as db
-from socorro.lib import datetimeutil, util
+from socorro.external import BadArgumentError
+from socorro.lib import datetimeutil, util, sqlutils
 
 import datetime
 
@@ -48,14 +49,22 @@ def getListOfTopCrashersBySignature(connection, dbParams):
 
     for param in assertPairs:
         if not isinstance(dbParams[param], assertPairs[param]):
-            raise ValueError(type(dbParams[param]))
+            raise BadArgumentError(type(dbParams[param]))
 
     order_by = 'report_count'  # default order field
     where = ['']  # trick for the later join
     if dbParams['crash_type'] != 'all':
-        where.append("process_type = '%s'" % (dbParams['crash_type'],))
+        where.append(
+            "process_type = %s" % (
+                sqlutils.quote_value(dbParams['crash_type']),
+            )
+        )
     if dbParams['os']:
-        order_by = '%s_count' % dbParams['os'][0:3].lower()
+        abbreviated_os = dbParams['os'][0:3].lower()
+        if abbreviated_os not in ('win', 'lin', 'mac'):
+            # this check prevents possible SQL injections
+            raise BadArgumentError('Invalid OS to order on')
+        order_by = '%s_count' % abbreviated_os
         where.append("%s > 0" % order_by)
 
     where = ' AND '.join(where)
