@@ -20,7 +20,7 @@ from socorro.external.es.crashstorage import (
 )
 from socorro.external.es.connection_context import ConnectionContext
 from socorro.unittest.external.es.base import ElasticsearchTestCase
-from socorro.lib import datetimeutil
+from socorro.lib.datetimeutil import string_to_datetime
 
 
 # A dummy crash report that is used for testing.
@@ -60,6 +60,7 @@ a_processed_crash = {
     'release_channel': 'default',
     'ReleaseChannel': 'default',
     'signature': 'libxul.so@0x117441c',
+    'started_datetime': '2012-04-08 10:56:50.440752',
     'startedDateTime': '2012-04-08 10:56:50.440752',
     'success': True,
     'topmost_filenames': [],
@@ -85,8 +86,18 @@ a_processed_crash = {
 }
 
 a_processed_crash_with_no_stackwalker = deepcopy(a_processed_crash)
+
 a_processed_crash_with_no_stackwalker['date_processed'] = \
     '2012-04-08T10:56:41+00:00'
+a_processed_crash_with_no_stackwalker['client_crash_date'] =  \
+    string_to_datetime('2012-04-08 10:52:42.0')
+a_processed_crash_with_no_stackwalker['completeddatetime'] =  \
+    string_to_datetime('2012-04-08 10:56:50.902884')
+a_processed_crash_with_no_stackwalker['started_datetime'] =  \
+    string_to_datetime('2012-04-08 10:56:50.440752')
+a_processed_crash_with_no_stackwalker['startedDateTime'] =  \
+    string_to_datetime('2012-04-08 10:56:50.440752')
+
 del a_processed_crash_with_no_stackwalker['json_dump']
 del a_processed_crash_with_no_stackwalker['upload_file_minidump_flash1'][
     'json_dump'
@@ -228,7 +239,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         # The date is used to generate the name of the index; it must be a
         # datetime object.
-        date = datetimeutil.string_to_datetime(
+        date = string_to_datetime(
             a_processed_crash['client_crash_date']
         )
         index = es_storage.get_index_for_crash(date)

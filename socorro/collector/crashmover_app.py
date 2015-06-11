@@ -110,25 +110,11 @@ class ProcessedCrashCopierApp(FetchTransformSaveApp):
 
 
 #==============================================================================
-class RawAndProcessedCopierApp(FetchTransformSaveApp):
+class RawAndProcessedCopierApp(ProcessedCrashCopierApp):
     """copy raw & processed crashes from a source to a destination"""
     app_name = 'raw_and_processed_crash_copier'
     app_version = '1.0'
     app_description = __doc__
-
-    required_config = Namespace()
-    #--------------------------------------------------------------------------
-    # new_crash_source namespace
-    #     this namespace is for config parameter having to do with the source
-    #     of new crash_ids.
-    #--------------------------------------------------------------------------
-    required_config.namespace('new_crash_source')
-    required_config.new_crash_source.add_option(
-        'new_crash_source_class',
-        doc='an iterable that will stream crash_ids needing processing',
-        default='socorro.processor.timemachine.PGQueryNewCrashSource',
-        from_string_converter=class_converter
-    )
 
     #--------------------------------------------------------------------------
     @staticmethod
