@@ -152,6 +152,7 @@ class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
         name="redactor_class",
         doc="the name of the class that implements a 'redact' method",
         default='socorro.external.crashstorage_base.Redactor',
+        from_string_converter=class_converter,
     )
     required_config.es_redactor.forbidden_keys = change_default(
         Redactor,
