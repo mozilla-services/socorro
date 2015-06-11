@@ -10,10 +10,12 @@ import sys
 import collections
 import datetime
 
+from socorro.lib.util import DotDict as SocorroDotDict
+
 from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
                                  class_converter
-from configman.dotdict import DotDict
+from configman.dotdict import DotDict as ConfigmanDotDict
 
 #==============================================================================
 class Redactor(RequiredConfig):
@@ -262,7 +264,7 @@ class NullCrashStorage(CrashStorageBase):
 
         parameters:
            crash_id - the id of a raw crash to fetch"""
-        return {}
+        return SocorroDotDict()
 
     #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name):
@@ -278,7 +280,7 @@ class NullCrashStorage(CrashStorageBase):
 
         parameters:
            crash_id - the id of a dump to fetch"""
-        return {}
+        return SocorroDotDict()
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
@@ -286,7 +288,7 @@ class NullCrashStorage(CrashStorageBase):
 
         parameters:
            crash_id - the id of a processed_crash to fetch"""
-        return {}
+        return SocorroDotDict()
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
@@ -392,7 +394,7 @@ class PolyCrashStorage(CrashStorageBase):
         super(PolyCrashStorage, self).__init__(config, quit_check_callback)
         self.storage_namespaces = \
           config.storage_classes.subordinate_namespace_names
-        self.stores = DotDict()
+        self.stores = ConfigmanDotDict()
         for a_namespace in self.storage_namespaces:
             self.stores[a_namespace] = \
               config[a_namespace].crashstorage_class(
