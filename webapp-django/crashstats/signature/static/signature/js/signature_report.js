@@ -238,7 +238,6 @@ $(function () {
         var statusElt = $('.status', aggregationsPanel);
         var contentElt = $('.content', aggregationsPanel);
         var selectElt = $('.fields-list', aggregationsPanel);
-        var loaderElt = $('.loader', aggregationsPanel);
 
         var dataUrl = aggregationsPanel.data('source-url');
 
@@ -250,11 +249,28 @@ $(function () {
             $('option[value=' + field + ']', selectElt).prop('disabled', false);
         }
 
+        function makePanelHeader(field) {
+            return field.charAt(0).toUpperCase() +
+                field.slice(1).replace(/_/g, ' ');
+        }
+
         function showAggregation(field) {
+            // Initialize aggregation panel with heading.
+            var panelElt = $('<div>', {class: 'panel'});
+            var headerElt = $('<header>', {class: 'title'});
+            var bodyElt = $('<div>', {class: 'body'});
+
+            headerElt.append(
+                $('<a>', {href: '#', class: 'options delete', text: 'X'}),
+                $('<h2>', {text: makePanelHeader(field)})
+            );
+            panelElt.append(headerElt, bodyElt);
+
             // Remove previous results and show loader.
             statusElt.empty();
-            loaderElt.show();
             disableOption(field);
+            contentElt.append(panelElt);
+            addLoaderToElt(bodyElt);
 
             var params = getParamsWithSignature();
             var url = dataUrl + field + '/?' + $.param(params, true);
@@ -263,9 +279,8 @@ $(function () {
                 url: url,
                 success: function(data) {
                     statusElt.empty();
-                    loaderElt.hide();
                     var dataElt = $(data);
-                    contentElt.append(dataElt);
+                    bodyElt.empty().append(dataElt);
                     $('.tablesorter').tablesorter();
 
                     $('.delete', dataElt).click(function (e) {
@@ -275,7 +290,6 @@ $(function () {
                     });
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                    loaderElt.hide();
                     handleError(statusElt, jqXHR, textStatus, errorThrown);
                 },
                 dataType: 'HTML'
