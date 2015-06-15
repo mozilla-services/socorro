@@ -2,6 +2,7 @@ import re
 import os
 from functools import wraps
 from cStringIO import StringIO
+from zipfile import BadZipfile
 
 from django import http
 from django.conf import settings
@@ -186,10 +187,13 @@ def web_upload(request):
                 content_type = 'application/x-gzip'
             else:
                 content_type = form.cleaned_data['file'].content_type
-            content = utils.preview_archive_content(
-                form.cleaned_data['file'].file,
-                content_type
-            )
+            try:
+                content = utils.preview_archive_content(
+                    form.cleaned_data['file'].file,
+                    content_type
+                )
+            except BadZipfile as exception:
+                return http.HttpResponseBadRequest(exception)
 
             error = check_symbols_archive_content(content)
             if error:

@@ -17,7 +17,13 @@ from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.symbols import models
 from crashstats.symbols.views import check_symbols_archive_content
 
-from .base import ZIP_FILE, TARGZ_FILE, TGZ_FILE, TAR_FILE
+from .base import (
+    ZIP_FILE,
+    TARGZ_FILE,
+    TGZ_FILE,
+    TAR_FILE,
+    ACTUALLY_NOT_ZIP_FILE,
+)
 from crashstats.symbols.views import (
     unpack_and_upload,
     get_bucket_name_and_location,
@@ -532,6 +538,45 @@ class TestViews(BaseTestViews):
         ok_(symbol_upload.content)
 
         assert self.uploaded_keys
+
+    def test_web_upload_unrecognized_file_extension(self):
+        url = reverse('symbols:web_upload')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+        with open(__file__) as file_object:
+            response = self.client.post(
+                url,
+                {'file': file_object}
+            )
+            eq_(response.status_code, 200)
+            ok_('Unrecognized file' in response.content)
+
+        assert not models.SymbolsUpload.objects.all()
+        assert not self.uploaded_keys
+
+    def test_web_upload_fake_file_extension(self):
+        """
+        Let's try to upload a file that seems to be a .zip file by its
+        name but isn't actually one.
+        This will result in the unpacking causing an exception and we
+        return that as a 400 Bad Request.
+        This is basically the case of seeking forgiveness instead of
+        asking for permission. I.e. we just try to unpack it if at least
+        the file name extension is recognized.
+        """
+        url = reverse('symbols:web_upload')
+        user = self._login()
+        self._add_permission(user, 'upload_symbols')
+        with open(ACTUALLY_NOT_ZIP_FILE) as file_object:
+            response = self.client.post(
+                url,
+                {'file': file_object}
+            )
+            eq_(response.status_code, 400)
+            ok_('File is not a zip file' in response.content)
+
+        assert not models.SymbolsUpload.objects.all()
+        assert not self.uploaded_keys
 
     def test_api_upload_about(self):
         url = reverse('symbols:api_upload')
