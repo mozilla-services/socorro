@@ -412,9 +412,6 @@ class PostgreSQLBase(object):
             if channel.startswith(tuple(config.non_release_channels)):
                 # This is a non-release channel.
 
-                # Use major_version instead of full version.
-                sql_params[version_param] = version_data["major_version"]
-
                 # Restrict by release_channel.
                 version_where.append("r.release_channel ILIKE '%s'" % channel)
 
