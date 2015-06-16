@@ -32,11 +32,13 @@ else
   # build breakpad from source
   make breakpad
 fi
-# Build JSON stackwalker
+# Build JSON stackwalker and friends
 pushd minidump-stackwalk
 make
 popd
 cp minidump-stackwalk/stackwalker stackwalk/bin
+cp minidump-stackwalk/jit-crash-categorize stackwalk/bin
+cp minidump-stackwalk/dumplookup stackwalk/bin
 
 # setup any unset test configs and databases without overwriting existing files
 pushd config
