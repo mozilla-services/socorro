@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import elasticsearch
+from esalsticsearch import helpers
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.index_creator import IndexCreator
@@ -181,7 +182,7 @@ class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
     #--------------------------------------------------------------------------
     @staticmethod
     def reconstitute_datetimes(processed_crash):
-        datetime_fields =  [
+        datetime_fields = [
             'submitted_timestamp',
             'date_processed',
             'client_crash_date',
@@ -213,4 +214,84 @@ class ESCrashStorageNoStackwalkerOutput(ESCrashStorage):
             dumps,
             processed_crash,
             crash_id
+        )
+
+
+from threading import Thread
+from Queue import Queue
+
+
+#==============================================================================
+class ESCrashBulkStorageNoStackwalkerOutput(ESCrashStorageNoStackwalkerOutput):
+    required_config = Namespace()
+    required_config.add_option(
+        'items_per_bulk_load',
+        default=500,
+        doc="the number of crashes that triggers a flush to ES"
+    )
+    required_config.add_option(
+        'maximum_queue_size',
+        default=512,
+        doc='the maximum size of the internal queue'
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(ESCrashBulkStorageNoStackwalkerOutput, self).__init__(
+            config,
+            quit_check_callback
+        )
+
+        self.task_queue = Queue(config.maximum_queue_size)
+        self.consuming_thread = Thread(
+            name="ConsumingThread",
+            target=self._consuming_thread_func
+        )
+
+        # overwrites original
+        self.transaction = config.transaction_executor_class(
+            config,
+            lambda: self.task_queue,
+            quit_check_callback
+        )
+        self.done = False
+        self.consuming_thread.start()
+
+    #--------------------------------------------------------------------------
+    def _submit_crash_to_elasticsearch(self, queue, crash_document):
+        queue.put(crash_document)
+
+     #-------------------------------------------------------------------------
+    def _consumer_iter(self):
+        try:
+            while True:
+                crash_document = self.task_queue.get()
+                if crash_document is None:
+                    self.done = True
+                    break
+                try:
+                    yield crash_document  # execute the task
+                except Exception:
+                    self.config.logger.error(
+                        "Error in processing a job",
+                        exc_info=True
+                    )
+        except Exception:
+            self.config.logger.critical(
+                "Failure in ES Bulktask_queue",
+                exc_info=True
+            )
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        self.task_queue.put(None)
+        self.consuming_thread.join()
+
+    #--------------------------------------------------------------------------
+    def _consuming_thread_func(self):  # execute the bulk load
+        es = self.es_context()
+        helpers.bulk(
+            es,
+            self._consumer_iter,
+            chunk_size=self.items_per_bulk_load
         )
