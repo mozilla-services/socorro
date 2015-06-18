@@ -298,7 +298,7 @@ class TestPostgreSQLBase(TestCase):
         sql_params = {}
         params.report_type = default_params.report_type
         params.versions = ["Firefox", "12.0a1", "Fennec", "11.0", "Firefox",
-                           "13.0b"]
+                           "13.0(beta)"]
         params.versions_info = {
             "Firefox:12.0a1": {
                 "version_string": "12.0a1",
@@ -308,7 +308,7 @@ class TestPostgreSQLBase(TestCase):
                 "build_id": ["20120101123456"],
                 "is_rapid_beta": False,
                 "from_rapid_beta": False,
-                "from_beta_version": "Firefox:12.0a1",
+                "rapid_beta_version": "Firefox:12.0a1",
             },
             "Fennec:11.0": {
                 "version_string": "11.0",
@@ -318,17 +318,17 @@ class TestPostgreSQLBase(TestCase):
                 "build_id": None,
                 "is_rapid_beta": False,
                 "from_rapid_beta": False,
-                "from_beta_version": "Fennec:11.0",
+                "rapid_beta_version": "Fennec:11.0",
             },
-            "Firefox:13.0b1": {
-                "version_string": "13.0b1",
+            "Firefox:13.0(beta)": {
+                "version_string": "13.0(beta)",
                 "product_name": "Firefox",
                 "major_version": "13.0",
                 "release_channel": "Beta",
                 "build_id": ["20120101123456", "20120101098765"],
                 "is_rapid_beta": False,
                 "from_rapid_beta": True,
-                "from_beta_version": "Firefox:13.0b",
+                "rapid_beta_version": "Firefox:13.0b",
             },
             "Firefox:13.0b": {
                 "version_string": "13.0b",
@@ -338,7 +338,7 @@ class TestPostgreSQLBase(TestCase):
                 "build_id": None,
                 "is_rapid_beta": True,
                 "from_rapid_beta": True,
-                "from_beta_version": "Firefox:13.0b",
+                "rapid_beta_version": "Firefox:13.0b",
             }
         }
 
@@ -365,7 +365,7 @@ class TestPostgreSQLBase(TestCase):
             "from_date": params.from_date,
             "to_date": params.to_date,
             "version0": "Firefox",
-            "version1": "12.0a1",
+            "version1": "12.0",
             "version2": "Firefox",
             "version3": "12.0a1",
             "version4": "Fennec",
@@ -373,9 +373,9 @@ class TestPostgreSQLBase(TestCase):
             "version6": "Fennec",
             "version7": "11.0",
             "version8": "Firefox",
-            "version9": "13.0b1",
+            "version9": "13.0",
             "version10": "Firefox",
-            "version11": "13.0b",
+            "version11": "13.0(beta)",
         }
 
         (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
@@ -478,8 +478,8 @@ class TestPostgreSQLBase(TestCase):
                 "release_channel": None,
                 "build_id": None
             },
-            "Firefox:13.0b": {
-                "version_string": "13.0b",
+            "Firefox:13.0(beta)": {
+                "version_string": "13.0(beta)",
                 "product_name": "Firefox",
                 "major_version": "13.0",
                 "release_channel": "beta",
@@ -502,16 +502,16 @@ class TestPostgreSQLBase(TestCase):
         }
 
         # test 1
-        params["versions"] = ["Firefox", "13.0b"]
-        key = "Firefox:13.0b"
+        params["versions"] = ["Firefox", "13.0(beta)"]
+        key = "Firefox:13.0(beta)"
         x = 0
         sql_params = {
             "version0": "Firefox",
-            "version1": "13.0b"
+            "version1": "13.0(beta)"
         }
         sql_params_exp = {
             "version0": "Firefox",
-            "version1": "13.0b"
+            "version1": "13.0"
         }
         version_where = []
         version_where_exp = (
@@ -525,7 +525,7 @@ class TestPostgreSQLBase(TestCase):
 
         version_where = pgbase.build_version_where(
             "Firefox",
-            "13.0b",
+            "13.0",
             x,
             sql_params,
             params["versions_info"][key],
