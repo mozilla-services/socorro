@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import elasticsearch
-from esalsticsearch import helpers
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.index_creator import IndexCreator
@@ -259,9 +258,29 @@ class ESCrashBulkStorageNoStackwalkerOutput(ESCrashStorageNoStackwalkerOutput):
 
     #--------------------------------------------------------------------------
     def _submit_crash_to_elasticsearch(self, queue, crash_document):
-        queue.put(crash_document)
+        crash_date = datetimeutil.string_to_datetime(
+            crash_document['processed_crash']['date_processed']
+        )
 
-     #-------------------------------------------------------------------------
+        # Obtain the index name.
+        es_index = self.get_index_for_crash(crash_date)
+        es_doctype = self.config.elasticsearch.elasticsearch_doctype
+        crash_id = crash_document['crash_id']
+
+        # Attempt to create the index; it's OK if it already exists.
+        if es_index not in self.indices_cache:
+            index_creator = IndexCreator(config=self.config)
+            index_creator.create_socorro_index(es_index)
+
+        action = {
+            '_index': es_index,
+            '_type': es_doctype,
+            '_id': crash_id,
+            '_source': crash_document,
+        }
+        queue.put(action)
+
+    #--------------------------------------------------------------------------
     def _consumer_iter(self):
         try:
             while True:
@@ -290,7 +309,7 @@ class ESCrashBulkStorageNoStackwalkerOutput(ESCrashStorageNoStackwalkerOutput):
     #--------------------------------------------------------------------------
     def _consuming_thread_func(self):  # execute the bulk load
         es = self.es_context()
-        helpers.bulk(
+        elasticsearch.helpers.streaming_bulk(
             es,
             self._consumer_iter,
             chunk_size=self.items_per_bulk_load
