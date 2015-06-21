@@ -3,6 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import hashlib
+import StringIO
+import gzip
+import web
 
 import mock
 from nose.tools import eq_, ok_
@@ -386,6 +389,93 @@ class TestCollectorApp(TestCase):
         r = c.POST()
         ok_(r.startswith('CrashID=bp-'))
         ok_(r.endswith('140107\n'))
+        c.crash_storage.save_raw_crash.assert_called_with(
+            erc,
+            {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
+            r[11:-1]
+        )
+
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.web.ctx')
+    def test_POST_with_gzip(
+        self,
+        mocked_web_ctx,
+        mocked_webapi,
+        mocked_utc_now,
+        mocked_time
+    ):
+        config = self.get_standard_config()
+        c = BreakpadCollector(config)
+        form = """
+--socorro1234567
+Content-Disposition: form-data; name="ProductName"
+
+FireSquid
+--socorro1234567
+Content-Disposition: form-data; name="Version"
+
+99
+--socorro1234567
+Content-Disposition: form-data; name="some_field"
+
+23
+--socorro1234567
+Content-Disposition: form-data; name="some_other_field"
+
+XYZ
+--socorro1234567
+Content-Disposition: form-data; name="dump"; filename="dump"
+Content-Type: application/octet-stream
+
+fake dump
+--socorro1234567
+Content-Disposition: form-data; name="aux_dump"; filename="aux_dump"
+Content-Type: application/octet-stream
+
+aux_dump contents
+"""
+
+        erc = DotDict()
+        erc.ProductName = 'FireSquid'
+        erc.Version = '99'
+        erc.some_field = '23'
+        erc.some_other_field = 'XYZ'
+        erc.legacy_processing = ACCEPT
+        erc.timestamp = 3.0
+        erc.submitted_timestamp = '2012-05-04T15:10:00'
+        erc.throttle_rate = 100
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
+        erc = dict(erc)
+
+        s = StringIO.StringIO()
+        g = gzip.GzipFile(fileobj=s, mode='w')
+        g.write(form)
+        g.close()
+        gzipped_form = s.getvalue()
+
+        mocked_webapi.data.return_value = gzipped_form
+        mocked_web_ctx.configure_mock(
+            env={
+                'HTTP_CONTENT_ENCODING': 'gzip',
+                'CONTENT_ENCODING': 'gzip',
+                'CONTENT_TYPE':
+                    'multipart/form-data; boundary="socorro1234567"',
+                'REQUEST_METHOD': 'POST'
+            }
+        )
+
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (ACCEPT, 100)
+        r = c.POST()
+        ok_(r.startswith('CrashID=bp-'))
+        ok_(r.endswith('120504\n'))
+        erc['uuid'] = r[11:-1]
         c.crash_storage.save_raw_crash.assert_called_with(
             erc,
             {'dump':'fake dump', 'aux_dump':'aux_dump contents'},

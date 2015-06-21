@@ -4,6 +4,9 @@
 
 import web
 import time
+import zlib
+import cgi
+import cStringIO
 
 from socorro.lib.ooid import createNewOoid
 from socorro.lib.util import DotDict
@@ -84,8 +87,32 @@ class BreakpadCollector(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def POST(self, *args):
+        # Handle gzipped form posts
+        if web.ctx.env.get('HTTP_CONTENT_ENCODING') == 'gzip':
+            gzip_header = 16 + zlib.MAX_WBITS
+            data = zlib.decompress(web.webapi.data(), gzip_header)
+            fp = cStringIO.StringIO(data)
+            e = web.ctx.env.copy()
+
+            # this is how web.webapi.rawinput() handles
+            # multipart/form-data, as of this writing
+            fs = cgi.FieldStorage(fp=fp, environ=e, keep_blank_values=1)
+            fsdict = dict([(k, fs[k]) for k in fs.keys()])
+            def process_fieldstorage(fs):
+                if isinstance(fs, list):
+                    return [process_fieldstorage(x) for x in fs]
+                elif fs.filename is None:
+                    return fs.value
+                else:
+                    return fs
+            form = web.utils.storage(
+                [(k, process_fieldstorage(v)) for k, v in fsdict.items()]
+            )
+        else:
+            form = web.webapi.rawinput()
+
         raw_crash, dumps = \
-            self._make_raw_crash_and_dumps(web.webapi.rawinput())
+            self._make_raw_crash_and_dumps(form)
 
         current_timestamp = utc_now()
         raw_crash.submitted_timestamp = current_timestamp.isoformat()
