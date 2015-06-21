@@ -10,6 +10,7 @@ import web
 import mock
 from nose.tools import eq_, ok_
 from datetime import datetime
+from contextlib import closing
 
 from configman.dotdict import DotDict
 
@@ -56,7 +57,6 @@ class TestCollectorApp(TestCase):
 
     def test_make_raw_crash(self):
         config = self.get_standard_config()
-        c = BreakpadCollector(config)
         form = DotDict()
         form.ProductName = 'FireSquid'
         form.Version = '99'
@@ -64,7 +64,13 @@ class TestCollectorApp(TestCase):
         form.some_field = '23'
         form.some_other_field = ObjectWithValue('XYZ')
 
-        rc, dmp = c._make_raw_crash_and_dumps(form)
+        class BreakpadCollectorWithMyForm(config.collector.collector_class):
+            def _form_as_mapping(self):
+                return form
+
+        c = BreakpadCollectorWithMyForm(config)
+
+        rc, dmp = c._get_raw_crash_from_form()
         eq_(rc.ProductName, 'FireSquid')
         eq_(rc.Version, '99')
         eq_(rc.some_field, '23')
@@ -452,11 +458,11 @@ aux_dump contents
         }
         erc = dict(erc)
 
-        s = StringIO.StringIO()
-        g = gzip.GzipFile(fileobj=s, mode='w')
-        g.write(form)
-        g.close()
-        gzipped_form = s.getvalue()
+        with closing(StringIO.StringIO()) as s:
+            g = gzip.GzipFile(fileobj=s, mode='w')
+            g.write(form)
+            g.close()
+            gzipped_form = s.getvalue()
 
         mocked_webapi.data.return_value = gzipped_form
         mocked_web_ctx.configure_mock(

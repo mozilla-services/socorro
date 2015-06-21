@@ -8,6 +8,8 @@ import zlib
 import cgi
 import cStringIO
 
+from contextlib import closing
+
 from socorro.lib.ooid import createNewOoid
 from socorro.lib.util import DotDict
 from socorro.collector.throttler import DISCARD, IGNORE
@@ -65,11 +67,42 @@ class BreakpadCollector(RequiredConfig):
     #--------------------------------------------------------------------------
 
     #--------------------------------------------------------------------------
-    def _make_raw_crash_and_dumps(self, form):
+    @staticmethod
+    def _process_fieldstorage(fs):
+        if isinstance(fs, list):
+            return [_process_fieldstorage(x) for x in fs]
+        elif fs.filename is None:
+            return fs.value
+        else:
+            return fs
+
+    #--------------------------------------------------------------------------
+    def _form_as_mapping(self):
+        """this method returns the POST form mapping with any gzip
+        decompression automatically handled"""
+        if web.ctx.env.get('HTTP_CONTENT_ENCODING') == 'gzip':
+            # Handle gzipped form posts
+            gzip_header = 16 + zlib.MAX_WBITS
+            data = zlib.decompress(web.webapi.data(), gzip_header)
+            e = web.ctx.env.copy()
+            with closing(cStringIO.StringIO(data)) as fp:
+                # this is how web.webapi.rawinput() handles
+                # multipart/form-data, as of this writing
+                fs = cgi.FieldStorage(fp=fp, environ=e, keep_blank_values=1)
+                form = web.utils.storage(
+                    [(k, self._process_fieldstorage(fs[k])) for k in fs.keys()]
+                )
+                return form
+        return web.webapi.rawinput()
+
+    #--------------------------------------------------------------------------
+    def _get_raw_crash_from_form(self):
+        """this method creates the raw_crash and the dumps mapping using the
+        POST form"""
         dumps = DotDict()
         raw_crash = DotDict()
         raw_crash.dump_checksums = DotDict()
-        for name, value in form.iteritems():
+        for name, value in self._form_as_mapping().iteritems():
             if isinstance(value, basestring):
                 if name != "dump_checksums":
                     raw_crash[name] = value
@@ -87,32 +120,7 @@ class BreakpadCollector(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def POST(self, *args):
-        # Handle gzipped form posts
-        if web.ctx.env.get('HTTP_CONTENT_ENCODING') == 'gzip':
-            gzip_header = 16 + zlib.MAX_WBITS
-            data = zlib.decompress(web.webapi.data(), gzip_header)
-            fp = cStringIO.StringIO(data)
-            e = web.ctx.env.copy()
-
-            # this is how web.webapi.rawinput() handles
-            # multipart/form-data, as of this writing
-            fs = cgi.FieldStorage(fp=fp, environ=e, keep_blank_values=1)
-            fsdict = dict([(k, fs[k]) for k in fs.keys()])
-            def process_fieldstorage(fs):
-                if isinstance(fs, list):
-                    return [process_fieldstorage(x) for x in fs]
-                elif fs.filename is None:
-                    return fs.value
-                else:
-                    return fs
-            form = web.utils.storage(
-                [(k, process_fieldstorage(v)) for k, v in fsdict.items()]
-            )
-        else:
-            form = web.webapi.rawinput()
-
-        raw_crash, dumps = \
-            self._make_raw_crash_and_dumps(form)
+        raw_crash, dumps = self._get_raw_crash_from_form()
 
         current_timestamp = utc_now()
         raw_crash.submitted_timestamp = current_timestamp.isoformat()
