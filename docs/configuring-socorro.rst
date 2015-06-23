@@ -6,8 +6,9 @@ Configure and run Socorro
 Storing configuration in Consul
 -------------------------------
 
-Socorro uses a distributed configuration service called Consul to hold
-configuration - https://consul.io/intro/getting-started/install.html
+Socorro apps get their configuration from environment variables. We suggest
+using Consul to hold configuration: 
+https://consul.io/intro/getting-started/install.html
 
 Consul must be running in order for Socorro apps to start up and access
 their configuration. Normally you want to run a cluster (see the docs above)
