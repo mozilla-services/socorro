@@ -683,12 +683,12 @@ class JitCrashCategorizeRule(ExternalProcessRule):
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
             processed_crash.product != 'Firefox'
-            or processed_crash.os_name.startswith('Windows')
+            or not processed_crash.os_name.startswith('Windows')
             or processed_crash.cpu_name != 'x86'
         ):
             # we don't want any of these
             return False
-        if processed_crash.json_dump.crashing_thread.frames[0].get(
+        if processed_crash.json_dump['crashing_thread']['frames'][0].get(
             'module',
             False
         ): # there is a module at the top of the stack, we don't want this
