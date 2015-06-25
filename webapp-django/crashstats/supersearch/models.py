@@ -75,6 +75,20 @@ class SuperSearch(models.SocorroMiddleware):
             and not x['is_mandatory']
         ) + SUPERSEARCH_META_PARAMS
 
+    def get(self, **kwargs):
+        # Sanitize the facets param and make sure no private data is requested.
+        all_fields = SuperSearchFields().get()
+        facets = kwargs.get('_facets')
+        filtered_facets = [
+            x for x in facets
+            if x in all_fields
+            and all_fields[x]['is_returned']
+            and not all_fields[x]['permissions_needed']
+        ]
+        kwargs['_facets'] = filtered_facets
+
+        return super(SuperSearch, self).get(**kwargs)
+
 
 class SuperSearchUnredacted(SuperSearch):
 
@@ -103,6 +117,12 @@ class SuperSearchUnredacted(SuperSearch):
                 permissions[perm] = True
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
+
+    def get(self, **kwargs):
+        # Notice that here we use `SuperSearch` as the class, so that we
+        # shortcut the `get` function in that class. The goal is to avoid
+        # the _facets field cleaning.
+        return super(SuperSearch, self).get(**kwargs)
 
 
 class SuperSearchFields(models.SocorroMiddleware):

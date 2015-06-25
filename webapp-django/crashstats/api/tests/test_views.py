@@ -1709,6 +1709,9 @@ class TestViews(BaseTestViews):
             if '/supersearch' in url:
                 ok_('exploitability' not in params)
 
+                if '_facets' in params:
+                    ok_('url' not in params['_facets'])
+
                 if 'product' in params:
                     eq_(params['product'], ['WaterWolf', 'NightTrain'])
 
@@ -1751,7 +1754,10 @@ class TestViews(BaseTestViews):
         ok_('thebig@lebowski.net' not in res['hits'][0]['user_comments'])
 
         # Verify it's not possible to use restricted parameters.
-        response = self.client.get(url, {'exploitability': 'high'})
+        response = self.client.get(url, {
+            'exploitability': 'high',
+            '_facets': ['url', 'product']
+        })
         eq_(response.status_code, 200)
 
         # Verify values can be lists.
