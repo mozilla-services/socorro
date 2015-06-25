@@ -4,7 +4,7 @@
 
 import datetime
 import re
-from elasticsearch_dsl import Search, F, Q
+from elasticsearch_dsl import Search, A, F, Q
 from elasticsearch.exceptions import NotFoundError
 
 from socorro.external import (
@@ -120,6 +120,34 @@ class SuperSearch(SearchBase):
 
         return hit
 
+    def get_field_name(self, value, full=True):
+        try:
+            field_ = self.all_fields[value]
+        except KeyError:
+            raise BadArgumentError(
+                value,
+                msg='Unknown field "%s"' % value
+            )
+
+        if not field_['is_returned']:
+            # Returning this field is not allowed.
+            raise BadArgumentError(
+                value,
+                msg='Field "%s" is not allowed to be returned' % value
+            )
+
+        field_name = '%s.%s' % (
+            field_['namespace'],
+            field_['in_database_name']
+        )
+
+        if full and field_['has_full_version']:
+            # If the param has a full version, that means what matters
+            # is the full string, and not its individual terms.
+            field_name += '.full'
+
+        return field_name
+
     def format_aggregations(self, aggregations):
         """Return aggregations in a form that looks like facets.
 
@@ -128,11 +156,27 @@ class SuperSearch(SearchBase):
         """
         aggs = aggregations.to_dict()
         for agg in aggs:
-            for i, row in enumerate(aggs[agg]['buckets']):
+            for i, bucket in enumerate(aggs[agg]['buckets']):
+                sub_aggs = {}
+                for key in bucket:
+                    # Go through all sub aggregations. Those are contained in
+                    # all the keys that are not 'key' or 'count'.
+                    if key in ('key', 'doc_count'):
+                        continue
+
+                    sub_aggs[key] = [
+                        {'term': x['key'], 'count': x['doc_count']}
+                        for x in bucket[key]['buckets']
+                    ]
+
                 aggs[agg]['buckets'][i] = {
-                    'term': row['key'],
-                    'count': row['doc_count'],
+                    'term': bucket['key'],
+                    'count': bucket['doc_count'],
                 }
+
+                if sub_aggs:
+                    aggs[agg]['buckets'][i]['facets'] = sub_aggs
+
             aggs[agg] = aggs[agg]['buckets']
 
         return aggs
@@ -168,6 +212,8 @@ class SuperSearch(SearchBase):
                         results_from = param.value[0]
                     elif param.name == '_results_number':
                         results_number = param.value[0]
+                    elif param.name == '_facets_size':
+                        facets_size = param.value[0]
                     # Don't use meta parameters in the query.
                     continue
 
@@ -303,27 +349,7 @@ class SuperSearch(SearchBase):
                 if not value:
                     continue
 
-                try:
-                    field_ = self.all_fields[value]
-                except KeyError:
-                    # That is not a known field, we can't restrict on it.
-                    raise BadArgumentError(
-                        value,
-                        msg='Unknown field "%s", cannot return it' % value
-                    )
-
-                if not field_['is_returned']:
-                    # Returning this field is not allowed.
-                    raise BadArgumentError(
-                        value,
-                        msg='Field "%s" is not allowed to be returned' % value
-                    )
-
-                field_name = '%s.%s' % (
-                    field_['namespace'],
-                    field_['in_database_name']
-                )
-
+                field_name = self.get_field_name(value, full=False)
                 fields.append(field_name)
 
         search = search.fields(fields)
@@ -345,19 +371,7 @@ class SuperSearch(SearchBase):
                     desc = True
                     value = value[1:]
 
-                try:
-                    field_ = self.all_fields[value]
-                except KeyError:
-                    # That is not a known field, we can't sort on it.
-                    raise BadArgumentError(
-                        value,
-                        msg='Unknown field "%s", cannot sort on it' % value
-                    )
-
-                field_name = '%s.%s' % (
-                    field_['namespace'],
-                    field_['in_database_name']
-                )
+                field_name = self.get_field_name(value, full=False)
 
                 if desc:
                     # The underlying library understands that '-' means
@@ -375,31 +389,38 @@ class SuperSearch(SearchBase):
         # Create facets.
         for param in params['_facets']:
             for value in param.value:
-                try:
-                    field_ = self.all_fields[value]
-                except KeyError:
-                    # That is not a known field, we can't facet on it.
-                    raise BadArgumentError(
-                        value,
-                        msg='Unknown field "%s", cannot facet on it' % value
-                    )
+                if not value:
+                    continue
 
-                field_name = '%s.%s' % (
-                    field_['namespace'],
-                    field_['in_database_name']
-                )
-
-                if field_['has_full_version']:
-                    # If the param has a full version, that means what matters
-                    # is the full string, and not its individual terms.
-                    field_name += '.full'
-
+                field_name = self.get_field_name(value)
                 search.aggs.bucket(
                     value,
                     'terms',
                     field=field_name,
-                    size=self.config.facets_max_number
+                    size=facets_size,
                 )
+
+        # Create signature aggregations.
+        if params['_aggs.signature']:
+            sig_bucket = A(
+                'terms',
+                field=self.get_field_name('signature'),
+                size=facets_size,
+            )
+            for param in params['_aggs.signature']:
+                for value in param.value:
+                    if not value:
+                        continue
+
+                    field_name = self.get_field_name(value)
+                    sig_bucket.bucket(
+                        value,
+                        'terms',
+                        field=field_name,
+                        size=facets_size,
+                    )
+
+            search.aggs.bucket('signature', sig_bucket)
 
         # Query and compute results.
         hits = []
