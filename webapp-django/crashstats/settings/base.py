@@ -35,16 +35,19 @@ INSTALLED_APPS = (
 
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
-    # Example code. Can (and should) be removed for actual projects.
+
+    # Other Socorro apps.
     '%s.dataservice' % PROJECT_MODULE,
     '%s.crashstats' % PROJECT_MODULE,
     '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,
     '%s.supersearch' % PROJECT_MODULE,
     '%s.signature' % PROJECT_MODULE,
+    '%s.topcrashers' % PROJECT_MODULE,
     '%s.authentication' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
+
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
     'waffle',

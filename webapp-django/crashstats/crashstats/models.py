@@ -870,6 +870,11 @@ class Platforms(SocorroMiddleware):
             for x in result['hits']
         ]
 
+    def get_all(self):
+        """Return all platforms without reducing them to a pre-configured list.
+        """
+        return super(Platforms, self).get()
+
 
 class CrashesPerAdu(SocorroMiddleware):
     # Fetch records for active daily installs.

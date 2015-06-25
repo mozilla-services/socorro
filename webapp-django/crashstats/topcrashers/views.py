@@ -1,0 +1,312 @@
+import datetime
+import isodate
+from collections import defaultdict
+
+from django import http
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from django.utils.http import urlquote
+
+
+from session_csrf import anonymous_csrf
+
+from crashstats.crashstats import models
+from crashstats.crashstats.decorators import (
+    check_days_parameter,
+    pass_default_context,
+)
+from crashstats.supersearch.form_fields import split_on_operator
+from crashstats.supersearch.models import (
+    SuperSearchUnredacted,
+)
+
+
+def get_date_boundaries(parameters):
+    """Return the date boundaries in a set of parameters.
+
+    Return a tuple with 2 datetime objects, the first one is the lower bound
+    date and the second one is the upper bound date.
+    """
+    default_date_range = datetime.timedelta(days=7)
+
+    greater_than = None
+    lower_than = None
+
+    if not parameters.get('date'):
+        lower_than = timezone.now()
+        greater_than = lower_than - default_date_range
+    else:
+        for param in parameters['date']:
+            value = isodate.parse_datetime(split_on_operator(param)[1])
+
+            if (
+                '<' in param and (
+                    not lower_than or
+                    (lower_than and lower_than > value)
+                )
+            ):
+                lower_than = value
+            if (
+                '>' in param and (
+                    not greater_than or
+                    (greater_than and greater_than < value)
+                )
+            ):
+                greater_than = value
+
+        if not lower_than:
+            # add a lower than that is now
+            lower_than = timezone.now()
+
+        if not greater_than:
+            # add a greater than that is lower_than minus the date range
+            greater_than = lower_than - default_date_range
+
+    return (greater_than, lower_than)
+
+
+def get_topcrashers_results(**kwargs):
+    '''Return the results of a search. '''
+    results = []
+
+    params = kwargs
+    params['_aggs.signature'] = [
+        'platform',
+        'is_garbage_collecting',
+        'hang_type',
+        'process_type',
+    ]
+
+    # We don't care about no results, only facets.
+    params['_results_number'] = 0
+
+    if params.get('process_type') in ('any', 'all'):
+        params['process_type'] = None
+
+    api = SuperSearchUnredacted()
+    search_results = api.get(**params)
+
+    if search_results['total'] > 0:
+        results = search_results['facets']['signature']
+
+        platforms = models.Platforms().get_all()['hits']
+        platform_codes = [
+            x['code'] for x in platforms if x['code'] != 'unknown'
+        ]
+
+        for i, hit in enumerate(results):
+            hit['signature'] = hit['term']
+            hit['rank'] = i + 1
+            hit['percent'] = 100.0 * hit['count'] / search_results['total']
+
+            # Number of crash per platform.
+            for platform in platform_codes:
+                hit[platform + '_count'] = 0
+
+            sig_platforms = hit['facets']['platform']
+            for platform in sig_platforms:
+                code = platform['term'][:3].lower()
+                if code in platform_codes:
+                    hit[code + '_count'] = platform['count']
+
+            # Number of crashes happening during garbage collection.
+            hit['is_gc_count'] = 0
+
+            sig_gc = hit['facets']['is_garbage_collecting']
+            for row in sig_gc:
+                if row['term'].lower() == 't':
+                    hit['is_gc_count'] = row['count']
+
+            # Number of plugin crashes.
+            hit['plugin_count'] = 0
+
+            sig_process = hit['facets']['process_type']
+            for row in sig_process:
+                if row['term'].lower() == 'plugin':
+                    hit['plugin_count'] = row['count']
+
+            # Number of hang crashes.
+            hit['hang_count'] = 0
+
+            sig_hang = hit['facets']['hang_type']
+            for row in sig_hang:
+                # Hangs have weird values in the database: a value of 1 or -1
+                # means it is a hang, a value of 0 or missing means it is not.
+                if row['term'] in (1, -1):
+                    hit['hang_count'] += row['count']
+
+        # Run the same query but for the previous date range, so we can
+        # compare the rankings and show rank changes.
+        dates = get_date_boundaries(params)
+        delta = (dates[1] - dates[0]) * 2
+        params['date'] = [
+            '>=' + (dates[1] - delta).isoformat(),
+            '<' + dates[0].isoformat()
+        ]
+
+        previous_range_results = api.get(**params)
+        total = previous_range_results['total']
+
+        compare_signatures = {}
+        if total > 0 and 'signature' in previous_range_results['facets']:
+            signatures = previous_range_results['facets']['signature']
+            for i, hit in enumerate(signatures):
+                compare_signatures[hit['term']] = {
+                    'count': hit['count'],
+                    'rank': i + 1,
+                    'percent': 100.0 * hit['count'] / total
+                }
+
+        for hit in results:
+            sig = compare_signatures.get(hit['term'])
+            if sig:
+                hit['diff'] = hit['percent'] - sig['percent']
+                hit['rank_diff'] = hit['rank'] - sig['rank']
+                hit['previous_percent'] = sig['percent']
+            else:
+                hit['diff'] = 'new'
+                hit['rank_diff'] = 0
+                hit['previous_percent'] = 0
+
+    return search_results
+
+
+@pass_default_context
+@anonymous_csrf
+@check_days_parameter([1, 3, 7, 14, 28], default=7)
+def topcrashers(request, days=None, possible_days=None, default_context=None):
+    context = default_context or {}
+
+    product = request.GET.get('product')
+    versions = request.GET.get('version')
+    crash_type = request.GET.get('process_type')
+    os_name = request.GET.get('platform')
+    result_count = request.GET.get('_facets_size')
+    tcbs_mode = request.GET.get('_tcbs_mode')
+
+    if not tcbs_mode or tcbs_mode not in ('realtime', 'byday'):
+        tcbs_mode = 'realtime'
+
+    if product not in context['releases']:
+        raise http.Http404('Unrecognized product')
+
+    if not versions:
+        # :(
+        # simulate what the nav.js does which is to take the latest version
+        # for this product.
+        for release in context['currentversions']:
+            if release['product'] == product and release['featured']:
+                url = '%s&version=%s' % (
+                    request.build_absolute_uri(), urlquote(release['version'])
+                )
+                return redirect(url)
+    else:
+        versions = versions.split(';')
+
+    if len(versions) == 1:
+        context['version'] = versions[0]
+
+    release_versions = [x['version'] for x in context['releases'][product]]
+    if context['version'] not in release_versions:
+        raise http.Http404('Unrecognized version')
+
+    if tcbs_mode == 'realtime':
+        end_date = datetime.datetime.utcnow().replace(microsecond=0)
+    elif tcbs_mode == 'byday':
+        end_date = datetime.datetime.utcnow().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+    if crash_type not in settings.PROCESS_TYPES:
+        crash_type = 'browser'
+
+    context['crash_type'] = crash_type
+
+    os_api = models.Platforms()
+    operating_systems = os_api.get()
+    if os_name not in (os_['name'] for os_ in operating_systems):
+        os_name = None
+
+    context['os_name'] = os_name
+
+    # set the result counts filter in the context to use in
+    # the template. This way we avoid hardcoding it twice and
+    # have it defined in one common location.
+    context['result_counts'] = settings.TCBS_RESULT_COUNTS
+    if result_count not in context['result_counts']:
+        result_count = settings.TCBS_RESULT_COUNTS[0]
+
+    context['result_count'] = result_count
+    context['query'] = {
+        'mode': tcbs_mode,
+        'end_date': end_date,
+        'start_date': end_date - datetime.timedelta(days=days),
+    }
+
+    api_results = get_topcrashers_results(
+        product=product,
+        version=context['version'],
+        platform=os_name,
+        process_type=crash_type,
+        date=[
+            '<' + end_date.isoformat(),
+            '>=' + context['query']['start_date'].isoformat()
+        ],
+        _facets_size=result_count,
+    )
+
+    tcbs = api_results['facets']['signature']
+
+    count_of_included_crashes = 0
+    signatures = []
+    for crash in tcbs[:int(result_count)]:
+        signatures.append(crash['signature'])
+        count_of_included_crashes += crash['count']
+
+    context['number_of_crashes'] = count_of_included_crashes
+    context['total_percentage'] = api_results['total'] and (
+        100.0 * count_of_included_crashes / api_results['total']
+    )
+
+    bugs = defaultdict(list)
+    api = models.Bugs()
+    if signatures:
+        for b in api.get(signatures=signatures)['hits']:
+            bugs[b['signature']].append(b['id'])
+
+    for crash in tcbs:
+        crash_counts = []
+        # Due to the inconsistencies of OS usage and naming of
+        # codes and props for operating systems the hacky bit below
+        # is required. Socorro and the world will be a better place
+        # once https://bugzilla.mozilla.org/show_bug.cgi?id=790642 lands.
+        for operating_system in operating_systems:
+            if operating_system['name'] == 'Unknown':
+                # not applicable in this context
+                continue
+            os_code = operating_system['code'][0:3].lower()
+            key = '%s_count' % os_code
+            crash_counts.append([crash[key], operating_system['name']])
+
+        crash['correlation_os'] = max(crash_counts)[1]
+        sig = crash['signature']
+        if sig in bugs:
+            if 'bugs' in crash:
+                crash['bugs'].extend(bugs[sig])
+            else:
+                crash['bugs'] = bugs[sig]
+        if 'bugs' in crash:
+            crash['bugs'].sort(reverse=True)
+
+    context['tcbs'] = tcbs
+    context['days'] = days
+    context['possible_days'] = possible_days
+    context['total_crashing_signatures'] = len(signatures)
+    context['total_number_of_crashes'] = api_results['total']
+    context['process_type_values'] = (
+        x for x in settings.PROCESS_TYPES if x != 'all'
+    )
+    context['platform_values'] = settings.DISPLAY_OS_NAMES
+
+    return render(request, 'topcrashers/topcrashers.html', context)

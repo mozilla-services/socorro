@@ -1,0 +1,212 @@
+{% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+
+  {% compress css %}
+  <link href="{{ static('crashstats/css/topcrashers.less') }}" rel="stylesheet" type="text/less" media="screen" />
+  {% endcompress %}
+{% endblock %}
+
+{% block page_title %}
+Top Crashers for {{ product }} {{ version }}
+{% endblock %}
+
+{% block content %}
+    <div id="mainbody">
+        <div class="page-heading">
+            <h2>
+                Top Crashers for <span id="current-product">{{ product }}</span>
+                <span id="current-version">{{ version }}</span>
+            </h2>
+            <ul class="options">
+                <li>
+                    <a
+                        href="{{ change_query_string(_tcbs_mode=None) }}"
+                        {% if query.mode == 'realtime' %} class="selected"{% endif %}
+                    >Near Real Time</a>
+                </li>
+                <li>
+                    <a
+                        href="{{ change_query_string(_tcbs_mode='byday') }}"
+                        {% if query.mode == 'byday' %} class="selected"{% endif %}
+                    >By Day</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="panel">
+            <div class="body">
+
+            {% if total_crashing_signatures %}
+            <div>
+                Top {{ total_crashing_signatures }} Crashing Signatures.
+                <time class="start-date">{{ query.start_date }}</time> through
+                <time class="end-date">{{ query.end_date }}</time>.
+                <p>The report covers <span class="percentage">{{ number_of_crashes }} ({{ total_percentage | round(2) }}%)</span> of all {{ total_number_of_crashes }} crashes during this period. </p>
+            </div>
+            {% endif %}
+
+            <ul class="tc-duration-type tc-filter">
+                <li class="tc-selector-heading">Type:</li>
+                {% for c in process_type_values %}
+                <li>
+                    <a href="{{ change_query_string(process_type=c) }}" {% if crash_type == c %} class="selected" {% endif %} >
+                        {{ c|capitalize }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            <ul class="tc-duration-days tc-filter">
+                <li class="tc-selector-heading">Days:</li>
+                {% for day in possible_days %}
+                <li><a href="{{ change_query_string(days=day) }}" {% if days == day %} class="selected" {% endif %}>{{ day }}</a></li>
+                {% endfor %}
+            </ul>
+            <ul class="tc-per-platform tc-filter">
+                <li class="tc-selector-heading">OS:</li>
+                <li><a href="{{ change_query_string(platform=None) }}" {% if not os_name %} class="selected" {% endif %}>All</a></li>
+                {% for os in platform_values %}
+                <li><a href="{{ change_query_string(platform=os) }}" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+                {% endfor %}
+            </ul>
+            <ul class="tc-result-count tc-filter">
+                <li class="tc-selector-heading">Result Count:</li>
+                {% for res_count in result_counts %}
+                <li><a href="{{ change_query_string(_facets_size=res_count) }}" {% if result_count == res_count %} class="selected" {% endif %}>{{ res_count }}</a></li>
+                {% endfor %}
+            </ul>
+            {% if total_crashing_signatures %}
+            <table id="{% if not os_name %}signature-list{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
+                <thead>
+                    <tr>
+                        <th scope="col">Rank</th>
+                        <th title="The percentage of crashes against overall crash volume" scope="col">%</th>
+                        <th title="The change in percentage since the {{ query.start_date }} report" scope="col">Diff</th>
+                        <th scope="col">Signature</th>
+                        {% if not os_name %}
+                        <th title="Crashes across platforms" scope="col">Count</th>
+                        <th scope="col">Win</th>
+                        <th scope="col">Mac</th>
+                        <th scope="col">Lin</th>
+                        {% else %}
+                        <th scope="col">{{ os_name }}</th>
+                        {% endif %}
+                        <th scope="col">Is GC</th>
+                        <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
+                        <th title="Does not imply Causation" scope="col">Correlation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for crash in tcbs %}
+                    <tr>
+                        <td class="rank">
+                            {{ crash.rank }}
+                            {% if crash.rank_diff != 'new'
+                               and crash.rank_diff >= 5
+                               or crash.rank_diff <= -5 %}
+                            <span {% if crash.rank_diff > 1 %} class="moving-up" {% elif crash.rank_diff < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ query.start_date }} report">{{ crash.rank_diff }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ crash.percent | round(2) }}%</td>
+                        {% if crash.diff == 'new' %}
+                        <td title="This is a new signature">new</td>
+                        {% else %}
+                        <td title="A change of {{ crash.diff | round(2) }}% from {{ crash.previous_percent | round(2) }}%">{{ crash.diff | round(2) }}%</td>
+                        {% endif %}
+                        <td class="signature-column">
+                            <a class="signature" href="{{ url('signature:signature_report') }}?product={{ product }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <div class="sig-history-container hide">
+                                <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
+                            </div>
+                            <div class="signature-icons">
+                                {% if crash.hang_count > 0 %}
+                                <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
+                                {% endif %}
+
+                                {% if crash.plugin_count > 0 %}
+                                <img src="{{ static('img/3rdparty/fatcow/brick16x16.png') }}" alt="Plugin Crash" title="Plugin Crash" class="plugin" height="16" width="16">
+                                {% else %}
+                                <img src="{{ static('img/3rdparty/fatcow/application16x16.png') }}" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% if not os_name %}
+                        <td>{{ crash.count }}</td>
+                        <td>{{ crash.win_count }}</td>
+                        <td>{{ crash.mac_count }}</td>
+                        <td>{{ crash.lin_count }}</td>
+                        {% elif os_name == 'Windows' %}
+                        <td>{{ crash.win_count }}</td>
+                        {% elif os_name == 'Linux' %}
+                        <td>{{ crash.lin_count }}</td>
+                        {% elif os_name == 'Mac OS X' %}
+                        <td>{{ crash.mac_count }}</td>
+                        {% endif %}
+                        <td>{{ crash.is_gc_count }}</td>
+                        <td class="bug_ids_more">
+                            {% for bug in crash.bugs %}
+                            {{ show_bug_link(bug) }}
+                            {% endfor %}
+                                <div class="bug_ids_expanded_list">
+                                <h3>Bugs for <code>{{ crash.signature }}</code></h3>
+                                <ul class="bug_ids_expanded full_bug_ids popup">
+                                    {% for bug in crash.bugs %}
+                                    <li>{{ show_bug_link(bug) }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="correlation-cell">
+                            <div class="correlation-panel">
+                                <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
+                                <div class="complete">
+                                    <h3>Based on <span class="osname">{{ crash.correlation_os }}</span> crashes</h3>
+                                    <div class="correlation-module"><h3>CPU</h3><div class="core-counts"></div></div>
+                                    <div class="correlation-module"><h3>Add-ons</h3><div class="interesting-addons"></div></div>
+                                    <div class="correlation-module"><h3>Modules</h3><div class="interesting-modules"></div></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+            {% else %}
+              <p class="no-results">
+                No crashing signatures found for the period
+                <time class="start-date">{{ query.start_date }}</time> to
+                <time class="end-date">{{ query.end_date }}</time>.
+              </p>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block site_js %}
+<script type="text/javascript">//<![CDATA[
+    var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}',
+        SocAjaxStartEnd = '/{{ query.start_date }}/{{ query.end_date }}/',
+        SocImg = '/static/img/',
+        SocReport = {
+            sig_base: '{{ url('crashstats:correlations_signatures_json') }}',
+            base: '{{ url('crashstats:correlations_json') }}',
+            path: 'product={{ product }}&version={{ version }}',
+            loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />',
+            product: '{{ product }}',
+            version: '{{ version }}'
+        };
+//]]>
+</script>
+  {{ super() }}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
+  {% endcompress %}
+  {% compress js %}
+  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
+  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
+  {% endcompress %}
+
+{% endblock %}

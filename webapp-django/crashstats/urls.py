@@ -29,6 +29,10 @@ urlpatterns = patterns(
         'crashstats.signature.urls',
         namespace='signature'
     )),
+    (r'^topcrashers/', include(
+        'crashstats.topcrashers.urls',
+        namespace='topcrashers'
+    )),
     (r'', include(auth_urls, namespace='auth')),
     (r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),

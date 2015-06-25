@@ -187,3 +187,5 @@ dj-database-url==0.3.0
 toposort==1.1
 # sha256: RQlJFVzISXytrJZqgYeXSNs8GMz2QMsnMX4BSJr1hyQ
 datadog==0.5.0
+# sha256: x4ZXPEj73ejlDlVeXiWoNkQ-Zm1sz_bLDSAIYVNYsOM
+freezegun==0.3.5
