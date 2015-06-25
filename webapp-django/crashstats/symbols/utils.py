@@ -1,4 +1,3 @@
-import mimetypes
 import zipfile
 import gzip
 import tarfile
@@ -28,8 +27,9 @@ class _TarMember(object):
         return self.container.extractfile(self.member)
 
 
-def get_archive_members(file_object, content_type):
-    if content_type == 'application/zip':
+def get_archive_members(file_object, file_name):
+    file_name = file_name.lower()
+    if file_name.endswith('.zip'):
         zf = zipfile.ZipFile(file_object)
         for member in zf.infolist():
             yield _ZipMember(
@@ -37,7 +37,7 @@ def get_archive_members(file_object, content_type):
                 zf
             )
 
-    elif content_type == 'application/x-gzip':
+    elif file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
         tar = gzip.GzipFile(fileobj=file_object)
         zf = tarfile.TarFile(fileobj=tar)
         for member in zf.getmembers():
@@ -47,7 +47,7 @@ def get_archive_members(file_object, content_type):
                     zf
                 )
 
-    elif content_type == 'application/x-tar':
+    elif file_name.endswith('.tar'):
         zf = tarfile.TarFile(fileobj=file_object)
         for member in zf.getmembers():
             # Sometimes when you make a tar file you get a
@@ -59,23 +59,14 @@ def get_archive_members(file_object, content_type):
                 )
 
     else:
-        raise NotImplementedError(content_type)
+        raise NotImplementedError(file_name)
 
 
-def preview_archive_content(file_object, content_type):
+def preview_archive_content(file_object, file_name):
     """return file listing of the contents of an archive file"""
     out = StringIO()
-    for member in get_archive_members(file_object, content_type):
+    for member in get_archive_members(file_object, file_name):
         print >>out, member.name.ljust(70),
         print >>out, str(member.size).rjust(9)
 
     return out.getvalue()
-
-
-def filename_to_mimetype(filename):
-    filename = filename.lower()
-    # .tgz and .tar.gz files in mimetypes.guess_type
-    # returns 'application/x-tar' :(
-    if filename.endswith('.tgz') or filename.endswith('.tar.gz'):
-        return 'application/x-gzip'
-    return mimetypes.guess_type(filename)[0]
