@@ -67,7 +67,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.support_classifiers.OutOfDateClassifier"
     ],
     [   # a set of classifiers to help with jit crashes
-        "jit_classifers",
+        "jit_classifiers",
         "processor.jit_classifiers",
         "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
