@@ -348,6 +348,19 @@ class ExternalProcessRule(Rule):
         return '1.0'
 
     #--------------------------------------------------------------------------
+    def _interpret_external_command_output(self, fp, processor_meta):
+        try:
+            return ujson.load(fp)
+        except Exception, x:
+            processor_meta.processor_notes.append(
+                "%s output failed in json: %s" % (
+                    self.config.command_pathname,
+                    x
+                )
+            )
+            return {}
+
+    #--------------------------------------------------------------------------
     def _execute_external_process(self, command_line, processor_meta):
         if self.config.get('chatty', False):
             self.config.logger.debug(
@@ -360,16 +373,10 @@ class ExternalProcessRule(Rule):
             stdout=subprocess.PIPE
         )
         with closing(subprocess_handle.stdout):
-            try:
-                external_command_output = ujson.load(subprocess_handle.stdout)
-            except Exception, x:
-                processor_meta.processor_notes.append(
-                    "%s output failed in json: %s" % (
-                        self.config.command_pathname,
-                        x
-                    )
-                )
-                external_command_output = {}
+            external_command_output = self._interpret_external_command_output(
+                subprocess_handle.stdout,
+                processor_meta
+            )
 
         return_code = subprocess_handle.wait()
         return external_command_output, return_code
@@ -664,7 +671,7 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         'result_key',
         'classifications.jit.category',
     )
-    required_config.result_key = change_default(
+    required_config.return_code_key = change_default(
         ExternalProcessRule,
         'return_code_key',
         'classifications.jit.category_return_code',
@@ -691,9 +698,22 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         if processed_crash.json_dump['crashing_thread']['frames'][0].get(
             'module',
             False
-        ): # there is a module at the top of the stack, we don't want this
+        ):  # there is a module at the top of the stack, we don't want this
             return False
         return (
             processed_crash.signature.endswith('EnterBaseline')
             or processed_crash.signature.endswith('EnterIon')
         )
+
+    #--------------------------------------------------------------------------
+    def _interpret_external_command_output(self, fp, processor_meta):
+        try:
+            return fp.read()
+        except IOError, x:
+            processor_meta.processor_notes.append(
+                "%s unable to read external command output: %s" % (
+                    self.config.command_pathname,
+                    x
+                )
+            )
+            return ''
