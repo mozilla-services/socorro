@@ -708,7 +708,7 @@ class JitCrashCategorizeRule(ExternalProcessRule):
     #--------------------------------------------------------------------------
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
-            return fp.read()
+            result =  fp.read()
         except IOError, x:
             processor_meta.processor_notes.append(
                 "%s unable to read external command output: %s" % (
@@ -717,3 +717,8 @@ class JitCrashCategorizeRule(ExternalProcessRule):
                 )
             )
             return ''
+        try:
+            return result.strip()
+        except AttributeError, x:
+            # there's no strip method
+            return result
