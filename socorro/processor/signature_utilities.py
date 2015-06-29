@@ -93,6 +93,65 @@ class CSignatureToolBase(SignatureTool):
         self.fixup_comma = re.compile(r',(?! )')
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def _is_exception(
+        exception_list,
+        remaining_original_line,
+        line_up_to_current_position
+    ):
+        for an_exception in exception_list:
+            if remaining_original_line.startswith(an_exception):
+                return True
+            if line_up_to_current_position.endswith(an_exception):
+                return True
+        return False
+
+    #--------------------------------------------------------------------------
+    def _collapse(
+        self,
+        function_signature_str,
+        open_string,
+        replacement_open_string,
+        close_string,
+        replacement_close_string,
+        exception_substring_list=(),  # list of exceptions that shouldn't collapse
+    ):
+        """this method takes a string representing a C/C++ function signature
+        and replaces anything between to possibly nested delimiters"""
+        target_counter = 0
+        collapsed_list = []
+        exception_mode = False
+
+        def append_if_not_in_collapse_mode(a_character):
+            if not target_counter:
+                collapsed_list.append(a_character)
+
+        for index, a_character in enumerate(function_signature_str):
+            if a_character == open_string:
+                if self._is_exception(
+                    exception_substring_list,
+                    function_signature_str[index + 1:],
+                    function_signature_str[:index]
+                ):
+                    exception_mode = True
+                    append_if_not_in_collapse_mode(a_character)
+                    continue
+                append_if_not_in_collapse_mode(replacement_open_string)
+                target_counter += 1
+            elif a_character == close_string:
+                if exception_mode:
+                    append_if_not_in_collapse_mode(a_character)
+                    exception_mode = False
+                else:
+                    target_counter -= 1
+                    append_if_not_in_collapse_mode(replacement_close_string)
+            else:
+                append_if_not_in_collapse_mode(a_character)
+
+        edited_function = ''.join(collapsed_list)
+        return edited_function
+
+    #--------------------------------------------------------------------------
     def normalize_signature(
         self,
         module=None,
@@ -115,35 +174,16 @@ class CSignatureToolBase(SignatureTool):
         if normalized is not None:
             return normalized
         if function:
-            target_counter = 0
-
-            collapsed_list = []
-            def append_if_not_in_collapse_mode(a_character):
-                if not target_counter:
-                    collapsed_list.append(a_character)
-
-            for a_character in function:
-                if a_character == '<':
-                    append_if_not_in_collapse_mode('<')
-                    target_counter += 1
-                elif a_character == '>':
-                    target_counter -= 1
-                    append_if_not_in_collapse_mode('T>')
-                else:
-                    append_if_not_in_collapse_mode(a_character)
-            function = ''.join(collapsed_list)
-
+            function = self._collapse(function, '<', '<', '>', 'T>')
             if self.config.collapse_arguments:
-                collapsed_list = []
-                target_counter = 0
-                for a_character in function:
-                    if a_character == '(':
-                        target_counter += 1
-                    elif a_character == ')':
-                        target_counter -= 1
-                    else:
-                        append_if_not_in_collapse_mode(a_character)
-                function = ''.join(collapsed_list)
+                function = self._collapse(
+                    function,
+                    '(',
+                    '',
+                    ')',
+                    '',
+                    ('anonymous namespace', 'operator')
+                )
 
             if self.signatures_with_line_numbers_re.match(function):
                 function = "%s:%s" % (function, line)
