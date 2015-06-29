@@ -50,6 +50,7 @@ class TestViews(BaseTestViews):
 
         self.patcher = mock.patch('crashstats.symbols.views.boto.connect_s3')
         self.uploaded_keys = {}
+        self.uploaded_headers = {}
         self.known_bucket_keys = {}
         self.created_buckets = []
         self.created_keys = []
@@ -63,8 +64,9 @@ class TestViews(BaseTestViews):
             def mocked_new_key(key_name):
                 mocked_key = mock.Mock()
 
-                def mocked_set(string):
+                def mocked_set(string, headers=None):
                     self.uploaded_keys[key_name] = string
+                    self.uploaded_headers[key_name] = headers
                     return len(string)
 
                 mocked_key.set_contents_from_string.side_effect = mocked_set
@@ -667,6 +669,7 @@ class TestViews(BaseTestViews):
             'south-africa-flag.jpeg'
         )
         ok_(self.uploaded_keys[expected_key])
+        ok_(self.uploaded_headers[expected_key]['Content-Encoding'], 'gzip')
 
     def test_upload_without_multipart_file(self):
         user = User.objects.create(username='user')
