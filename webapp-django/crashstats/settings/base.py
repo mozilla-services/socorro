@@ -409,6 +409,11 @@ MANAGERS = ADMINS
 SYMBOLS_MIME_OVERRIDES = {
     'sym': 'text/plain'
 }
+SYMBOLS_COMPRESS_EXTENSIONS = config(
+    'SYMBOLS_COMPRESS_EXTENSIONS',
+    'sym',
+    cast=Csv()
+)
 
 # ------------------------------------------------
 # Below are settings that can be overridden using
