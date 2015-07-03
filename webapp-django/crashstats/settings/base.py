@@ -244,6 +244,9 @@ CHANNELS = (
     'esr'
 )
 
+# default channel for adu by signature graph
+CHANNEL = 'nightly'
+
 # this is the max length of signatures in forms
 SIGNATURE_MAX_LENGTH = 255
 
