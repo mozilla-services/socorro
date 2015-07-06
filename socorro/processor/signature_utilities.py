@@ -343,6 +343,7 @@ class CSignatureTool(CSignatureToolBase):
           'imalloc',
           'init_library',
           'invalid_parameter_noinfo',
+          '_invalid_parameter_noinfo',
           'isalloc',
           'jemalloc_crash',
           'je_.*',
