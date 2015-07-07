@@ -1,4 +1,4 @@
-from mock import Mock, MagicMock
+from mock import Mock, MagicMock, patch
 
 from nose.tools import eq_, ok_
 
@@ -21,6 +21,7 @@ class TestCrashStorage(TestCase):
         config.filter_on_legacy_processing = True
         config.redactor_class = Redactor
         config.forbidden_keys = Redactor.required_config.forbidden_keys.default
+        config.throttle = 100
         return config
 
     def test_constructor(self):
@@ -62,6 +63,87 @@ class TestCrashStorage(TestCase):
         crash_store.transaction.reset_mock()
 
         # test for save rejection because of "legacy_processing"
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 5
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        ok_(not crash_store.transaction.called)
+
+    @patch('socorro.external.rabbitmq.crashstorage.randint')
+    def test_save_raw_crash_normal_throttle(self, randint_mock):
+        random_ints = [100, 49, 50, 51, 1, 100]
+        def side_effect(*args, **kwargs):
+            return random_ints.pop(0)
+        randint_mock.side_effect = side_effect
+
+        config = self._setup_config()
+        config.throttle = 50
+        crash_store = RabbitMQCrashStorage(config)
+
+        # test for "legacy_processing" missing from crash #0: 100
+        crash_store.save_raw_crash(
+            raw_crash=DotDict(),
+            dumps=DotDict(),
+            crash_id='crash_id'
+        )
+        ok_(not crash_store.transaction.called)
+        config.logger.reset_mock()
+
+        # test for normal save #1: 49
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 0
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        crash_store.transaction.assert_called_with(
+            crash_store._save_raw_crash_transaction,
+            'crash_id'
+        )
+        crash_store.transaction.reset_mock()
+
+        # test for normal save #2: 50
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 0
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        crash_store.transaction.assert_called_with(
+            crash_store._save_raw_crash_transaction,
+            'crash_id'
+        )
+        crash_store.transaction.reset_mock()
+
+        # test for normal save #3: 51
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 0
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        ok_(not crash_store.transaction.called)
+        crash_store.transaction.reset_mock()
+
+
+
+        # test for save rejection because of "legacy_processing" #4: 1
+        raw_crash = DotDict()
+        raw_crash.legacy_processing = 5
+        crash_store.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=DotDict,
+            crash_id='crash_id'
+        )
+        ok_(not crash_store.transaction.called)
+
+        # test for save rejection because of "legacy_processing" #5: 100
         raw_crash = DotDict()
         raw_crash.legacy_processing = 5
         crash_store.save_raw_crash(

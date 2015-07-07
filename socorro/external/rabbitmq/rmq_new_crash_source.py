@@ -23,7 +23,7 @@ class RMQNewCrashSource(RequiredConfig):
     #--------------------------------------------------------------------------
     def __init__(self, config, processor_name, quit_check_callback=None):
         self.crash_store = config.crashstorage_class(
-            config, 
+            config,
             quit_check_callback
         )
 

@@ -205,6 +205,13 @@ class SubmitterApp(FetchTransformSaveApp):
         short_form='n',
         default='all'
     )
+    required_config.namespace('new_crash_source')
+    required_config.new_crash_source.add_option(
+        'new_crash_source_class',
+        doc='an iterable that will stream crash_ids needing processing',
+        default='',
+        from_string_converter=class_converter
+    )
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -258,25 +265,37 @@ class SubmitterApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     def _infinite_iterator(self):
         while True:
-            for crash_id in self.source.new_crashes():
+            for crash_id in self.new_crash_source.new_crashes():
                 yield crash_id
 
     #--------------------------------------------------------------------------
     def _all_iterator(self):
-        for crash_id in self.source.new_crashes():
+        for crash_id in self.new_crash_source.new_crashes():
             yield crash_id
 
     #--------------------------------------------------------------------------
     def _limited_iterator(self):
         i = 0
         while True:
-            for crash_id in self.source.new_crashes():
+            for crash_id in self.new_crash_source.new_crashes():
                 if i == int(self.config.submitter.number_of_submissions):
                     break
                 i += 1
                 yield crash_id
             if i == int(self.config.submitter.number_of_submissions):
                 break
+
+    #--------------------------------------------------------------------------
+    def _setup_source_and_destination(self):
+        """instantiate the classes that implement the source and destination
+        crash storage systems."""
+        super(SubmitterApp, self)._setup_source_and_destination()
+        if self.config.new_crash_source.new_crash_source_class:
+            self.new_crash_source = \
+                self.config.new_crash_source.new_crash_source_class(config)
+        else:
+            self.new_crash_source = self.source
+
 
 
 if __name__ == '__main__':

@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pika
+from random import randint
+
 from Queue import (
     Queue,
     Empty
@@ -66,6 +68,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
         doc='toggle for using or ignoring the throttling flag',
         reference_value_from='resource.rabbitmq',
     )
+    required_config.add_option(
+        'throttle',
+        default=100,
+        doc='percentage of the time that rabbit will try to queue',
+        reference_value_from='resource.rabbitmq',
+    )
+
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -93,8 +102,20 @@ class RabbitMQCrashStorage(CrashStorageBase):
             delivery_mode=2,  # make message persistent
         )
 
+        if config.throttle == 100:
+            self.dont_queue_this_crash = lambda: False
+        else:
+            self.dont_queue_this_crash = lambda: randint(1, 100) > config.throttle
+
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
+        if  self.dont_queue_this_crash():
+            self.config.logger.info(
+                'Crash %s filtered out of RabbitMQ queue %s',
+                crash_id,
+                self.config.routing_key
+            )
+            return
         try:
             this_crash_should_be_queued = (
                 (not self.config.filter_on_legacy_processing)
