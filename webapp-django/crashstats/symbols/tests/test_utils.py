@@ -1,4 +1,4 @@
-from nose.tools import ok_
+from nose.tools import ok_, eq_
 
 from crashstats.symbols import utils
 from crashstats.base.tests.testbase import TestCase
@@ -15,7 +15,7 @@ class TestUtils(TestCase):
 
     def test_preview_zip(self):
         with open(ZIP_FILE) as f:
-            result = utils.preview_archive_content(f, 'foo.zip')
+            result = utils.preview_archive_content(f, 'application/zip')
             # the sample.zip file contains...
             ok_('south-africa-flag.jpeg' in result)
             # and it's 69183 bytes
@@ -23,7 +23,7 @@ class TestUtils(TestCase):
 
     def test_preview_tar(self):
         with open(TAR_FILE) as f:
-            result = utils.preview_archive_content(f, 'foo.tar')
+            result = utils.preview_archive_content(f, 'application/x-tar')
             # the sample.tar file contains...
             ok_('south-africa-flag.jpeg' in result)
             # and it's 69183 bytes
@@ -31,7 +31,7 @@ class TestUtils(TestCase):
 
     def test_preview_tgz(self):
         with open(TGZ_FILE) as f:
-            result = utils.preview_archive_content(f, 'foo.tgz')
+            result = utils.preview_archive_content(f, 'application/x-gzip')
             # the sample.tgz file contains...
             ok_('south-africa-flag.jpeg' in result)
             # and it's 69183 bytes
@@ -39,8 +39,15 @@ class TestUtils(TestCase):
 
     def test_preview_targz(self):
         with open(TARGZ_FILE) as f:
-            result = utils.preview_archive_content(f, 'foo.tar.gz')
+            result = utils.preview_archive_content(f, 'application/x-gzip')
             # the sample.tar.gz file contains...
             ok_('south-africa-flag.jpeg' in result)
             # and it's 69183 bytes
             ok_('69183' in result)
+
+    def test_filename_to_mimetype(self):
+        function = utils.filename_to_mimetype
+        eq_(function(ZIP_FILE), 'application/zip')
+        eq_(function(TGZ_FILE), 'application/x-gzip')
+        eq_(function(TARGZ_FILE), 'application/x-gzip')
+        eq_(function(TAR_FILE), 'application/x-tar')
