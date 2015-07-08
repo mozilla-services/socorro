@@ -5,7 +5,6 @@
     {{ super() }}
     {% compress css %}
 <link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
-<link href="{{ static('crashstats/css/lib/metricsgraphics.css') }}" type="text/css" rel="stylesheet">
     {% endcompress %}
 
     {% compress css %}
@@ -47,7 +46,6 @@
             <li><a href="#reports" class="reports" data-tab-name="reports">Reports</a></li>
             <li><a href="#aggregations" class="aggregations" data-tab-name="aggregations">Aggregations</a></li>
             <li><a href="#comments" class="comments" data-tab-name="comments">Comments</a></li>
-            <li><a href="#graph" class="graph" data-tab-name="graph">Graph</a></li>
         </ul>
     </nav>
 
@@ -136,39 +134,6 @@
         </div>
     </section>
 
-    <!-- Graph panel.
-        Displays a graph of crashes/ADU against build date
-    -->
-    <section class="panel" id="graph-panel"
-        data-source-url="{{ url('signature:signature_report') }}graphdata/"
-    >
-        <header class="title">
-            <h2>Graph</h2>
-        </header>
-
-        <div class="body">
-            <div class="controls">
-                <select class="channels-list">
-                    <option></option>
-                    {% for channel in channels %}
-                    <option value="{{ channel }}">{{ channel }}</option>
-                    {% endfor %}
-                </select>
-                <hr>
-            </div>
-            <div class="content">
-                <div class="panel">
-                    <header class="title">
-                        <h2>ADU by signature</h2>
-                    </header>
-                    <div class="body">
-                        <div class="adu-graph" id="adu-graph"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
 </div>
 {% endblock %}
 
@@ -179,11 +144,7 @@
 <script>
 var BASE_URL = location.protocol + '//' + location.host;
 var FIELDS = {{ fields | json_dumps }};
-var DEFAULT_CHANNEL = '{{ channel }}';
 </script>
-
-<script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-<script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
 
 {% compress js %}
 <script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
