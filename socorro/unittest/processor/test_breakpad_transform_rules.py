@@ -676,7 +676,7 @@ class TestBreakpadTransformRule2015(TestCase):
 
         mocked_subprocess_handle = \
             mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = '{}\n'
+        mocked_subprocess_handle.stdout.read.return_value = '{}'
         mocked_subprocess_handle.wait.return_value = 124
 
         rule = BreakpadStackwalkerRule2015(config)
