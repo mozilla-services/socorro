@@ -178,10 +178,19 @@ def web_upload(request):
     if request.method == 'POST':
         form = forms.UploadForm(request.POST, request.FILES)
         if form.is_valid():
+            name = form.cleaned_data['file'].name
+            if name.endswith('.tar.gz') or name.endswith('.tgz'):
+                # Django uses mimetypes to turn a filename into a
+                # mimetype. For .tar, .tar.gz and .tgz you get
+                # 'application/x-tar' which misses out that it's
+                # gzipped. So we override that here.
+                content_type = 'application/x-gzip'
+            else:
+                content_type = form.cleaned_data['file'].content_type
             try:
                 content = utils.preview_archive_content(
                     form.cleaned_data['file'].file,
-                    form.cleaned_data['file'].name
+                    content_type
                 )
             except BadZipfile as exception:
                 return http.HttpResponseBadRequest(exception)
@@ -203,7 +212,7 @@ def web_upload(request):
             unpack_and_upload(
                 utils.get_archive_members(
                     form.cleaned_data['file'].file,
-                    form.cleaned_data['file'].name
+                    content_type
                 ),
                 symbols_upload,
                 bucket_name,
@@ -255,6 +264,10 @@ def upload(request):
     for name in request.FILES:
         upload = request.FILES[name]
         size = upload.size
+        if name.endswith('.tar.gz') or name.endswith('.tgz'):
+            content_type = 'application/x-gzip'
+        elif name.endswith('.zip'):
+            content_type = 'application/zip'
         break
     else:
         return http.HttpResponseBadRequest(
@@ -264,7 +277,10 @@ def upload(request):
     if not size:
         return http.HttpResponseBadRequest('File size 0')
 
-    content = utils.preview_archive_content(upload, name)
+    content = utils.preview_archive_content(
+        upload,
+        utils.filename_to_mimetype(name)
+    )
     error = check_symbols_archive_content(content)
     if error:
         return http.HttpResponseBadRequest(error)
@@ -279,7 +295,10 @@ def upload(request):
         request.user
     )
     unpack_and_upload(
-        utils.get_archive_members(upload, name),
+        utils.get_archive_members(
+            upload,
+            content_type
+        ),
         symbols_upload,
         bucket_name,
         bucket_location
