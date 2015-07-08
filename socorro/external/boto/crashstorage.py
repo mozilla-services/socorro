@@ -92,7 +92,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     required_config.add_option(
         'prefix',
         doc="a prefix to use inside the bucket",
-        default='dev',
+        default='',
         reference_value_from='resource.boto',
         likely_to_be_changed=True,
     )
