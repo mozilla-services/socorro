@@ -5,7 +5,7 @@
 import copy
 import ujson
 
-from mock import Mock, patch, call
+from mock import Mock, patch
 from nose.tools import eq_, ok_
 from contextlib import contextmanager
 
@@ -19,6 +19,7 @@ from socorro.processor.breakpad_transform_rules import (
     CrashingThreadRule,
     ExternalProcessRule,
     DumpLookupExternalRule,
+    JitCrashCategorizeRule
 )
 
 canonical_standard_raw_crash = DotDict({
@@ -733,3 +734,298 @@ class TestBreakpadTransformRule2015(TestCase):
             ]
         )
 
+#==============================================================================
+class TestJitCrashCategorizeRule(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = True
+        config.dump_field = 'upload_file_minidump'
+        config.command_line = (
+            JitCrashCategorizeRule.required_config.command_line.default
+        )
+        config.result_key = 'classifications.jit.category'
+        config.return_code_key = 'classifications.jit.category_return_code'
+        config.command_pathname = \
+            '/data/socorro/stackwalk/bin/jit-crash-categorize'
+        config.temporary_file_system_storage_path = '/tmp'
+        config.threshold = 8
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+        processor_meta.quit_check = lambda: False
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_everything_we_hoped_for(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = CDotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows 386'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processor_meta.processor_notes, [])
+        eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
+        eq_(processed_crash.classifications.jit.category_return_code, 0)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_everything_we_hoped_for_2(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = CDotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows 386'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterIon'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processor_meta.processor_notes, [])
+        eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
+        eq_(processed_crash.classifications.jit.category_return_code, 0)
+
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_subprocess_fail(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = CDotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows 386'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            None
+        )
+        mocked_subprocess_handle.wait.return_value = -1
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        eq_(processor_meta.processor_notes, [])
+        ok_(processed_crash.classifications.jit.category is None)
+        eq_(processed_crash.classifications.jit.category_return_code, -1)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_wrong_os(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'MS-DOS'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        ok_('classifications.jit.category' not in processed_crash)
+        ok_('classifications.jit.category_return_code' not in processed_crash)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_wrong_product(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processed_crash.product = 'Firefrenzy'
+        processed_crash.os_name = 'Windows NT'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        ok_('classifications.jit.category' not in processed_crash)
+        ok_('classifications.jit.category_return_code' not in processed_crash)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_wrong_cpu(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows NT'
+        processed_crash.cpu_name = 'VAX 750'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        ok_('classifications.jit.category' not in processed_crash)
+        ok_('classifications.jit.category_return_code' not in processed_crash)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_wrong_signature(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows NT'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'this-is-not-a-JIT-signature'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module',})
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        ok_('classifications.jit.category' not in processed_crash)
+        ok_('classifications.jit.category_return_code' not in processed_crash)
+
+    #--------------------------------------------------------------------------
+    @patch('socorro.processor.breakpad_transform_rules.subprocess')
+    def test_module_on_stack_top(self, mocked_subprocess_module):
+        config = self.get_basic_config()
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
+        processed_crash = DotDict()
+        processed_crash.product = 'Firefox'
+        processed_crash.os_name = 'Windows NT'
+        processed_crash.cpu_name = 'x86'
+        processed_crash.signature = 'EnterBaseline'
+        processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'module': 'a-module',}),
+            DotDict({'not_module': 'not-a-module',}),
+        ]
+        processor_meta = self.get_basic_processor_meta()
+
+        mocked_subprocess_handle = (
+            mocked_subprocess_module.Popen.return_value
+        )
+        mocked_subprocess_handle.stdout.read.return_value = (
+            'EXTRA-SPECIAL'
+        )
+        mocked_subprocess_handle.wait.return_value = 0
+
+        rule = JitCrashCategorizeRule(config)
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        ok_('classifications.jit.category' not in processed_crash)
+        ok_('classifications.jit.category_return_code' not in processed_crash)
