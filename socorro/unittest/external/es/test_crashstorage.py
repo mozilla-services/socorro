@@ -16,7 +16,8 @@ from socorro.external import BadArgumentError
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     ESCrashStorage,
-    ESCrashStorageNoStackwalkerOutput
+    ESCrashStorageRedactedSave,
+    ESBulkCrashStorage
 )
 from socorro.external.es.connection_context import ConnectionContext
 from socorro.unittest.external.es.base import ElasticsearchTestCase
@@ -71,24 +72,24 @@ a_processed_crash = {
     'user_id': None,
     'uuid': '936ce666-ff3b-4c7a-9674-367fe2120408',
     'version': '13.0a1',
-    'upload_file_minidump_flash1':  {
-        'things':  'untouched',
-        'json_dump':  'stackwalker output',
+    'upload_file_minidump_flash1': {
+        'things': 'untouched',
+        'json_dump': 'stackwalker output',
     },
-    'upload_file_minidump_flash2':  {
-        'things':  'untouched',
-        'json_dump':  'stackwalker output',
+    'upload_file_minidump_flash2': {
+        'things': 'untouched',
+        'json_dump': 'stackwalker output',
     },
-    'upload_file_minidump_browser':  {
-        'things':  'untouched',
-        'json_dump':  'stackwalker output',
+    'upload_file_minidump_browser': {
+        'things': 'untouched',
+        'json_dump': 'stackwalker output',
     },
 }
 
 a_processed_crash_with_no_stackwalker = deepcopy(a_processed_crash)
 
 a_processed_crash_with_no_stackwalker['date_processed'] = \
-    '2012-04-08T10:56:41+00:00'
+    string_to_datetime('2012-04-08 10:56:41.558922')
 a_processed_crash_with_no_stackwalker['client_crash_date'] =  \
     string_to_datetime('2012-04-08 10:52:42.0')
 a_processed_crash_with_no_stackwalker['completeddatetime'] =  \
@@ -121,7 +122,7 @@ a_raw_crash = {
 #logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch') # for nosetests
+@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestESCrashStorage(ElasticsearchTestCase):
     """These tests interact with Elasticsearch (or some other external
     resource).
@@ -150,7 +151,6 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
     def tearDown(self):
         """Remove indices that may have been created by the test.
         """
-
         try:
             self.index_client.delete(
                 self.config.elasticsearch.elasticsearch_default_index
@@ -160,7 +160,6 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
             # It's fine it's fine; 404 means the test didn't create any
             # indices, therefore they can't be deleted.
             pass
-
 
         try:
             self.index_client.delete(
@@ -192,6 +191,47 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
                 id=a_processed_crash['uuid']
             )
         )
+        es_storage.close()
+
+    def test_bulk_index_crash(self):
+        """Test indexing a crash document.
+        """
+
+        local_config = self.get_tuned_config(
+            ESBulkCrashStorage,
+            {"items_per_bulk_load": 10, }
+        )
+
+        es_storage = ESBulkCrashStorage(config=local_config)
+
+        for x in range(20):
+            uuid = "%02d%s" % (
+                x,
+                a_processed_crash['uuid'][2:]
+            )
+            new_processed_crash = deepcopy(a_processed_crash)
+            new_processed_crash['uuid'] = uuid
+
+            es_storage.save_raw_and_processed(
+                raw_crash=a_raw_crash,
+                dumps=None,
+                processed_crash=new_processed_crash,
+                crash_id=uuid
+            )
+        es_storage.close()
+
+        for x in range(20):
+            uuid = "%02d%s" % (
+                x,
+                a_processed_crash['uuid'][2:]
+            )
+            # Ensure that the document was indexed by attempting to retreive it.
+            ok_(
+                self.es_client.get(
+                    index=local_config.elasticsearch.elasticsearch_index,
+                    id=uuid
+                )
+            )
 
 
 class TestESCrashStorage(ElasticsearchTestCase):
@@ -232,7 +272,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # we need to specify it now.
         modified_config = self.get_tuned_config(
             ESCrashStorage,
-            {'resource.elasticsearch.elasticsearch_index': \
+            {'resource.elasticsearch.elasticsearch_index':
                 'socorro_integration_test_reports%Y%m%d'}
         )
         es_storage = ESCrashStorage(config=modified_config)
@@ -336,7 +376,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         sub_mock = mock.MagicMock()
         espy_mock.Elasticsearch.return_value = sub_mock
 
-        es_storage = ESCrashStorageNoStackwalkerOutput(config=modified_config)
+        es_storage = ESCrashStorageRedactedSave(config=modified_config)
 
         crash_id = a_processed_crash['uuid']
 
@@ -373,7 +413,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
             body=document,
             **additional
         )
-
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_fatal_failure(self, espy_mock):
