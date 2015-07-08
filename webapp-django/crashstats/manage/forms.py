@@ -274,15 +274,3 @@ class ReleaseForm(BaseForm):
             return value
         except ValueError:
             raise forms.ValidationError('Must start with YYYYMMDD')
-
-
-class CrashMeNowForm(BaseForm):
-
-    exception_type = forms.ChoiceField(
-        choices=(
-            ('NameError', 'NameError'),
-            ('ValueError', 'ValueError'),
-            ('AttributeError', 'AttributeError'),
-        )
-    )
-    exception_value = forms.CharField()
