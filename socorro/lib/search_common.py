@@ -71,12 +71,10 @@ class SearchFilter(object):
 
 class SearchBase(object):
     meta_filters = [
-        SearchFilter('_aggs.signature', default=''),
         SearchFilter('_columns', default=[
             'uuid', 'date', 'signature', 'product', 'version'
         ]),
         SearchFilter('_facets', default='signature'),
-        SearchFilter('_facets_size', data_type='int', default=50),
         SearchFilter('_results_number', data_type='int', default=100),
         SearchFilter('_results_offset', data_type='int', default=0),
         SearchFilter('_return_query', data_type='bool', default=False),
