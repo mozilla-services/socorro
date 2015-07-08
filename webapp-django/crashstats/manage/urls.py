@@ -98,8 +98,5 @@ urlpatterns = patterns(
     url('^api-tokens/data/$',
         views.api_tokens_data,
         name='api_tokens_data'),
-    url('^crash-me-now/$',
-        views.crash_me_now,
-        name='crash_me_now'),
 
 )
