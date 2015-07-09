@@ -31,7 +31,6 @@ from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
-    SuperSearchResponse,
 )
 
 from .test_models import Response
@@ -473,6 +472,19 @@ class BaseTestViews(DjangoTestCase):
         )
         group.permissions.add(permission)
         return group
+
+    @staticmethod
+    def only_certain_columns(hits, columns):
+        """return a new list where each dict within only has keys mentioned
+        in the `columns` list."""
+        return [
+            dict(
+                (k, x[k])
+                for k in x
+                if k in columns
+            )
+            for x in hits
+        ]
 
 
 class TestAnalytics(BaseTestViews):
@@ -2634,8 +2646,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_your_crashes(self, rget):
+    def test_your_crashes(self, rget, supersearch):
         url = reverse('crashstats:your_crashes')
 
         def mocked_get(url, params, **options):
@@ -2656,11 +2669,16 @@ class TestViews(BaseTestViews):
                     }
                 })
 
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
             assert '_columns' in params
             assert 'email' in params
             assert params['email'] == ['test@mozilla.com']
 
-            return SuperSearchResponse({
+            results = {
                 'hits': [
                     {
                         'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
@@ -2672,9 +2690,10 @@ class TestViews(BaseTestViews):
                     }
                 ],
                 'total': 2
-            }, columns=params['_columns'])
+            }
+            return results
 
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         # A user needs to be signed in to see this page.
         response = self.client.get(url)
@@ -2692,8 +2711,9 @@ class TestViews(BaseTestViews):
         ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
         ok_('test@mozilla.com' in response.content)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_your_crashes_no_data(self, rget):
+    def test_your_crashes_no_data(self, rget, supersearch):
         url = reverse('crashstats:your_crashes')
 
         def mocked_get(url, params, **options):
@@ -2714,15 +2734,20 @@ class TestViews(BaseTestViews):
                     }
                 })
 
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
             assert 'email' in params
             assert params['email'] == ['test@mozilla.com']
 
-            return Response({
+            return {
                 'hits': [],
                 'total': 0
-            })
+            }
 
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         self._login()
 

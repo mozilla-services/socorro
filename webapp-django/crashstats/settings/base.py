@@ -639,3 +639,24 @@ SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
     'SYMBOLS_BUCKET_DEFAULT_LOCATION',
     None
 )
+
+# Config for when the models pull directly from socorro.external classes.
+# NOTE: This is overwritten, for tests in settings_test.py
+SOCORRO_IMPLEMENTATIONS_CONFIG = {
+    'elasticsearch': {
+        # All of these settings are repeated with sensible defaults
+        # in the implementation itself.
+        # We repeat them here so it becomes super easy to override
+        # from the way we set settings for the webapp.
+        'elasticsearch_urls': config(
+            'ELASTICSEARCH_URLS',
+            'http://localhost:9200',
+            cast=Csv()
+        ),
+        # e.g. (deliberately commented out)
+        # 'elasticsearch_doctype': config(
+        #     'ELASTICSEARCH_DOCTYPE',
+        #     'crash_reports'
+        # )
+    }
+}

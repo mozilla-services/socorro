@@ -17,7 +17,6 @@ from crashstats.supersearch.views import (
 )
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
-    SuperSearchResponse,
 )
 
 
@@ -140,9 +139,10 @@ class TestViews(BaseTestViews):
 
         ok_('exploitability' in content)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
-    def test_search_results(self, rget, cpost):
+    def test_search_results(self, rget, cpost, supersearch):
         def mocked_post(**options):
             return {
                 "hits": [
@@ -160,10 +160,16 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            raise NotImplementedError(url)
+
+        cpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
             assert '_columns' in params
 
             if 'product' in params and 'WaterWolf' in params['product']:
-                return SuperSearchResponse({
+                results = {
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -223,9 +229,14 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 4
-                }, columns=params['_columns'])
+                }
+                results['hits'] = self.only_certain_columns(
+                    results['hits'],
+                    params['_columns']
+                )
+                return results
             elif 'product' in params and 'SeaMonkey' in params['product']:
-                return SuperSearchResponse({
+                results = {
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -255,12 +266,17 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 2
-                }, columns=params['_columns'])
+                }
+                results['hits'] = self.only_certain_columns(
+                    results['hits'],
+                    params['_columns']
+                )
+                return results
             elif (
                 'signature' in params and
                 '~nsASDOMWindowEnumerator' in params['signature']
             ):
-                return SuperSearchResponse({
+                results = {
                     "hits": [
                         {
                             "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -281,12 +297,16 @@ class TestViews(BaseTestViews):
                         ]
                     },
                     "total": 1
-                }, columns=params['_columns'])
+                }
+                results['hits'] = self.only_certain_columns(
+                    results['hits'],
+                    params['_columns']
+                )
+                return results
             else:
-                return Response({"hits": [], "facets": [], "total": 0})
+                return {"hits": [], "facets": [], "total": 0}
 
-        cpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
         response = self.client.get(
@@ -368,14 +388,13 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.get')
-    def test_search_results_ratelimited(self, rget):
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
+    def test_search_results_ratelimited(self, supersearch):
 
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-            return Response({"hits": [], "facets": [], "total": 0})
+        def mocked_supersearch_get(**params):
+            return {"hits": [], "facets": [], "total": 0}
 
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
@@ -392,9 +411,10 @@ class TestViews(BaseTestViews):
         eq_(response.content, 'Too Many Requests')
         eq_(response['content-type'], 'text/plain')
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_search_results_admin_mode(self, rget, rpost):
+    def test_search_results_admin_mode(self, rget, rpost, supersearch):
         """Test that an admin can see more fields, and that a non-admin cannot.
         """
         def mocked_post(**options):
@@ -407,6 +427,12 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
             assert '_columns' in params
 
             if '_facets' in params and 'url' in params['_facets']:
@@ -434,7 +460,7 @@ class TestViews(BaseTestViews):
                     ]
                 }
 
-            return SuperSearchResponse({
+            results = {
                 "hits": [
                     {
                         "signature": "nsASDOMWindowEnumerator::GetNext()",
@@ -475,10 +501,14 @@ class TestViews(BaseTestViews):
                 ],
                 "facets": facets,
                 "total": 3
-            }, columns=params['_columns'])
+            }
+            results['hits'] = self.only_certain_columns(
+                results['hits'],
+                params['_columns']
+            )
+            return results
 
-        rpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
 
@@ -540,9 +570,10 @@ class TestViews(BaseTestViews):
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_search_results_parameters(self, rget, rpost):
+    def test_search_results_parameters(self, rget, rpost, supersearch):
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
             return Response({
@@ -556,6 +587,12 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
             ok_('product' in params)
             ok_('WaterWolf' in params['product'])
@@ -572,14 +609,13 @@ class TestViews(BaseTestViews):
             ok_('java_stack_trace' in params)
             ok_('Exception' in params['java_stack_trace'])
 
-            return Response({
+            return {
                 "hits": [],
                 "facets": "",
                 "total": 0
-            })
+            }
 
-        rpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
 
@@ -593,9 +629,10 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.post')
     @mock.patch('requests.get')
-    def test_search_results_pagination(self, rget, rpost):
+    def test_search_results_pagination(self, rget, rpost, supersearch):
         """Test that the pagination of results works as expected.
         """
         def mocked_post(**options):
@@ -610,6 +647,12 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
+            raise NotImplementedError(url)
+
+        rpost.side_effect = mocked_post
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
             assert '_columns' in params
 
             # Make sure a negative page does not lead to negative offset value.
@@ -627,14 +670,13 @@ class TestViews(BaseTestViews):
                     "platform": "Linux",
                     "build_id": 888981
                 })
-            return SuperSearchResponse({
-                "hits": hits,
+            return {
+                "hits": self.only_certain_columns(hits, params['_columns']),
                 "facets": "",
                 "total": len(hits)
-            }, columns=params['_columns'])
+            }
 
-        rpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
 
@@ -711,8 +753,9 @@ class TestViews(BaseTestViews):
         group = self._create_group_with_permission('run_custom_queries')
         user.groups.add(group)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_search_custom_permission(self, rget):
+    def test_search_custom_permission(self, rget, supersearch):
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
@@ -720,9 +763,14 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            return Response()
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            return None
+
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_custom')
 
@@ -735,8 +783,9 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Run a search to get some results' in response.content)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_search_custom(self, rget):
+    def test_search_custom(self, rget, supersearch):
 
         def mocked_get(url, params, **options):
             assert 'supersearch' in url
@@ -744,9 +793,14 @@ class TestViews(BaseTestViews):
             if 'supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            return Response()
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            return None
+
+        supersearch().get.side_effect = mocked_supersearch_get
 
         self.create_custom_query_perm()
 
@@ -755,27 +809,30 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Run a search to get some results' in response.content)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_search_custom_parameters(self, rget):
+    def test_search_custom_parameters(self, rget, supersearch):
         self.create_custom_query_perm()
 
         def mocked_get(url, params, **options):
             if '/supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if '/supersearch' in url:
-                ok_('_return_query' in params)
-                ok_('signature' in params)
-                eq_(params['signature'], ['nsA'])
-
-                return Response({
-                    "query": {"query": None},
-                    "indices": ["socorro200000", "socorro200001"]
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            ok_('_return_query' in params)
+            ok_('signature' in params)
+            eq_(params['signature'], ['nsA'])
+
+            return {
+                "query": {"query": None},
+                "indices": ["socorro200000", "socorro200001"]
+            }
+
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_custom')
         response = self.client.get(url, {'signature': 'nsA'})
