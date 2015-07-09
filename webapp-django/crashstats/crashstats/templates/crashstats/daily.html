@@ -2,12 +2,14 @@
 {% block site_css %}
   {{ super() }}
   {% compress css %}
-  <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/daily.less') }}">
-  {% endcompress %}
-  {% compress css %}
       <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
       <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
       <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
+      <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/metricsgraphics.css') }}">
+      <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/metricsgraphics_custom.css') }}">
+  {% endcompress %}
+  {% compress css %}
+      <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/daily.less') }}">
   {% endcompress %}
 {% endblock %}
 
@@ -248,7 +250,8 @@ Crashes per Active Daily Install for {{ product }}
         </div>
 
         <div class="body">
-                <div id="adu-chart"></div>
+                <div id="crashes-per-adi-graph"></div>
+                <div id="crashes-per-adi-legend" class="crashes-per-adi-legend"></div>
             <p class="adu-chart-help">This graph uses an approximate <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle">throttle value</a> for each version, which may not be completely accurate for the entire time period.</p>
             </div>
     </div>
@@ -377,14 +380,14 @@ Crashes per Active Daily Install for {{ product }}
 {% endblock %}
 {% block site_js %}
   {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
 
   {% compress js %}
   <script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
   {% endcompress %}
 
   {% compress js %}
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
+  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+  <script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
   <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
   {% endcompress %}
   <script>
