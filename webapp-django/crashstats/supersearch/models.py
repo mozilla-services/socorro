@@ -8,8 +8,10 @@ from crashstats.crashstats import models
 
 
 SUPERSEARCH_META_PARAMS = (
+    ('_aggs.signature', list),
     ('_columns', list),
     ('_facets', list),
+    ('_facets_size', int),
     ('_results_offset', int),
     ('_results_number', int),
     '_return_query',

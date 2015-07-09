@@ -626,13 +626,242 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get(**kwargs)
 
         ok_('version' in res['facets'])
-        eq_(len(res['facets']['version']), self.api.config.facets_max_number)
+        eq_(len(res['facets']['version']), 50)  # 50 is the default value
+
+        # Test with a different number of facets results.
+        kwargs = {
+            '_facets': ['version'],
+            '_facets_size': 20
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('version' in res['facets'])
+        eq_(len(res['facets']['version']), 20)
+
+        kwargs = {
+            '_facets': ['version'],
+            '_facets_size': 100
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('version' in res['facets'])
+        eq_(len(res['facets']['version']), number_of_crashes)
 
         # Test errors
         assert_raises(
             BadArgumentError,
             self.api.get,
             _facets=['unkownfield']
+        )
+
+    @minimum_es_version('1.0')
+    def test_get_with_signature_aggregations(self):
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Windows NT',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'NightTrain',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'foo(bar)',
+            'product': 'EarthRacoon',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+
+        # Index a lot of distinct values to test the results limit.
+        number_of_crashes = 51
+        processed_crash = {
+            'version': '10.%s',
+            'signature': 'crash_me_I_m_famous',
+            'date_processed': self.now,
+        }
+        self.index_many_crashes(
+            number_of_crashes,
+            processed_crash,
+            loop_field='version',
+        )
+        # Note: index_many_crashes does the index refreshing.
+
+        # Test several facets
+        kwargs = {
+            '_aggs.signature': ['product', 'platform'],
+            'signature': '!=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('facets' in res)
+        ok_('signature' in res['facets'])
+
+        expected_terms = [
+            {
+                'term': 'js::break_your_browser',
+                'count': 3,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 2
+                        },
+                        {
+                            'term': 'NightTrain',
+                            'count': 1
+                        },
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
+                            'count': 2
+                        },
+                        {
+                            'term': 'Windows NT',
+                            'count': 1
+                        },
+                    ]
+                }
+            },
+            {
+                'term': 'foo(bar)',
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'EarthRacoon',
+                            'count': 1
+                        }
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+        ]
+        eq_(res['facets']['signature'], expected_terms)
+
+        # Test one facet with filters
+        kwargs = {
+            '_aggs.signature': ['product'],
+            'product': 'WaterWolf',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('signature' in res['facets'])
+        expected_terms = [
+            {
+                'term': 'js::break_your_browser',
+                'count': 2,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 2
+                        },
+                    ]
+                }
+            },
+        ]
+        eq_(res['facets']['signature'], expected_terms)
+
+        # Test one facet with a different filter
+        kwargs = {
+            '_aggs.signature': ['product'],
+            'platform': 'linux',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('signature' in res['facets'])
+
+        expected_terms = [
+            {
+                'term': 'js::break_your_browser',
+                'count': 2,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'NightTrain',
+                            'count': 1
+                        },
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        },
+                    ],
+                }
+            },
+            {
+                'term': 'foo(bar)',
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'EarthRacoon',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+        ]
+        eq_(res['facets']['signature'], expected_terms)
+
+        # Test the number of results.
+        kwargs = {
+            '_aggs.signature': ['version'],
+            'signature': '=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('signature' in res['facets'])
+        ok_('version' in res['facets']['signature'][0]['facets'])
+
+        version_sub_facet = res['facets']['signature'][0]['facets']['version']
+        eq_(len(version_sub_facet), 50)  # 50 is the default
+
+        # Test with a different number of facets results.
+        kwargs = {
+            '_aggs.signature': ['version'],
+            '_facets_size': 20,
+            'signature': '=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('signature' in res['facets'])
+        ok_('version' in res['facets']['signature'][0]['facets'])
+
+        version_sub_facet = res['facets']['signature'][0]['facets']['version']
+        eq_(len(version_sub_facet), 20)
+
+        kwargs = {
+            '_aggs.signature': ['version'],
+            '_facets_size': 100,
+            'signature': '=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        version_sub_facet = res['facets']['signature'][0]['facets']['version']
+        eq_(len(version_sub_facet), number_of_crashes)
+
+        # Test errors
+        args = {}
+        args['_aggs.signature'] = ['unkownfield']
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            **args
         )
 
     @minimum_es_version('1.0')
