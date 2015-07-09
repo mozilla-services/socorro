@@ -11,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 import mock
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from eventlog.models import Log
 
 from crashstats.symbols.models import SymbolsUpload
@@ -1848,3 +1848,22 @@ class TestViews(BaseTestViews):
         eq_(event.extra['notes'], 'Some notes')
         eq_(event.extra['user'], self.user.email)
         eq_(event.extra['permissions'], permission.name)
+
+    def test_crash_me_now(self):
+        url = reverse('manage:crash_me_now')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        assert_raises(
+            NameError,
+            self.client.post,
+            url,
+            {
+                'exception_type': 'NameError',
+                'exception_value': 'Crash!'
+            }
+        )
