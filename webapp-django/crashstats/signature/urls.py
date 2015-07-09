@@ -15,6 +15,11 @@ urlpatterns = patterns(
         name='signature_comments',
     ),
     url(
+        r'^graphdata/(?P<channel>\w+)/$',
+        views.signature_graph_data,
+        name='signature_graph_data',
+    ),
+    url(
         r'^aggregation/(?P<aggregation>\w+)/$',
         views.signature_aggregation,
         name='signature_aggregation',
