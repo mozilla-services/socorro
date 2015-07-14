@@ -145,9 +145,10 @@ class TestCrashStorage(TestCase):
         connection = Mock()
         ack_token = DotDict()
         ack_token.delivery_tag = 1
+        crash_id = 'some-crash-id'
 
         crash_store = RabbitMQCrashStorage(config)
-        crash_store._transaction_ack_crash(connection, ack_token)
+        crash_store._transaction_ack_crash(connection, crash_id, ack_token)
 
         connection.channel.basic_ack.assert_called_once_with(delivery_tag=1)
 
