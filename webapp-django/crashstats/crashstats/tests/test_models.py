@@ -882,9 +882,9 @@ class TestModels(DjangoTestCase):
         api = model()
 
         def mocked_post(**options):
-            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
+            assert options == {'signatures': 'Pickle::ReadBytes'}
             return {"hits": ["123456789"]}
-        rpost.side_effect = mocked_post
+        rpost.cls().post.side_effect = mocked_post
 
         r = api.get(signatures='Pickle::ReadBytes')
         ok_(r['hits'])

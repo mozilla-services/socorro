@@ -4,7 +4,7 @@ from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
-from waffle import Switch
+from waffle.models import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.tests.common import (

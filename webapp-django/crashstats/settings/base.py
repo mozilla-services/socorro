@@ -30,7 +30,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'commonware.response.cookies',
-    'south',  # important that django_nose comes AFTER this one
     'django_nose',
     'session_csrf',
 
@@ -43,7 +42,7 @@ INSTALLED_APPS = (
     '%s.manage' % PROJECT_MODULE,
     '%s.supersearch' % PROJECT_MODULE,
     '%s.signature' % PROJECT_MODULE,
-    '%s.auth' % PROJECT_MODULE,
+    '%s.authentication' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
     'django.contrib.messages',
@@ -297,7 +296,9 @@ MIDDLEWARE_RETRY_SLEEPTIME = 3
 MIDDLEWARE_RETRIES = 10
 
 # Overridden so we can control the redirects better
-BROWSERID_VERIFY_CLASS = '%s.auth.views.CustomBrowserIDVerify' % PROJECT_MODULE
+BROWSERID_VERIFY_CLASS = (
+    '%s.authentication.views.CustomBrowserIDVerify' % PROJECT_MODULE
+)
 
 # For a more friendly Persona pop-up
 BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}

@@ -309,7 +309,7 @@ def users_data(request):
 
 @json_view
 @superuser_required
-@transaction.commit_on_success
+@transaction.atomic
 def user(request, id):
     context = {}
     user_ = get_object_or_404(User, id=id)
@@ -338,7 +338,7 @@ def user(request, id):
     return render(request, 'manage/user.html', context)
 
 
-@transaction.commit_on_success
+@transaction.atomic
 @superuser_required
 def groups(request):
     context = {}

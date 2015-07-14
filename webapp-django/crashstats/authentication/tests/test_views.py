@@ -56,14 +56,8 @@ class TestDebugLogin(DjangoTestCase):
 
     def test_render(self):
         url = reverse('auth:debug_login')
-        _caches = {
-            'default': {
-                'BACKEND': 'path.to.SomeCache'
-            }
-        }
         with self.settings(
             SESSION_COOKIE_SECURE=True,
-            CACHES=_caches,
             DEBUG=True,
             BROWSERID_AUDIENCES=[
                 'http://socorro',
@@ -73,7 +67,6 @@ class TestDebugLogin(DjangoTestCase):
             response = self.client.get(url)
             eq_(response.status_code, 200)
             ok_('data-session-cookie-secure="true"' in response.content)
-            ok_('data-cache-setting="SomeCache"' in response.content)
             ok_('data-debug="true"' in response.content)
             ok_(
                 'data-audiences="http://socorro,http://crashstats.com"'

@@ -188,7 +188,7 @@ def home(request):
 
 @login_required
 @permission_required('crashstats.upload_symbols')
-@transaction.commit_on_success
+@transaction.atomic
 def web_upload(request):
     context = {}
     if request.method == 'POST':
@@ -266,7 +266,7 @@ def api_upload(request):
 @csrf_exempt
 @api_login_required
 @permission_required('crashstats.upload_symbols')
-@transaction.commit_on_success
+@transaction.atomic
 def upload(request):
     for name in request.FILES:
         upload = request.FILES[name]
