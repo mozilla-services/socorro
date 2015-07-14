@@ -9,6 +9,23 @@
   table.data-table th {
       width: 250px;
   }
+  .count {
+      display: none;
+      margin-bottom: 0;
+  }
+  p.pleasewait {
+      display: none;
+      float: right;
+      margin-right: 10px;
+  }
+  .pagination {
+      display: none;
+      float: right;
+      margin: 0 10px;
+  }
+  form#filter {
+      margin-top: 30px;
+  }
   </style>
 {% endblock %}
 
@@ -16,7 +33,10 @@
   {{ super() }}
   <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
   {% compress js %}
-  <script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
+  <script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
+  {% endcompress %}
+  {% compress js %}
+  <script type="text/javascript" src="{{ static('manage/js/symbols-uploads.js') }}"></script>
   {% endcompress %}
 {% endblock %}
 
@@ -31,30 +51,48 @@
         <h2>{{ page_title }}</h2>
       </div>
     <div class="body">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Filename</th>
-            <th>&nbsp;</th>
-            <th>Size</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for upload in all_uploads %}
-          <tr>
-            <td><a href="{{ url('manage:user', upload.user.pk) }}">{{ upload.user.email }}</a></td>
-            <td>{{ upload.filename }}</td>
-            <td>
-              <a href="{{ url('symbols:content', upload.pk) }}">List content</a>
-            </td>
-            <td>{{ upload.size | filesizeformat }}</td>
-            <td><time class="ago" data-date="{{ upload.created.isoformat() }}">{{ upload.created.isoformat() }}</time></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+      <p class="pleasewait">
+        <img src="{{ static('img/loading.png') }}" alt="Loading animation" />
+        Loading...
+      </p>
+
+      <h3 class="count"><b></b> Symbols Uploads found
+        <span class="page-wrapper">(page <span class="page"></span>)</span>
+      </h3>
+
+      <p class="pagination">
+        <a href="" class="previous">&larr; Previous</a>
+        <a href="" class="next">Next &rarr;</a>
+      </p>
+
+      <form action="" id="filter" data-dataurl="{{ url('manage:symbols_uploads_data') }}">
+        <input type="hidden" name="page">
+        <table class="data-table" >
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Filename</th>
+              <th>&nbsp;</th>
+              <th>Size</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr>
+              <td><input type="text" name="email" placeholder="Search by email"></td>
+              <td><input type="text" name="filename" placeholder="Search by filename"></td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+              <td><input type="submit" value="Filter">
+                  <input type="button" class="reset" value="Reset">
+              </td>
+            </tr>
+          </tfoot>
+          <tbody>
+          </tbody>
+        </table>
+      </form>
     </div>
   </div>
 

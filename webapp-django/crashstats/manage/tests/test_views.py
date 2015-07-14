@@ -1000,21 +1000,12 @@ class TestViews(BaseTestViews):
         eq_(event.extra['no_lines'], 6)
 
     def test_symbols_uploads(self):
-        self._login()
         url = reverse('manage:symbols_uploads')
-
-        user = User.objects.create(username='user', email='user@mozilla.com')
-        SymbolsUpload.objects.create(
-            user=user,
-            filename='file.zip',
-            size=123456,
-            content='Some Content'
-        )
-
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('file.zip' in response.content)
-        ok_('user@mozilla.com' in response.content)
 
     @mock.patch('requests.get')
     def test_supersearch_fields(self, rget):
@@ -1867,3 +1858,85 @@ class TestViews(BaseTestViews):
                 'exception_value': 'Crash!'
             }
         )
+
+    def test_symbols_uploads_data_pagination(self):
+        url = reverse('manage:symbols_uploads_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+
+        other = User.objects.create(username='o', email='other@mozilla.com')
+        for i in range(settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE):
+            SymbolsUpload.objects.create(
+                user=other,
+                filename='file-%d.zip' % i,
+                size=1000 + i,
+                content='Some Content'
+            )
+        # add this last so it shows up first
+        user = User.objects.create(username='user', email='user@mozilla.com')
+        upload = SymbolsUpload.objects.create(
+            user=user,
+            filename='file.zip',
+            size=123456,
+            content='Some Content'
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE + 1)
+        eq_(data['batch_size'], settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE)
+        eq_(data['page'], 1)
+        items = data['items']
+        eq_(len(items), settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE)
+        first, = items[:1]
+        eq_(first['id'], upload.id)
+        eq_(first['created'], upload.created.isoformat())
+        eq_(first['filename'], 'file.zip')
+        eq_(first['size'], 123456)
+        eq_(first['url'], reverse('symbols:content', args=(first['id'],)))
+        eq_(first['user'], {
+            'email': user.email,
+            'url': reverse('manage:user', args=(user.id,)),
+            'id': user.id,
+        })
+
+        # let's go to page 2
+        response = self.client.get(url, {'page': 2})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], settings.SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE + 1)
+        items = data['items']
+        eq_(len(items), 1)
+        eq_(data['page'], 2)
+
+        # filter by user email
+        response = self.client.get(url, {'email': user.email[:5].upper()})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 1)
+        first, = data['items']
+        eq_(first['user']['id'], user.id)
+
+        # filter by filename
+        response = self.client.get(url, {'filename': 'FILE.ZI'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 1)
+        first, = data['items']
+        eq_(first['filename'], 'file.zip')
+
+    def test_symbols_uploads_data_pagination_bad_request(self):
+        url = reverse('manage:symbols_uploads_data')
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {'page': 0})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'page': -1})
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'page': 'NaN'})
+        eq_(response.status_code, 400)

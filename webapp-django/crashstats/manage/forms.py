@@ -36,6 +36,12 @@ class FilterUsersForm(BaseForm):
         return {'0': None, '1': True, '-1': False}.get(value)
 
 
+class FilterSymbolsUploadsForm(BaseForm):
+
+    email = forms.CharField(required=False)
+    filename = forms.CharField(required=False)
+
+
 class FilterEventsForm(BaseForm):
 
     user = forms.CharField(required=False)
