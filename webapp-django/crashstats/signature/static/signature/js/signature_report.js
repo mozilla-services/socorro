@@ -425,7 +425,7 @@ $(function () {
                 x_accessor: 'date',
                 y_accessor: 'ratio',
                 xax_start_at_min: true,
-                decimals: 3,
+                decimals: 10,
                 area: false,
                 mouseover: function(d, i) {
                     $('.mg-active-datapoint')
