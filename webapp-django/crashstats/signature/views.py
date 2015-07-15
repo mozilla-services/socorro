@@ -320,17 +320,26 @@ def signature_graph_data(request, channel):
     start_date = None
     end_date = None
 
+    # Store one day as variable for readability
+    one_day = datetime.timedelta(days=1)
+
     # Check for dates
     if 'date' in params:
         for date in params['date']:
-            # Set the latest given start date as the start date
+            # Set the earliest given start date as the start date
             if date.startswith('>'):
-                d = isodate.parse_date(date.strip('>'))
+                if date.startswith('>='):
+                    d = isodate.parse_date(date.lstrip('>='))
+                else:
+                    d = isodate.parse_date(date.lstrip('>')) + one_day
                 if not start_date or d < start_date:
                     start_date = d
-            # Set the earliest given end date as the end date
+            # Set the latest given end date as the end date
             elif date.startswith('<'):
-                d = isodate.parse_date(date.strip('<'))
+                if date.startswith('<='):
+                    d = isodate.parse_date(date.lstrip('<='))
+                else:
+                    d = isodate.parse_date(date.lstrip('<')) - one_day
                 if not end_date or d > end_date:
                     end_date = d
 
