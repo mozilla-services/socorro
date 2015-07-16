@@ -154,7 +154,7 @@ class TestCSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(fixupComma, s.fixup_comma)
 
     #--------------------------------------------------------------------------
-    def test_normalize(self):
+    def test_normalize_with_collapse_args(self):
         """test_normalize: bunch of variations"""
         s, c = self.setup_config_C_sig_tool()
         a = [
@@ -168,6 +168,8 @@ class TestCSignatureTool(BaseTestClass):
             # never comes up
             #(('module', 'f(  *s , &n)', 's', '23', '0xFFF'), 'f(*s, &n)'),
             (('module', 'f3(s,t,u)', 's', '23', '0xFFF'), 'f3'),
+            (('module', '::(anonymous namespace)::f3(s,t,u)', 's', '23', '0xFFF'), '::(anonymous namespace)::f3'),
+            (('module', 'operator()(s,t,u)', 's', '23', '0xFFF'), 'operator()'),
             (('module', 'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>', 's', '23', '0xFFF'), 'Alpha<T>::Echo<T>'),
             (('module', 'f<3>(s,t,u)', 's', '23', '0xFFF'), 'f<T>'),
             (('module', '', 'source/', '23', '0xFFF'), 'source#23'),
