@@ -187,6 +187,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                         ]
                     self.transaction(
                         self._transaction_ack_crash,
+                        crash_id_to_be_acknowledged,
                         acknowledgement_token
                     )
                     del self.acknowledgement_token_cache[
@@ -210,13 +211,19 @@ class RabbitMQCrashStorage(CrashStorageBase):
             pass  # nothing to do with an empty queue
 
     #--------------------------------------------------------------------------
-    def _transaction_ack_crash(self, connection, acknowledgement_token):
-        self.config.logger.debug(
-            'RabbitMQCrashStorage acking with delivery_tag %s',
-            acknowledgement_token.delivery_tag
-        )
+    def _transaction_ack_crash(
+        self,
+        connection,
+        crash_id,
+        acknowledgement_token
+    ):
         connection.channel.basic_ack(
             delivery_tag=acknowledgement_token.delivery_tag
+        )
+        self.config.logger.debug(
+            'RabbitMQCrashStorage acking %s with delivery_tag %s',
+            crash_id,
+            acknowledgement_token.delivery_tag
         )
 
 
