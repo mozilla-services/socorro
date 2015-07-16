@@ -1,5 +1,6 @@
 import re
 import os
+import mimetypes
 from functools import wraps
 from cStringIO import StringIO
 from zipfile import BadZipfile
@@ -98,12 +99,27 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
             file = StringIO()
             file.write(member.extractor().read())
 
+            content_type = mimetypes.guess_type(key_name)[0]  # default guess
             for ext in settings.SYMBOLS_MIME_OVERRIDES:
-                if key_name.endswith('.{0}'.format(ext)):
-                    key.content_type = settings.SYMBOLS_MIME_OVERRIDES[ext]
+                if key_name.lower().endswith('.{0}'.format(ext)):
+                    content_type = settings.SYMBOLS_MIME_OVERRIDES[ext]
+                    key.content_type = content_type
                     symbols_upload.content_type = key.content_type
 
-            uploaded = key.set_contents_from_string(file.getvalue())
+            compress = False
+            for ext in settings.SYMBOLS_COMPRESS_EXTENSIONS:
+                if key_name.lower().endswith('.{0}'.format(ext)):
+                    compress = True
+                    break
+            headers = {
+                'Content-Type': content_type,
+            }
+            if compress:
+                headers['Content-Encoding'] = 'gzip'
+                value = file.getvalue().encode('zlib')
+            else:
+                value = file.getvalue()
+            uploaded = key.set_contents_from_string(value, headers)
             total_uploaded += uploaded
 
         symbols_upload.content += '%s%s,%s\n' % (

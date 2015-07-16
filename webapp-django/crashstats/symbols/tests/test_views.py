@@ -50,10 +50,16 @@ class TestViews(BaseTestViews):
 
         self.patcher = mock.patch('crashstats.symbols.views.boto.connect_s3')
         self.uploaded_keys = {}
+        self.uploaded_headers = {}
         self.known_bucket_keys = {}
         self.created_buckets = []
         self.created_keys = []
         mocked_connect_s3 = self.patcher.start()
+
+        self.symbols_compress_extensions = settings.SYMBOLS_COMPRESS_EXTENSIONS
+        # Forcibly set this for all tests so it doesn't matter what's in
+        # settings/base.py or any local overrides
+        settings.SYMBOLS_COMPRESS_EXTENSIONS = ('sym',)
 
         def mocked_get_bucket(*a, **k):
             raise boto.exception.S3ResponseError(404, "Not found")
@@ -63,8 +69,9 @@ class TestViews(BaseTestViews):
             def mocked_new_key(key_name):
                 mocked_key = mock.Mock()
 
-                def mocked_set(string):
+                def mocked_set(string, headers=None):
                     self.uploaded_keys[key_name] = string
+                    self.uploaded_headers[key_name] = headers
                     return len(string)
 
                 mocked_key.set_contents_from_string.side_effect = mocked_set
@@ -98,6 +105,7 @@ class TestViews(BaseTestViews):
         super(TestViews, self).tearDown()
         shutil.rmtree(self.tmp_dir)
         self.patcher.stop()
+        settings.SYMBOLS_COMPRESS_EXTENSIONS = self.symbols_compress_extensions
 
     def _login(self):
         user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
@@ -230,6 +238,11 @@ class TestViews(BaseTestViews):
             settings.SYMBOLS_FILE_PREFIX,
             'south-africa-flag.jpeg'
         )
+        line += "+%s,%s/%s\n" % (
+            settings.SYMBOLS_BUCKET_DEFAULT_NAME,
+            settings.SYMBOLS_FILE_PREFIX,
+            'xpcshell.sym'
+        )
         eq_(symbol_upload.content, line)
         eq_(symbol_upload.content_type, 'text/plain')
         ok_(self.uploaded_keys)
@@ -266,6 +279,11 @@ class TestViews(BaseTestViews):
                 'my-special-bucket-name',
                 settings.SYMBOLS_FILE_PREFIX,
                 'south-africa-flag.jpeg'
+            )
+            line += "+%s,%s/%s\n" % (
+                'my-special-bucket-name',
+                settings.SYMBOLS_FILE_PREFIX,
+                'xpcshell.sym'
             )
             eq_(symbol_upload.content, line)
             eq_(self.created_buckets, [
@@ -360,6 +378,11 @@ class TestViews(BaseTestViews):
                 settings.SYMBOLS_FILE_PREFIX,
                 'south-africa-flag.jpeg'
             )
+            line += "+%s,%s/%s\n" % (
+                'my-special-bucket-name',
+                settings.SYMBOLS_FILE_PREFIX,
+                'xpcshell.sym'
+            )
             eq_(symbol_upload.content, line)
             eq_(self.created_buckets, [
                 (
@@ -401,6 +424,11 @@ class TestViews(BaseTestViews):
                 settings.SYMBOLS_FILE_PREFIX,
                 'south-africa-flag.jpeg'
             )
+            line += "+%s,%s/%s\n" % (
+                'my-special-bucket-name',
+                settings.SYMBOLS_FILE_PREFIX,
+                'xpcshell.sym'
+            )
             eq_(symbol_upload.content, line)
             eq_(self.created_buckets, [
                 (
@@ -434,8 +462,17 @@ class TestViews(BaseTestViews):
             settings.SYMBOLS_FILE_PREFIX,
             'south-africa-flag.jpeg'
         )
+        line += "+%s,%s/%s\n" % (
+            settings.SYMBOLS_BUCKET_DEFAULT_NAME,
+            settings.SYMBOLS_FILE_PREFIX,
+            'xpcshell.sym'
+        )
         eq_(symbol_upload.content, line)
-        ok_(not self.uploaded_keys)  # nothing was uploaded
+        # only the xpcshell.sym was uploaded
+        eq_(
+            self.uploaded_keys.keys(),
+            ['%s/xpcshell.sym' % (settings.SYMBOLS_FILE_PREFIX,)]
+        )
 
     def test_web_upload_existing_upload_but_different_size(self):
         """what if the file already is uploaded"""
@@ -462,6 +499,11 @@ class TestViews(BaseTestViews):
             settings.SYMBOLS_BUCKET_DEFAULT_NAME,
             settings.SYMBOLS_FILE_PREFIX,
             'south-africa-flag.jpeg'
+        )
+        line += "+%s,%s/%s\n" % (
+            settings.SYMBOLS_BUCKET_DEFAULT_NAME,
+            settings.SYMBOLS_FILE_PREFIX,
+            'xpcshell.sym'
         )
         eq_(symbol_upload.content, line)
         ok_(key_name in self.uploaded_keys)
@@ -662,11 +704,27 @@ class TestViews(BaseTestViews):
                 ok_(symbol_upload.content)
 
         # the ZIP_FILE contains a file called south-africa-flag.jpeg
-        expected_key = os.path.join(
+        key = os.path.join(
             settings.SYMBOLS_FILE_PREFIX,
             'south-africa-flag.jpeg'
         )
-        ok_(self.uploaded_keys[expected_key])
+        ok_(self.uploaded_keys[key])
+        eq_(self.uploaded_headers[key], {'Content-Type': 'image/jpeg'})
+
+        # and a file called xpcshell.sym
+        key = os.path.join(
+            settings.SYMBOLS_FILE_PREFIX,
+            'xpcshell.sym'
+        )
+        ok_(self.uploaded_keys[key])
+        eq_(self.uploaded_headers[key], {
+            'Content-Type': 'text/plain',
+            'Content-Encoding': 'gzip'
+        })
+        # The sample.zip file contains the file xpcshell.sym and it's
+        # 1156 bytes when un-archived. But the file is compressed so
+        # the bytes we upload is less
+        ok_(len(self.uploaded_keys[key]) < 1156, len(self.uploaded_keys[key]))
 
     def test_upload_without_multipart_file(self):
         user = User.objects.create(username='user')
