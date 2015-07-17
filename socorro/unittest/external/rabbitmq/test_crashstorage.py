@@ -189,6 +189,55 @@ class TestCrashStorage(TestCase):
         for result in crash_store.new_crashes():
             eq_(expected, result)
 
+    def test_new_crash_duplicate_discovered(self):
+        """ Tests queue with standard queue items only
+        """
+        config = self._setup_config()
+        from socorro.database.transaction_executor import TransactionExecutor
+        config.transaction_executor_class = TransactionExecutor
+        crash_store = RabbitMQCrashStorage(config)
+        crash_store.rabbitmq.config.standard_queue_name = 'socorro.normal'
+        crash_store.rabbitmq.config.reprocessing_queue_name = \
+            'socorro.reprocessing'
+        crash_store.rabbitmq.config.priority_queue_name = 'socorro.priority'
+
+        faked_methodframe = DotDict()
+        faked_methodframe.delivery_tag = 'delivery_tag'
+        test_queue = [
+            (faked_methodframe, '1', 'normal_crash_id'),
+            (None, None, None),
+            (None, None, None),
+        ]
+
+        def basic_get(queue='socorro.priority'):
+            if len(test_queue) == 0:
+                return (None, None, None)
+            if queue == 'socorro.priority':
+                return test_queue.pop()
+            elif queue == 'socorro.reprocessing':
+                return test_queue.pop()
+            elif queue == 'socorro.normal':
+                return test_queue.pop()
+        crash_store.rabbitmq.connection = MagicMock()
+        crash_store.rabbitmq.connection.return_value.channel.basic_get = \
+            MagicMock(side_effect=basic_get)
+        transation_connection = crash_store.transaction.db_conn_context_source \
+            .return_value.__enter__.return_value
+
+        # load the cache as if this crash had alredy been seen
+        crash_store.acknowledgement_token_cache['normal_crash_id'] = \
+            faked_methodframe
+
+        for result in crash_store.new_crashes():
+            # new crash should be suppressed
+            eq_(None, result)
+
+        # we should ack the new crash even though we did use it for processing
+        transation_connection.channel.basic_ack \
+            .assert_called_with(
+                delivery_tag=faked_methodframe.delivery_tag
+            )
+
     def test_new_crash_standard_queue(self):
         """ Tests queue with standard queue items only
         """

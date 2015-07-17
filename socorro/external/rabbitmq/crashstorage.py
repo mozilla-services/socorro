@@ -153,6 +153,11 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 method_frame, header_frame, body = conn.channel.basic_get(
                     queue=queue
                 )
+                if method_frame and self._suppress_duplicate_jobs(
+                    body,
+                    method_frame
+                ):
+                    continue
                 if method_frame:
                     break
             if not method_frame:
@@ -165,6 +170,26 @@ class RabbitMQCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def ack_crash(self, crash_id):
         self.acknowledgment_queue.put(crash_id)
+
+    #--------------------------------------------------------------------------
+    def _suppress_duplicate_jobs(self, crash_id, acknowledgement_token):
+        """if this crash is in the cache, then it is already in progress
+        and this is a duplicate.  Acknowledge it, then return to True
+        to let the caller know to skip on to the next crash."""
+        if crash_id in self.acknowledgement_token_cache:
+            # reject this crash - it's already being processsed
+            self.config.logger.info(
+                'duplicate job: %s is already in progress',
+                crash_id
+            )
+            # ack this
+            self.transaction(
+                self._transaction_ack_crash,
+                crash_id,
+                acknowledgement_token
+            )
+            return True
+        return False
 
     #--------------------------------------------------------------------------
     def _consume_acknowledgement_queue(self):
