@@ -283,6 +283,14 @@ class NullCrashStorage(CrashStorageBase):
         return SocorroDotDict()
 
     #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        """the default implementation of fetching all the dumps
+
+        parameters:
+           crash_id - the id of a dump to fetch"""
+        return SocorroDotDict()
+
+    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """the default implementation of fetching a processed_crash
 
