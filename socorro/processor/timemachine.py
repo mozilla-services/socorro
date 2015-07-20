@@ -104,6 +104,8 @@ class PGQueryNewCrashSource(RequiredConfig):
         while True:
             yield None
 
+    #--------------------------------------------------------------------------
+    new_crashes =  __iter__
 
     #--------------------------------------------------------------------------
     def __call__(self):

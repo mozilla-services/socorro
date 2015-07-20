@@ -249,6 +249,9 @@ class TestSubmitterApp(TestCase):
         )
         config.producer_consumer.number_of_threads = float(1)
 
+        config.new_crash_source = DotDict()
+        config.new_crash_source.new_crash_source_class = None
+
         config.submitter = DotDict()
         config.submitter.delay = 0
         config.submitter.dry_run = False

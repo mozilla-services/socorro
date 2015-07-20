@@ -252,5 +252,8 @@ class LegacyNewCrashSource(RequiredConfig):
                 yield None
 
     #--------------------------------------------------------------------------
+    new_crashes =  __iter__
+
+    #--------------------------------------------------------------------------
     def __call__(self):
         return self.__iter__()
