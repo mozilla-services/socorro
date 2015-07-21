@@ -292,7 +292,10 @@ class SubmitterApp(FetchTransformSaveApp):
         super(SubmitterApp, self)._setup_source_and_destination()
         if self.config.new_crash_source.new_crash_source_class:
             self.new_crash_source = \
-                self.config.new_crash_source.new_crash_source_class(config)
+                self.config.new_crash_source.new_crash_source_class(
+                    self.config.new_crash_source,
+                    'submitter'
+                )
         else:
             self.new_crash_source = self.source
 
