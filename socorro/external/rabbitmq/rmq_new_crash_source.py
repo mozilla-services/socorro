@@ -51,5 +51,9 @@ class RMQNewCrashSource(RequiredConfig):
             )
 
     #--------------------------------------------------------------------------
+    def new_crashes(self):
+        return self.__iter__()
+
+    #--------------------------------------------------------------------------
     def __call__(self):
         return self.__iter__()
