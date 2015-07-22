@@ -161,16 +161,24 @@ class SuperSearch(SearchBase):
                 for key in bucket:
                     # Go through all sub aggregations. Those are contained in
                     # all the keys that are not 'key' or 'count'.
-                    if key in ('key', 'doc_count'):
+                    if key in ('key', 'key_as_string', 'doc_count'):
                         continue
 
                     sub_aggs[key] = [
-                        {'term': x['key'], 'count': x['doc_count']}
+                        {
+                            # For date data, Elasticsearch exposes a timestamp
+                            # in 'key' and a human-friendly string in
+                            # 'key_as_string'. We thus check if the later
+                            # exists to expose it, and return the normal
+                            # 'key' if not.
+                            'term': x.get('key_as_string', x['key']),
+                            'count': x['doc_count'],
+                        }
                         for x in bucket[key]['buckets']
                     ]
 
                 aggs[agg]['buckets'][i] = {
-                    'term': bucket['key'],
+                    'term': bucket.get('key_as_string', bucket['key']),
                     'count': bucket['doc_count'],
                 }
 
@@ -209,12 +217,18 @@ class SuperSearch(SearchBase):
             for param in sub_params:
 
                 if param.name.startswith('_'):
+                    # By default, all param values are turned into lists,
+                    # even when they have and can have only one value.
+                    # For those we know there can only be one value,
+                    # so we just extract it from the made-up list.
                     if param.name == '_results_offset':
                         results_from = param.value[0]
                     elif param.name == '_results_number':
                         results_number = param.value[0]
                     elif param.name == '_facets_size':
                         facets_size = param.value[0]
+                    elif param.name == '_histogram_interval.date':
+                        histogram_interval_date = param.value[0]
                     # Don't use meta parameters in the query.
                     continue
 
@@ -402,7 +416,7 @@ class SuperSearch(SearchBase):
                 )
 
         # Create signature aggregations.
-        if params['_aggs.signature']:
+        if params.get('_aggs.signature'):
             sig_bucket = A(
                 'terms',
                 field=self.get_field_name('signature'),
@@ -422,6 +436,28 @@ class SuperSearch(SearchBase):
                     )
 
             search.aggs.bucket('signature', sig_bucket)
+
+        # Create date histograms.
+        if params.get('_histogram.date'):
+            date_bucket = A(
+                'date_histogram',
+                field=self.get_field_name('date'),
+                interval=histogram_interval_date,
+            )
+            for param in params['_histogram.date']:
+                for value in param.value:
+                    if not value:
+                        continue
+
+                    field_name = self.get_field_name(value)
+                    val_bucket = A(
+                        'terms',
+                        field=field_name,
+                        size=facets_size,
+                    )
+                    date_bucket.bucket(value, val_bucket)
+
+            search.aggs.bucket('histogram_date', date_bucket)
 
         # Query and compute results.
         hits = []

@@ -518,7 +518,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ok_(last_product <= hit['product'], (last_product, hit['product']))
             last_product = hit['product']
 
-            ok_(last_platform <= hit['platform'], (last_platform, hit['platform']))
+            ok_(
+                last_platform <= hit['platform'],
+                (last_platform, hit['platform'])
+            )
             last_platform = hit['platform']
 
         # Invalid field.
@@ -858,6 +861,264 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         # Test errors
         args = {}
         args['_aggs.signature'] = ['unkownfield']
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            **args
+        )
+
+    @minimum_es_version('1.0')
+    def test_get_with_date_histogram(self):
+        yesterday = self.now - datetime.timedelta(days=1)
+        the_day_before = self.now - datetime.timedelta(days=2)
+
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Windows NT',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Linux',
+            'date_processed': yesterday,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'NightTrain',
+            'os_name': 'Linux',
+            'date_processed': the_day_before,
+        })
+        self.index_crash({
+            'signature': 'foo(bar)',
+            'product': 'EarthRacoon',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+
+        # Index a lot of distinct values to test the results limit.
+        number_of_crashes = 51
+        processed_crash = {
+            'version': '10.%s',
+            'signature': 'crash_me_I_m_famous',
+            'date_processed': self.now,
+        }
+        self.index_many_crashes(
+            number_of_crashes,
+            processed_crash,
+            loop_field='version',
+        )
+        # Note: index_many_crashes does the index refreshing.
+
+        # Test several facets
+        kwargs = {
+            '_histogram.date': ['product', 'platform'],
+            'signature': '!=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('facets' in res)
+        ok_('histogram_date' in res['facets'])
+
+        def dt_to_midnight(date):
+            return date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        today_str = dt_to_midnight(self.now).isoformat()
+        yesterday_str = dt_to_midnight(yesterday).isoformat()
+        day_before_str = dt_to_midnight(the_day_before).isoformat()
+
+        expected_terms = [
+            {
+                'term': day_before_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'NightTrain',
+                            'count': 1
+                        },
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+            {
+                'term': yesterday_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        }
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+            {
+                'term': today_str,
+                'count': 2,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'EarthRacoon',
+                            'count': 1
+                        },
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        },
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
+                            'count': 1
+                        },
+                        {
+                            'term': 'Windows NT',
+                            'count': 1
+                        }
+                    ],
+                }
+            }
+        ]
+        eq_(res['facets']['histogram_date'], expected_terms)
+
+        # Test one facet with filters
+        kwargs = {
+            '_histogram.date': ['product'],
+            'product': 'WaterWolf',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('histogram_date' in res['facets'])
+        expected_terms = [
+            {
+                'term': yesterday_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        },
+                    ]
+                }
+            },
+            {
+                'term': today_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        },
+                    ]
+                }
+            },
+        ]
+        eq_(res['facets']['histogram_date'], expected_terms)
+
+        # Test one facet with a different filter
+        kwargs = {
+            '_histogram.date': ['product'],
+            'platform': 'linux',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('histogram_date' in res['facets'])
+
+        expected_terms = [
+            {
+                'term': day_before_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'NightTrain',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+            {
+                'term': yesterday_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+            {
+                'term': today_str,
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'EarthRacoon',
+                            'count': 1
+                        }
+                    ],
+                }
+            }
+        ]
+        eq_(res['facets']['histogram_date'], expected_terms)
+
+        # Test the number of results.
+        kwargs = {
+            '_histogram.date': ['version'],
+            'signature': '=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('histogram_date' in res['facets'])
+        ok_('version' in res['facets']['histogram_date'][0]['facets'])
+
+        version_facet = res['facets']['histogram_date'][0]['facets']['version']
+        eq_(len(version_facet), 50)  # 50 is the default
+
+        # Test with a different number of facets results.
+        kwargs = {
+            '_histogram.date': ['version'],
+            '_facets_size': 20,
+            'signature': '=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('histogram_date' in res['facets'])
+        ok_('version' in res['facets']['histogram_date'][0]['facets'])
+
+        version_facet = res['facets']['histogram_date'][0]['facets']['version']
+        eq_(len(version_facet), 20)
+
+        kwargs = {
+            '_histogram.date': ['version'],
+            '_facets_size': 100,
+            'signature': '=crash_me_I_m_famous',
+        }
+        res = self.api.get(**kwargs)
+
+        version_facet = res['facets']['histogram_date'][0]['facets']['version']
+        eq_(len(version_facet), number_of_crashes)
+
+        # Test errors
+        args = {}
+        args['_histogram.date'] = ['unkownfield']
         assert_raises(
             BadArgumentError,
             self.api.get,

@@ -87,7 +87,8 @@ def string_to_datetime(date):
             except ValueError:
                 # e.g. '2012-01-10 12:13:14Z' becomes '2012-01-10T12:13:14Z'
                 parsed = isodate.parse_datetime(
-                  re.sub('(\d)\s(\d)', r'\1T\2', date))
+                    re.sub('(\d)\s(\d)', r'\1T\2', date)
+                )
             if not parsed.tzinfo:
                 parsed = parsed.replace(tzinfo=UTC)
             return parsed
