@@ -78,8 +78,15 @@ class ProcessedCrashCopierApp(FetchTransformSaveApp):
           self.quit_check
         )
         for x in self.iterator():
-            self.config.logger.debug('yielding %s', x)
-            yield x  # (args, kwargs) or None
+            if x is None:
+                self.config.logger.debug('yielding %s', x)
+                yield None
+            elif isinstance(x, tuple):
+                self.config.logger.debug('yielding %s', x)
+                yield x  # (args, kwargs) or None
+            else:
+                yield (x, {})  # ensure (args, kwargs) form
+
 
     #--------------------------------------------------------------------------
     def _transform(self, crash_id):

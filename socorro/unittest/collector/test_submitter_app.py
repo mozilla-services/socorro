@@ -431,8 +431,10 @@ class TestSubmitterApp(TestCase):
         sub._setup_source_and_destination()
         itera = sub.source_iterator()
 
+        # setup a fake iter using two form of the data to ensure it deals
+        # with both forms correctly.
         config.new_crash_source.new_crash_source_class.return_value \
-            .new_crashes = lambda: iter([1, 2, 3])
+            .new_crashes = lambda: iter([1, ((2, ), {}), 3])
 
         eq_(itera.next(), ((1,), {}))
         eq_(itera.next(), ((2,), {}))
@@ -451,12 +453,12 @@ class TestSubmitterApp(TestCase):
         itera = sub.source_iterator()
 
         config.new_crash_source.new_crash_source_class.return_value \
-            .new_crashes = lambda: iter([1, 2, 3])
+            .new_crashes = lambda: iter([((1, ), {'finished_func': 1,}), 2, 3])
 
-        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((1,), {'finished_func': 1,}))
         eq_(itera.next(), ((2,), {}))
         eq_(itera.next(), ((3,), {}))
-        eq_(itera.next(), ((1,), {}))
+        eq_(itera.next(), ((1,), {'finished_func': 1,}))
         eq_(itera.next(), ((2,), {}))
         assert_raises(StopIteration, itera.next)
 

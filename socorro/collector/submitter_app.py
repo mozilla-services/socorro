@@ -250,7 +250,10 @@ class SubmitterApp(FetchTransformSaveApp):
         for x in self._crash_set_iter():
             if x is None:
                 break
-            yield ((x,), {})
+            elif isinstance(x, tuple):
+                yield x  # already in (args, kwargs) form
+            else:
+                yield ((x,), {})  # (args, kwargs)
             if self.config.submitter.delay:
                 time.sleep(self.config.submitter.delay)
         self.config.logger.info(

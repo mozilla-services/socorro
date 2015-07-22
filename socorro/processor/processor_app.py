@@ -100,7 +100,12 @@ class ProcessorApp(FetchTransformSaveApp):
         )
         while True:  # loop forever and never raise StopIteration
             for x in self.iterator():
-                yield x  # (args, kwargs) or None
+                if x is None:
+                    yield None
+                elif isinstance(x, tuple):
+                    yield x  # already in (args, kwargs) form
+                else:
+                    yield ((x,), {})  # (args, kwargs)
             else:
                 yield None  # if the inner iterator yielded nothing at all,
                             # yield None to give the caller the chance to sleep
@@ -112,17 +117,12 @@ class ProcessorApp(FetchTransformSaveApp):
         self.task_manager.quit_check()
 
     #--------------------------------------------------------------------------
-    def _transform(
-        self,
-        crash_id,
-        finished_func=(lambda: None),
-    ):
+    def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
         a key to fetch the raw crash from the 'source', the conversion funtion
         implemented by the 'processor_class' is applied, the
-        processed crash is saved to the 'destination', and then 'finished_func'
-        is called."""
+        processed crash is saved to the 'destination'"""
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
             dumps = self.source.get_raw_dumps_as_files(crash_id)
