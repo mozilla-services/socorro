@@ -135,7 +135,11 @@ class TestCrashMoverApp(TestCase):
                     self.first = False
                 else:
                     for k in range(999):
-                        yield k
+                        # ensure that both forms work
+                        if k % 4:
+                            yield k
+                        else:
+                            yield ((k, ), {'some_crap': True,} )
                     for k in range(2):
                         yield None
 

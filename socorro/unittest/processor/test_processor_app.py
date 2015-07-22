@@ -47,7 +47,7 @@ class TestProcessorApp(TestCase):
 
         config.new_crash_source = DotDict()
         sequence_generator = sequencer(((1,), {}),
-                                       ((2,), {}),
+                                       2,  # ensure both forms acceptable
                                        None,
                                        ((3,), {}))
         mocked_new_crash_source = mock.Mock(side_effect=sequence_generator)

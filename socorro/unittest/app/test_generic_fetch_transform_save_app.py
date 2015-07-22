@@ -137,7 +137,15 @@ class TestFetchTransformSaveApp(TestCase):
                     self.first = False
                 else:
                     for k in range(999):
-                        yield ((k, ), {"finished_func": faked_finished_func})
+                        # ensure that both forms (a single value or the
+                        # (args, kwargs) form are accepted.)
+                        if k % 4:
+                            yield k
+                        else:
+                            yield (
+                                (k, ),
+                                {"finished_func": faked_finished_func}
+                            )
                     for k in range(2):
                         yield None
 
@@ -171,6 +179,7 @@ class TestFetchTransformSaveApp(TestCase):
         fts_app.source = FakeStorageSource()
         fts_app.destination = FakeStorageDestination
         error_detected = False
+        no_finished_function_counter = 0
         for x, y in zip(xrange(1002), (a for a in fts_app.source_iterator())):
             if x == 0:
                 ok_(y is None)
@@ -180,12 +189,15 @@ class TestFetchTransformSaveApp(TestCase):
                     eq_(x, y,'iterator fails on iteration %d: %s' % (x, y))
                 # invoke that finished func to ensure that we've got the
                 # right object
-                y[1]['finished_func']()
+                try:
+                    y[1]['finished_func']()
+                except KeyError:
+                    no_finished_function_counter += 1
             else:
                 if y is not None and not error_detected:
                     error_detected = True
                     ok_(x is None, 'iterator fails on iteration %d: %s' % (x, y))
-        eq_(faked_finished_func.call_count, 999)
+        eq_(faked_finished_func.call_count, 999 - no_finished_function_counter)
 
     def test_no_source(self):
 

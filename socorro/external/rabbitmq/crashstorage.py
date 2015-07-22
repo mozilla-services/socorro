@@ -181,9 +181,12 @@ class RabbitMQCrashStorage(CrashStorageBase):
                     continue
                 if method_frame:
                     break
-            if not method_frame:
-                return
+            # must consume ack queue before testing for end of iterator
+            # or the last job won't get ack'd
             self._consume_acknowledgement_queue()
+            if not method_frame:
+                # there was nothing in the queue - leave the iterator
+                return
             self.acknowledgement_token_cache[body] = method_frame
             yield body
             queues.reverse()
