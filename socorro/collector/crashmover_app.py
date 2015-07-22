@@ -82,7 +82,7 @@ class ProcessedCrashCopierApp(FetchTransformSaveApp):
             yield x  # (args, kwargs) or None
 
     #--------------------------------------------------------------------------
-    def transform(self, crash_id):
+    def _transform(self, crash_id):
         """this default transform function only transfers raw data from the
         source to the destination without changing the data.  While this may
         be good enough for the raw crashmover, the processor would override
@@ -128,11 +128,7 @@ class RawAndProcessedCopierApp(ProcessedCrashCopierApp):
         }
 
     #--------------------------------------------------------------------------
-    def transform(
-        self,
-        crash_id,
-        finished_func=(lambda: None),
-    ):
+    def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
         a key to fetch the raw crash from the 'source', the conversion funtion
@@ -140,55 +136,37 @@ class RawAndProcessedCopierApp(ProcessedCrashCopierApp):
         processed crash is saved to the 'destination', and then 'finished_func'
         is called."""
         try:
-            try:
-                raw_crash = self.source.get_raw_crash(crash_id)
-                processed_crash = self.source.get_processed(
-                    crash_id
-                )
-            except CrashIDNotFound:
-                self.processor.reject_raw_crash(
-                    crash_id,
-                    'this crash cannot be found in raw crash storage'
-                )
-                return
-            except Exception, x:
-                self.config.logger.warning(
-                    'error loading crash %s',
-                    crash_id,
-                    exc_info=True
-                )
-                self.processor.reject_raw_crash(
-                    crash_id,
-                    'error in loading: %s' % x
-                )
-                return
-
-            if 'uuid' not in raw_crash:
-                raw_crash.uuid = crash_id
-            self.destination.save_raw_and_processed(
-                raw_crash,
-                None,
-                processed_crash,
+            raw_crash = self.source.get_raw_crash(crash_id)
+            processed_crash = self.source.get_processed(
                 crash_id
             )
-            self.config.logger.info('saved - %s', crash_id)
-        finally:
-            # no matter what causes this method to end, we need to make sure
-            # that the finished_func gets called. If the new crash source is
-            # RabbitMQ, this is what removes the job from the queue.
-            try:
-                finished_func()
-            except Exception, x:
-                # when run in a thread, a failure here is not a problem, but if
-                # we're running all in the same thread, a failure here could
-                # derail the the whole processor. Best just log the problem
-                # so that we can continue.
-                self.config.logger.error(
-                    'Error completing job %s: %s',
-                    crash_id,
-                    x,
-                    exc_info=True
-                )
+        except CrashIDNotFound:
+            self.processor.reject_raw_crash(
+                crash_id,
+                'this crash cannot be found in raw crash storage'
+            )
+            return
+        except Exception, x:
+            self.config.logger.warning(
+                'error loading crash %s',
+                crash_id,
+                exc_info=True
+            )
+            self.processor.reject_raw_crash(
+                crash_id,
+                'error in loading: %s' % x
+            )
+            return
+
+        if 'uuid' not in raw_crash:
+            raw_crash.uuid = crash_id
+        self.destination.save_raw_and_processed(
+            raw_crash,
+            None,
+            processed_crash,
+            crash_id
+        )
+        self.config.logger.info('saved - %s', crash_id)
 
 if __name__ == '__main__':
     main(CrashMoverApp)

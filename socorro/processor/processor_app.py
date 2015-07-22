@@ -112,7 +112,7 @@ class ProcessorApp(FetchTransformSaveApp):
         self.task_manager.quit_check()
 
     #--------------------------------------------------------------------------
-    def transform(
+    def _transform(
         self,
         crash_id,
         finished_func=(lambda: None),
@@ -124,87 +124,69 @@ class ProcessorApp(FetchTransformSaveApp):
         processed crash is saved to the 'destination', and then 'finished_func'
         is called."""
         try:
-            try:
-                raw_crash = self.source.get_raw_crash(crash_id)
-                dumps = self.source.get_raw_dumps_as_files(crash_id)
-            except CrashIDNotFound:
-                self.processor.reject_raw_crash(
-                    crash_id,
-                    'this crash cannot be found in raw crash storage'
-                )
-                return
-            except Exception, x:
-                self.config.logger.warning(
-                    'error loading crash %s',
-                    crash_id,
-                    exc_info=True
-                )
-                self.processor.reject_raw_crash(
-                    crash_id,
-                    'error in loading: %s' % x
-                )
-                return
+            raw_crash = self.source.get_raw_crash(crash_id)
+            dumps = self.source.get_raw_dumps_as_files(crash_id)
+        except CrashIDNotFound:
+            self.processor.reject_raw_crash(
+                crash_id,
+                'this crash cannot be found in raw crash storage'
+            )
+            return
+        except Exception, x:
+            self.config.logger.warning(
+                'error loading crash %s',
+                crash_id,
+                exc_info=True
+            )
+            self.processor.reject_raw_crash(
+                crash_id,
+                'error in loading: %s' % x
+            )
+            return
 
-            try:
-                processed_crash = self.source.get_unredacted_processed(
-                    crash_id
-                )
-            except CrashIDNotFound:
-                processed_crash = DotDict()
+        try:
+            processed_crash = self.source.get_unredacted_processed(
+                crash_id
+            )
+        except CrashIDNotFound:
+            processed_crash = DotDict()
 
-            try:
-                if 'uuid' not in raw_crash:
-                    raw_crash.uuid = crash_id
-                processed_crash = (
-                    self.processor.process_crash(
-                        raw_crash,
-                        dumps,
-                        processed_crash,
-                    )
-                )
-                """ bug 866973 - save_raw_and_processed() instead of just
-                    save_processed().  The raw crash may have been modified
-                    by the processor rules.  The individual crash storage
-                    implementations may choose to honor re-saving the raw_crash
-                    or not.
-                """
-                self.destination.save_raw_and_processed(
+        try:
+            if 'uuid' not in raw_crash:
+                raw_crash.uuid = crash_id
+            processed_crash = (
+                self.processor.process_crash(
                     raw_crash,
-                    None,
+                    dumps,
                     processed_crash,
-                    crash_id
                 )
-                self.config.logger.info('saved - %s', crash_id)
-            finally:
-                # earlier, we created the dumps as files on the file system,
-                # we need to clean up after ourselves.
-                for a_dump_pathname in dumps.itervalues():
-                    try:
-                        if "TEMPORARY" in a_dump_pathname:
-                            os.unlink(a_dump_pathname)
-                    except OSError, x:
-                        # the file does not actually exist
-                        self.config.logger.info(
-                            'deletion of dump failed: %s',
-                            x,
-                        )
+            )
+            """ bug 866973 - save_raw_and_processed() instead of just
+                save_processed().  The raw crash may have been modified
+                by the processor rules.  The individual crash storage
+                implementations may choose to honor re-saving the raw_crash
+                or not.
+            """
+            self.destination.save_raw_and_processed(
+                raw_crash,
+                None,
+                processed_crash,
+                crash_id
+            )
+            self.config.logger.info('saved - %s', crash_id)
         finally:
-            # no matter what causes this method to end, we need to make sure
-            # that the finished_func gets called. If the new crash source is
-            # RabbitMQ, this is what removes the job from the queue.
-            try:
-                finished_func()
-            except Exception, x:
-                # when run in a thread, a failure here is not a problem, but if
-                # we're running all in the same thread, a failure here could
-                # derail the the whole processor. Best just log the problem
-                # so that we can continue.
-                self.config.logger.error(
-                    'Error completing job %s: %s',
-                    crash_id,
-                    x,
-                    exc_info=True
-                )
+            # earlier, we created the dumps as files on the file system,
+            # we need to clean up after ourselves.
+            for a_dump_pathname in dumps.itervalues():
+                try:
+                    if "TEMPORARY" in a_dump_pathname:
+                        os.unlink(a_dump_pathname)
+                except OSError, x:
+                    # the file does not actually exist
+                    self.config.logger.info(
+                        'deletion of dump failed: %s',
+                        x,
+                    )
 
     #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):

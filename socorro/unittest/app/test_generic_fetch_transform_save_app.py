@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.tools import eq_, ok_, assert_raises
+from mock import Mock
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
@@ -124,6 +125,8 @@ class TestFetchTransformSaveApp(TestCase):
 
     def test_source_iterator(self):
 
+        faked_finished_func =  Mock()
+
         class FakeStorageSource(object):
 
             def __init__(self):
@@ -134,7 +137,7 @@ class TestFetchTransformSaveApp(TestCase):
                     self.first = False
                 else:
                     for k in range(999):
-                        yield k
+                        yield ((k, ), {"finished_func": faked_finished_func})
                     for k in range(2):
                         yield None
 
@@ -174,13 +177,15 @@ class TestFetchTransformSaveApp(TestCase):
             elif x < 1000:
                 if x - 1 != y[0][0] and not error_detected:
                     error_detected = True
-                    eq_(x, y,
-                                     'iterator fails on iteration %d' % x)
+                    eq_(x, y,'iterator fails on iteration %d: %s' % (x, y))
+                # invoke that finished func to ensure that we've got the
+                # right object
+                y[1]['finished_func']()
             else:
                 if y is not None and not error_detected:
                     error_detected = True
-                    ok_(x is None,
-                                    'iterator fails on iteration %d' % x)
+                    ok_(x is None, 'iterator fails on iteration %d: %s' % (x, y))
+        eq_(faked_finished_func.call_count, 999)
 
     def test_no_source(self):
 

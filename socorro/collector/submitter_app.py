@@ -234,7 +234,7 @@ class SubmitterApp(FetchTransformSaveApp):
             self._crash_set_iter = self._limited_iterator
 
     #--------------------------------------------------------------------------
-    def transform(self, crash_id):
+    def _transform(self, crash_id):
         """this transform function only transfers raw data from the
         source to the destination without changing the data."""
         if self.config.submitter.dry_run:
