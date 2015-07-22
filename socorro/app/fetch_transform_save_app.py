@@ -123,6 +123,8 @@ class FetchTransformSaveApp(App):
             for x in self.source.new_crashes():
                 if x is None:
                     yield None
+                elif isinstance(x, tuple):
+                    yield x  # already in (args, kwargs) form
                 else:
                     yield ((x,), {})  # (args, kwargs)
             else:
@@ -130,7 +132,33 @@ class FetchTransformSaveApp(App):
                             # yield None to give the caller the chance to sleep
 
     #--------------------------------------------------------------------------
-    def transform(self, crash_id):
+    def transform(
+        self,
+        crash_id,
+        finished_func=(lambda: None),
+    ):
+        try:
+            self._transform(crash_id)
+        finally:
+            # no matter what causes this method to end, we need to make sure
+            # that the finished_func gets called. If the new crash source is
+            # RabbitMQ, this is what removes the job from the queue.
+            try:
+                finished_func()
+            except Exception, x:
+                # when run in a thread, a failure here is not a problem, but if
+                # we're running all in the same thread, a failure here could
+                # derail the the whole processor. Best just log the problem
+                # so that we can continue.
+                self.config.logger.error(
+                    'Error completing job %s: %s',
+                    crash_id,
+                    x,
+                    exc_info=True
+                )
+
+    #--------------------------------------------------------------------------
+    def _transform(self, crash_id):
         """this default transform function only transfers raw data from the
         source to the destination without changing the data.  While this may
         be good enough for the raw crashmover, the processor would override
