@@ -6,7 +6,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
-from .auth import urls as auth_urls
+from .authentication import urls as auth_urls
 
 from funfactory.monkeypatches import patch
 patch()

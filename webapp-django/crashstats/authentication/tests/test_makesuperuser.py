@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import CommandError
 
 from crashstats.base.tests.testbase import DjangoTestCase
-from crashstats.auth.management.commands import makesuperuser
+from crashstats.authentication.management.commands import makesuperuser
 
 
 @contextlib.contextmanager
@@ -73,8 +73,11 @@ class TestMakeSuperuserCommand(DjangoTestCase):
             in buffer.getvalue()
         )
 
-    @mock.patch('crashstats.auth.management.commands.makesuperuser.get_input',
-                return_value='BOB@mozilla.com ')
+    @mock.patch(
+        'crashstats.authentication.management.commands.makesuperuser.'
+        'get_input',
+        return_value='BOB@mozilla.com '
+    )
     def test_with_raw_input(self, mocked_raw_input):
         User.objects.create(username='bob', email='bob@mozilla.com')
         cmd = makesuperuser.Command()
@@ -84,8 +87,11 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         # reload
         ok_(User.objects.get(email='bob@mozilla.com', is_superuser=True))
 
-    @mock.patch('crashstats.auth.management.commands.makesuperuser.get_input',
-                return_value='\n')
+    @mock.patch(
+        'crashstats.authentication.management.commands.makesuperuser.'
+        'get_input',
+        return_value='\n'
+    )
     def test_with_raw_input_but_empty(self, mocked_raw_input):
         cmd = makesuperuser.Command()
         assert_raises(

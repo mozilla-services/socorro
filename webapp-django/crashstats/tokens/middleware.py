@@ -16,7 +16,7 @@ def json_forbidden_response(msg):
     )
 
 
-def has_perm(all, codename):
+def has_perm(all, codename, obj=None):
     codename = codename.split('.', 1)[1]
     return all.filter(codename=codename).count()
 

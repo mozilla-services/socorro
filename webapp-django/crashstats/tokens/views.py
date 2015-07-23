@@ -10,7 +10,7 @@ from . import forms
 
 
 @login_required
-@transaction.commit_on_success
+@transaction.atomic
 def home(request):
     context = {}
 
@@ -76,7 +76,7 @@ def home(request):
 
 
 @login_required
-@transaction.commit_on_success
+@transaction.atomic
 def delete_token(request, pk):
     token = get_object_or_404(models.Token, pk=pk, user=request.user)
     token.delete()

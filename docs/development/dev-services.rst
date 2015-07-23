@@ -64,7 +64,7 @@ while the EPEL package is from an `i386` tree it will work on `x86_64`):
 ::
   sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 
-Install the `PostgreSQL repository <http://yum.pgrpms.org/repopackages.php>`_. 
+Install the `PostgreSQL repository <http://yum.pgrpms.org/repopackages.php>`_.
 This package will vary depending on your distribution and environment.
 For example if you are running RHEL 6 on i386, you would do this:
 ::
@@ -155,8 +155,6 @@ Add public keys for PostgreSQL and ElasticSearch Apt Repositories:
 Install dependencies
 ::
   sudo apt-get install python-software-properties
-  # python 2.6
-  sudo add-apt-repository ppa:fkrull/deadsnakes
   # postgresql 9.3
   sudo apt-add-repository 'deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main'
   # elasticsearch 0.9
@@ -164,8 +162,8 @@ Install dependencies
   sudo apt-get update
   sudo apt-get install build-essential subversion libpq-dev openjdk-7-jre \
     python-virtualenv python-dev postgresql-9.3 postgresql-plperl-9.3 \
-    postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.6 \
-    python2.6-dev libxslt1-dev git-core mercurial node-less rabbitmq-server \
+    postgresql-contrib-9.3 postgresql-server-dev-9.3 rsync python2.7 \
+    python2.7-dev libxslt1-dev git-core mercurial node-less rabbitmq-server \
     elasticsearch memcached apache2 libsasl2-dev
 
 Modify postgresql config

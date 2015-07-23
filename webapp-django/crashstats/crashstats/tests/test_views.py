@@ -285,8 +285,7 @@ class BaseTestViews(DjangoTestCase):
     def setUp(self, rget):
         super(BaseTestViews, self).setUp()
 
-        # checking settings.CACHES isn't as safe as `cache.__class__`
-        if 'LocMemCache' not in cache.__class__.__name__:
+        if 'LocMemCache' not in settings.CACHES['default']['BACKEND']:
             raise ImproperlyConfigured(
                 'The tests requires that you use LocMemCache when running'
             )

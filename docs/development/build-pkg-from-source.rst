@@ -11,9 +11,9 @@ RHEL (or clones e.g. CentOS)
 Install the fpm dependency for rpm build
 ::
 
-  sudo yum install rpm-build 
-  sudo yum install ruby ruby-devel ruby-ri ruby-rdoc rubygems 
-  sudo gem install fpm 
+  sudo yum install rpm-build
+  sudo yum install ruby ruby-devel ruby-ri ruby-rdoc rubygems
+  sudo gem install fpm
 
 From inside the Socorro checkout:
 ::
@@ -31,12 +31,12 @@ Install the fpm dependency for deb build
 ::
 
   sudo apt-get install ruby ruby-dev rubygems
-  sudo gem install fpm 
+  sudo gem install fpm
 
 Install the build dependencies
 ::
 
-  sudo apt-get install nodejs node-less python2.6-dev python-virtualenv libxml2-dev libxslt1-dev postgresql-contrib-9.3 postgresql-server-dev-9.3 libsasl2-dev pkg-config libcurl4-gnutls-dev rsync
+  sudo apt-get install nodejs node-less python2.7-dev python-virtualenv libxml2-dev libxslt1-dev postgresql-contrib-9.3 postgresql-server-dev-9.3 libsasl2-dev pkg-config libcurl4-gnutls-dev rsync
 
 From inside the Socorro checkout:
 ::
