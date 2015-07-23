@@ -6,7 +6,7 @@ import datetime
 import elasticsearch
 
 from socorro.external import (
-    InsertionError,
+    BadArgumentError,
     MissingArgumentError,
     ResourceNotFound,
 )
@@ -92,9 +92,10 @@ class SuperSearchFields(ElasticsearchBase):
             )
         except elasticsearch.exceptions.ConflictError:
             # This field exists in the database, it thus cannot be created!
-            raise InsertionError(
-                'The field "%s" already exists in the database, '
-                'impossible to create it. ' % params['name']
+            raise BadArgumentError(
+                'name',
+                msg='The field "%s" already exists in the database, '
+                    'impossible to create it. ' % params['name'],
             )
 
         if params.get('storage_mapping'):
@@ -406,7 +407,12 @@ class SuperSearchFields(ElasticsearchBase):
                     doc_type=self.config.elasticsearch.elasticsearch_doctype,
                     body=crash,
                 )
-
+        except elasticsearch.exceptions.ElasticsearchException:
+            raise BadArgumentError(
+                'storage_mapping',
+                msg='Indexing existing data in Elasticsearch failed with the '
+                    'new mapping. ',
+            )
         finally:
             try:
                 index_creator.get_index_client().delete(temp_index)
