@@ -496,3 +496,83 @@ class TestViews(BaseTestViews):
         ok_('140' in response.content)
         ok_('99' not in response.content)
         ok_('139' in response.content)
+
+    @mock.patch('requests.get')
+    def test_signature_graph_data(self, rget):
+        def mocked_get(url, params, **options):
+
+            # Check the mandatory parameters are present and correct
+            ok_('signature' in params)
+            eq_(params['signature'], DUMB_SIGNATURE)
+
+            ok_('product_name' in params)
+            eq_(params['product_name'], 'WaterWolf')
+
+            ok_('channel' in params)
+            eq_(params['channel'], 'nightly')
+
+            ok_('start_date' in params)
+            eq_(params['start_date'], '2014-12-25')
+
+            ok_('end_date' in params)
+            eq_(params['end_date'], '2015-01-01')
+
+            # Return empty Response object, since the view doesn't
+            # process the data
+            return Response()
+
+        rget.side_effect = mocked_get
+
+        url = reverse(
+            'signature:signature_graph_data',
+            args=('nightly',)
+        )
+
+        # Test that the params get passed through to the api correctly
+        response = self.client.get(url, {
+            'signature': [DUMB_SIGNATURE],
+            'product': ['WaterWolf'],
+            'date': '>=2014-12-25',
+            'date': '<=2015-01-01'
+        })
+
+        # Check the the earliest given start date becomes start_date
+        response = self.client.get(url, {
+            'signature': [DUMB_SIGNATURE],
+            'product': ['WaterWolf'],
+            'date': '>=2014-12-25',
+            'date': '>=2014-12-28',
+            'date': '<=2015-01-01'
+        })
+
+        # Check the the latest given end date becomes end_date
+        response = self.client.get(url, {
+            'signature': [DUMB_SIGNATURE],
+            'product': ['WaterWolf'],
+            'date': '>=2014-12-25',
+            'date': '<=2014-12-29',
+            'date': '<=2015-01-01'
+        })
+
+        # If date starts with >, check that start_date is 1 day more
+        response = self.client.get(url, {
+            'signature': [DUMB_SIGNATURE],
+            'product': ['WaterWolf'],
+            'date': '>2014-12-24',
+            'date': '<=2015-01-01'
+        })
+
+        # If date starts with <, check that end_date is 1 day less
+        response = self.client.get(url, {
+            'signature': [DUMB_SIGNATURE],
+            'product': ['WaterWolf'],
+            'date': '>=2014-12-25',
+            'date': '<2015-01-02'
+        })
+
+        # If no start date was given, check it is 7 days less than end_date
+        response = self.client.get(url, {
+            'signature': [DUMB_SIGNATURE],
+            'product': ['WaterWolf'],
+            'date': '<=2015-01-01'
+        })
