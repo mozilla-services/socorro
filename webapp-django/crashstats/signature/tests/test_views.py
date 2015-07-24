@@ -529,7 +529,7 @@ class TestViews(BaseTestViews):
         )
 
         # Test that the params get passed through to the api correctly
-        response = self.client.get(url, {
+        self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': '>=2014-12-25',
@@ -537,7 +537,7 @@ class TestViews(BaseTestViews):
         })
 
         # Check the the earliest given start date becomes start_date
-        response = self.client.get(url, {
+        self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': '>=2014-12-25',
@@ -546,7 +546,7 @@ class TestViews(BaseTestViews):
         })
 
         # Check the the latest given end date becomes end_date
-        response = self.client.get(url, {
+        self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': '>=2014-12-25',
@@ -555,7 +555,7 @@ class TestViews(BaseTestViews):
         })
 
         # If date starts with >, check that start_date is 1 day more
-        response = self.client.get(url, {
+        self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': '>2014-12-24',
@@ -563,7 +563,7 @@ class TestViews(BaseTestViews):
         })
 
         # If date starts with <, check that end_date is 1 day less
-        response = self.client.get(url, {
+        self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': '>=2014-12-25',
@@ -571,7 +571,7 @@ class TestViews(BaseTestViews):
         })
 
         # If no start date was given, check it is 7 days less than end_date
-        response = self.client.get(url, {
+        self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': '<=2015-01-01'
