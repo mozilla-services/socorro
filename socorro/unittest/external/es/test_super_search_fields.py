@@ -8,7 +8,7 @@ from nose.plugins.attrib import attr
 from nose.tools import assert_raises, eq_, ok_
 
 from socorro.external import (
-    InsertionError,
+    BadArgumentError,
     MissingArgumentError,
     ResourceNotFound,
 )
@@ -103,7 +103,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
 
         # Field already exists.
         assert_raises(
-            InsertionError,
+            BadArgumentError,
             self.api.create_field,
             name='product',
             in_database_name='product',
@@ -368,7 +368,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             }
         })
         assert_raises(
-            elasticsearch.exceptions.RequestError,
+            BadArgumentError,
             self.api.test_mapping,
             mapping,
         )
@@ -385,9 +385,8 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
                 'type': 'long'
             }
         })
-        # self.api.test_mapping(mapping)
         assert_raises(
-            elasticsearch.exceptions.RequestError,
+            BadArgumentError,
             self.api.test_mapping,
             mapping,
         )
