@@ -28,68 +28,43 @@ $(function() {
      */
     function plotGraph(ajaxUrl) {
         $.getJSON(ajaxUrl, function(data) {
+            // Remove the loader.
+            socorro.ui.removeLoader();
 
             // Only set the dimensions of the container if there is actual data.
             if (data.total > 0) {
                 graphContainer.addClass('gccrashes_graph');
+
+                // Format the data for the graph.
+                var graphData = $.map(data.hits, function(hit) {
+                    return {
+                        'build_id': hit[0],
+                        'crashes': hit[1]
+                    };
+                });
+
+                // Draw the graph.
+                MG.data_graphic({
+                    data: graphData,
+                    chart_type: 'bar',
+                    full_width: true,
+                    bar_orientation: 'vertical',
+                    target: '#gccrashes_graph',
+                    x_accessor: 'build_id',
+                    y_accessor: 'crashes',
+                    rotate_x_labels: -50,
+                    truncate_x_labels: false,
+                    bottom: 80,
+                    mouseover: function(d, i) {
+                        $('.mg-active-datapoint')
+                            .html('Build ID: ' + graphData[i].build_id +
+                                ', GC crashes: ' + graphData[i].crashes
+                            );
+                    }
+                });
+            } else {
+                graphContainer.text('No results were found.');
             }
-            socorro.ui.removeLoader();
-
-            var items = data.hits;
-            var graphData = {};
-            graphData.key = data.total;
-            graphData.values = [];
-
-            for (var item in items) {
-                var currentItem = {
-                    "label": items[item][0],
-                    "value": items[item][1]
-                };
-                graphData.values.push(currentItem);
-            }
-
-            nv.addGraph(function() {
-                var graph = nv.models.discreteBarChart()
-                    .x(function(d) {
-                        return d.label;
-                    })
-                    .y(function(d) {
-                        return d.value;
-                    })
-                    .margin({ bottom: 120 })
-                    .color(["#058DC7"])
-                    .staggerLabels(false)
-                    .tooltips(true)
-                    .showValues(false)
-                    .tooltipContent(function(key, y, e, graph) {
-                        return '<h4 class="graph-tooltip-header">' + y + '</h4><p class="graph-tooltip-body">' + graph.value + '</p>';
-                    })
-                    .transitionDuration(500);
-
-                graph.yAxis
-                     .axisLabel('GC Crashes per 1M ADI by Build ID')
-                     .axisLabelDistance(30)
-                     .tickFormat(d3.format(',d'));
-
-                d3.select('#gccrashes_graph svg')
-                      .datum([graphData])
-                      .call(graph);
-
-                // Only do the transform on the ticks if we actually have data.
-                if (graphData.key > 0) {
-                    var xTicks = d3.select('.nv-x').selectAll('g.tick text');
-                    xTicks.attr('transform', 'translate (-10, 60) rotate(-90 0, 0)');
-                } else {
-                    // Do not clip the No Data text
-                    d3.select('.nv-noData')
-                      .attr('dy', '0');
-
-                }
-
-                nv.utils.windowResize(graph.update);
-
-                return graph;
-            });
         });
     }
 
@@ -188,8 +163,8 @@ $(function() {
                 product: productSelector.val()
             };
 
-            // Clear out the SVG container
-            $('svg', graphContainer).empty();
+            // Clear out the graph container.
+            graphContainer.empty();
             // Remove class from container so it will collapse.
             graphContainer.removeClass('gccrashes_graph');
 

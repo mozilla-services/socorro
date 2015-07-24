@@ -1,0 +1,7 @@
+/* Make axis labels more visible */
+.mg-x-axis text,
+.mg-y-axis text {
+    fill: black;
+    font-size: 1rem;
+    opacity: 0.8;
+}
