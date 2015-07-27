@@ -52,3 +52,11 @@ AWS_SECRET_ACCESS_KEY = 'anything'
 SYMBOLS_BUCKET_DEFAULT_NAME = 'my-lovely-bucket'
 SYMBOLS_FILE_PREFIX = 'v99'
 SYMBOLS_BUCKET_DEFAULT_LOCATION = 'us-west-2'
+
+
+# So it never ever actually uses a real ElasticSearch server
+SOCORRO_IMPLEMENTATIONS_CONFIG = {
+    'elasticsearch': {
+        'elasticsearch_urls': ['http://example:9123'],
+    },
+}

@@ -1699,43 +1699,46 @@ class TestViews(BaseTestViews):
             response = self.client.get(url)
         eq_(response.status_code, 200)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_SuperSearch(self, rget):
+    def test_SuperSearch(self, rget, supersearch):
 
         def mocked_get(url, params, **options):
             if '/supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if '/supersearch' in url:
-                ok_('exploitability' not in params)
-
-                if '_facets' in params:
-                    ok_('url' not in params['_facets'])
-
-                if 'product' in params:
-                    eq_(params['product'], ['WaterWolf', 'NightTrain'])
-
-                return Response({
-                    'hits': [
-                        {
-                            'signature': 'abcdef',
-                            'product': 'WaterWolf',
-                            'version': '1.0',
-                            'email': 'thebig@lebowski.net',
-                            'exploitability': 'high',
-                            'url': 'http://embarassing.website.com',
-                            'user_comments': 'hey I am thebig@lebowski.net',
-                        }
-                    ],
-                    'facets': {
-                        'signature': []
-                    },
-                    'total': 0
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            ok_('exploitability' not in params)
+
+            if '_facets' in params:
+                ok_('url' not in params['_facets'])
+
+            if 'product' in params:
+                eq_(params['product'], ['WaterWolf', 'NightTrain'])
+
+            return {
+                'hits': [
+                    {
+                        'signature': 'abcdef',
+                        'product': 'WaterWolf',
+                        'version': '1.0',
+                        'email': 'thebig@lebowski.net',
+                        'exploitability': 'high',
+                        'url': 'http://embarassing.website.com',
+                        'user_comments': 'hey I am thebig@lebowski.net',
+                    }
+                ],
+                'facets': {
+                    'signature': []
+                },
+                'total': 0
+            }
+
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('api:model_wrapper', args=('SuperSearch',))
         response = self.client.get(url)
@@ -1766,40 +1769,41 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
+    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.get')
-    def test_SuperSearchUnredacted(self, rget):
+    def test_SuperSearchUnredacted(self, rget, supersearch):
 
         def mocked_get(url, params, **options):
             if '/supersearch/fields' in url:
                 return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
 
-            if '/supersearch' in url:
-                ok_('exploitability' in params)
-
-                if 'product' in params:
-                    eq_(params['product'], ['WaterWolf', 'NightTrain'])
-
-                return Response({
-                    'hits': [
-                        {
-                            'signature': 'abcdef',
-                            'product': 'WaterWolf',
-                            'version': '1.0',
-                            'email': 'thebig@lebowski.net',
-                            'exploitability': 'high',
-                            'url': 'http://embarassing.website.com',
-                            'user_comments': 'hey I am thebig@lebowski.net',
-                        }
-                    ],
-                    'facets': {
-                        'signature': []
-                    },
-                    'total': 0
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            ok_('exploitability' in params)
+            if 'product' in params:
+                eq_(params['product'], ['WaterWolf', 'NightTrain'])
+            return {
+                'hits': [
+                    {
+                        'signature': 'abcdef',
+                        'product': 'WaterWolf',
+                        'version': '1.0',
+                        'email': 'thebig@lebowski.net',
+                        'exploitability': 'high',
+                        'url': 'http://embarassing.website.com',
+                        'user_comments': 'hey I am thebig@lebowski.net',
+                    }
+                ],
+                'facets': {
+                    'signature': []
+                },
+                'total': 0
+            }
+
+        supersearch().get.side_effect = mocked_supersearch_get
 
         url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
         response = self.client.get(url, {'exploitability': 'high'})

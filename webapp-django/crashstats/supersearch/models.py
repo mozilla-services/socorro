@@ -2,9 +2,40 @@ import functools
 import json
 
 from django.core.cache import cache
+from django.conf import settings
+
+from socorro.external.es import supersearch
+from socorro.middleware.middleware_app import MiddlewareApp
+
+from configman import Namespace, configuration, class_converter
 
 from crashstats import scrubber
 from crashstats.crashstats import models
+
+
+def_source = Namespace()
+def_source.namespace('elasticsearch')
+def_source.elasticsearch.add_option(
+    'elasticsearch_class',
+    doc='a class that implements the ES connection object',
+    default='socorro.external.es.connection_context.ConnectionContext',
+    from_string_converter=class_converter
+)
+
+
+def config_from_configman():
+    return configuration(
+        definition_source=[
+            def_source,
+            # This is a tie-over until we totally get rid of the MiddlwareApp.
+            # At the moment it defines some useful options that are required
+            # by SuperSearch implementation.
+            MiddlewareApp.required_config.webapi,
+        ],
+        values_source_list=[
+            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
+        ]
+    )
 
 
 SUPERSEARCH_META_PARAMS = (
@@ -49,7 +80,16 @@ def get_api_whitelist(include_all_fields=False):
 
 class SuperSearch(models.SocorroMiddleware):
 
-    URL_PREFIX = '/supersearch/'
+    @property
+    def implementation(self):
+        try:
+            return self.__implementation
+        except AttributeError:
+            # print dict(config_from_configman.items())
+            self.__implementation = supersearch.SuperSearch(
+                config=config_from_configman()
+            )
+            return self.__implementation
 
     API_WHITELIST = {
         'hits': get_api_whitelist()
