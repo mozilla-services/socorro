@@ -722,9 +722,11 @@ class TestViews(BaseTestViews):
             'Content-Encoding': 'gzip'
         })
         # The sample.zip file contains the file xpcshell.sym and it's
-        # 1156 bytes when un-archived. But the file is compressed so
-        # the bytes we upload is less
-        ok_(len(self.uploaded_keys[key]) < 1156, len(self.uploaded_keys[key]))
+        # 1156 bytes when un-archived. Just gzip'in the content of the
+        # file will yield a file that is 476 bytes.
+        # But if you do it properly there's header information in the
+        # string which is a couple of extra bytes.
+        eq_(len(self.uploaded_keys[key]), 488)
 
     def test_upload_without_multipart_file(self):
         user = User.objects.create(username='user')
