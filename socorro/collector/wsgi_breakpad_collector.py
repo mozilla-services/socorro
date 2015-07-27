@@ -96,6 +96,13 @@ class BreakpadCollector(RequiredConfig):
         return web.webapi.rawinput()
 
     #--------------------------------------------------------------------------
+    @staticmethod
+    def _no_x00_character(value):
+        if isinstance(value, basestring) and '\x00' in value:
+            return ''.join(c for c in value if c != '\x00')
+        return value
+
+    #--------------------------------------------------------------------------
     def _get_raw_crash_from_form(self):
         """this method creates the raw_crash and the dumps mapping using the
         POST form"""
@@ -105,7 +112,7 @@ class BreakpadCollector(RequiredConfig):
         for name, value in self._form_as_mapping().iteritems():
             if isinstance(value, basestring):
                 if name != "dump_checksums":
-                    raw_crash[name] = value
+                    raw_crash[name] = self._no_x00_character(value)
             elif hasattr(value, 'file') and hasattr(value, 'value'):
                 dumps[name] = value.value
                 raw_crash.dump_checksums[name] = \

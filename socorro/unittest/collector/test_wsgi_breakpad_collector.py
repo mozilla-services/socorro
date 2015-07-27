@@ -61,7 +61,7 @@ class TestCollectorApp(TestCase):
         form.ProductName = 'FireSquid'
         form.Version = '99'
         form.dump = 'fake dump'
-        form.some_field = '23'
+        form.some_field = '\x0023'
         form.some_other_field = ObjectWithValue('XYZ')
 
         class BreakpadCollectorWithMyForm(config.collector.collector_class):
@@ -84,7 +84,7 @@ class TestCollectorApp(TestCase):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
-        rawform.ProductName = 'FireSquid'
+        rawform.ProductName = '\x00FireSquid'
         rawform.Version = '99'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
         rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
@@ -190,7 +190,7 @@ class TestCollectorApp(TestCase):
         rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
         rawform.some_field = '23'
         rawform.some_other_field = ObjectWithValue('XYZ')
-        rawform.uuid = '332d798f-3c42-47a5-843f-a0f892140107'
+        rawform.uuid = '332d798f-3cx\x0042-47a5-843f-a0f892140107'
 
         form = DotDict(rawform)
         form.dump = rawform.dump.value
@@ -359,7 +359,7 @@ class TestCollectorApp(TestCase):
 
         rawform = DotDict()
         rawform.ProductName = 'FireSquid'
-        rawform.Version = '99'
+        rawform.Version = '99\x00'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
         rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
         rawform.some_field = '23'
