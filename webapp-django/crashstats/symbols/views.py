@@ -1,3 +1,4 @@
+import gzip
 import re
 import os
 import mimetypes
@@ -116,7 +117,10 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
             }
             if compress:
                 headers['Content-Encoding'] = 'gzip'
-                value = file.getvalue().encode('zlib')
+                out = StringIO()
+                with gzip.GzipFile(fileobj=out, mode='w') as f:
+                    f.write(file.getvalue())
+                value = out.getvalue()
             else:
                 value = file.getvalue()
             uploaded = key.set_contents_from_string(value, headers)
