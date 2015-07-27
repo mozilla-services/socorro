@@ -150,6 +150,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
         )
 
     #--------------------------------------------------------------------------
+    def _basic_get_transaction(self, conn, queue):
+        """reorganize the the call to rabbitmq basic_get so that it can be
+        used by the transaction retry wrapper."""
+        things = conn.channel.basic_get(queue=queue)
+        return things
+
+    #--------------------------------------------------------------------------
     def new_crashes(self):
         """This generator fetches crash_ids from RabbitMQ."""
 
@@ -171,7 +178,8 @@ class RabbitMQCrashStorage(CrashStorageBase):
         ]
         while True:
             for queue in queues:
-                method_frame, header_frame, body = conn.channel.basic_get(
+                method_frame, header_frame, body = self.transaction(
+                    self._basic_get_transaction,
                     queue=queue
                 )
                 if method_frame and self._suppress_duplicate_jobs(
