@@ -19,6 +19,7 @@ from django.db import transaction
 from django.core.exceptions import ImproperlyConfigured
 
 import boto
+import boto.s3.connection
 import boto.exception
 
 from crashstats.tokens.models import Token
@@ -69,7 +70,8 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
 
     conn = boto.connect_s3(
         settings.AWS_ACCESS_KEY,
-        settings.AWS_SECRET_ACCESS_KEY
+        settings.AWS_SECRET_ACCESS_KEY,
+        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
     )
     assert bucket_name
     try:
