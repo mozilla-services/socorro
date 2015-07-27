@@ -1,46 +1,42 @@
 $(function() {
-    var aduChartContainer = $("#adu-chart"),
-        colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'],
-        chartOpts = {
-            xaxis: {
-              mode: 'time',
-              timeformat: "%b %d",
-              minTickSize: [1, "day"]
-            },
-            yaxis: {
-              min: 0
-            },
-            series: {
-                lines: { show: true },
-                points: {
-                    show: true,
-                    radius: 1
-                },
-                shadowSize: 0
-            },
-            colors: colours,
-            grid: {
-                color: '#606060',
-                backgroundColor: '#ffffff',
-                borderColor: '#c0c0c0',
-                borderWidth: 0
-            },
-            legend: {
-                position: "ne"
-            }
-        };
+    var aduChartContainer = $("#crashes-per-adi-graph"),
+        colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'];
 
     if (window.socGraphByReportType === false) {
         if(data.count > 0) {
-            var chartData = [
-                { data: data["ratio" + 1], label: data.labels[0] },
-                { data: data["ratio" + 2], label: data.labels[1] },
-                { data: data["ratio" + 3], label: data.labels[2] },
-                { data: data["ratio" + 4], label: data.labels[3] }
-            ];
-            // this is a trick to make the legend appear as a list in one single row
-            chartOpts.legend.noColumns = chartData.length;
-            $.plot(aduChartContainer, chartData, chartOpts);
+
+            // Format the graph data.
+            var graphData = [];
+            var legend = [];
+            for (var i = 1; i < data.product_versions.length + 1; i++) {
+                graphData.push(
+                    $.map(data['ratio' + i], function(value) {
+                        return {
+                            'date': new Date(value[0]),
+                            'ratio': value[1]
+                        };
+                    })
+                );
+
+                legend.push(data.labels[i - 1]);
+            }
+
+            // Draw the graph.
+            MG.data_graphic({
+                data: graphData,
+                full_width: true,
+                target: '#crashes-per-adi-graph',
+                x_accessor: 'date',
+                y_accessor: 'ratio',
+                xax_start_at_min: true,
+                interpolate: 'basic',
+                area: false,
+                legend: legend,
+                legend_target: '#crashes-per-adi-legend'
+            });
+
+        } else {
+            aduChartContainer.text('No results were found.');
         }
     }
 
