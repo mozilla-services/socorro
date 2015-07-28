@@ -1714,6 +1714,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:daily')
 
         def mocked_get(url, params, **options):
+            eq_(params['versions'], ['20.0', '19.0'])
             if '/products' in url:
                 return Response("""
                     {
@@ -1850,6 +1851,18 @@ class TestViews(BaseTestViews):
             'date_start': '2010-01-01'
         })
         eq_(response.status_code, 200)
+
+        # Test that the version sorting is working
+        self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['19.0', '20.0']
+        })
+
+        # Test that the versions become unique
+        self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['19.0', '19.0', '20.0']
+        })
 
     @mock.patch('crashstats.crashstats.models.Platforms')
     @mock.patch('requests.get')
