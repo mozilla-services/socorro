@@ -141,6 +141,7 @@ Socorro Middlware is a REST service that listens on localhost and should
 underlying data stores:
 
 .. code-block:: bash
+
   implementations__implementation_list='psql: socorro.external.postgresql, fs: socorro.external.filesystem, es: socorro.external.es, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq, hb: socorro.external.fs'
   implementations__service_overrides='Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq, Search: es, Query: es'
   # Pluggable Elasticsearch implementation
