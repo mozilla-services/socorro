@@ -5,21 +5,16 @@
 import codecs
 import datetime
 import urllib2
-import csv
-import getpass
 import os
 import tempfile
 import unicodedata
 
 import pyhs2
 
-from configman import Namespace
+from configman import Namespace, class_converter
 from crontabber.base import BaseCronApp
-from crontabber.mixins import (
-    as_backfill_cron_app,
-    with_postgres_transactions,
-    with_single_postgres_transaction
-)
+from crontabber.mixins import as_backfill_cron_app
+from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.external.postgresql.dbapi2_util import execute_no_results
 
 """
@@ -128,9 +123,8 @@ _FENNEC38_ADI_CHANNEL_CORRECTION_SQL = """
               and build = '20150427090529'
               and date > '2015-04-27';"""
 
+
 @as_backfill_cron_app
-@with_postgres_transactions()
-@with_single_postgres_transaction()
 class FetchADIFromHiveCronApp(BaseCronApp):
     """ This cron is our daily blocklist ping web logs query
         that rolls up all the browser checkins and let's us know
@@ -167,7 +161,6 @@ class FetchADIFromHiveCronApp(BaseCronApp):
         doc='Password to connect to Hive with',
         secret=True)
 
-
     required_config.add_option(
         'hive_database',
         default='default',
@@ -183,13 +176,107 @@ class FetchADIFromHiveCronApp(BaseCronApp):
         default=30 * 60,  # 30 minutes
         doc='number of seconds to wait before timing out')
 
+    required_config.namespace('primary_destination')
+    required_config.primary_destination.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+        "TransactionExecutorWithInfiniteBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.primary_destination.add_option(
+        'database_class',
+        default=ConnectionContext,
+        doc='The class responsible for connecting to Postgres',
+        reference_value_from='resource.postgresql',
+    )
+
+    required_config.namespace('secondary_destination')
+    required_config.secondary_destination.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+        "TransactionExecutorWithInfiniteBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.secondary_destination.add_option(
+        'database_class',
+        default=ConnectionContext,
+        doc=(
+            'The class responsible for connecting to Postgres. '
+            'Optionally set this to an empty string to entirely '
+            'disable the secondary destination.'
+        ),
+        reference_value_from='resource.postgresql',
+    )
+
     @staticmethod
     def remove_control_characters(s):
         if isinstance(s, str):
             s = unicode(s, 'utf-8', errors='replace')
         return ''.join(c for c in s if unicodedata.category(c)[0] != "C")
 
-    def run(self, connection, date):
+    def _database_transaction(
+        self,
+        connection,
+        raw_adi_logs_pathname,
+        target_date
+    ):
+        with codecs.open(raw_adi_logs_pathname, 'r', 'utf-8') as f:
+            pgcursor = connection.cursor()
+            pgcursor.copy_from(
+                f,
+                'raw_adi_logs',
+                null='None',
+                columns=[
+                    'report_date',
+                    'product_name',
+                    'product_os_platform',
+                    'product_os_version',
+                    'product_version',
+                    'build',
+                    'build_channel',
+                    'product_guid',
+                    'count'
+                ]
+            )
+            pgcursor.execute(_RAW_ADI_QUERY, (target_date,))
+
+        # for Bug 1159993
+        execute_no_results(connection, _FENNEC38_ADI_CHANNEL_CORRECTION_SQL)
+
+    def run(self, date):
+
+        db_class = self.config.primary_destination.database_class
+        primary_database = db_class(self.config.primary_destination)
+        tx_class = self.config.primary_destination.transaction_executor_class
+        primary_transaction = tx_class(
+            self.config,
+            primary_database,
+        )
+        transactions = [primary_transaction]
+
+        db_class = self.config.secondary_destination.database_class
+        # The reason for checking if this is anything at all is
+        # because one way of disabling the secondary destination
+        # is to set the database_class to an empty string.
+        if db_class:
+            secondary_database = db_class(self.config.secondary_destination)
+            if secondary_database.config != primary_database.config:
+                # The secondary really is different from the first one.
+                # By default, if not explicitly set, it'll pick up the same
+                # resource values as the first one.
+                tx_class = (
+                    self.config.secondary_destination.transaction_executor_class
+                )
+                secondary_transaction = tx_class(
+                    self.config,
+                    secondary_database,
+                )
+                transactions.append(secondary_transaction)
+
         target_date = (date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
         raw_adi_logs_pathname = os.path.join(
@@ -230,28 +317,13 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                     )
                     f.write("\n")
 
-            with codecs.open(raw_adi_logs_pathname, 'r', 'utf-8') as f:
-                pgcursor = connection.cursor()
-                pgcursor.copy_from(
-                    f,
-                    'raw_adi_logs',
-                    null='None',
-                    columns=[
-                        'report_date',
-                        'product_name',
-                        'product_os_platform',
-                        'product_os_version',
-                        'product_version',
-                        'build',
-                        'build_channel',
-                        'product_guid',
-                        'count'
-                    ]
+            for transaction in transactions:
+                transaction(
+                    self._database_transaction,
+                    raw_adi_logs_pathname,
+                    target_date
                 )
-                pgcursor.execute(_RAW_ADI_QUERY, (target_date,))
 
-            # for Bug 1159993
-            execute_no_results(connection, _FENNEC38_ADI_CHANNEL_CORRECTION_SQL)
         finally:
             if os.path.isfile(raw_adi_logs_pathname):
                 os.remove(raw_adi_logs_pathname)
