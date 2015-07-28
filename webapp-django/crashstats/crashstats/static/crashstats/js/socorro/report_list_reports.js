@@ -66,10 +66,6 @@ var Reports = (function() {
        activate: function(url) {
            url = url || null;
            if (loaded) return;
-           if (Columns.value() === null) {
-               // the storage hasn't returned yet!
-               return Columns.load(Reports.activate);
-           }
            loaded = true;
 
            var $panel = $('#reports');
@@ -108,52 +104,26 @@ Panels.register('reports', function() {
 });
 
 
-
 var Columns = (function() {
-    var COLUMNS = null;
-    var KEY = 'report-list-report-columns';
-
-    // New API, new object || Where the polyfill lives
-    var storage = navigator.storage || navigator.alsPolyfillStorage;
+    var columns = null;
+    var key = 'report-list-report-columns';
 
     return {
         value: function() {
-            return COLUMNS;
+            if (columns === null) {
+                columns = JSON.parse(
+                    localStorage.getItem(key) || '[]'
+                );
+            }
+            return columns;
         },
-        load: function(callback) {
-           storage
-               .get(KEY)
-               .then(function(value) {
-                   if (value) {
-                       COLUMNS = value.split(',');
-                   } else {
-                       // happens when you've never saved this before
-                       COLUMNS = [];
-                   }
-                   if (callback) callback();
-               }, function(e) {
-                   console.log('Unable to retrieve columns', e);
-                   if (callback) callback();
-               });
-        },
-        save: function(columns, callback) {
-            COLUMNS = columns;
-            storage
-                .set(KEY, columns.join(','))
-                .then(function() {
-                    if (callback) callback();
-                }, function(e) {
-                    console.log('Unable to save columns', e);
-                    if (callback) callback();
-                });
+        save: function(new_columns, callback) {
+            columns = new_columns;
+            localStorage.setItem(key, JSON.stringify(columns));
+            if (callback) callback();
         }
     };
 })();
-
-
-// we can try to run this as soon as possible
-// so it's done when Reports.activate() gets called
-Columns.load();
 
 
 $(function() {
