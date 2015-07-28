@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 
 from waffle.models import Switch
 
+from crashstats.supersearch.models import SuperSearch
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
@@ -65,18 +66,7 @@ class TestViews(BaseTestViews):
         ok_('Loading' in response.content)
         ok_(reverse('crashstats:report_list') in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_signature_reports(self, rget, supersearch):
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_signature_reports(self):
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -130,7 +120,7 @@ class TestViews(BaseTestViews):
 
             return {"hits": [], "total": 0}
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_reports')
 
@@ -181,18 +171,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 400)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_parameters(self, rget, supersearch):
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_parameters(self):
 
         def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
@@ -217,7 +196,7 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_reports')
 
@@ -232,20 +211,9 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_signature_reports_pagination(self, rget, supersearch):
+    def test_signature_reports_pagination(self):
         """Test that the pagination of results works as expected.
         """
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -271,7 +239,7 @@ class TestViews(BaseTestViews):
                 "total": len(hits)
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_reports')
 
@@ -301,18 +269,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_signature_aggregation(self, rget, supersearch):
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_signature_aggregation(self):
 
         def mocked_supersearch_get(**params):
             ok_('signature' in params)
@@ -351,7 +308,7 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         # Test with no results.
         url = reverse(
@@ -379,18 +336,7 @@ class TestViews(BaseTestViews):
         ok_('windows' in response.content)
         ok_('mac' in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_signature_comments(self, rget, supersearch):
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_signature_comments(self):
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -451,7 +397,7 @@ class TestViews(BaseTestViews):
 
             return {"hits": [], "total": 0}
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_comments')
 
@@ -475,20 +421,8 @@ class TestViews(BaseTestViews):
         ok_('WaterWolf Y U SO GOOD' in response.content)
         ok_('locale1' in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_signature_comments_pagination(self, rget, supersearch):
+    def test_signature_comments_pagination(self):
         """Test that the pagination of comments works as expected. """
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -511,7 +445,7 @@ class TestViews(BaseTestViews):
                 "total": 140
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('signature:signature_comments')
 

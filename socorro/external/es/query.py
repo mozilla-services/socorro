@@ -28,7 +28,7 @@ class Query(ElasticsearchBase):
 
     def get_connection(self):
         with self.es_context(
-            timeout=self.config.webapi.elasticsearch_timeout_extended
+            timeout=self.config.elasticsearch.elasticsearch_timeout_extended
         ) as conn:
             return conn
 

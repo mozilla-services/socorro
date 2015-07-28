@@ -12,11 +12,9 @@ from django.core.urlresolvers import reverse
 from waffle.models import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.supersearch.models import SuperSearch
 from crashstats.supersearch.views import (
     get_report_list_parameters,
-)
-from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
 )
 
 
@@ -49,17 +47,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-    @mock.patch('requests.get')
-    def test_search(self, rget):
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-        rget.side_effect = mocked_get
-
+    def test_search(self):
         self._login()
         url = reverse('supersearch.search')
         response = self.client.get(url)
@@ -79,16 +67,7 @@ class TestViews(BaseTestViews):
         options = doc('#simple-search select[name=process_type] option')
         ok_('browser' in str(options))
 
-    @mock.patch('requests.get')
-    def test_search_ratelimited(self, rget):
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-        rget.side_effect = mocked_get
+    def test_search_ratelimited(self):
 
         url = reverse('supersearch.search')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
@@ -101,16 +80,7 @@ class TestViews(BaseTestViews):
         ok_('Hold your horses!' in response.content)
         eq_(response['content-type'], 'text/html; charset=utf-8')
 
-    @mock.patch('requests.get')
-    def test_search_fields(self, rget):
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-        rget.side_effect = mocked_get
+    def test_search_fields(self):
 
         user = self._login()
         url = reverse('supersearch.search_fields')
@@ -139,10 +109,8 @@ class TestViews(BaseTestViews):
 
         ok_('exploitability' in content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_search_results(self, rget, cpost, supersearch):
+    def test_search_results(self, cpost):
         def mocked_post(**options):
             return {
                 "hits": [
@@ -154,16 +122,7 @@ class TestViews(BaseTestViews):
                 "total": 1
             }
 
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
         cpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -306,7 +265,7 @@ class TestViews(BaseTestViews):
             else:
                 return {"hits": [], "facets": [], "total": 0}
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
         response = self.client.get(
@@ -388,13 +347,12 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    def test_search_results_ratelimited(self, supersearch):
+    def test_search_results_ratelimited(self):
 
         def mocked_supersearch_get(**params):
             return {"hits": [], "facets": [], "total": 0}
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
@@ -411,26 +369,15 @@ class TestViews(BaseTestViews):
         eq_(response.content, 'Too Many Requests')
         eq_(response['content-type'], 'text/plain')
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.post')
-    @mock.patch('requests.get')
-    def test_search_results_admin_mode(self, rget, rpost, supersearch):
+    def test_search_results_admin_mode(self, rpost):
         """Test that an admin can see more fields, and that a non-admin cannot.
         """
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
             return Response({"hits": [], "total": 0})
 
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
         rpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -508,7 +455,7 @@ class TestViews(BaseTestViews):
             )
             return results
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
 
@@ -570,10 +517,8 @@ class TestViews(BaseTestViews):
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.post')
-    @mock.patch('requests.get')
-    def test_search_results_parameters(self, rget, rpost, supersearch):
+    def test_search_results_parameters(self, rpost):
         def mocked_post(**options):
             assert 'bugs' in options['url'], options['url']
             return Response({
@@ -581,16 +526,7 @@ class TestViews(BaseTestViews):
                 "total": 0
             })
 
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
         rpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
@@ -615,7 +551,7 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
 
@@ -629,10 +565,8 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
     @mock.patch('requests.post')
-    @mock.patch('requests.get')
-    def test_search_results_pagination(self, rget, rpost, supersearch):
+    def test_search_results_pagination(self, rpost):
         """Test that the pagination of results works as expected.
         """
         def mocked_post(**options):
@@ -641,16 +575,7 @@ class TestViews(BaseTestViews):
                 {"hits": [], "total": 0}
             """)
 
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
         rpost.side_effect = mocked_post
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -676,7 +601,7 @@ class TestViews(BaseTestViews):
                 "total": len(hits)
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_results')
 
@@ -753,24 +678,12 @@ class TestViews(BaseTestViews):
         group = self._create_group_with_permission('run_custom_queries')
         user.groups.add(group)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_search_custom_permission(self, rget, supersearch):
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_search_custom_permission(self):
 
         def mocked_supersearch_get(**params):
             return None
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_custom')
 
@@ -783,24 +696,12 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Run a search to get some results' in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_search_custom(self, rget, supersearch):
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_search_custom(self):
 
         def mocked_supersearch_get(**params):
             return None
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         self.create_custom_query_perm()
 
@@ -809,18 +710,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Run a search to get some results' in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_search_custom_parameters(self, rget, supersearch):
+    def test_search_custom_parameters(self):
         self.create_custom_query_perm()
-
-        def mocked_get(url, params, **options):
-            if '/supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             ok_('_return_query' in params)
@@ -832,7 +723,7 @@ class TestViews(BaseTestViews):
                 "indices": ["socorro200000", "socorro200001"]
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('supersearch.search_custom')
         response = self.client.get(url, {'signature': 'nsA'})
@@ -842,16 +733,9 @@ class TestViews(BaseTestViews):
         ok_('socorro200000' in response.content)
         ok_('socorro200001' in response.content)
 
-    @mock.patch('requests.get')
     @mock.patch('requests.post')
-    def test_search_query(self, rget, rpost):
+    def test_search_query(self, rpost):
         self.create_custom_query_perm()
-
-        def mocked_get(url, params, **options):
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            return Response('{"hits": []}')
 
         def mocked_post(url, data, **options):
             ok_('/query' in url)
@@ -860,7 +744,6 @@ class TestViews(BaseTestViews):
 
             return Response({"hits": []})
 
-        rget.side_effect = mocked_get
         rpost.side_effect = mocked_post
 
         url = reverse('supersearch.search_query')

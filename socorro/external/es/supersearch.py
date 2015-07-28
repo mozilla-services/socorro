@@ -56,7 +56,7 @@ class SuperSearch(SearchBase):
         * to_date datetime object
         """
         if es_index is None:
-            es_index = self.config.elasticsearch_index
+            es_index = self.config.elasticsearch.elasticsearch_index
 
         indices = []
         current_date = from_date

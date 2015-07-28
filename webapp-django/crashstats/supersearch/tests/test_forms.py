@@ -2,7 +2,7 @@ from nose.tools import eq_, ok_
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import forms
-from crashstats.supersearch.tests.test_views import (
+from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
 

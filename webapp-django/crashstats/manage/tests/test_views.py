@@ -16,6 +16,10 @@ from eventlog.models import Log
 
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.tokens.models import Token
+from crashstats.supersearch.models import (
+    SuperSearchFields,
+    SuperSearchMissingFields,
+)
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
@@ -1007,15 +1011,13 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.get')
-    def test_supersearch_fields(self, rget):
+    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
+    def test_supersearch_fields(self, supersearchfields):
         self._login()
         url = reverse('manage:supersearch_fields')
 
-        def mocked_get(url, **options):
-            assert '/supersearch/fields/' in url
-
-            return Response({
+        def mocked_supersearchfields_get_fields(**params):
+            return {
                 'signature': {
                     'name': 'signature',
                     'namespace': 'processed_crash',
@@ -1040,9 +1042,11 @@ class TestViews(BaseTestViews):
                     'is_returned': True,
                     'is_mandatory': False,
                 }
-            })
+            }
 
-        rget.side_effect = mocked_get
+        supersearchfields().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1051,41 +1055,42 @@ class TestViews(BaseTestViews):
         ok_('product' in response.content)
         ok_('enum' in response.content)
 
-    @mock.patch('requests.get')
-    def test_supersearch_fields_missing(self, rget):
+    def test_supersearch_fields_missing(self):
         self._login()
         url = reverse('manage:supersearch_fields_missing')
 
-        def mocked_get(url, **options):
-            assert '/supersearch/' in url
+        def mocked_supersearchfields_get_fields(**params):
+            return {
+                'product': {
+                    'name': 'product',
+                    'namespace': 'processed_crash',
+                    'in_database_name': 'product',
+                    'query_type': 'enum',
+                    'form_field_choices': None,
+                    'permissions_needed': [],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                }
+            }
 
-            if '/supersearch/fields/' in url:
-                return Response({
-                    'product': {
-                        'name': 'product',
-                        'namespace': 'processed_crash',
-                        'in_database_name': 'product',
-                        'query_type': 'enum',
-                        'form_field_choices': None,
-                        'permissions_needed': [],
-                        'default_value': None,
-                        'is_exposed': True,
-                        'is_returned': True,
-                        'is_mandatory': False,
-                    }
-                })
+        def mocked_supersearchfields_get_missing_fields(**params):
+            return {
+                'hits': [
+                    'field_a',
+                    'namespace1.field_b',
+                    'namespace2.subspace1.field_c',
+                ],
+                'total': 3
+            }
 
-            if '/supersearch/missing_fields/' in url:
-                return Response({
-                    'hits': [
-                        'field_a',
-                        'namespace1.field_b',
-                        'namespace2.subspace1.field_c',
-                    ],
-                    'total': 3
-                })
-
-        rget.side_effect = mocked_get
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
+        SuperSearchMissingFields.implementation().get.side_effect = (
+            mocked_supersearchfields_get_missing_fields
+        )
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1093,15 +1098,12 @@ class TestViews(BaseTestViews):
         ok_('namespace1.field_b' in response.content)
         ok_('namespace2.subspace1.field_c' in response.content)
 
-    @mock.patch('requests.get')
-    def test_supersearch_field(self, rget):
+    def test_supersearch_field(self):
         self._login()
         url = reverse('manage:supersearch_field')
 
-        def mocked_get(url, **options):
-            assert '/supersearch/fields/' in url
-
-            return Response({
+        def mocked_supersearchfields_get_fields(**params):
+            return {
                 'signature': {
                     'name': 'signature',
                     'namespace': 'processed_crash',
@@ -1126,9 +1128,11 @@ class TestViews(BaseTestViews):
                     'is_returned': True,
                     'is_mandatory': False,
                 }
-            })
+            }
 
-        rget.side_effect = mocked_get
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
 
         # Test when creating a new field.
         response = self.client.get(url)
@@ -1156,25 +1160,24 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'name': 'unknown'})
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.get')
-    @mock.patch('requests.post')
-    def test_supersearch_field_create(self, rpost, rget):
+    def test_supersearch_field_create(self):
         self._login()
         url = reverse('manage:supersearch_field_create')
 
-        def mocked_get(url, **options):
-            assert '/supersearch/fields/' in url
-            return Response({})
+        def mocked_supersearchfields_get_fields(**params):
+            return {}
 
-        def mocked_post(url, data, **options):
-            assert '/supersearch/field/' in url
-            assert 'name' in data
-            assert 'in_database_name' in data
+        def mocked_supersearchfields_create_field(**params):
+            assert 'name' in params
+            assert 'in_database_name' in params
+            return True
 
-            return Response(True)
-
-        rget.side_effect = mocked_get
-        rpost.side_effect = mocked_post
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
+        SuperSearchFields.implementation().create_field.side_effect = (
+            mocked_supersearchfields_create_field
+        )
 
         response = self.client.post(
             url,
@@ -1199,9 +1202,8 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, {'in_database_name': 'bar'})
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.get')
-    @mock.patch('requests.put')
-    def test_supersearch_field_update(self, rput, rget):
+    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
+    def test_supersearch_field_update(self, supersearchfields):
         self._login()
         url = reverse('manage:supersearch_field_update')
 
@@ -1217,13 +1219,10 @@ class TestViews(BaseTestViews):
             content_type=ct
         )
 
-        def mocked_get(url, **options):
-            assert '/supersearch/fields/' in url
-            return Response({})
+        def mocked_supersearchfields_get_fields(**params):
+            return {}
 
-        def mocked_put(url, data, **options):
-            assert '/supersearch/field/' in url
-
+        def mocked_supersearchfields_update_field(**data):
             ok_('name' in data)
             ok_('description' in data)
             ok_('is_returned' in data)
@@ -1237,11 +1236,14 @@ class TestViews(BaseTestViews):
                 data['permissions_needed'],
                 ['crashstats.i.can.haz.permission']
             )
+            return True
 
-            return Response(True)
-
-        rget.side_effect = mocked_get
-        rput.side_effect = mocked_put
+        supersearchfields().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
+        supersearchfields().update_field.side_effect = (
+            mocked_supersearchfields_update_field
+        )
 
         response = self.client.post(
             url,
@@ -1270,24 +1272,24 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, {'in_database_name': 'bar'})
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.get')
-    @mock.patch('requests.delete')
-    def test_supersearch_field_delete(self, rdelete, rget):
+    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
+    def test_supersearch_field_delete(self, supersearchfields):
         self._login()
         url = reverse('manage:supersearch_field_delete')
 
-        def mocked_get(url, **options):
-            assert '/supersearch/fields/' in url
-            return Response({})
+        def mocked_supersearchfields_get_fields(**params):
+            return {}
 
-        def mocked_delete(url, params, **options):
-            assert '/supersearch/field/' in url
+        def mocked_supersearchfields_delete_field(**params):
             assert 'name' in params
+            return True
 
-            return Response(True)
-
-        rget.side_effect = mocked_get
-        rdelete.side_effect = mocked_delete
+        supersearchfields().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
+        supersearchfields().delete_field.side_effect = (
+            mocked_supersearchfields_delete_field
+        )
 
         response = self.client.get(url, {'name': 'signature'})
         eq_(response.status_code, 302)

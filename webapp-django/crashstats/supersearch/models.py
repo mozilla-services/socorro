@@ -1,41 +1,13 @@
 import functools
 import json
 
-from django.core.cache import cache
-from django.conf import settings
-
 from socorro.external.es import supersearch
-from socorro.middleware.middleware_app import MiddlewareApp
+from socorro.external.es import super_search_fields
 
-from configman import Namespace, configuration, class_converter
+from django.core.cache import cache
 
 from crashstats import scrubber
 from crashstats.crashstats import models
-
-
-def_source = Namespace()
-def_source.namespace('elasticsearch')
-def_source.elasticsearch.add_option(
-    'elasticsearch_class',
-    doc='a class that implements the ES connection object',
-    default='socorro.external.es.connection_context.ConnectionContext',
-    from_string_converter=class_converter
-)
-
-
-def config_from_configman():
-    return configuration(
-        definition_source=[
-            def_source,
-            # This is a tie-over until we totally get rid of the MiddlwareApp.
-            # At the moment it defines some useful options that are required
-            # by SuperSearch implementation.
-            MiddlewareApp.required_config.webapi,
-        ],
-        values_source_list=[
-            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
-        ]
-    )
 
 
 SUPERSEARCH_META_PARAMS = (
@@ -80,16 +52,7 @@ def get_api_whitelist(include_all_fields=False):
 
 class SuperSearch(models.SocorroMiddleware):
 
-    @property
-    def implementation(self):
-        try:
-            return self.__implementation
-        except AttributeError:
-            # print dict(config_from_configman.items())
-            self.__implementation = supersearch.SuperSearch(
-                config=config_from_configman()
-            )
-            return self.__implementation
+    implementation = supersearch.SuperSearch
 
     API_WHITELIST = {
         'hits': get_api_whitelist()
@@ -169,7 +132,7 @@ class SuperSearchUnredacted(SuperSearch):
 
 class SuperSearchFields(models.SocorroMiddleware):
 
-    URL_PREFIX = '/supersearch/fields/'
+    implementation = super_search_fields.SuperSearchFields
 
     # The only reason this data will change is if a user changes it via the UI.
     # If that happens, the cache will be reset automatically. We can thus
@@ -179,7 +142,7 @@ class SuperSearchFields(models.SocorroMiddleware):
 
 class SuperSearchMissingFields(models.SocorroMiddleware):
 
-    URL_PREFIX = '/supersearch/missing_fields/'
+    implementation = super_search_fields.SuperSearchMissingFields
 
     # This service's data doesn't change a lot over time, it's fine to cache
     # it for a long time.
@@ -188,7 +151,7 @@ class SuperSearchMissingFields(models.SocorroMiddleware):
 
 class SuperSearchField(models.SocorroMiddleware):
 
-    URL_PREFIX = '/supersearch/field/'
+    implementation = super_search_fields.SuperSearchFields
 
     required_params = (
         'name',
@@ -212,11 +175,21 @@ class SuperSearchField(models.SocorroMiddleware):
     def get(self, **kwargs):
         raise NotImplemented()
 
+    def create_field(self, **kwargs):
+        # print "IMPL", self.get_implementation()
+        return self.get_implementation().create_field(**kwargs)
+
+    def update_field(self, **kwargs):
+        return self.get_implementation().update_field(**kwargs)
+
+    def delete_field(self, **kwargs):
+        return self.get_implementation().delete_field(**kwargs)
+
     def post(self, payload):
-        return super(SuperSearchField, self).post(self.URL_PREFIX, payload)
+        raise NotImplementedError('Use create_field')
 
     def put(self, payload):
-        return super(SuperSearchField, self).put(self.URL_PREFIX, payload)
+        raise NotImplementedError('Use update_field')
 
 
 class Query(models.SocorroMiddleware):

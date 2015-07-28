@@ -14,6 +14,10 @@ import stat
 import time
 
 import ujson
+from configman import configuration
+
+from socorro.external.es.base import ElasticsearchConfig
+from socorro.app import socorro_app
 
 from django.conf import settings
 from django.core.cache import cache
@@ -31,6 +35,20 @@ from crashstats.dataservice import models
 models = models  # silence pyflakes
 
 logger = logging.getLogger('crashstats_models')
+
+
+def config_from_configman():
+    return configuration(
+        definition_source=[
+            ElasticsearchConfig.required_config,
+            # This required_config defines the logger aggregate
+            socorro_app.App.required_config,
+
+        ],
+        values_source_list=[
+            settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
+        ]
+    )
 
 
 class Lazy(object):
@@ -144,7 +162,11 @@ def measure_fetches(method):
             return result
         t1 = time.time()
         self = args[0]
-        url = args[1]
+        url_or_implementation = args[1]
+        if isinstance(url_or_implementation, basestring):
+            url = url_or_implementation
+        else:
+            url = url_or_implementation.__class__.__name__
         msecs = int((t1 - t0) * 1000)
         hit_or_miss = 'HIT' if hit_or_miss else 'MISS'
 
@@ -274,6 +296,10 @@ class SocorroCommon(object):
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
+    # At the moment, we're supporting talk HTTP to the middleware AND
+    # instantiating implementation classes so this is None by default.
+    implementation = None
+
     @measure_fetches
     def fetch(
         self,
@@ -331,7 +357,10 @@ class SocorroCommon(object):
                 ).prepare()
                 cache_key = hashlib.md5(iri_to_uri(req.url)).hexdigest()
             else:
-                cache_key = hashlib.md5(unicode(params)).hexdigest()
+                name = implementation.__class__.__name__
+                cache_key = hashlib.md5(
+                    name + unicode(params)
+                ).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
@@ -490,6 +519,20 @@ class SocorroCommon(object):
             url = '%s%s' % (self.base_url, url)
         return url
 
+    _implementations = {}
+
+    def get_implementation(self):
+        if self.implementation:
+            key = self.__class__.__name__
+            try:
+                return self._implementations[key]
+            except KeyError:
+                self._implementations[key] = self.implementation(
+                    config=config_from_configman()
+                )
+                return self._implementations[key]
+        return None
+
 
 class SocorroMiddleware(SocorroCommon):
     """ Soon to be deprecated by classes using socorro dataservice classes
@@ -559,8 +602,9 @@ class SocorroMiddleware(SocorroCommon):
         to define a `URL_PREFIX` and (`required_params` and/or
         `possible_params`)
         """
-        if self.implementation:
-            url_or_implementation = self.implementation
+        implementation = self.get_implementation()
+        if implementation is not None:
+            url_or_implementation = implementation
         else:
             # the old-fashioned way of doing a regular middleware HTTP query
             url = self.URL_PREFIX

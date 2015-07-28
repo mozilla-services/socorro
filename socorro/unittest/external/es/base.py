@@ -12,8 +12,8 @@ from functools import wraps
 from configman import ConfigurationManager, environment
 from nose import SkipTest
 
+from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.index_creator import IndexCreator
-from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.unittest.testbase import TestCase
 
 
@@ -764,7 +764,7 @@ class ElasticsearchTestCase(TestCase):
     def __init__(self, *args, **kwargs):
         super(ElasticsearchTestCase, self).__init__(*args, **kwargs)
 
-        self.config = self.get_mware_config()
+        self.config = self.get_base_config()
         es_context = self.config.elasticsearch.elasticsearch_class(
             config=self.config.elasticsearch
         )
@@ -826,14 +826,17 @@ class ElasticsearchTestCase(TestCase):
 
         return config_manager.get_config()
 
-    def get_mware_config(self, es_index=None):
+    def get_base_config(self, es_index=None):
         extra_values = None
         if es_index:
             extra_values = {
                 'resource.elasticsearch.elasticsearch_index': es_index
             }
 
-        return self.get_tuned_config(MiddlewareApp, extra_values=extra_values)
+        return self.get_tuned_config(
+            ElasticsearchConfig,
+            extra_values=extra_values
+        )
 
     def index_super_search_fields(self, fields=None):
         if fields is None:

@@ -146,7 +146,7 @@ class IntegrationTestQuery(ElasticsearchTestCase):
 
         # Test default indices with an index schema based on dates.
         index_schema = 'socorro_%Y%W'
-        config = self.get_mware_config(es_index=index_schema)
+        config = self.get_base_config(es_index=index_schema)
         api = Query(config=config)
 
         now = datetimeutil.utc_now()

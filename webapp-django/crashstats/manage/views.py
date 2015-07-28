@@ -632,7 +632,7 @@ def supersearch_field_create(request):
         return http.HttpResponseBadRequest(field_data)
 
     api = SuperSearchField()
-    api.post(field_data)
+    api.create_field(**field_data)
 
     log(request.user, 'supersearch_field.post', field_data)
 
@@ -655,7 +655,7 @@ def supersearch_field_update(request):
         return http.HttpResponseBadRequest(field_data)
 
     api = SuperSearchField()
-    api.put(field_data)
+    api.update_field(**field_data)
 
     log(request.user, 'supersearch_field.put', field_data)
 
@@ -673,7 +673,7 @@ def supersearch_field_delete(request):
         return http.HttpResponseBadRequest('A "name" is needed')
 
     api = SuperSearchField()
-    api.delete(name=field_name)
+    api.delete_field(name=field_name)
 
     log(request.user, 'supersearch_field.delete', {'name': field_name})
 
