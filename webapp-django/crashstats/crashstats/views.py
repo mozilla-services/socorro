@@ -628,7 +628,7 @@ def daily(request, default_context=None):
     if form.is_valid():
         params = form.cleaned_data
         params['product'] = params.pop('p')
-        params['versions'] = params.pop('v')
+        params['versions'] = sorted(list(set(params.pop('v'))), reverse=True)
         try:
             params['os_names'] = params.pop('os')
         except KeyError:
