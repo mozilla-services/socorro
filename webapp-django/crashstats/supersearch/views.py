@@ -174,6 +174,7 @@ def search_results(request):
         x for x in data['columns'] if x in allowed_fields
     ]
 
+    # Copy the list of columns so that they can differ.
     params['_columns'] = list(data['columns'])
 
     # The uuid is always displayed in the UI so we need to make sure it is
@@ -181,8 +182,10 @@ def search_results(request):
     if 'uuid' not in params['_columns']:
         params['_columns'].append('uuid')
 
-    # The `uuid` field is a special case, it will not be displayed like
-    # normal columns.
+    # The `uuid` field is a special case, it is always displayed in the first
+    # column of the table. Hence we do not want to show it again in the
+    # auto-generated list of columns, so we its name from the list of
+    # columns to display.
     if 'uuid' in data['columns']:
         data['columns'].remove('uuid')
 

@@ -72,6 +72,8 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             assert '_columns' in params
 
+            ok_('uuid' in params['_columns'])
+
             ok_('signature' in params)
             eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
