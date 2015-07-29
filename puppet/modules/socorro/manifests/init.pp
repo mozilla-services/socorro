@@ -40,7 +40,7 @@ class socorro::vagrant {
     'devtools':
       baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
     'elasticsearch':
-      baseurl => 'http://packages.elasticsearch.org/elasticsearch/0.90/centos',
+      baseurl => 'http://packages.elasticsearch.org/elasticsearch/1.4/centos',
       gpgkey  => 'https://packages.elasticsearch.org/GPG-KEY-elasticsearch';
     'PGDG':
       baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
