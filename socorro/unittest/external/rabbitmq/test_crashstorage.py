@@ -2,10 +2,16 @@ from mock import Mock, MagicMock, patch
 
 from nose.tools import eq_, ok_
 
+from socket import timeout
+
 from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
 )
 from socorro.lib.util import DotDict
+from socorro.database.transaction_executor import (
+    TransactionExecutorWithInfiniteBackoff,
+    TransactionExecutor
+)
 from socorro.external.crashstorage_base import Redactor
 from socorro.unittest.testbase import TestCase
 
@@ -15,6 +21,7 @@ class TestCrashStorage(TestCase):
     def _setup_config(self):
         config = DotDict()
         config.transaction_executor_class = Mock()
+        config.backoff_delays = (0, 0, 0)
         config.logger = Mock()
         config.rabbitmq_class = MagicMock()
         config.routing_key = 'socorro.normal'
@@ -261,21 +268,98 @@ class TestCrashStorage(TestCase):
 
     def test_new_crash(self):
         config = self._setup_config()
+        config.transaction_executor_class = \
+            TransactionExecutorWithInfiniteBackoff
         crash_store = RabbitMQCrashStorage(config)
 
-        iterable = (('1', '1', 'crash_id'),)
-        crash_store.rabbitmq.connection.return_value.channel.basic_get = \
-            MagicMock(side_effect=iterable)
+        iterable = [
+            StopIteration(),
+            ('1', '1', 'crash_id'),
+        ]
+        def iter_the_iterable(queue):
+            item =  iterable.pop()
+            if isinstance(item, Exception):
+                raise item
+            return item
+
+        crash_store.rabbitmq.return_value.__enter__.return_value  \
+            .channel.basic_get = MagicMock(side_effect=iter_the_iterable)
 
         expected = 'crash_id'
         for result in crash_store.new_crashes():
             eq_(expected, result)
 
+    def test_new_crash_with_fail_retry(self):
+        config = self._setup_config()
+        config.transaction_executor_class = \
+            TransactionExecutorWithInfiniteBackoff
+        crash_store = RabbitMQCrashStorage(config)
+
+        iterable = [
+            ('1', '1', 'crash_id'),
+            timeout(),
+            timeout(),
+            ('2', '2', 'other_id')
+        ]
+        def an_iterator(queue):
+            item =  iterable.pop()
+            if isinstance(item, Exception):
+                raise item
+            return item
+
+        crash_store.rabbitmq.operational_exceptions = (
+          timeout,
+        )
+        crash_store.rabbitmq.return_value.__enter__.return_value  \
+            .channel.basic_get = MagicMock(side_effect=an_iterator)
+
+        expected = ('other_id', 'crash_id', )
+        for expected, result in zip(expected,  crash_store.new_crashes()):
+            eq_(expected, result)
+
+    def test_new_crash_with_fail_retry_then_permanent_fail(self):
+        config = self._setup_config()
+        config.transaction_executor_class = \
+            TransactionExecutorWithInfiniteBackoff
+        crash_store = RabbitMQCrashStorage(config)
+
+        class MyException(Exception):
+            pass
+
+        iterable = [
+            ('1', '1', 'crash_id'),
+            MyException(),
+            timeout(),
+            ('2', '2', 'other_id')
+        ]
+        def an_iterator(queue):
+            item =  iterable.pop()
+            if isinstance(item, Exception):
+                raise item
+            return item
+
+        crash_store.rabbitmq.operational_exceptions = (
+          timeout,
+        )
+        crash_store.rabbitmq.return_value.__enter__.return_value  \
+            .channel.basic_get = MagicMock(side_effect=an_iterator)
+
+        expected = ('other_id', )
+        count = 0
+        try:
+            for expected, result in zip(expected,  crash_store.new_crashes()):
+                count += 1
+                if count ==  1:
+                    eq_(expected, result)
+                eq_(count, 1, 'looped too far')
+        except MyException:
+            eq_(count,  1)
+
+
     def test_new_crash_duplicate_discovered(self):
         """ Tests queue with standard queue items only
         """
         config = self._setup_config()
-        from socorro.database.transaction_executor import TransactionExecutor
         config.transaction_executor_class = TransactionExecutor
         crash_store = RabbitMQCrashStorage(config)
         crash_store.rabbitmq.config.standard_queue_name = 'socorro.normal'
@@ -286,24 +370,20 @@ class TestCrashStorage(TestCase):
         faked_methodframe = DotDict()
         faked_methodframe.delivery_tag = 'delivery_tag'
         test_queue = [
-            (faked_methodframe, '1', 'normal_crash_id'),
             (None, None, None),
+            (faked_methodframe, '1', 'normal_crash_id'),
             (None, None, None),
         ]
 
         def basic_get(queue='socorro.priority'):
             if len(test_queue) == 0:
-                return (None, None, None)
-            if queue == 'socorro.priority':
-                return test_queue.pop()
-            elif queue == 'socorro.reprocessing':
-                return test_queue.pop()
-            elif queue == 'socorro.normal':
-                return test_queue.pop()
-        crash_store.rabbitmq.connection = MagicMock()
-        crash_store.rabbitmq.connection.return_value.channel.basic_get = \
-            MagicMock(side_effect=basic_get)
-        transation_connection = crash_store.transaction.db_conn_context_source \
+                raise StopIteration
+            return test_queue.pop()
+
+        crash_store.rabbitmq.return_value.__enter__.return_value  \
+            .channel.basic_get = MagicMock(side_effect=basic_get)
+
+        transaction_connection = crash_store.transaction.db_conn_context_source \
             .return_value.__enter__.return_value
 
         # load the cache as if this crash had alredy been seen
@@ -315,7 +395,7 @@ class TestCrashStorage(TestCase):
             eq_(None, result)
 
         # we should ack the new crash even though we did use it for processing
-        transation_connection.channel.basic_ack \
+        transaction_connection.channel.basic_ack \
             .assert_called_with(
                 delivery_tag=faked_methodframe.delivery_tag
             )
@@ -324,6 +404,7 @@ class TestCrashStorage(TestCase):
         """ Tests queue with standard queue items only
         """
         config = self._setup_config()
+        config.transaction_executor_class = TransactionExecutor
         crash_store = RabbitMQCrashStorage(config)
         crash_store.rabbitmq.config.standard_queue_name = 'socorro.normal'
         crash_store.rabbitmq.config.reprocessing_queue_name = \
@@ -336,18 +417,18 @@ class TestCrashStorage(TestCase):
             (None, None, None),
         ]
 
-        def basic_get(queue='socorro.priority'):
+        def basic_get(queue):
             if len(test_queue) == 0:
-                return (None, None, None)
+                raise StopIteration
             if queue == 'socorro.priority':
-                return test_queue.pop()
+                return (None, None, None)
             elif queue == 'socorro.reprocessing':
-                return test_queue.pop()
+                return (None, None, None)
             elif queue == 'socorro.normal':
                 return test_queue.pop()
 
-        crash_store.rabbitmq.connection.return_value.channel.basic_get = \
-            MagicMock(side_effect=basic_get)
+        crash_store.rabbitmq.return_value.__enter__.return_value  \
+            .channel.basic_get = MagicMock(side_effect=basic_get)
 
         expected = ['normal_crash_id']
         for result in crash_store.new_crashes():
@@ -357,6 +438,7 @@ class TestCrashStorage(TestCase):
         """ Tests queue with reprocessing, standard items; no priority items
         """
         config = self._setup_config()
+        config.transaction_executor_class = TransactionExecutor
         crash_store = RabbitMQCrashStorage(config)
         crash_store.rabbitmq.config.standard_queue_name = 'socorro.normal'
         crash_store.rabbitmq.config.reprocessing_queue_name = \
@@ -371,18 +453,13 @@ class TestCrashStorage(TestCase):
             (None, None, None),
         ]
 
-        def basic_get(queue='socorro.priority'):
+        def basic_get(queue):
             if len(test_queue) == 0:
-                return (None, None, None)
-            if queue == 'socorro.priority':
-                return test_queue.pop()
-            elif queue == 'socorro.reprocessing':
-                return test_queue.pop()
-            elif queue == 'socorro.normal':
-                return test_queue.pop()
+                raise StopIteration
+            return test_queue.pop()
 
-        crash_store.rabbitmq.connection.return_value.channel.basic_get = \
-            MagicMock(side_effect=basic_get)
+        crash_store.rabbitmq.return_value.__enter__.return_value  \
+            .channel.basic_get = MagicMock(side_effect=basic_get)
 
         expected = ['normal_crash_id', 'reprocessing_crash_id']
         for result in crash_store.new_crashes():
