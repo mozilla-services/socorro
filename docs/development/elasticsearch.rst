@@ -52,6 +52,20 @@ quantity of data you deal with, etc.
 
 .. _`Setting up elasticsearch`: https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html
 
+One of our services requires the use of Groovy, the scripting tool that
+Elasticsearch uses. However, because of some security issues,
+`Groovy has been disabled by default`_ in recent versions of ES. If your Elasticsearch is
+not publicly accessible, there is no risk with enabling it.
+
+.. _`Groovy has been disabled by default`: https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html
+
+To enable Groovy, add to your ``elasticsearch.yml`` file
+(usually in ``/etc/elasticsearch/``)::
+
+    script.disable_dynamic: false
+
+Then restart Elasticsearch and you should be set.
+
 Once elasticsearch is installed, you will want to set up the basic data
 required by Socorro. There is a script that will do that for you::
 
