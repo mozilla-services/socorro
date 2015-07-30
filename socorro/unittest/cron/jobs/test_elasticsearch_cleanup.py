@@ -22,8 +22,8 @@ class IntegrationTestElasticsearchCleanup(IntegrationTestBase):
                  'ElasticsearchCleanupCronApp|30d',
         )
 
-    @mock.patch('socorro.external.elasticsearch.index_cleaner.pyelasticsearch')
-    def test_run(self, pyes_mock):
+    @mock.patch('socorro.external.es.connection_context.ConnectionContext')
+    def test_run(self, connection_context):
         with self._setup_config_manager().context() as config:
             tab = CronTabber(config)
             tab.run_all()

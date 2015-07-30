@@ -264,11 +264,3 @@ that has access to the ``contains`` operator also has ``does not contain``).
 +----------------------+------------------------------------------------------+
 | bool                 | is true                                              |
 +----------------------+------------------------------------------------------+
-
-Moving data (backfilling, reindexing... )
------------------------------------------
-
-We currently don't provide a generic tool to move data to Elasticsearch. There
-is a script that can be used as a base
-(``./scripts/elasticsearch_backfill_app.py``), but you might have to update
-it depending on your needs.

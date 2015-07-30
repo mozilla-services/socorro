@@ -2867,5 +2867,5 @@ and contain the needed service implementation.
 
 For example, if you want to force search to be executed with ElasticSearch,
 you can add to the middleware call `force\_api\_impl/elasticsearch/`. If
-`socorro.external.elasticsearch` exists and contains a `search` module, it
+`socorro.external.es` exists and contains a `search` module, it
 will get loaded and used.

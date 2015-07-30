@@ -6,11 +6,11 @@
 # name: elasticsearch_storage_class
 # doc: The class to use to store crash reports in elasticsearch.
 # converter: configman.converters.class_converter
-#elasticsearch_storage_class='socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage'
+#elasticsearch_storage_class='socorro.external.es.crashstorage.ESCrashStorage'
 
 # name: elasticsearch_urls
 # doc: the urls to the elasticsearch instances (leave blank to disable)
-# converter: socorro.external.elasticsearch.crashstorage.string_to_list
+# converter: socorro.middleware.middleware_app.string_to_list
 #elasticsearch_urls='http://localhost:9200'
 
 # name: elasticsearch_index
@@ -22,11 +22,6 @@
 # doc: a type to insert crashes in elasticsearch
 # converter: str
 #elasticsearch_doctype='crash_reports'
-
-# name: elasticsearch_mapping
-# doc: the mapping of crash reports to insert
-# converter: str
-#elasticsearch_mapping='./socorro/external/elasticsearch/socorro_mapping.json'
 
 # name: timeout
 # doc: how long to wait in seconds for confirmation of a submission
