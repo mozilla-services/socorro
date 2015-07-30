@@ -10,13 +10,13 @@ BEGIN
 
 -- Daily batch update function for new products and versions
 -- Reads data from releases_raw, cleans it
--- and puts the new versions into product_versions 
+-- and puts the new versions into product_versions
 -- and product_version_builds
 
 -- Cumulative and can be run repeatedly without issues
 -- * covers FennecAndroid and ESR releases
 -- * Compares releases from the last 30 days
--- * Restricts to only the defined "repositories" in 
+-- * Restricts to only the defined "repositories" in
 --   release_repositories
 -- * covers WebRT
 -- * covers Rapid betas
@@ -125,36 +125,6 @@ WHERE releases_recent.product_name = 'Fennec'
     AND major_version_sort(releases_recent.version)
         >= major_version_sort(products.rapid_release_version);
 
--- Insert MetroFirefox "releases", which are copies of Firefox releases,
--- only if the FF release is greater than the first release for MetroFirefox
-
-INSERT INTO releases_recent (
-    product_name,
-    version,
-    beta_number,
-    build_id,
-    update_channel,
-    platform,
-    is_rapid,
-    is_rapid_beta,
-    repository
-)
-SELECT
-    'MetroFirefox' as product_name,
-    version,
-    beta_number,
-    build_id,
-    update_channel,
-    platform,
-    is_rapid,
-    is_rapid_beta,
-    repository
-FROM releases_recent
-    JOIN products
-     ON products.product_name = 'MetroFirefox'
-WHERE releases_recent.product_name = 'Firefox'
-    AND major_version_sort(releases_recent.version)
-        >= major_version_sort(products.rapid_release_version);
 
 -- Release metadata for B2G does not come from releases_raw
 -- Partner data is inserted into update_channel_map instead
