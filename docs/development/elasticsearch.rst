@@ -38,11 +38,8 @@ Web app. Here is a list of those features:
 Supported versions
 ------------------
 
-Socorro currently requires **elasticsearch version 0.90.x**. Support for
-versions 1.x is planned but not done at the time of writing. For up-to-date
-information, please check `bug 1010239`_.
-
-.. _`bug 1010239`: https://bugzilla.mozilla.org/show_bug.cgi?id=1010239
+Socorro currently requires **Elasticsearch version 1.4 or greater**. Support of
+versions greater than 1.4 is not officially tested, but should work fine.
 
 Installation
 ------------
@@ -53,7 +50,7 @@ configuration for elasticsearch. It is however likely that you will want to
 tweak it to fit your needs, depending on the size of your cluster, the
 quantity of data you deal with, etc.
 
-.. _`Setting up elasticsearch`: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup.html
+.. _`Setting up elasticsearch`: https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html
 
 Once elasticsearch is installed, you will want to set up the basic data
 required by Socorro. There is a script that will do that for you::
@@ -100,8 +97,7 @@ Here are the important options that you might want to change:
    by using the ``--help`` option of any Socorro app that uses elasticsearch.
    For example:
    ``$ python ./socorro/processor/processor_app.py
-   --storage_classes=socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage
-   --help``
+   --storage_classes=socorro.external.es.crashstorage.ESCrashStorage --help``
 
 Processors
 ^^^^^^^^^^
@@ -109,8 +105,8 @@ Processors
 Open the config file for processors: ``./config/processor.ini``.
 In the ``[destination]`` namespace, look for the option called
 ``storage_classes``. That key contains the list of storage systems where the
-processors will save data. Add ``socorro.external.elasticsearch.crashstorage.\
-ElasticSearchCrashStorage`` to that list to make your processors index data in
+processors will save data. Add ``socorro.external.es.crashstorage.\
+ESCrashStorage`` to that list to make your processors index data in
 elasticsearch.
 
 You will then need to add the specific configuration of Elasticsearch in

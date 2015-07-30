@@ -139,7 +139,7 @@ class MiddlewareApp(App):
         doc='list of packages for service implementations',
         default='psql:socorro.external.postgresql, '
                 'hbase:socorro.external.hb, '
-                'es:socorro.external.elasticsearch, '
+                'es:socorro.external.es, '
                 'fs:socorro.external.fs, '
                 'http:socorro.external.http, '
                 'rabbitmq:socorro.external.rabbitmq',
@@ -201,8 +201,7 @@ class MiddlewareApp(App):
     required_config.namespace('elasticsearch')
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
-        default='socorro.external.elasticsearch.connection_context.'
-                'ConnectionContext',
+        default='socorro.external.es.connection_context.ConnectionContext',
         from_string_converter=class_converter
     )
 
