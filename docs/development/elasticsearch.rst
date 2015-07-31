@@ -172,6 +172,21 @@ the Super Search page (you need to switch it on) and hit the Search button
 with no parameter. That should return all the crash reports that were indexed
 in the passed week.
 
+Fake data for development
+-------------------------
+
+If you want to populate your Elasticsearch database with some fake data, the
+recommended way is to first insert fakedata into PostgreSQL and then migrate
+that data over to Elasticsearch. This way you will have consistent data accross
+both databases and will be able to have comparison points.
+
+To insert fake data into PostgreSQL, see :ref:`databasesetup-chapter`.
+
+When that is complete, run the following script to migrate the data from
+PostgreSQL to Elasticsearch::
+
+    $ python socorro/external/postgresql/crash_migration_app.py
+
 Master list of fields
 ---------------------
 

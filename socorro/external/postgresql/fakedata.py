@@ -392,6 +392,130 @@ class BaseTable(object):
             buildids.append(self.buildid(fragment))
         return buildids
 
+    def generate_processed_crash_rows(self):
+        count = 0
+        for product in self.releases:
+            cph = self.releases[product]['crashes_per_hour']
+            delta = datetime.timedelta(minutes=(60.0 / int(cph)))
+            for timestamp in date_range(self.start_date, self.end_date, delta):
+                choices = []
+                for channel in self.releases[product]['channels']:
+                    versions = self.releases[product][
+                        'channels'][channel]['versions']
+                    adu = self.releases[product]['channels'][channel]['adu']
+                    for version in versions:
+                        probability = float(version['probability'])
+                        self.releases[product]['channels'][
+                            channel]['name'] = channel
+                        choice = (version, adu, channel)
+                        choices.append((choice, probability))
+
+                (version, adu, channel_name) = weighted_choice(choices)
+                number = version['number']
+                buildids = self.daily_builds(version['buildid'], channel_name)
+                product_guid = self.releases[product]['guid']
+                # TODO enumerate correct values
+                exploitability = 'medium'
+
+                for os_name in self.oses:
+                    # TODO need to review, want to fake more of these
+                    client_crash_date = timestamp.strftime(
+                        '%Y-%m-%d %H:%M:%S+00:00')
+                    date_processed = str(timestamp)
+                    signature = weighted_choice([(
+                        x, self.signatures[x]) for x in self.signatures])
+
+                    now = datetime.datetime.now()
+                    amt = 1
+                    if (
+                        signature == self.explosive_signature and
+                        timestamp.date() == now.date()
+                    ):
+                        amt = 5
+
+                    for i in xrange(amt):
+                        url = weighted_choice(self.urls)
+                        install_age = '1234'
+                        last_crash = '1234'
+                        uptime = '1234'
+                        cpu_name = 'x86'
+                        cpu_info = '...'
+                        reason = weighted_choice([
+                            (x, self.crash_reasons[x])
+                            for x in self.crash_reasons
+                        ])
+                        address = '0xdeadbeef'
+                        os_version = '1.2.3.4'
+                        email = weighted_choice(self.email_addresses)
+                        user_id = ''
+                        started_datetime = str(timestamp)
+                        completed_datetime = str(timestamp)
+                        success = 't'
+                        truncated = 'f'
+                        processor_notes = '...'
+                        user_comments = None
+                        # if there is an email, always include a comment
+                        if email:
+                            user_comments = weighted_choice([
+                                (x, self.comments[x])
+                                for x in self.comments
+                            ])
+                        app_notes = ''
+                        distributor = ''
+                        distributor_version = ''
+                        topmost_filenames = ''
+                        addons_checked = 'f'
+                        flash_version = weighted_choice([
+                            (x, self.flash_versions[x])
+                            for x in self.flash_versions])
+                        hangid = ''
+                        process_type = weighted_choice([
+                            (x, self.process_types[x])
+                            for x in self.process_types])
+
+                        for buildid in buildids:
+                            row = [str(count),
+                                   client_crash_date,
+                                   date_processed,
+                                   self.generate_crashid(timestamp),
+                                   product,
+                                   number,
+                                   buildid,
+                                   signature,
+                                   url,
+                                   install_age,
+                                   last_crash,
+                                   uptime,
+                                   cpu_name,
+                                   cpu_info,
+                                   reason,
+                                   address,
+                                   os_name,
+                                   os_version,
+                                   email,
+                                   user_id,
+                                   started_datetime,
+                                   completed_datetime,
+                                   success,
+                                   truncated,
+                                   processor_notes,
+                                   user_comments,
+                                   app_notes,
+                                   distributor,
+                                   distributor_version,
+                                   topmost_filenames,
+                                   addons_checked,
+                                   flash_version,
+                                   hangid,
+                                   process_type,
+                                   channel_name,
+                                   product_guid,
+                                   exploitability,
+                                   channel_name]
+
+                            yield row
+                            count += 1
+
 
 class Products(BaseTable):
     table = 'products'
@@ -525,134 +649,17 @@ class Reports(BaseTable):
                'update_channel']
 
     def generate_rows(self):
-        count = 0
-        for product in self.releases:
-            cph = self.releases[product]['crashes_per_hour']
-            delta = datetime.timedelta(minutes=(60.0 / int(cph)))
-            for timestamp in date_range(self.start_date, self.end_date, delta):
-                choices = []
-                for channel in self.releases[product]['channels']:
-                    versions = self.releases[product][
-                        'channels'][channel]['versions']
-                    adu = self.releases[product]['channels'][channel]['adu']
-                    for version in versions:
-                        probability = float(version['probability'])
-                        self.releases[product]['channels'][
-                            channel]['name'] = channel
-                        choice = (version, adu, channel)
-                        choices.append((choice, probability))
-
-                (version, adu, channel_name) = weighted_choice(choices)
-                number = version['number']
-                buildids = self.daily_builds(version['buildid'], channel_name)
-                product_guid = self.releases[product]['guid']
-                # TODO enumerate correct values
-                exploitability = 'medium'
-
-                for os_name in self.oses:
-                    # TODO need to review, want to fake more of these
-                    client_crash_date = timestamp.strftime(
-                        '%Y-%m-%d %H:%M:%S+00:00')
-                    date_processed = str(timestamp)
-                    signature = weighted_choice([(
-                        x, self.signatures[x]) for x in self.signatures])
-
-                    now = datetime.datetime.now()
-                    amt = 1
-                    if (signature == self.explosive_signature and
-                        timestamp.date() == now.date()):
-                        amt = 5
-
-                    for i in xrange(amt):
-                        url = weighted_choice(self.urls)
-                        install_age = '1234'
-                        last_crash = '1234'
-                        uptime = '1234'
-                        cpu_name = 'x86'
-                        cpu_info = '...'
-                        reason = weighted_choice([
-                            (x, self.crash_reasons[x])
-                            for x in self.crash_reasons
-                        ])
-                        address = '0xdeadbeef'
-                        os_version = '1.2.3.4'
-                        email = weighted_choice(self.email_addresses)
-                        user_id = ''
-                        started_datetime = str(timestamp)
-                        completed_datetime = str(timestamp)
-                        success = 't'
-                        truncated = 'f'
-                        processor_notes = '...'
-                        user_comments = None
-                        # if there is an email, always include a comment
-                        if email:
-                            user_comments = weighted_choice([
-                                (x, self.comments[x])
-                                for x in self.comments
-                            ])
-                        app_notes = ''
-                        distributor = ''
-                        distributor_version = ''
-                        topmost_filenames = ''
-                        addons_checked = 'f'
-                        flash_version = weighted_choice([
-                            (x, self.flash_versions[x])
-                            for x in self.flash_versions])
-                        hangid = ''
-                        process_type = weighted_choice([
-                            (x, self.process_types[x])
-                            for x in self.process_types])
-
-                        for buildid in buildids:
-                            row = [str(count),
-                                   client_crash_date,
-                                   date_processed,
-                                   self.generate_crashid(timestamp),
-                                   product,
-                                   number,
-                                   buildid,
-                                   signature,
-                                   url,
-                                   install_age,
-                                   last_crash,
-                                   uptime,
-                                   cpu_name,
-                                   cpu_info,
-                                   reason,
-                                   address,
-                                   os_name,
-                                   os_version,
-                                   email,
-                                   user_id,
-                                   started_datetime,
-                                   completed_datetime,
-                                   success,
-                                   truncated,
-                                   processor_notes,
-                                   user_comments,
-                                   app_notes,
-                                   distributor,
-                                   distributor_version,
-                                   topmost_filenames,
-                                   addons_checked,
-                                   flash_version,
-                                   hangid,
-                                   process_type,
-                                   channel_name,
-                                   product_guid,
-                                   exploitability,
-                                   channel_name]
-
-                            yield row
-                            count += 1
+        return self.generate_processed_crash_rows()
 
 
 class ProductProductidMap(BaseTable):
     table = 'product_productid_map'
     columns = ['product_name', 'productid', 'rewrite', 'version_began',
                'version_ended']
-    rows = [['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '1.0'],
-            ['B2G', '{3c2e2abc-06d4-11e1-ac3b-374f68613e61}', 'f', '1.0', '1.0']]
+    rows = [
+        ['WaterWolf', '{waterwolf@example.org}', 'f', '1.0', '1.0'],
+        ['B2G', '{3c2e2abc-06d4-11e1-ac3b-374f68613e61}', 'f', '1.0', '1.0'],
+    ]
 
 
 class RawCrashes(BaseTable):
@@ -753,8 +760,20 @@ class ProcessedCrashes(BaseTable):
     columns = ['uuid', 'processed_crash', 'date_processed']
 
     def generate_rows(self):
-        for crashid, date_processed, in crash_ids:
-            processed_crash = {
+        for data in self.generate_processed_crash_rows():
+            processed_crash = dict(zip((
+                'id', 'client_crash_date', 'date_processed', 'uuid', 'product',
+                'version', 'build', 'signature', 'url', 'install_age',
+                'last_crash', 'uptime', 'cpu_name', 'cpu_info', 'reason',
+                'address', 'os_name', 'os_version', 'email', 'user_id',
+                'started_datetime', 'completed_datetime', 'success',
+                'truncated', 'processor_notes', 'user_comments', 'app_notes',
+                'distributor', 'distributor_version', 'topmost_filenames',
+                'addons_checked', 'flash_version', 'hangid', 'process_type',
+                'release_channel', 'productid', 'exploitability',
+                'update_channel'
+            ), data))
+            processed_crash.update({
                 "ReleaseChannel": "release",
                 "Winsock_LSP": "",
                 "additional_minidumps": [],
@@ -768,26 +787,10 @@ class ProcessedCrashes(BaseTable):
                         "24.3.0"
                     ]
                 ],
-                "addons_checked": True,
-                "address": "0x60943b3c",
-                "app_notes": None,
-                "build": "20140131092626",
-                "client_crash_date": "2014-02-18 23:59:36.000000",
                 "completeddatetime": "2014-02-19 00:00:17.670013",
-                "cpu_info": "GenuineIntel family 6 model 58 stepping 9 | 4",
-                "cpu_name": "x86",
                 "crash_time": 1392767976,
                 "crashedThread": 0,
-                "date_processed": None, #FIXME
-                "distributor": None,
-                "distributor_version": None,
-                "dump": "",
-                "email": None,
-                "exploitability": "low",
-                "flash_version": "[blank]",
                 "hang_type": 0,
-                "hangid": None,
-                "install_age": 754083,
                 "java_stack_trace": None,
                 "json_dump": {
                     "crash_info": {
@@ -855,7 +858,7 @@ class ProcessedCrashes(BaseTable):
                             "version": "2013.4.9.86"
                         },
                     ],
-                            "sensitive": {
+                    "sensitive": {
                         "exploitability": "low"
                     },
                     "status": "OK",
@@ -897,31 +900,15 @@ class ProcessedCrashes(BaseTable):
                         },
                     ],
                 },
-                "last_crash": 105,
-                "os_name": "Windows NT",
-                "os_version": "6.1.7601 Service Pack 1",
                 "pluginFilename": None,
                 "pluginName": None,
                 "pluginVersion": None,
-                "process_type": None,
-                "processor_notes": "socorro-processor1_stage_metrics_phx1_mozilla_com.24717:2012; HybridCrashProcessor",
-                "product": "WaterWolf",
-                "productid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-                "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
-                "release_channel": "esr",
-                "signature": "memcpy | nsACString_internal::Assign(nsCSubstringTuple const&, mozilla::fallible_t const&) | nsACString_internal::Assign(nsCSubstringTuple const&) | nsACString_internal::operator=(nsCSubstringTuple const&)",
-                "startedDateTime": "2014-02-19 00:00:12.474004",
-                "success": True,
-                "topmost_filenames": "f:/dd/vctools/crt_bld/SELF_X86/crt/src/INTEL/memcpy.asm",
-                "truncated": False,
-                "uptime": 94,
-                "url": None,
-                "user_comments": None,
-                "user_id": "",
-                "uuid": crashid,
-                "version": "24.3.0esr"
-            }
-            row = [crashid, json.dumps(processed_crash), date_processed]
+            })
+            row = [
+                processed_crash['uuid'],
+                json.dumps(processed_crash),
+                processed_crash['date_processed']
+            ]
             yield row
 
 
