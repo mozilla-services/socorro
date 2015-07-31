@@ -259,12 +259,20 @@ $(function () {
             var panelElt = $('<div>', {class: 'panel'});
             var headerElt = $('<header>', {class: 'title'});
             var bodyElt = $('<div>', {class: 'body'});
+            var deleteButton = $('<a>', {href: '#', class: 'options delete', text: 'X'})
+
 
             headerElt.append(
-                $('<a>', {href: '#', class: 'options delete', text: 'X'}),
+                deleteButton,
                 $('<h2>', {text: makePanelHeader(field)})
             );
             panelElt.append(headerElt, bodyElt);
+
+            deleteButton.click(function (e) {
+                e.preventDefault();
+                panelElt.remove();
+                enableOption(field);
+            });
 
             // Remove previous results and show loader.
             statusElt.empty();
@@ -282,12 +290,6 @@ $(function () {
                     var dataElt = $(data);
                     bodyElt.empty().append(dataElt);
                     $('.tablesorter').tablesorter();
-
-                    $('.delete', dataElt).click(function (e) {
-                        e.preventDefault();
-                        dataElt.remove();
-                        enableOption(field);
-                    });
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     handleError(statusElt, jqXHR, textStatus, errorThrown);
