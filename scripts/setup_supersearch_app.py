@@ -11,6 +11,7 @@ mapping for processed and raw crashes.
 
 import json
 import os
+from elasticsearch.helpers import bulk
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -39,52 +40,63 @@ class SetupSuperSearchApp(generic_app.App):
     required_config.namespace('elasticsearch')
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
-        default='socorro.external.es.connection_context.'
-                'ConnectionContext',
+        default='socorro.external.es.connection_context.ConnectionContext',
         from_string_converter=class_converter,
     )
     required_config.elasticsearch.add_option(
         'index_creator_class',
-        default='socorro.external.es.crashstorage.'
-                'ESCrashStorage',
+        default='socorro.external.es.index_creator.IndexCreator',
         from_string_converter=class_converter,
     )
 
     def main(self):
-        # Create the socorro index in elasticsearch.
+        es_index = 'socorro'
+
+        es_context = self.config.elasticsearch.elasticsearch_class(
+            config=self.config.elasticsearch
+        )
         index_creator = self.config.elasticsearch.index_creator_class(
             self.config.elasticsearch
         )
-        index_creator.create_index('socorro', None)
+        index_client = index_creator.get_index_client()
+
+        with es_context() as conn:
+            es_connection = conn
+
+        # Create the socorro index in elasticsearch.
+        index_creator.create_index(es_index, None)
 
         # Load the initial data set.
         data_file = open(self.config.supersearch_fields_file, 'r')
         all_fields = json.loads(data_file.read())
 
         # Index the data.
-        es_connection = index_creator.es
-        # XXX ADRIAN: How should this be rewritten now that the old
-        # pyelasticsearch is gone as socorro.external.elasticsearch disappears.
-        es_connection.bulk_index(
-            index='socorro',
-            doc_type='supersearch_fields',
-            docs=all_fields.values(),
-            id_field='name',
+        actions = []
+        for name, field in all_fields.iteritems():
+            action = {
+                '_index': es_index,
+                '_type': 'supersearch_fields',
+                '_id': name,
+                '_source': field,
+            }
+            actions.append(action)
+
+        bulk(
+            client=es_connection,
+            actions=actions,
         )
 
         # Verify data was correctly inserted.
-        es_connection.refresh()
+        index_client.refresh(index=[es_index])
         total_indexed = es_connection.count(
-            '*',
-            index='socorro',
+            index=es_index,
             doc_type='supersearch_fields',
         )['count']
         total_expected = len(all_fields)
 
-        if total_expected != total_indexed:
+        if total_expected > total_indexed:
             indexed_fields = es_connection.search(
-                '*',
-                index='socorro',
+                index=es_index,
                 doc_type='supersearch_fields',
                 size=total_indexed,
             )
