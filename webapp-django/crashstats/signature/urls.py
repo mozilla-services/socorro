@@ -25,6 +25,11 @@ urlpatterns = patterns(
         name='signature_aggregation',
     ),
     url(
+        r'^graphs/(?P<field>\w+)/$',
+        views.signature_graphs,
+        name='signature_graphs',
+    ),
+    url(
         r'^$',
         views.signature_report,
         name='signature_report',

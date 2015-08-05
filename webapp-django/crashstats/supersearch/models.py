@@ -12,6 +12,7 @@ from crashstats.crashstats import models
 
 SUPERSEARCH_META_PARAMS = (
     ('_aggs.signature', list),
+    ('_histogram.date', list),
     ('_columns', list),
     ('_facets', list),
     ('_facets_size', int),

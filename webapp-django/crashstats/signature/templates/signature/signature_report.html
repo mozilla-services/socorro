@@ -45,6 +45,7 @@
 
     <nav id="panels-nav">
         <ul class="tabs">
+            <li><a href="#graphs" class="graphs" data-tab-name="graphs">Graphs</a></li>
             <li><a href="#reports" class="reports" data-tab-name="reports">Reports</a></li>
             <li><a href="#aggregations" class="aggregations" data-tab-name="aggregations">Aggregations</a></li>
             <li><a href="#comments" class="comments" data-tab-name="comments">Comments</a></li>
@@ -74,6 +75,7 @@
 
 <script>
 var SOURCE_URLS = {
+        'graphs': "{{ url('signature:signature_report') }}graphs/",
         'reports': "{{ url('signature:signature_reports') }}",
         'aggregations': "{{ url('signature:signature_report') }}aggregation/",
         'comments': "{{ url('signature:signature_comments') }}",
@@ -103,6 +105,7 @@ var DEFAULT_CHANNEL = '{{ channel }}';
     {% compress js %}
 <script src="{{ static('signature/js/signature_report.js') }}"></script>
 <script src="{{ static('signature/js/signature_tab.js') }}"></script>
+<script src="{{ static('signature/js/signature_tab_graphs.js') }}"></script>
 <script src="{{ static('signature/js/signature_tab_reports.js') }}"></script>
 <script src="{{ static('signature/js/signature_tab_aggregations.js') }}"></script>
 <script src="{{ static('signature/js/signature_tab_comments.js') }}"></script>

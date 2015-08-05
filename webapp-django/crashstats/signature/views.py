@@ -215,11 +215,6 @@ def signature_aggregation(request, aggregation):
     params['_results_offset'] = 0
     params['_facets'] = [aggregation]
 
-    data['current_url'] = '%s?%s' % (
-        reverse('signature:signature_report'),
-        current_query.urlencode()
-    )
-
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
@@ -235,6 +230,53 @@ def signature_aggregation(request, aggregation):
     data['total_count'] = search_results['total']
 
     return render(request, 'signature/signature_aggregation.html', data)
+
+
+@waffle_switch('signature-report')
+@utils.json_view
+def signature_graphs(request, field):
+    '''Return a multi-line graph of crashes per day grouped by field. '''
+    params = get_validated_params(request)
+    if isinstance(params, http.HttpResponseBadRequest):
+        # There was an error in the form, let's return it.
+        return params
+
+    signature = params['signature'][0]
+
+    data = {}
+    data['aggregation'] = field
+
+    allowed_fields = get_allowed_fields(request.user)
+
+    # Make sure the field we want to aggregate on is allowed.
+    if field not in allowed_fields:
+        return http.HttpResponseBadRequest(
+            '<ul><li>'
+            'You are not allowed to group by the "%s" field'
+            '</li></ul>' % field
+        )
+
+    current_query = request.GET.copy()
+    data['params'] = current_query.copy()
+
+    params['signature'] = '=' + signature
+    params['_results_number'] = 0
+    params['_results_offset'] = 0
+    params['_histogram.date'] = [field]
+    params['_facets'] = [field]
+
+    api = SuperSearchUnredacted()
+    try:
+        search_results = api.get(**params)
+    except models.BadStatusCodeError, e:
+        # We need to return the error message in some HTML form for jQuery to
+        # pick it up.
+        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+
+    data['aggregates'] = search_results['facets']['histogram_date']
+    data['term_counts'] = search_results['facets'][field]
+
+    return data
 
 
 @waffle_switch('signature-report')

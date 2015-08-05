@@ -1,5 +1,6 @@
 import mock
 import pyquery
+import json
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
@@ -335,6 +336,97 @@ class TestViews(BaseTestViews):
         ok_(str(1337 / 1382 * 100) in response.content)
         ok_('windows' in response.content)
         ok_('mac' in response.content)
+
+    def test_signature_graphs(self):
+
+        def mocked_supersearch_get(**params):
+            ok_('signature' in params)
+            eq_(params['signature'], ['=' + DUMB_SIGNATURE])
+
+            ok_('_histogram.date' in params)
+            ok_('_facets' in params)
+
+            if 'product' in params['_facets']:
+                return {
+                    "hits": [],
+                    "total": 4,
+                    "facets": {
+                        "product": [
+                            {
+                                "count": 4,
+                                "term": "WaterWolf"
+                            }
+                        ],
+                        "histogram_date": [
+                            {
+                                "count": 2,
+                                "term": "2015-08-05T00:00:00+00:00",
+                                "facets": {
+                                    "product": [
+                                        {
+                                            "count": 2,
+                                            "term": "WaterWolf"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "count": 2,
+                                "term": "2015-08-06T00:00:00+00:00",
+                                "facets": {
+                                    "product": [
+                                        {
+                                            "count": 2,
+                                            "term": "WaterWolf"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+
+            return {
+                "hits": [],
+                "total": 0,
+                "facets": {
+                    "platform": [],
+                    "signature": [],
+                    "histogram_date": []
+                }
+            }
+
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+
+        # Test with no results
+        url = reverse(
+            'signature:signature_graphs',
+            args=('platform',)
+        )
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_('aggregates' in struct)
+        eq_(len(struct['aggregates']), 0)
+        ok_('term_counts' in struct)
+        eq_(len(struct['term_counts']), 0)
+
+        # Test with results
+        url = reverse(
+            'signature:signature_graphs',
+            args=('product',)
+        )
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        ok_('aggregates' in struct)
+        eq_(len(struct['aggregates']), 2)
+        ok_('term_counts' in struct)
+        eq_(len(struct['term_counts']), 1)
 
     def test_signature_comments(self):
 

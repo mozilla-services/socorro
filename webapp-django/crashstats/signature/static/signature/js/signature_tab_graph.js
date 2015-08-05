@@ -177,6 +177,7 @@ SignatureReport.GraphTab.prototype.drawGraph = function(data, contentElement) {
         xax_start_at_min: true,
         decimals: 10,
         area: false,
+        show_secondary_x_label: false,
         mouseover: function(d, i) {
             $('.mg-active-datapoint')
                 .html('Build ID: ' + data[i].build_id +
