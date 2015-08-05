@@ -85,7 +85,16 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
     if conn.lookup(bucket_name):
         bucket = conn.get_bucket(bucket_name)
     else:
-        bucket = conn.create_bucket(bucket_name, bucket_location)
+        try:
+            bucket = conn.create_bucket(bucket_name, bucket_location)
+        except AttributeError as exception:
+            # This extra exception trap is temporary until we can figure
+            # out why sometimes we get AttributeErrors here.
+            raise AttributeError(
+                '%s (bucket_name=%r, bucket_location=%r)' % (
+                    exception, bucket_name, bucket_location
+                )
+            )
 
     total_uploaded = 0
     for member in iterator:
