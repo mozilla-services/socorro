@@ -82,9 +82,8 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
     )
     assert bucket_name
 
-    if conn.lookup(bucket_name):
-        bucket = conn.get_bucket(bucket_name)
-    else:
+    bucket = conn.lookup(bucket_name)
+    if bucket is None:
         try:
             bucket = conn.create_bucket(bucket_name, bucket_location)
         except AttributeError as exception:
