@@ -2,8 +2,6 @@ import os
 import shutil
 import tempfile
 
-import boto
-import boto.exception
 from nose.tools import eq_, ok_, assert_raises
 import mock
 
@@ -61,8 +59,8 @@ class TestViews(BaseTestViews):
         # settings/base.py or any local overrides
         settings.SYMBOLS_COMPRESS_EXTENSIONS = ('sym',)
 
-        def mocked_get_bucket(*a, **k):
-            raise boto.exception.S3ResponseError(404, "Not found")
+        def mocked_lookup(*a, **k):
+            return False
 
         def mocked_create_bucket(name, location):
 
@@ -98,7 +96,7 @@ class TestViews(BaseTestViews):
             mocked_bucket.get_key.side_effect = mocked_get_key
             return mocked_bucket
 
-        mocked_connect_s3().get_bucket = mocked_get_bucket
+        mocked_connect_s3().lookup = mocked_lookup
         mocked_connect_s3().create_bucket = mocked_create_bucket
 
     def tearDown(self):
