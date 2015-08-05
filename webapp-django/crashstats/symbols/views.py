@@ -74,9 +74,10 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
         calling_format=boto.s3.connection.OrdinaryCallingFormat(),
     )
     assert bucket_name
-    try:
+
+    if conn.lookup(bucket_name):
         bucket = conn.get_bucket(bucket_name)
-    except boto.exception.S3ResponseError:
+    else:
         bucket = conn.create_bucket(bucket_name, bucket_location)
 
     total_uploaded = 0
