@@ -39,14 +39,14 @@ class SetupSuperSearchApp(generic_app.App):
     required_config.namespace('elasticsearch')
     required_config.elasticsearch.add_option(
         'elasticsearch_class',
-        default='socorro.external.elasticsearch.connection_context.'
+        default='socorro.external.es.connection_context.'
                 'ConnectionContext',
         from_string_converter=class_converter,
     )
     required_config.elasticsearch.add_option(
         'index_creator_class',
-        default='socorro.external.elasticsearch.crashstorage.'
-                'ElasticSearchCrashStorage',
+        default='socorro.external.es.crashstorage.'
+                'ESCrashStorage',
         from_string_converter=class_converter,
     )
 
@@ -63,6 +63,8 @@ class SetupSuperSearchApp(generic_app.App):
 
         # Index the data.
         es_connection = index_creator.es
+        # XXX ADRIAN: How should this be rewritten now that the old
+        # pyelasticsearch is gone as socorro.external.elasticsearch disappears.
         es_connection.bulk_index(
             index='socorro',
             doc_type='supersearch_fields',

@@ -17,7 +17,7 @@ class ElasticsearchCleanupCronApp(BaseCronApp):
     required_config = Namespace()
     required_config.add_option(
         'elasticsearch_cleaner_class',
-        default='socorro.external.elasticsearch.index_cleaner.IndexCleaner',
+        default='socorro.external.es.index_cleaner.IndexCleaner',
         doc='a class that handles the deletion of obsolete indices',
         from_string_converter=class_converter,
     )

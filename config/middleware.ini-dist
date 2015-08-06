@@ -336,7 +336,7 @@
 [implementations]
 
     # list of packages for service implementations
-    #implementation_list=psql: socorro.external.postgresql, hbase: socorro.external.hb, es: socorro.external.elasticsearch, fs: socorro.external.fs, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq
+    #implementation_list=psql: socorro.external.postgresql, hbase: socorro.external.hb, es: socorro.external.es, fs: socorro.external.fs, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq
 
     # comma separated list of class overrides, e.g `Crashes: hbase`
     #service_overrides=CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq, Query: es
@@ -485,4 +485,3 @@
 
     # the maximum date range for searches, in days
     #search_maximum_date_range=365
-

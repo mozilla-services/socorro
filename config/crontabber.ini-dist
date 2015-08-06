@@ -16,7 +16,7 @@
         #elasticsearch_base_settings=./socorro/external/elasticsearch/mappings/socorro_index_settings.json
 
         # None
-        #elasticsearch_class=socorro.external.elasticsearch.connection_context.ConnectionContext
+        #elasticsearch_class=socorro.external.es.connection_context.ConnectionContext
 
         # the default index used to store data
         #elasticsearch_default_index=socorro
@@ -393,7 +393,7 @@
             #elasticsearch_base_settings=./socorro/external/elasticsearch/mappings/socorro_index_settings.json
 
             # None
-            #elasticsearch_class=socorro.external.elasticsearch.connection_context.ConnectionContext
+            #elasticsearch_class=socorro.external.es.connection_context.ConnectionContext
 
             # the default index used to store data
             # see "resource.elasticsearch.elasticsearch_default_index" for the default or override it here
@@ -428,7 +428,7 @@
             #forbidden_keys=url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive,memory_info
 
             # None
-            #index_creator_class=socorro.external.elasticsearch.crashstorage.ElasticSearchCrashStorage
+            #index_creator_class=socorro.external.es.crashstorage.ESCrashStorage
 
             # the name of the class that implements a 'redact' method
             # see "resource.redactor.redactor_class" for the default or override it here
@@ -843,7 +843,7 @@
 
             # None
             # see "resource.elasticsearch.elasticsearch_class" for the default or override it here
-            #elasticsearch_class=socorro.external.elasticsearch.connection_context.ConnectionContext
+            #elasticsearch_class=socorro.external.es.connection_context.ConnectionContext
 
             # the default index used to store data
             # see "resource.elasticsearch.elasticsearch_default_index" for the default or override it here

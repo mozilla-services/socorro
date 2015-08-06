@@ -161,7 +161,7 @@ Classes:
   know which crashes are new.
 
 * `FSLegacyRadixTreeStorage` - Doesn't have a queueing mechanism. Processors
-  can use these for local storage that doesn't require any knowledge of queueing. 
+  can use these for local storage that doesn't require any knowledge of queueing.
   Backwards compatible with `socorro.external.filesystem` (aka the 2009 system).
 
 * `FSLegacyDatedRadixTreeStorage` - In production use on collectors. Use
@@ -298,15 +298,6 @@ socorro.external.rabbitmq.rmq_new_crash_source
 A pluggable Functor/generator for feeding new crashes to the processor,
 implemented as a wrapper around new_crashes().
 
-socorro.external.elasticsearch
-------------------------------
-
-TBD by adrian.
-
-.. ############################################################################
-   To be DEPRECATED
-   ############################################################################
-
 socorro.external.filesystem
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -336,7 +327,7 @@ Which classes are used with which _app
   `socorro.external.hb`. In testing we use `socorro.external.fs`.
 
 * `socorro.processor.processor_app`: In production: reads from `socorro.external.hb`, writes to
-  `socorro.external.elasticsearch`, `socorro.external.hb` and `socorro.external.postgresql`
+  `socorro.external.es`, `socorro.external.hb` and `socorro.external.postgresql`
   using `PolyCrashStore`. In testing we use `socorro.external.fs`,
   `socorro.external.rabbitmq`, and `socorro.external.postgresql`.
 
@@ -369,4 +360,3 @@ Potential Edicts
 
 * Every middleware service provides an implementation that ends in ``_service``.
 * Every container has an attribute that describes it as a container!
-
