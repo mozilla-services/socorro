@@ -16,11 +16,7 @@ services:
 before_install:
   - npm install -g less
   - gem install puppet puppet-lint
-  - wget --no-check-certificate 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.10.tar.gz'
-  - tar zxf elasticsearch-0.90.10.tar.gz
-  # Note! bin/elasticsearch will start ES in the background automatically.
-  #    # That's why this works without using a service or a trailing &
-  - ./elasticsearch-0.90.10/bin/elasticsearch
+  - ./scripts/start-travis-elasticsearch.sh
 
 install: true
 
