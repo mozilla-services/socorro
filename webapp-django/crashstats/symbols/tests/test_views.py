@@ -60,7 +60,7 @@ class TestViews(BaseTestViews):
         settings.SYMBOLS_COMPRESS_EXTENSIONS = ('sym',)
 
         def mocked_lookup(*a, **k):
-            return False
+            return None
 
         def mocked_create_bucket(name, location):
 
