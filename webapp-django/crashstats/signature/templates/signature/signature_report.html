@@ -56,7 +56,7 @@
         Shows a loading bar, is displayed by default when the page is
         loading initial data.
     -->
-    <section class="panel" id="loading-panel">
+    <section class="panel tab-panel" id="loading-panel">
         <header class="title">
             <h2>Loading&hellip;</h2>
         </header>
@@ -65,111 +65,6 @@
             <div class="loader"></div>
         </div>
     </section>
-
-    <!-- Reports panel.
-        Displays a list of crash reports that have the current signature.
-    -->
-    <section class="panel" id="reports-panel"
-        data-source-url="{{ url('signature:signature_reports') }}"
-    >
-        <header class="title">
-            <h2>Crash Reports</h2>
-        </header>
-
-        <div class="body">
-            <div class="controls">
-                <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
-                <!-- This second input is required by select2 for sorting. -->
-                <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
-                <button type="submit">Update</button>
-                <hr>
-            </div>
-
-            <div class="content">
-                <div class="loader"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Aggregations panel.
-        Displays tables with aggregations of one or several fields.
-    -->
-    <section class="panel" id="aggregations-panel"
-        data-source-url="{{ url('signature:signature_report') }}aggregation/"
-    >
-        <header class="title">
-            <h2>Aggregations</h2>
-        </header>
-
-        <div class="body">
-            <div class="controls">
-                <select class="fields-list">
-                    <option></option>
-                    {% for field in fields %}
-                    <option value="{{ field.id }}">{{ field.text }}</option>
-                    {% endfor %}
-                </select>
-                <hr>
-            </div>
-
-            <div class="status"></div>
-
-            <div class="content"></div>
-            <div class="clear"></div>
-        </div>
-    </section>
-
-    <!-- Comments panel.
-        Displays a list of user comments from crash reports that have the
-        current signature.
-    -->
-    <section class="panel" id="comments-panel"
-        data-source-url="{{ url('signature:signature_comments') }}"
-    >
-        <header class="title">
-            <h2>User Comments</h2>
-        </header>
-
-        <div class="body">
-            <div class="content">
-                <div class="loader"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Graph panel.
-        Displays a graph of crashes/ADU against build date
-    -->
-    <section class="panel" id="graph-panel"
-        data-source-url="{{ url('signature:signature_report') }}graphdata/"
-    >
-        <header class="title">
-            <h2>Graph</h2>
-        </header>
-
-        <div class="body">
-            <div class="controls">
-                <select class="channels-list">
-                    <option></option>
-                    {% for channel in channels %}
-                    <option value="{{ channel }}">{{ channel }}</option>
-                    {% endfor %}
-                </select>
-                <hr>
-            </div>
-            <div class="content">
-                <div class="panel">
-                    <header class="title">
-                        <h2>ADU by signature</h2>
-                    </header>
-                    <div class="body">
-                        <div class="adu-graph" id="adu-graph"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
 </div>
 {% endblock %}
 
@@ -178,8 +73,16 @@
     {{ super() }}
 
 <script>
+var SOURCE_URLS = {
+        'reports': "{{ url('signature:signature_reports') }}",
+        'aggregations': "{{ url('signature:signature_report') }}aggregation/",
+        'comments': "{{ url('signature:signature_comments') }}",
+        'graph': "{{ url('signature:signature_report') }}graphdata/"
+    };
 var BASE_URL = location.protocol + '//' + location.host;
 var FIELDS = {{ fields | json_dumps }};
+var CHANNELS = {{ channels | json_dumps }}
+var COLUMNS = {{ columns | join(', ') | json_dumps }};
 var DEFAULT_CHANNEL = '{{ channel }}';
 </script>
 
@@ -199,6 +102,12 @@ var DEFAULT_CHANNEL = '{{ channel }}';
 
     {% compress js %}
 <script src="{{ static('signature/js/signature_report.js') }}"></script>
+<script src="{{ static('signature/js/signature_tab.js') }}"></script>
+<script src="{{ static('signature/js/signature_tab_reports.js') }}"></script>
+<script src="{{ static('signature/js/signature_tab_aggregations.js') }}"></script>
+<script src="{{ static('signature/js/signature_tab_comments.js') }}"></script>
+<script src="{{ static('signature/js/signature_tab_graph.js') }}"></script>
+<script src="{{ static('signature/js/signature_panel.js') }}"></script>
     {% endcompress %}
 
 {% endblock %}

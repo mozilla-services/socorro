@@ -74,7 +74,7 @@ a.crash-id {
     }
 }
 
-#reports-panel {
+.reports-panel {
     .controls {
         input {
             width: 800px;
@@ -82,23 +82,13 @@ a.crash-id {
     }
 }
 
-#aggregations-panel {
+section.aggregations-panel {
     .panel {
-        float: left;
+        display: inline-block;
+        vertical-align: top;
         width: 45%;
         margin-left: 2.5%;
         margin-right: 2.5%;
-
-        .options {
-            background-image: url('../../img/3rdparty/silk/cross.png');
-            display: inline-block;
-            float: right;
-            height: 16px;
-            margin-top: 10px;
-            padding: 4px;
-            text-indent: -9999px;
-            width: 16px;
-        }
     }
 
     .controls {
@@ -118,10 +108,21 @@ a.crash-id {
     }
 }
 
-#graph-panel {
+.graph-panel {
     .controls {
         .channels-list {
             width: 30%;
         }
     }
+}
+
+.tab-inner-panel .delete {
+    background-image: url('../../img/3rdparty/silk/cross.png');
+    display: inline-block;
+    float: right;
+    height: 16px;
+    margin-top: 10px;
+    padding: 4px;
+    text-indent: -9999px;
+    width: 16px;
 }

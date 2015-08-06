@@ -6,6 +6,11 @@
     opacity: 0.8;
 }
 
+/* Make title smaller */
+.mg-chart-title {
+    font-size: 1.2rem;
+}
+
 /* Colours to override defaults for multi-line graphs */
 .mg-line1-color,
 .mg-hover-line1-color {
