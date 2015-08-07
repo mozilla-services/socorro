@@ -75,6 +75,7 @@ SERVICES_LIST = (
     (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
+    (r'/adi/(.*)', 'adi.ADI'),
 )
 
 # certain items in a URL path should NOT be split by `+`
@@ -550,7 +551,7 @@ class ImplementationWrapper(JsonWebServiceBase):
         except AttributeError:
             try:
                 if (method_name == 'post' and
-                    getattr(instance, 'create', None)):
+                   getattr(instance, 'create', None)):
                     # use the `create` alias
                     method = instance.create
                 elif (method_name == 'put' and
