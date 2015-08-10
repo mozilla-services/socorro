@@ -135,6 +135,7 @@ $(function() {
                     x_accessor: 'date',
                     y_accessor: 'ratio',
                     xax_start_at_min: true,
+                    utc_time: true,
                     interpolate: 'basic',
                     area: false,
                     legend: legend,
