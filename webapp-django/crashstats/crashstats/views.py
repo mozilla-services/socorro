@@ -2020,7 +2020,7 @@ def signature_summary(request):
             'version': r['version_string'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count'],
-            'rank': r['currentRank']})
+            'rank': r.get('currentRank', '') })
     for r in result['uptimeRange']:
         signature_summary['uptimeRange'].append({
             'range': r['category'],
