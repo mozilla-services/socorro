@@ -139,7 +139,8 @@ $(function() {
                     interpolate: 'basic',
                     area: false,
                     legend: legend,
-                    legend_target: '#homepage-graph-legend'
+                    legend_target: '#homepage-graph-legend',
+                    show_secondary_x_label: false
                 });
             } else {
                 chartContainer.empty().append("No Active Daily User crash data is available for this report.");
