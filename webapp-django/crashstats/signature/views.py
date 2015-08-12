@@ -314,6 +314,12 @@ def signature_graph_data(request, channel):
         return params
 
     signature = params['signature'][0]
+
+    # Check that a product was specified
+    if not params['product'] or not params['product'][0]:
+        return http.HttpResponseBadRequest(
+            '"product" parameter is mandatory'
+        )
     product = params['product'][0]
 
     # Initialise start and end dates
