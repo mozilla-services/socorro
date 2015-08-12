@@ -237,72 +237,11 @@ class MiddlewareApp(App):
         reference_value_from='resource.elasticsearch',
     )
     required_config.webapi.add_option(
-        'elasticsearch_urls',
-        default=['http://localhost:9200'],
-        doc='the urls to the elasticsearch instances',
-        from_string_converter=string_to_list,
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.add_option(
-        'elasticsearch_default_index',
-        default='socorro',
-        doc='the default index used to store data',
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.webapi.add_option(
-        'elasticsearch_index',
-        default='socorro%Y%W',
-        doc='an index format to pull crashes from elasticsearch '
-            "(use datetime's strftime format to have "
-            'daily, weekly or monthly indexes)',
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.webapi.add_option(
-        'elasticsearch_doctype',
-        default='crash_reports',
-        doc='the default doctype to use in elasticsearch',
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.webapi.add_option(
-        'elasticsearch_timeout',
-        default=30,
-        doc='the time in seconds before a query to elasticsearch fails',
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.webapi.add_option(
-        'elasticsearch_timeout_extended',
-        default=120,
-        doc='the time in seconds before a query to elasticsearch fails in '
-            'restricted sections',
-        reference_value_from='resource.elasticsearch',
-    )
-    required_config.webapi.add_option(
-        'facets_max_number',
-        default=50,
-        doc='the maximum number of results a facet will return in search'
-    )
-    required_config.webapi.add_option(
-        'mapping_test_crash_number',
-        default=100,
-        doc='the number of crash reports to test against when attempting to '
-            'validate a new Elasticsearch mapping. ',
-    )
-    required_config.webapi.add_option(
         'searchMaxNumberOfDistinctSignatures',
         default=1000,
         doc='Integer containing the maximum allowed number of distinct '
             'signatures the system should retrieve. Used mainly for '
             'performances in ElasticSearch'
-    )
-    required_config.webapi.add_option(
-        'search_default_date_range',
-        default=7,  # in days
-        doc='the default date range for searches, in days'
-    )
-    required_config.webapi.add_option(
-        'search_maximum_date_range',
-        default=365,  # in days
-        doc='the maximum date range for searches, in days'
     )
     required_config.webapi.add_option(
         'platforms',

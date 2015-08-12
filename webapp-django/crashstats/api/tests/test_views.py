@@ -14,8 +14,12 @@ from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response,
 )
-from crashstats.supersearch.tests.test_views import (
+from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
+)
+from crashstats.supersearch.models import (
+    SuperSearch,
+    SuperSearchFields,
 )
 from crashstats.tokens.models import Token
 
@@ -38,13 +42,15 @@ class TestDedentLeft(TestCase):
 
 class TestDocumentationViews(BaseTestViews):
 
-    @mock.patch('requests.get')
-    def test_documentation_home_page(self, rget):
-        def mocked_get(url, params, **options):
-            if '/supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
+    def test_documentation_home_page(self, supersearchfields):
 
-        rget.side_effect = mocked_get
+        def mocked_supersearchfields_get_fields(**params):
+            return SUPERSEARCH_FIELDS_MOCKED_RESULTS
+
+        supersearchfields().get.side_effect = (
+            mocked_supersearchfields_get_fields
+        )
 
         url = reverse('api:documentation')
         response = self.client.get(url)
@@ -1699,17 +1705,14 @@ class TestViews(BaseTestViews):
             response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_SuperSearch(self, rget, supersearch):
+    def test_SuperSearch(self):
 
-        def mocked_get(url, params, **options):
-            if '/supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+        def mocked_supersearchfields(**params):
+            return SUPERSEARCH_FIELDS_MOCKED_RESULTS
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields
+        )
 
         def mocked_supersearch_get(**params):
             ok_('exploitability' not in params)
@@ -1738,7 +1741,7 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('api:model_wrapper', args=('SuperSearch',))
         response = self.client.get(url)
@@ -1769,17 +1772,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_SuperSearchUnredacted(self, rget, supersearch):
-
-        def mocked_get(url, params, **options):
-            if '/supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_SuperSearchUnredacted(self):
 
         def mocked_supersearch_get(**params):
             ok_('exploitability' in params)
@@ -1803,7 +1796,7 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
         response = self.client.get(url, {'exploitability': 'high'})

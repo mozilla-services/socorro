@@ -45,6 +45,16 @@ class SuperSearchFields(ElasticsearchBase):
             for r in results['hits']['hits']
         )
 
+    # The reason for this alias is because this class gets used from
+    # the webapp and it expects to be able to execute
+    # SuperSearchFields.get() but there's a subclass of this class
+    # called SuperSearchMissingFields which depends on calling
+    # self.get_fields(). That class has its own `get` method.
+    # If you don't refer to `get_fields` with `get_fields` you'd get
+    # an infinite recursion loop.
+
+    get = get_fields
+
     def create_field(self, **kwargs):
         """Create a new field in the database, to be used by supersearch and
         all Elasticsearch related services.
@@ -174,7 +184,7 @@ class SuperSearchFields(ElasticsearchBase):
             # objects in the back-end). We therefore want to remove that field
             # before we do the merge, so that it is entirely overwritten.
             es_connection.update(
-                index=self.config.elasticsearch_default_index,
+                index=self.config.elasticsearch.elasticsearch_default_index,
                 doc_type='supersearch_fields',
                 body={'script': 'ctx._source.remove("storage_mapping")'},
                 id=params['name'],
@@ -184,7 +194,7 @@ class SuperSearchFields(ElasticsearchBase):
         # takes care of merging the new document into the old one, so missing
         # values won't be changed.
         es_connection.update(
-            index=self.config.elasticsearch_default_index,
+            index=self.config.elasticsearch.elasticsearch_default_index,
             doc_type='supersearch_fields',
             body={'doc': params},
             id=params['name'],
@@ -383,7 +393,6 @@ class SuperSearchFields(ElasticsearchBase):
         # Import at runtime to avoid dependency circle.
         from socorro.external.es.index_creator import IndexCreator
         index_creator = IndexCreator(self.config)
-
         try:
             index_creator.create_index(
                 temp_index,
@@ -397,7 +406,7 @@ class SuperSearchFields(ElasticsearchBase):
             crashes_sample = es_connection.search(
                 index=current_indices,
                 doc_type=self.config.elasticsearch.elasticsearch_doctype,
-                size=self.config.webapi.mapping_test_crash_number,
+                size=self.config.elasticsearch.mapping_test_crash_number,
             )
             crashes = [x['_source'] for x in crashes_sample['hits']['hits']]
 
@@ -420,3 +429,13 @@ class SuperSearchFields(ElasticsearchBase):
                 # If the index does not exist (if the index creation failed
                 # for example), we don't need to do anything.
                 pass
+
+
+class SuperSearchMissingFields(SuperSearchFields):
+
+    def get(self):
+        # This is the whole reason for making this subclass.
+        # This way we can get a dedicated class with a single get method
+        # so that it becomes easier to use the big class for multiple
+        # API purposes.
+        return super(SuperSearchMissingFields, self).get_missing_fields()

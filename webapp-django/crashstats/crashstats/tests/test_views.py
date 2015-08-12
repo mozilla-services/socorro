@@ -32,7 +32,7 @@ from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
 )
-
+from crashstats.supersearch.models import SuperSearchFields, SuperSearch
 from .test_models import Response
 
 
@@ -407,41 +407,53 @@ class BaseTestViews(DjangoTestCase):
                  }
                       """ % {'end_date': now.strftime('%Y-%m-%d'),
                              'yesterday': yesterday.strftime('%Y-%m-%d')})
-            if '/supersearch/fields/' in url:
-                results = copy.copy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-                # to be realistic we want to introduce some dupes
-                # that have a different key but its `in_database_name`
-                # is one that is already in the hardcoded list (the
-                # baseline)
-                assert 'accessibility' not in results
-                results['accessibility'] = {
-                    'name': 'accessibility',
-                    'query_type': 'string',
-                    'namespace': 'raw_crash',
-                    'form_field_choices': None,
-                    'permissions_needed': [],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                    'in_database_name': 'Accessibility',
-                }
-                return Response(results)
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_supersearchfields(**params):
+            results = copy.copy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+            # to be realistic we want to introduce some dupes
+            # that have a different key but its `in_database_name`
+            # is one that is already in the hardcoded list (the
+            # baseline)
+            assert 'accessibility' not in results
+            results['accessibility'] = {
+                'name': 'accessibility',
+                'query_type': 'string',
+                'namespace': 'raw_crash',
+                'form_field_choices': None,
+                'permissions_needed': [],
+                'default_value': None,
+                'is_exposed': True,
+                'is_returned': True,
+                'is_mandatory': False,
+                'in_database_name': 'Accessibility',
+            }
+            return results
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields
+        )
+        # This will make sure the cache is pre-populated
+        SuperSearchFields().get()
 
         # call these here so it gets patched for each test because
         # it gets used so often
         from crashstats.crashstats.models import CurrentVersions, Platforms
         CurrentVersions().get()
         Platforms().get()
-        from crashstats.supersearch.models import SuperSearchFields
-        SuperSearchFields().get()
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()
         cache.clear()
+
+        from crashstats.crashstats.models import SocorroCommon
+        # We use a memoization technique on the SocorroCommon so that we
+        # can get the same implementation class instance repeatedly under
+        # the same request. This is great for low-level performance but
+        # it makes it impossible to test classes that are imported only
+        # once like they are in unit test running.
+        SocorroCommon._implementations = {}
 
     def _login(self):
         user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
@@ -2716,32 +2728,27 @@ class TestViews(BaseTestViews):
         eq_(data['broken'], ['job1'])
         eq_(data['blocked'], ['job2', 'job3'])
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_your_crashes(self, rget, supersearch):
+    def test_your_crashes(self):
         url = reverse('crashstats:your_crashes')
 
-        def mocked_get(url, params, **options):
-            assert '/supersearch/' in url
+        def mocked_supersearchfields(**params):
+            return {
+                'email': {
+                    'name': 'email',
+                    'query_type': 'string',
+                    'namespace': 'processed_crash',
+                    'form_field_choices': None,
+                    'permissions_needed': ['crashstats.view_pii'],
+                    'default_value': None,
+                    'is_exposed': True,
+                    'is_returned': True,
+                    'is_mandatory': False,
+                }
+            }
 
-            if '/supersearch/fields/' in url:
-                return Response({
-                    'email': {
-                        'name': 'email',
-                        'query_type': 'string',
-                        'namespace': 'processed_crash',
-                        'form_field_choices': None,
-                        'permissions_needed': ['crashstats.view_pii'],
-                        'default_value': None,
-                        'is_exposed': True,
-                        'is_returned': True,
-                        'is_mandatory': False,
-                    }
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        SuperSearchFields.implementation().get.side_effect = (
+            mocked_supersearchfields
+        )
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -2763,7 +2770,7 @@ class TestViews(BaseTestViews):
             }
             return results
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         # A user needs to be signed in to see this page.
         response = self.client.get(url)
@@ -2781,32 +2788,8 @@ class TestViews(BaseTestViews):
         ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
         ok_('test@mozilla.com' in response.content)
 
-    @mock.patch('socorro.external.es.supersearch.SuperSearch')
-    @mock.patch('requests.get')
-    def test_your_crashes_no_data(self, rget, supersearch):
+    def test_your_crashes_no_data(self):
         url = reverse('crashstats:your_crashes')
-
-        def mocked_get(url, params, **options):
-            assert '/supersearch/' in url
-
-            if '/supersearch/fields/' in url:
-                return Response({
-                    'email': {
-                        'name': 'email',
-                        'query_type': 'string',
-                        'namespace': 'processed_crash',
-                        'form_field_choices': None,
-                        'permissions_needed': ['crashstats.view_pii'],
-                        'default_value': None,
-                        'is_exposed': True,
-                        'is_returned': True,
-                        'is_mandatory': False,
-                    }
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             assert 'email' in params
@@ -2817,7 +2800,7 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        supersearch().get.side_effect = mocked_supersearch_get
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
 
         self._login()
 

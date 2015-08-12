@@ -45,7 +45,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get_indices(dates)
         eq_(res, ['socorro_integration_test_reports'])
 
-        config = self.get_mware_config(es_index='socorro_%Y%W')
+        config = self.get_base_config(es_index='socorro_%Y%W')
         api = SuperSearch(config=config)
 
         dates = [
@@ -1158,7 +1158,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
     def test_get_against_nonexistent_index(self):
-        config = self.get_mware_config(es_index='socorro_test_reports_%W')
+        config = self.get_base_config(es_index='socorro_test_reports_%W')
         api = SuperSearch(config=config)
         params = {
             'date': ['>2000-01-01T00:00:00', '<2000-01-10T00:00:00']

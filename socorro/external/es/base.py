@@ -4,6 +4,51 @@
 
 import datetime
 
+from configman import Namespace, class_converter
+
+from socorro.app.generic_app import App
+
+
+class ElasticsearchConfig(App):
+
+    required_config = Namespace()
+    required_config.namespace('elasticsearch')
+    required_config.elasticsearch.add_option(
+        'elasticsearch_class',
+        doc='a class that implements the ES connection object',
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter
+    )
+    required_config.elasticsearch.add_option(
+        'elasticsearch_timeout_extended',
+        default=120,
+        doc='the time in seconds before a query to elasticsearch fails in '
+            'restricted sections',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.elasticsearch.add_option(
+        'facets_max_number',
+        default=50,
+        doc='the maximum number of results a facet will return in search'
+    )
+    required_config.elasticsearch.add_option(
+        'mapping_test_crash_number',
+        default=100,
+        doc='the number of crash reports to test against when attempting to '
+            'validate a new Elasticsearch mapping. ',
+    )
+    # shared and not specifically in the elasticsearch config
+    required_config.add_option(
+        'search_default_date_range',
+        default=7,  # in days
+        doc='the default date range for searches, in days'
+    )
+    required_config.add_option(
+        'search_maximum_date_range',
+        default=365,  # in days
+        doc='the maximum date range for searches, in days'
+    )
+
 
 class ElasticsearchBase(object):
 

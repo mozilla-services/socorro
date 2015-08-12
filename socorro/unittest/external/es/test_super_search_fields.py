@@ -62,7 +62,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         res = self.api.create_field(**params)
         ok_(res)
         field = self.connection.get(
-            index=self.config.webapi.elasticsearch_default_index,
+            index=self.config.elasticsearch.elasticsearch_default_index,
             doc_type='supersearch_fields',
             id='plotfarm',
         )
@@ -80,7 +80,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         ok_(res)
         ok_(
             self.connection.get(
-                index=self.config.webapi.elasticsearch_default_index,
+                index=self.config.elasticsearch.elasticsearch_default_index,
                 doc_type='supersearch_fields',
                 id='brand_new_field',
             )
@@ -201,7 +201,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
 
     @minimum_es_version('1.0')
     def test_get_missing_fields(self):
-        config = self.get_mware_config(
+        config = self.get_base_config(
             es_index='socorro_integration_test_%W'
         )
 
