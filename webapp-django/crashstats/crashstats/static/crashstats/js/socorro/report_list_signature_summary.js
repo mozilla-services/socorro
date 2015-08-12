@@ -4,7 +4,7 @@
 var Templates = {};
 Templates.percentageByOs = "{{#percentageByOs}} <tr><td> {{os}} </td><td> {{percentage}} %</td><td> {{numberOfCrashes}} </td></tr> {{/percentageByOs}}";
 Templates.uptimeRange = "{{#uptimeRange}} <tr><td> {{range}} </td><td> {{percentage}} %</td><td> {{numberOfCrashes}} </td></tr> {{/uptimeRange}}";
-Templates.productVersions = "{{#productVersions}} <tr><td> {{product}} </td> <td> {{version}} </td> <td> {{percentage}} %</td><td> {{numberOfCrashes}} </td></tr> {{/productVersions}}";
+Templates.productVersions = "{{#productVersions}} <tr><td> {{product}} </td> <td> {{version}} </td> <td> {{percentage}} %</td><td> {{numberOfCrashes}} </td><td> {{rank}} </td></tr> {{/productVersions}}";
 Templates.architecture = "{{#architectures}} <tr><td> {{architecture}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/architectures}}";
 Templates.processType = "{{#processTypes}} <tr><td> {{processType}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/processTypes}}";
 Templates.flashVersion = "{{#flashVersions}} <tr><td> {{flashVersion}} </td> <td> {{percentage}} %</td> <td> {{numberOfCrashes}} </td> </tr> {{/flashVersions}}";
