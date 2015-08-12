@@ -33,7 +33,8 @@ $(function() {
                 interpolate: 'basic',
                 area: false,
                 legend: legend,
-                legend_target: '#crashes-per-adi-legend'
+                legend_target: '#crashes-per-adi-legend',
+                show_secondary_x_label: false
             });
 
         } else {
