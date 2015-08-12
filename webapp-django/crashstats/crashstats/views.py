@@ -2019,7 +2019,8 @@ def signature_summary(request):
             'product': r['product_name'],
             'version': r['version_string'],
             'percentage': format_float(r['percentage']),
-            'numberOfCrashes': r['report_count']})
+            'numberOfCrashes': r['report_count'],
+            'rank':r['rank']})
     for r in result['uptimeRange']:
         signature_summary['uptimeRange'].append({
             'range': r['category'],
