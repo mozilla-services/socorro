@@ -91,6 +91,8 @@ SignatureReport.GraphTab.prototype.getParamsForUrl = function () {
         // Prompt the user to choose a product.
         this.$contentElement.empty().text('Please select a product.');
 
+        return;
+
     }
 
     return params;

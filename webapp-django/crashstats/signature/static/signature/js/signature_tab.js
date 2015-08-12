@@ -160,28 +160,32 @@ SignatureReport.Tab.prototype.loadContent = function (contentElement, option) {
     // Get the parameters for the URL to get the data.
     var params = this.getParamsForUrl();
 
-    // Make the URL for getting the data.
-    var url = this.buildUrl(params, option);
+    if (params) {
 
-    // Define the returned data type according to whether we are getting a
-    // table or a graph.
-    var dataTypes = {
-        'table': 'html',
-        'graph': 'json'
-    };
+        // Make the URL for getting the data.
+        var url = this.buildUrl(params, option);
 
-    // Empty the content element and append a loader.
-    SignatureReport.addLoaderToElement(contentElement);
+        // Define the returned data type according to whether we are getting a
+        // table or a graph.
+        var dataTypes = {
+            'table': 'html',
+            'graph': 'json'
+        };
 
-    // Request the data.
-    $.ajax({
-        url: url,
-        success: $.proxy(this.onAjaxSuccess, this, contentElement),
-        error: function(jqXHR, textStatus, errorThrown) {
-            SignatureReport.handleError(contentElement, jqXHR, textStatus, errorThrown);
-        },
-        dataType: dataTypes[this.dataDisplayType]
-    });
+        // Empty the content element and append a loader.
+        SignatureReport.addLoaderToElement(contentElement);
+
+        // Request the data.
+        $.ajax({
+            url: url,
+            success: $.proxy(this.onAjaxSuccess, this, contentElement),
+            error: function(jqXHR, textStatus, errorThrown) {
+                SignatureReport.handleError(contentElement, jqXHR, textStatus, errorThrown);
+            },
+            dataType: dataTypes[this.dataDisplayType]
+        });
+
+    }
 
 };
 
