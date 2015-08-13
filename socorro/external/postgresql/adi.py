@@ -76,4 +76,4 @@ class ADI(PostgreSQLBase):
             row = dict(zip(fields, record))
             row['date'] = row['date'].strftime('%Y-%m-%d')
             rows.append(row)
-        return {'hits': rows}
+        return {'hits': rows, 'total': len(rows)}

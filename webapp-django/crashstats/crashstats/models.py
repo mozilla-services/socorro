@@ -1735,3 +1735,20 @@ class AduBySignature(SocorroMiddleware):
         'hits',
         'total',
     )
+
+
+class ADI(SocorroMiddleware):
+
+    URL_PREFIX = '/adi/'
+
+    required_params = (
+        ('start_date', datetime.date),
+        ('end_date', datetime.date),
+        'product',
+        'version',
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )

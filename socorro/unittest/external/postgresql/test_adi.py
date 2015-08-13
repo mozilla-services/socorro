@@ -95,6 +95,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
             version='42'
         )
         eq_(stats['hits'], [])
+        eq_(stats['total'], 0)
 
         stats = impl.get(
             start_date=start,
@@ -103,6 +104,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
             version='40'
         )
         start_formatted = start.strftime('%Y-%m-%d')
+        eq_(stats['total'], 4)
         hits = stats['hits']
         # Because the results come back in no particular order,
         # to make it easier to compare, sort by something predictable.
