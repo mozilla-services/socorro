@@ -138,7 +138,7 @@ class TestCollectorApp(TestCase):
         config = self.get_standard_config()
         c = BreakpadCollector(config)
         rawform = DotDict()
-        rawform.ProductName = 'FireSquid'
+        rawform[u'\u0000ProductName'] = 'FireSquid'
         rawform.Version = '99'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
         rawform.some_field = '23'
@@ -362,8 +362,8 @@ class TestCollectorApp(TestCase):
         rawform.Version = '99\x00'
         rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
         rawform.aux_dump = DotDict({'value': 'aux_dump contents', 'file': 'silliness'})
-        rawform.some_field = '23'
-        rawform.some_other_field = ObjectWithValue('XYZ')
+        rawform[u'some_field\u0000'] = '23'
+        rawform[u'some_\u0000other_field'] = ObjectWithValue('XYZ')
         rawform.uuid = '332d798f-3c42-47a5-843f-a0f892140107'
         rawform.legacy_processing = str(DEFER)
         rawform.throttle_rate = 100

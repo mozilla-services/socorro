@@ -98,8 +98,10 @@ class BreakpadCollector(RequiredConfig):
     #--------------------------------------------------------------------------
     @staticmethod
     def _no_x00_character(value):
-        if isinstance(value, basestring) and '\x00' in value:
-            return ''.join(c for c in value if c != '\x00')
+        if isinstance(value, basestring) and (
+            '\x00' in value or u'\u0000' in value
+        ):
+            return ''.join(c for c in value if (c != '\x00' and c != u'\u0000'))
         return value
 
     #--------------------------------------------------------------------------
@@ -110,6 +112,7 @@ class BreakpadCollector(RequiredConfig):
         raw_crash = DotDict()
         raw_crash.dump_checksums = DotDict()
         for name, value in self._form_as_mapping().iteritems():
+            name = self._no_x00_character(name)
             if isinstance(value, basestring):
                 if name != "dump_checksums":
                     raw_crash[name] = self._no_x00_character(value)
