@@ -1494,6 +1494,59 @@ class TestModels(DjangoTestCase):
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
         eq_(r[1], {'code': 'unk', 'name': 'Unknown', 'display': False})
 
+    @mock.patch('requests.get')
+    def test_adi(self, rget):
+        model = models.ADI
+        api = model()
+
+        def mocked_get(url, params, **options):
+            assert '/adi/' in url
+
+            ok_('product' in params)
+            eq_(params['product'], 'WaterWolf')
+
+            ok_('version' in params)
+            eq_(params['version'], '2.0')
+
+            ok_('start_date' in params)
+            ok_('end_date' in params)
+
+            return Response(
+                {
+                    "hits": [
+                        {
+
+                            "product": "WaterWolf",
+                            "release_channel": "aurora",
+                            "adi_count": 12327,
+                            "platform": "Darwin",
+                            "version": "2.0",
+                            "date": "2015-08-12"
+
+                        },
+                        {
+                            "product": "WaterWolf",
+                            "release_channel": "aurora",
+                            "adi_count": 4,
+                            "platform": "Linux",
+                            "version": "2.0",
+                            "date": "2015-08-12"
+
+                        }
+                    ],
+                    "total": 2
+                }
+            )
+
+        rget.side_effect = mocked_get
+        r = api.get(
+            product='WaterWolf',
+            version='2.0',
+            start_date=datetime.date(2015, 8, 12),
+            end_date=datetime.date(2015, 8, 13),
+        )
+        eq_(r['total'], 2)
+
 
 class TestModelsWithFileCaching(TestCase):
 
