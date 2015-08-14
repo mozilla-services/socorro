@@ -211,6 +211,7 @@ class SuperSearch(SearchBase):
 
         # Create filters.
         filters = None
+        histogram_intervals = {}
 
         for field, sub_params in params.items():
             sub_filters = None
@@ -227,8 +228,11 @@ class SuperSearch(SearchBase):
                         results_number = param.value[0]
                     elif param.name == '_facets_size':
                         facets_size = param.value[0]
-                    elif param.name == '_histogram_interval.date':
-                        histogram_interval_date = param.value[0]
+
+                    for f in self.histogram_fields:
+                        if param.name == '_histogram_interval.%s' % f:
+                            histogram_intervals[f] = param.value[0]
+
                     # Don't use meta parameters in the query.
                     continue
 
@@ -437,27 +441,32 @@ class SuperSearch(SearchBase):
 
             search.aggs.bucket('signature', sig_bucket)
 
-        # Create date histograms.
-        if params.get('_histogram.date'):
-            date_bucket = A(
-                'date_histogram',
-                field=self.get_field_name('date'),
-                interval=histogram_interval_date,
-            )
-            for param in params['_histogram.date']:
-                for value in param.value:
-                    if not value:
-                        continue
+        # Create histograms.
+        for f in self.histogram_fields:
+            if params.get('_histogram.%s' % f):
+                histogram_type = (
+                    self.all_fields[f]['query_type'] == 'date'
+                    and 'date_histogram' or 'histogram'
+                )
+                date_bucket = A(
+                    histogram_type,
+                    field=self.get_field_name(f),
+                    interval=histogram_intervals[f],
+                )
+                for param in params['_histogram.%s' % f]:
+                    for value in param.value:
+                        if not value:
+                            continue
 
-                    field_name = self.get_field_name(value)
-                    val_bucket = A(
-                        'terms',
-                        field=field_name,
-                        size=facets_size,
-                    )
-                    date_bucket.bucket(value, val_bucket)
+                        field_name = self.get_field_name(value)
+                        val_bucket = A(
+                            'terms',
+                            field=field_name,
+                            size=facets_size,
+                        )
+                        date_bucket.bucket(value, val_bucket)
 
-            search.aggs.bucket('histogram_date', date_bucket)
+                search.aggs.bucket('histogram_%s' % f, date_bucket)
 
         # Query and compute results.
         hits = []

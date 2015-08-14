@@ -19,6 +19,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'signature': {
         'name': 'signature',
         'data_validation_type': 'str',
+        'query_type': 'string',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -29,6 +30,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'product': {
         'name': 'product',
         'data_validation_type': 'enum',
+        'query_type': 'enum',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -39,6 +41,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'version': {
         'name': 'version',
         'data_validation_type': 'str',
+        'query_type': 'string',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -49,6 +52,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'date': {
         'name': 'date',
         'data_validation_type': 'datetime',
+        'query_type': 'date',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -59,6 +63,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'build_id': {
         'name': 'build_id',
         'data_validation_type': 'int',
+        'query_type': 'number',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -69,6 +74,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'process_type': {
         'name': 'process_type',
         'data_validation_type': 'enum',
+        'query_type': 'enum',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -79,6 +85,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'hang_type': {
         'name': 'hang_type',
         'data_validation_type': 'enum',
+        'query_type': 'enum',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -89,6 +96,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     'user_comments': {
         'name': 'user_comments',
         'data_validation_type': 'str',
+        'query_type': 'string',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,

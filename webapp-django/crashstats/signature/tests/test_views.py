@@ -9,25 +9,25 @@ from waffle.models import Switch
 
 from crashstats.supersearch.models import SuperSearch
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.supersearch.tests.common import (
-    SUPERSEARCH_FIELDS_MOCKED_RESULTS,
-)
+
 
 DUMB_SIGNATURE = 'mozilla::wow::such_signature(smth*)'
 
 
 class TestViews(BaseTestViews):
 
-    @staticmethod
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
+        super(cls, TestViews).setUpClass()
         TestViews.switch = Switch.objects.create(
             name='signature-report',
             active=True,
         )
 
-    @staticmethod
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         TestViews.switch.delete()
+        super(cls, TestViews).tearDownClass()
 
     def test_waffle_switch(self):
         # Deactivate the switch to verify it's not accessible.
@@ -49,17 +49,7 @@ class TestViews(BaseTestViews):
         TestViews.switch.active = True
         TestViews.switch.save()
 
-    @mock.patch('requests.get')
-    def test_signature_report(self, rget):
-
-        def mocked_get(url, params, **options):
-            assert 'supersearch' in url
-
-            if 'supersearch/fields' in url:
-                return Response(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
-
-        rget.side_effect = mocked_get
-
+    def test_signature_report(self):
         url = reverse('signature:signature_report')
         response = self.client.get(url, {'signature': DUMB_SIGNATURE})
         eq_(response.status_code, 200)

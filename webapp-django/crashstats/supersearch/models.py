@@ -12,7 +12,6 @@ from crashstats.crashstats import models
 
 SUPERSEARCH_META_PARAMS = (
     ('_aggs.signature', list),
-    ('_histogram.date', list),
     ('_columns', list),
     ('_facets', list),
     ('_facets_size', int),
@@ -20,6 +19,14 @@ SUPERSEARCH_META_PARAMS = (
     ('_results_number', int),
     '_return_query',
     ('_sort', list),
+)
+
+
+# Those parameters contain list of fields and thus need to be verified before
+# sent to the middleware, so that no private field can be accessed.
+PARAMETERS_LISTING_FIELDS = (
+    '_facets',
+    '_aggs.signature',
 )
 
 
@@ -67,6 +74,8 @@ class SuperSearch(models.SocorroMiddleware):
     def __init__(self):
         all_fields = SuperSearchFields().get()
 
+        self.parameters_listing_fields = list(PARAMETERS_LISTING_FIELDS)
+
         self.required_params = tuple(
             (x['name'], list) for x in all_fields.values()
             if x['is_exposed']
@@ -74,24 +83,57 @@ class SuperSearch(models.SocorroMiddleware):
             and x['is_mandatory']
         )
 
+        histogram_fields = self._get_extended_params(all_fields)
+        for field in histogram_fields:
+            if '_histogram.' in field[0]:
+                self.parameters_listing_fields.append(field[0])
+
         self.possible_params = tuple(
             (x['name'], list) for x in all_fields.values()
             if x['is_exposed']
             and not x['permissions_needed']
             and not x['is_mandatory']
-        ) + SUPERSEARCH_META_PARAMS
+        ) + SUPERSEARCH_META_PARAMS + tuple(histogram_fields)
+
+    def _get_extended_params(self, all_fields):
+        # Add histogram fields for all 'date' or 'number' fields.
+        histogram_fields = []
+        for field in all_fields.values():
+            if (
+                field['is_exposed']
+                and not field['permissions_needed']
+                and field['query_type'] in ('date', 'number')
+            ):
+                histogram_fields.append(
+                    ('_histogram.%s' % field['name'], list)
+                )
+
+                # Intervals can be strings for dates (like "day" or "1.5h")
+                # and can only be integers for numbers.
+                interval_type = {
+                    'date': basestring,
+                    'number': int
+                }.get(field['query_type'])
+
+                histogram_fields.append(
+                    ('_histogram_interval.%s' % field['name'], interval_type)
+                )
+
+        return tuple(histogram_fields)
 
     def get(self, **kwargs):
-        # Sanitize the facets param and make sure no private data is requested.
+        # Sanitize all parameters listing fields and make sure no private data
+        # is requested.
         all_fields = SuperSearchFields().get()
-        facets = kwargs.get('_facets')
-        filtered_facets = [
-            x for x in facets
-            if x in all_fields
-            and all_fields[x]['is_returned']
-            and not all_fields[x]['permissions_needed']
-        ]
-        kwargs['_facets'] = filtered_facets
+        for param in self.parameters_listing_fields:
+            values = kwargs.get(param)
+            filtered_values = [
+                x for x in values
+                if x in all_fields
+                and all_fields[x]['is_returned']
+                and not all_fields[x]['permissions_needed']
+            ]
+            kwargs[param] = filtered_values
 
         return super(SuperSearch, self).get(**kwargs)
 
@@ -112,10 +154,12 @@ class SuperSearchUnredacted(SuperSearch):
             if x['is_exposed'] and x['is_mandatory']
         )
 
+        histogram_fields = self._get_extended_params(all_fields)
+
         self.possible_params = tuple(
             (x['name'], list) for x in all_fields.values()
             if x['is_exposed'] and not x['is_mandatory']
-        ) + SUPERSEARCH_META_PARAMS
+        ) + SUPERSEARCH_META_PARAMS + histogram_fields
 
         permissions = {}
         for field_data in all_fields.values():

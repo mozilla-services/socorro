@@ -45,6 +45,13 @@ OPERATORS_MAP = {
 }
 
 
+# Query types of field that we can build histograms on.
+HISTOGRAM_QUERY_TYPES = (
+    'date',
+    'number',
+)
+
+
 class SearchParam(object):
     def __init__(
         self,
@@ -77,8 +84,6 @@ class SearchBase(object):
         ]),
         SearchFilter('_facets', default='signature'),
         SearchFilter('_facets_size', data_type='int', default=50),
-        SearchFilter('_histogram.date'),
-        SearchFilter('_histogram_interval.date', default='day'),
         SearchFilter('_results_number', data_type='int', default=100),
         SearchFilter('_results_offset', data_type='int', default=0),
         SearchFilter('_return_query', data_type='bool', default=False),
@@ -94,12 +99,14 @@ class SearchBase(object):
             context = self.context
         self.config = context
 
+        self.filters = []
+        self.histogram_fields = []
+
         fields = kwargs.get('fields')
         if fields:
             self.build_filters(fields)
 
     def build_filters(self, fields):
-        self.filters = []
         for field in fields.values():
             self.filters.append(SearchFilter(
                 field['name'],
@@ -107,6 +114,25 @@ class SearchBase(object):
                 data_type=field['data_validation_type'],
                 mandatory=field['is_mandatory'],
             ))
+
+            # Generate all histogram meta filters.
+            if field['query_type'] in HISTOGRAM_QUERY_TYPES:
+                # Store that field in a list so we can easily use it later.
+                self.histogram_fields.append(field['name'])
+
+                # Add a field to get a list of other fields to aggregate.
+                self.meta_filters.append(SearchFilter(
+                    '_histogram.%s' % field['name']
+                ))
+
+                # Add an interval field.
+                default_interval = 1
+                if field['query_type'] == 'date':
+                    default_interval = 'day'
+                self.meta_filters.append(SearchFilter(
+                    '_histogram_interval.%s' % field['name'],
+                    default=default_interval,
+                ))
 
         # Add meta parameters.
         self.filters.extend(self.meta_filters)

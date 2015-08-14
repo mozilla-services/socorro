@@ -1708,8 +1708,15 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             ok_('exploitability' not in params)
 
-            if '_facets' in params:
-                ok_('url' not in params['_facets'])
+            restricted_params = (
+                '_facets',
+                '_aggs.signature',
+                '_histogram.date',
+            )
+            for key in restricted_params:
+                if key in params:
+                    ok_('url' not in params[key])
+                    ok_('email' not in params[key])
 
             if 'product' in params:
                 eq_(params['product'], ['WaterWolf', 'NightTrain'])
@@ -1753,7 +1760,9 @@ class TestViews(BaseTestViews):
         # Verify it's not possible to use restricted parameters.
         response = self.client.get(url, {
             'exploitability': 'high',
-            '_facets': ['url', 'product']
+            '_facets': ['url', 'email', 'product'],
+            '_aggs.signature': ['url', 'email', 'product'],
+            '_histogram.date': ['url', 'email', 'product'],
         })
         eq_(response.status_code, 200)
 
