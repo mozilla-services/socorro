@@ -129,13 +129,18 @@ section.aggregations-panel {
     }
 }
 
-.tab-inner-panel .delete {
-    background-image: url('../../img/3rdparty/silk/cross.png');
-    display: inline-block;
-    float: right;
-    height: 16px;
-    margin-top: 10px;
-    padding: 4px;
-    text-indent: -9999px;
-    width: 16px;
+.tab-inner-panel {
+    .delete {
+        background-image: url('../../img/3rdparty/silk/cross.png');
+        display: inline-block;
+        float: right;
+        height: 16px;
+        margin-top: 10px;
+        padding: 4px;
+        text-indent: -9999px;
+        width: 16px;
+    }
+    .delete:hover {
+        cursor: pointer;
+    }
 }
