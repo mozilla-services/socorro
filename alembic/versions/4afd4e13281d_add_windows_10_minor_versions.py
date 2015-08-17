@@ -1,4 +1,4 @@
-"""add windows 10 minor versions
+"""correct 'Windows Unknown' records
 
 Revision ID: 4afd4e13281d
 Revises: b99155654de
@@ -16,16 +16,6 @@ from alembic import op
 
 
 def upgrade():
-    # table `windows_versions` is the source that is used to help populate
-    # the `os_version_string` column in table `os_versions`.
-    # See `procs/create_os_version_string.sql`
-    op.execute("""
-        INSERT INTO windows_versions
-        (windows_version_name, major_version, minor_version) VALUES
-        ('Windows 10', 10, 4),
-        ('Windows 10', 10, 5)
-    """)
-
     # The function `create_os_version_string` gets used by
     # `procs/update_os_versions.sql` but re-running it won't fix those
     # that have been stored as "Windows Unknown" because the os_name is not
@@ -37,7 +27,7 @@ def upgrade():
         WHERE
         os_name = 'Windows' AND
         major_version = 10 AND
-        (minor_version = 4 OR minor_version = 5)
+        os_version_string = 'Windows Unknown'
     """)
 
     # The reason for doing all of this is because the
@@ -58,21 +48,12 @@ def upgrade():
 
 def downgrade():
     op.execute("""
-        DELETE FROM windows_versions
-        WHERE
-        windows_version_name = 'Windows 10' AND
-        major_version = 10 AND
-        (minor_version = 4 OR minor_version = 5)
-    """)
-
-    op.execute("""
         UPDATE os_versions
         SET os_version_string = 'Windows Unknown'
         WHERE
         os_version_string = 'Windows 10' AND
         os_name = 'Windows' AND
-        major_version = 10 AND
-        (minor_version = 4 OR minor_version = 5)
+        major_version = 10
     """)
 
     op.execute("""
