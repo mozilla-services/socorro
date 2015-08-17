@@ -154,7 +154,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
         legend_target: '.new-legend',
         show_secondary_x_label: false,
         mouseover: function(d, i) {
-            $('.mg-active-datapoint')
+            $('.mg-active-datapoint', contentElement)
                 .html(d.term +
                     ': ' +
                     d.count +
