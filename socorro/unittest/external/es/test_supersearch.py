@@ -1428,6 +1428,17 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = api.get(**params)
         eq_(res, {'total': 0, 'hits': [], 'facets': {}})
 
+    def test_get_too_large_date_range(self):
+        # this is a whole year apart
+        params = {
+            'date': ['>2000-01-01T00:00:00', '<2001-01-10T00:00:00']
+        }
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            **params
+        )
+
     def test_get_return_query_mode(self):
         res = self.api.get(
             signature='js',
