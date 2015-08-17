@@ -15,6 +15,7 @@ from django.forms.forms import DeclarativeFieldsMetaclass
 from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
 
+from socorro.external import BadArgumentError, MissingArgumentError
 import crashstats.supersearch.models
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
@@ -26,6 +27,12 @@ from .cleaner import Cleaner
 MODELS_MODULES = (
     models,
     crashstats.supersearch.models,
+)
+
+
+BAD_REQUEST_EXCEPTIONS = (
+    BadArgumentError,
+    MissingArgumentError,
 )
 
 
@@ -223,6 +230,7 @@ def model_wrapper(request, model_name):
 
     form = FormWrapper(model, request.REQUEST)
     if form.is_valid():
+
         try:
             result = function(**form.cleaned_data)
         except models.BadStatusCodeError as e:
@@ -267,6 +275,8 @@ def model_wrapper(request, model_name):
                     status=400
                 )
             raise
+        except BAD_REQUEST_EXCEPTIONS as e:
+            return http.HttpResponseBadRequest(e)
 
         # Some models allows to return a binary reponse. It does so based on
         # the models `BINARY_RESPONSE` dict in which all keys and values

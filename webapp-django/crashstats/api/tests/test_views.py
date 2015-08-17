@@ -9,6 +9,7 @@ from django.conf import settings
 import mock
 from nose.tools import eq_, ok_
 
+from socorro.external import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
@@ -17,10 +18,7 @@ from crashstats.crashstats.tests.test_views import (
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
-from crashstats.supersearch.models import (
-    SuperSearch,
-    SuperSearchFields,
-)
+from crashstats.supersearch.models import SuperSearch
 from crashstats.tokens.models import Token
 
 
@@ -1707,13 +1705,6 @@ class TestViews(BaseTestViews):
 
     def test_SuperSearch(self):
 
-        def mocked_supersearchfields(**params):
-            return SUPERSEARCH_FIELDS_MOCKED_RESULTS
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields
-        )
-
         def mocked_supersearch_get(**params):
             ok_('exploitability' not in params)
 
@@ -1828,3 +1819,25 @@ class TestViews(BaseTestViews):
             'product': ['WaterWolf', 'NightTrain']
         })
         eq_(response.status_code, 200)
+
+    def test_change_certain_exceptions_to_bad_request(self):
+
+        # It actually doesn't matter so much which service we use
+        # because we're heavily mocking it.
+        # Here we use the SuperSearch model.
+
+        def mocked_supersearch_get(**params):
+            if params.get('product'):
+                raise MissingArgumentError(params['product'])
+            else:
+                raise BadArgumentError('That was a bad thing to do')
+
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+
+        url = reverse('api:model_wrapper', args=('SuperSearch',))
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+        ok_('That was a bad thing to do' in response.content)
+        response = self.client.get(url, {'product': 'foobaz'})
+        eq_(response.status_code, 400)
+        ok_('foobaz' in response.content)
