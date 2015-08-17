@@ -9,8 +9,7 @@ SignatureReport.Panel = function (panelName, onDelete) {
     var $headingElement = $('<h2>', {
         'text': SignatureReport.capitalizeHeading(panelName)
     });
-    var $deleteButton = $('<a>', {
-        'href': '#',
+    var $deleteButton = $('<div>', {
         'class': 'options delete',
         'text': 'X'
     });
