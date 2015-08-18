@@ -9,11 +9,13 @@ How to pack the symbols archive files
 The minidump processor uses the binary filename (of the executable or shared
 library) along with a debug ID (which is a GUID with one additional character)
 to locate symbol files for each module in a minidump. Breakpad symbol files
-as produced by the *dump_syms* tool contain all the information needed to
+as produced by the ``dump_syms`` tool contain all the information needed to
 create the proper file paths in the first line of the file.
 
-As a concrete example, if you run *dump_syms* on a single binary named
-*test*::
+As a concrete example, if you run ``dump_syms`` on a single binary named
+``test``:
+
+::
 
     $ dump_syms ./test > test.sym
     $ head -n1 test.sym
@@ -36,11 +38,14 @@ As a concrete example, if you run *dump_syms* on a single binary named
     ---------                     -------
          1056                     3 files
 
-The filename here is *test*, and the debug ID is the GUID shown. The contents of the *symbols* directory can be zipped up as shown and will work properly to symbolicate crash reports.
+The filename here is ``test``, and the debug ID is the GUID shown. The
+contents of the ``symbols`` directory can be zipped up as shown and
+will work properly to symbolicate crash reports.
 
-There are `a simple set of scripts <https://gist.github.com/luser/2ad32d290f224782fcfc>`
+There are `a simple set of scripts <https://gist.github.com/luser/2ad32d290f224782fcfc>`_
 available for generating and uploading symbol zip files in the proper format.
-You may also be interested in `symbolstore.py <https://dxr.mozilla.org/mozilla-central/source/toolkit/crashreporter/tools/symbolstore.py>`,
+You may also be interested in
+`symbolstore.py <https://dxr.mozilla.org/mozilla-central/source/toolkit/crashreporter/tools/symbolstore.py>`_,
 which is what official Firefox builds use to package their symbols.
 
 
