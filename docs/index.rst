@@ -37,5 +37,6 @@ The Socorro development mailing list is https://lists.mozilla.org/listinfo/tools
 
    production-install
    configuring-socorro
+   symbols
    troubleshoot
    development/index
