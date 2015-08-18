@@ -487,3 +487,11 @@ aux_dump contents
             {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
             r[11:-1]
         )
+
+    def test_no_x00_character(self):
+        config = self.get_standard_config()
+        c = BreakpadCollector(config)
+
+        eq_(c._no_x00_character('\x00hello'), 'hello')
+        eq_(c._no_x00_character(u'\u0000bye'), 'bye')
+        eq_(c._no_x00_character(u'\u0000\x00bye'), 'bye')

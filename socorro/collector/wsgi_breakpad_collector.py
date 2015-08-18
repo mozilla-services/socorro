@@ -98,10 +98,10 @@ class BreakpadCollector(RequiredConfig):
     #--------------------------------------------------------------------------
     @staticmethod
     def _no_x00_character(value):
-        if isinstance(value, basestring) and (
-            '\x00' in value or u'\u0000' in value
-        ):
-            return ''.join(c for c in value if (c != '\x00' and c != u'\u0000'))
+        if isinstance(value, unicode) and u'\u0000' in value:
+            return ''.join(c for c in value if c != u'\u0000')
+        if isinstance(value, str) and '\x00' in value:
+            return ''.join(c for c in value if c != '\x00')
         return value
 
     #--------------------------------------------------------------------------
