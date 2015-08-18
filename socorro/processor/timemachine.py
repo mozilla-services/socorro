@@ -20,7 +20,7 @@ class DateProcessedTimeMachine(Rule):
     required_config.add_option(
         name='crashstorage_class',
         doc='the crash storage system class',
-        default='socorro.external.hb.crashstorage.HBaseCrashStorage',
+        default='socorro.external.boto.crashstorage.BotoS3CrashStorage',
         from_string_converter=class_converter
     )
     required_config.add_option(

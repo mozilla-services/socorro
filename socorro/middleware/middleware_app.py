@@ -180,7 +180,7 @@ class MiddlewareApp(App):
     required_config.namespace('hbase')
     required_config.hbase.add_option(
         'hbase_class',
-        default='socorro.external.hb.crashstorage.HBaseCrashStorage',
+        default='socorro.external.boto.crashstorage.BotoS3CrashStorage',
         from_string_converter=class_converter
     )
 

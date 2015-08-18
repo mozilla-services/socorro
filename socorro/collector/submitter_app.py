@@ -128,7 +128,7 @@ class DBSamplingCrashSource(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         'source_implementation',
-        default='socorro.external.hbase.crashstorage.HBaseCrashStorage',
+        default='socorro.external.boto.crashstorage.BotoS3CrashStorage',
         doc='a class for a source of raw crashes',
         from_string_converter=class_converter
     )
