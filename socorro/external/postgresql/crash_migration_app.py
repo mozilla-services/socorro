@@ -19,6 +19,7 @@ from socorro.external.postgresql.dbapi2_util import (
     single_value_sql,
 )
 
+from configman import Namespace
 
 class DumbPostgreSQLCrashStorage(PostgreSQLCrashStorage):
     '''Dumb version of the PostgreSQL crashstorage class that fetches data
@@ -46,6 +47,13 @@ class CrashMigrationApp(RawAndProcessedCopierApp):
     app_version = '1.0'
     app_description = __doc__
 
+    required_config = Namespace()
+    required_config.add_option(
+        'no_dumps',
+        doc="don't copy binary dumps",
+        default=True
+    )
+
     @staticmethod
     def get_application_defaults():
         return {
@@ -68,6 +76,10 @@ class CrashMigrationApp(RawAndProcessedCopierApp):
     def _transform(self, crash_id):
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
+            if self.config.no_dumps:
+                dumps = {}
+            else:
+                dumps =  self.source.get_raw_dumps(crash_id)
             processed_crash = self.source.get_unredacted_processed(
                 crash_id
             )
@@ -89,7 +101,7 @@ class CrashMigrationApp(RawAndProcessedCopierApp):
             raw_crash.uuid = crash_id
         self.destination.save_raw_and_processed(
             raw_crash,
-            None,
+            dumps,
             processed_crash,
             crash_id
         )
