@@ -93,6 +93,42 @@ class TestBase(TestCase):
             eq_(crashstorage.new_crashes(), [])
             crashstorage.close()
 
+        with config_manager.context() as config:
+            class MyCrashStorageTest(CrashStorageBase):
+                def save_raw_crash(self, raw_crash, dumps, crash_id):
+                    eq_(crash_id, "fake_id")
+                    eq_(raw_crash, "fake raw crash")
+                    eq_(
+                        sorted(dumps.keys()),
+                        sorted(['one', 'two', 'three'])
+                    )
+                    eq_(
+                        sorted(dumps.values()),
+                        sorted(['eins', 'zwei', 'drei'])
+                    )
+
+            values = ['eins', 'zwei', 'drei']
+            def open_function(*args, **kwargs):
+                return values.pop(0)
+            crashstorage = MyCrashStorageTest(
+                config,
+                quit_check_callback=fake_quit_check
+            )
+
+            with mock.patch("__builtin__.open") as open_mock:
+                open_mock.return_value = mock.MagicMock()
+                open_mock.return_value.__enter__.return_value.read  \
+                   .side_effect = open_function
+                crashstorage.save_raw_crash_with_file_dumps(
+                    "fake raw crash",
+                    {
+                        'one': 'eins',
+                        'two': 'zwei',
+                        'three': 'drei'
+                    },
+                    'fake_id'
+                )
+
     def test_polyerror(self):
         p = PolyStorageError('hell')
         try:
