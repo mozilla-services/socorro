@@ -110,11 +110,8 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
 def _get_config_manager():
     required_config = Namespace()
 
-    webapi = Namespace()
-    webapi.search_default_date_range = 7
-    webapi.search_maximum_date_range = 365
-
-    required_config.webapi = webapi
+    required_config.search_default_date_range = 7
+    required_config.search_maximum_date_range = 365
 
     config_manager = ConfigurationManager(
         [required_config],

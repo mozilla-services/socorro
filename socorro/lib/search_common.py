@@ -297,7 +297,7 @@ class SearchBase(object):
                 raise BadArgumentError(
                     'date',
                     msg='Date range is bigger than %s days' %
-                    self.config.webapi.search_maximum_date_range
+                    self.config.search_maximum_date_range
                 )
 
             parameters['date'].append(lower_than)
