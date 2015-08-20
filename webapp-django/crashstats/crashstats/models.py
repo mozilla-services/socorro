@@ -519,19 +519,32 @@ class SocorroCommon(object):
             url = '%s%s' % (self.base_url, url)
         return url
 
-    _implementations = {}
-
     def get_implementation(self):
         if self.implementation:
             key = self.__class__.__name__
+            global _implementations
             try:
-                return self._implementations[key]
+                return _implementations[key]
             except KeyError:
-                self._implementations[key] = self.implementation(
+                _implementations[key] = self.implementation(
                     config=config_from_configman()
                 )
-                return self._implementations[key]
+                return _implementations[key]
         return None
+
+    @classmethod
+    def clear_implementations_cache(cls):
+        # Why not allow of specific keys to clear?
+        # Because it's sometimes complicated to know which implementation
+        # something depends on. "Is it SuperSearch or SuperSearchUnredacted?"
+        # Also, the price of losing them all is not that expensive.
+        global _implementations
+        _implementations = {}
+
+
+# Global cache dict to helps us only instantiate an implemenation
+# class only once per process.
+_implementations = {}
 
 
 class SocorroMiddleware(SocorroCommon):

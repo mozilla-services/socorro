@@ -30,6 +30,7 @@ from crashstats.crashstats.models import (
     Platforms
 )
 from crashstats.supersearch.models import (
+    SuperSearch,
     SuperSearchField,
     SuperSearchFields,
     SuperSearchMissingFields,
@@ -638,6 +639,7 @@ def supersearch_field_create(request):
 
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
+    SuperSearch.clear_implementations_cache()
 
     # The API is using cache to get all fields by a specific namespace
     # for the whitelist lookup, clear that cache too.
@@ -657,6 +659,8 @@ def supersearch_field_update(request):
     api = SuperSearchField()
     api.update_field(**field_data)
 
+    SuperSearch.clear_implementations_cache()
+
     log(request.user, 'supersearch_field.put', field_data)
 
     # Refresh the cache for the fields service.
@@ -674,6 +678,8 @@ def supersearch_field_delete(request):
 
     api = SuperSearchField()
     api.delete_field(name=field_name)
+
+    SuperSearch.clear_implementations_cache()
 
     log(request.user, 'supersearch_field.delete', {'name': field_name})
 

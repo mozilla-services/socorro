@@ -453,7 +453,7 @@ class BaseTestViews(DjangoTestCase):
         # the same request. This is great for low-level performance but
         # it makes it impossible to test classes that are imported only
         # once like they are in unit test running.
-        SocorroCommon._implementations = {}
+        SocorroCommon.clear_implementations_cache()
 
     def _login(self):
         user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
