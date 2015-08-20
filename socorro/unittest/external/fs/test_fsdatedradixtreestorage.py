@@ -40,24 +40,157 @@ class TestFSDatedRadixTreeStorage(TestCase):
         return config_manager
 
     def _make_test_crash(self):
-        self.fsrts.save_raw_crash({
-            "test": "TEST"
-        }, {
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_1)
+        self.fsrts.save_raw_crash(
+            {  # raw crash
+                "test": "TEST"
+            },
+            {  # dumps
+                'foo': 'bar',
+                self.fsrts.config.dump_field: 'baz'
+            },
+            self.CRASH_ID_1
+        )
 
     def test_save_raw_crash(self):
-        self._make_test_crash()
-        ok_(os.path.islink(
-            os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1))))
-        ok_(os.path.exists(
-            os.path.join(
-              self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
-              self.fsrts._get_date_root_name(self.CRASH_ID_1),
-              self.CRASH_ID_1)))
+        try:
+            self._make_test_crash()
+            ok_(os.path.islink(
+                os.path.join(
+                  self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                  self.fsrts._get_date_root_name(self.CRASH_ID_1))))
+            ok_(os.path.exists(
+                os.path.join(
+                  self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                  self.fsrts._get_date_root_name(self.CRASH_ID_1),
+                  self.CRASH_ID_1)))
+            ok_(
+                os.path.exists(
+                    "%s/%s.json" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(
+                os.path.exists(
+                    "%s/%s.dump" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(
+                os.path.exists(
+                    "%s/%s.foo.dump" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+        finally:
+            self.fsrts.remove(self.CRASH_ID_1)
+
+    def test_save_raw_crash_no_dumps(self):
+        try:
+            self.fsrts.save_raw_crash(
+                {  # raw crash
+                    "test": "TEST"
+                },
+                None,  # dumps
+                self.CRASH_ID_1
+            )
+            ok_(os.path.islink(
+                os.path.join(
+                  self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                  self.fsrts._get_date_root_name(self.CRASH_ID_1))))
+            ok_(os.path.exists(
+                os.path.join(
+                  self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                  self.fsrts._get_date_root_name(self.CRASH_ID_1),
+                  self.CRASH_ID_1)))
+            ok_(
+                os.path.exists(
+                    "%s/%s.json" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(not
+                os.path.exists(
+                    "%s/%s.dump" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(not
+                os.path.exists(
+                    "%s/%s.foo.dump" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+        finally:
+            self.fsrts.remove(self.CRASH_ID_1)
+
+    def test_save_raw_and_processed_crash_no_dumps(self):
+        try:
+            self.fsrts.save_raw_and_processed(
+                {  # raw crash
+                    "test": "TEST"
+                },
+                None,  # dumps
+                {  # processed_crash
+                    'processed': 'crash',
+                    'uuid': self.CRASH_ID_1,
+                },
+                self.CRASH_ID_1
+            )
+            ok_(os.path.islink(
+                os.path.join(
+                  self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                  self.fsrts._get_date_root_name(self.CRASH_ID_1))))
+            ok_(os.path.exists(
+                os.path.join(
+                  self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                  self.fsrts._get_date_root_name(self.CRASH_ID_1),
+                  self.CRASH_ID_1)))
+            ok_(
+                os.path.exists(
+                    "%s/%s.json" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(not
+                os.path.exists(
+                    "%s/%s.dump" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(not
+                os.path.exists(
+                    "%s/%s.foo.dump" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+            ok_(
+                os.path.exists(
+                    "%s/%s.jsonz" % (
+                        self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1),
+                        self.CRASH_ID_1
+                    )
+                )
+            )
+        finally:
+            self.fsrts.remove(self.CRASH_ID_1)
 
     def test_get_raw_crash(self):
         self._make_test_crash()
