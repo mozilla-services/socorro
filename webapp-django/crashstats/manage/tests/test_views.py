@@ -1011,8 +1011,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
-    def test_supersearch_fields(self, supersearchfields):
+    def test_supersearch_fields(self):
         self._login()
         url = reverse('manage:supersearch_fields')
 
@@ -1044,7 +1043,7 @@ class TestViews(BaseTestViews):
                 }
             }
 
-        supersearchfields().get.side_effect = (
+        SuperSearchFields.implementation().get.side_effect = (
             mocked_supersearchfields_get_fields
         )
 
@@ -1202,8 +1201,7 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, {'in_database_name': 'bar'})
         eq_(response.status_code, 400)
 
-    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
-    def test_supersearch_field_update(self, supersearchfields):
+    def test_supersearch_field_update(self):
         self._login()
         url = reverse('manage:supersearch_field_update')
 
@@ -1238,10 +1236,10 @@ class TestViews(BaseTestViews):
             )
             return True
 
-        supersearchfields().get.side_effect = (
+        SuperSearchFields.implementation().get.side_effect = (
             mocked_supersearchfields_get_fields
         )
-        supersearchfields().update_field.side_effect = (
+        SuperSearchFields.implementation().update_field.side_effect = (
             mocked_supersearchfields_update_field
         )
 
@@ -1272,8 +1270,7 @@ class TestViews(BaseTestViews):
         response = self.client.post(url, {'in_database_name': 'bar'})
         eq_(response.status_code, 400)
 
-    @mock.patch('socorro.external.es.super_search_fields.SuperSearchFields')
-    def test_supersearch_field_delete(self, supersearchfields):
+    def test_supersearch_field_delete(self):
         self._login()
         url = reverse('manage:supersearch_field_delete')
 
@@ -1284,10 +1281,10 @@ class TestViews(BaseTestViews):
             assert 'name' in params
             return True
 
-        supersearchfields().get.side_effect = (
+        SuperSearchFields.implementation().get.side_effect = (
             mocked_supersearchfields_get_fields
         )
-        supersearchfields().delete_field.side_effect = (
+        SuperSearchFields.implementation().delete_field.side_effect = (
             mocked_supersearchfields_delete_field
         )
 
