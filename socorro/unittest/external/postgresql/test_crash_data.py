@@ -25,7 +25,7 @@ class TestIntegrationPostgresCrashData(TestCase):
     def setUp(self):
         super(TestIntegrationPostgresCrashData, self).setUp()
         self.config_manager = self._common_config_setup()
-
+        self._truncate()
         with self.config_manager.context() as config:
             store = crashstorage.PostgreSQLCrashStorage(config.database)
 
@@ -99,20 +99,22 @@ class TestIntegrationPostgresCrashData(TestCase):
         )
 
     def tearDown(self):
+        self._truncate()
+        super(TestIntegrationPostgresCrashData, self).tearDown()
+
+    def _truncate(self):
         with self.config_manager.context() as config:
             store = crashstorage.PostgreSQLCrashStorage(config.database)
 
-        connection = store.database.connection()
-        cursor = connection.cursor()
-        cursor.execute("""
-            TRUNCATE
-                report_partition_info,
-                plugins
-            CASCADE;
-        """)
-        connection.commit()
-
-        super(TestIntegrationPostgresCrashData, self).tearDown()
+            connection = store.database.connection()
+            cursor = connection.cursor()
+            cursor.execute("""
+                TRUNCATE
+                    report_partition_info,
+                    plugins
+                CASCADE
+            """)
+            connection.commit()
 
     def _common_config_setup(self):
         mock_logging = Mock()

@@ -1,3 +1,5 @@
+/* This file is deprecated in favor of crashes_per_user.js */
+
 $(function() {
     var aduChartContainer = $("#crashes-per-adi-graph"),
         colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'];

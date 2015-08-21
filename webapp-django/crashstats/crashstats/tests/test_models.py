@@ -1438,8 +1438,8 @@ class TestModels(DjangoTestCase):
             ok_('product' in params)
             eq_(params['product'], 'WaterWolf')
 
-            ok_('version' in params)
-            eq_(params['version'], '2.0')
+            ok_('versions' in params)
+            eq_(params['versions'], ['2.0'])
 
             ok_('start_date' in params)
             ok_('end_date' in params)
@@ -1449,19 +1449,15 @@ class TestModels(DjangoTestCase):
                     "hits": [
                         {
 
-                            "product": "WaterWolf",
-                            "release_channel": "aurora",
+                            "build_type": "aurora",
                             "adi_count": 12327,
-                            "platform": "Darwin",
                             "version": "2.0",
                             "date": "2015-08-12"
 
                         },
                         {
-                            "product": "WaterWolf",
-                            "release_channel": "aurora",
+                            "build_type": "release",
                             "adi_count": 4,
-                            "platform": "Linux",
                             "version": "2.0",
                             "date": "2015-08-12"
 
@@ -1474,7 +1470,8 @@ class TestModels(DjangoTestCase):
         rget.side_effect = mocked_get
         r = api.get(
             product='WaterWolf',
-            version='2.0',
+            versions=['2.0'],
+            platforms=['Windows', 'Linux'],
             start_date=datetime.date(2015, 8, 12),
             end_date=datetime.date(2015, 8, 13),
         )

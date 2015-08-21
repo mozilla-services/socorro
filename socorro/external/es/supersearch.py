@@ -195,7 +195,6 @@ class SuperSearch(SearchBase):
         The list of accepted parameters (with types and default values) is in
         the database and can be accessed with the super_search_fields service.
         """
-
         # Filter parameters and raise potential errors.
         params = self.get_parameters(**kwargs)
 
