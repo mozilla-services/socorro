@@ -2690,7 +2690,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:crontabber_status')
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        eq_(json.loads(response.content), {'status': 'OK'})
+        eq_(json.loads(response.content), {'status': 'ALLGOOD'})
 
     @mock.patch('requests.get')
     def test_crontabber_status_trouble(self, rget):
