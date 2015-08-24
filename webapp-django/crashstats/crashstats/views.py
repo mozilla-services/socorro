@@ -1769,7 +1769,7 @@ def crontabber_status(request):
     api = CrontabberState()
 
     # start by assuming the status is OK which means no jobs are broken
-    context = {'status': 'OK'}
+    context = {'status': 'ALLGOOD'}
 
     all_apps = api.get()['state']
     broken = [
