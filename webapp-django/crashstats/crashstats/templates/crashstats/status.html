@@ -133,10 +133,10 @@
   <script src="{{ static('crashstats/js/socorro/laglog.js') }}"></script>
   {% endcompress %}
   <script>
-    var waiting_job_count = {{ plot_data.waiting_job_count | safe }};
-    var processors_count = {{ plot_data.processors_count | safe }};
-    var avg_process_sec = {{ plot_data.avg_process_sec | safe }};
-    var avg_wait_sec = {{ plot_data.avg_wait_sec | safe }};
-    var x_ticks = {{ plot_data.date_created | safe }};
+    var waiting_job_count = {{ plot_data.waiting_job_count | json_dumps }};
+    var processors_count = {{ plot_data.processors_count | json_dumps }};
+    var avg_process_sec = {{ plot_data.avg_process_sec | json_dumps }};
+    var avg_wait_sec = {{ plot_data.avg_wait_sec | json_dumps }};
+    var x_ticks = {{ plot_data.date_created | json_dumps }};
   </script>
 {% endblock %}

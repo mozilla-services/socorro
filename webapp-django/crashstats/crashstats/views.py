@@ -767,7 +767,7 @@ def daily(request, default_context=None):
             form_selection
         )
     context['data_table'] = data_table
-    context['graph_data'] = json.dumps(cadu)
+    context['graph_data'] = cadu
     context['report'] = 'daily'
 
     return render(request, 'crashstats/daily.html', context)

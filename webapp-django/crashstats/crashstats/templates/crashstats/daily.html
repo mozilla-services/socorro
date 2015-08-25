@@ -391,7 +391,7 @@ Crashes per Active Daily Install for {{ product }}
   <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
   {% endcompress %}
   <script>
-    var data = {{ graph_data | safe }};
+    var data = {{ graph_data | json_dumps }};
     window.socGraphByReportType = false;
   </script>
 {% endblock %}
