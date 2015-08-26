@@ -31,6 +31,9 @@ div.panel.ongoing {
     margin: 0 auto;
     display: none;
 }
+div.panel.failing {
+    display: none;
+}
 
 @-webkit-keyframes color_change {
   from { color: #9f3774; }
