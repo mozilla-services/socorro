@@ -892,7 +892,6 @@ class CrashesPerAdu(SocorroMiddleware):
         'date_range_type',
         'os',
         'report_type',
-        'separated_by',  # used for a hack in get()
     )
 
     API_WHITELIST = {
@@ -909,18 +908,6 @@ class CrashesPerAdu(SocorroMiddleware):
             }
         }
     }
-
-    def get(self, **kwargs):
-        # hack a bit before moving on to the sensible stuff
-        if 'os' in kwargs:
-            # Operating systems can be specified for by version as
-            # well but, we only want to separate the results by OS
-            # if the selected, report type was by_os.
-            if ('form_selection' in kwargs and
-                    kwargs.get('form_selection') == 'by_os'):
-                kwargs['separated_by'] = 'os'
-
-        return super(CrashesPerAdu, self).get(**kwargs)
 
 
 class TCBS(SocorroMiddleware):

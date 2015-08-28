@@ -164,7 +164,6 @@ class Crashes(PostgreSQLBase):
             ("to_date", now, "date"),
             ("os", None, ["list", "str"]),
             ("report_type", None, ["list", "str"]),
-            ("separated_by", None, "str"),
             ("date_range_type", "date", "str"),
         ]
 
@@ -238,11 +237,6 @@ class Crashes(PostgreSQLBase):
 
             db_group = ["product_name", "version_string", date_range_field]
 
-            if params.separated_by == "os":
-                db_fields += ["os_name", "os_short_name"]
-                db_group += ["os_name", "os_short_name"]
-                out_fields += ["os", "os_short"]
-
             sql_where = []
             if params.os and params.os[0]:
                 sql_where.append("os_short_name IN %(os)s")
@@ -304,8 +298,6 @@ class Crashes(PostgreSQLBase):
 
             key = "%s:%s" % (daily_data["product"],
                              daily_data["version"])
-            if params.separated_by == "os":
-                key = "%s:%s" % (key, daily_data["os_short"])
 
             if "os_short" in daily_data:
                 del daily_data["os_short"]

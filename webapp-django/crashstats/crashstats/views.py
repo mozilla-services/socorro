@@ -605,16 +605,10 @@ def daily(request, default_context=None):
 
     context['products'] = context['currentproducts']['products']
 
-    form_selection = request.GET.get('form_selection')
-
     platforms_api = models.Platforms()
     platforms = platforms_api.get()
 
-    if form_selection == 'by_os':
-        form_class = forms.DailyFormByOS
-    else:
-        form_selection = 'by_version'
-        form_class = forms.DailyFormByVersion
+    form_class = forms.DailyFormByVersion
 
     date_range_types = ['report', 'build']
     hang_types = ['any', 'crash', 'hang-p']
@@ -640,7 +634,6 @@ def daily(request, default_context=None):
     if len(params['versions']) > 0:
         context['version'] = params['versions'][0]
 
-    context['form_selection'] = form_selection
     context['product'] = params['product']
 
     if not params['versions']:
@@ -700,7 +693,6 @@ def daily(request, default_context=None):
         to_date=end_date,
         date_range_type=params['date_range_type'],
         os=params['os_names'],
-        form_selection=form_selection,
         report_type=hang_type
     )
 
@@ -747,14 +739,9 @@ def daily(request, default_context=None):
         context['versions'] = params['versions']
 
     for date in data_table['dates']:
-        if form_selection == 'by_version':
-            data_table['dates'][date] = sorted(data_table['dates'][date],
-                                               key=itemgetter('version'),
-                                               reverse=True)
-        else:
-            data_table['dates'][date] = sorted(data_table['dates'][date],
-                                               key=itemgetter('os'),
-                                               reverse=True)
+        data_table['dates'][date] = sorted(data_table['dates'][date],
+                                           key=itemgetter('version'),
+                                           reverse=True)
 
     if request.GET.get('format') == 'csv':
         return _render_daily_csv(
@@ -764,7 +751,6 @@ def daily(request, default_context=None):
             params['versions'],
             platforms,
             context['os_names'],
-            form_selection
         )
     context['data_table'] = data_table
     context['graph_data'] = cadu
@@ -773,10 +759,9 @@ def daily(request, default_context=None):
     return render(request, 'crashstats/daily.html', context)
 
 
-def _render_daily_csv(request, data, product, versions, platforms, os_names,
-                      form_selection):
+def _render_daily_csv(request, data, product, versions, platforms, os_names):
     response = http.HttpResponse('text/csv', content_type='text/csv')
-    title = 'ADI_' + product + '_' + '_'.join(versions) + '_' + form_selection
+    title = 'ADI_' + product + '_' + '_'.join(versions)
     response['Content-Disposition'] = (
         'attachment; filename="%s.csv"' % title
     )
@@ -788,18 +773,9 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
         ('throttle', 'Throttle'),
         ('crash_hadu', 'Ratio'),
     )
-    if form_selection == 'by_version':
-        for version in versions:
-            for __, label in labels:
-                head_row.append('%s %s %s' % (product, version, label))
-    elif form_selection == 'by_os':
-        for os_name in os_names:
-            for version in versions:
-                for __, label in labels:
-                    head_row.append(
-                        '%s %s on %s %s' %
-                        (product, version, os_name, label)
-                    )
+    for version in versions:
+        for __, label in labels:
+            head_row.append('%s %s %s' % (product, version, label))
     writer.writerow(head_row)
 
     def append_row_blob(blob, labels):
@@ -825,45 +801,18 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
              'report_count': 1935,
              'throttle': 1.0,
              'version': u'4.0a2'}]
-
-         Or, if form_selection=='by_os' it would look like this:
-           [{'os': 'Linux',
-             'adu': 4500,
-             'crash_hadu': 43.0,
-             'date': u'2012-10-13',
-             'product': u'WaterWolf',
-             'report_count': 1935,
-             'throttle': 1.0,
-             'version': u'4.0a2'},
-            {'os': 'Windows',
-             'adu': 4500,
-             'crash_hadu': 43.0,
-             'date': u'2012-10-13',
-             'product': u'WaterWolf',
-             'report_count': 1935,
-             'throttle': 1.0,
-             'version': u'4.0a2'},
-             ]
         """
         row = [date]
         info_by_version = dict((x['version'], x) for x in crash_info)
 
-        if form_selection == 'by_version':
-            # Turn each of them into a dict where the keys is the version
-            for version in versions:
-                if version in info_by_version:
-                    blob = info_by_version[version]
-                    append_row_blob(blob, labels)
-                else:
-                    for __ in labels:
-                        row.append('-')
-        elif form_selection == 'by_os':
-            info_by_os = dict((x['os'], x) for x in crash_info)
-            for os_name in os_names:
-                blob = info_by_os[os_name]
+        # Turn each of them into a dict where the keys is the version
+        for version in versions:
+            if version in info_by_version:
+                blob = info_by_version[version]
                 append_row_blob(blob, labels)
-        else:
-            raise NotImplementedError(form_selection)  # pragma: no cover
+            else:
+                for __ in labels:
+                    row.append('-')
 
         assert len(row) == len(head_row), (len(row), len(head_row))
         writer.writerow(row)
@@ -878,22 +827,12 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names,
     row = ['Total']
 
     for version in versions:
-        if form_selection == 'by_os':
-            for platform in platforms:
-                product_version_platform = '%s:%s:%s' % (product, version,
-                                                         platform['code'])
-                try:
-                    blob = data['totals'][product_version_platform]
-                except KeyError:
-                    continue
-                append_row_blob(blob, totals_labels)
-        else:
-            product_version = '%s:%s' % (product, version)
-            try:
-                blob = data['totals'][product_version]
-            except KeyError:
-                continue
-            append_row_blob(blob, totals_labels)
+        product_version = '%s:%s' % (product, version)
+        try:
+            blob = data['totals'][product_version]
+        except KeyError:
+            continue
+        append_row_blob(blob, totals_labels)
     writer.writerow(row)
     return response
 
