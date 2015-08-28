@@ -411,24 +411,6 @@ class TestModels(DjangoTestCase):
         ok_(response['hits'])
         eq_(current_day, '2012-10-10')
 
-        response = api.get(
-            product='WaterWolf',
-            versions=['5.0a1'],
-            from_date=week_ago,
-            to_date=today,
-            os='Linux',
-            form_selection='by_os',
-            separated_by='os',
-            date_range_type='report'
-        )
-
-        for product in response['hits']:
-            operating_system = product.split(":")[2]
-
-        ok_('product_versions' not in response)
-        ok_(response['hits'])
-        eq_(operating_system, 'lin')
-
     def test_crashes_per_adu_parameter_type_error(self):
         model = models.CrashesPerAdu
         api = model()
