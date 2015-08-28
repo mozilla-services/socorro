@@ -185,8 +185,7 @@ class Crashes(PostgreSQLBase):
 
         # simple version, for home page graphs mainly
         if ((not params.os or not params.os[0]) and
-                (not params.report_type or not params.report_type[0]) and
-                (not params.separated_by or not params.separated_by[0])):
+                (not params.report_type or not params.report_type[0])):
             if params.date_range_type == "build":
                 table_to_use = "home_page_graph_build_view"
                 date_range_field = "build_date"

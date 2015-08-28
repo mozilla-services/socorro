@@ -705,45 +705,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         eq_(res, res_expected)
 
-        # Test 3: one product, one version, extended fields, complex version
-        params = {
-            "product": "Firefox",
-            "versions": ["11.0"],
-            "separated_by": "os"
-        }
-        res_expected = {
-            "hits": {
-                "Firefox:11.0:win": {
-                    today: {
-                        "product": "Firefox",
-                        "version": "11.0",
-                        "date": today,
-                        "os": "Windows",
-                        "report_count": 50,
-                        "adu": 3000,
-                        "crash_hadu": 1.667,
-                        "throttle": 0.1
-                    }
-                },
-                "Firefox:11.0:lin": {
-                    today: {
-                        "product": "Firefox",
-                        "version": "11.0",
-                        "date": today,
-                        "os": "Linux",
-                        "report_count": 10,
-                        "adu": 1000,
-                        "crash_hadu": 1.0,
-                        "throttle": 0.1
-                    }
-                }
-            }
-        }
-
-        res = crashes.get_daily(**params)
-        eq_(res, res_expected)
-
-        # Test 4: report type filter, complex version
+        # Test 3: report type filter, complex version
         params = {
             "product": "Firefox",
             "versions": ["13.0"],
@@ -768,7 +730,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         eq_(res, res_expected)
 
-        # Test 5: extended fields, by build date and with report type,
+        # Test 4: extended fields, by build date and with report type,
         # complex version
         params = {
             "product": "Firefox",
@@ -815,7 +777,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_daily(**params)
         eq_(res, res_expected)
 
-        # Test 6: missing parameters
+        # Test 5: missing parameters
         assert_raises(MissingArgumentError, crashes.get_daily)
         assert_raises(MissingArgumentError,
                       crashes.get_daily,
