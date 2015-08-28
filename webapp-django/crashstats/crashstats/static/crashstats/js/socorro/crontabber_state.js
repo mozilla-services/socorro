@@ -50,6 +50,15 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
+function escapeHtml(unsafe) {
+   return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+}
+
 d3.json("/api/CrontabberState/", function(data) {
 
     /**
@@ -183,7 +192,7 @@ d3.json("/api/CrontabberState/", function(data) {
             'depends_on'
         ];
 
-    table.classed('data-table tablesorter', true)
+    table.classed('data-table tablesorter', true);
 
     thead.append("tr").selectAll("th")
         .data(tableFields)
@@ -249,7 +258,7 @@ d3.json("/api/CrontabberState/", function(data) {
         })
         .classed("header", true);
 
-    var tr = tbody.selectAll("tr")
+    tr = tbody.selectAll("tr")
         .data(nodes)
       .enter().append("tr")
         .filter(function(node) {
@@ -279,6 +288,57 @@ d3.json("/api/CrontabberState/", function(data) {
         // if there are any ongoing rows, only they display the ongoing panel
         $('div.ongoing').show();
     }
+
+    table = d3.select('#failing').append('table');
+    thead = table.append('thead');
+    tbody = table.append('tbody');
+    tableFields = [
+        'name',
+        'error_count',
+        'last_error',
+    ];
+    table.classed('data-table tablesorter', true); // worth doing?
+
+    thead.append('tr').selectAll('th')
+        .data(tableFields)
+        .enter()
+        .append('th')
+        .text(function capitalize(s) {
+            return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
+        })
+        .classed('header', true);
+
+    var anyErrors = false;
+    tbody.selectAll('tr')
+        .data(nodes)
+        .enter()
+        .append('tr')
+        .filter(function(node) {
+            if (node.error_count) {
+                anyErrors = true;
+            }
+            return node.error_count;
+        })
+        .selectAll('td')
+        .data(function(d) {
+            return _.map(tableFields, function(field) {
+                return d[field];
+            });
+        })
+        .enter()
+        .append('td')
+        .html(function(d, i) {
+            if (tableFields[i] === 'last_error') {
+                return '<pre>' +
+                    escapeHtml(JSON.stringify(d, undefined, 4)) +
+                    '</pre>';
+            }
+            return escapeHtml('' + d);
+        });
+    if (anyErrors) {
+        $('div.failing').show();
+    }
+
     $('.tablesorter').tablesorter();
 
 });
