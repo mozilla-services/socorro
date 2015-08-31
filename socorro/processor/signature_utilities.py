@@ -436,6 +436,7 @@ class CSignatureTool(CSignatureToolBase):
           'nss.*',
           'nsTArray<.*',
           'nsTArray_base<.*',
+          'nsTArray_Impl<.*',
           'NtUser.*',
           'objc_exception_throw',
           'objc_msgSend',
