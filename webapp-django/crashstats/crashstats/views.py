@@ -1953,8 +1953,9 @@ def signature_summary(request):
             'os': r['category'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
-    for r in result['productVersions']:
+    for i, r in enumerate(result['productVersions']):
         signature_summary['productVersions'].append({
+            'rank': i + 1,
             'product': r['product_name'],
             'version': r['version_string'],
             'percentage': format_float(r['percentage']),
