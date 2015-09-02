@@ -74,6 +74,7 @@ class CSignatureToolBase(SignatureTool):
         'collapse_arguments',
         default=False,
         doc="remove function arguments during normalization",
+        reference_value_from='resource.signature'
     )
 
     hang_prefixes = {
@@ -283,7 +284,8 @@ class CSignatureTool(CSignatureToolBase):
                'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash',
                'google_breakpad::ExceptionHandler::HandleInvalidParameter'
               ]""",
-        from_string_converter=eval
+        from_string_converter=eval,
+        reference_value_from='resource.signature'
     )
     required_config.add_option(
         'irrelevant_signature_re',
@@ -337,7 +339,8 @@ class CSignatureTool(CSignatureToolBase):
           '_ZdlPv',
           'zero',
           ])""",
-        from_string_converter=eval
+        from_string_converter=eval,
+        reference_value_from='resource.signature'
     )
     required_config.add_option(
         'prefix_signature_re',
@@ -511,7 +514,8 @@ class CSignatureTool(CSignatureToolBase):
           '.*DebugAbort.*',
           'mozilla::ipc::MessageChannel::~MessageChannel.*',
         ])""",
-        from_string_converter=eval
+        from_string_converter=eval,
+        reference_value_from='resource.signature'
     )
     required_config.add_option(
         'signatures_with_line_numbers_re',
@@ -555,14 +559,16 @@ class CSignatureToolDB(CSignatureToolBase):
         doc="the class of the database",
         default='socorro.external.postgresql.connection_context.'
                 'ConnectionContext',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.signature'
     )
     required_config.add_option(
         'transaction_executor_class',
         default="socorro.database.transaction_executor."
                 "TransactionExecutorWithInfiniteBackoff",
         doc='a class that will manage transactions',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.signature'
     )
 
     #--------------------------------------------------------------------------
@@ -715,19 +721,22 @@ class SignatureGenerationRule(Rule):
         'c_signature_tool_class',
         doc='the class that can generate a C signature',
         default='socorro.processor.signature_utilities.CSignatureTool',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.signature'
     )
     required_config.c_signature.add_option(
         'maximum_frames_to_consider',
         doc='the maximum number of frames to consider',
         default=40,
+        reference_value_from='resource.signature'
     )
     required_config.namespace('java_signature')
     required_config.java_signature.add_option(
         'java_signature_tool_class',
         doc='the class that can generate a Java signature',
         default='socorro.processor.signature_utilities.JavaSignatureTool',
-        from_string_converter=class_converter
+        from_string_converter=class_converter,
+        reference_value_from='resource.signature'
     )
 
     #--------------------------------------------------------------------------
@@ -912,7 +921,7 @@ class SignatureRunWatchDog(SignatureGenerationRule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return '::RunWatchdog(void*)' in processed_crash['signature']
+        return '::RunWatchdog' in processed_crash['signature']
 
     #--------------------------------------------------------------------------
     def _get_crashing_thread(self, processed_crash):

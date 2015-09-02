@@ -881,7 +881,7 @@ frames_from_json_dump_with_templates = {
         },
         {
             u'frame': 3,
-            u'function': u'RealMsgWaitForMultipleObjectsEx',
+            u'function': u'RealMsgWaitForMultipleObjectsEx(void **fakeargs)',
             u'function_offset': u'0xe1',
             u'module': u'user32.dll',
             u'module_offset': u'0x20869',
@@ -1468,6 +1468,7 @@ class TestSignatureWatchDogRule(TestCase):
                     CSignatureTool.required_config
                     .signatures_with_line_numbers_re.default
                 ),
+                'collapse_arguments': True,
             },
             'java_signature': {
                 'java_signature_tool_class': JavaSignatureTool,
@@ -1504,7 +1505,7 @@ class TestSignatureWatchDogRule(TestCase):
         ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
 
         fake_processed_crash = {
-            'signature': "mozilla::(anonymous namespace)::RunWatchdog(void*)",
+            'signature': "mozilla::(anonymous namespace)::RunWatchdog",
         }
         ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
 
