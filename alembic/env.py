@@ -1,4 +1,5 @@
 from __future__ import with_statement
+import os
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
@@ -61,8 +62,12 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+
+    engine_config = config.get_section(config.config_ini_section)
+    if os.environ.get('sqlalchemy.url'):
+        engine_config['sqlalchemy.url'] = os.environ['sqlalchemy.url']
     engine = engine_from_config(
-                config.get_section(config.config_ini_section),
+                engine_config,
                 prefix='sqlalchemy.',
                 poolclass=pool.NullPool)
 
@@ -84,4 +89,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
