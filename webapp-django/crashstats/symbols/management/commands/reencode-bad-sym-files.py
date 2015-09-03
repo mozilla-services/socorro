@@ -1,10 +1,11 @@
 import gzip
+import ssl
 from cStringIO import StringIO
 
 from optparse import make_option
 
 import requests
-import boto.s3.connection
+import boto
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -12,6 +13,28 @@ from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 
 from crashstats.symbols.models import SymbolsUpload
+
+
+# Due to a bug in boto, see
+# https://github.com/boto/boto/issues/2836
+# you can't connect to a S3 bucket, from OSX Python 2.7, if the bucket
+# name has a dot in it. To remedy that, on OSX Python 2.7, you can
+# override the calling_format parameter when you make the connection
+# but doing that will make it impossible for any other environments to
+# find the bucket.
+# The current solution is this hack below,
+# taken from https://github.com/boto/boto/issues/2836#issuecomment-68682573
+
+_old_match_hostname = ssl.match_hostname
+
+
+def _new_match_hostname(cert, hostname):
+    if hostname.endswith('.s3.amazonaws.com'):
+        pos = hostname.find('.s3.amazonaws.com')
+        hostname = hostname[:pos].replace('.', '') + hostname[pos:]
+    return _old_match_hostname(cert, hostname)
+
+ssl.match_hostname = _new_match_hostname
 
 
 class Command(BaseCommand):
@@ -41,13 +64,13 @@ class Command(BaseCommand):
             '--first-date',
             dest='first_date',
             default='2015-07-20',  # the day we started compressing (132)
-            help='Upload date range start'
+            help='Upload date range start (Default 2015-07-20)'
         ),
         make_option(
             '--end-date',
             dest='end_date',
             default='2015-08-05',  # the day the fix was release on prod (134)
-            help='Upload date range end'
+            help='Upload date range end (Default 2015-08-05)'
         ),
         make_option(
             '--max-uploads',
@@ -80,7 +103,6 @@ class Command(BaseCommand):
         conn = boto.connect_s3(
             settings.AWS_ACCESS_KEY,
             settings.AWS_SECRET_ACCESS_KEY,
-            calling_format=boto.s3.connection.OrdinaryCallingFormat()
         )
         if max_uploads > 0:
             uploads = uploads.order_by('?')[:max_uploads]
@@ -104,7 +126,17 @@ class Command(BaseCommand):
                     assert key.content_type == 'text/plain', key.content_type
                     assert key.content_encoding == 'gzip', key.content_encoding
                     print filesizeformat(key.size).ljust(10),
-                    url = key.generate_url(expires_in=0, query_auth=False)
+
+                    # Instead of relying on key.generate_url(...)
+                    # which will produce a URL like
+                    # https://my.bucket.name.s3.amazonaws.com/key/name.ext
+                    # which can be troublesome for Python 2.7 on OSX to
+                    # GET because of the dots, we instead make our own
+                    # URL.
+                    url = 'https://s3.amazonaws.com/{}/{}'.format(
+                        key.bucket.name,
+                        key.name
+                    )
                     print url
                     if self._correctly_encoded(url):
                         print "CORRECTLY ENCODED"
