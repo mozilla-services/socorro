@@ -2389,9 +2389,6 @@ class TestViews(BaseTestViews):
         # for example,
         eq_(struct['uptimeRange'][0]['percentage'], '29.13')
 
-        # Ensure there's a ranking for productVersions.
-        ok_('rank' in struct['productVersions'][0])
-
         user = self._login()
         group = self._create_group_with_permission('view_exploitability')
         user.groups.add(group)
