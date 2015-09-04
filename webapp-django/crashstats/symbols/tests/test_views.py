@@ -355,10 +355,7 @@ class TestViews(BaseTestViews):
         user = self._login()
         self._add_permission(user, 'upload_symbols')
         exception_names = {
-            user.email: (
-                'my-special-bucket-name',
-                'us-north-1'
-            )
+            user.email: 'my-special-bucket-name|us-north-1',
         }
         with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exception_names):
             with open(ZIP_FILE) as file_object:
@@ -401,10 +398,7 @@ class TestViews(BaseTestViews):
         )
 
         exception_names = {
-            user.email: (
-                'my-special-bucket-name',
-                'us-north-1'
-            )
+            user.email: 'my-special-bucket-name|us-north-1',
         }
         with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exception_names):
             with open(ZIP_FILE) as file_object:

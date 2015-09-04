@@ -626,15 +626,29 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', '')
 # Information for uploading symbols to S3
 SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')
 
-# To set overriding exceptions by email, use:
-SYMBOLS_BUCKET_EXCEPTIONS = {
-    # e.g.
-    # 'joe.bloggs@example.com': 'private-crashes.my-bucket'
-    # or you can specify it as a tuple of (name, location)
-    # 'joe@example.com': ('my-bucket', 'USWest1')
-    config('SYMBOLS_BUCKET_EXCEPTIONS_USER', ''):
-        config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
-}
+# The format for this is `email:bucketname, email2:bucketname, etc`
+SYMBOLS_BUCKET_EXCEPTIONS = config('SYMBOLS_BUCKET_EXCEPTIONS', '', cast=Csv())
+SYMBOLS_BUCKET_EXCEPTIONS = dict(
+    x.strip().split(':', 1) for x in SYMBOLS_BUCKET_EXCEPTIONS
+)
+# We *used* to allow just one single key/value override exceptions
+# we need to continue to support for a little bit.
+if (
+    config('SYMBOLS_BUCKET_EXCEPTIONS_USER', '') and
+    config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
+):
+    import warnings
+    warnings.warn(
+        'Note! To specify exceptions for users for different buckets, '
+        'instead use the CSV based key SYMBOLS_BUCKET_EXCEPTIONS where '
+        'each combination is written as \'emailregex:bucketname\' and '
+        'multiples are written as comma separated.',
+        DeprecationWarning
+    )
+    SYMBOLS_BUCKET_EXCEPTIONS[
+        config('SYMBOLS_BUCKET_EXCEPTIONS_USER', '')
+    ] = config('SYMBOLS_BUCKET_EXCEPTIONS_BUCKET', '')
+
 
 SYMBOLS_FILE_PREFIX = config('SYMBOLS_FILE_PREFIX', 'v1')
 # e.g. "us-west-2" see boto.s3.connection.Location
