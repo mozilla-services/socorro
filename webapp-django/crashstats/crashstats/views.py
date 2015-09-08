@@ -1121,7 +1121,7 @@ def report_index(request, crash_id, default_context=None):
 
     context['total_correlations'] = total_correlations
     context['BUG_PRODUCT_MAP'] = settings.BUG_PRODUCT_MAP
-
+    context['CRASH_ANALYSIS_URL'] = settings.CRASH_ANALYSIS_URL
     return render(request, 'crashstats/report_index.html', context)
 
 

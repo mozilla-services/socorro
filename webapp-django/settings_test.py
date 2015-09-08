@@ -60,3 +60,9 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         'elasticsearch_urls': ['http://example:9123'],
     },
 }
+
+
+# Make sure we never actually hit a real URL when testing the
+# Crash-analysis monitoring.
+CRASH_ANALYSIS_URL = 'https://crashanalysis.m.c/something/'
+CRASH_ANALYSIS_HEALTH_DAYS = 2

@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     '%s.tokens' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
     '%s.profile' % PROJECT_MODULE,
+    '%s.monitoring' % PROJECT_MODULE,
 
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
@@ -678,3 +679,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         # )
     }
 }
+
+
+CRASH_ANALYSIS_URL = 'https://crash-analysis.mozilla.com/crash_analysis/'

@@ -2749,6 +2749,9 @@ class TestViews(BaseTestViews):
         ok_('&#34;sensitive&#34;' not in response.content)
         ok_('&#34;exploitability&#34;' not in response.content)
 
+        # should be a link there to crash analysis
+        ok_(settings.CRASH_ANALYSIS_URL in response.content)
+
         # the email address will appear if we log in
         user = self._login()
         group = self._create_group_with_permission('view_pii')
