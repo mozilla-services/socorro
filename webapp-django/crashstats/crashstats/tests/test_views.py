@@ -2370,37 +2370,21 @@ class TestViews(BaseTestViews):
             'version': 'WaterWolf:19.0'
         })
         eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        ok_(struct['architectures'])
-        ok_(struct['flashVersions'])
-        ok_(struct['percentageByOs'])
-        ok_(struct['processTypes'])
-        ok_(struct['productVersions'])
-        ok_(struct['uptimeRange'])
-        ok_(struct['distinctInstall'])
-        ok_(struct['devices'])
-        ok_(struct['graphics'])
-        ok_(not struct['canViewExploitability'])
-        ok_('exploitabilityScore' not in struct)
-
-        # percentages are turned into string as they're fed straight into
-        # a mustache template.
-        # for example,
-        eq_(struct['uptimeRange'][0]['percentage'], '29.13')
+        ok_('Operating System:' in response.content)
+        ok_('Exploitability:' not in response.content)
 
         user = self._login()
         group = self._create_group_with_permission('view_exploitability')
         user.groups.add(group)
 
-        response = self.client.get(url, {'range_value': '1',
-                                         'signature': 'sig',
-                                         'version': 'WaterWolf:19.0'})
+        response = self.client.get(url, {
+            'range_value': '1',
+            'signature': 'sig',
+            'version': 'WaterWolf:19.0'
+        })
         eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        ok_(struct['canViewExploitability'])
-        ok_(struct['exploitabilityScore'])
+        ok_('Operating System:' in response.content)
+        ok_('Exploitability:' in response.content)
 
     @mock.patch('requests.get')
     def test_signature_summary_flash_exploitability(self, rget):
@@ -2461,19 +2445,15 @@ class TestViews(BaseTestViews):
             'version': 'WaterWolf:19.0'
         })
         eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        ok_(struct['canViewExploitability'])
-        ok_(struct['exploitabilityScore'])
+        ok_('Exploitability:' in response.content)
 
-        response = self.client.get(url, {'range_value': '1',
-                                         'signature': 'sig2',  # different
-                                         'version': 'WaterWolf:19.0'})
+        response = self.client.get(url, {
+            'range_value': '1',
+            'signature': 'sig2',  # different from before!
+            'version': 'WaterWolf:19.0'
+        })
         eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        ok_(not struct['canViewExploitability'])
-        ok_('exploitabilityScore' not in struct)
+        ok_('Exploitability:' not in response.content)
 
     @mock.patch('requests.get')
     def test_status(self, rget):

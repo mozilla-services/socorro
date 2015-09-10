@@ -152,7 +152,7 @@ urlpatterns = patterns(
         r'(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<signature>.*)',
         views.plot_signature,
         name='plot_signature'),
-    url(r'^signature_summary/json_data$',
+    url(r'^signature_summary/$',
         views.signature_summary,
         name='signature_summary'),
     url(r'^rawdumps/(?P<crash_id>[\w-]{36})-(?P<name>\w+)\.'
