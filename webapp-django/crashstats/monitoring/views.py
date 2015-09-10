@@ -17,7 +17,7 @@ def crash_analysis_health(request):
     base_url = settings.CRASH_ANALYSIS_URL
     days_back = int(getattr(
         settings,
-        'CRASH_ANALYSIS_HEALTH_DAYS',
+        'CRASH_ANALYSIS_MONITOR_DAYS_BACK',
         3
     ))
 

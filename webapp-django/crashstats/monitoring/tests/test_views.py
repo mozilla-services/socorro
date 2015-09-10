@@ -22,7 +22,7 @@ class TestViews(BaseTestViews):
             """)
 
         rget.side_effect = mocked_get
-        assert settings.CRASH_ANALYSIS_HEALTH_DAYS == 2
+        assert settings.CRASH_ANALYSIS_MONITOR_DAYS_BACK == 2
         url = reverse('monitoring:crash_analysis_health')
         response = self.client.get(url)
         eq_(response.status_code, 200)

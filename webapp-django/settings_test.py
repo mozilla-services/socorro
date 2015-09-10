@@ -65,4 +65,4 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
 # Make sure we never actually hit a real URL when testing the
 # Crash-analysis monitoring.
 CRASH_ANALYSIS_URL = 'https://crashanalysis.m.c/something/'
-CRASH_ANALYSIS_HEALTH_DAYS = 2
+CRASH_ANALYSIS_MONITOR_DAYS_BACK = 2
