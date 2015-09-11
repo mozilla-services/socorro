@@ -55,8 +55,6 @@ elasticsearch==1.2
 # sha256: vjtAX2ezbybvBNNKkSJSvps-Q0bxtfXQK_0jzH3ZQeg
 # sha256: LUb7Hnm9I9XqRjMDxvW0U1bj3LyHzeau5XioOynYK8A
 elasticsearch-dsl==0.0.3
-# sha256: 2upIE6eJSfnxlBvixW1aviyZqFgjUMrwWYBPtleIrKU
-pyelasticsearch==0.6.1
 # sha256: QQvqlt8kefozmGxAw-76nB57qVp_cHEcMVhgu-LWbH8
 # sha256: 2Fg3nvWYjUU0u4kJQy1pdCIQCq_ycimdZhM5g2ttrps
 urllib3==1.9.1
