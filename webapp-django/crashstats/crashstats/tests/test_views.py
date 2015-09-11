@@ -3946,12 +3946,6 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_report_list_partial_sigurls(self, rget):
 
-        really_long_url = (
-            'http://thisistheworldsfivehundredthirtyfifthslong'
-            'esturk.com/that/contains/a/path/and/?a=query&'
-        )
-        assert len(really_long_url) > 80
-
         def mocked_get(url, params, **options):
             # no specific product was specified, then it should be all products
             ok_('products' in params)
@@ -3959,14 +3953,12 @@ class TestViews(BaseTestViews):
             ok_('ALL' in params['products'])
 
             if '/signatureurls' in url:
-                return Response("""{
+                return Response({
                     "hits": [
-                        {"url": "http://farm.ville", "crash_count":123},
-                        {"url": "%s", "crash_count": 1}
+                        {"url": "http://farm.ville", "crash_count": 123}
                     ],
                     "total": 2
-                }
-                """ % (really_long_url))
+                })
 
             raise NotImplementedError(url)
 
@@ -3989,11 +3981,7 @@ class TestViews(BaseTestViews):
             'range_value': 3
         })
         eq_(response.status_code, 200)
-        # <a href="HERE" title="HERE">HERE</a>
         eq_(response.content.count('http://farm.ville'), 3)
-        # because the label is truncated
-        # <a href="HERE" title="HERE">HE...</a>
-        eq_(response.content.count(really_long_url), 2)
 
     @mock.patch('requests.get')
     def test_report_list_partial_sigurls_specific_product(self, rget):

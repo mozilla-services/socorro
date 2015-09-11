@@ -1,6 +1,5 @@
 {% if request.user.has_perm('crashstats.view_pii') %}
     {% if signature_urls %}
-    <p class="urlvis-toggle"><a href="#url_toggle" aria-role="button" data-toggled="Truncate URLs">Show Full URLs</a></p>
     <table id="signature-urls" class="signature-urls tablesorter data-table">
         <thead>
             <tr>
@@ -13,7 +12,7 @@
             <tr>
                 <td>{{ hit.crash_count }}</td>
                 <td>
-                    <a href="{{ hit.url }}" title="{{ hit.url }}">{{ truncatechars(hit.url, 80) }}</a>
+                    <a href="{{ hit.url }}" title="{{ hit.url }}">{{ hit.url }}</a>
                 </td>
             </tr>
         {% endfor %}

@@ -6,29 +6,8 @@ var SignatureURLs = (function() {
     function post_activate($panel) {
         var signature_urls = $('#signature-urls');
 
-        if(signature_urls.length > 0) {
+        if (signature_urls.length > 0) {
             signature_urls.tablesorter();
-
-            // Show and truncate URLs to make copying easier
-            $('.urlvis-toggle a').on('click', function(event) {
-                event.preventDefault();
-
-                var current_txt = $(this).text();
-                var toggled_txt = $(this).data('toggled');
-
-                $(this).text(toggled_txt);
-                $(this).data('toggled', current_txt);
-
-                // Find all anchor links inside the urls table
-                signature_urls.find('a').each(function() {
-                    var link = $(this);
-                    var title = link.attr('title');
-                    var txt = link.text();
-
-                    link.attr('title', txt);
-                    link.text(title);
-                });
-            });
         }
     }
 
