@@ -206,13 +206,6 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test backfill_nightly_builds
-            'nightly_builds': {
-                'params': {
-                    "update_day": yesterday_str,
-                },
-                'res_expected': [(True,)],
-            },
             # Test backfill_rank_compare
             'rank_compare': {
                 'params': {

@@ -23,7 +23,6 @@ BACKFILL_PARAMETERS = {
     "home_page_graph_build": ['update_day', 'check_period'],
     "home_page_graph": ['update_day', 'check_period'],
     "matviews": ['start_date', 'end_date', 'reports_clean', 'check_period'],
-    "nightly_builds": ['update_day'],
     "one_day": ['update_day'],
     "rank_compare": ['update_day'],
     "reports_clean": ['start_date', 'end_date'],

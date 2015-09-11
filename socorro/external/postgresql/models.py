@@ -719,22 +719,6 @@ class HomePageGraphBuild(DeclarativeBase):
     report_date = Column(u'report_date', DATE(), primary_key=True, nullable=False)
 
 
-class NightlyBuild(DeclarativeBase):
-    __tablename__ = 'nightly_builds'
-
-    #column definitions
-    build_date = Column(u'build_date', DATE(), primary_key=True, nullable=False)
-    days_out = Column(u'days_out', INTEGER(), primary_key=True, nullable=False)
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False)
-    report_count = Column(u'report_count', INTEGER(), nullable=False, server_default=text('0'))
-    report_date = Column(u'report_date', DATE(), nullable=False)
-
-    __table_args__ = (
-        Index('nightly_builds_product_version_id_report_date', product_version_id, report_date),
-        Index('nightly_builds_key', product_version_id, build_date, days_out, unique=True)
-    )
-
-
 class OsName(DeclarativeBase):
     __tablename__ = 'os_names'
 

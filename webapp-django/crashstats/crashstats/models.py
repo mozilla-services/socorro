@@ -1481,31 +1481,6 @@ class CrontabberState(SocorroMiddleware):
     API_WHITELIST = None
 
 
-class CrashTrends(SocorroMiddleware):
-
-    URL_PREFIX = '/crashtrends/'
-
-    required_params = (
-        'product',
-        'version',
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-    )
-
-    API_WHITELIST = {
-        'crashtrends': (
-            'build_date',
-            'version_string',
-            'product_version',
-            'days_out',
-            'report_count',
-            'report_date',
-            'product_name',
-            'product_version_id',
-        ),
-    }
-
-
 class BugzillaAPI(SocorroCommon):
     base_url = settings.BZAPI_BASE_URL
     username = password = None

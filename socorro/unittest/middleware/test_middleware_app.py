@@ -805,26 +805,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 'product': None
             })
 
-    def test_crashtrends(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/crashtrends/',
-                {
-                    'start_date': '2012-03-01',
-                    'end_date': '2012-03-15',
-                    'product': 'Firefox',
-                    'version': '13.0a1',
-                }
-            )
-            eq_(response.data, {'crashtrends': []})
-
     def test_platforms(self):
         config_manager = self._setup_config_manager()
 
