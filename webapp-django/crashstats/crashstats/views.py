@@ -1860,7 +1860,6 @@ def plot_signature(request, product, versions, start_date, end_date,
     return graph_data
 
 
-@utils.json_view
 def signature_summary(request):
 
     form = forms.SignatureSummaryForm(
@@ -1894,7 +1893,7 @@ def signature_summary(request):
     api = models.SignatureSummary()
 
     result = {}
-    signature_summary = {}
+    context = {}
 
     results = api.get(
         report_types=report_types.keys(),
@@ -1905,7 +1904,7 @@ def signature_summary(request):
     )
     for r, name in report_types.items():
         result[name] = results['reports'][r]
-        signature_summary[name] = []
+        context[name] = []
 
     # whether you can view the exploitability stuff depends on several
     # logical steps...
@@ -1926,7 +1925,7 @@ def signature_summary(request):
 
     if can_view_exploitability:
         for r in result['exploitabilityScore']:
-            signature_summary['exploitabilityScore'].append({
+            context['exploitabilityScore'].append({
                 'report_date': r['report_date'],
                 'null_count': r['null_count'],
                 'low_count': r['low_count'],
@@ -1935,53 +1934,52 @@ def signature_summary(request):
             })
     else:
         result.pop('exploitabilityScore')
-        signature_summary.pop('exploitabilityScore')
+        context.pop('exploitabilityScore')
 
-    # because in python we use pep8 under_scored style in js we use camelCase
-    signature_summary['canViewExploitability'] = can_view_exploitability
+    context['can_view_exploitability'] = can_view_exploitability
 
     def format_float(number):
         return '%.2f' % float(number)
 
     for r in result['architectures']:
-        signature_summary['architectures'].append({
+        context['architectures'].append({
             'architecture': r['category'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['percentageByOs']:
-        signature_summary['percentageByOs'].append({
+        context['percentageByOs'].append({
             'os': r['category'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['productVersions']:
-        signature_summary['productVersions'].append({
+        context['productVersions'].append({
             'product': r['product_name'],
             'version': r['version_string'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['uptimeRange']:
-        signature_summary['uptimeRange'].append({
+        context['uptimeRange'].append({
             'range': r['category'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['processTypes']:
-        signature_summary['processTypes'].append({
+        context['processTypes'].append({
             'processType': r['category'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['flashVersions']:
-        signature_summary['flashVersions'].append({
+        context['flashVersions'].append({
             'flashVersion': r['category'],
             'percentage': format_float(r['percentage']),
             'numberOfCrashes': r['report_count']})
     for r in result['distinctInstall']:
-        signature_summary['distinctInstall'].append({
+        context['distinctInstall'].append({
             'product': r['product_name'],
             'version': r['version_string'],
             'crashes': r['crashes'],
             'installations': r['installations']})
     for r in result['devices']:
-        signature_summary['devices'].append({
+        context['devices'].append({
             'cpu_abi': r['cpu_abi'],
             'manufacturer': r['manufacturer'],
             'model': r['model'],
@@ -2004,14 +2002,13 @@ def signature_summary(request):
             )
         else:
             adapter_name = r['adapter_hex']
-        signature_summary['graphics'].append({
+        context['graphics'].append({
             'vendor': vendor_name,
             'adapter': adapter_name,
             'report_count': r['report_count'],
             'percentage': r['percentage'],
         })
-
-    return signature_summary
+    return render(request, 'crashstats/signature_summary_tables.html', context)
 
 
 @pass_default_context
