@@ -223,7 +223,6 @@
 
     # None
     jobs='''
-  socorro.cron.jobs.laglog.LagLog|5m
   socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d
   socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00
   socorro.cron.jobs.matviews.SignaturesCronApp|1d|05:00
@@ -1201,44 +1200,6 @@
 
         # time
         #time=07:30
-
-        [[[database]]]
-
-            # None
-            # see "resource.postgresql.database_class" for the default or override it here
-            #database_class=socorro.external.postgresql.connection_context.ConnectionContext
-
-            # the hostname of the database
-            # see "resource.postgresql.database_hostname" for the default or override it here
-            #database_hostname=localhost
-
-            # the name of the database
-            # see "resource.postgresql.database_name" for the default or override it here
-            #database_name=breakpad
-
-            # the user's database password
-            # see "secrets.postgresql.database_password" for the default or override it here
-            #database_password=aPassword
-
-            # the port for the database
-            # see "resource.postgresql.database_port" for the default or override it here
-            #database_port=5432
-
-            # a class that will execute transactions
-            # see "resource.postgresql.database_transaction_executor_class" for the default or override it here
-            #database_transaction_executor_class=crontabber.transaction_executor.TransactionExecutor
-
-            # the name of the user within the database
-            # see "secrets.postgresql.database_username" for the default or override it here
-            #database_username=breakpad_rw
-
-    [[class-LagLog]]
-
-        # frequency
-        #frequency=5m
-
-        # time
-        #time=
 
         [[[database]]]
 

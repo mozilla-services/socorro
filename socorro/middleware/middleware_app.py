@@ -57,7 +57,6 @@ SERVICES_LIST = (
     (r'/field/(.*)', 'field.Field'),
     (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
     (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
-    (r'/laglog/(.*)', 'laglog.LagLog'),
     (r'/platforms/(.*)', 'platforms.Platforms'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/(.*)', 'products.Products'),
@@ -328,21 +327,7 @@ class MiddlewareApp(App):
         default='',
         reference_value_from='secrets.sentry',
     )
-    #--------------------------------------------------------------------------
-    # laglog namespace
-    #     the namespace for the replica lag log
-    #--------------------------------------------------------------------------
-    required_config.namespace('laglog')
-    required_config.laglog.add_option(
-        'max_bytes_warning',
-        default=16 * 1024 * 1024,
-        doc="Number of bytes that warrents a warning"
-    )
-    required_config.laglog.add_option(
-        'max_bytes_critical',
-        default=32 * 1024 * 1024,
-        doc="Number of bytes that warrents a critial"
-    )
+
     #--------------------------------------------------------------------------
     # introspection namespace
     #     the namespace for things related to running middleware
