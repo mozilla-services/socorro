@@ -7,6 +7,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
 from .authentication import urls as auth_urls
+from .monitoring import urls as monitoring_urls
 
 from funfactory.monkeypatches import patch
 patch()
@@ -34,6 +35,7 @@ urlpatterns = patterns(
         namespace='topcrashers'
     )),
     (r'', include(auth_urls, namespace='auth')),
+    (r'^monitoring/', include(monitoring_urls, namespace='monitoring')),
     (r'^api/tokens/', include('crashstats.tokens.urls', namespace='tokens')),
     (r'^api/', include('crashstats.api.urls', namespace='api')),
     (r'^symbols/', include('crashstats.symbols.urls', namespace='symbols')),

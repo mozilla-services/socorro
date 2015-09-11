@@ -24,6 +24,11 @@ class Response(object):
         self.content = content.strip()
         self.status_code = status_code
 
+    @property
+    def text(self):
+        # similar to content but with the right encoding
+        return unicode(self.content, 'utf-8')
+
 
 class TestExceptions(TestCase):
 
