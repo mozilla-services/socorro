@@ -1072,6 +1072,23 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, {'hits': [], u'total': 0})
 
+    def test_signature_first_date(self):
+        config_manager = self._setup_config_manager()
+
+        with config_manager.context() as config:
+            app = middleware_app.MiddlewareApp(config)
+            app.main()
+            server = middleware_app.application
+
+            response = self.post(
+                server,
+                '/signature/first_date/',
+                {
+                    'signatures': 'sig+nature',
+                }
+            )
+            eq_(response.data, {'hits': [], u'total': 0})
+
     def test_signaturesummary(self):
         config_manager = self._setup_config_manager()
 
