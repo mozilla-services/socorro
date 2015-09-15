@@ -60,7 +60,7 @@ def crash_analysis_health(request):
         for line in good_lines:
             size = int(line.split()[-1])
             if not size:
-                errors.append(
+                warnings.append(
                     "%s contains a 0-bytes sized file" % (
                         url,
                     )
