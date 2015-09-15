@@ -481,7 +481,7 @@ Or, by setting the crontabber jobs as a comma-delimited list:
 
 .. code-block:: bash
 
-  crontabber__jobs='socorro.cron.jobs.laglog.LagLog|5m, socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d, socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00, socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d'
+  crontabber__jobs='socorro.cron.jobs.weekly_reports_partitions.WeeklyReportsPartitionsCronApp|7d, socorro.cron.jobs.matviews.ProductVersionsCronApp|1d|05:00, socorro.cron.jobs.truncate_partitions.TruncatePartitionsCronApp|7d'
 
 Put this into a file named "crontabber.conf" in your socorro-config folder.
 

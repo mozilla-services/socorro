@@ -1239,21 +1239,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 platforms
             )
 
-    def test_laglog(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/laglog/',
-            )
-            eq_(response.status, 200)
-            eq_(json.loads(response.body), {'replicas': []})
-
     def test_graphics_devices(self):
         config_manager = self._setup_config_manager()
 
