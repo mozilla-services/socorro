@@ -28,17 +28,15 @@
         }
     }
 }
-.signature-urls {
-    th:first-child {
-        width: 7%;
+table.signature-urls {
+    table-layout: fixed;
+    td {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
-}
-.urlvis-toggle {
-    text-align: right;
-    a:link,
-    a:visited {
-        .button();
-        color: #fff;
+    th:first-child {
+        width: 100px;
     }
 }
 
