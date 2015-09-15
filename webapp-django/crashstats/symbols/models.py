@@ -12,8 +12,9 @@ class SymbolsUpload(models.Model):
     content_type = models.TextField(null=True)
 
     def __repr__(self):
-        return '<%s: %s (%d)...>' % (
+        return '<%s: id=%s filename="%s" size=%d>' % (
             self.__class__.__name__,
+            self.id,
             self.filename,
             self.size
         )

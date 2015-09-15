@@ -25,16 +25,20 @@ from crashstats.symbols.models import SymbolsUpload
 # The current solution is this hack below,
 # taken from https://github.com/boto/boto/issues/2836#issuecomment-68682573
 
-_old_match_hostname = ssl.match_hostname
 
+# Only recent versions of Python 2.7 have this and thus only those
+# need this monkey patching.
+if hasattr(ssl, 'match_hostname'):
 
-def _new_match_hostname(cert, hostname):
-    if hostname.endswith('.s3.amazonaws.com'):
-        pos = hostname.find('.s3.amazonaws.com')
-        hostname = hostname[:pos].replace('.', '') + hostname[pos:]
-    return _old_match_hostname(cert, hostname)
+    _old_match_hostname = ssl.match_hostname
 
-ssl.match_hostname = _new_match_hostname
+    def _new_match_hostname(cert, hostname):
+        if hostname.endswith('.s3.amazonaws.com'):
+            pos = hostname.find('.s3.amazonaws.com')
+            hostname = hostname[:pos].replace('.', '') + hostname[pos:]
+        return _old_match_hostname(cert, hostname)
+
+    ssl.match_hostname = _new_match_hostname
 
 
 class Command(BaseCommand):
@@ -106,6 +110,9 @@ class Command(BaseCommand):
         )
         if max_uploads > 0:
             uploads = uploads.order_by('?')[:max_uploads]
+        valid_bucket_names = [settings.SYMBOLS_BUCKET_DEFAULT_NAME]
+        valid_bucket_names += settings.SYMBOLS_BUCKET_EXCEPTIONS.values()
+
         for upload in uploads:
             print repr(upload)
             for line in upload.content.splitlines():
@@ -114,7 +121,15 @@ class Command(BaseCommand):
                 bucket_name = line.split(',')[0]
                 if bucket_name.startswith('+') or bucket_name.startswith('='):
                     bucket_name = bucket_name[1:]
+
                 if bucket_name not in buckets:
+                    if bucket_name not in valid_bucket_names:
+                        print (
+                            "Skipping %r because unrecognized bucket name" % (
+                                bucket_name,
+                            )
+                        )
+                        continue
                     buckets[bucket_name] = conn.lookup(bucket_name)
 
                 if not buckets[bucket_name]:
@@ -124,8 +139,9 @@ class Command(BaseCommand):
                 key = buckets[bucket_name].get_key(line.split(',')[1])
                 if key is not None:
                     assert key.content_type == 'text/plain', key.content_type
-                    assert key.content_encoding == 'gzip', key.content_encoding
-                    print filesizeformat(key.size).ljust(10),
+                    if key.content_encoding != 'gzip':
+                        # then it doesn't need to be fixed
+                        continue
 
                     # Instead of relying on key.generate_url(...)
                     # which will produce a URL like
@@ -137,7 +153,8 @@ class Command(BaseCommand):
                         key.bucket.name,
                         key.name
                     )
-                    print url
+
+                    print filesizeformat(key.size).ljust(10), url
                     if self._correctly_encoded(url):
                         print "CORRECTLY ENCODED"
                     else:
