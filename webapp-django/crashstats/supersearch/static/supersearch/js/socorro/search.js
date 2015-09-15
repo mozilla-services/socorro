@@ -73,26 +73,28 @@ $(function () {
             error: function(jqXHR, textStatus, errorThrown) {
                 var errorContent = $('<div>', {class: 'error'});
 
-                try {
-                    var errorDetails = $(jqXHR.responseText); // This might fail
-                    var errorTitle = 'Oops, an error occured';
-                    var errorMsg = 'Please fix the following issues: ';
-
-                    errorContent.append($('<h3>', {text: errorTitle}));
-                    errorContent.append($('<p>', {text: errorMsg}));
-                    errorContent.append(errorDetails);
-                }
-                catch (e) {
-                    // If an exception occurs, that means jQuery wasn't able
-                    // to understand the status of the HTTP response. It is
-                    // probably a 500 error. We thus show a different error.
-                    var errorTitle = 'An unexpected error occured :(';
-                    var errorMsg = 'We have been automatically informed of that error, and are working on a solution. ';
-                    var errorDetails = textStatus + ' - ' + errorThrown;
-
-                    errorContent.append($('<h3>', {text: errorTitle}));
-                    errorContent.append($('<p>', {text: errorMsg}));
-                    errorContent.append($('<p>', {text: errorDetails}));
+                if (jqXHR.status >= 400 && jqXHR.status < 500) {
+                    errorContent.append(
+                        $('<h3>', {text: 'Oops, an error occured'})
+                    );
+                    errorContent.append(
+                        $('<p>', {text: 'Please fix the following issues:'})
+                    );
+                    errorContent.append(
+                        $('<p>', {text: jqXHR.responseText})
+                    );
+                } else {
+                    // We have no interest data to display as a constructive
+                    // error message to the user. So we'll have to show a
+                    // generic error message.
+                    errorContent.append(
+                        $('<h3>', {text: 'An unexpected error occured :('})
+                    );
+                    errorContent.append(
+                        $('<p>', {text: 'We have been automatically informed ' +
+                                        'of that error, and are working on a ' +
+                                        'solution. '})
+                    );
                 }
 
                 contentElt.empty().append(errorContent);
