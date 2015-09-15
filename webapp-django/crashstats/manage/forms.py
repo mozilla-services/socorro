@@ -128,6 +128,7 @@ class GroupForm(BaseModelForm):
 
     class Meta:
         model = Group
+        fields = ('name', 'permissions')
 
     def __init__(self, *args, **kwargs):
         super(GroupForm, self).__init__(*args, **kwargs)
