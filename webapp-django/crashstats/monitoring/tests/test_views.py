@@ -85,9 +85,9 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         data = json.loads(response.content)
-        eq_(data['status'], 'Broken')
-        eq_(len(data['errors']), 2)
-        ok_('contains a 0-bytes sized file' in data['errors'][0])
+        eq_(data['status'], 'ALLGOOD')
+        eq_(len(data['warnings']), 2)
+        ok_('contains a 0-bytes sized file' in data['warnings'][0])
 
     @mock.patch('requests.get')
     def test_broken_not_files(self, rget):
