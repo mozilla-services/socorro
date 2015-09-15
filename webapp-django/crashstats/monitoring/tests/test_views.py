@@ -12,6 +12,17 @@ from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 
 class TestViews(BaseTestViews):
 
+    def test_index(self):
+        url = reverse('monitoring:index')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        ok_(reverse('monitoring:crash_analysis_health') in response.content)
+        ok_(reverse('monitoring:crontabber_status') in response.content)
+
+
+class TestCrashAnalysisHealthViews(BaseTestViews):
+
     @mock.patch('requests.get')
     def test_all_good(self, rget):
 
@@ -107,3 +118,63 @@ class TestViews(BaseTestViews):
         eq_(data['status'], 'Broken')
         eq_(len(data['errors']), 2)
         ok_('contains no valid file links' in data['errors'][0])
+
+
+class TestCrontabberStatusViews(BaseTestViews):
+
+    @mock.patch('requests.get')
+    def test_crontabber_status_ok(self, rget):
+
+        def mocked_get(url, **options):
+            assert '/crontabber_state/' in url
+            return Response({
+                'state': {
+                    'job1': {
+                        'error_count': 0,
+                        'depends_on': []
+                    }
+                }
+            })
+
+        rget.side_effect = mocked_get
+
+        url = reverse('monitoring:crontabber_status')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(json.loads(response.content), {'status': 'ALLGOOD'})
+
+    @mock.patch('requests.get')
+    def test_crontabber_status_trouble(self, rget):
+
+        def mocked_get(url, **options):
+            assert '/crontabber_state/' in url
+            return Response({
+                'state': {
+                    'job1': {
+                        'error_count': 1,
+                        'depends_on': [],
+                    },
+                    'job2': {
+                        'error_count': 0,
+                        'depends_on': ['job1'],
+                    },
+                    'job3': {
+                        'error_count': 0,
+                        'depends_on': ['job2'],
+                    },
+                    'job1b': {
+                        'error_count': 0,
+                        'depends_on': [],
+                    },
+                }
+            })
+
+        rget.side_effect = mocked_get
+
+        url = reverse('monitoring:crontabber_status')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['status'], 'Broken')
+        eq_(data['broken'], ['job1'])
+        eq_(data['blocked'], ['job2', 'job3'])

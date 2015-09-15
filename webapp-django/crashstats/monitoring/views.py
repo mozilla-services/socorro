@@ -3,9 +3,15 @@ import urlparse
 
 import requests
 
+from django.shortcuts import render
 from django.conf import settings
 
 from crashstats.crashstats import utils
+from crashstats.crashstats.models import CrontabberState
+
+
+def index(request):
+    return render(request, 'monitoring/index.html')
 
 
 @utils.json_view
@@ -79,3 +85,41 @@ def crash_analysis_health(request):
         'errors': errors,
         'warnings': warnings,
     }
+
+
+@utils.json_view
+def crontabber_status(request):
+    api = CrontabberState()
+
+    # start by assuming the status is OK which means no jobs are broken
+    context = {'status': 'ALLGOOD'}
+
+    all_apps = api.get()['state']
+    broken = [
+        name for name, state in all_apps.items()
+        if state['error_count']
+    ]
+    blocked = [
+        name for name, state in all_apps.items()
+        if set(broken) & set(state['depends_on'])
+    ]
+
+    # This infinite loop recurses deeper and deeper into the structure
+    # to find all jobs that are blocked. If we find that job X is blocked
+    # by job Y in iteration 1, we need to do another iteration to see if
+    # there are jobs that are blocked by job X (which was blocked by job Y)
+    while True:
+        also_blocked = [
+            name for name, state in all_apps.items()
+            if name not in blocked and set(blocked) & set(state['depends_on'])
+        ]
+        if not also_blocked:
+            break
+        blocked += also_blocked
+
+    if broken:
+        # let's change our mind
+        context['status'] = 'Broken'
+        context['broken'] = broken
+        context['blocked'] = blocked
+    return context
