@@ -21,7 +21,6 @@ from session_csrf import anonymous_csrf
 from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
 from crashstats.supersearch.models import SuperSearchUnredacted
-from crashstats.crashstats.models import CrontabberState
 
 
 # To prevent running in to a known Python bug
@@ -1701,44 +1700,6 @@ def status_revision(request):
 def crontabber_state(request, default_context=None):
     context = default_context or {}
     return render(request, 'crashstats/crontabber_state.html', context)
-
-
-@utils.json_view
-def crontabber_status(request):
-    api = CrontabberState()
-
-    # start by assuming the status is OK which means no jobs are broken
-    context = {'status': 'ALLGOOD'}
-
-    all_apps = api.get()['state']
-    broken = [
-        name for name, state in all_apps.items()
-        if state['error_count']
-    ]
-    blocked = [
-        name for name, state in all_apps.items()
-        if set(broken) & set(state['depends_on'])
-    ]
-
-    # This infinite loop recurses deeper and deeper into the structure
-    # to find all jobs that are blocked. If we find that job X is blocked
-    # by job Y in iteration 1, we need to do another iteration to see if
-    # there are jobs that are blocked by job X (which was blocked by job Y)
-    while True:
-        also_blocked = [
-            name for name, state in all_apps.items()
-            if name not in blocked and set(blocked) & set(state['depends_on'])
-        ]
-        if not also_blocked:
-            break
-        blocked += also_blocked
-
-    if broken:
-        # let's change our mind
-        context['status'] = 'Broken'
-        context['broken'] = broken
-        context['blocked'] = blocked
-    return context
 
 
 @pass_default_context
