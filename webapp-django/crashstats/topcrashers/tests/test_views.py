@@ -35,7 +35,7 @@ class TestViews(BaseTestViews):
             if '_columns' not in params:
                 params['_columns'] = []
 
-            if 'date' in params:
+            if 'hang_type' not in params['_aggs.signature']:
                 # Return results for the previous week.
                 results = {
                     'hits': [],
@@ -59,6 +59,10 @@ class TestViews(BaseTestViews):
                                 'process_type': [{
                                     'term': 'plugin',
                                     'count': 50,
+                                }],
+                                'histogram_uptime': [{
+                                    'term': 0,
+                                    'count': 40,
                                 }],
                             }
                         }]
@@ -89,6 +93,10 @@ class TestViews(BaseTestViews):
                                 'process_type': [{
                                     'term': 'plugin',
                                     'count': 50,
+                                }],
+                                'histogram_uptime': [{
+                                    'term': 0,
+                                    'count': 60,
                                 }],
                             }
                         }]
@@ -137,6 +145,9 @@ class TestViews(BaseTestViews):
         doc = pyquery.PyQuery(response.content)
         selected_count = doc('.tc-result-count a[class="selected"]')
         eq_(selected_count.text(), '100')
+
+        # Check the startup crash icon is there.
+        ok_('Startup Crash' in response.content)
 
     def test_topcrasher_with_invalid_version(self):
         # 0.1 is not a valid release version

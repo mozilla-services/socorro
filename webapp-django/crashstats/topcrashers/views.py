@@ -76,7 +76,9 @@ def get_topcrashers_results(**kwargs):
         'is_garbage_collecting',
         'hang_type',
         'process_type',
+        '_histogram.uptime',
     ]
+    params['_histogram_interval.uptime'] = 60
 
     # We don't care about no results, only facets.
     params['_results_number'] = 0
@@ -136,6 +138,15 @@ def get_topcrashers_results(**kwargs):
                 if row['term'] in (1, -1):
                     hit['hang_count'] += row['count']
 
+            # Number of startup crashes.
+            hit['startup_percent'] = 0
+
+            sig_startup = hit['facets']['histogram_uptime']
+            for row in sig_startup:
+                if row['term'] == 0:
+                    ratio = 1.0 * row['count'] / hit['count']
+                    hit['startup_crash'] = ratio > 0.5
+
         # Run the same query but for the previous date range, so we can
         # compare the rankings and show rank changes.
         dates = get_date_boundaries(params)
@@ -143,6 +154,9 @@ def get_topcrashers_results(**kwargs):
         params['date'] = [
             '>=' + (dates[1] - delta).isoformat(),
             '<' + dates[0].isoformat()
+        ]
+        params['_aggs.signature'] = [
+            'platform',
         ]
 
         previous_range_results = api.get(**params)

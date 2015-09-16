@@ -119,6 +119,10 @@ Top Crashers for {{ product }} {{ version }}
                                 <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
                             </div>
                             <div class="signature-icons">
+                                {% if crash.startup_crash %}
+                                <img src="{{ static('img/icons/rocket_fly.png') }}" alt="Startup Crash" title="Startup Crash" class="startup" height="16" width="16">
+                                {% endif %}
+
                                 {% if crash.hang_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">
                                 {% endif %}

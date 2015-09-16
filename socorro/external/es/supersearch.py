@@ -216,7 +216,6 @@ class SuperSearch(SearchBase):
         for field, sub_params in params.items():
             sub_filters = None
             for param in sub_params:
-
                 if param.name.startswith('_'):
                     # By default, all param values are turned into lists,
                     # even when they have and can have only one value.
@@ -431,13 +430,30 @@ class SuperSearch(SearchBase):
                     if not value:
                         continue
 
-                    field_name = self.get_field_name(value)
-                    sig_bucket.bucket(
-                        value,
-                        'terms',
-                        field=field_name,
-                        size=facets_size,
-                    )
+                    if value.startswith('_histogram.'):
+                        # This is a histogram aggregation we want to run,
+                        # not a terms aggregation.
+                        field_name = value[len('_histogram.'):]
+                        if field_name not in self.histogram_fields:
+                            continue
+
+                        histogram_type = (
+                            self.all_fields[field_name]['query_type'] == 'date'
+                            and 'date_histogram' or 'histogram'
+                        )
+                        sig_bucket.bucket(
+                            'histogram_%s' % field_name,
+                            histogram_type,
+                            field=self.get_field_name(field_name),
+                            interval=histogram_intervals[field_name],
+                        )
+                    else:
+                        sig_bucket.bucket(
+                            value,
+                            'terms',
+                            field=self.get_field_name(value),
+                            size=facets_size,
+                        )
 
             search.aggs.bucket('signature', sig_bucket)
 

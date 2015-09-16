@@ -74,6 +74,8 @@ class SuperSearch(models.SocorroMiddleware):
     def __init__(self):
         all_fields = SuperSearchFields().get()
 
+        # These fields contain lists of other fields. Later on, we want to
+        # make sure that none of those listed fields are restricted.
         self.parameters_listing_fields = list(PARAMETERS_LISTING_FIELDS)
 
         self.required_params = tuple(
@@ -83,8 +85,8 @@ class SuperSearch(models.SocorroMiddleware):
             and x['is_mandatory']
         )
 
-        histogram_fields = self._get_extended_params(all_fields)
-        for field in histogram_fields:
+        self.histogram_fields = self._get_extended_params(all_fields)
+        for field in self.histogram_fields:
             if '_histogram.' in field[0]:
                 self.parameters_listing_fields.append(field[0])
 
@@ -93,7 +95,7 @@ class SuperSearch(models.SocorroMiddleware):
             if x['is_exposed']
             and not x['permissions_needed']
             and not x['is_mandatory']
-        ) + SUPERSEARCH_META_PARAMS + tuple(histogram_fields)
+        ) + SUPERSEARCH_META_PARAMS + tuple(self.histogram_fields)
 
     def _get_extended_params(self, all_fields):
         # Add histogram fields for all 'date' or 'number' fields.
@@ -125,13 +127,37 @@ class SuperSearch(models.SocorroMiddleware):
         # Sanitize all parameters listing fields and make sure no private data
         # is requested.
         all_fields = SuperSearchFields().get()
+
+        # Initialize the list of allowed fields with all the fields we know
+        # that are returned and do not require any permission.
+        allowed_fields = set(
+            x for x in all_fields
+            if all_fields[x]['is_returned']
+            and not all_fields[x]['permissions_needed']
+        )
+
+        # Extend that list with the special fields, like `_histogram.*`.
+        # Those are accepted values for fields listing other fields.
+        for field in self.histogram_fields:
+            histogram = field[0]
+            if not histogram.startswith('_histogram.'):
+                continue
+
+            field_name = histogram[len('_histogram.'):]
+            if (
+                field_name in all_fields
+                and all_fields[field_name]['is_returned']
+                and not all_fields[field_name]['permissions_needed']
+            ):
+                allowed_fields.add(histogram)
+
+        # Now make sure all fields listing fields only have unrestricted
+        # values.
         for param in self.parameters_listing_fields:
             values = kwargs.get(param)
             filtered_values = [
                 x for x in values
-                if x in all_fields
-                and all_fields[x]['is_returned']
-                and not all_fields[x]['permissions_needed']
+                if x in allowed_fields
             ]
             kwargs[param] = filtered_values
 
