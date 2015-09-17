@@ -2543,18 +2543,19 @@ class TestViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
+            assert '_sort' in params
             assert 'email' in params
             assert params['email'] == ['test@mozilla.com']
 
             results = {
                 'hits': [
                     {
-                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
-                        'date': '2000-01-01T00:00:00'
-                    },
-                    {
                         'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
                         'date': '2000-01-02T00:00:00'
+                    },
+                    {
+                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
+                        'date': '2000-01-01T00:00:00'
                     }
                 ],
                 'total': 2

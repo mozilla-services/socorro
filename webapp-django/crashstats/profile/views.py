@@ -27,6 +27,7 @@ def profile(request, default_context=None):
         email=request.user.email,
         date='>%s' % start_date,
         _columns=['date', 'uuid'],
+        _sort='-date',
     )
 
     context['crashes_list'] = [

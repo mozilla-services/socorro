@@ -1717,6 +1717,7 @@ def your_crashes(request, default_context=None):
         email=request.user.email,
         date='>%s' % one_month_ago,
         _columns=['date', 'uuid'],
+        _sort='-date',
     )
 
     context['crashes_list'] = [

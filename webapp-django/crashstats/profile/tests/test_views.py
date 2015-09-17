@@ -14,19 +14,20 @@ class TestViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
+            assert '_sort' in params
             assert 'email' in params
             assert params['email'] == ['test@mozilla.com']
 
             results = {
                 'hits': [
                     {
+                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
+                        'date': '2000-01-02T00:00:00'
+                    },
+                    {
                         'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
                         'date': '2000-01-01T00:00:00'
                     },
-                    {
-                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
-                        'date': '2000-01-02T00:00:00'
-                    }
                 ],
                 'total': 2
             }
@@ -77,10 +78,10 @@ class TestViews(BaseTestViews):
         self._create_group_with_permission(
             'view_pii', 'Group A'
         )
-        groupB = self._create_group_with_permission(
+        group_b = self._create_group_with_permission(
             'view_exploitability', 'Group B'
         )
-        user.groups.add(groupB)
+        user.groups.add(group_b)
         assert not user.has_perm('crashstats.view_pii')
         assert user.has_perm('crashstats.view_exploitability')
 
