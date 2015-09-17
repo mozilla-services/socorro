@@ -27,7 +27,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 
 from crashstats.base.tests.testbase import DjangoTestCase
-from crashstats.crashstats import models
+from crashstats.crashstats import models, views
 from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
@@ -243,6 +243,28 @@ def mocked_post_nohits(**options):
 
 def mocked_post_threeothersigs(**options):
     return BUG_STATUS
+
+
+class TestHelpFunctions(DjangoTestCase):
+    def test_get_super_search_style_params(self):
+        params_in = {
+            'signature': 'foo',
+            'product': ['WaterWolf'],
+            'platform': 'Linux',
+            'version': 'WaterWolf:1.0a2',
+            'end_date': datetime.datetime(2000, 1, 8),
+            'start_date': datetime.datetime(2000, 1, 1),
+        }
+        params_out = views.get_super_search_style_params(**params_in)
+        params_exp = {
+            'signature': 'foo',
+            'product': ['WaterWolf'],
+            'platform': 'Linux',
+            'version': '1.0a2',
+            'date': ['>=2000-01-08T00:00:00', '<2000-01-01T00:00:00'],
+        }
+
+        ok_(params_out, params_exp)
 
 
 class RobotsTestViews(DjangoTestCase):
@@ -3601,7 +3623,7 @@ class TestViews(BaseTestViews):
             if link.text and 'View ALL' in link.text:
                 ok_(urllib.quote_plus(sig) in link.attrib['href'])
 
-    def test_report_list_columns_offered(self):
+    def test_report_list_all_link_columns_offered(self):
         url = reverse('crashstats:report_list')
         response = self.client.get(url, {'signature': 'sig'})
         eq_(response.status_code, 200)
