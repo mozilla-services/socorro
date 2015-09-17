@@ -81,7 +81,7 @@ $(function () {
                         $('<p>', {text: 'Please fix the following issues:'})
                     );
                     errorContent.append(
-                        $('<p>', {text: jqXHR.responseText})
+                        $(jqXHR.responseText)
                     );
                 } else {
                     // We have no interest data to display as a constructive
