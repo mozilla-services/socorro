@@ -21,22 +21,10 @@ fi
 
 function cleanup_rabbitmq() {
   echo -n "INFO: Purging rabbitmq queue 'socorro.normal'..."
-  python scripts/test_rabbitmq.py \
-      --test_rabbitmq.purge='socorro.normal' \
-      --test_rabbitmq.rabbitmq_host=$rmq_host \
-      --test_rabbitmq.rabbitmq_user=$rmq_user \
-      --test_rabbitmq.rabbitmq_password=$rmq_password \
-      --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host \
-      > /dev/null 2>&1
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' --test_rabbitmq.rabbitmq_host=$rmq_host --test_rabbitmq.rabbitmq_user=$rmq_user --test_rabbitmq.rabbitmq_password=$rmq_password --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host > /dev/null 2>&1
   echo " Done."
   echo -n "INFO: Purging rabbitmq queue 'socorro.priority'..."
-  python scripts/test_rabbitmq.py \
-      --test_rabbitmq.purge='socorro.priority' \
-      --test_rabbitmq.rabbitmq_host=$rmq_host \
-      --test_rabbitmq.rabbitmq_user=$rmq_user \
-      --test_rabbitmq.rabbitmq_password=$rmq_password \
-      --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host \
-      > /dev/null 2>&1
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.priority' --test_rabbitmq.rabbitmq_host=$rmq_host --test_rabbitmq.rabbitmq_user=$rmq_user --test_rabbitmq.rabbitmq_password=$rmq_password --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host > /dev/null 2>&1
   echo " Done."
 }
 
@@ -46,6 +34,7 @@ function cleanup() {
   echo "INFO: cleaning up crash storage directories"
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
   rm -rf ./crashes/
+  rm -rf ./submissions
 
   echo "INFO: Terminating background jobs"
 
@@ -121,12 +110,16 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-socorro collector \
-    --storage.crashstorage_class=socorro.external.crashstorage_base.PolyCrashStorage \
-    --storage.storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage' \
-    --storage.storage0.crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage \
-    --storage.storage1.crashstorage_class=socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage \
-    --resource.rabbitmq.host=localhost --secrets.rabbitmq.rabbitmq_user=guest \
+socorro collector2015 \
+    --services.services_controller='[{"name": "collector", "uri": "/submit", "service_implementation_class": "socorro.collector.wsgi_breakpad_collector.BreakpadCollector2015"}, {"name": "pellet_stove", "uri": "/pellet/submit", "service_implementation_class": "socorro.collector.wsgi_generic_collector.GenericCollector"}]' \
+    --services.collector.storage.crashstorage_class=socorro.external.crashstorage_base.PolyCrashStorage \
+    --services.collector.storage.storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage' \
+    --services.collector.storage.storage0.crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage \
+    --services.collector.storage.storage1.crashstorage_class=socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage \
+    --services.pellet_stove.storage.crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage \
+    --services.pellet_stove.storage.fs_root=./submissions \
+    --resource.rabbitmq.host=localhost \
+    --secrets.rabbitmq.rabbitmq_user=guest \
     --secrets.rabbitmq.rabbitmq_password=guest \
     --resource.rabbitmq.virtual_host=/ \
     --resource.rabbitmq.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor \
@@ -145,6 +138,7 @@ socorro processor \
     --new_crash_source.new_crash_source_class='socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource' \
     --processor.processor_class='socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015' \
     > processor.log 2>&1 &
+
 sleep 1
 socorro middleware \
     --admin.conf=./config/middleware.ini \
@@ -193,10 +187,11 @@ function retry() {
 # wait for collector to startup
 retry 'collector' 'running standalone at 0.0.0.0:8882'
 
-echo -n 'INFO: submitting test crash...'
+# BREAKPAD submission test
+echo -n 'INFO: submitting breakpad test crash...'
 # submit test crash
 socorro submitter \
-    -u http://localhost:8882/submit \
+    -u http://0.0.0.0:8882/submit \
     -s testcrash/raw/ \
     -n 1 \
     > submitter.log 2>&1
@@ -218,6 +213,34 @@ echo "INFO: collector received crash ID: $CRASHID"
 # make sure crashes are picked up, and no errors are logged
 retry 'collector' "$CRASHID"
 retry 'processor' "$CRASHID"
+
+# OTHER submission test
+echo -n 'INFO: submitting other test crash...'
+# submit test crash
+socorro submitter \
+    -u http://0.0.0.0:8882/pellet/submit \
+    -s testcrash/not_breakpad/ \
+    -n 1 \
+    >> submitter.log 2>&1
+if [ $? != 0 ]
+then
+  fatal 1 "submitter failed, check submitter.log"
+fi
+echo " Done."
+
+CRASHID_OTHER=`grep 'CrashID' submitter.log | awk -FCrashID=xx- '{print $2}'`
+if [ -z "$CRASHID_OTHER" ]
+then
+  cat submitter.log
+  fatal 1 "no crash ID found in submitter log"
+fi
+
+echo "INFO: collector received crash ID: $CRASHID_OTHER"
+
+# make sure crashes are picked up, and no errors are logged
+retry 'collector' "$CRASHID_OTHER"
+# no processor for this crash type yet
+
 
 # check that mware has raw crash
 curl -s -D middleware_headers.log "http://localhost:8883/crash_data/?datatype=raw&uuid=${CRASHID}" > /dev/null

@@ -1,0 +1,14 @@
+{
+    "product": "NestPelletStoveController",
+    "version": "0.3",
+    "timestamp": "2015-09-15T00:00:01",
+    "remote_temp": 50,
+    "indoor_temp": 65,
+    "threshold_temp": 70,
+    "temp_units": "F",
+    "stove_status": "on",
+    "stove_level": 3,
+    "error_level": 0,
+    "error_type": "heater fault",
+    "emergency_contacts": ["x@gmail.com", "y@gmail.com", "406 555 1200"]
+}
