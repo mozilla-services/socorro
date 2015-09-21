@@ -45,7 +45,6 @@ class ApplicationDefaultsProxy(object):
         """
         return {
             'collector': 'socorro.collector.collector_app.CollectorApp',
-            'collector2015': 'socorro.collector.collector_app.Collector2015App',
             'crashmover': 'socorro.collector.crashmover_app.CrashMoverApp',
             'setupdb': 'socorro.external.postgresql.setupdb_app.SocorroDBApp',
             'submitter': 'socorro.collector.submitter_app.SubmitterApp',

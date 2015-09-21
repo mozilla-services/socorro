@@ -2,8 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-def class_with_partial_init(C, *args, **kwargs):
+def classWithPartialInit(C, *args, **kwargs):
     """
     Return a new subclass of C.
 
@@ -13,11 +12,7 @@ def class_with_partial_init(C, *args, **kwargs):
 
     """
     class W(C):
-        wrapped_partial = True
-
         def __init__(self):
             super(W, self).__init__(*args, **kwargs)
     W.__name__ = C.__name__
     return W
-
-classWithPartialInit = class_with_partial_init
