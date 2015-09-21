@@ -21,41 +21,19 @@ class WebServerBase(RequiredConfig):
         urls = []
 
         for each in services_list:
-
             if hasattr(each, 'uri'):
-                # this service has a hard coded uri embedded within
+                # this is the old middleware and dataservice
                 uri, cls = each.uri, each
-                config.logger.debug(
-                    'embedded uri class %s %s',
-                    cls.__name__,
-                    uri
-                )
             else:
-                # this is a uri, service pair
+                # this is middleware_app (soon to be deprecated)
                 uri, cls = each
-                config.logger.debug(
-                    'service pair uri class %s %s',
-                    cls.__name__,
-                    uri
-                )
 
             if isinstance(uri, basestring):
                 uri = (uri, )
 
             for a_uri in uri:
                 urls.append(a_uri)
-                if hasattr(cls, 'wrapped_partial'):
-                    config.logger.debug(
-                        "appending already wrapped %s",
-                        cls.__name__
-                    )
-                    urls.append(cls)
-                else:
-                    config.logger.debug(
-                        "wrapping %s",
-                        cls.__name__
-                    )
-                    urls.append(classWithPartialInit(cls, config))
+                urls.append(classWithPartialInit(cls, config))
 
         self.urls = tuple(urls)
 

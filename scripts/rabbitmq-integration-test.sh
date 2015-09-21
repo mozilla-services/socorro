@@ -7,8 +7,6 @@
 #
 # This uses the same setup as http://socorro.readthedocs.org/en/latest/installation.html
 
-export PATH=$PATH:${VIRTUAL_ENV:-"socorro-virtualenv"}/bin:$PWD/scripts
-
 source scripts/defaults
 
 if [ "$#" != "1" ] || [ "$1" != "--destroy" ]
@@ -21,22 +19,10 @@ fi
 
 function cleanup_rabbitmq() {
   echo -n "INFO: Purging rabbitmq queue 'socorro.normal'..."
-  python scripts/test_rabbitmq.py \
-      --test_rabbitmq.purge='socorro.normal' \
-      --test_rabbitmq.rabbitmq_host=$rmq_host \
-      --test_rabbitmq.rabbitmq_user=$rmq_user \
-      --test_rabbitmq.rabbitmq_password=$rmq_password \
-      --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host \
-      > /dev/null 2>&1
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.normal' --test_rabbitmq.rabbitmq_host=$rmq_host --test_rabbitmq.rabbitmq_user=$rmq_user --test_rabbitmq.rabbitmq_password=$rmq_password --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host > /dev/null 2>&1
   echo " Done."
   echo -n "INFO: Purging rabbitmq queue 'socorro.priority'..."
-  python scripts/test_rabbitmq.py \
-      --test_rabbitmq.purge='socorro.priority' \
-      --test_rabbitmq.rabbitmq_host=$rmq_host \
-      --test_rabbitmq.rabbitmq_user=$rmq_user \
-      --test_rabbitmq.rabbitmq_password=$rmq_password \
-      --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host \
-      > /dev/null 2>&1
+  python scripts/test_rabbitmq.py --test_rabbitmq.purge='socorro.priority' --test_rabbitmq.rabbitmq_host=$rmq_host --test_rabbitmq.rabbitmq_user=$rmq_user --test_rabbitmq.rabbitmq_password=$rmq_password --test_rabbitmq.rabbitmq_vhost=$rmq_virtual_host > /dev/null 2>&1
   echo " Done."
 }
 
@@ -78,17 +64,16 @@ echo -n "INFO: setting up environment..."
 source ${VIRTUAL_ENV:-"socorro-virtualenv"}/bin/activate >> setup.log 2>&1
 if [ $? != 0 ]
 then
-  fatal 1 "couldn't activate virtualenv"
+  fatal 1 "could activate virtualenv"
 fi
 export PYTHONPATH=.
 echo " Done."
 
 echo -n "INFO: setting up database..."
-socorro setupdb --dropdb --force --createdb > setupdb.log 2>&1
+python socorro/external/postgresql/setupdb_app.py --dropdb --force --createdb > setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "setupdb_app.py failed, check setupdb.log"
-  cat setupdb.log
 fi
 echo " Done."
 popd >> setupdb.log 2>&1
@@ -97,10 +82,7 @@ popd >> setupdb.log 2>&1
 cleanup_rabbitmq
 
 echo -n "INFO: setting up 'weekly-reports-partitions' via crontabber..."
-python socorro/cron/crontabber_app.py \
-    --job=weekly-reports-partitions \
-    --force \
-    >> setupdb.log 2>&1
+python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force >> setupdb.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "crontabber weekly-reports-partitions failed, check setupdb.log"
@@ -121,42 +103,10 @@ done
 echo " Done."
 
 echo -n "INFO: starting up collector, processor and middleware..."
-socorro collector \
-    --storage.crashstorage_class=socorro.external.crashstorage_base.PolyCrashStorage \
-    --storage.storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage' \
-    --storage.storage0.crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage \
-    --storage.storage1.crashstorage_class=socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage \
-    --resource.rabbitmq.host=localhost --secrets.rabbitmq.rabbitmq_user=guest \
-    --secrets.rabbitmq.rabbitmq_password=guest \
-    --resource.rabbitmq.virtual_host=/ \
-    --resource.rabbitmq.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor \
-    --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy \
-    --web_server.ip_address=0.0.0.0 \
-    > collector.log 2>&1 &
-socorro processor \
-    --admin.conf=./config/processor.ini \
-    --resource.rabbitmq.host=$rmq_host \
-    --secrets.rabbitmq.rabbitmq_user=$rmq_user \
-    --secrets.rabbitmq.rabbitmq_password=$rmq_password \
-    --resource.rabbitmq.virtual_host=$rmq_virtual_host \
-    --resource.postgresql.database_hostname=$database_hostname \
-    --secrets.postgresql.database_username=$database_username \
-    --secrets.postgresql.database_password=$database_password \
-    --new_crash_source.new_crash_source_class='socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource' \
-    --processor.processor_class='socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015' \
-    > processor.log 2>&1 &
+python socorro/collector/collector_app.py --admin.conf=./config/collector.ini --resource.rabbitmq.host=$rmq_host --secrets.rabbitmq.rabbitmq_user=$rmq_user --secrets.rabbitmq.rabbitmq_password=$rmq_password --resource.rabbitmq.virtual_host=$rmq_virtual_host --resource.rabbitmq.transaction_executor_class=socorro.database.transaction_executor.TransactionExecutor --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > collector.log 2>&1 &
+python socorro/processor/processor_app.py --admin.conf=./config/processor.ini --resource.rabbitmq.host=$rmq_host --secrets.rabbitmq.rabbitmq_user=$rmq_user --secrets.rabbitmq.rabbitmq_password=$rmq_password --resource.rabbitmq.virtual_host=$rmq_virtual_host --resource.postgresql.database_hostname=$database_hostname --secrets.postgresql.database_username=$database_username --secrets.postgresql.database_password=$database_password --new_crash_source.new_crash_source_class='socorro.external.rabbitmq.rmq_new_crash_source.RMQNewCrashSource' --processor.processor_class='socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015' > processor.log 2>&1 &
 sleep 1
-socorro middleware \
-    --admin.conf=./config/middleware.ini \
-    --database.database_hostname=$database_hostname \
-    --database.database_username=$database_username \
-    --database.database_password=$database_password \
-    --rabbitmq.host=$rmq_host \
-    --rabbitmq.rabbitmq_user=$rmq_user \
-    --rabbitmq.rabbitmq_password=$rmq_password \
-    --rabbitmq.virtual_host=$rmq_virtual_host \
-    --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy \
-    > middleware.log 2>&1 &
+python socorro/middleware/middleware_app.py --admin.conf=./config/middleware.ini --database.database_hostname=$database_hostname --database.database_username=$database_username --database.database_password=$database_password --rabbitmq.host=$rmq_host --rabbitmq.rabbitmq_user=$rmq_user --rabbitmq.rabbitmq_password=$rmq_password --rabbitmq.virtual_host=$rmq_virtual_host --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy > middleware.log 2>&1 &
 echo " Done."
 
 function retry() {
@@ -195,11 +145,7 @@ retry 'collector' 'running standalone at 0.0.0.0:8882'
 
 echo -n 'INFO: submitting test crash...'
 # submit test crash
-socorro submitter \
-    -u http://localhost:8882/submit \
-    -s testcrash/raw/ \
-    -n 1 \
-    > submitter.log 2>&1
+python socorro/collector/submitter_app.py -u http://localhost:8882/submit -s testcrash/raw/ -n 1 > submitter.log 2>&1
 if [ $? != 0 ]
 then
   fatal 1 "submitter failed, check submitter.log"
