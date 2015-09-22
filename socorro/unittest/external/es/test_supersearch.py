@@ -1451,3 +1451,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('query' in query)
         ok_('aggs' in query)
         ok_('size' in query)
+
+    def test_get_with_zero(self):
+        res = self.api.get(
+            _results_number=0,
+        )
+        eq_(len(res['hits']), 0)

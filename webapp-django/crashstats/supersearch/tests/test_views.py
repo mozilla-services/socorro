@@ -20,25 +20,24 @@ from crashstats.supersearch.views import (
 
 class TestViews(BaseTestViews):
 
-    @staticmethod
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
+        super(cls, TestViews).setUpClass()
         TestViews.custom_switch = Switch.objects.create(
             name='supersearch-custom-query',
             active=True,
         )
 
-    @staticmethod
-    def tearDownClass():
-        try:
-            TestViews.custom_switch.delete()
-        except AssertionError:
-            # test_search_waffle_switch removes those switches before, causing
-            # this error
-            pass
+    @classmethod
+    def tearDownClass(cls):
+        TestViews.custom_switch.delete()
+        super(cls, TestViews).tearDownClass()
 
     def test_search_waffle_switch(self):
-        # Delete the custom-query switch but keep the generic one around.
-        TestViews.custom_switch.delete()
+        # Deactivate the switch to verify it's not accessible.
+        TestViews.custom_switch.active = False
+        TestViews.custom_switch.save()
+
         url = reverse('supersearch.search_custom')
         response = self.client.get(url)
         eq_(response.status_code, 404)
@@ -46,6 +45,9 @@ class TestViews(BaseTestViews):
         url = reverse('supersearch.search_query')
         response = self.client.get(url)
         eq_(response.status_code, 404)
+
+        TestViews.custom_switch.active = True
+        TestViews.custom_switch.save()
 
     def test_search(self):
         self._login()
@@ -582,7 +584,7 @@ class TestViews(BaseTestViews):
 
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
-            ok_('_results_offset' not in params)
+            eq_(params.get('_results_offset'), 0)
 
             hits = []
             for i in range(140):

@@ -52,9 +52,9 @@ psycopg2==2.6.1
 # sha256: U6gisBsElN-WWMBOhyFhgOXsvoWxeGc92Eix-AnVwQA
 # sha256: u5PYXKflDWjkGXhSu226YJi7dyUA-C9dsv9KgHEVBck
 elasticsearch==1.2
-# sha256: vjtAX2ezbybvBNNKkSJSvps-Q0bxtfXQK_0jzH3ZQeg
-# sha256: LUb7Hnm9I9XqRjMDxvW0U1bj3LyHzeau5XioOynYK8A
-elasticsearch-dsl==0.0.3
+# sha256: 8UuM7WZr4UJlQTP-ZznWVrMZxKnsMiitFEvQ8o42pDU
+# sha256: Tpdx2a8EZIlHF_PQUFBrYhfHmXcO4AtKaAO5xkWQAY4
+elasticsearch-dsl==0.0.8
 # sha256: QQvqlt8kefozmGxAw-76nB57qVp_cHEcMVhgu-LWbH8
 # sha256: 2Fg3nvWYjUU0u4kJQy1pdCIQCq_ycimdZhM5g2ttrps
 urllib3==1.9.1

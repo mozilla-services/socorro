@@ -104,6 +104,16 @@ class TestModels(DjangoTestCase):
         eq_(result['from_date'], datetime.date.today().strftime('%Y-%m-%d'))
         ok_('os' not in result)
 
+        # The value `0` is a perfectly fine value and should be kept in the
+        # parameters, and not ignored as a "falsy" value.
+        api = models.CrashesByExploitability()
+        inp = {
+            'batch': 0,
+        }
+        result = api.kwargs_to_params(inp)
+        # no interesting conversion or checks here
+        eq_(result, inp)
+
     def test_kwargs_to_params_exceptions(self):
         """the method kwargs_to_params() can take extra care of some special
         cases"""

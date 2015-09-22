@@ -213,7 +213,7 @@ class TestViews(BaseTestViews):
 
             # Make sure a negative page does not lead to negative offset value.
             # But instead it is considered as the page 1 and thus is not added.
-            ok_('_results_offset' not in params)
+            eq_(params.get('_results_offset'), 0)
 
             hits = []
             for i in range(140):
@@ -511,7 +511,7 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             assert '_columns' in params
 
-            if '_results_offset' in params:
+            if params.get('_results_offset') != 0:
                 hits_range = range(100, 140)
             else:
                 hits_range = range(100)

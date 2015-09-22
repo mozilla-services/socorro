@@ -674,10 +674,12 @@ class SocorroMiddleware(SocorroCommon):
 
         for param in self.get_annotated_params():
             name = param['name']
-            if param['required'] and not kwargs.get(name):
-                raise RequiredParameterError(name)
             value = kwargs.get(name)
-            if not value:
+
+            # 0 is a perfectly fine value, it should not be considered "falsy".
+            if not value and value is not 0:
+                if param['required']:
+                    raise RequiredParameterError(name)
                 continue
 
             if isinstance(value, param['type']):
