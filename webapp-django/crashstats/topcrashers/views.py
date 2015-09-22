@@ -270,7 +270,10 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         _facets_size=result_count,
     )
 
-    tcbs = api_results['facets']['signature']
+    if api_results['total'] > 0:
+        tcbs = api_results['facets']['signature']
+    else:
+        tcbs = []
 
     count_of_included_crashes = 0
     signatures = []
@@ -283,11 +286,20 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         100.0 * count_of_included_crashes / api_results['total']
     )
 
+    # Get augmented bugs data.
     bugs = defaultdict(list)
-    api = models.Bugs()
     if signatures:
-        for b in api.get(signatures=signatures)['hits']:
+        bugs_api = models.Bugs()
+        for b in bugs_api.get(signatures=signatures)['hits']:
             bugs[b['signature']].append(b['id'])
+
+    # Get augmented signature data.
+    sig_date_data = {}
+    if signatures:
+        sig_api = models.SignatureFirstDate()
+        first_dates = sig_api.get(signatures=signatures)
+        for sig in first_dates['hits']:
+            sig_date_data[sig['signature']] = sig['first_date']
 
     for crash in tcbs:
         crash_counts = []
@@ -305,11 +317,18 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
         crash['correlation_os'] = max(crash_counts)[1]
         sig = crash['signature']
+
+        # Augment with bugs.
         if sig in bugs:
             if 'bugs' in crash:
                 crash['bugs'].extend(bugs[sig])
             else:
                 crash['bugs'] = bugs[sig]
+
+        # Augment with first appearance dates.
+        if sig in sig_date_data:
+            crash['first_report'] = isodate.parse_datetime(sig_date_data[sig])
+
         if 'bugs' in crash:
             crash['bugs'].sort(reverse=True)
 

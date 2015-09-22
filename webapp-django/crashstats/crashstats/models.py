@@ -1409,6 +1409,28 @@ class SignaturesByBugs(SocorroMiddleware):
         return bugs.post(**kwargs)
 
 
+class SignatureFirstDate(SocorroMiddleware):
+
+    URL_PREFIX = '/signature/first_date/'
+
+    required_params = (
+        ('signatures', list),
+    )
+
+    API_WHITELIST = {
+        'hits': (
+            'signature',
+            'first_date',
+            'first_build',
+        )
+    }
+
+    def get(self, **kwargs):
+        # Get is actually a POST underneath.
+        url = self.URL_PREFIX
+        return self.post(url, kwargs)
+
+
 class SignatureTrend(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/signature_history/'

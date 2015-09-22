@@ -912,6 +912,23 @@ class TestModels(DjangoTestCase):
 
         assert_raises(ValueError, api.get)
 
+    @mock.patch('requests.post')
+    def test_signature_first_date(self, rpost):
+        api = models.SignatureFirstDate()
+
+        def mocked_post(url, params, **options):
+            assert 'signature/first_date' in url, url
+            return Response({
+                "hits": [],
+                "total": 0
+            })
+
+        rpost.side_effect = mocked_post
+        r = api.get(
+            signatures=['Pickle::ReadBytes', 'FakeSignature'],
+        )
+        eq_(r['total'], 0)
+
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):
         model = models.SignatureTrend

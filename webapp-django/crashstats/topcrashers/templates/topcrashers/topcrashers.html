@@ -92,6 +92,7 @@ Top Crashers for {{ product }} {{ version }}
                         <th scope="col">{{ os_name }}</th>
                         {% endif %}
                         <th scope="col">Is GC</th>
+                        <th scope="col">First Appearance</th>
                         <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
                         <th title="Does not imply Causation" scope="col">Correlation</th>
                     </tr>
@@ -147,6 +148,11 @@ Top Crashers for {{ product }} {{ version }}
                         <td>{{ crash.mac_count }}</td>
                         {% endif %}
                         <td>{{ crash.is_gc_count }}</td>
+                        <td title="This crash signature first appeared at {{ crash.first_report }}" >
+                            <time datetime="{{ crash.first_report }}">
+                                {{ crash.first_report.date() }}
+                            </time>
+                        </td>
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
                             {{ show_bug_link(bug) }}

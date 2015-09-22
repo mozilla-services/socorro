@@ -16,9 +16,10 @@ class TestViews(BaseTestViews):
     base_url = reverse('topcrashers:topcrashers')
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_topcrashers(self, rpost):
+    @mock.patch('requests.post')
+    def test_topcrashers(self, rpost, bugs_get):
 
-        def mocked_post(**options):
+        def mocked_bugs(**options):
             return {
                 "hits": [
                     {"id": 123456789,
@@ -29,7 +30,22 @@ class TestViews(BaseTestViews):
                      "signature": u"FakeSignature1 \u7684 Japanese"}
                 ]
             }
-        rpost.side_effect = mocked_post
+        bugs_get.side_effect = mocked_bugs
+
+        def mocked_sigs(url, **options):
+            if 'signature/first_date' in url:
+                return Response({
+                    "hits": [
+                        {
+                            "signature": u"FakeSignature1 \u7684 Japanese",
+                            "first_date": "2000-01-01T12:23:34",
+                            "first_build": "20000101122334",
+                        },
+                    ],
+                    "total": 1
+                })
+            raise NotImplementedError(url)
+        rpost.side_effect = mocked_sigs
 
         def mocked_supersearch_get(**params):
             if '_columns' not in params:
@@ -135,6 +151,9 @@ class TestViews(BaseTestViews):
         bug_ids = [x.text for x in doc('td.bug_ids_more > a')]
         # higher bug number first
         eq_(bug_ids, ['33333', '22222'])
+
+        # Check the first appearance date is there.
+        ok_('2000-01-01 12:23:34' in response.content)
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
