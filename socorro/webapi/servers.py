@@ -5,7 +5,7 @@
 import web
 import os
 
-from socorro.webapi.classPartial import classWithPartialInit
+from socorro.webapi.class_partial import class_with_partial_init
 
 from configman import Namespace, RequiredConfig
 
@@ -55,7 +55,7 @@ class WebServerBase(RequiredConfig):
                         "wrapping %s",
                         cls.__name__
                     )
-                    urls.append(classWithPartialInit(cls, config))
+                    urls.append(class_with_partial_init(cls, config))
 
         self.urls = tuple(urls)
 
