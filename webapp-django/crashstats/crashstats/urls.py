@@ -105,6 +105,9 @@ urlpatterns = patterns(
     url('^daily$',
         views.daily,
         name='daily'),
+    url('^crashes-per-user/$',
+        views.crashes_per_user,
+        name='crashes_per_user'),
     # handle old-style urls
     url('^topchangers' + products + '$',
         views.topchangers,

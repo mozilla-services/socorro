@@ -23,14 +23,16 @@ class ADI(PostgreSQLBase):
             ('start_date', yesterday, 'date'),
             ('end_date', tomorrow, 'date'),
             ('product', '', 'str'),
-            ('version', '', 'str'),
+            ('versions', [], 'list'),
+            ('platforms', [], 'list'),
         ]
         params = external_common.parse_arguments(filters, kwargs)
         required = (
             'start_date',
             'end_date',
             'product',
-            'version',
+            'versions',
+            'platforms',
         )
         missing = []
         for each in required:
@@ -40,40 +42,40 @@ class ADI(PostgreSQLBase):
             raise MissingArgumentError(', '.join(missing))
 
         SQL = """
-        SELECT
-            SUM(adi_count) AS adi_count,
-            date::DATE,
-            product_name AS product,
-            product_version AS version,
-            product_os_platform AS platform,
-            update_channel AS release_channel
-        FROM
-            raw_adi
-        WHERE
-            product_name = %(product)s AND
-            product_version = %(version)s AND
-            date BETWEEN %(start_date)s::DATE AND %(end_date)s::DATE
-        GROUP BY
-            date::DATE,
-            product_name,
-            product_os_platform,
-            product_version,
-            update_channel
+            SELECT
+                SUM(adu_count) AS adi_count,
+                adu_date AS date,
+                pv.build_type,
+                pv.version_string AS version
+            FROM
+                product_adu
+            LEFT OUTER JOIN product_versions pv USING (product_version_id)
+            WHERE
+                pv.product_name = %(product)s
+                AND pv.version_string IN %(versions)s
+                AND os_name IN %(platforms)s
+                AND adu_date BETWEEN %(start_date)s AND %(end_date)s
+            GROUP BY
+                adu_date,
+                build_type,
+                version_string
         """
 
+        params['versions'] = tuple(params['versions'])
+        params['platforms'] = tuple(params['platforms'])
         results = self.query(SQL, params)
 
         fields = (
             'adi_count',
             'date',
-            'product',
+            'build_type',
             'version',
-            'platform',
-            'release_channel',
         )
         rows = []
         for record in results:
             row = dict(zip(fields, record))
             row['date'] = row['date'].strftime('%Y-%m-%d')
+            # BIGINTs become Decimal which becomes floating point in JSON
+            row['adi_count'] = long(row['adi_count'])
             rows.append(row)
         return {'hits': rows, 'total': len(rows)}

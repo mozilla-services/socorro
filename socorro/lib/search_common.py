@@ -352,6 +352,8 @@ class SearchBase(object):
                     new_values.append(0)
                 elif val == 'hang':
                     new_values.extend([-1, 1])
+                else:
+                    new_values.append(val)
 
             hang_type.value = new_values
             hang_type.data_type = 'int'

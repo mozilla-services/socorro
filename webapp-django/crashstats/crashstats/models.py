@@ -1740,10 +1740,24 @@ class ADI(SocorroMiddleware):
         ('start_date', datetime.date),
         ('end_date', datetime.date),
         'product',
-        'version',
+        ('versions', list),
+        ('platforms', list),
     )
 
     API_WHITELIST = (
         'hits',
         'total',
+    )
+
+
+class ProductBuildTypes(SocorroMiddleware):
+
+    URL_PREFIX = '/products/build_types/'
+
+    required_params = (
+        'product',
+    )
+
+    API_WHITELIST = (
+        'hits',
     )
