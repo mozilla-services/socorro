@@ -1264,60 +1264,6 @@ class TestViews(BaseTestViews):
         ok_(dump['state'])
 
     @mock.patch('requests.get')
-    def test_CrashTrends(self, rget):
-        def mocked_get(url, params, **options):
-            if '/crashtrends' in url:
-                ok_('product' in params)
-                eq_('WaterWolf', params['product'])
-
-                ok_('version' in params)
-                eq_('5.0', params['version'])
-
-                ok_('start_date' in params)
-                eq_('2012-01-01', params['start_date'])
-
-                ok_('end_date' in params)
-                eq_('2013-01-01', params['end_date'])
-
-                return Response("""
-                {
-                  "crashtrends": [
-                    {
-                        "sort": "1",
-                        "default_version": "5.0a1",
-                        "release_name": "waterwolf",
-                        "rapid_release_version": "5.0",
-                        "product_name": "WaterWolf"
-                    }],
-                    "total": "1"
-                }
-                """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('CrashTrends',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['product'])
-        ok_(dump['errors']['version'])
-        ok_(dump['errors']['start_date'])
-        ok_(dump['errors']['end_date'])
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '5.0',
-            'start_date': '2012-1-1',
-            'end_date': '2013-1-1',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['crashtrends'])
-        ok_(dump['total'])
-
-    @mock.patch('requests.get')
     def test_SignatureURLs(self, rget):
         def mocked_get(url, params, **options):
             if '/signatureurls' in url:

@@ -4,7 +4,6 @@ import datetime
 import logging
 import math
 import isodate
-import urllib
 from collections import defaultdict
 from operator import itemgetter
 
@@ -2387,33 +2386,6 @@ def gccrashes_json(request, default_context=None):
     return result
 
 
-@pass_default_context
-def crash_trends(request, product, versions=None, default_context=None):
-    context = default_context or {}
-    context['product'] = product
-    context['report'] = 'crash_trends'
-
-    version = get_latest_nightly(context, product)
-
-    context['version'] = version
-    context['end_date'] = datetime.datetime.utcnow()
-    context['start_date'] = context['end_date'] - datetime.timedelta(days=7)
-
-    context['products'] = context['currentproducts']
-
-    url = reverse('crashstats:crashtrends_json')
-    params = {
-        'product': product,
-        'version': version,
-        'start_date': context['start_date'].strftime('%Y-%m-%d'),
-        'end_date': context['end_date'].strftime('%Y-%m-%d')
-    }
-    url += '?' + urllib.urlencode(params)
-    context['data_url'] = url
-
-    return render(request, 'crashstats/crash_trends.html', context)
-
-
 @utils.json_view
 @pass_default_context
 def get_nightlies_for_product_json(request, default_context=None):
@@ -2421,47 +2393,6 @@ def get_nightlies_for_product_json(request, default_context=None):
         default_context,
         request.GET.get('product')
     )
-
-
-@utils.json_view
-@pass_default_context
-def crashtrends_json(request, default_context=None):
-    nightly_versions = get_all_nightlies(default_context)
-
-    form = forms.CrashTrendsForm(nightly_versions, request.GET)
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    product = form.cleaned_data['product']
-    version = form.cleaned_data['version']
-    start_date = form.cleaned_data['start_date']
-    end_date = form.cleaned_data['end_date']
-
-    api = models.CrashTrends()
-    response = api.get(
-        product=product,
-        version=version,
-        start_date=start_date.date(),
-        end_date=end_date.date()
-    )
-
-    formatted = {}
-    for report in response['crashtrends']:
-        report_date = report['report_date']
-        if report_date not in formatted:
-            formatted[report_date] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-            if report['days_out'] >= 8:
-                formatted[report_date][8] += report['report_count']
-            else:
-                days_out = int(report['days_out'])
-                formatted[report_date][days_out] += report['report_count']
-
-    json_response = {
-        'crashtrends': formatted,
-        'total': len(formatted)
-    }
-
-    return json_response
 
 
 @permission_required('crashstats.view_rawdump')

@@ -52,7 +52,6 @@ SERVICES_LIST = (
         r'signature_history|exploitability|adu_by_signature)/(.*)',
         'crashes.Crashes'
     ),
-    (r'/crashtrends/(.*)', 'crash_trends.CrashTrends'),
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
     (r'/field/(.*)', 'field.Field'),
     (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),

@@ -1098,34 +1098,6 @@ class TestViews(BaseTestViews):
         })
         ok_(response.status_code, 400)
 
-    def test_crash_trends(self):
-        url = reverse('crashstats:crash_trends', args=('WaterWolf',))
-        no_nightly_url = reverse('crashstats:crash_trends', args=('LandCrab',))
-        inconsistent_case_url = reverse('crashstats:crash_trends',
-                                        args=('SeaMonkey',))
-        unkown_product_url = reverse('crashstats:crash_trends',
-                                     args=('NotKnown',))
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('Nightly Crash Trends For WaterWolf' in response.content)
-
-        response = self.client.get(unkown_product_url)
-        eq_(response.status_code, 404)
-
-        # This used to cause a 500 because there is no Nightly associated
-        # with this product, should 200 now.
-        response = self.client.get(no_nightly_url)
-        eq_(response.status_code, 200)
-        ok_('Nightly Crash Trends For LandCrab' in response.content)
-
-        # This used to cause a 500 because of inconsistent case for
-        # release names in the DB, causing some releases to be returned
-        # as 'nightly' instead of 'Nightly'. This should now return 200.
-        response = self.client.get(inconsistent_case_url)
-        eq_(response.status_code, 200)
-        ok_('Nightly Crash Trends For SeaMonkey' in response.content)
-
     @mock.patch('requests.get')
     def test_get_nightlies_for_product_json(self, rget):
         url = reverse('crashstats:get_nightlies_for_product_json')
@@ -1160,79 +1132,6 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {'product': 'Unknown'})
         ok_(response.content, [])
-
-    @mock.patch('requests.get')
-    def test_crashtrends_json(self, rget):
-        url = reverse('crashstats:crashtrends_json')
-
-        def mocked_get(url, params, **options):
-            ok_('start_date' in params)
-            eq_('2012-10-01', params['start_date'])
-
-            ok_('end_date' in params)
-            eq_('2012-10-10', params['end_date'])
-
-            if '/crashtrends' in url:
-                return Response("""
-                    {
-                      "crashtrends": [{
-                        "build_date": "2012-10-10",
-                        "version_string": "5.0a1",
-                        "product_version_id": 1,
-                        "days_out": 6,
-                        "report_count": 144,
-                        "report_date": "2012-10-04",
-                        "product_name": "WaterWolf"
-                      },
-                      {
-                        "build_date": "2012-10-06",
-                        "version_string": "5.0a1",
-                        "product_version_id": 1,
-                        "days_out": 2,
-                        "report_count": 162,
-                        "report_date": "2012-10-08",
-                        "product_name": "WaterWolf"
-                      },
-                      {
-                        "build_date": "2012-09-29",
-                        "version_string": "5.0a1",
-                        "product_version_id": 1,
-                        "days_out": 5,
-                        "report_count": 144,
-                        "report_date": "2012-10-04",
-                        "product_name": "WaterWolf"
-                      }]
-                    }
-                    """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0',
-            'start_date': '2012-10-01',
-            'end_date': '2012-10-10'
-        })
-        ok_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        eq_(struct['total'], 2)
-
-        # Test with product that does not have a nightly
-        response = self.client.get(url, {
-            'product': 'LandCrab',
-            'version': '9.5',
-            'start_date': '2012-10-01',
-            'end_date': '2012-10-10'
-        })
-        ok_(response.status_code, 400)
-        ok_('text/html' in response['content-type'])
-        ok_(
-            'LandCrab is not one of the available choices'
-            in response.content
-        )
 
     @mock.patch('crashstats.crashstats.models.SignaturesByBugs.get')
     @mock.patch('requests.get')

@@ -94,8 +94,6 @@ WHILE thisday <= lastday LOOP
     PERFORM backfill_home_page_graph(thisday);
     PERFORM backfill_home_page_graph_build(thisday);
     DROP TABLE IF EXISTS new_signatures;
-    RAISE INFO 'nightly builds';
-    PERFORM backfill_nightly_builds(thisday);
     RAISE INFO 'exploitability';
     PERFORM backfill_exploitability(thisday);
     RAISE INFO 'android_devices';
@@ -124,5 +122,3 @@ DROP TABLE temp_signature_summaries;
 
 RETURN true;
 END; $$;
-
-
