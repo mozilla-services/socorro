@@ -1,44 +1,34 @@
 {% macro pagination(report, current_url, current_page, tab = None) %}
 {% set separator = not current_url.endswith('?') and '&' or '' %}
-  <div class="pagination">
-    <span class="totalItems">{{ report.total_count | digitgroupseparator }}</span> Results
-    {% if report.total_pages > 1 %}
+<div class="pagination">
+    <span class="totalItems">{{ report.total_count | digitgroupseparator }}</span>
+    Results
+{% if report.total_pages > 1 %}
     &hellip;
     {% if current_page > 1 %}
-    <a
-        href="{{ current_url }}{{ separator }}page={{ current_page - 1 }}{{ tab }}"
-        data-page="{{ current_page - 1 }}"
-    >&larr; Prev</a>
+    <a href="{{ current_url }}{{ separator }}page={{ current_page - 1 }}{{ tab }}" data-page="{{ current_page - 1 }}">&larr; Prev</a>
     {% endif %}
+
     {% for page in range(1, report.total_pages + 1) %}
-      {% if page == current_page %}
+        {% if page == current_page %}
         <strong>{{ page }}</strong>
-      {% elif page > 2 and page < (report.total_pages - 2) %}
-        {% if current_page < 3 and page == 7 %}
-          &hellip;
-        {% elif current_page > 6 and page == 3 %}
-          &hellip;
-        {% elif page > (current_page - 3) and page < (current_page + 3) %}
-          <a
-              href="{{ current_url }}{{ separator }}page={{ page }}{{ tab }}"
-              data-page="{{ page }}"
-          >{{ page }}</a>
-        {% elif page == (report.total_pages - 3) %}
-          &hellip;
+        {% elif page > 2 and page < (report.total_pages - 2) %}
+            {% if current_page < 3 and page==7 %}
+            &hellip;
+            {% elif current_page> 6 and page == 3 %}
+            &hellip;
+            {% elif page > (current_page - 3) and page < (current_page + 3) %}
+            <a href="{{ current_url }}{{ separator }}page={{ page }}{{ tab }}" data-page="{{ page }}">{{ page }}</a>
+            {% elif page == (report.total_pages - 3) %}
+            &hellip;
+            {% endif %}
+        {% else %}
+            <a href="{{ current_url }}{{ separator }}page={{ page }}{{ tab }}" data-page="{{ page }}">{{ page }}</a>
         {% endif %}
-      {% else %}
-        <a
-            href="{{ current_url }}{{ separator }}page={{ page }}{{ tab }}"
-            data-page="{{ page }}"
-        >{{ page }}</a>
-      {% endif %}
     {% endfor %}
     {% if report.total_pages > current_page %}
-      <a
-          href="{{ current_url }}{{ separator }}page={{ current_page + 1 }}{{ tab }}"
-          data-page="{{ current_page + 1 }}"
-      >Next &rarr;</a>
+        <a href="{{ current_url }}{{ separator }}page={{ current_page + 1 }}{{ tab }}" data-page="{{ current_page + 1 }}">Next &rarr;</a>
     {% endif %}
-    {% endif %}
-  </div>
+{% endif %}
+</div>
 {%- endmacro %}
