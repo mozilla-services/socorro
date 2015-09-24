@@ -821,6 +821,7 @@ class SignatureGenerationRule(Rule):
             processed_crash.get('hang_type', ''),
             crashed_thread,
         )
+        processed_crash.proto_signature = ' | '.join(signature_list)
         processed_crash.signature = signature
         if signature_notes:
             processor_meta.processor_notes.extend(signature_notes)

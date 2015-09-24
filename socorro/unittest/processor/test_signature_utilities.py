@@ -119,8 +119,8 @@ class TestCSignatureTool(BaseTestClass):
             expectedRegEx.signatures_with_line_numbers_re,
             s.signatures_with_line_numbers_re
         )
-        self.assert_equal_with_nicer_output(fixupSpace, s.fixup_space)
-        self.assert_equal_with_nicer_output(fixupComma, s.fixup_comma)
+        eq_(fixupSpace.pattern, s.fixup_space.pattern)
+        eq_(fixupComma.pattern, s.fixup_comma.pattern)
 
     #--------------------------------------------------------------------------
     def test_C_db_tool_init(self):
@@ -1122,6 +1122,7 @@ class TestSignatureGeneration(TestCase):
                 'length'
             ]
         )
+        ok_('proto_signature' not in processed_crash)
 
     #--------------------------------------------------------------------------
     def test_action_2(self):
@@ -1144,6 +1145,17 @@ class TestSignatureGeneration(TestCase):
             '| MsgWaitForMultipleObjects | F_1152915508_________________'
             '_________________'
         )
+        eq_(
+            processed_crash.proto_signature,
+            'NtWaitForMultipleObjects | WaitForMultipleObjectsEx | '
+            'WaitForMultipleObjectsExImplementation | '
+            'RealMsgWaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________ | '
+            'F2166389______________________________________ | '
+            'F_917831355___________________________________ | '
+            'F1315696776________________________________ | '
+            'F_1428703866________________________________'
+        )
         eq_(processor_meta.processor_notes, [])
 
     #--------------------------------------------------------------------------
@@ -1164,6 +1176,18 @@ class TestSignatureGeneration(TestCase):
         eq_(
             processed_crash.signature,
             'Alpha<T>::Echo<T>'
+        )
+        eq_(
+            processed_crash.proto_signature,
+            'NtWaitForMultipleObjects | Alpha<T>::Echo<T> | '
+            'WaitForMultipleObjectsExImplementation | '
+            'RealMsgWaitForMultipleObjectsEx | '
+            'MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________ | '
+            'F2166389______________________________________ | '
+            'F_917831355___________________________________ | '
+            'F1315696776________________________________ | '
+            'F_1428703866________________________________'
         )
         eq_(processor_meta.processor_notes, [])
 
@@ -1193,6 +1217,10 @@ class TestSignatureGeneration(TestCase):
         eq_(
             processed_crash.signature,
             'EMPTY: no crashing thread identified'
+        )
+        eq_(
+            processed_crash.proto_signature,
+            ''
         )
         eq_(
             processor_meta.processor_notes,
@@ -1245,6 +1273,10 @@ class TestSignatureGeneration(TestCase):
         eq_(
             processed_crash.signature,
             'user2.dll@0x20869'
+        )
+        eq_(
+            processed_crash.proto_signature,
+            '@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869'
         )
         eq_(processor_meta.processor_notes, [])
 
