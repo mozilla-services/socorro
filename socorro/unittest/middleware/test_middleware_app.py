@@ -478,8 +478,6 @@ class IntegrationTestMiddlewareApp(TestCase):
         super(IntegrationTestMiddlewareApp, self).tearDown()
         self.conn.cursor().execute("""
             TRUNCATE
-                bugs,
-                bug_associations,
                 reports,
                 products,
                 releases_raw,
@@ -530,11 +528,20 @@ class IntegrationTestMiddlewareApp(TestCase):
         """)
         self.conn.commit()
 
-    def _setup_config_manager(self, extra_value_source=None):
+    def _setup_config_manager(
+        self,
+        extra_value_source=None,
+        services_list=None
+    ):
         if extra_value_source is None:
             extra_value_source = {}
         extra_value_source['web_server.wsgi_server_class'] = MyWSGIServer
         mock_logging = mock.Mock()
+        if services_list:
+            middleware_app.MiddlewareApp.SERVICES_LIST = services_list
+        else:
+            # the global list
+            middleware_app.MiddlewareApp.SERVICES_LIST = middleware_app.SERVICES_LIST
         required_config = middleware_app.MiddlewareApp.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
@@ -589,8 +596,17 @@ class IntegrationTestMiddlewareApp(TestCase):
 
     def test_overriding_implementation_class(self):
         config_manager = self._setup_config_manager({
-            'implementations.service_overrides': 'Backfill: psql, Bugs: typo'
-        })
+            'implementations.implementation_list': (
+                'psql:socorro.unittest.middleware'
+            ),
+            'implementations.service_overrides': (
+                'Fooing: typo'
+            )
+        },
+            services_list=(
+                ('/fooing/', 'things.Fooing'),
+            )
+        )
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
@@ -599,33 +615,21 @@ class IntegrationTestMiddlewareApp(TestCase):
                 app.main
             )
 
-        imp_list_option = (
-            middleware_app.MiddlewareApp.required_config
-            .implementations.implementation_list
-        )
-        default = imp_list_option.from_string_converter(
-            imp_list_option.default
-        )
-        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
-        imp_service_overrides_option = (
-            middleware_app.MiddlewareApp.required_config
-            .implementations.service_overrides
-        )
-        default_overrides = imp_service_overrides_option.from_string_converter(
-            imp_service_overrides_option.default
-        )
-        prev_overrides_list = (
-            ', '.join('%s: %s' % (x, y) for (x, y) in default_overrides)
-        )
+        prev_impl_list = 'psql: does.not.exist'
+        prev_overrides_list = 'Other: stuff'
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                prev_overrides_list + ', Bugs: testy'
+                prev_overrides_list + ', Doesnt: matter'
             ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.uTYPO.middleware'
             )
-        })
+        },
+            services_list=(
+                ('/fooing/', 'fooing.Fooing'),
+            )
+        )
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
@@ -633,36 +637,36 @@ class IntegrationTestMiddlewareApp(TestCase):
 
         config_manager = self._setup_config_manager({
             'implementations.service_overrides': (
-                prev_overrides_list + ', Bugs: testy'
+                prev_overrides_list + ', Fooing: testy'
             ),
             'implementations.implementation_list': (
                 prev_impl_list + ', testy: socorro.unittest.middleware'
             )
-        })
+        },
+            services_list=(
+                ('/fooing/', 'fooing.Fooing'),
+            )
+        )
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
             app.main()
             server = middleware_app.application
 
-            response = self.get(server, '/bugs/')
+            response = self.get(server, '/fooing/')
             eq_(response.data, ['all', 'your', 'base'])
 
     def test_overriding_implementation_class_at_runtime(self):
-        imp_list_option = (
-            middleware_app.MiddlewareApp.required_config
-            .implementations.implementation_list
-        )
-        default = imp_list_option.from_string_converter(
-            imp_list_option.default
-        )
-        prev_impl_list = ', '.join('%s: %s' % (x, y) for (x, y) in default)
-
         config_manager = self._setup_config_manager({
             'implementations.implementation_list': (
-                prev_impl_list + ', testy: socorro.unittest.middleware'
+                'psql: socorro.unittest.middleware, '
+                'testy: socorro.unittest.middleware.somesubmodule'
             )
-        })
+        },
+            services_list=(
+                ('/fooing/', 'fooing.Fooing'),
+            )
+        )
 
         with config_manager.context() as config:
             app = middleware_app.MiddlewareApp(config)
@@ -670,20 +674,20 @@ class IntegrationTestMiddlewareApp(TestCase):
             server = middleware_app.application
 
             # normal call
-            url = '/bugs/'
+            url = '/fooing/'
             response = self.get(server, url, {'signatures': ['abc']})
-            eq_(response.data, {'hits': [], 'total': 0})
+            eq_(response.data, ['all', 'your', 'base'])
 
             # forcing implementation at runtime
-            url = '/bugs/'
+            url = '/fooing/'
             response = self.get(server, url, {
                 'signatures': ['abc'],
                 '_force_api_impl': 'testy',
             })
-            eq_(response.data, ['all', 'your', 'base'])
+            eq_(response.data, ['one', 'two', 'three'])
 
             # forcing unexisting implementation at runtime
-            url = '/bugs/'
+            url = '/fooing/'
             assert_raises(
                 AppError,
                 self.get,
@@ -990,66 +994,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, {})
 
-    def test_bugs(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.post(
-                server,
-                '/bugs/',
-                {'signatures': ['sign1', 'sign2']}
-            )
-            eq_(response.data, {'hits': [], u'total': 0})
-
-            # because the bugs API is using POST and potentially multiple
-            # signatures, it's a good idea to write a full integration test
-
-            cursor = self.conn.cursor()
-            cursor.execute("""
-            INSERT INTO bugs VALUES
-            (1),
-            (2),
-            (3);
-            INSERT INTO bug_associations
-            (signature, bug_id)
-            VALUES
-            (%s, 1),
-            (%s, 3),
-            (%s, 2);
-            """, ('othersig', 'si/gn1', 'sign2+'))
-            self.conn.commit()
-
-            response = self.post(
-                server,
-                '/bugs/',
-                {'signatures': ['si/gn1', 'sign2+']}
-            )
-            hits = sorted(response.data['hits'], key=lambda k: k['id'])
-            eq_(response.data['total'], 2)
-            eq_(hits,
-                             [{u'id': 2, u'signature': u'sign2+'},
-                              {u'id': 3, u'signature': u'si/gn1'}])
-
-            response = self.post(
-                server,
-                '/bugs/',
-                {'signatures': 'othersig'}
-            )
-            eq_(response.data['total'], 1)
-            eq_(response.data['hits'],
-                             [{u'id': 1, u'signature': u'othersig'}])
-
-            response = self.post(
-                server,
-                '/bugs/',
-                {'signatures': ['never', 'heard', 'of']}
-            )
-            eq_(response.data, {'hits': [], u'total': 0})
-
     def test_signature_first_date(self):
         config_manager = self._setup_config_manager()
 
@@ -1157,15 +1101,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.status, 400)
             ok_('versions' in response.body)
-
-            response = self.post(
-                server,
-                '/bugs/',
-                {},
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('signatures' in response.body)
 
             response = self.get(
                 server,

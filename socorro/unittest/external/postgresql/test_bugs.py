@@ -2,9 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Deprecated by socorro/unittest/external/postgresql/test_bugs_service.py"""
-
-from nose.tools import eq_, assert_raises
+from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.postgresql.bugs import Bugs, MissingArgumentError
 
@@ -76,7 +74,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         params = {
             "signatures": "mysignature"
         }
-        res = bugs.post(**params)
+        res = bugs.get(**params)
         res_expected = {
             "hits": [
                 {
@@ -102,7 +100,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         params = {
             "signatures": ["mysignature", "js"]
         }
-        res = bugs.post(**params)
+        res = bugs.get(**params)
         res_expected = {
             "hits": [
                 {
@@ -136,7 +134,7 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         params = {
             "signatures": "unknown"
         }
-        res = bugs.post(**params)
+        res = bugs.get(**params)
         res_expected = {
             "hits": [],
             "total": 0
@@ -147,20 +145,26 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         #......................................................................
         # Test 4: missing argument
         params = {}
-        assert_raises(MissingArgumentError, bugs.post, **params)
+        assert_raises(MissingArgumentError, bugs.get, **params)
 
         #......................................................................
         # Test 5: search by bug_ids argument
         params = {
-            "bug_ids": ["1","2"]
+            "bug_ids": ["1", "2"]
         }
-        res = bugs.post(**params)
+        res = bugs.get(**params)
+
+        # This is what we expect but because the results aren't sorted,
+        # we can't expect them to come in in this order.
         res_expected = {
             'hits': [
-                {'id': 1, 'signature': 'sign1'},
                 {'id': 1, 'signature': 'js'},
+                {'id': 1, 'signature': 'sign1'},
                 {'id': 2, 'signature': 'mysignature'}
             ],
-            "total": 3
+            'total': 3
         }
-        eq_(res, res_expected)
+        eq_(res['total'], res_expected['total'])
+        assert len(res['hits']) == len(res_expected['hits'])
+        for row in res_expected['hits']:
+            ok_(row in res['hits'])

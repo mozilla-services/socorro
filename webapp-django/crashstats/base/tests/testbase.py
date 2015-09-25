@@ -3,6 +3,7 @@ import mock
 import django.test
 import django.utils.unittest
 
+from crashstats.crashstats import models
 from crashstats.supersearch.models import (
     SuperSearch,
     SuperSearchFields,
@@ -30,6 +31,8 @@ class DjangoTestCase(django.test.TestCase):
         # attacking first in
         # https://bugzilla.mozilla.org/show_bug.cgi?id=1188083
         classes_with_implementation = (
+            models.Bugs,
+            models.SignaturesByBugs,
             SuperSearch,
             SuperSearchFields,
             SuperSearchField,

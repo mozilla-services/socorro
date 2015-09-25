@@ -17,7 +17,9 @@ import ujson
 from configman import configuration
 
 from socorro.external.es.base import ElasticsearchConfig
+from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.app import socorro_app
+from socorro.external.postgresql import bugs
 
 from django.conf import settings
 from django.core.cache import cache
@@ -26,13 +28,6 @@ from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
-# The reason to import this is if this file is, for some reason, imported
-# before django's had a chance to register all models.py in the
-# settings.INSTALLED_APPS list.
-# This can happen if you use django-nose on a specific file.
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1121749
-from crashstats.dataservice import models
-models = models  # silence pyflakes
 
 logger = logging.getLogger('crashstats_models')
 
@@ -41,9 +36,9 @@ def config_from_configman():
     return configuration(
         definition_source=[
             ElasticsearchConfig.required_config,
+            PostgreSQLCrashStorage.required_config,
             # This required_config defines the logger aggregate
             socorro_app.App.required_config,
-
         ],
         values_source_list=[
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
@@ -1353,39 +1348,34 @@ class CrashesByExploitability(SocorroMiddleware):
 
 class Bugs(SocorroMiddleware):
 
-    required_params = settings.DATASERVICE_CONFIG.services.Bugs.required_params
-    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
+    implementation = bugs.Bugs
 
-    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
+    required_params = (
+        'signatures',
+    )
 
-    @memoize
-    def get(self, **kwargs):
-        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
-        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
-
-        if not kwargs.get('signatures'):
-            raise ValueError("'signatures' can not be empty")
-        return bugs.post(**kwargs)
+    API_WHITELIST = {
+        'hits': (
+            'id',
+            'signature',
+        ),
+    }
 
 
 class SignaturesByBugs(SocorroMiddleware):
 
-    settings.DATASERVICE_CONFIG.services.Bugs.required_params = (
+    implementation = bugs.Bugs
+
+    required_params = (
         'bug_ids',
     )
-    required_params = settings.\
-        DATASERVICE_CONFIG.services.Bugs.required_params
-    expect_json = settings.DATASERVICE_CONFIG.services.Bugs.output_is_json
 
-    API_WHITELIST = settings.DATASERVICE_CONFIG.services.Bugs.api_whitelist
-
-    def get(self, **kwargs):
-        bugs_cls = settings.DATASERVICE_CONFIG.services.Bugs.cls
-        bugs = bugs_cls(settings.DATASERVICE_CONFIG.services.Bugs)
-
-        if not kwargs.get('bug_ids'):
-            raise ValueError("'bug_ids' can not be empty")
-        return bugs.post(**kwargs)
+    API_WHITELIST = {
+        'hits': (
+            'id',
+            'signature',
+        ),
+    }
 
 
 class SignatureFirstDate(SocorroMiddleware):

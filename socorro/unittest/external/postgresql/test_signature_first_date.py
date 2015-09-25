@@ -14,7 +14,8 @@ from .unittestbase import PostgreSQLTestCase
 
 # =============================================================================
 class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
-    """Test socorro.external.postgresql.bugs_service.Bugs class. """
+    """Test socorro.external.postgresql.signature_first_date
+    .SignatureFirstDate class. """
 
     # -------------------------------------------------------------------------
     def _insert_test_data(self):

@@ -266,7 +266,7 @@ class TestHealthcheckViews(BaseTestViews):
             eq_(
                 config['hosts'],
                 settings.SOCORRO_IMPLEMENTATIONS_CONFIG
-                ['elasticsearch']['elasticsearch_urls']
+                ['resource']['elasticsearch']['elasticsearch_urls']
             )
             return es_instance
 

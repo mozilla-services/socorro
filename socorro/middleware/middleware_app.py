@@ -42,7 +42,6 @@ from configman.converters import class_converter
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
     (r'/backfill/(.*)', 'backfill.Backfill'),
-    (r'/bugs/(.*)', 'bugs.Bugs'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
     (r'/crash_data/(.*)', 'crash_data.CrashData'),
@@ -125,6 +124,9 @@ class MiddlewareApp(App):
     app_name = 'middleware'
     app_version = '3.1'
     app_description = __doc__
+
+    # make the global list a class attribute
+    SERVICES_LIST = SERVICES_LIST
 
     #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
@@ -402,7 +404,7 @@ class MiddlewareApp(App):
         services_list = []
         # populate the 'services_list' with the tuples that will define the
         # urls and services offered by the middleware.
-        for url, impl_class in SERVICES_LIST:
+        for url, impl_class in self.SERVICES_LIST:
             impl_instance = lookup(impl_class)
             wrapped_impl = wrap(impl_instance, impl_class)
             services_list.append((url, wrapped_impl))
