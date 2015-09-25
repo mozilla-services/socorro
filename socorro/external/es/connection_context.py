@@ -55,6 +55,13 @@ class ConnectionContext(RequiredConfig):
         reference_value_from='resource.elasticsearch',
     )
     required_config.add_option(
+        'elasticsearch_timeout_extended',
+        default=120,
+        doc='the time in seconds before a query to elasticsearch fails in '
+            'restricted sections',
+        reference_value_from='resource.elasticsearch',
+    )
+    required_config.add_option(
         'elasticsearch_default_index',
         default='socorro',
         doc='the default index used to store data',
