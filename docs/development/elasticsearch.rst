@@ -163,9 +163,16 @@ Here is a list of the switches you need to turn on to use each feature:
 +-----------------------+-----------------------------------------------------+
 | Feature               | Switches                                            |
 +=======================+=====================================================+
-| Custom Queries        | supersearch-custom-query                            |
-+-----------------------+-----------------------------------------------------+
 | Signature report      | signature-report                                    |
++-----------------------+-----------------------------------------------------+
+
+Here are features that are enabled by default, that you need to switch
+if you want to *disable* them:
+
++-----------------------+-----------------------------------------------------+
+| Feature               | Switches                                            |
++=======================+=====================================================+
+| Custom Queries        | supersearch-custom-query-disabled                   |
 +-----------------------+-----------------------------------------------------+
 
 Validate your configuration

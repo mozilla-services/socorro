@@ -20,34 +20,35 @@ from crashstats.supersearch.views import (
 
 class TestViews(BaseTestViews):
 
-    @classmethod
-    def setUpClass(cls):
-        super(cls, TestViews).setUpClass()
-        TestViews.custom_switch = Switch.objects.create(
-            name='supersearch-custom-query',
-            active=True,
+    def test_search_waffle_switch(self):
+        url_custom = reverse('supersearch.search_custom')
+        url_query = reverse('supersearch.search_query')
+
+        response = self.client.get(url_custom)
+        # By default, it's available, but it redirects because
+        # you're not signed in.
+        eq_(response.status_code, 302)
+        response = self.client.get(url_query)
+        eq_(response.status_code, 302)
+
+        # disable it
+        switch = Switch.objects.create(
+            name='supersearch-custom-query-disabled',
+            active=True
         )
 
-    @classmethod
-    def tearDownClass(cls):
-        TestViews.custom_switch.delete()
-        super(cls, TestViews).tearDownClass()
-
-    def test_search_waffle_switch(self):
-        # Deactivate the switch to verify it's not accessible.
-        TestViews.custom_switch.active = False
-        TestViews.custom_switch.save()
-
-        url = reverse('supersearch.search_custom')
-        response = self.client.get(url)
+        response = self.client.get(url_custom)
+        eq_(response.status_code, 404)
+        response = self.client.get(url_query)
         eq_(response.status_code, 404)
 
-        url = reverse('supersearch.search_query')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        TestViews.custom_switch.active = True
-        TestViews.custom_switch.save()
+        # leave it but disable the disabling switch
+        switch.active = False
+        switch.save()
+        response = self.client.get(url_custom)
+        eq_(response.status_code, 302)
+        response = self.client.get(url_query)
+        eq_(response.status_code, 302)
 
     def test_search(self):
         self._login()
