@@ -2,66 +2,57 @@
 
 {% block page_title %}Admin{% endblock %}
 
-
-{% block site_css %}
-  {{ super() }}
-  <style type="text/css">
-
-  </style>
-{% endblock %}
-
-
 {% block admin_title %}Admin Home{% endblock %}
 
 {% block mainbody %}
 
-    <div class="panel">
-      <div class="body">
+<div class="panel">
+    <div class="body">
 
-      <p>
-        <a href="{{ url('manage:featured_versions') }}">Featured Versions</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:fields') }}">Fields</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:skiplist') }}">Skiplist</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:users') }}">Users</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:groups') }}">Groups</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:analyze_model_fetches') }}">Analyze Model Fetches</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:graphics_devices') }}">Graphics Devices</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:symbols_uploads') }}">Symbols Uploads</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:supersearch_fields') }}">Super Search Fields</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:products') }}">Products</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:releases') }}">Releases</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:events') }}">Events</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:api_tokens') }}">API Tokens</a>
-      </p>
-      <p>
-         <a href="{{ url('manage:crash_me_now') }}">Crash Me Now</a>
-      </p>
+        <p>
+            <a href="{{ url('manage:featured_versions') }}">Featured Versions</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:fields') }}">Fields</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:skiplist') }}">Skiplist</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:users') }}">Users</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:groups') }}">Groups</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:analyze_model_fetches') }}">Analyze Model Fetches</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:graphics_devices') }}">Graphics Devices</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:symbols_uploads') }}">Symbols Uploads</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:supersearch_fields') }}">Super Search Fields</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:products') }}">Products</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:releases') }}">Releases</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:events') }}">Events</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:api_tokens') }}">API Tokens</a>
+        </p>
+        <p>
+            <a href="{{ url('manage:crash_me_now') }}">Crash Me Now</a>
+        </p>
 
-      </div>
     </div>
+</div>
 
 {% endblock %}

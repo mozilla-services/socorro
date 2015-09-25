@@ -10,39 +10,38 @@
         <h2>{% block admin_title %}Admin{% endblock %}</h2>
         <ul class="options">
             <li><a href="{{ url('manage:home') }}"
-                 {% if request.path_info == url('manage:home') %}class="selected"{% endif %}>Home</a></li>
+                {% if request.path_info == url('manage:home') %}class="selected"{% endif %}>Home</a></li>
             <li><a href="{{ url('manage:featured_versions') }}"
-                 {% if request.path_info == url('manage:featured_versions') %}class="selected"{% endif %}>Featured Versions</a></li>
+                {% if request.path_info == url('manage:featured_versions') %}class="selected"{% endif %}>Featured Versions</a></li>
             <li><a href="{{ url('manage:fields') }}"
-                 {% if request.path_info == url('manage:fields') %}class="selected"{% endif %}>Fields</a></li>
+                {% if request.path_info == url( 'manage:fields') %}class="selected"{% endif %}>Fields</a></li>
             <li><a href="{{ url('manage:skiplist') }}"
-                 {% if request.path_info == url('manage:skiplist') %}class="selected"{% endif %}>Skiplist</a></li>
+                {% if request.path_info == url( 'manage:skiplist') %}class="selected"{% endif %}>Skiplist</a></li>
             <li><a href="{{ url('manage:users') }}"
-                 {% if url('manage:users') in request.path_info  %}class="selected"{% endif %}>Users</a></li>
+                {% if url( 'manage:users') in request.path_info %}class="selected"{% endif %}>Users</a></li>
             <li><a href="{{ url('manage:groups') }}"
-                 {% if url('manage:groups') in request.path_info  %}class="selected"{% endif %}>Groups</a></li>
+                {% if url( 'manage:groups') in request.path_info %}class="selected"{% endif %}>Groups</a></li>
             <li><a href="{{ url('manage:analyze_model_fetches') }}"
-                 {% if url('manage:analyze_model_fetches') in request.path_info  %}class="selected"{% endif %}>Analyze Model Fetches</a></li>
+                {% if url( 'manage:analyze_model_fetches') in request.path_info %}class="selected"{% endif %}>Analyze Model Fetches</a></li>
             <li><a href="{{ url('manage:graphics_devices') }}"
-                 {% if url('manage:graphics_devices') in request.path_info  %}class="selected"{% endif %}>Graphics Devices</a></li>
+                {% if url( 'manage:graphics_devices') in request.path_info %}class="selected"{% endif %}>Graphics Devices</a></li>
             <li><a href="{{ url('manage:symbols_uploads') }}"
-                 {% if url('manage:symbols_uploads') in request.path_info  %}class="selected"{% endif %}>Symbols Uploads</a></li>
+                {% if url( 'manage:symbols_uploads') in request.path_info %}class="selected"{% endif %}>Symbols Uploads</a></li>
             <li><a href="{{ url('manage:supersearch_fields') }}"
-                 {% if url('manage:supersearch_fields') in request.path_info  %}class="selected"{% endif %}>Super Search Fields</a></li>
+                {% if url( 'manage:supersearch_fields') in request.path_info %}class="selected"{% endif %}>Super Search Fields</a></li>
             <li><a href="{{ url('manage:products') }}"
-                 {% if url('manage:products') in request.path_info  %}class="selected"{% endif %}>Products</a></li>
+                {% if url( 'manage:products') in request.path_info %}class="selected"{% endif %}>Products</a></li>
             <li><a href="{{ url('manage:releases') }}"
-                 {% if url('manage:releases') in request.path_info  %}class="selected"{% endif %}>Releases</a></li>
+                {% if url( 'manage:releases') in request.path_info %}class="selected"{% endif %}>Releases</a></li>
             <li><a href="{{ url('manage:events') }}"
-                 {% if url('manage:events') in request.path_info  %}class="selected"{% endif %}>Events</a></li>
+                {% if url( 'manage:events') in request.path_info %}class="selected"{% endif %}>Events</a></li>
             <li><a href="{{ url('manage:api_tokens') }}"
-                 {% if url('manage:api_tokens') in request.path_info  %}class="selected"{% endif %}>API Tokens</a></li>
+                {% if url( 'manage:api_tokens') in request.path_info %}class="selected"{% endif %}>API Tokens</a></li>
             <li><a href="{{ url('manage:crash_me_now') }}"
-                 {% if url('manage:crash_me_now') in request.path_info  %}class="selected"{% endif %}>Crash Me Now</a></li>
+                {% if url( 'manage:crash_me_now') in request.path_info %}class="selected"{% endif %}>Crash Me Now</a></li>
         </ul>
     </div>
-    {% block mainbody %}
-    {% endblock %}
+    {% block mainbody %} {% endblock %}
 
 </div>
 {% endblock %}

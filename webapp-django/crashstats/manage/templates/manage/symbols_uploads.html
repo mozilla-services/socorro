@@ -2,98 +2,104 @@
 
 {% block page_title %}{{ super() }} - {{ page_title }}{% endblock %}
 
-
 {% block site_css %}
-  {{ super() }}
-  <style type="text/css">
-  table.data-table th {
-      width: 250px;
-  }
-  .count {
-      display: none;
-      margin-bottom: 0;
-  }
-  p.pleasewait {
-      display: none;
-      float: right;
-      margin-right: 10px;
-  }
-  .pagination {
-      display: none;
-      float: right;
-      margin: 0 10px;
-  }
-  form#filter {
-      margin-top: 30px;
-  }
-  </style>
+{{ super() }}
+<style type="text/css">
+    table.data-table th {
+        width: 250px;
+    }
+
+    .count {
+        display: none;
+        margin-bottom: 0;
+    }
+
+    p.pleasewait {
+        display: none;
+        float: right;
+        margin-right: 10px;
+    }
+
+    .pagination {
+        display: none;
+        float: right;
+        margin: 0 10px;
+    }
+
+    form#filter {
+        margin-top: 30px;
+    }
+</style>
 {% endblock %}
 
 {% block site_js %}
-  {{ super() }}
-  <script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
-  {% compress js %}
-  <script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
-  {% endcompress %}
-  {% compress js %}
-  <script type="text/javascript" src="{{ static('manage/js/symbols-uploads.js') }}"></script>
-  {% endcompress %}
+{{ super() }}
+<script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
+{% compress js %}
+<script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
+{% endcompress %}
+{% compress js %}
+<script type="text/javascript" src="{{ static('manage/js/symbols-uploads.js') }}"></script>
+{% endcompress %}
 {% endblock %}
-
 
 {% block admin_title %}{{ super() }} - {{ page_title }}{% endblock %}
 
-
 {% block mainbody %}
 
-  <div class="panel">
-       <div class="title">
+<div class="panel">
+    <div class="title">
         <h2>{{ page_title }}</h2>
-      </div>
+    </div>
     <div class="body">
 
-      <p class="pleasewait">
-        <img src="{{ static('img/loading.png') }}" alt="Loading animation" />
-        Loading...
-      </p>
+        <p class="pleasewait">
+            <img src="{{ static('img/loading.png') }}" alt="Loading animation" /> Loading...
+        </p>
 
-      <h3 class="count"><b></b> Symbols Uploads found
-        <span class="page-wrapper">(page <span class="page"></span>)</span>
-      </h3>
+        <h3 class="count"><b></b> Symbols Uploads found
+            <span class="page-wrapper">(page
+                <span class="page"></span>)</span>
+        </h3>
 
-      <p class="pagination">
-        <a href="" class="previous">&larr; Previous</a>
-        <a href="" class="next">Next &rarr;</a>
-      </p>
+        <p class="pagination">
+            <a href="" class="previous">&larr; Previous</a>
+            <a href="" class="next">Next &rarr;</a>
+        </p>
 
-      <form action="" id="filter" data-dataurl="{{ url('manage:symbols_uploads_data') }}">
-        <input type="hidden" name="page">
-        <table class="data-table" >
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Filename</th>
-              <th>&nbsp;</th>
-              <th>Size</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tfoot>
-            <tr>
-              <td><input type="text" name="email" placeholder="Search by email"></td>
-              <td><input type="text" name="filename" placeholder="Search by filename"></td>
-              <td>&nbsp;</td>
-              <td>&nbsp;</td>
-              <td><input type="submit" value="Filter">
-                  <input type="button" class="reset" value="Reset">
-              </td>
-            </tr>
-          </tfoot>
-          <tbody>
-          </tbody>
-        </table>
-      </form>
+        <form action="" id="filter" data-dataurl="{{ url('manage:symbols_uploads_data') }}">
+            <input type="hidden" name="page">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Filename</th>
+                        <th>&nbsp;</th>
+                        <th>Size</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <td>
+                            <input type="text" name="email" placeholder="Search by email">
+                        </td>
+                        <td>
+                            <input type="text" name="filename" placeholder="Search by filename">
+                        </td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>
+                            <input type="submit" value="Filter">
+                            <input type="button" class="reset" value="Reset">
+                        </td>
+                    </tr>
+                </tfoot>
+                <tbody>
+                </tbody>
+            </table>
+        </form>
     </div>
-  </div>
+</div>
 
 {% endblock %}
