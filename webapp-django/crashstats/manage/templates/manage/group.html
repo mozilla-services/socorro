@@ -5,22 +5,23 @@
 {% block admin_title %}{{ super() }} - Group '{{ group.name }}'{% endblock %}
 
 {% block mainbody %}
-
-  <div class="panel">
+<div class="panel">
     <div class="body">
 
-      <form class="edit" action="" method="post">
-        {{ csrf() }}
-        <table class="data-table">
-        {{ form }}
-        <tr>
-          <th>&nbsp;</th>
-          <td><input type="submit" value="Save"></td>
-        </tr>
-        </table>
-      </form>
+        <form class="edit" action="" method="post">
+            {{ csrf() }}
+            <table class="data-table">
+                {{ form }}
+                <tr>
+                    <th>&nbsp;</th>
+                    <td>
+                        <input type="submit" value="Save">
+                    </td>
+                </tr>
+            </table>
+        </form>
 
     </div>
-  </div>
+</div>
 
 {% endblock %}

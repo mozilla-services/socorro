@@ -5,26 +5,27 @@
 {% block admin_title %}{{ super() }} - Crash Me Now{% endblock %}
 
 {% block mainbody %}
-
-  <div class="panel">
+<div class="panel">
     <div class="body notitle">
 
-      <h3>
-        Cause a Webapp Exception
-      </h3>
+        <h3>
+            Cause a Webapp Exception
+        </h3>
 
-      <form action="" method="post">
-        {{ csrf() }}
-        <table class="data-table">
-          {{ form }}
-          <tr>
-            <th>&nbsp;</th>
-            <td><input type="submit" value="Thanks Obama!"></td>
-          </tr>
-        </table>
-      </form>
+        <form action="" method="post">
+            {{ csrf() }}
+            <table class="data-table">
+                {{ form }}
+                <tr>
+                    <th>&nbsp;</th>
+                    <td>
+                        <input type="submit" value="Thanks Obama!">
+                    </td>
+                </tr>
+            </table>
+        </form>
 
     </div>
-  </div>
+</div>
 
 {% endblock %}
