@@ -175,8 +175,8 @@ def get_topcrashers_results(**kwargs):
         for hit in results:
             sig = compare_signatures.get(hit['term'])
             if sig:
-                hit['diff'] = hit['percent'] - sig['percent']
-                hit['rank_diff'] = hit['rank'] - sig['rank']
+                hit['diff'] = sig['percent'] - hit['percent']
+                hit['rank_diff'] = sig['rank'] - hit['rank']
                 hit['previous_percent'] = sig['percent']
             else:
                 hit['diff'] = 'new'
