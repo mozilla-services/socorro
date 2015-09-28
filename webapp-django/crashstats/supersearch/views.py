@@ -340,7 +340,7 @@ def get_report_list_parameters(source):
     return params
 
 
-@waffle_switch('supersearch-custom-query')
+@waffle_switch('!supersearch-custom-query-disabled')
 @permission_required('crashstats.run_custom_queries')
 @pass_default_context
 def search_custom(request, default_context=None):
@@ -381,7 +381,7 @@ def search_custom(request, default_context=None):
     return render(request, 'supersearch/search_custom.html', context)
 
 
-@waffle_switch('supersearch-custom-query')
+@waffle_switch('!supersearch-custom-query-disabled')
 @permission_required('crashstats.run_custom_queries')
 @require_POST
 @utils.json_view
