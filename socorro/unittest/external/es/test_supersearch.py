@@ -426,6 +426,77 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_(not res['hits'][0]['accessibility'])
 
     @minimum_es_version('1.0')
+    def test_get_with_combined_operators(self):
+        sigs = (
+            'js::break_your_browser',
+            'mozilla::js::function',
+            'js<isKewl>',
+            'foo(bar)',
+        )
+
+        self.index_crash({
+            'signature': sigs[0],
+            'app_notes': 'foo bar mozilla',
+            'product': 'WaterWolf',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': sigs[1],
+            'app_notes': 'foo bar',
+            'product': 'WaterWolf',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': sigs[2],
+            'app_notes': 'foo mozilla',
+            'product': 'EarthRacoon',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': sigs[3],
+            'app_notes': 'mozilla bar',
+            'product': 'EarthRacoon',
+            'date_processed': self.now,
+        })
+        self.refresh_index()
+
+        res = self.api.get(
+            signature=['js', '~::'],
+        )
+        eq_(res['total'], 3)
+        eq_(
+            sorted([x['signature'] for x in res['hits']]),
+            sorted([sigs[0], sigs[1], sigs[2]])
+        )
+
+        res = self.api.get(
+            signature=['js', '~::'],
+            product=['Unknown'],
+        )
+        eq_(res['total'], 0)
+        eq_(len(res['hits']), 0)
+
+        res = self.api.get(
+            signature=['js', '~::'],
+            product=['WaterWolf', 'EarthRacoon'],
+        )
+        eq_(res['total'], 3)
+        eq_(
+            sorted([x['signature'] for x in res['hits']]),
+            sorted([sigs[0], sigs[1], sigs[2]])
+        )
+
+        res = self.api.get(
+            signature=['js', '~::'],
+            app_notes=['foo bar'],
+        )
+        eq_(res['total'], 2)
+        eq_(
+            sorted([x['signature'] for x in res['hits']]),
+            sorted([sigs[0], sigs[1]])
+        )
+
+    @minimum_es_version('1.0')
     def test_get_with_pagination(self):
         number_of_crashes = 21
         processed_crash = {

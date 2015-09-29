@@ -44,7 +44,7 @@ class SuperSearch(SearchBase):
         with self.es_context() as conn:
             return conn
 
-    def generate_list_of_indices(self, from_date, to_date, es_index=None):
+    def get_list_of_indices(self, from_date, to_date, es_index=None):
         """Return the list of indices to query to access all the crash reports
         that were processed between from_date and to_date.
 
@@ -81,7 +81,7 @@ class SuperSearch(SearchBase):
             if '<' in date.operator:
                 end_date = date.value
 
-        return self.generate_list_of_indices(start_date, end_date)
+        return self.get_list_of_indices(start_date, end_date)
 
     def format_field_names(self, hit):
         """Return a hit with each field's database name replaced by its
@@ -209,7 +209,7 @@ class SuperSearch(SearchBase):
         )
 
         # Create filters.
-        filters = None
+        filters = []
         histogram_intervals = {}
 
         for field, sub_params in params.items():
@@ -248,22 +248,47 @@ class SuperSearch(SearchBase):
                 elif param.data_type == 'str' and not param.operator:
                     param.value = [x.lower() for x in param.value]
 
+                # Operators needing wildcards, and the associated value
+                # transformation with said wildcards.
+                operator_wildcards = {
+                    '~': '*%s*',  # contains
+                    '$': '%s*',  # starts with
+                    '^': '*%s'  # ends with
+                }
+                # Operators needing ranges, and the associated Elasticsearch
+                # comparison operator.
+                operator_range = {
+                    '>': 'gt',
+                    '<': 'lt',
+                    '>=': 'gte',
+                    '<=': 'lte',
+                }
+
                 args = {}
                 filter_type = 'term'
                 filter_value = None
+
                 if not param.operator:
                     # contains one of the terms
                     if len(param.value) == 1:
                         val = param.value[0]
-                        if not isinstance(val, basestring) or (
-                            isinstance(val, basestring) and ' ' not in val
-                        ):
-                            filter_value = val
 
-                        # If the term contains white spaces, we want to perform
-                        # a phrase query. Thus we do nothing here and let this
-                        # value be handled later.
+                        if not isinstance(val, basestring) or ' ' not in val:
+                            # There's only one term and no white space, this
+                            # is a simple term filter.
+                            filter_value = val
+                        else:
+                            # If the term contains white spaces, we want to
+                            # perform a phrase query.
+                            filter_type = 'query'
+                            args = Q(
+                                'simple_query_string',
+                                query=param.value[0],
+                                fields=[name],
+                                default_operator='and',
+                            ).to_dict()
                     else:
+                        # There are several terms, this is a terms filter.
                         filter_type = 'terms'
                         filter_value = param.value
                 elif param.operator == '=':
@@ -271,93 +296,50 @@ class SuperSearch(SearchBase):
                     if field_data['has_full_version']:
                         name = '%s.full' % name
                     filter_value = param.value
-                elif param.operator == '>':
-                    # greater than
+                elif param.operator in operator_range:
                     filter_type = 'range'
                     filter_value = {
-                        'gt': param.value
-                    }
-                elif param.operator == '<':
-                    # lower than
-                    filter_type = 'range'
-                    filter_value = {
-                        'lt': param.value
-                    }
-                elif param.operator == '>=':
-                    # greater than or equal to
-                    filter_type = 'range'
-                    filter_value = {
-                        'gte': param.value
-                    }
-                elif param.operator == '<=':
-                    # lower than or equal to
-                    filter_type = 'range'
-                    filter_value = {
-                        'lte': param.value
+                        operator_range[param.operator]: param.value
                     }
                 elif param.operator == '__null__':
-                    # is null
                     filter_type = 'missing'
                     args['field'] = name
+                elif param.operator in operator_wildcards:
+                    filter_type = 'query'
+
+                    # Wildcard operations are better applied to a non-analyzed
+                    # field (called "full") if there is one.
+                    if field_data['has_full_version']:
+                        name = '%s.full' % name
+
+                    q_args = {}
+                    q_args[name] = (
+                        operator_wildcards[param.operator] % param.value
+                    )
+                    query = Q('wildcard', **q_args)
+                    args = query.to_dict()
 
                 if filter_value is not None:
                     args[name] = filter_value
 
                 if args:
+                    new_filter = F(filter_type, **args)
                     if param.operator_not:
-                        new_filter = ~F(filter_type, **args)
-                    else:
-                        new_filter = F(filter_type, **args)
+                        new_filter = ~new_filter
 
                     if sub_filters is None:
                         sub_filters = new_filter
-                    elif param.data_type == 'enum':
-                        sub_filters |= new_filter
-                    else:
+                    elif filter_type == 'range':
                         sub_filters &= new_filter
+                    else:
+                        sub_filters |= new_filter
 
                     continue
 
-                # These use a wildcard and thus need to be in a query
-                # instead of a filter.
-                operator_wildcards = {
-                    '~': '*%s*',  # contains
-                    '$': '%s*',  # starts with
-                    '^': '*%s'  # ends with
-                }
-                if param.operator in operator_wildcards:
-                    if field_data['has_full_version']:
-                        name = '%s.full' % name
+            if sub_filters is not None:
+                filters.append(sub_filters)
 
-                    query_type = 'wildcard'
-                    args[name] = (
-                        operator_wildcards[param.operator] % param.value
-                    )
-                elif not param.operator:
-                    # This is a phrase that was passed down.
-                    query_type = 'simple_query_string'
-                    args['query'] = param.value[0]
-                    args['fields'] = [name]
-                    args['default_operator'] = 'and'
-
-                if args:
-                    query = Q(query_type, **args)
-                    if param.operator_not:
-                        query = ~query
-                    search = search.query(query)
-                else:
-                    # If we reach this point, that means the operator is
-                    # not supported, and we should raise an error about that.
-                    raise NotImplementedError(
-                        'Operator %s is not supported' % param.operator
-                    )
-
-            if filters is None:
-                filters = sub_filters
-            elif sub_filters is not None:
-                filters &= sub_filters
-
-        search = search.filter(filters)
+        search = search.filter(F('bool', must=filters))
 
         # Restricting returned fields.
         fields = []

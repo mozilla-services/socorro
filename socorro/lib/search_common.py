@@ -375,7 +375,8 @@ class SearchBase(object):
         # Iterate on a copy so we can delete elements while looping.
         for version in list(parameters['version']):
             if version.operator:
-                # We only care about the '' operator ("has terms").
+                # We only care about the "has terms" operator, which
+                # actually is an empty string.
                 continue
 
             new_values = []
