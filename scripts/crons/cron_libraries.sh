@@ -53,7 +53,7 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Pulling processed JSON from PostgreSQL"
-    psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /data/bin/tar_crashes.py $TMPDIR/${I}_${J}.tar
+    psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /data/socorro/application/scripts/crons/tar_crashes.py $TMPDIR/${I}_${J}.tar
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
@@ -78,7 +78,7 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Pulling processed JSON from PostgreSQL"
-    psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /data/bin/tar_crashes.py $TMPDIR/${I}_${J}.tar
+    psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /data/socorro/application/scripts/crons/tar_crashes.py $TMPDIR/${I}_${J}.tar
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
