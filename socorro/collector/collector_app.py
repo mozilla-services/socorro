@@ -11,7 +11,7 @@
 # set both socorro and configman in your PYTHONPATH
 
 from socorro.app.generic_app import App, main
-from socorro.webapi.classPartial import class_with_partial_init
+from socorro.webapi.class_partial import class_with_partial_init
 from socorro.lib.converters import web_services_from_str
 
 from configman import Namespace
@@ -143,7 +143,7 @@ class Collector2015App(BaseCollectorApp):
             "name": "generic",
             "uri": "/some/other/uri",
             "service_implementation_class":
-                "socorro.collector.generic_collector.GenericCollector"
+                "socorro.collector.wsgi_generic_collector.GenericCollector"
         }
         ]''',
         doc='json-like list of services to be offered by this collector:'
@@ -174,7 +174,8 @@ class Collector2015App(BaseCollectorApp):
                     class_with_partial_init(
                         self.config.services[namespace]
                             .service_implementation_class,
-                        self.config.services[namespace]
+                        self.config.services[namespace],
+                        self.config
                     )
                 )
             )
@@ -189,7 +190,6 @@ class Collector2015App(BaseCollectorApp):
         # server will use.  For other webservers, the 'run' method actually
         # starts the standalone web server.
         application = self.web_server.run()
-
 
 if __name__ == '__main__':
     main(CollectorApp)

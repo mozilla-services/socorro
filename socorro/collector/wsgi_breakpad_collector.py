@@ -57,10 +57,6 @@ class BreakpadCollectorBase(GenericCollectorBase):
         return self.config.accept_submitted_legacy_processing
 
     #--------------------------------------------------------------------------
-    def _get_throttler(self):
-        return self.config.throttler
-
-    #--------------------------------------------------------------------------
     def _get_crash_storage(self):
         return self.config.crash_storage
 
@@ -119,6 +115,10 @@ class BreakpadCollector(BreakpadCollectorBase):
     #--------------------------------------------------------------------------
 
     #--------------------------------------------------------------------------
+    def _get_throttler(self):
+        return self.config.throttler
+
+    #--------------------------------------------------------------------------
     def _get_dump_field(self):
         return self.config.collector.dump_field
 
@@ -170,13 +170,21 @@ class BreakpadCollector2015(BreakpadCollectorBase):
 
     #--------------------------------------------------------------------------
     def _get_throttler(self):
-        return self.config.throttler.throttler_class(
-            self.config.throttler
-        )
+        try:
+            return self.config.throttler.throttler_instance
+        except KeyError:
+            self.config.throttler.throttler_instance = \
+                self.config.throttler.throttler_class(self.config.throttler)
+            return self.config.throttler.throttler_instance
 
     #--------------------------------------------------------------------------
     def _get_crash_storage(self):
-        return self.config.storage.crashstorage_class(
-            self.config.storage
-        )
+        try:
+            return self.config.storage.storage_instance
+        except KeyError:
+            self.config.storage.storage_instance = \
+                self.config.storage.crashstorage_class(
+                    self.config.storage
+                )
 
+            return self.config.storage.storage_instance

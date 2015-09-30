@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import web
-import socorro.webapi.classPartial as cpart
+import socorro.webapi.class_partial as cpart
 import socorro.lib.ConfigurationManager as cm
 import socorro.collector.wsgicollector as wscol
 import socorro.lib.util as sutil
@@ -50,7 +50,7 @@ web.webapi.internalerror = web.debugerror
 web.config.debug = False
 servicesList = (wscol.Collector,
                )
-urls = tuple(y for aTuple in ((x.uri, cpart.classWithPartialInit(x, config))
+urls = tuple(y for aTuple in ((x.uri, cpart.class_with_partial_init(x, config))
                     for x in servicesList) for y in aTuple)
 logger.info(str(urls))
 
