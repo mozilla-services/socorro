@@ -4,7 +4,6 @@ import datetime
 import logging
 import math
 import isodate
-import urllib
 from collections import defaultdict
 from operator import itemgetter
 
@@ -270,39 +269,6 @@ def get_timedelta_from_value_and_unit(value, unit):
         date_delta = datetime.timedelta(weeks=1)
 
     return date_delta
-
-
-def get_super_search_style_params(**kwargs):
-    if 'signature' not in kwargs:
-        raise ValueError('"signature" is a mandatory parameter')
-
-    params = {
-        'signature': kwargs['signature'],
-        'product': kwargs.get('product'),
-        'platform': kwargs.get('platform'),
-        'date': [],
-        'version': [],
-    }
-
-    if kwargs.get('start_date'):
-        start_date = kwargs.get('start_date').isoformat()
-        params['date'].append('>=' + start_date)
-
-    if kwargs.get('end_date'):
-        end_date = kwargs.get('end_date').isoformat()
-        params['date'].append('<' + end_date)
-
-    if kwargs.get('version'):
-        versions = kwargs.get('version')
-        if not isinstance(versions, (tuple, list)):
-            versions = [versions]
-
-        for version in versions:
-            assert ':' in version
-            number = version.split(':')[1]
-            params['version'].append(number)
-
-    return params
 
 
 @pass_default_context
@@ -1954,19 +1920,6 @@ def report_list(request, partial=None, default_context=None):
             {'value': x[0], 'label': x[1], 'default': x[2]}
             for x in ALL_REPORTS_COLUMNS
         ]
-
-        super_search_params = get_super_search_style_params(
-            signature=context['signature'],
-            product=context['selected_products'],
-            version=context['product_versions'],
-            platform=form.cleaned_data['platform'],
-            start_date=start_date,
-            end_date=end_date,
-        )
-        context['super_search_query_string'] = urllib.urlencode(
-            utils.sanitize_dict(super_search_params),
-            True
-        )
 
     if partial == 'graph':
         tmpl = 'crashstats/partials/graph.html'
