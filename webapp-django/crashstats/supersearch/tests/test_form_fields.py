@@ -28,6 +28,20 @@ class TestFormFields(TestCase):
         eq_(cleaned_value, [dt])
         eq_(field.prefixed_value, ['>2012-12-31T10:20:30+00:00'])
 
+        field = form_fields.DateTimeField()
+        cleaned_value = field.clean(['>=2012-12-31'])
+        dt = datetime.datetime(2012, 12, 31)
+        dt = dt.replace(tzinfo=utc)
+        eq_(cleaned_value, [dt])
+        eq_(field.prefixed_value, ['>=2012-12-31T00:00:00+00:00'])
+
+        field = form_fields.DateTimeField()
+        cleaned_value = field.clean(['>=2012-12-31T01:02:03+00:00'])
+        dt = datetime.datetime(2012, 12, 31, 1, 2, 3)
+        dt = dt.replace(tzinfo=utc)
+        eq_(cleaned_value, [dt])
+        eq_(field.prefixed_value, ['>=2012-12-31T01:02:03+00:00'])
+
     def test_several_fields(self):
         field1 = form_fields.DateTimeField()
         cleaned_value1 = field1.clean(['>12/31/2012 10:20:30'])

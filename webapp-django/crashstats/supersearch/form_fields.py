@@ -112,19 +112,22 @@ class IntegerField(MultiplePrefixedValueField, forms.IntegerField):
     pass
 
 
-class DateTimeField(MultiplePrefixedValueField, forms.DateTimeField):
-    def value_to_string(self, value):
-        if value:
-            return value.isoformat()
-
+class IsoDateTimeField(forms.DateTimeField):
     def to_python(self, value):
         if value:
             try:
                 return isodate.parse_datetime(value).replace(tzinfo=utc)
-            except ValueError:
+            except (ValueError, isodate.isoerror.ISO8601Error):
                 # let the super method deal with that
                 pass
-        return super(DateTimeField, self).to_python(value)
+
+        return super(IsoDateTimeField, self).to_python(value)
+
+
+class DateTimeField(MultiplePrefixedValueField, IsoDateTimeField):
+    def value_to_string(self, value):
+        if value:
+            return value.isoformat()
 
 
 class StringField(MultipleValueField):

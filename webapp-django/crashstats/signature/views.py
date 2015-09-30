@@ -281,8 +281,8 @@ def signature_graphs(request, field):
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
-    data['aggregates'] = search_results['facets']['histogram_date']
-    data['term_counts'] = search_results['facets'][field]
+    data['aggregates'] = search_results['facets'].get('histogram_date', [])
+    data['term_counts'] = search_results['facets'].get(field, [])
 
     return data
 
