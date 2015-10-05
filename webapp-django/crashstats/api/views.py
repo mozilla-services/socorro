@@ -27,6 +27,7 @@ from .cleaner import Cleaner
 MODELS_MODULES = (
     models,
     crashstats.supersearch.models,
+    crashstats.symbols.models,
 )
 
 

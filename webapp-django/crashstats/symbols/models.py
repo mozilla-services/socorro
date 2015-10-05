@@ -1,6 +1,10 @@
+import datetime
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+
+from crashstats.crashstats import models as crashstats_models
 
 
 class SymbolsUpload(models.Model):
@@ -18,3 +22,81 @@ class SymbolsUpload(models.Model):
             self.filename,
             self.size
         )
+
+
+class UploadedSymbols(crashstats_models.SocorroMiddleware):
+    """
+    An API to find past uploads and see what S3 keys where in the
+    archive. And out of the S3 keys, you will be able to see which
+    ones were new or different and which were uploaded under the
+    existing key.
+    """
+    required_params = (
+        ('start_date', datetime.date),
+        ('end_date', datetime.date),
+    )
+    possible_params = (
+        'user_search',
+        'filename_search',
+        'content_search',
+    )
+
+    API_WHITELIST = {
+        'hits': (
+            'id',
+            'user',
+            'filename',
+            'content',
+            'date',
+            'size',
+            'content_type'
+        ),
+
+    }
+
+    API_REQUIRED_PERMISSIONS = (
+        'crashstats.view_all_symbol_uploads',
+    )
+
+    def get(self, **kwargs):
+        # Note! This API is not cached.
+
+        query = SymbolsUpload.objects.filter(
+            created__gte=kwargs['start_date'],
+            created__lt=kwargs['end_date'] + datetime.timedelta(days=1),
+        ).order_by('-created')
+        if kwargs.get('user_search'):
+            query = query.filter(user__email__icontains=kwargs['user_search'])
+        if kwargs.get('filename_search'):
+            query = query.filter(filename__icontains=kwargs['filename_search'])
+        if kwargs.get('content_search'):
+            query = query.filter(content__icontains=kwargs['content_search'])
+
+        query = query.select_related('user')
+        hits = []
+
+        for upload in query:
+            added = []
+            existed = []
+            for line in upload.content.splitlines():
+                path = line[1:]
+                if line[0] == '+':
+                    added.append(path)
+                else:
+                    existed.append(path)
+            hits.append({
+                'id': upload.id,
+                'user': upload.user.email,
+                'filename': upload.filename,
+                'content': {
+                    'added': added,
+                    'existed': existed,
+                },
+                'date': upload.created,
+                'size': upload.size,
+                'content_type': upload.content_type,
+            })
+        return {
+            'hits': hits,
+            'total': query.count(),
+        }

@@ -103,7 +103,7 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
         key = bucket.get_key(key_name)
 
         # let's assume first that we need to add a new key
-        prefix = "+"
+        prefix = '+'
         if key:
             # key already exists, but is it the same size?
             if key.size != member.size:

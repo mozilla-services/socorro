@@ -19,6 +19,7 @@ PERMISSIONS = {
     'run_custom_queries': 'Run Custom Queries in Super Search',
     'run_long_queries': 'Run Long Queries',
     'upload_symbols': 'Upload Symbols Files',
+    'view_all_symbol_uploads': 'View all Symbol Uploads',
 }
 
 
