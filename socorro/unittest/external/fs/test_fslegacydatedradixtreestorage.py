@@ -8,7 +8,10 @@ from socorro.external.fs.crashstorage import (
     FSLegacyDatedRadixTreeStorage,
     FSTemporaryStorage
 )
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.crashstorage_base import (
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+)
 from socorro.unittest.testbase import TestCase
 
 
@@ -44,18 +47,18 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
     def _make_test_crash(self):
         self.fsrts.save_raw_crash({
             "test": "TEST"
-        }, {
+        }, MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_1)
+        }), self.CRASH_ID_1)
 
     def _make_test_crash_3(self):
         self.fsrts.save_raw_crash({
             "test": "TEST"
-        }, {
+        }, MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_3)
+        }), self.CRASH_ID_3)
 
 
     def test_save_raw_crash(self):
@@ -91,10 +94,10 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
+        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        })
+        }))
         assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
                           self.CRASH_ID_2)
 
@@ -214,28 +217,34 @@ class TestFSTemporaryStorage(TestCase):
         return config_manager
 
     def _make_test_crash(self):
-        self.fsrts.save_raw_crash({
-            "test": "TEST"
-        }, {
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_1)
+        self.fsrts.save_raw_crash(
+            {"test": "TEST"},
+            MemoryDumpsMapping({
+                'foo': 'bar',
+                self.fsrts.config.dump_field: 'baz'
+            }),
+            self.CRASH_ID_1
+        )
 
     def _make_test_crash_3(self):
-        self.fsrts.save_raw_crash({
-            "test": "TEST"
-        }, {
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_3)
+        self.fsrts.save_raw_crash(
+            {"test": "TEST"},
+            MemoryDumpsMapping({
+                'foo': 'bar',
+                self.fsrts.config.dump_field: 'baz'
+            }),
+            self.CRASH_ID_3
+        )
 
     def _make_test_crash_4(self):
-        self.fsrts.save_raw_crash({
-            "test": "TEST"
-        }, {
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_4)
+        self.fsrts.save_raw_crash(
+            {"test": "TEST"},
+            MemoryDumpsMapping({
+                'foo': 'bar',
+                self.fsrts.config.dump_field: 'baz'
+            }),
+            self.CRASH_ID_4
+        )
 
     def test_save_raw_crash(self):
         self._make_test_crash()
@@ -270,10 +279,10 @@ class TestFSTemporaryStorage(TestCase):
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
+        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        })
+        }))
         assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
                           self.CRASH_ID_2)
 
@@ -404,10 +413,10 @@ class TestFSTemporaryStorage(TestCase):
         # save crash 1 in old system
         self.fsrts_old.save_raw_crash({
             "test": "TEST"
-        }, {
+        }, MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        }, self.CRASH_ID_1)
+        }), self.CRASH_ID_1)
         ok_(os.path.exists(
             './crashes/20071025/date/00/00_00/0bba929f-8721-460c-dead-'
             'a43c20071025'

@@ -33,9 +33,13 @@ class IntegrationTestCrashData(TestCase):
             fake_raw_dump_1 = 'peter is a swede'
             fake_raw_dump_2 = 'lars is a norseman'
             fake_raw_dump_3 = 'adrian is a frenchman'
-            fake_dumps = {'upload_file_minidump': fake_raw_dump_1,
-                          'lars': fake_raw_dump_2,
-                          'adrian': fake_raw_dump_3}
+            fake_dumps = crashstorage.MemoryDumpsMapping(
+                {
+                    'upload_file_minidump': fake_raw_dump_1,
+                    'lars': fake_raw_dump_2,
+                    'adrian': fake_raw_dump_3
+                }
+            )
             fake_raw = {
                 'name': 'Peter',
                 'legacy_processing': 0,

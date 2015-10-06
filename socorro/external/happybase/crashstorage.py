@@ -10,7 +10,9 @@ from socorro.external.happybase.connection_context import \
     HappyBaseConnectionContext
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
-    CrashIDNotFound
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+    FileDumpsMapping
 )
 from socorro.lib.util import DotDict
 
@@ -104,18 +106,22 @@ class HBaseCrashStorage(CrashStorageBase):
             "timestamps:submitted": submitted_timestamp,
             "ids:ooid": crash_id,
         }
-        for key, dump in dumps.iteritems():
+        # we don't know where the dumps came from, they could be in
+        # in the form of names to binary blobs or names to pathnames.
+        # this call ensures that we've got the former.
+        in_memory_dumps = dumps.as_memory_dumps_mapping()
+        for key, dump in in_memory_dumps.iteritems():
             if key in (None, '', 'upload_file_minidump'):
                 key = 'dump'
             columns_and_values['raw_data:%s' % key] = dump
 
-        def do_save(connection, raw_crash, dumps, crash_id):
+        def do_save(connection, raw_crash, in_memory_dumps, crash_id):
             crash_report_table = connection.table('crash_reports')
             crash_report_table.put(
                 row_id,
                 columns_and_values
             )
-        self.transaction(do_save, raw_crash, dumps, crash_id)
+        self.transaction(do_save, raw_crash, in_memory_dumps, crash_id)
 
     def save_processed(self, processed_crash):
         crash_id = processed_crash['uuid']
@@ -187,7 +193,9 @@ class HBaseCrashStorage(CrashStorageBase):
                     row_id,
                     columns=['raw_data']
                 )
-                return dict(
+                # ensure that we return a proper mapping of names to
+                # binary blobs.
+                return MemoryDumpsMapping(
                     (self._make_dump_name(k), v) for k, v in dumps.iteritems()
                 )
             except KeyError:
@@ -196,33 +204,14 @@ class HBaseCrashStorage(CrashStorageBase):
         return self.transaction(do_get, row_id)
 
     def get_raw_dumps_as_files(self, crash_id):
-        row_id = crash_id_to_row_id(crash_id)
+        in_memory_dumps = self.get_raw_dumps(crash_id)
+        # convert our in memory name/blob data into name/pathname data
+        return in_memory_dumps.as_file_dumps_mapping(
+            crash_id,
+            self.hbase.config.temporary_file_system_storage_path,
+            self.hbase.config.dump_file_suffix
+        )
 
-        def do_get(connection, row_id):
-            try:
-                crash_report_table = connection.table('crash_reports')
-                dumps = crash_report_table.row(
-                    row_id,
-                    columns=['raw_data']
-                )
-                return dict((self._make_dump_name(k), v) for k, v in dumps)
-            except KeyError:
-                raise CrashIDNotFound(crash_id)
-        dumps = self.transaction(do_get, row_id)
-        name_to_pathname_mapping = {}
-        for a_dump_name, a_dump in dumps:
-            dump_pathname = os.path.join(
-                self.config.temporary_file_system_storage_path,
-                "%s.%s.TEMPORARY%s" % (
-                    crash_id,
-                    a_dump_name,
-                    self.config.dump_file_suffix
-                )
-            )
-            name_to_pathname_mapping[a_dump_name] = dump_pathname
-            with open(dump_pathname, 'wb') as f:
-                f.write(a_dump)
-        return name_to_pathname_mapping
 
     def get_unredacted_processed(self, crash_id):
         row_id = crash_id_to_row_id(crash_id)

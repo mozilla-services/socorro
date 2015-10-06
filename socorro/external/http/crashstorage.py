@@ -84,6 +84,7 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def _submit_crash_via_http_POST(self, raw_crash, dumps, crash_id):
+        in_memory_dumps = dumps.as_memory_dumps_mapping()
         for dump_name, dump in dumps.iteritems():
             if not dump_name:
                 dump_name = self.config.dump_field_name

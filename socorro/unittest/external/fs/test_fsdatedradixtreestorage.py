@@ -5,7 +5,10 @@ from configman import ConfigurationManager
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.fs.crashstorage import FSDatedRadixTreeStorage
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.crashstorage_base import (
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+)
 from socorro.unittest.testbase import TestCase
 
 
@@ -44,10 +47,10 @@ class TestFSDatedRadixTreeStorage(TestCase):
             {  # raw crash
                 "test": "TEST"
             },
-            {  # dumps
+            MemoryDumpsMapping({  # dumps
                 'foo': 'bar',
                 self.fsrts.config.dump_field: 'baz'
-            },
+            }),
             self.CRASH_ID_1
         )
 

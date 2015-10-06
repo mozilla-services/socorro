@@ -14,6 +14,7 @@ from socorro.lib.ooid import createNewOoid
 from socorro.lib.util import DotDict
 from socorro.collector.throttler import DISCARD, IGNORE
 from socorro.lib.datetimeutil import utc_now
+from socorro.external.crashstorage_base import MemoryDumpsMapping
 
 from configman import RequiredConfig, Namespace, class_converter
 
@@ -94,7 +95,7 @@ class GenericCollectorBase(RequiredConfig):
     def _get_raw_crash_from_form(self):
         """this method creates the raw_crash and the dumps mapping using the
         POST form"""
-        dumps = DotDict()
+        dumps = MemoryDumpsMapping()
         raw_crash = DotDict()
         raw_crash.dump_checksums = DotDict()
         for name, value in self._form_as_mapping().iteritems():

@@ -7,6 +7,7 @@ saving, fetching and iterating over raw crashes, dumps and processed crashes.
 """
 
 import sys
+import os
 import collections
 import datetime
 
@@ -16,6 +17,100 @@ from configman import Namespace,  RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
                                  class_converter
 from configman.dotdict import DotDict as ConfigmanDotDict
+
+
+#==============================================================================
+class MemoryDumpsMapping(dict):
+    """there has been a bifurcation in the crash storage data throughout the
+    history of the classes.  The crash dumps have two different
+    representations:
+
+    1) a mapping of crash names to binary data blobs
+    2) a mapping of crash names to file pathnames.
+
+    It has been a manner of gentleman's agreement that two types do not mix.
+    However, as the two methods have evolved in parallel the distinction has
+    become more and more inconvenient.
+
+    This class represents case 1 from above.  It is a mapping of crash dump
+    names to binary representation of the dump.  Before using a mapping, a given
+    crash store should call the "as_file_dumps_mapping" or
+    "as_memory_dumps_mapping" depend on what that crashstorage implementation
+    is going to need.
+    """
+
+    #--------------------------------------------------------------------------
+    def as_file_dumps_mapping(self, crash_id, temp_path, dump_file_suffix):
+        """convert this MemoryDumpMapping into a FileDumpsMappng by writing
+        each of the dump to a filesystem."""
+        name_to_pathname_mapping = FileDumpsMapping()
+        for a_dump_name, a_dump in self.iteritems():
+            if a_dump_name in (None, '', 'dump'):
+                a_dump_name = 'upload_file_minidump'
+            dump_pathname = os.path.join(
+                temp_path,
+                "%s.%s.TEMPORARY%s" % (
+                    crash_id,
+                    a_dump_name,
+                    dump_file_suffix
+                )
+            )
+            name_to_pathname_mapping[a_dump_name] = dump_pathname
+            with open(dump_pathname, 'wb') as f:
+                f.write(a_dump)
+        return name_to_pathname_mapping
+
+    #--------------------------------------------------------------------------
+    def as_memory_dumps_mapping(self):
+        """this is alrady a MemoryDumpMapping so we can just return self
+        without having to do any conversion."""
+        return self
+
+
+#==============================================================================
+class FileDumpsMapping(dict):
+    """there has been a bifurcation in the crash storage data throughout the
+    history of the classes.  The crash dumps have two different
+    representations:
+
+    1) a mapping of crash names to binary data blobs
+    2) a mapping of crash names to file pathnames.
+
+    It has been a manner of gentleman's agreement that two types do not mix.
+    However, as the two methods have evolved in parallel the distinction has
+    become more and more inconvenient.
+
+
+    This class represents case 2 from above.  It is a mapping of crash dump
+    names to pathname of a file containing the dump.  Before using a mapping,
+    a given crash store should call the "as_file_dumps_mapping" or
+    "as_memory_dumps_mapping" depend on what that crashstorage implementation
+    is going to need.
+    """
+
+    #--------------------------------------------------------------------------
+    def as_file_dumps_mapping(
+        self,
+        *args,
+        **kwargs
+    ):
+        """this crash is already a FileDumpsMapping, so we can just return self.
+        However, the arguments to this function are ignored.  The purpose of
+        this class is not to move crashes around on filesytem. The arguments
+        a solely for maintaining a consistent interface with the companion
+        MemoryDumpsMapping class."""
+        return self
+
+    #--------------------------------------------------------------------------
+    def as_memory_dumps_mapping(self):
+        """convert this into a MemoryDumpsMapping by opening and reading each
+        of the dumps in the mapping."""
+        in_memory_dumps = MemoryDumpsMapping()
+        for dump_key, dump_path in self.iteritems():
+            with open(dump_path) as f:
+                in_memory_dumps[dump_key] = f.read()
+        return in_memory_dumps
+
 
 #==============================================================================
 class Redactor(RequiredConfig):

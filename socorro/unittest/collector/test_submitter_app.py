@@ -88,11 +88,15 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
 
-        dump_pathnames = ['raw_crash_file',
-            '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.dump',
-            '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash1.dump',
-            '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump',
-            ]
+        dump_pathnames = (
+            '6611a662-e70f-4ba5-a397-69a3a2121129',
+            (
+                'raw_crash_file',
+                '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.dump',
+                '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash1.dump',
+                '/some/path/6611a662-e70f-4ba5-a397-69a3a2121129.flash2.dump',
+            ),
+        )
         raw_dumps_files = sub_walker.get_raw_dumps_as_files(dump_pathnames)
 
         dump_names = {'upload_file_minidump':

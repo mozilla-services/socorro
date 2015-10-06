@@ -14,6 +14,7 @@ from socorro.database.transaction_executor import (
     TransactionExecutor,
     TransactionExecutorWithLimitedBackoff
 )
+from socorro.external.crashstorage_base import MemoryDumpsMapping
 from socorro.unittest.testbase import TestCase
 
 
@@ -56,10 +57,10 @@ class TestCrashStorage(TestCase):
             "Product": "FireSquid",
             "Version": "-33",
         }
-        dumps = {
+        dumps = MemoryDumpsMapping({
             'upload_file_minidump': 'dump #1',
             'browser': 'dump #2'
-        }
+        })
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
         with patch("socorro.external.http.crashstorage.poster") as m_poster:
             with patch("socorro.external.http.crashstorage.urllib2") as m_urllib:
@@ -90,10 +91,10 @@ class TestCrashStorage(TestCase):
             "Product": "FireSquid",
             "Version": "-33",
         }
-        dumps = {
+        dumps = MemoryDumpsMapping({
             'upload_file_minidump': 'dump #1',
             'browser': 'dump #2'
-        }
+        })
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
         with patch("socorro.external.http.crashstorage.poster") as m_poster:
             with patch("socorro.external.http.crashstorage.urllib2") as m_urllib:

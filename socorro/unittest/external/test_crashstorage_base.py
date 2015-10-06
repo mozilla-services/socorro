@@ -14,7 +14,9 @@ from socorro.external.crashstorage_base import (
     PrimaryDeferredStorage,
     PrimaryDeferredProcessedStorage,
     Redactor,
-    BenchmarkingCrashStorage
+    BenchmarkingCrashStorage,
+    MemoryDumpsMapping,
+    FileDumpsMapping
 )
 from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
@@ -854,6 +856,23 @@ class TestBench(TestCase):
                 1
             )
             mock_logging.debug.reset_mock()
+
+
+class TestDumpsMappings(TestCase):
+
+    def test_simple(self):
+        mdm = MemoryDumpsMapping({
+            'upload_file_minidump': 'binary_data',
+            'moar_dump': "more binary data",
+        })
+        ok_(mdm.as_memory_dumps_mapping() is mdm)
+        fdm = mdm.as_file_dumps_mapping(
+            'a',
+            '/tmp',
+            'dump'
+        )
+        ok_(fdm.as_file_dumps_mapping() is fdm)
+        eq_(fdm.as_memory_dumps_mapping(), mdm)
 
 
 
