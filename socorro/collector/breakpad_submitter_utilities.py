@@ -38,7 +38,7 @@ class BreakpadPOSTDestination(CrashStorageBase):
         self.hang_id_cache = dict()
 
     #--------------------------------------------------------------------------
-    def save_raw_crash(self, raw_crash, dumps, crash_id):
+    def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
         try:
             for dump_name, dump_pathname in dumps.iteritems():
                 if not dump_name:
@@ -61,11 +61,10 @@ class BreakpadPOSTDestination(CrashStorageBase):
             self.config.logger.debug(
                 'submission response: %s',
                 submission_response
-                )
+            )
             if self.config.echo_response:
                 print submission_response
         finally:
             for dump_name, dump_pathname in dumps.iteritems():
                 if "TEMPORARY" in dump_pathname:
                     os.unlink(dump_pathname)
-

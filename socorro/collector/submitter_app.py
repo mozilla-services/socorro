@@ -6,8 +6,12 @@
 
 
 import time
-import os.path
 import json
+
+from os import (
+    path,
+    listdir
+)
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
@@ -17,7 +21,6 @@ from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.filesystem.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
 from socorro.external.postgresql.dbapi2_util import execute_query_iter
-
 
 
 #==============================================================================
@@ -46,6 +49,10 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
+        if isinstance(quit_check_callback, basestring):
+            # this class is being used as a 'new_crash_source' and the name
+            # of the app has been passed - we can ignore it
+            quit_check_callback = None
         super(SubmitterFileSystemWalkerSource, self).__init__(
             config,
             quit_check_callback
@@ -90,11 +97,11 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
 
         ['upload_file_minidump', 'flash1', 'flash2']
         """
-        prefix = os.path.commonprefix([os.path.basename(x) for x in pathnames])
+        prefix = path.commonprefix([path.basename(x) for x in pathnames])
         prefix_length = len(prefix)
         dump_names = []
         for a_pathname in pathnames:
-            base_name = os.path.basename(a_pathname)
+            base_name = path.basename(a_pathname)
             dump_name = base_name[prefix_length:-len(self.config.dump_suffix)]
             if not dump_name:
                 dump_name = self.config.dump_field
@@ -109,15 +116,19 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             self.config.search_root,
             lambda x: x[2].endswith(".json")
         ):
-            prefix = os.path.splitext(a_file_name)[0]
+            prefix = path.splitext(a_file_name)[0]
             crash_pathnames = [raw_crash_pathname]
-            for dumpfilename in os.listdir(a_path):
+            for dumpfilename in listdir(a_path):
                 if (dumpfilename.startswith(prefix) and
                     dumpfilename.endswith(self.config.dump_suffix)):
-                    crash_pathnames.append(os.path.join(a_path,
-                                                        dumpfilename))
-            # yield the pathnames of all the crash parts
-            yield crash_pathnames
+                    crash_pathnames.append(
+                        path.join(a_path, dumpfilename)
+                    )
+            # yield the pathnames of all the crash parts - normally, this
+            # method in a crashstorage class yields just a crash_id.  In this
+            # case however, we have only pathnames to work with. So we return
+            # this (args, kwargs) form instead
+            yield (((prefix, crash_pathnames), ), {})
 
 
 #==============================================================================
@@ -148,12 +159,19 @@ class DBSamplingCrashSource(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
+        if isinstance(quit_check_callback, basestring):
+            # this class is being used as a 'new_crash_source' and the name
+            # of the app has been passed - we can ignore it
+            quit_check_callback = None
         self._implementation = config.source_implementation(
             config,
             quit_check_callback
         )
         self.config = config
-        self.quit_check = quit_check_callback
+        if quit_check_callback:
+            self.quit_check = quit_check_callback
+        else:
+            self.quit_check = lambda: None
 
     #--------------------------------------------------------------------------
     def new_crashes(self):
@@ -237,12 +255,36 @@ class SubmitterApp(FetchTransformSaveApp):
     def _transform(self, crash_id):
         """this transform function only transfers raw data from the
         source to the destination without changing the data."""
+        paths = None
+        if isinstance(crash_id, tuple):
+            # the SubmitterFileSystemWalkerSource returns a tuple of crash_id
+            # and path to files rather than just the crash_id.  This is because
+            # it has no way to look up the location of a crash given just a
+            # crash_id.  It works on a random directory structure. This line
+            # unpacks the tuple so that they can be used separately in the
+            # right context
+            crash_id, paths = crash_id
         if self.config.submitter.dry_run:
             print crash_id
         else:
-            raw_crash = self.source.get_raw_crash(crash_id)
-            dumps = self.source.get_raw_dumps_as_files(crash_id)
-            self.destination.save_raw_crash(raw_crash, dumps, crash_id)
+            # in the case where the path has a non-None value, that means
+            # we need to lookup the crash using something other than the
+            # crash_id.  This is the case when the old
+            # SubmitterFileSystemWalkerSource class is the source.  It returns
+            # a list of file paths.  If 'paths' is None, then we can use the
+            # crash_id to lookup the crash. If 'paths' is not None, then we
+            # have to use it to lookup the crash rather than the crash_id.
+            self.config.logger.debug('paths: %s', paths)
+            raw_crash = self.source.get_raw_crash(paths if paths else crash_id)
+            self.config.logger.debug('raw_crash: %s', raw_crash)
+            dumps = self.source.get_raw_dumps_as_files(
+                paths if paths else crash_id
+            )
+            self.destination.save_raw_crash_with_file_dumps(
+                raw_crash,
+                dumps,
+                crash_id
+            )
 
     #--------------------------------------------------------------------------
     def source_iterator(self):
@@ -301,7 +343,6 @@ class SubmitterApp(FetchTransformSaveApp):
                 )
         else:
             self.new_crash_source = self.source
-
 
 
 if __name__ == '__main__':

@@ -140,6 +140,25 @@ class CrashStorageBase(RequiredConfig):
         pass
 
     #--------------------------------------------------------------------------
+    def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
+        """this method that saves  both the raw_crash and the dump and must be
+        overridden in any implementation that wants a different behavior.  It
+        assumes that the crashes are in the form of paths to files.
+
+        parameters:
+            raw_crash - a mapping containing the raw crash meta data.  It is
+                        often saved as a json file, but here it is in the form
+                        of a dict.
+            dumps - a dict of dump name keys and paths to file system locations
+                    for the dump data
+            crash_id - the crash key to use for this crash"""
+        in_memory_dumps = {}
+        for dump_key, dump_path in dumps.iteritems():
+            with open(dump_path) as f:
+                in_memory_dumps[dump_key] = f.read()
+        self.save_raw_crash(raw_crash, in_memory_dumps, crash_id)
+
+    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         """this method saves the processed_crash and must be overridden in
         anything that chooses to implement it.
@@ -1083,7 +1102,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
         return result
 
-
     #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         start_time = self.start_timer()
@@ -1118,4 +1136,3 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             self.tag,
             end_time - start_time
         )
-

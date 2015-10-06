@@ -107,21 +107,97 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
         eq_(raw_dumps_files, dump_names)
 
     #--------------------------------------------------------------------------
-    # this test, tests nothing
     def test_new_crashes(self):
-        config = self.get_standard_config()
-        sub_walker = SubmitterFileSystemWalkerSource(config)
-
         sequence =  [
-            './6611a662-e70f-4ba5-a397-69a3a2121129.json',
-            './7611a662-e70f-4ba5-a397-69a3a2121129.json',
-            './8611a662-e70f-4ba5-a397-69a3a2121129.json',
+            (
+                './',
+                '6611a662-e70f-4ba5-a397-69a3a2121129.json',
+                './6611a662-e70f-4ba5-a397-69a3a2121129.json',
+            ),
+            (
+                './',
+                '6611a662-e70f-4ba5-a397-69a3a2121129.upload.dump',
+                './6611a662-e70f-4ba5-a397-69a3a2121129.upload.dump',
+            ),
+            (
+                './',
+                '7611a662-e70f-4ba5-a397-69a3a2121129.json',
+                './7611a662-e70f-4ba5-a397-69a3a2121129.json',
+            ),
+            (
+                './',
+                '7611a662-e70f-4ba5-a397-69a3a2121129.other.dump',
+                './7611a662-e70f-4ba5-a397-69a3a2121129.other.dump',
+            ),
+            (
+                './',
+                '7611a662-e70f-4ba5-a397-69a3a2121129.other.txt',
+                './7611a662-e70f-4ba5-a397-69a3a2121129.other.txt',
+            ),
+            (
+                './',
+                '8611a662-e70f-4ba5-a397-69a3a2121129.json',
+                './8611a662-e70f-4ba5-a397-69a3a2121129.json',
+            )
         ]
-        crash_path =  generator_for_sequence(*sequence)
-        sub_walker.new_crashes = crash_path
-        for a_row in sub_walker.new_crashes():
-            eq_(a_row, sequence.pop())
 
+        def findFileGenerator_mock_method(root, method):
+            for x in sequence:
+                if method(x):
+                    yield x
+
+        def listdir_mock_method(a_path):
+            for x in sequence:
+                yield x[1]
+
+        config = self.get_standard_config()
+
+        expected = [
+            (
+                ((
+                    '6611a662-e70f-4ba5-a397-69a3a2121129',
+                    [
+                        './6611a662-e70f-4ba5-a397-69a3a2121129.json',
+                        './6611a662-e70f-4ba5-a397-69a3a2121129.upload.dump'
+                    ],
+                ), ),
+                {}
+            ),
+            (
+                ((
+                    '7611a662-e70f-4ba5-a397-69a3a2121129',
+                    [
+                        './7611a662-e70f-4ba5-a397-69a3a2121129.json',
+                        './7611a662-e70f-4ba5-a397-69a3a2121129.other.dump'
+                    ],
+                ), ),
+                {}
+            ),
+            (
+                ((
+                    '8611a662-e70f-4ba5-a397-69a3a2121129',
+                    [
+                        './8611a662-e70f-4ba5-a397-69a3a2121129.json'
+                    ]
+                ), ),
+                {}
+            ),
+        ]
+
+        find_patch_path = 'socorro.collector.submitter_app.findFileGenerator'
+        with mock.patch(
+            find_patch_path,
+            new_callable=lambda: findFileGenerator_mock_method
+        ):
+            listdir_patch_path = 'socorro.collector.submitter_app.listdir'
+            with mock.patch(
+                listdir_patch_path,
+                new_callable=lambda: listdir_mock_method
+            ):
+
+                sub_walker = SubmitterFileSystemWalkerSource(config)
+                result = [x for x in sub_walker.new_crashes()]
+                eq_(result, expected)
 
 
 #==============================================================================
@@ -332,8 +408,11 @@ class TestSubmitterApp(TestCase):
         sub.transform(crash_id)
         sub.source.get_raw_crash.assert_called_with(crash_id)
         sub.source.get_raw_dumps_as_files.assert_called_with(crash_id)
-        sub.destination.save_raw_crash.assert_called_with(fake_raw_crash,
-                                                          fake_dump, crash_id)
+        sub.destination.save_raw_crash_with_file_dumps.assert_called_with(
+            fake_raw_crash,
+            fake_dump,
+            crash_id
+        )
 
     #--------------------------------------------------------------------------
     def test_source_iterator(self):
@@ -475,4 +554,33 @@ class TestSubmitterApp(TestCase):
             .new_crashes = lambda: iter([1, 2, 3])
 
         eq_(itera.next(), ((1,), {}))
+        assert_raises(StopIteration, itera.next)
+
+        # Test with number of submissions equal to an integer < number of items
+        # AND the new_crashes iter returning an args, kwargs form rather than
+        # than a crash_id
+        # It raises StopIterations after some number of elements were called
+        config = self.get_new_crash_source_config()
+        config.submitter.number_of_submissions = "2"
+        sub = SubmitterApp(config)
+        sub._setup_source_and_destination()
+        sub._setup_task_manager()
+        itera = sub.source_iterator()
+
+        config.new_crash_source.new_crash_source_class.return_value \
+            .new_crashes = lambda: iter(
+                [
+                    (((1, ['./1.json', './1.dump', './1.other.dump']), ), {}),
+                    (((2, ['./2.json', './1.dump']), ), {})
+                ]
+            )
+
+        eq_(
+            itera.next(),
+            (((1, ['./1.json', './1.dump', './1.other.dump']), ), {})
+        )
+        eq_(
+            itera.next(),
+            (((2, ['./2.json', './1.dump']), ), {})
+        )
         assert_raises(StopIteration, itera.next)
