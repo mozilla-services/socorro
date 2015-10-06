@@ -253,6 +253,11 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     context['result_count'] = result_count
     context['query'] = {
+        'product': product,
+        'versions': versions[0],
+        'crash_type': crash_type,
+        'os_name': os_name,
+        'result_count': unicode(result_count),
         'mode': tcbs_mode,
         'end_date': end_date,
         'start_date': end_date - datetime.timedelta(days=days),

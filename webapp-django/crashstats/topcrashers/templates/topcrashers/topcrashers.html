@@ -18,20 +18,17 @@ Top Crashers for {{ product }} {{ version }}
                 Top Crashers for <span id="current-product">{{ product }}</span>
                 <span id="current-version">{{ version }}</span>
             </h2>
-            <ul class="options">
-                <li>
-                    <a
-                        href="{{ change_query_string(_tcbs_mode=None) }}"
-                        {% if query.mode == 'realtime' %} class="selected"{% endif %}
-                    >Near Real Time</a>
-                </li>
-                <li>
-                    <a
-                        href="{{ change_query_string(_tcbs_mode='byday') }}"
-                        {% if query.mode == 'byday' %} class="selected"{% endif %}
-                    >By Day</a>
-                </li>
-            </ul>
+            <a href="{{ url(
+                'crashstats:topcrasher',
+                product=query['product'],
+                versions=query['versions'],
+                date_range_type='report',
+                crash_type=query['crash_type'].replace('any', 'all'),
+                os_name=query['os_name'],
+                result_count=query['result_count'],
+            ) }}?days={{ days }}">
+                Old Top Crashers report
+            </a>
         </div>
 
         <div class="panel">
@@ -45,6 +42,24 @@ Top Crashers for {{ product }} {{ version }}
                 <p>The report covers <span class="percentage">{{ number_of_crashes }} ({{ total_percentage | round(2) }}%)</span> of all {{ total_number_of_crashes }} crashes during this period. </p>
             </div>
             {% endif %}
+
+            <div class="tc-filters-block">
+                <ul class="tc-filter">
+                    <li class="tc-selector-heading">Report Date:</li>
+                    <li>
+                        <a
+                            href="{{ change_query_string(_tcbs_mode=None) }}"
+                            {% if query.mode == 'realtime' %} class="selected"{% endif %}
+                        >Most Recent</a>
+                    </li>
+                    <li>
+                        <a
+                            href="{{ change_query_string(_tcbs_mode='byday') }}"
+                            {% if query.mode == 'byday' %} class="selected"{% endif %}
+                        >By Day</a>
+                    </li>
+                </ul>
+            </div>
 
             <ul class="tc-duration-type tc-filter">
                 <li class="tc-selector-heading">Type:</li>

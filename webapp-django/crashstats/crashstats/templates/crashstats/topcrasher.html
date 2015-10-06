@@ -33,6 +33,9 @@ Top Crashers for {{ product }} {{ version }}
                   {% endif %}
                 {% endif %}
             </ul>
+            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ versions[0] }}&amp;date_range_type={{ date_range_type }}&amp;process_type={{ crash_type.replace('all', 'any') }}&amp;platform={{ os_name }}&amp;_facets_size={{ result_count }}&amp;days={{ days }}">
+                New Top Crashers report
+            </a>
         </div>
 
         <div class="panel">
