@@ -1,12 +1,12 @@
 {% extends "crashstats_base.html" %}
 
 {% block site_css %}
-  {{ super() }}
+    {{ super() }}
 
-  {% compress css %}
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/metricsgraphics.css') }}">
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/metricsgraphics_custom.css') }}">
-  {% endcompress %}
+    {% compress css %}
+    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/metricsgraphics.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/metricsgraphics_custom.css') }}">
+    {% endcompress %}
 {% endblock %}
 
 {% block page_title %}
@@ -50,7 +50,47 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
         </div>
 
         <div class="body">
-            <div id="release_channels"></div>
+            <div id="release_channels">
+                {% for version in currentversions %}
+                {% if version.product == product and version.featured %}
+                <div class='release_channel'>
+                    <h4>{{product}} {{version.version}}</h4>
+                    <ul>
+                        <li>
+                            <a href="{{ url(
+                                'crashstats:topcrasher',
+                                product=product,
+                                versions=version.version,
+                                date_range_type=default_date_range_type,
+                            ) }}?days={{days}}">
+                                Top Crashers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url(
+                                'crashstats:topchangers',
+                                product=product,
+                                versions=version.version,
+                            ) }}?days={{days}}">
+                                Top Changers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url(
+                                'crashstats:topcrasher',
+                                product=product,
+                                versions=version.version,
+                                date_range_type=default_date_range_type,
+                                crash_type='plugin',
+                            ) }}?days={{days}}">
+                                Top Plugin Crashers
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
             <br class="clear" />
         </div>
     </div>
@@ -59,18 +99,15 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
 
 {% endblock %}
 {% block site_js %}
-  {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
-  {% compress js %}
-  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
-  {% endcompress %}
+    {{ super() }}
+    {% compress js %}
+    <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
+    <script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
+    {% endcompress %}
 
-  {% compress js %}
-  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-  <script src="{{ static('crashstats/js/jquery/mustache.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/homepage_tmpl.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/dashboard_graph.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
-  {% endcompress %}
+    {% compress js %}
+    <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
+    <script src="{{ static('crashstats/js/socorro/dashboard_graph.js') }}"></script>
+    <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
+    {% endcompress %}
 {% endblock %}

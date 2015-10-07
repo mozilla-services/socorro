@@ -63,14 +63,14 @@ $(function() {
         }
     },
     buildAjaxURL = function() {
-        product = $("#products_select").val(),
-        version = $("#product_version_select").val(),
-        ajaxURL = baseURL,
-        hashString = window.location.hash,
-        dateRangeVal = dateRangeTypeValPattern.exec(hashString);
+        var product = $("#products_select").val();
+        var version = $("#product_version_select").val();
+        var ajaxURL = baseURL;
+        var hashString = window.location.hash;
+        var dateRangeVal = dateRangeTypeValPattern.exec(hashString);
 
-        var isDateRangeSet = hashString.indexOf("date_range_type"),
-            isDurationSet = hashString.indexOf("duration");
+        var isDateRangeSet = hashString.indexOf("date_range_type");
+        var isDurationSet = hashString.indexOf("duration");
 
         if(product.length) {
             ajaxURL += "product=" + product;
@@ -91,12 +91,8 @@ $(function() {
         return ajaxURL;
     },
     buildCrashReports = function(data) {
-        var useTmpl = data.date_range_type === "build" ? crashReportsByBuildDateTmpl : crashReportsByVersionTmpl,
-            crashReportsHTML = Mustache.to_html(useTmpl, data),
-            releaseChannelsContainer = $("#release_channels");
-
-        releaseChannelsContainer.empty().append(crashReportsHTML);
-        releaseChannelsContainer.find('h4').each(function(index, item) {
+        $("#release_channels h4")
+        .each(function(index) {
             $(this).css('color', colours[index]);
         });
     },
