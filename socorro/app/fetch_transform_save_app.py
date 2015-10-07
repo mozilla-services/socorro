@@ -56,10 +56,10 @@ class FetchTransformSaveApp(App):
     # iterator 'new_crashes' and the accessors 'get_raw_crash' and
     # 'get_raw_dumps'
     required_config.source.add_option(
-      'crashstorage_class',
-      doc='the source storage class',
-      default=None,
-      from_string_converter=class_converter
+        'crashstorage_class',
+        doc='the source storage class',
+        default=None,
+        from_string_converter=class_converter
     )
     required_config.destination = Namespace()
     # For destination, the storage class should implement the 'save_raw_crash'
@@ -67,17 +67,23 @@ class FetchTransformSaveApp(App):
     # or transform methods and therefore completely redefine what api calls
     # are relevant.
     required_config.destination.add_option(
-      'crashstorage_class',
-      doc='the destination storage class',
-      default=None,
-      from_string_converter=class_converter
+        'crashstorage_class',
+        doc='the destination storage class',
+        default=None,
+        from_string_converter=class_converter
     )
     required_config.producer_consumer = Namespace()
     required_config.producer_consumer.add_option(
-      'producer_consumer_class',
-      doc='the class implements a threaded producer consumer queue',
-      default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
-      from_string_converter=class_converter
+        'producer_consumer_class',
+        doc='the class implements a threaded producer consumer queue',
+        default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'number_of_submissions',
+        doc="the number of crashes to submit (all, forever, 1...)",
+        short_form='n',
+        default='forever'
     )
 
     ###########################################################################
@@ -104,32 +110,143 @@ class FetchTransformSaveApp(App):
 
         return {
             'source.crashstorage_class':
-                'socorro.external.fs.crashstorage.FSPermanentStorage',
+            'socorro.external.fs.crashstorage.FSPermanentStorage',
             'destination.crashstorage_class':
-                'socorro.external.fs.crashstorage.FSPermanentStorage',
+            'socorro.external.fs.crashstorage.FSPermanentStorage',
         }
-
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(FetchTransformSaveApp, self).__init__(config)
         self.waiting_func = None
+        # select the iterator type based on the "number_of_submissions" config
+        self.source_iterator = {
+            'forever': self._infinite_iterator,
+            'all': self._all_iterator,
+        }.get(config.number_of_submissions, self._limited_iterator)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # iterator section
+    #
+    # the following methods setup a nested hierarchy of iterators.  Each layer
+    # in the hierarchy adds a feature to the enclosed iterator.
+
+    # The  iterator at the core, the innermost, will yield a list of crash_ids
+    # from some source. A subclass may define its own source and makes it
+    # available by overriding the method "_create_iter".
+    #
+    # That innermost iterator is then wrapped by the "_basic_iterator" method.
+    # this iterator changes the form of the yielded values to the (*args,
+    # **kwargs) as required by the TaskManager.  It also gives derived classes
+    # the oportunity to run callbacks between each iteration or at the point
+    # that the innermost iterator is exhausted.
+    #
+    # The outermost layer of the iterator nesting imposes length limitations
+    # on the iterators.  Controlled by the configuration parameter
+    # "number_of_submissions" this iterator can be limit to an exact number
+    # of iterations, set to run forever, or run only until the natural
+    # exhaustion of the innermost iterator.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     #--------------------------------------------------------------------------
-    def source_iterator(self):
-        """this iterator yields individual crash_ids from the source
-        crashstorage class's 'new_crashes' method."""
-        while(True):  # loop forever and never raise StopIteration
-            for x in self.source.new_crashes():
-                if x is None:
-                    yield None
-                elif isinstance(x, tuple):
-                    yield x  # already in (args, kwargs) form
-                else:
-                    yield ((x,), {})  # (args, kwargs)
+    def _create_iter(self):
+        # the actual mechanism of creating the iterator to be overridden in
+        # subclasses based on what they want to iterate over.  In this default,
+        # iteration will come from the crashstorage instance defined as
+        # "source".  This works for the crashmover where the generally used
+        # source is the file system walking class.
+        return self.source.new_crashes()
+
+    #--------------------------------------------------------------------------
+    def _action_between_each_iteration(self):
+        """an action to take after an item has been yielded by the iterator.
+        This method is to be overridden by derived classes"""
+        pass
+
+    #--------------------------------------------------------------------------
+    def _action_after_iteration_completes(self):
+        """an action to be done when the iterator returned by the
+        "_create_iter" method is exhausted.  This method is to be overridden
+        in base classes that might need to do something special at that point.
+        examples may be simple logging, waiting, or resetting the iteration
+        system for the next loop."""
+        pass
+
+    #--------------------------------------------------------------------------
+    def _basic_iterator(self):
+        """this iterator yields individual crash_ids and/or Nones from the
+        iterator specified by the "_create_iter" method. Bare values yielded
+        by the "_create_iter" method get wrapped into an *args, **kwargs form.
+        That form is then used by the task manager as the arguments to the
+        worker function."""
+        for x in self._create_iter():
+            if x is None or isinstance(x, tuple):
+                yield x
             else:
-                yield None  # if the inner iterator yielded nothing at all,
-                            # yield None to give the caller the chance to sleep
+                yield ((x,), {})
+            self._action_between_each_iteration()
+        else:
+            # when the iterator is exhausted, yield None as this is an
+            # indicator to some of the clients to take an action.
+            # This is a moribund action, but in this current refactoring
+            # we don't want to change old behavior
+            yield None
+        self._action_after_iteration_completes()
+
+    #--------------------------------------------------------------------------
+    def _infinite_iterator(self):
+        """this iterator wraps the "_basic_iterator" when the configuration
+        specifies that the "number_of_submissions" is set to "forever".
+        Whenever the "_basic_iterator" is exhausted, it is called again to
+        restart the iteration.  It is up to the implementation of the innermost
+        iterator to define what starting over means.  Some iterators may
+        repeat exactly what they did before, while others may iterate over
+        new values"""
+        while True:
+            for crash_id in self._basic_iterator():
+                if self._filter_disallowed_values(crash_id):
+                    continue
+                yield crash_id
+
+    #--------------------------------------------------------------------------
+    def _all_iterator(self):
+        """this is the iterator for the case when "number_of_submissions" is
+        set to "all".  It goes through the innermost iterator exactly once
+        and raises the StopIteration exception when that innermost iterator is
+        exhausted"""
+        for crash_id in self._basic_iterator():
+            if crash_id is None:
+                break
+            yield crash_id
+
+    #--------------------------------------------------------------------------
+    def _limited_iterator(self):
+        """this is the iterator for the case when "number_of_submissions" is
+        set to an integer.  It goes through the innermost iterator exactly the
+        number of times specified by "number_of_submissions"  To do that, it
+        might run the innermost iterator to exhaustion.  If that happens, that
+        innermost iterator is called again to start over.  It is up to the
+        implementation of the innermost iteration to define what starting
+        over means.  Some iterators may repeat exactly what they did before,
+        while others may iterate over new values"""
+        i = 0
+        while True:
+            for crash_id in self._basic_iterator():
+                if self._filter_disallowed_values(crash_id):
+                    continue
+                if i == int(self.config.number_of_submissions):
+                    break
+                i += 1
+                yield crash_id
+            if i == int(self.config.number_of_submissions):
+                break
+
+    #--------------------------------------------------------------------------
+    def _filter_disallowed_values(self, current_value):
+        """in this base class there are no disallowed values coming from the
+        iterators.  Other users of these iterator may have some standards and
+        can detect and reject them here"""
+        return False
 
     #--------------------------------------------------------------------------
     def transform(
@@ -200,7 +317,6 @@ class FetchTransformSaveApp(App):
                     exc_info=True
                 )
 
-
     #--------------------------------------------------------------------------
     def quit_check(self):
         self.task_manager.quit_check()
@@ -215,24 +331,24 @@ class FetchTransformSaveApp(App):
         crash storage systems."""
         try:
             self.source = self.config.source.crashstorage_class(
-              self.config.source,
-              quit_check_callback=self.quit_check
+                self.config.source,
+                quit_check_callback=self.quit_check
             )
         except Exception:
             self.config.logger.critical(
-              'Error in creating crash source',
-              exc_info=True
+                'Error in creating crash source',
+                exc_info=True
             )
             raise
         try:
             self.destination = self.config.destination.crashstorage_class(
-              self.config.destination,
-              quit_check_callback=self.quit_check
+                self.config.destination,
+                quit_check_callback=self.quit_check
             )
         except Exception:
             self.config.logger.critical(
-              'Error in creating crash destination',
-              exc_info=True
+                'Error in creating crash destination',
+                exc_info=True
             )
             raise
 
@@ -248,9 +364,9 @@ class FetchTransformSaveApp(App):
         signal.signal(signal.SIGTERM, respond_to_SIGTERM_with_logging)
         self.task_manager = \
             self.config.producer_consumer.producer_consumer_class(
-              self.config.producer_consumer,
-              job_source_iterator=self.source_iterator,
-              task_func=self.transform
+                self.config.producer_consumer,
+                job_source_iterator=self.source_iterator,
+                task_func=self.transform
             )
         self.config.executor_identity = self.task_manager.executor_identity
 
@@ -269,3 +385,43 @@ class FetchTransformSaveApp(App):
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self._cleanup()
+
+
+#==============================================================================
+class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
+    required_config = Namespace()
+    required_config.namespace('new_crash_source')
+    required_config.new_crash_source.add_option(
+        'new_crash_source_class',
+        doc='an iterable that will stream crash_ids needing processing',
+        default='',
+        from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def _create_iter(self):
+        # while the base class ties the iterator to the class specified as the
+        # crash data "source", this class introduces a different stream of
+        # crash_ids in the form of the "new_crash_source_class".  While this is
+        # also typically tied to a crashstorage class, it doesn't have to be
+        # the same class as the "source".  For example, the "source" may be
+        # AmazonS3 but the stream of crash_ids may be from RabbitMQ or a
+        # PG query
+        return self.new_crash_source.new_crashes()
+
+    #--------------------------------------------------------------------------
+    def _setup_source_and_destination(self):
+        """use the base class to setup the source and destinations but add to
+        that setup the instantiation of the "new_crash_source" """
+        super(FetchTransformSaveWithSeparateNewCrashSourceApp, self) \
+            ._setup_source_and_destination()
+        if self.config.new_crash_source.new_crash_source_class:
+            self.new_crash_source = \
+                self.config.new_crash_source.new_crash_source_class(
+                    self.config.new_crash_source,
+                    self.app_instance_name
+                )
+        else:
+            # the configuration failed to provide a "new_crash_source", fall
+            # back to tying the "new_crash_source" to the "source".
+            self.new_crash_source = self.source

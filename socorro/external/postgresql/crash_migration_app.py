@@ -63,12 +63,7 @@ class CrashMigrationApp(RawAndProcessedCopierApp):
                 'ESCrashStorageNoStackwalkerOutput',
         }
 
-    def source_iterator(self):
-        for x in self.get_all_crash_ids():
-            yield (x, {})  # (args, kwargs)
-        raise StopIteration()
-
-    def get_all_crash_ids(self):
+    def _create_iter(self):
         connection = self.source.database.connection()
         sql = 'select uuid from raw_crashes;'
         return execute_query_iter(connection, sql)

@@ -10,20 +10,17 @@ import os
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
-from socorro.external.crashstorage_base import (
-  PolyCrashStorage,
-  CrashIDNotFound,
+from socorro.app.fetch_transform_save_app import (
+    FetchTransformSaveWithSeparateNewCrashSourceApp,
+    main
 )
+from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.util import DotDict
-from socorro.external.fs.fs_new_crash_source import (
-  FSNewCrashSource
-)
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 
 #==============================================================================
-class ProcessorApp(FetchTransformSaveApp):
+class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     """the Socorro processor converts raw_crashes into processed_crashes"""
     app_name = 'processor'
     app_version = '3.0'
@@ -41,24 +38,11 @@ class ProcessorApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     required_config.namespace('processor')
     required_config.processor.add_option(
-      'processor_class',
-      doc='the class that transforms raw crashes into processed crashes',
-      default='socorro.processor.socorrolite_processor_2015'
-              '.SocorroLiteProcessorAlgorithm2015',
-      from_string_converter=class_converter
-    )
-    #--------------------------------------------------------------------------
-    # new_crash_source namespace
-    #     this namespace is for config parameter having to do with the source
-    #     of new crash_ids.
-    #--------------------------------------------------------------------------
-    required_config.namespace('new_crash_source')
-    required_config.new_crash_source.add_option(
-      'new_crash_source_class',
-      doc='an iterable that will stream crash_ids needing processing',
-      default='socorro.external.fs.fs_new_crash_source'
-              '.FSNewCrashSource',
-      from_string_converter=class_converter
+        'processor_class',
+        doc='the class that transforms raw crashes into processed crashes',
+        default='socorro.processor.socorrolite_processor_2015'
+        '.SocorroLiteProcessorAlgorithm2015',
+        from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
     # companion_process namespace
@@ -67,11 +51,11 @@ class ProcessorApp(FetchTransformSaveApp):
     #--------------------------------------------------------------------------
     required_config.namespace('companion_process')
     required_config.companion_process.add_option(
-      'companion_class',
-      doc='a classname that runs a process in parallel with the processor',
-      default='',
-      #default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
-      from_string_converter=class_converter
+        'companion_class',
+        doc='a classname that runs a process in parallel with the processor',
+        default='',
+        #default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
+        from_string_converter=class_converter
     )
 
     ###########################################################################
@@ -88,27 +72,6 @@ class ProcessorApp(FetchTransformSaveApp):
             "source.crashstorage_class": FSDatedPermanentStorage,
             "destination.crashstorage_class": FSDatedPermanentStorage,
         }
-
-    #--------------------------------------------------------------------------
-    def source_iterator(self):
-        """this iterator yields individual crash_ids from the source
-        crashstorage class's 'new_crash_ids' method."""
-        self.iterator = self.config.new_crash_source.new_crash_source_class(
-          self.config.new_crash_source,
-          self.processor_name,
-          self.quit_check
-        )
-        while True:  # loop forever and never raise StopIteration
-            for x in self.iterator():
-                if x is None:
-                    yield None
-                elif isinstance(x, tuple):
-                    yield x  # already in (args, kwargs) form
-                else:
-                    yield ((x,), {})  # (args, kwargs)
-            else:
-                yield None  # if the inner iterator yielded nothing at all,
-                            # yield None to give the caller the chance to sleep
 
     #--------------------------------------------------------------------------
     def quit_check(self):
@@ -202,19 +165,15 @@ class ProcessorApp(FetchTransformSaveApp):
         else:
             self.companion_process = None
 
-        self.processor_name = "%s.%d:2015" % (
-            os.uname()[1].replace('.', '_'),
-            os.getpid()
-        )
-        self.config.processor_name = self.processor_name
+        self.config.processor_name = self.app_instance_name
 
         # this function will be called by the MainThread periodically
         # while the threaded_task_manager processes crashes.
         self.waiting_func = None
 
         self.processor = self.config.processor.processor_class(
-          self.config.processor,
-          self.quit_check
+            self.config.processor,
+            self.quit_check
         )
 
     #--------------------------------------------------------------------------

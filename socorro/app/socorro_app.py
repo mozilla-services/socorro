@@ -146,6 +146,8 @@ class SocorroApp(RequiredConfig):
     #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
+        # give a name to this running instance of the program.
+        self.app_instance_name = self._app_instance_name()
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -162,6 +164,17 @@ class SocorroApp(RequiredConfig):
         """derived classes must override this function with business logic"""
         raise NotImplementedError(
             "A definition of 'main' in a derived class is required"
+        )
+
+    #--------------------------------------------------------------------------
+    def _app_instance_name(self):
+        # originally, only the processors had instance names.  By putting this
+        # call here, all the apps have instance names that can be used to
+        # tag output that is traceble back to an app/machine/process.
+        return "%s_%s_%d" % (
+            self.app_name,
+            os.uname()[1].replace('.', '_'),
+            os.getpid()
         )
 
     #--------------------------------------------------------------------------

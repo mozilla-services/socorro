@@ -335,7 +335,7 @@ class TestSubmitterApp(TestCase):
         config.submitter = DotDict()
         config.submitter.delay = 0
         config.submitter.dry_run = False
-        config.submitter.number_of_submissions = "all"
+        config.number_of_submissions = "all"
 
         config.logger = mock.MagicMock()
 
@@ -377,7 +377,7 @@ class TestSubmitterApp(TestCase):
         config.submitter = DotDict()
         config.submitter.delay = 0
         config.submitter.dry_run = False
-        config.submitter.number_of_submissions = "all"
+        config.number_of_submissions = "all"
 
         config.logger = mock.MagicMock()
 
@@ -424,7 +424,7 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to all
         # It raises StopIterations after all the elements were called
         config = self.get_standard_config()
-        config.submitter.number_of_submissions = "all"
+        config.number_of_submissions = "all"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
@@ -440,9 +440,10 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to forever
         # It never raises StopIterations
         config = self.get_standard_config()
-        config.submitter.number_of_submissions = "forever"
+        config.number_of_submissions = "forever"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
+        sub._setup_task_manager()
         itera = sub.source_iterator()
 
         sub.source.new_crashes = lambda: iter([1, 2, 3])
@@ -457,7 +458,7 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to an integer > number of items
         # It raises StopIterations after some number of elements were called
         config = self.get_standard_config()
-        config.submitter.number_of_submissions = "5"
+        config.number_of_submissions = "5"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
@@ -475,7 +476,7 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to an integer < number of items
         # It raises StopIterations after some number of elements were called
         config = self.get_standard_config()
-        config.submitter.number_of_submissions = "1"
+        config.number_of_submissions = "1"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
@@ -492,7 +493,7 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to all
         # It raises StopIterations after all the elements were called
         config = self.get_new_crash_source_config()
-        config.submitter.number_of_submissions = "all"
+        config.number_of_submissions = "all"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
@@ -509,9 +510,10 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to forever
         # It never raises StopIterations
         config = self.get_new_crash_source_config()
-        config.submitter.number_of_submissions = "forever"
+        config.number_of_submissions = "forever"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
+        sub._setup_task_manager()
         itera = sub.source_iterator()
 
         # setup a fake iter using two form of the data to ensure it deals
@@ -529,7 +531,7 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to an integer > number of items
         # It raises StopIterations after some number of elements were called
         config = self.get_new_crash_source_config()
-        config.submitter.number_of_submissions = "5"
+        config.number_of_submissions = "5"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
@@ -548,7 +550,7 @@ class TestSubmitterApp(TestCase):
         # Test with number of submissions equal to an integer < number of items
         # It raises StopIterations after some number of elements were called
         config = self.get_new_crash_source_config()
-        config.submitter.number_of_submissions = "1"
+        config.number_of_submissions = "1"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()
@@ -565,7 +567,7 @@ class TestSubmitterApp(TestCase):
         # than a crash_id
         # It raises StopIterations after some number of elements were called
         config = self.get_new_crash_source_config()
-        config.submitter.number_of_submissions = "2"
+        config.number_of_submissions = "2"
         sub = SubmitterApp(config)
         sub._setup_source_and_destination()
         sub._setup_task_manager()

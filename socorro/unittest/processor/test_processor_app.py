@@ -45,16 +45,17 @@ class TestProcessorApp(TestCase):
           return_value=mocked_processor
         )
 
+        config.number_of_submissions = 'forever'
         config.new_crash_source = DotDict()
-        sequence_generator = sequencer(((1,), {}),
-                                       2,  # ensure both forms acceptable
-                                       None,
-                                       ((3,), {}))
-        mocked_new_crash_source = mock.Mock(side_effect=sequence_generator)
-        mocked_new_crash_source.id = 'mocked_new_crash_source'
-        config.new_crash_source.new_crash_source_class = mock.Mock(
-          return_value=mocked_new_crash_source
-        )
+        class FakedNewCrashSource(object):
+            def __init__(self, *args, **kwargs):
+                pass
+            def new_crashes(self):
+                return sequencer(((1,), {}),
+                                 2,  # ensure both forms acceptable
+                                 None,
+                                 ((3,), {}))()
+        config.new_crash_source.new_crash_source_class = FakedNewCrashSource
 
         config.companion_process = DotDict()
         mocked_companion_process = mock.Mock()
