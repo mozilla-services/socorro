@@ -23,6 +23,13 @@ from socorro.lib.ooid import dateFromOoid, depthFromOoid
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
 
+
+def dates_to_strings_for_json(obj):
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+    return json.JSONEncoder.default(self, obj)
+
+
 @contextmanager
 def using_umask(n):
     old_n = os.umask(n)
@@ -181,7 +188,7 @@ class FSRadixTreeStorage(CrashStorageBase):
         processed_crash = processed_crash.copy()
         f = StringIO()
         with closing(gzip.GzipFile(mode='wb', fileobj=f)) as fz:
-            json.dump(processed_crash, fz, default=self.json_default)
+            json.dump(processed_crash, fz, default=dates_to_strings_for_json)
         self._save_files(crash_id, {
             crash_id + self.config.jsonz_file_suffix: f.getvalue()
         })
@@ -250,12 +257,6 @@ class FSRadixTreeStorage(CrashStorageBase):
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
         shutil.rmtree(parent_dir)
-
-    @staticmethod
-    def json_default(obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
-        raise TypeError
 
 
 class FSLegacyRadixTreeStorage(FSRadixTreeStorage):
@@ -639,17 +640,13 @@ FSPermanentStorage = FSLegacyRadixTreeStorage
 FSDatedPermanentStorage = FSLegacyDatedRadixTreeStorage
 
 
-class TarFileCrashStore(CrashStorageBase):
+#==============================================================================
+class TarFileWritingCrashStore(CrashStorageBase):
     required_config = Namespace()
     required_config.add_option(
         name='tarball_name',
         doc='pathname to a the target tarfile',
-        default='fred.tar'
-    )
-    required_config.add_option(
-        name='temp_directory',
-        doc='the pathname of a temporary directory',
-        default='/tmp'
+        default=datetime.datetime.now().strftime("%Y%m%d")
     )
     required_config.add_option(
         name='tarfile_module',
@@ -663,68 +660,108 @@ class TarFileCrashStore(CrashStorageBase):
         default='gzip',
         from_string_converter=class_converter
     )
-    required_config.add_option(
-        name='os_module',
-        doc='a module that supplies the os interface',
-        default='os',
-        from_string_converter=class_converter
-    )
 
-    @staticmethod
-    def stringify_datetimes(obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
-        raise TypeError
+    #------------------------------------------------------------------------------
+    def _create_tarfile(self):
+        """subclasses that have a different way of openning or creating
+        the tar file pointer can override this method.  Useful for creating
+        text buffer tarfiles or using temporary files"""
+        return self.tarfile_module.open(self.config.tarball_name, 'w')
 
+    #------------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
-        super(TarFileCrashStore, self).__init__(config, quit_check_callback)
+        super(TarFileWritingCrashStore, self).__init__(config, quit_check_callback)
         self.tarfile_module = config.tarfile_module
         self.gzip_module = config.gzip_module
-        self.os_module = config.os_module
+        self.tar_fp = self._create_tarfile()
 
-    def _save_to_tarfile(self, actual_pathname, target_pathname):
-        try:
-            self.tar_file.add(actual_pathname, target_pathname)
-        except AttributeError:
-            # the tar_file is lazy instantiated.  It isn't created until
-            # a process tries to save something to it
-            self.tar_file = self.tarfile_module.open(
-                self.config.tarball_name,
-                'w'
-            )
-            self.tar_file.add(actual_pathname, target_pathname)
-
+    #------------------------------------------------------------------------------
     def close(self):
-        try:
-            self.tar_file.close()
-        except AttributeError:
-            # the tar_file was never actually created because the save_*
-            # were never called.  we can silently ignore this
-            pass
+        self.tar_fp.close()
 
+    #------------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         processed_crash_as_string = json.dumps(
             processed_crash,
-            default=self.stringify_datetimes
+            default=dates_to_strings_for_json
         )
-        crash_id = processed_crash['crash_id']
-        file_name = os.path.join(
-            self.config.temp_directory,
-            crash_id + '.jsonz'
+        crash_id = processed_crash["crash_id"]
+
+        compressed_crash = StringIO()
+        gzip_file = self.gzip_module.GzipFile(fileobj=compressed_crash, mode='w')
+        gzip_file.write(processed_crash_as_string)
+        gzip_file.close()
+        compressed_crash.seek(0)
+        tarinfo = self.tarfile_module.TarInfo('%s.jsonz' % crash_id)
+        tarinfo.size = len(compressed_crash.getvalue())
+        self.tar_fp.addfile(tarinfo, compressed_crash)
+        self.config.logger.debug(
+            'TarFileCrashStore saved - %s to %s',
+            crash_id,
+            self.config.tarball_name
         )
-        file_handle = self.gzip_module.open(file_name, 'w', 9)
-        try:
-            file_handle.write(processed_crash_as_string)
-        finally:
-            file_handle.close()
-        self._save_to_tarfile(
-            file_name,
-            os.path.join(
-                crash_id[:2],
-                crash_id[2:4],
-                crash_id + '.jsonz'
-            )
+
+
+#==============================================================================
+class TarFileSequentialReadingCrashStore(CrashStorageBase):
+    required_config = Namespace()
+    required_config.add_option(
+        name='tarball_name',
+        doc='pathname to a the target tarfile',
+        default='fred.tar'
+    )
+    required_config.add_option(
+        name='tarfile_module',
+        doc='a module that supplies the tarfile interface',
+        default='tarfile',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        name='gzip_module',
+        doc='a module that supplies the gzip interface',
+        default='gzip',
+        from_string_converter=class_converter
+    )
+
+    #------------------------------------------------------------------------------
+    @staticmethod
+    def stringify_datetimes(obj):
+        if isinstance(obj, datetime.date):
+            return obj.iso_format()
+        return json.JSONEncoder.default(self, obj)
+
+    #------------------------------------------------------------------------------
+    def _create_tarfile(self):
+        """subclasses that have a different way of openning or creating
+        the tar file pointer can override this method.  Useful for creating
+        text buffer tarfiles or using temporary files"""
+        return self.tarfile_module.open(self.config.tarball_name, 'r')
+
+    #------------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(TarFileSequentialReadingCrashStore, self).__init__(
+            config,
+            quit_check_callback
         )
-        self.os_module.unlink(file_name)
-        self.config.logger.debug('saved - %s', file_name)
+        self.tarfile_module = config.tarfile_module
+        self.gzip_module = config.gzip_module
+        self.tar_fp = self._create_tarfile()
+
+    #------------------------------------------------------------------------------
+    def close(self):
+        self.tar_fp.close()
+
+    #------------------------------------------------------------------------------
+    def get_unredacted_processed(self, crash_id_ignored):
+        """we don't implement random access in this class, the next
+        one is all you get no matter what you ask for"""
+        a_tar_info_object = self.tar_fp.next()
+        if a_tar_info_object is None:
+            raise CrashIDNotFound(crash_id_ignored)
+        result_gzip_fp = gzip.GzipFile(
+            fileobj=self.tar_fp.extractfile(a_tar_info_object)
+        )
+        reconstituted_processed_crash_as_str = result_gzip_fp.read().strip()
+        processed_crash = json.loads(reconstituted_processed_crash_as_str)
+        return processed_crash
 
