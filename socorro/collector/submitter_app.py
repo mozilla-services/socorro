@@ -17,7 +17,11 @@ from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
-from socorro.external.crashstorage_base import CrashStorageBase
+from socorro.external.crashstorage_base import (
+    CrashStorageBase,
+    FileDumpsMapping,
+    MemoryDumpsMapping,
+)
 from socorro.external.filesystem.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
 from socorro.external.postgresql.dbapi2_util import execute_query_iter
@@ -59,7 +63,7 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
         )
 
     #--------------------------------------------------------------------------
-    def get_raw_crash(self, path_tuple):
+    def get_raw_crash(self, (prefix, path_tuple)):
         """the default implemntation of fetching a raw_crash
         parameters:
            path_tuple - a tuple of paths. the first element is the raw_crash
@@ -68,13 +72,23 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             return DotDict(json.load(raw_crash_fp))
 
     #--------------------------------------------------------------------------
-    def get_raw_dumps_as_files(self, dump_pathnames):
+    def get_raw_dumps(self, prefix_path_tuple):
+        file_dumps_mapping = self.get_raw_dumps_as_files(prefix_path_tuple)
+        return file_dumps_mapping.as_memory_dumps_mapping()
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, prefix_path_tuple):
         """the default implemntation of fetching a dump.
         parameters:
         dump_pathnames - a tuple of paths. the second element and beyond are
                          the dump pathnames"""
-        return dict(zip(self._dump_names_from_pathnames(dump_pathnames[1:]),
-                        dump_pathnames[1:]))
+        prefix, dump_pathnames = prefix_path_tuple
+        return FileDumpsMapping(
+            zip(
+                self._dump_names_from_pathnames(dump_pathnames[1:]),
+                dump_pathnames[1:]
+            )
+        )
 
     #--------------------------------------------------------------------------
     def _dump_names_from_pathnames(self, pathnames):
@@ -256,14 +270,6 @@ class SubmitterApp(FetchTransformSaveApp):
         """this transform function only transfers raw data from the
         source to the destination without changing the data."""
         paths = None
-        if isinstance(crash_id, tuple):
-            # the SubmitterFileSystemWalkerSource returns a tuple of crash_id
-            # and path to files rather than just the crash_id.  This is because
-            # it has no way to look up the location of a crash given just a
-            # crash_id.  It works on a random directory structure. This line
-            # unpacks the tuple so that they can be used separately in the
-            # right context
-            crash_id, paths = crash_id
         if self.config.submitter.dry_run:
             print crash_id
         else:
@@ -275,11 +281,9 @@ class SubmitterApp(FetchTransformSaveApp):
             # crash_id to lookup the crash. If 'paths' is not None, then we
             # have to use it to lookup the crash rather than the crash_id.
             self.config.logger.debug('paths: %s', paths)
-            raw_crash = self.source.get_raw_crash(paths if paths else crash_id)
+            raw_crash = self.source.get_raw_crash(crash_id)
             self.config.logger.debug('raw_crash: %s', raw_crash)
-            dumps = self.source.get_raw_dumps_as_files(
-                paths if paths else crash_id
-            )
+            dumps = self.source.get_raw_dumps_as_files(crash_id)
             self.destination.save_raw_crash_with_file_dumps(
                 raw_crash,
                 dumps,

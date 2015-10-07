@@ -8,7 +8,10 @@ import mock
 from nose.tools import eq_, assert_raises
 
 from socorro.lib.util import SilentFakeLogger, DotDict
-from socorro.external.crashstorage_base import Redactor
+from socorro.external.crashstorage_base import (
+    Redactor,
+    MemoryDumpsMapping
+)
 from socorro.external.hb.crashstorage import HBaseCrashStorage, CrashIDNotFound
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.unittest.testbase import TestCase
@@ -106,7 +109,7 @@ class TestCrashStorage(TestCase):
     def test_save_raw_crash(self):
         self.storage.save_raw_crash({
             "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
-        }, {}, "0bba929f-8721-460c-dead-a43c20071027")
+        }, MemoryDumpsMapping(), "0bba929f-8721-460c-dead-a43c20071027")
         with self.storage.hbase() as conn:
             eq_(conn.client.mutateRow.call_count, 5)
 
@@ -114,7 +117,7 @@ class TestCrashStorage(TestCase):
         self.storage.save_raw_crash({
             "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00",
             "HangID": "?"
-        }, {}, "0bba929f-8721-460c-dead-a43c20071027")
+        }, MemoryDumpsMapping(), "0bba929f-8721-460c-dead-a43c20071027")
         with self.storage.hbase() as conn:
             eq_(conn.client.mutateRow.call_count, 7)
 

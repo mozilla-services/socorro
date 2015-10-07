@@ -17,8 +17,12 @@ except ImportError:
     from StringIO import StringIO
 
 from configman import Namespace, class_converter
-from socorro.external.crashstorage_base import CrashStorageBase, \
-                                               CrashIDNotFound
+from socorro.external.crashstorage_base import (
+    CrashStorageBase,
+    CrashIDNotFound,
+    FileDumpsMapping,
+    MemoryDumpsMapping
+)
 from socorro.lib.ooid import dateFromOoid, depthFromOoid
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.util import DotDict
@@ -195,12 +199,13 @@ class FSRadixTreeStorage(CrashStorageBase):
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         if dumps is None:
-            dumps = {}
+            dumps = MemoryDumpsMapping()
         files = {
             crash_id + self.config.json_file_suffix: json.dumps(raw_crash)
         }
+        in_memory_dumps = dumps.as_memory_dumps_mapping()
         files.update(dict((self._get_dump_file_name(crash_id, fn), dump)
-                          for fn, dump in dumps.iteritems()))
+                          for fn, dump in in_memory_dumps.iteritems()))
         self._save_files(crash_id, files)
 
     def get_raw_crash(self, crash_id):
@@ -229,16 +234,14 @@ class FSRadixTreeStorage(CrashStorageBase):
                       for dump_file_name in os.listdir(parent_dir)
                       if dump_file_name.startswith(crash_id) and
                          dump_file_name.endswith(self.config.dump_file_suffix)]
-        return DotDict(zip(self._dump_names_from_paths(dump_paths),
+        # we want to return a name/pathname mapping for the raw dumps
+        return FileDumpsMapping(zip(self._dump_names_from_paths(dump_paths),
                            dump_paths))
 
     def get_raw_dumps(self, crash_id):
-        def read_with(fn):
-            with open(fn) as f:
-                return f.read()
-        return DotDict((k, read_with(v))
-                       for k, v
-                       in self.get_raw_dumps_as_files(crash_id).iteritems())
+        file_dump_mapping = self.get_raw_dumps_as_files(crash_id)
+        # ensure that we return a name/blob mapping
+        return file_dump_mapping.as_memory_dumps_mapping()
 
     def get_unredacted_processed(self, crash_id):
         """this method returns an unredacted processed crash"""

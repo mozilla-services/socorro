@@ -4,11 +4,17 @@
 
 import mock
 import json
+import tempfile
+import shutil
+from os.path import join
 
 import boto.exception
 
 from socorro.lib.util import DotDict
-from socorro.external.crashstorage_base import Redactor
+from socorro.external.crashstorage_base import (
+    Redactor,
+    MemoryDumpsMapping
+)
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
     SupportReasonAPIStorage
@@ -19,6 +25,7 @@ from socorro.database.transaction_executor import (
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
 import socorro.unittest.testbase
+
 
 a_raw_crash = {
     "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
@@ -37,6 +44,16 @@ BotoS3CrashStorage.conditional_exceptions = (ConditionallyABadDeal, )
 
 
 class TestCase(socorro.unittest.testbase.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestCase, cls).setUpClass()
+        cls.TEMPDIR = tempfile.mkdtemp()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCase, cls).tearDownClass()
+        shutil.rmtree(cls.TEMPDIR)
 
     def _fake_processed_crash(self):
         d = DotDict()
@@ -114,8 +131,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'port': port,
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
-            'temporary_file_system_storage_path':
-            '/i/am/hiding/junk/files/here',
+            'temporary_file_system_storage_path': self.TEMPDIR,
             'dump_file_suffix': '.dump',
             'bucket_name': 'mozilla-support-reason',
             'prefix': 'dev',
@@ -154,7 +170,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
         boto_s3_store.save_raw_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            {},
+            MemoryDumpsMapping(),
             "0bba929f-8721-460c-dead-a43c20071027"
         )
         self.assert_s3_connection_parameters(
@@ -169,7 +185,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         # the tested call
         boto_s3_store.save_raw_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            {},
+            MemoryDumpsMapping(),
             "0bba929f-8721-460c-dead-a43c20071027"
         )
 
@@ -221,7 +237,9 @@ class TestCase(socorro.unittest.testbase.TestCase):
         # the tested call
         boto_s3_store.save_raw_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            {'dump': 'fake dump', 'flash_dump': 'fake flash dump'},
+            MemoryDumpsMapping(
+                {'dump': 'fake dump', 'flash_dump': 'fake flash dump'}
+            ),
             "0bba929f-8721-460c-dead-a43c20071027"
         )
 
@@ -282,7 +300,9 @@ class TestCase(socorro.unittest.testbase.TestCase):
         # the tested call
         boto_s3_store.save_raw_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            {'dump': 'fake dump', 'flash_dump': 'fake flash dump'},
+            MemoryDumpsMapping(
+                {'dump': 'fake dump', 'flash_dump': 'fake flash dump'}
+            ),
             "0bba929f-8721-460c-dead-a43c20071027"
         )
 
@@ -885,42 +905,29 @@ class TestCase(socorro.unittest.testbase.TestCase):
             "936ce666-ff3b-4c7a-9674-367fe2120408"
         )
 
-        # what should have happened internally
         # we don't care much about the mocked internals as the bulk of that
         # function is tested elsewhere.
-        # we just need to be concerned about the file writing
+        # we just need to be concerned about the file writing worked
         self.assertEqual(
             result,
             {
-                'flash_dump': '/i/am/hiding/junk/files/here/936ce666-ff3b-4'
-                'c7a-9674-367fe2120408.flash_dump.TEMPORARY.dump',
-
-                'city_dump': '/i/am/hiding/junk/files/here/936ce666-ff3b-4c7'
-                'a-9674-367fe2120408.city_dump.TEMPORARY.dump',
-
-                'upload_file_minidump': '/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-96'
-                '74-367fe2120408.upload_file_minidump.TEMPORARY.dump'
+                'flash_dump': join(
+                    self.TEMPDIR,
+                    '936ce666-ff3b-4c7a-9674-367fe2120408.flash_dump'
+                        '.TEMPORARY.dump'
+                ),
+                'city_dump': join(
+                    self.TEMPDIR,
+                    '936ce666-ff3b-4c7a-9674-367fe2120408.city_dump'
+                        '.TEMPORARY.dump'
+                ),
+                'upload_file_minidump': join(
+                    self.TEMPDIR,
+                    '936ce666-ff3b-4c7a-9674-367fe2120408'
+                        '.upload_file_minidump.TEMPORARY.dump'
+                )
             }
         )
-        boto_s3_store._open.assert_has_calls([
-            mock.call(u'/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-9674-'
-                      '367fe2120408.flash_dump.TEMPORARY.dump', 'wb'),
-            mock.call().__enter__(),
-            mock.call().__enter__().write(
-                'this is "flash_dump", the second one'
-            ),
-            mock.call().__exit__(None, None, None),
-            mock.call(u'/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-9674'
-                      '-367fe2120408.city_dump.TEMPORARY.dump', 'wb'),
-            mock.call().__enter__(),
-            mock.call().__enter__().write('this is "city_dump", the last one'),
-            mock.call().__exit__(None, None, None),
-            mock.call(u'/i/am/hiding/junk/files/here/936ce666-ff3b-4c7a-9674-'
-                      '367fe2120408.upload_file_minidump.TEMPORARY.dump', 'wb'),
-            mock.call().__enter__(),
-            mock.call().__enter__().write('this is "dump", the first one'),
-            mock.call().__exit__(None, None, None)
-        ])
 
     def test_get_unredacted_processed(self):
     # setup some internal behaviors and fake outs

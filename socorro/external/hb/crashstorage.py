@@ -10,7 +10,10 @@ import os
 
 from socorro.lib.datetimeutil import utc_now
 from socorro.external.crashstorage_base import (
-    CrashStorageBase, CrashIDNotFound)
+    CrashStorageBase,
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+)
 from socorro.external.hb.connection_context import \
      HBaseConnectionContext
 from socorro.lib.util import DotDict
@@ -163,7 +166,11 @@ class HBaseCrashStorage(CrashStorageBase):
                        ("ids:ooid",              crash_id)
                       ]
 
-            for key, dump in dumps.iteritems():
+            # we don't know where the dumps came from, they could be in
+            # in the form of names to binary blobs or names to pathnames.
+            # this call ensures that we've got the former.
+            memory_dumps_mapping = dumps.as_memory_dumps_mapping()
+            for key, dump in memory_dumps_mapping.iteritems():
                 if key in (None, '', 'upload_file_minidump'):
                     key = 'dump'
                 columns.append(('raw_data:%s' % key, dump))
@@ -404,7 +411,9 @@ class HBaseCrashStorage(CrashStorageBase):
             try:
                 if raw_rows:
                     column_mapping = raw_rows[0].columns
-                    d = dict([
+                    # ensure that we return a proper mapping of names to
+                    # binary blobs.
+                    d = MemoryDumpsMapping([
                         (self._make_dump_name(k), v.value)
                             for k, v in column_mapping.iteritems()])
                     return d
@@ -419,28 +428,13 @@ class HBaseCrashStorage(CrashStorageBase):
         return transaction()
 
     def get_raw_dumps_as_files(self, crash_id):
-        """this method fetches a set of dumps from HBase and writes each one
-        to a temporary file.  The pathname for the dump includes the string
-        'TEMPORARY' as a signal to the processor that it has the responsibilty
-        to delete the file when it is done using it."""
-        @self._wrap_in_transaction
-        def transaction(client):
-            dumps_mapping = self.get_raw_dumps(crash_id)
-
-            name_to_pathname_mapping = {}
-            for name, dump in dumps_mapping.iteritems():
-                dump_pathname = os.path.join(
-                    self.config.temporary_file_system_storage_path,
-                    "%s.%s.TEMPORARY%s" % (crash_id,
-                                           name,
-                                           self.config.dump_file_suffix)
-                )
-                name_to_pathname_mapping[name] = dump_pathname
-                with open(dump_pathname, 'wb') as f:
-                    f.write(dump)
-
-            return name_to_pathname_mapping
-        return transaction()
+        memory_dumps_mapping = self.get_raw_dumps(crash_id)
+        # convert our in memory name/blob data into name/pathname data
+        return memory_dumps_mapping.as_file_dumps_mapping(
+            crash_id,
+            self.hbase.config.temporary_file_system_storage_path,
+            self.hbase.config.dump_file_suffix
+        )
 
     def get_unredacted_processed(self, crash_id):
         """Return the unredacted processed json (jsonz) for a given ooid as a

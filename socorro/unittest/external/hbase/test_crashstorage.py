@@ -13,7 +13,11 @@ from configman import ConfigurationManager
 
 from socorro.external.hbase import hbase_client
 
-from socorro.external.crashstorage_base import CrashIDNotFound, Redactor
+from socorro.external.crashstorage_base import (
+    CrashIDNotFound,
+    Redactor,
+    MemoryDumpsMapping
+)
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
 from socorro.external.hbase.connection_context import \
      HBaseConnectionContextPooled
@@ -108,9 +112,11 @@ else:
                 fake_raw_dump_1 = 'peter is a swede'
                 fake_raw_dump_2 = 'lars is a norseman'
                 fake_raw_dump_3 = 'adrian is a frenchman'
-                fake_dumps = {'upload_file_minidump': fake_raw_dump_1,
-                              'lars': fake_raw_dump_2,
-                              'adrian': fake_raw_dump_3}
+                fake_dumps = MemoryDumpsMapping({
+                    'upload_file_minidump': fake_raw_dump_1,
+                     'lars': fake_raw_dump_2,
+                     'adrian': fake_raw_dump_3
+                })
                 crashstorage.save_raw_crash(json.loads(raw),
                                             fake_dumps,
                                             crash_id)

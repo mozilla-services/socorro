@@ -5,7 +5,10 @@ from configman import ConfigurationManager
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.fs.crashstorage import FSRadixTreeStorage
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.crashstorage_base import (
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+)
 from socorro.unittest.testbase import TestCase
 
 
@@ -42,10 +45,10 @@ class TestFSRadixTreeStorage(TestCase):
     def _make_test_crash(self, crash_id=CRASH_ID_1):
         self.fsrts.save_raw_crash({
             "test": "TEST"
-        }, {
+        }, MemoryDumpsMapping({
             'foo': 'bar',
             self.fsrts.config.dump_field: 'baz'
-        }, crash_id)
+        }), crash_id)
 
     def _make_processed_test_crash(self):
         self.fsrts.save_processed({
@@ -105,10 +108,13 @@ class TestFSRadixTreeStorage(TestCase):
 
     def test_get_raw_dumps(self):
         self._make_test_crash()
-        eq_(self.fsrts.get_raw_dumps(self.CRASH_ID_1), {
-            'foo': 'bar',
-            self.fsrts.config.dump_field: 'baz'
-        })
+        eq_(
+            self.fsrts.get_raw_dumps(self.CRASH_ID_1),
+            MemoryDumpsMapping({
+                'foo': 'bar',
+                self.fsrts.config.dump_field: 'baz'
+            }),
+        )
         assert_raises(CrashIDNotFound, self.fsrts.get_raw_dumps,
                           self.CRASH_ID_2)
 

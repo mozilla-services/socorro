@@ -6,7 +6,10 @@ import mock
 import json
 
 from socorro.lib.util import SilentFakeLogger, DotDict
-from socorro.external.crashstorage_base import Redactor
+from socorro.external.crashstorage_base import (
+    Redactor,
+    MemoryDumpsMapping,
+)
 from socorro.external.happybase.crashstorage import HBaseCrashStorage, CrashIDNotFound
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.unittest.testbase import TestCase
@@ -106,7 +109,7 @@ class TestCrashStorage(TestCase):
     def test_save_raw_crash(self):
         self.storage.save_raw_crash({
             "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
-        }, {}, "0bba929f-8721-460c-dead-a43c20071027")
+        }, MemoryDumpsMapping(), "0bba929f-8721-460c-dead-a43c20071027")
         with self.storage.hbase() as conn:
             self.assertEqual(conn.table.call_count, 1)
             self.assertEqual(conn.table.return_value.put.call_count, 1)
@@ -115,7 +118,7 @@ class TestCrashStorage(TestCase):
         self.storage.save_raw_crash({
             "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00",
             "HangID": "?"
-        }, {}, "0bba929f-8721-460c-dead-a43c20071027")
+        }, MemoryDumpsMapping(), "0bba929f-8721-460c-dead-a43c20071027")
         with self.storage.hbase() as conn:
             self.assertEqual(conn.table.call_count, 1)
             self.assertEqual(conn.table.return_value.put.call_count, 1)

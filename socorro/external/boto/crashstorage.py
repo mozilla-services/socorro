@@ -13,7 +13,8 @@ import contextlib
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
-    CrashIDNotFound
+    CrashIDNotFound,
+    MemoryDumpsMapping,
 )
 from socorro.lib.util import DotDict
 
@@ -177,6 +178,8 @@ class BotoS3CrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     @staticmethod
     def do_save_raw_crash(boto_s3_store, raw_crash, dumps, crash_id):
+        if dumps is None:
+            dumps = MemoryDumpsMapping()
         raw_crash_as_string = boto_s3_store._convert_mapping_to_string(
             raw_crash
         )
@@ -193,6 +196,11 @@ class BotoS3CrashStorage(CrashStorageBase):
             "dump_names",
             dump_names_as_string
         )
+
+        # we don't know what type of dumps mapping we have.  We do know,
+        # however, that by calling the memory_dump_mapping method, we will
+        # get a MemoryDumpMapping which is exactly what we need.
+        dumps = dumps.as_memory_dumps_mapping()
         for dump_name, dump in dumps.iteritems():
             if dump_name in (None, '', 'upload_file_minidump'):
                 dump_name = 'dump'
@@ -278,7 +286,9 @@ class BotoS3CrashStorage(CrashStorageBase):
             dump_names = boto_s3_store._convert_string_to_list(
                 dump_names_as_string
             )
-            dumps = {}
+            # when we fetch the dumps, they are by default in memory, so we'll
+            # put them into a MemoryDumpMapping.
+            dumps = MemoryDumpsMapping()
             for dump_name in dump_names:
                 if dump_name in (None, '', 'upload_file_minidump'):
                     dump_name = 'dump'
@@ -294,42 +304,18 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
+        """this returns a MemoryDumpsMapping"""
         return self.transaction_for_get(self.do_get_raw_dumps, crash_id)
 
     #--------------------------------------------------------------------------
-    @staticmethod
-    def do_get_raw_dumps_as_files(boto_s3_store, crash_id):
-        """the default implementation of fetching all the dumps as files on
-        a file system somewhere.  returns a list of pathnames.
-
-        parameters:
-           crash_id - the id of a dump to fetch"""
-        try:
-            dumps_mapping = boto_s3_store.get_raw_dumps(crash_id)
-            name_to_pathname_mapping = {}
-            for a_dump_name, a_dump in dumps_mapping.iteritems():
-                if a_dump_name in (None, '', 'dump'):
-                    a_dump_name = 'upload_file_minidump'
-                dump_pathname = os.path.join(
-                    boto_s3_store.config.temporary_file_system_storage_path,
-                    "%s.%s.TEMPORARY%s" % (
-                        crash_id,
-                        a_dump_name,
-                        boto_s3_store.config.dump_file_suffix
-                    )
-                )
-                name_to_pathname_mapping[a_dump_name] = dump_pathname
-                with boto_s3_store._open(dump_pathname, 'wb') as f:
-                    f.write(a_dump)
-            return name_to_pathname_mapping
-        except boto.exception.StorageResponseError, x:
-            raise CrashIDNotFound(
-                '%s not found: %s' % (crash_id, x)
-            )
-
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
-        return self.transaction_for_get(self.do_get_raw_dumps_as_files, crash_id)
+        in_memory_dumps = self.get_raw_dumps(crash_id)
+        # convert our native memory dump mapping into a file dump mapping.
+        return in_memory_dumps.as_file_dumps_mapping(
+            crash_id,
+            self.config.temporary_file_system_storage_path,
+            self.config.dump_file_suffix
+        )
 
     #--------------------------------------------------------------------------
     @staticmethod
