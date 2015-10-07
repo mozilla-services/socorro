@@ -5117,3 +5117,62 @@ class TestViews(BaseTestViews):
                 eq_(cells[1], 'No')
             elif cells[0] == PERMISSIONS['view_exploitability']:
                 eq_(cells[1], 'Yes!')
+
+    @mock.patch('requests.get')
+    def test_graphics_report(self, rget):
+
+        def mocked_get(url, **options):
+            header = ['signature', 'date_processed']
+            hits = [
+                ['my signature', '2015-10-08 23:22:21'],
+                ['other signature', '2015-10-08 13:12:11'],
+            ]
+            return Response({
+                'header': header,
+                'hits': hits,
+            })
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats:graphics_report')
+        response = self.client.get(url)
+        eq_(response.status_code, 403)
+        user = self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 403)
+        group = Group.objects.create(name='Hackers')
+        permission = Permission.objects.get(codename='run_long_queries')
+        group.permissions.add(permission)
+        user.groups.add(group)
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+        data = {'date': datetime.datetime.utcnow().date()}
+        response = self.client.get(url, data)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/csv')
+        eq_(response['Content-Length'], str(len(response.content)))
+        # the content should be parseable
+        length = len(response.content)
+        inp = StringIO(response.content)
+        reader = csv.reader(inp, delimiter='\t')
+        lines = list(reader)
+        assert len(lines) == 3
+        header = lines[0]
+        eq_(header, ['signature', 'date_processed'])
+        first = lines[1]
+        eq_(first, ['my signature', '2015-10-08 23:22:21'])
+
+        # now fetch it with gzip
+        response = self.client.get(url, data, HTTP_ACCEPT_ENCODING='gzip')
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/csv')
+        eq_(response['Content-Length'], str(len(response.content)))
+        eq_(response['Content-Encoding'], 'gzip')
+        compressed = len(response.content)
+        ok_(compressed < length)
+
+        # check that the model isn't available in the API documentation
+        api_url = reverse('api:model_wrapper', args=('GraphicsReport',))
+        response = self.client.get(reverse('api:documentation'))
+        eq_(response.status_code, 200)
+        ok_(api_url not in response.content)

@@ -160,6 +160,7 @@ BLACKLIST = (
     'Query',
     # because it's an internal thing only
     'SuperSearchFields',
+    'GraphicsReport',
 )
 
 

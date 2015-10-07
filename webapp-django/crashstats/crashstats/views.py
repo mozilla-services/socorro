@@ -3,10 +3,13 @@ import json
 import datetime
 import logging
 import math
-import isodate
 import urllib
+import gzip
 from collections import defaultdict
 from operator import itemgetter
+from io import BytesIO
+
+import isodate
 
 from django import http
 from django.contrib.auth.models import Permission
@@ -2519,3 +2522,51 @@ def correlations_signatures_json(request):
     if result is None:
         result = {'hits': [], 'total': 0}
     return result
+
+
+def graphics_report(request):
+    """Return a CSV output of all crashes for a specific date for a
+    particular day and a particular product."""
+    if (
+        not request.user.is_authenticated() or
+        not request.user.has_perm('crashstats.run_long_queries')
+    ):
+        return http.HttpResponseForbidden(
+            "You must have the 'Run long queries' permission"
+        )
+    form = forms.GraphicsReportForm(
+        request.GET,
+        initial={'product': 'Firefox'}
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+    api = models.GraphicsReport()
+    data = api.get(
+        product='Firefox',
+        date=datetime.datetime.utcnow().date(),
+    )
+    assert data['header']
+    assert 'hits' in data
+
+    accept_gzip = 'gzip' in request.META.get('HTTP_ACCEPT_ENCODING', '')
+    response = http.HttpResponse(content_type='text/csv')
+    out = BytesIO()
+    writer = utils.UnicodeWriter(out, delimiter='\t')
+    writer.writerow(data['header'])
+    for row in data['hits']:
+        writer.writerow(row)
+
+    payload = out.getvalue()
+    if accept_gzip:
+        zbuffer = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', compresslevel=6, fileobj=zbuffer)
+        zfile.write(payload)
+        zfile.close()
+        compressed_payload = zbuffer.getvalue()
+        response.write(compressed_payload)
+        response['Content-Length'] = len(compressed_payload)
+        response['Content-Encoding'] = 'gzip'
+    else:
+        response.write(payload)
+        response['Content-Length'] = len(payload)
+    return response

@@ -513,3 +513,9 @@ class GCCrashesForm(BaseForm):
                 )
 
             return cleaned_end_date
+
+
+class GraphicsReportForm(BaseForm):
+
+    date = forms.DateField()
+    product = forms.CharField(required=False)

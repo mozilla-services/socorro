@@ -186,6 +186,9 @@ urlpatterns = patterns(
     url(r'^permissions/$',
         views.permissions,
         name='permissions'),
+    url(r'^graphics_report/$',
+        views.graphics_report,
+        name='graphics_report'),
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
