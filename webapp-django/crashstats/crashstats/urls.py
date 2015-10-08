@@ -47,9 +47,6 @@ urlpatterns = patterns(
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
-    url(r'^your-crashes/$',
-        views.your_crashes,
-        name='your_crashes'),
     url(r'^products/$',
         views.products_list,
         name='products_list'),
@@ -183,9 +180,6 @@ urlpatterns = patterns(
     url(r'^login/$',
         views.login,
         name='login'),
-    url(r'^permissions/$',
-        views.permissions,
-        name='permissions'),
     url(r'^graphics_report/$',
         views.graphics_report,
         name='graphics_report'),
@@ -206,6 +200,18 @@ urlpatterns = patterns(
             url='/search/',
             query_string=True,
             permanent=True
+        )),
+
+    # Redirect old independant pages to the unified Profile page.
+    url(r'^your-crashes/$',
+        RedirectView.as_view(
+            url='/profile/',
+            permanent=perm_legacy_redirect
+        )),
+    url(r'^permissions/$',
+        RedirectView.as_view(
+            url='/profile/',
+            permanent=perm_legacy_redirect
         )),
 
     # handle old-style URLs

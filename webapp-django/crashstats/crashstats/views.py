@@ -12,11 +12,10 @@ from io import BytesIO
 import isodate
 
 from django import http
-from django.contrib.auth.models import Permission
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
 from django.utils.http import urlquote
 
@@ -2140,46 +2139,9 @@ def crontabber_state(request, default_context=None):
 
 
 @pass_default_context
-@login_required
-def your_crashes(request, default_context=None):
-    """Shows a logged in user a list of his or her recent crash reports. """
-    context = default_context or {}
-
-    one_month_ago = (
-        datetime.datetime.utcnow() - datetime.timedelta(weeks=4)
-    ).isoformat()
-
-    api = SuperSearchUnredacted()
-    results = api.get(
-        email=request.user.email,
-        date='>%s' % one_month_ago,
-        _columns=['date', 'uuid'],
-        _sort='-date',
-    )
-
-    context['crashes_list'] = [
-        dict(zip(('crash_id', 'date'), (x['uuid'], x['date'])))
-        for x in results['hits']
-    ]
-
-    return render(request, 'crashstats/your_crashes.html', context)
-
-
-@pass_default_context
 def login(request, default_context=None):
     context = default_context or {}
     return render(request, 'crashstats/login.html', context)
-
-
-@pass_default_context
-@login_required
-def permissions(request, default_context=None):
-    context = default_context or {}
-    context['permissions'] = (
-        Permission.objects.filter(content_type__model='')
-        .order_by('name')
-    )
-    return render(request, 'crashstats/permissions.html', context)
 
 
 def quick_search(request):

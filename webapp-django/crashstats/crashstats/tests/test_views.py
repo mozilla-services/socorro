@@ -32,7 +32,7 @@ from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
 )
-from crashstats.supersearch.models import SuperSearchFields, SuperSearch
+from crashstats.supersearch.models import SuperSearchFields
 from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
 from .test_models import Response
 
@@ -2441,88 +2441,6 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    def test_your_crashes(self):
-        url = reverse('crashstats:your_crashes')
-
-        def mocked_supersearchfields(**params):
-            return {
-                'email': {
-                    'name': 'email',
-                    'query_type': 'string',
-                    'namespace': 'processed_crash',
-                    'form_field_choices': None,
-                    'permissions_needed': ['crashstats.view_pii'],
-                    'default_value': None,
-                    'is_exposed': True,
-                    'is_returned': True,
-                    'is_mandatory': False,
-                }
-            }
-
-        SuperSearchFields.implementation().get.side_effect = (
-            mocked_supersearchfields
-        )
-
-        def mocked_supersearch_get(**params):
-            assert '_columns' in params
-            assert '_sort' in params
-            assert 'email' in params
-            assert params['email'] == ['test@mozilla.com']
-
-            results = {
-                'hits': [
-                    {
-                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130802',
-                        'date': '2000-01-02T00:00:00'
-                    },
-                    {
-                        'uuid': '1234abcd-ef56-7890-ab12-abcdef130801',
-                        'date': '2000-01-01T00:00:00'
-                    }
-                ],
-                'total': 2
-            }
-            return results
-
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
-
-        # A user needs to be signed in to see this page.
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
-
-        self._login()
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('1234abcd-ef56-7890-ab12-abcdef130801' in response.content)
-        ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
-        ok_('test@mozilla.com' in response.content)
-
-    def test_your_crashes_no_data(self):
-        url = reverse('crashstats:your_crashes')
-
-        def mocked_supersearch_get(**params):
-            assert 'email' in params
-            assert params['email'] == ['test@mozilla.com']
-
-            return {
-                'hits': [],
-                'total': 0
-            }
-
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
-
-        self._login()
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('test@mozilla.com' in response.content)
-        ok_('no crash report' in response.content)
-
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index(self, rget, rpost):
@@ -2957,7 +2875,7 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
-    def test_report_index_with_invalid_InstallTime(self, rget, rpost):
+    def test_report_index_with_invalid_install_time(self, rget, rpost):
         dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
         email0 = "some@emailaddress.com"
@@ -5080,44 +4998,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Login Required' not in response.content)
         ok_('Insufficient Privileges' in response.content)
-
-    def test_your_permissions_page(self):
-        url = reverse('crashstats:permissions')
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
-        )
-        user = self._login()
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_(user.email in response.content)
-
-        # make some groups and attach permissions
-        self._create_group_with_permission(
-            'view_pii', 'Group A'
-        )
-        groupB = self._create_group_with_permission(
-            'view_exploitability', 'Group B'
-        )
-        user.groups.add(groupB)
-        assert not user.has_perm('crashstats.view_pii')
-        assert user.has_perm('crashstats.view_exploitability')
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_(PERMISSIONS['view_pii'] in response.content)
-        ok_(PERMISSIONS['view_exploitability'] in response.content)
-        doc = pyquery.PyQuery(response.content)
-        for row in doc('table.permissions tbody tr'):
-            cells = []
-            for td in doc('td', row):
-                cells.append(td.text.strip())
-            if cells[0] == PERMISSIONS['view_pii']:
-                eq_(cells[1], 'No')
-            elif cells[0] == PERMISSIONS['view_exploitability']:
-                eq_(cells[1], 'Yes!')
 
     @mock.patch('requests.get')
     def test_graphics_report(self, rget):
