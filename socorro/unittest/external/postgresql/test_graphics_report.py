@@ -48,7 +48,7 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
                 'thunderbird'
             );
         """)
-        today = datetime.datetime.utcnow().date()
+        yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
         cursor.execute("""
             INSERT INTO reports
             (id, signature, date_processed, uuid, product,
@@ -76,7 +76,11 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
                 NULL,
                 FALSE
             );
-        """, (today, today))
+        """, (
+            yesterday,
+            # make one 1 minute later so we can test the sort order
+            yesterday + datetime.timedelta(seconds=60)
+        ))
 
         cls.connection.commit()
 
@@ -102,4 +106,8 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         assert res['hits']
         ok_(isinstance(res['hits'], list))
         signatures = [x[0] for x in res['hits']]
-        eq_(signatures, ['my signature', 'signature'])
+        eq_(signatures, ['signature', 'my signature'])
+        date_processed = [x[4] for x in res['hits']]
+        # should be ordered ascending
+        first, second = date_processed
+        ok_(first < second)

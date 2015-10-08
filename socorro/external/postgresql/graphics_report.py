@@ -62,9 +62,9 @@ This was the original SQL used in the old cron job:
 SQL = """
 SELECT
     r.signature,
-    'URL (removed)' as url,        -- 1
+    NULL as url,        -- 1
     'https://crash-stats.mozilla.com/report/index/' || r.uuid as uuid_url, -- 2
-    to_char(r.client_crash_date,'YYYYMMDDHH24MI') as client_crash_date,   -- 3
+    NULL as client_crash_date,   -- 3
     to_char(r.date_processed,'YYYYMMDDHH24MI') as date_processed,         -- 4
     r.last_crash, -- 5
     r.product,    -- 6
@@ -78,25 +78,21 @@ SELECT
     array(select ba.bug_id from bug_associations ba where ba.signature = r.signature) as bug_list, --14
     r.user_comments, --15
     r.uptime as uptime_seconds, --16
-    '' as email, --17
-    (select sum(adi_count) from raw_adi adi
-       where adi.date = %(date)s
-         and r.product = adi.product_name and r.version = adi.product_version
-         and substring(r.os_name from 1 for 3) = substring(adi.product_os_platform from 1 for 3)
-         and r.os_version LIKE '%%'||adi.product_os_version||'%%') as adu_count, --18
-    r.topmost_filenames, --19
-    case when (r.addons_checked is NULL) then '[unknown]'when (r.addons_checked) then 'checked' else 'not' end as addons_checked, --20
-    r.flash_version, --21
+    NULL as email, --17
+    NULL as adu_count, --18
+    NULL as topmost_filenames, --19
+    NULL as addons_checked, --20
+    NULL as flash_version, --21
     r.hangid, --22
     r.reason, --23
     r.process_type, --24
     r.app_notes, --25
-    r.install_age, --26
-    rd.duplicate_of, --27
+    NULL as install_age, --26
+    NULL as duplicate_of, --27
     r.release_channel, --28
     r.productid --29
 FROM
-    reports r left join reports_duplicates rd on r.uuid = rd.uuid
+    reports r
 WHERE
     r.date_processed BETWEEN %(yesterday)s AND %(date)s
     AND r.product = %(product)s
