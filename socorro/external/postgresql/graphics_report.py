@@ -75,7 +75,7 @@ SELECT
     r.os_version, --11
     r.cpu_name || ' | ' || r.cpu_info as cpu_info,   --12
     r.address,    --13
-    array(select ba.bug_id from bug_associations ba where ba.signature = r.signature) as bug_list, --14
+    ARRAY(SELECT 1 WHERE FALSE) as bug_list, --14
     r.user_comments, --15
     r.uptime as uptime_seconds, --16
     NULL as email, --17

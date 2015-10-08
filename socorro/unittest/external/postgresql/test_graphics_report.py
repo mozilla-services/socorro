@@ -111,3 +111,5 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         # should be ordered ascending
         first, second = date_processed
         ok_(first < second)
+        bug_associations = [x[14] for x in res['hits']]
+        eq_(bug_associations, [[], []])
