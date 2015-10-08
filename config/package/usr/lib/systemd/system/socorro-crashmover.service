@@ -2,6 +2,7 @@
 Description=Socorro Crashmover
 
 [Service]
+User=socorro
 WorkingDirectory=/home/socorro
 Environment=VENV=/data/socorro/socorro-virtualenv
 ExecStart=/bin/bash -c "/usr/bin/envconsul -upcase=false -prefix socorro/common -prefix socorro/crashmover $VENV/bin/socorro crashmover"
