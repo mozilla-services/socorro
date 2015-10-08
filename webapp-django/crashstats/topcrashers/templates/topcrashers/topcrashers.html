@@ -130,7 +130,11 @@ Top Crashers for {{ product }} {{ version }}
                         <td title="A change of {{ crash.diff | round(2) }}% from {{ crash.previous_percent | round(2) }}%">{{ crash.diff | round(2) }}%</td>
                         {% endif %}
                         <td class="signature-column">
-                            <a class="signature" href="{{ url('signature:signature_report') }}?product={{ product }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <a class="signature"
+                                href="{{ url('signature:signature_report') }}?product={{ product }}&amp;signature={{ crash.signature | urlencode }}&amp;version={{ version }}&amp;date={{ ('<' + query.end_date.isoformat()) | urlencode }}&amp;date={{ ('>=' + query.start_date.isoformat()) | urlencode }}" title="{{ crash.signature }}"
+                            >
+                                {{ crash.signature | truncate(length=80, killwords=True) }}
+                            </a>
                             <div class="sig-history-container hide">
                                 <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
                             </div>
