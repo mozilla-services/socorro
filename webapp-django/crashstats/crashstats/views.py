@@ -901,6 +901,11 @@ def daily(request, default_context=None):
     context['graph_data'] = cadu
     context['report'] = 'daily'
 
+    url = reverse('crashstats:crashes_per_user')
+    if request.META.get('QUERY_STRING'):
+        url += '?{}'.format(request.META['QUERY_STRING'])
+    context['new_daily_report_url'] = url
+
     return render(request, 'crashstats/daily.html', context)
 
 

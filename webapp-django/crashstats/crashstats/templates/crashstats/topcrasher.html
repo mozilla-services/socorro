@@ -15,6 +15,12 @@ Top Crashers for {{ product }} {{ version }}
     <div id="mainbody">
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <div class="page-heading">
+            <p class="old-new-report-link">
+                <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ versions[0] }}&amp;date_range_type={{ date_range_type }}&amp;process_type={{ crash_type.replace('all', 'any') }}&amp;platform={{ os_name }}&amp;_facets_size={{ result_count }}&amp;days={{ days }}">
+                    View the <b>new</b> <i>Top Crashers</i> report
+                </a>
+            </p>
+
             <h2>Top Crashers for <span id="current-product">{{ product }}</span> <span id="current-version">{{ version }}</span></h2>
             <ul class="options">
                 {% if os_name %}
@@ -33,9 +39,6 @@ Top Crashers for {{ product }} {{ version }}
                   {% endif %}
                 {% endif %}
             </ul>
-            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ versions[0] }}&amp;date_range_type={{ date_range_type }}&amp;process_type={{ crash_type.replace('all', 'any') }}&amp;platform={{ os_name }}&amp;_facets_size={{ result_count }}&amp;days={{ days }}">
-                New Top Crashers report
-            </a>
         </div>
 
         <div class="panel">
