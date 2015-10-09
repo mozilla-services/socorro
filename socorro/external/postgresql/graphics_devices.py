@@ -35,8 +35,7 @@ class GraphicsDevices(PostgreSQLBase):
             FROM graphics_device
         """
         results = self.query(sql_query + sql_where, params)
-        keys = 'vendor_hex', 'adapter_hex', 'vendor_name', 'adapter_name'
-        hits = [dict(zip(keys, x)) for x in results]
+        hits = results.zipped()
         return {'hits': hits, 'total': len(hits)}
 
     def post(self, **kwargs):

@@ -28,7 +28,7 @@ class Field(PostgreSQLBase):
 
         sql = '''/* socorro.external.postgresql.field.Field.get */
             SELECT
-                raw_field,
+                raw_field AS name,
                 transforms,
                 product
             FROM data_dictionary
@@ -47,6 +47,6 @@ class Field(PostgreSQLBase):
         if not results:
             return field_data
 
-        field_data = dict(zip(('name', 'transforms', 'product'), results[0]))
+        field_data = results.zipped()[0]
 
         return field_data

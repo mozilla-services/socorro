@@ -45,18 +45,7 @@ class ServerStatus(PostgreSQLBase):
         results = self.query(sql, params, error_message=error_message)
 
         stats = []
-        for row in results:
-            stat = dict(zip((
-                "id",
-                "date_recently_completed",
-                "date_oldest_job_queued",
-                "avg_process_sec",
-                "avg_wait_sec",
-                "waiting_job_count",
-                "processors_count",
-                "date_created"
-            ), row))
-
+        for stat in results.zipped():
             # Turn dates into strings for later JSON encoding
             for i in ("date_recently_completed",
                       "date_oldest_job_queued",

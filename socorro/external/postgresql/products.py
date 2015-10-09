@@ -29,13 +29,13 @@ class Products(PostgreSQLBase):
         sql = """
             /* socorro.external.postgresql.products.Products.get */
             SELECT
-                product_name,
-                version_string,
+                product_name AS product,
+                version_string AS version,
                 start_date,
                 end_date,
                 throttle,
-                is_featured,
-                build_type,
+                is_featured AS featured,
+                build_type AS release,
                 has_builds
             FROM product_info
             ORDER BY product_sort, version_sort DESC, channel_sort
@@ -47,34 +47,23 @@ class Products(PostgreSQLBase):
         products = []
         versions_per_product = {}
 
-        for row in results:
-            version = dict(zip((
-                'product',
-                'version',
-                'start_date',
-                'end_date',
-                'throttle',
-                'featured',
-                'release',
-                'has_builds',
-            ), row))
-
+        for version in results.zipped():
             try:
-                version['end_date'] = datetimeutil.date_to_string(
-                    version['end_date']
+                version.end_date = datetimeutil.date_to_string(
+                    version.end_date
                 )
             except TypeError:
                 pass
             try:
-                version['start_date'] = datetimeutil.date_to_string(
-                    version['start_date']
+                version.start_date = datetimeutil.date_to_string(
+                    version.start_date
                 )
             except TypeError:
                 pass
 
-            version['throttle'] = float(version['throttle'])
+            version.throttle = float(version.throttle)
 
-            product = version['product']
+            product = version.product
             if product not in products:
                 products.append(product)
 
@@ -138,21 +127,13 @@ class Products(PostgreSQLBase):
                              error_message=error_message)
 
         products = []
-        for row in results:
-            product = dict(zip((
-                "product",
-                "version",
-                "start_date",
-                "end_date",
-                "is_featured",
-                "build_type",
-                "throttle",
-                "has_builds"
-            ), row))
-            product["start_date"] = datetimeutil.date_to_string(
-                                                        product["start_date"])
-            product["end_date"] = datetimeutil.date_to_string(
-                                                        product["end_date"])
+        for product in results.zipped():
+            product.start_date = datetimeutil.date_to_string(
+                product.start_date
+            )
+            product.end_date = datetimeutil.date_to_string(
+                product.end_date
+            )
             products.append(product)
 
         return {
@@ -169,7 +150,9 @@ class Products(PostgreSQLBase):
 
         sql = """
             /* socorro.external.postgresql.products.get_default_version */
-            SELECT product_name, version_string
+            SELECT
+                product_name AS product,
+                version_string AS version
             FROM default_versions
         """
 
@@ -181,9 +164,8 @@ class Products(PostgreSQLBase):
         results = self.query(sql, params, error_message=error_message)
 
         products = {}
-        for row in results:
-            product = dict(zip(("product", "version"), row))
-            products[product["product"]] = product["version"]
+        for product in results.zipped():
+            products[product.product] = product.version
 
         return {
             "hits": products

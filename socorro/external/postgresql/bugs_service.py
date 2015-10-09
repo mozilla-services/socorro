@@ -84,10 +84,7 @@ class Bugs(PostgreSQLWebServiceBase):
         error_message = "Failed to retrieve bug associations from PostgreSQL"
         results = self.query(sql, sql_params, error_message=error_message)
 
-        bugs = []
-        for row in results:
-            bug = dict(zip(("signature", "id"), row))
-            bugs.append(bug)
+        bugs = results.zipped()
 
         return {
             "hits": bugs,

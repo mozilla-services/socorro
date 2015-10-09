@@ -36,8 +36,8 @@ class ProductBuildTypes(PostgreSQLBase):
         results = self.query(sql, params)
 
         build_types = {}
-        for row in results:
-            build_types[row[0]] = row[1]
+        for row in results.zipped():
+            build_types[row.build_type] = row.throttle
 
         return {
             'hits': build_types,

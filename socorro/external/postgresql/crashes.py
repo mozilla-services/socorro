@@ -135,15 +135,9 @@ class Crashes(PostgreSQLBase):
                                  error_message=error_message)
 
             # Transforming the results into what we want
-            for row in results:
-                comment = dict(zip((
-                    "date_processed",
-                    "user_comments",
-                    "uuid",
-                    "email",
-                ), row))
-                comment["date_processed"] = datetimeutil.date_to_string(
-                    comment["date_processed"]
+            for comment in results.zipped():
+                comment.date_processed = datetimeutil.date_to_string(
+                    comment.date_processed
                 )
                 comments.append(comment)
 
@@ -432,7 +426,7 @@ class Crashes(PostgreSQLBase):
             fields.append("count_%s" % platform["id"])
             fields.append("frequency_%s" % platform["id"])
 
-        frequencies = [dict(zip(fields, row)) for row in results]
+        frequencies = results.zipped()
 
         return {
             "hits": frequencies,
@@ -520,8 +514,8 @@ class Crashes(PostgreSQLBase):
                 FROM hist
             )
             SELECT
-                report_date,
-                report_count,
+                report_date AS date,
+                report_count AS count,
                 report_count / total_crashes::float * 100 AS percent_of_total
             FROM scaling_window
             ORDER BY report_date DESC
@@ -532,9 +526,8 @@ class Crashes(PostgreSQLBase):
 
         # Transforming the results into what we want
         history = []
-        for row in results:
-            dot = dict(zip(('date', 'count', 'percent_of_total'), row))
-            dot['date'] = datetimeutil.date_to_string(dot['date'])
+        for dot in results.zipped():
+            dot.date = datetimeutil.date_to_string(dot.date)
             history.append(dot)
 
         return {
@@ -642,15 +635,7 @@ class Crashes(PostgreSQLBase):
         results = self.query(sql_query, params, error_message=error_message)
 
         # Transforming the results into what we want
-        crashes = []
-        for row in results:
-            crash = dict(zip(("signature",
-                              "high_count",
-                              "medium_count",
-                              "low_count",
-                              "null_count",
-                              "none_count"), row))
-            crashes.append(crash)
+        crashes = results.zipped()
 
         return {
             "hits": crashes,
@@ -704,18 +689,7 @@ class Crashes(PostgreSQLBase):
         )
         results = self.query(sql_query, params, error_message=error_message)
 
-        fields = [
-            'product_name',
-            'signature',
-            'adu_date',
-            'build_date',
-            'buildid',
-            'crash_count',
-            'adu_count',
-            'os_name',
-            'channel'
-        ]
-        crashes = [dict(zip(fields, row)) for row in results]
+        crashes = results.zipped()
 
         return {
             "hits": crashes,

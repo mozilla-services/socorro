@@ -45,4 +45,7 @@ class GCCrashes(PostgreSQLBase):
             ORDER BY build
         """, params)
 
-        return {'hits': result, 'total': len(result)}
+        # Because we don't return a list of dicts, we turn it into a
+        # pure list first so it becomes a list of tuples.
+        rows = list(result)
+        return {'hits': rows, 'total': len(rows)}
