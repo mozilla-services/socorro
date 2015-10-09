@@ -100,16 +100,14 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
     def test_get(self):
         api = GraphicsReport(config=self.config)
         res = api.get(product='Firefox')
-        ok_(res['header'])
-        eq_(res['header'][0], 'signature')
-        eq_(res['header'][-1], 'productid')
         assert res['hits']
+        assert len(res['hits']) == res['total']
         ok_(isinstance(res['hits'], list))
-        signatures = [x[0] for x in res['hits']]
+        signatures = [x.signature for x in res['hits']]
         eq_(signatures, ['signature', 'my signature'])
-        date_processed = [x[4] for x in res['hits']]
+        date_processed = [x.date_processed for x in res['hits']]
         # should be ordered ascending
         first, second = date_processed
         ok_(first < second)
-        bug_associations = [x[14] for x in res['hits']]
+        bug_associations = [x.bug_list for x in res['hits']]
         eq_(bug_associations, [[], []])

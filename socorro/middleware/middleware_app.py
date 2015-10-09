@@ -76,7 +76,6 @@ SERVICES_LIST = (
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/adi/(.*)', 'adi.ADI'),
-    # the legacy one
     (r'/graphics_report/', 'graphics_report.GraphicsReport'),
 )
 

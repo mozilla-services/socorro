@@ -63,10 +63,10 @@ SQL = """
 SELECT
     r.signature,
     NULL as url,        -- 1
-    'https://crash-stats.mozilla.com/report/index/' || r.uuid as uuid_url, -- 2
+    NULL as uuid_url, -- 2
     NULL as client_crash_date,   -- 3
     to_char(r.date_processed,'YYYYMMDDHH24MI') as date_processed,         -- 4
-    r.last_crash, -- 5
+    NULL as last_crash, -- 5
     r.product,    -- 6
     r.version,    -- 7
     r.build,      -- 8
@@ -76,21 +76,25 @@ SELECT
     r.cpu_name || ' | ' || r.cpu_info as cpu_info,   --12
     r.address,    --13
     ARRAY(SELECT 1 WHERE FALSE) as bug_list, --14
-    r.user_comments, --15
+    NULL as user_comments, --15
     r.uptime as uptime_seconds, --16
     NULL as email, --17
-    NULL as adu_count, --18
-    NULL as topmost_filenames, --19
+    (select sum(adi_count) from raw_adi adi
+       where adi.date = %(date)s
+         and r.product = adi.product_name and r.version = adi.product_version
+         and substring(r.os_name from 1 for 3) = substring(adi.product_os_platform from 1 for 3)
+         and r.os_version LIKE '%%'||adi.product_os_version||'%%') as adu_count, --18
+    r.topmost_filenames, --19
     NULL as addons_checked, --20
     NULL as flash_version, --21
-    r.hangid, --22
+    NULL as hangid, --22
     r.reason, --23
-    r.process_type, --24
+    NULL as process_type, --24
     r.app_notes, --25
     NULL as install_age, --26
     NULL as duplicate_of, --27
-    r.release_channel, --28
-    r.productid --29
+    NULL as release_channel, --28
+    NULL as productid --29
 FROM
     reports r
 WHERE
@@ -123,39 +127,8 @@ class GraphicsReport(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
         params['yesterday'] = params['date'] - datetime.timedelta(days=1)
         results = self.query(SQL, params)
-        header = [
-            'signature',
-            'url',
-            'uuid_url',
-            'client_crash_date',
-            'date_processed',
-            'last_crash',
-            'product',
-            'version',
-            'build',
-            'branch',
-            'os_name',
-            'os_version',
-            'cpu_info',
-            'address',
-            'bug_list',
-            'user_comments',
-            'uptime_seconds',
-            'email',
-            'adu_count',
-            'topmost_filenames',
-            'addons_checked',
-            'flash_version',
-            'hangid',
-            'reason',
-            'process_type',
-            'app_notes',
-            'install_age',
-            'duplicate_of',
-            'release_channel',
-            'productid',
-        ]
+        hits = results.zipped()
         return {
-            'header': header,
-            'hits': results,
+            'hits': hits,
+            'total': len(hits),
         }

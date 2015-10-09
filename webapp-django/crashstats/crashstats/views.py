@@ -34,6 +34,40 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
 
 
+GRAPHICS_REPORT_HEADER = (
+    'signature',
+    'url',
+    'uuid_url',
+    'client_crash_date',
+    'date_processed',
+    'last_crash',
+    'product',
+    'version',
+    'build',
+    'branch',
+    'os_name',
+    'os_version',
+    'cpu_info',
+    'address',
+    'bug_list',
+    'user_comments',
+    'uptime_seconds',
+    'email',
+    'adu_count',
+    'topmost_filenames',
+    'addons_checked',
+    'flash_version',
+    'hangid',
+    'reason',
+    'process_type',
+    'app_notes',
+    'install_age',
+    'duplicate_of',
+    'release_channel',
+    'productid',
+)
+
+
 def ratelimit_blocked(request, exception):
     # http://tools.ietf.org/html/rfc6585#page-3
     status = 429
@@ -2545,16 +2579,23 @@ def graphics_report(request):
         product='Firefox',
         date=datetime.datetime.utcnow().date(),
     )
-    assert data['header']
     assert 'hits' in data
 
     accept_gzip = 'gzip' in request.META.get('HTTP_ACCEPT_ENCODING', '')
     response = http.HttpResponse(content_type='text/csv')
     out = BytesIO()
     writer = utils.UnicodeWriter(out, delimiter='\t')
-    writer.writerow(data['header'])
+    writer.writerow(GRAPHICS_REPORT_HEADER)
     for row in data['hits']:
-        writer.writerow(row)
+        # Each row is a dict, we want to turn it into a list of
+        # exact order as the `header` tuple above.
+        # However, because the csv writer module doesn't "understand"
+        # python's None, we'll replace those with '' to make the
+        # CSV not have the word 'None' where the data is None.
+        writer.writerow([
+            row[x] is not None and row[x] or ''
+            for x in GRAPHICS_REPORT_HEADER
+        ])
 
     payload = out.getvalue()
     if accept_gzip:
