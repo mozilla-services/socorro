@@ -14,14 +14,16 @@ class Platforms(PostgreSQLBase):
     def get(self, **kwargs):
         """Return data about all platforms. """
         sql = """/* socorro.external.postgresql.platforms.Platforms.get */
-            SELECT *
+            SELECT
+                os_name AS name,
+                os_short_name AS code
             FROM os_names
         """
 
         error_message = "Failed to retrieve platforms data from PostgreSQL"
         results = self.query(sql, error_message=error_message)
 
-        platforms = [dict(zip(("name", "code"), p)) for p in results]
+        platforms = results.zipped()
 
         return {
             "hits": platforms,

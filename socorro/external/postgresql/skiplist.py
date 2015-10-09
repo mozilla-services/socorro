@@ -44,7 +44,7 @@ class SkipList(PostgreSQLBase):
         error_message = "Failed to retrieve skip list data from PostgreSQL"
         sql_results = self.query(sql, sql_params, error_message=error_message)
 
-        results = [dict(zip(("category", "rule"), x)) for x in sql_results]
+        results = sql_results.zipped()
 
         return {'hits': results, 'total': len(results)}
 

@@ -29,7 +29,9 @@ class Releases(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         sql = """
-            SELECT build_type, product_name
+            SELECT
+                build_type AS channel,
+                product_name AS product
             FROM product_info
         """
         sql_params = {}
@@ -42,12 +44,11 @@ class Releases(PostgreSQLBase):
         sql_results = self.query(sql, sql_params, error_message=error_message)
 
         channels = {}
-        for row in sql_results:
-            res = dict(zip(("channel", "product"), row))
-            if res["product"] not in channels:
-                channels[res["product"]] = [res["channel"]]
+        for res in sql_results.zipped():
+            if res.product not in channels:
+                channels[res.product] = [res.channel]
             else:
-                channels[res["product"]].append(res["channel"])
+                channels[res.product].append(res.channel)
 
         return channels
 
@@ -60,7 +61,9 @@ class Releases(PostgreSQLBase):
         params = external_common.parse_arguments(filters, kwargs)
 
         sql = """
-            SELECT product_name, version_string
+            SELECT
+                product_name AS product,
+                version_string AS version
             FROM product_info
             WHERE is_featured = true
         """
@@ -76,13 +79,12 @@ class Releases(PostgreSQLBase):
         hits = {}
         total = 0
 
-        for row in sql_results:
+        for version in sql_results.zipped():
             total += 1
-            version = dict(zip(("product", "version"), row))
-            if version["product"] not in hits:
-                hits[version["product"]] = [version["version"]]
+            if version.product not in hits:
+                hits[version.product] = [version.version]
             else:
-                hits[version["product"]].append(version["version"])
+                hits[version.product].append(version.version)
 
         return {
             "total": total,

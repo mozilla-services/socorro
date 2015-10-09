@@ -65,17 +65,10 @@ class ADI(PostgreSQLBase):
         params['platforms'] = tuple(params['platforms'])
         results = self.query(SQL, params)
 
-        fields = (
-            'adi_count',
-            'date',
-            'build_type',
-            'version',
-        )
         rows = []
-        for record in results:
-            row = dict(zip(fields, record))
-            row['date'] = row['date'].strftime('%Y-%m-%d')
+        for row in results.zipped():
+            row.date = row.date.strftime('%Y-%m-%d')
             # BIGINTs become Decimal which becomes floating point in JSON
-            row['adi_count'] = long(row['adi_count'])
+            row.adi_count = long(row.adi_count)
             rows.append(row)
         return {'hits': rows, 'total': len(rows)}

@@ -260,41 +260,16 @@ class Report(PostgreSQLBase):
                     sql_params,
                     error_message="Failed to retrieve crashes from reports",
                     connection=connection
-                )
+                ).zipped()
             else:
                 results = []
 
-        # Transforming the results into what we want
-        fields = (
-            "date_processed",
-            "uptime",
-            "user_comments",
-            "uuid",
-            "uuid",  # the uuid::text one
-            "product",
-            "version",
-            "build",
-            "signature",
-            "url",
-            "os_name",
-            "os_version",
-            "cpu_name",
-            "cpu_info",
-            "address",
-            "reason",
-            "last_crash",
-            "install_age",
-            "hangid",
-            "process_type",
-            "release_channel",
-            "install_time",
-            "duplicate_of",
-        )
-        if include_raw_crash:
-            fields += ("raw_crash",)
         crashes = []
-        for row in results:
-            crash = dict(zip(fields, row))
+        for crash in results:
+            assert crash['uuid'] == crash['uuid_text']
+            crash.pop('uuid_text')
+            if not include_raw_crash and 'raw_crash' in crash:
+                crash.pop('raw_crash')
             for i in crash:
                 try:
                     crash[i] = datetimeutil.date_to_string(crash[i])

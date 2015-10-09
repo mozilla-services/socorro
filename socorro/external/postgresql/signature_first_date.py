@@ -20,7 +20,10 @@ class SignatureFirstDate(PostgreSQLBase):
 
         sql_params = [tuple(params['signatures'])]
         sql = """
-            SELECT signature, first_report, first_build
+            SELECT
+                signature,
+                first_report AS first_date,
+                first_build
             FROM signatures
             WHERE signature IN %s
         """
@@ -29,9 +32,8 @@ class SignatureFirstDate(PostgreSQLBase):
         results = self.query(sql, sql_params, error_message=error_message)
 
         signatures = []
-        for row in results:
-            sig = dict(zip(('signature', 'first_date', 'first_build'), row))
-            sig['first_date'] = datetimeutil.date_to_string(sig['first_date'])
+        for sig in results.zipped():
+            sig.first_date = datetimeutil.date_to_string(sig.first_date)
             signatures.append(sig)
 
         return {

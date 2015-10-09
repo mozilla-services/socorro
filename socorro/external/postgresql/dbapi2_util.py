@@ -4,6 +4,10 @@
 
 """short cuts for ugly Python DBAPI2 syntax"""
 
+from collections import Sequence
+
+from socorro.lib.util import DotDict
+
 
 #==============================================================================
 class SQLDidNotReturnSingleValue (Exception):
@@ -13,6 +17,49 @@ class SQLDidNotReturnSingleValue (Exception):
 #==============================================================================
 class SQLDidNotReturnSingleRow (Exception):
     pass
+
+
+#==============================================================================
+class FetchAllSequence(Sequence):
+    """A sequence wrapper for results of a PG cursor's fetchall()
+    that when supplied with the cursor description gives you an
+    iterable that works the same as regular fetchall() but
+    also offers the convenience method zipped().
+
+    You can use this like this::
+
+        >>> sql = "select col1, col2 from some_table"
+        >>> cursor = connection.cursor()
+        >>> cursor.excute(sql, ())
+        >>> seq = FetchAllSequence(cursor.fetchall(), cursor.description)
+        >>> seq.zipped()
+        [{'col1': value1, 'col2': value2}, {'col1': valueA, 'col2': valueB}]
+
+    """
+
+    def __init__(self, rows, description):
+        self.rows = rows
+        self.description = description
+
+    def __getitem__(self, index):
+        return self.rows[index]
+
+    def __len__(self):
+        return len(self.rows)
+
+    def __contains__(self, value):
+        return value in self.rows
+
+    def __iter__(self):
+        for x in self.rows:
+            yield x
+
+    def __str__(self):
+        return str(self.rows)
+
+    def zipped(self):
+        names = [x.name for x in self.description]
+        return [DotDict(zip(names, x)) for x in self.rows]
 
 
 #------------------------------------------------------------------------------
@@ -53,7 +100,10 @@ def execute_query_iter(connection, sql, parameters=None):
 def execute_query_fetchall(connection, sql, parameters=None):
     with connection.cursor() as a_cursor:
         a_cursor.execute(sql, parameters)
-        return a_cursor.fetchall()
+        return FetchAllSequence(
+            a_cursor.fetchall(),
+            a_cursor.description
+        )
 
 
 #------------------------------------------------------------------------------

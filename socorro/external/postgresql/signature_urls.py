@@ -130,12 +130,7 @@ class SignatureURLs(PostgreSQLBase):
         error_message = "Failed to retrieve urls for signature from PostgreSQL"
         results = self.query(sql_query, sql_params,
                              error_message=error_message)
-
-        urls = []
-        for row in results:
-            url = dict(zip(("url", "crash_count"), row))
-            urls.append(url)
-
+        urls = results.zipped()
         return {
             "hits": urls,
             "total": len(urls)

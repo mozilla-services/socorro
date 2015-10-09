@@ -37,18 +37,9 @@ class CrontabberState(PostgreSQLBase):
         )
         results = self.query(sql, error_message=error_message)
         state = {}
-        for row in results:
-            app_name = row[0]
-            state[app_name] = dict(zip((
-                'next_run',
-                'first_run',
-                'last_run',
-                'last_success',
-                'error_count',
-                'depends_on',
-                'last_error',
-                'ongoing'
-            ), row[1:]))
+        for row in results.zipped():
+            app_name = row.pop('app_name')
+            state[app_name] = row
             possible_datetimes = (
                 'next_run',
                 'first_run',
