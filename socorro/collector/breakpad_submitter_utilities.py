@@ -38,9 +38,14 @@ class BreakpadPOSTDestination(CrashStorageBase):
         self.hang_id_cache = dict()
 
     #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        self.save_raw_crash_with_file_dumps(raw_crash, dumps, crash_id)
+
+    #--------------------------------------------------------------------------
     def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
+        file_dumps = dumps.as_file_dumps_mapping()
         try:
-            for dump_name, dump_pathname in dumps.iteritems():
+            for dump_name, dump_pathname in file_dumps.iteritems():
                 if not dump_name:
                     dump_name = self.config.source.dump_field
                 raw_crash[dump_name] = open(dump_pathname, 'rb')
@@ -57,6 +62,8 @@ class BreakpadPOSTDestination(CrashStorageBase):
                     raw_crash['uuid']
                 )
             except KeyError:
+                # the raw crash has no member named 'uuid', this is fine
+                # we can ignore it
                 pass
             self.config.logger.debug(
                 'submission response: %s',
@@ -65,6 +72,4 @@ class BreakpadPOSTDestination(CrashStorageBase):
             if self.config.echo_response:
                 print submission_response
         finally:
-            for dump_name, dump_pathname in dumps.iteritems():
-                if "TEMPORARY" in dump_pathname:
-                    os.unlink(dump_pathname)
+            file_dumps.remove_temp_files()

@@ -61,46 +61,15 @@ class CrashMigrationApp(RawAndProcessedCopierApp):
             'destination.crashstorage_class':
                 'socorro.external.es.crashstorage.'
                 'ESCrashStorageNoStackwalkerOutput',
+            "worker_task.worker_task_impl":
+                "socorro.app.fts_worker_methods.CopyAllWorkerMethod",
+            "number_of_submissions": "all",
         }
 
     def _create_iter(self):
         connection = self.source.database.connection()
         sql = 'select uuid from raw_crashes;'
         return execute_query_iter(connection, sql)
-
-    def _transform(self, crash_id):
-        try:
-            raw_crash = self.source.get_raw_crash(crash_id)
-            if self.config.no_dumps:
-                dumps = {}
-            else:
-                dumps =  self.source.get_raw_dumps(crash_id)
-            processed_crash = self.source.get_unredacted_processed(
-                crash_id
-            )
-        except CrashIDNotFound:
-            self.config.logger.warning(
-                'cannot find crash %s',
-                crash_id,
-            )
-            return
-        except Exception:
-            self.config.logger.warning(
-                'error loading crash %s',
-                crash_id,
-                exc_info=True
-            )
-            return
-
-        if 'uuid' not in raw_crash:
-            raw_crash.uuid = crash_id
-        self.destination.save_raw_and_processed(
-            raw_crash,
-            dumps,
-            processed_crash,
-            crash_id
-        )
-        self.config.logger.info('saved - %s', crash_id)
 
 
 if __name__ == '__main__':

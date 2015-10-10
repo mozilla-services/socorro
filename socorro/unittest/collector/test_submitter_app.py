@@ -13,7 +13,9 @@ from socorro.collector.submitter_app import (
     SubmitterFileSystemWalkerSource,
     DBSamplingCrashSource
 )
-from configman.dotdict import DotDict
+from socorro.app.fts_worker_methods import ProcessorWorkerMethod
+from configman.dotdict import DotDict, DotDictWithAcquisition
+from socorro.app.fts_worker_methods import RawCrashCopyWorkerMethod
 from socorro.external.postgresql import dbapi2_util
 from socorro.external.crashstorage_base import Redactor
 from socorro.unittest.testbase import TestCase
@@ -46,7 +48,7 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
 
     #--------------------------------------------------------------------------
     def get_standard_config(self):
-        config = DotDict()
+        config = DotDictWithAcquisition()
         config.search_root = None
         config.dump_suffix = '.dump'
         config.dump_field = "upload_file_minidump"
@@ -209,7 +211,7 @@ class TestDBSamplingCrashSource(TestCase):
 
     #--------------------------------------------------------------------------
     def get_standard_config(self):
-        config = DotDict()
+        config = DotDictWithAcquisition()
 
         mocked_source_implementation = mock.Mock()
         mocked_source_implementation.quit_check_callback = None
@@ -305,23 +307,23 @@ class TestSubmitterApp(TestCase):
 
     #--------------------------------------------------------------------------
     def get_standard_config(self):
-        config = DotDict()
+        config = DotDictWithAcquisition()
 
-        config.source = DotDict()
+        config.source = DotDictWithAcquisition()
         mocked_source_crashstorage = mock.Mock()
         mocked_source_crashstorage.id = 'mocked_source_crashstorage'
         config.source.crashstorage_class = mock.Mock(
             return_value=mocked_source_crashstorage
         )
 
-        config.destination = DotDict()
+        config.destination = DotDictWithAcquisition()
         mocked_destination_crashstorage = mock.Mock()
         mocked_destination_crashstorage.id = 'mocked_destination_crashstorage'
         config.destination.crashstorage_class = mock.Mock(
             return_value=mocked_destination_crashstorage
         )
 
-        config.producer_consumer = DotDict()
+        config.producer_consumer = DotDictWithAcquisition()
         mocked_producer_consumer = mock.Mock()
         mocked_producer_consumer.id = 'mocked_producer_consumer'
         config.producer_consumer.producer_consumer_class = mock.Mock(
@@ -329,37 +331,42 @@ class TestSubmitterApp(TestCase):
         )
         config.producer_consumer.number_of_threads = float(1)
 
-        config.new_crash_source = DotDict()
+        config.new_crash_source = DotDictWithAcquisition()
         config.new_crash_source.new_crash_source_class = None
 
-        config.submitter = DotDict()
+        config.submitter = DotDictWithAcquisition()
         config.submitter.delay = 0
-        config.submitter.dry_run = False
+        config.dry_run = False
         config.number_of_submissions = "all"
 
         config.logger = mock.MagicMock()
+        config.redactor_class = mock.MagicMock()
+
+        config.worker_task = DotDictWithAcquisition(
+            {"worker_task_impl": RawCrashCopyWorkerMethod,},
+        )
 
         return config
 
     #--------------------------------------------------------------------------
     def get_new_crash_source_config(self):
-        config = DotDict()
+        config = DotDictWithAcquisition()
 
-        config.source = DotDict()
+        config.source = DotDictWithAcquisition()
         mocked_source_crashstorage = mock.Mock()
         mocked_source_crashstorage.id = 'mocked_source_crashstorage'
         config.source.crashstorage_class = mock.Mock(
             return_value=mocked_source_crashstorage
         )
 
-        config.destination = DotDict()
+        config.destination = DotDictWithAcquisition()
         mocked_destination_crashstorage = mock.Mock()
         mocked_destination_crashstorage.id = 'mocked_destination_crashstorage'
         config.destination.crashstorage_class = mock.Mock(
             return_value=mocked_destination_crashstorage
         )
 
-        config.producer_consumer = DotDict()
+        config.producer_consumer = DotDictWithAcquisition()
         mocked_producer_consumer = mock.Mock()
         mocked_producer_consumer.id = 'mocked_producer_consumer'
         config.producer_consumer.producer_consumer_class = mock.Mock(
@@ -367,19 +374,23 @@ class TestSubmitterApp(TestCase):
         )
         config.producer_consumer.number_of_threads = float(1)
 
-        config.new_crash_source = DotDict()
+        config.new_crash_source = DotDictWithAcquisition()
         mocked_new_crash_source =  mock.Mock()
         mocked_new_crash_source.id = 'mocked_new_crash_source'
         config.new_crash_source.new_crash_source_class = mock.Mock(
             return_value=mocked_new_crash_source
         )
 
-        config.submitter = DotDict()
+        config.submitter = DotDictWithAcquisition()
         config.submitter.delay = 0
-        config.submitter.dry_run = False
+        config.dry_run = False
         config.number_of_submissions = "all"
 
+        config.worker_task = DotDictWithAcquisition()
+        config.worker_task.worker_task_impl = ProcessorWorkerMethod
+
         config.logger = mock.MagicMock()
+        config.redactor_class = mock.MagicMock()
 
         return config
 
@@ -404,15 +415,15 @@ class TestSubmitterApp(TestCase):
         sub.source.get_raw_crash = mocked_get_raw_crash
 
         fake_dump = {'upload_file_minidump': 'fake dump'}
-        mocked_get_raw_dumps_as_files = mock.Mock(return_value=fake_dump)
-        sub.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
+        mocked_get_raw_dumps = mock.Mock(return_value=fake_dump)
+        sub.source.get_raw_dumps = mocked_get_raw_dumps
 
         sub.destination.save_raw_crash = mock.Mock()
 
-        sub.transform(crash_id)
+        sub.worker_method(crash_id)
         sub.source.get_raw_crash.assert_called_with(crash_id)
-        sub.source.get_raw_dumps_as_files.assert_called_with(crash_id)
-        sub.destination.save_raw_crash_with_file_dumps.assert_called_with(
+        sub.source.get_raw_dumps.assert_called_with(crash_id)
+        sub.destination.save_raw_crash.assert_called_with(
             fake_raw_crash,
             fake_dump,
             crash_id
