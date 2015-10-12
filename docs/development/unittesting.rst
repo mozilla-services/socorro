@@ -200,7 +200,6 @@ license block, followed by an empty line::
 Usual import::
 
   import socorro.directory.module
-  from nose.plugins.Attrib import attr
 
 When mock objects are needed::
 
@@ -384,13 +383,6 @@ mock will be created and passed into the test method ::
 
         assert_true(package.module.ClassName is MockClass)
 
-It is possible to indicate which tests we want to run. ``[NOSE_ATTR]``
-sets to test only the tests that have some specific attribute
-specified by ``@attr``::
-
-  @attr(integration='postgres')
-  def test_something(self):
-      assert True
 
 Code readability
 ^^^^^^^^^^^^^^^^

@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import DatabaseError
@@ -601,7 +600,6 @@ class TestPostgreSQLBase(TestCase):
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestBase(PostgreSQLTestCase):
 
     #--------------------------------------------------------------------------

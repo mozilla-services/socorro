@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mock import Mock, MagicMock, patch
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.rabbitmq import priorityjobs
@@ -12,7 +11,6 @@ from socorro.unittest.testbase import TestCase
 from configman.dotdict import DotDictWithAcquisition
 
 #==============================================================================
-@attr(integration='rabbitmq')  # for nosetests
 class IntegrationTestPriorityjobs(TestCase):
     """Test socorro.external.rabbitmq.priorityjobs.Priorityjobs class."""
 

@@ -12,7 +12,6 @@ import threading
 from socorro.unittest.testlib.loggerForTest import TestingLogger
 from socorro.unittest.testbase import TestCase
 from createDBforTest import *
-from nose.plugins.attrib import attr
 
 import socorro.lib.ConfigurationManager as cm
 import dbTestconfig as testConfig
@@ -69,7 +68,6 @@ class TestSingleCursor(psycopg2.extensions.cursor):
     return self.result
 
 
-@attr(integration='postgres')
 class IntegrationTestPsycopghelper(TestCase):
   def setUp(self):
     self.logger = TestingLogger()

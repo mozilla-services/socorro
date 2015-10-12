@@ -6,7 +6,6 @@ import datetime
 import elasticsearch
 import json
 import mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import (
@@ -26,7 +25,6 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestQuery(ElasticsearchTestCase):
     """Test Query with an elasticsearch database containing fake data. """
 

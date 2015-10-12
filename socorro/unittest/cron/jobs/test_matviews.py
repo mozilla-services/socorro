@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
-from nose.plugins.attrib import attr
 from nose.tools import ok_
 
 from crontabber.app import CronTabber
@@ -17,7 +16,6 @@ from socorro.unittest.cron.setup_configman import (
 )
 
 
-@attr(integration='postgres')
 class TestMatviews(IntegrationTestBase):
 
     def _setup_config_manager(self, jobs):

@@ -4,7 +4,6 @@
 
 import elasticsearch
 
-from nose.plugins.attrib import attr
 from nose.tools import ok_
 
 from socorro.external.es.index_creator import IndexCreator
@@ -17,7 +16,6 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestIndexCreator(ElasticsearchTestCase):
     def __init__(self, *args, **kwargs):
         super(IntegrationTestIndexCreator, self).__init__(*args, **kwargs)

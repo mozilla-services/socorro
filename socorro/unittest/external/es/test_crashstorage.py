@@ -5,7 +5,6 @@
 import mock
 import elasticsearch
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from copy import deepcopy
@@ -122,7 +121,6 @@ a_raw_crash = {
 #logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestESCrashStorage(ElasticsearchTestCase):
     """These tests interact with Elasticsearch (or some other external
     resource).

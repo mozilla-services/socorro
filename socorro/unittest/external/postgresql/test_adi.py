@@ -4,7 +4,6 @@
 
 import datetime
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql.adi import ADI
@@ -13,7 +12,6 @@ from socorro.external import MissingArgumentError
 from unittestbase import PostgreSQLTestCase
 
 
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestADI(PostgreSQLTestCase):
 
     def setUp(self):

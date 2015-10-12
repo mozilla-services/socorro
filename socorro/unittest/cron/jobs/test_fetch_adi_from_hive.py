@@ -7,7 +7,6 @@ import datetime
 import contextlib
 
 import mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
 from crontabber.app import CronTabber
@@ -17,7 +16,6 @@ from socorro.unittest.cron.setup_configman import (
 )
 
 
-@attr(integration='postgres')
 class TestFetchADIFromHive(IntegrationTestBase):
 
     def setUp(self):

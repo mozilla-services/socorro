@@ -5,7 +5,6 @@
 import datetime
 import random
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from crontabber.app import CronTabber
@@ -28,7 +27,6 @@ VALUES
 """
 
 
-@attr(integration='postgres')  # for nosetests
 class TestSuspiciousCrashAnalysisIntegration(IntegrationTestBase):
 
     def setUp(self):

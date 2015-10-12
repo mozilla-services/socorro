@@ -192,7 +192,6 @@ want to test that the database behaves as expected.
 Here is an example of an integration test file for a PostgreSQL service
 (testing the service that was created in the previous section)::
 
-    from nose.plugins.attrib import attr
     from nose.tools import eq_, assert_raises
 
     from socorro.external import MissingOrBadArgumentError
@@ -200,7 +199,6 @@ Here is an example of an integration test file for a PostgreSQL service
     from unittestbase import PostgreSQLTestCase
 
 
-    @attr(integration='postgres')  # for nosetests
     class IntegrationTestCrash(PostgreSQLTestCase):
         '''Test socorro.external.postgresql.crash.Crash class. '''
 

@@ -7,7 +7,6 @@ import gzip
 import os
 from subprocess import PIPE
 import mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 from crontabber.app import CronTabber
 from socorro.unittest.cron.setup_configman import (
@@ -17,7 +16,6 @@ from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 
 #==============================================================================
-@attr(integration='postgres')
 class IntegrationTestDailyURL(IntegrationTestBase):
 
     def setUp(self):

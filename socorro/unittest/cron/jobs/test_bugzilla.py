@@ -4,7 +4,6 @@
 
 import datetime
 import os
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 from dateutil import tz
 from crontabber.app import CronTabber
@@ -29,7 +28,6 @@ SAMPLE_CSV = [
 
 
 #==============================================================================
-@attr(integration='postgres')
 class IntegrationTestBugzilla(IntegrationTestBase):
 
     def tearDown(self):

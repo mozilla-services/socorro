@@ -4,7 +4,6 @@
 
 """Deprecated by socorro/unittest/external/postgresql/test_bugs_service.py"""
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql.bugs import Bugs, MissingArgumentError
@@ -13,7 +12,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestBugs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.bugs.Bugs class. """
 

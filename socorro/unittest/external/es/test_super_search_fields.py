@@ -4,7 +4,6 @@
 
 import datetime
 import elasticsearch
-from nose.plugins.attrib import attr
 from nose.tools import assert_raises, eq_, ok_
 
 from socorro.external import (
@@ -27,7 +26,6 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
     """Test SuperSearchFields with an elasticsearch database containing fake
     data. """

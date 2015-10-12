@@ -4,7 +4,6 @@
 
 import elasticsearch
 
-from nose.plugins.attrib import attr
 from nose.tools import ok_
 
 from socorro.external.es.connection_context import (
@@ -13,7 +12,6 @@ from socorro.external.es.connection_context import (
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestConnectionContext(ElasticsearchTestCase):
 
     def test_connection_context(self):

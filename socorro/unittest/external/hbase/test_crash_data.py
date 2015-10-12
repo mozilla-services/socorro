@@ -6,7 +6,6 @@ import os
 from nose.plugins.skip import SkipTest
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
@@ -21,7 +20,6 @@ if _run_integration_tests in ('false', 'False', 'no', '0'):
 
 
 
-@attr(integration='hbase')  # for nosetests
 class TestIntegrationHBaseCrashData(TestCase):
 
     def setUp(self):
