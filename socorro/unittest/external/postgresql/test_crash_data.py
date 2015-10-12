@@ -5,7 +5,6 @@
 from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 from mock import Mock
-from nose.plugins.attrib import attr
 
 from socorro.external import (
     MissingArgumentError,
@@ -19,7 +18,6 @@ from socorro.unittest.external.postgresql.test_crashstorage import (
 )
 
 
-@attr(integration='hbase')  # for nosetests
 class TestIntegrationPostgresCrashData(TestCase):
 
     def setUp(self):

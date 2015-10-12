@@ -5,7 +5,6 @@
 import datetime
 import mock
 import socorro.external.postgresql.tcbs as tcbs
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 from socorro.external import BadArgumentError
 from socorro.lib import datetimeutil, util
@@ -13,7 +12,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')
 class IntegrationTestTCBS(PostgreSQLTestCase):
     """Test TopCrashers By Signature functions"""
     #--------------------------------------------------------------------------

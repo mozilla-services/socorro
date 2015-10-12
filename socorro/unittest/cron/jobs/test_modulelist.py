@@ -5,7 +5,6 @@
 import functools
 
 import mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
 from crontabber.app import CronTabber
@@ -53,7 +52,6 @@ def mocked_Popen(command, **kwargs):
 
 
 #==============================================================================
-@attr(integration='postgres')
 class TestModulelist(IntegrationTestBase):
 
     def setUp(self):

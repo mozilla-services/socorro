@@ -13,7 +13,6 @@ import re
 import socorro
 
 from paste.fixture import TestApp, AppError
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from configman import (
@@ -449,7 +448,6 @@ class MeasuringImplementationWrapperTestCase(TestCase):
             raise AssertionError('call never found')
 
 
-@attr(integration='postgres')
 class IntegrationTestMiddlewareApp(TestCase):
     # test the middleware_app except that we won't start the daemon
 

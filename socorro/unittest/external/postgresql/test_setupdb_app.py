@@ -7,7 +7,6 @@ from psycopg2 import ProgrammingError
 import psycopg2
 
 from .unittestbase import PostgreSQLTestCase
-from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from nose.tools import ok_, eq_
 from socorro.external.postgresql.setupdb_app import SocorroDBApp
@@ -87,7 +86,6 @@ class TestConnectionContext(TestCase):
             )
 
 
-@attr(integration='postgres')
 class IntegrationTestSetupDB(PostgreSQLTestCase):
 
     def _get_connection(self, database_name, DSN):

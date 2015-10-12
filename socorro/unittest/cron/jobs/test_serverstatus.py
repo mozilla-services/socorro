@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mock import Mock, MagicMock
-from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from crontabber.app import CronTabber
@@ -16,7 +15,6 @@ from socorro.unittest.cron.setup_configman import (
 
 
 #==============================================================================
-@attr(integration='postgres')
 class IntegrationTestServerStatus(IntegrationTestBase):
 
     def _clear_tables(self):
@@ -105,4 +103,3 @@ class IntegrationTestServerStatus(IntegrationTestBase):
         res_expected = (None, None, 0.0, 1)
         res = cursor.fetchone()
         eq_(res, res_expected)
-

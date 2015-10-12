@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from socorro.external.postgresql.crontabber_state import CrontabberState
@@ -10,7 +9,6 @@ from socorro.external.postgresql.crontabber_state import CrontabberState
 from unittestbase import PostgreSQLTestCase
 
 
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crontabbers_state.CrontabberState
     class """

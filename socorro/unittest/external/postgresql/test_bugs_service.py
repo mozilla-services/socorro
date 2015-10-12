@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external.postgresql.bugs_service import (
@@ -19,7 +18,6 @@ from socorro.external.postgresql.service_base import (
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestBugs(PostgreSQLWebServiceBase):
     """Test socorro.external.postgresql.bugs_service.Bugs class. """
 

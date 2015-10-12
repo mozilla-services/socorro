@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from .unittestbase import PostgreSQLTestCase
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 import datetime
 
@@ -14,7 +13,6 @@ from socorro.lib import datetimeutil
 
 
 #==============================================================================
-@attr(integration='postgres')
 class TestBackfill(PostgreSQLTestCase):
     """Tests the calling of all backfill functions"""
 

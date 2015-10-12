@@ -7,7 +7,6 @@ import urllib2
 from functools import wraps
 from cStringIO import StringIO
 import mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 from crontabber.app import CronTabber
 from socorro.lib.datetimeutil import utc_now
@@ -465,7 +464,6 @@ class TestFTPScraper(TestCaseBase):
         )
 
 
-@attr(integration='postgres')  # for nosetests
 class TestIntegrationFTPScraper(IntegrationTestBase):
 
     def setUp(self):

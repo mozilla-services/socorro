@@ -4,7 +4,6 @@
 
 import datetime
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from socorro.external.postgresql.suspicious import SuspiciousCrashSignatures
@@ -13,7 +12,6 @@ from socorro.lib import datetimeutil
 from unittestbase import PostgreSQLTestCase
 
 
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestSuspicious(PostgreSQLTestCase):
 
     def setUp(self):

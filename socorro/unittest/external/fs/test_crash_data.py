@@ -7,7 +7,6 @@ import tempfile
 
 from configman import ConfigurationManager, Namespace
 from mock import Mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError, ResourceNotFound, \
@@ -16,7 +15,6 @@ from socorro.external.fs import crash_data, crashstorage
 from socorro.unittest.testbase import TestCase
 
 
-@attr(integration='filesystem')  # for nosetests
 class IntegrationTestCrashData(TestCase):
 
     def setUp(self):

@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError, BadArgumentError
@@ -14,7 +13,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestSignatureURLs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.signature_urls.SignatureURLs class. """
 

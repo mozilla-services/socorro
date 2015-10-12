@@ -5,7 +5,6 @@
 import datetime
 import elasticsearch
 
-from nose.plugins.attrib import attr
 from nose.tools import ok_
 
 from socorro.lib.datetimeutil import utc_now
@@ -22,7 +21,6 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestIndexCleaner(ElasticsearchTestCase):
     def __init__(self, *args, **kwargs):
         super(IntegrationTestIndexCleaner, self).__init__(*args, **kwargs)

@@ -4,7 +4,6 @@
 
 import json
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
@@ -14,7 +13,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
     def tearDown(self):

@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-from nose.plugins.attrib import attr
 from nose.tools import assert_raises, eq_, ok_
 
 from socorro.external import BadArgumentError
@@ -21,7 +20,6 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
-@attr(integration='elasticsearch')  # for nosetests
 class IntegrationTestSuperSearch(ElasticsearchTestCase):
     """Test SuperSearch with an elasticsearch database containing fake
     data. """

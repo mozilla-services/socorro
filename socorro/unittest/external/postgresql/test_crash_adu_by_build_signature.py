@@ -4,7 +4,6 @@
 
 import datetime
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
 from socorro.lib import datetimeutil
@@ -13,7 +12,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
     """Test of Crash ADU By Build Signature stored procedures"""
 

@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from mock import Mock
-from nose.plugins.attrib import attr
 from nose.tools import eq_
 
 from socorro.lib.util import DotDict
@@ -18,7 +17,6 @@ from socorro.unittest.cron.setup_configman import (
 
 
 #==============================================================================
-@attr(integration='postgres')
 class IntegrationTestReprocessingJobs(IntegrationTestBase):
 
     def _clear_tables(self):

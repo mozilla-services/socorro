@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
@@ -10,7 +9,6 @@ from socorro.external.postgresql.field import Field
 from .unittestbase import PostgreSQLTestCase
 
 
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestField(PostgreSQLTestCase):
     '''Test socorro.external.postgresql.field.Field class. '''
 

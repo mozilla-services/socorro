@@ -4,7 +4,6 @@
 
 from decimal import Decimal
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
@@ -14,7 +13,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
     """Test socorro.external.postgresql.product_build_types.ProductBuildTypes
      class. """

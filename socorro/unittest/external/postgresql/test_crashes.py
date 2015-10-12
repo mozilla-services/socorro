@@ -4,7 +4,6 @@
 
 import random
 import datetime
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import (
@@ -134,7 +133,6 @@ class TestCrashes(TestCase):
 
 
 # =============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestCrashes(PostgreSQLTestCase):
     """Test socorro.external.postgresql.crashes.Crashes class. """
 
