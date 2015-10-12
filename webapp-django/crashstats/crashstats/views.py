@@ -3,10 +3,13 @@ import json
 import datetime
 import logging
 import math
-import isodate
 import urllib
+import gzip
 from collections import defaultdict
 from operator import itemgetter
+from io import BytesIO
+
+import isodate
 
 from django import http
 from django.contrib.auth.models import Permission
@@ -29,6 +32,40 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 # we, here at "import time" (as opposed to run time) make use of time.strptime
 # at least once
 datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
+
+
+GRAPHICS_REPORT_HEADER = (
+    'signature',
+    'url',
+    'uuid_url',
+    'client_crash_date',
+    'date_processed',
+    'last_crash',
+    'product',
+    'version',
+    'build',
+    'branch',
+    'os_name',
+    'os_version',
+    'cpu_info',
+    'address',
+    'bug_list',
+    'user_comments',
+    'uptime_seconds',
+    'email',
+    'adu_count',
+    'topmost_filenames',
+    'addons_checked',
+    'flash_version',
+    'hangid',
+    'reason',
+    'process_type',
+    'app_notes',
+    'install_age',
+    'duplicate_of',
+    'release_channel',
+    'productid',
+)
 
 
 def ratelimit_blocked(request, exception):
@@ -2519,3 +2556,58 @@ def correlations_signatures_json(request):
     if result is None:
         result = {'hits': [], 'total': 0}
     return result
+
+
+def graphics_report(request):
+    """Return a CSV output of all crashes for a specific date for a
+    particular day and a particular product."""
+    if (
+        not request.user.is_authenticated() or
+        not request.user.has_perm('crashstats.run_long_queries')
+    ):
+        return http.HttpResponseForbidden(
+            "You must have the 'Run long queries' permission"
+        )
+    form = forms.GraphicsReportForm(
+        request.GET,
+        initial={'product': 'Firefox'}
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+    api = models.GraphicsReport()
+    data = api.get(
+        product='Firefox',
+        date=datetime.datetime.utcnow().date(),
+    )
+    assert 'hits' in data
+
+    accept_gzip = 'gzip' in request.META.get('HTTP_ACCEPT_ENCODING', '')
+    response = http.HttpResponse(content_type='text/csv')
+    out = BytesIO()
+    writer = utils.UnicodeWriter(out, delimiter='\t')
+    writer.writerow(GRAPHICS_REPORT_HEADER)
+    for row in data['hits']:
+        # Each row is a dict, we want to turn it into a list of
+        # exact order as the `header` tuple above.
+        # However, because the csv writer module doesn't "understand"
+        # python's None, we'll replace those with '' to make the
+        # CSV not have the word 'None' where the data is None.
+        writer.writerow([
+            row[x] is not None and row[x] or ''
+            for x in GRAPHICS_REPORT_HEADER
+        ])
+
+    payload = out.getvalue()
+    if accept_gzip:
+        zbuffer = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', compresslevel=6, fileobj=zbuffer)
+        zfile.write(payload)
+        zfile.close()
+        compressed_payload = zbuffer.getvalue()
+        response.write(compressed_payload)
+        response['Content-Length'] = len(compressed_payload)
+        response['Content-Encoding'] = 'gzip'
+    else:
+        response.write(payload)
+        response['Content-Length'] = len(payload)
+    return response

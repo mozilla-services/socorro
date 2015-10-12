@@ -76,6 +76,7 @@ SERVICES_LIST = (
     (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/adi/(.*)', 'adi.ADI'),
+    (r'/graphics_report/', 'graphics_report.GraphicsReport'),
 )
 
 # certain items in a URL path should NOT be split by `+`
