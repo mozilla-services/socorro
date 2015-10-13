@@ -14,8 +14,6 @@ code, pre {
 p.code code {
     font-size: 1.5em;
     padding: 6px;
-    display: flex;
-    float: left;
 }
 p.example code,
 pre.example {
@@ -32,16 +30,6 @@ p.code .rest-hidden {
 div.token {
     border-bottom: 1px solid #ccc;
     padding: 25px 5px;
-}
-
-/* The `p.code code` selector, defined above, is a `display:flexbox`
-   so that each element within gets bunched up to each other without
-   any whitespace padding.
-   Then to make this button appear "to the right" of this, we have to
-   hack its position. */
-div.token button {
-    position: relative;
-    top: -8px;
 }
 
 table.meta-data th {
