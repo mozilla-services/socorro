@@ -682,3 +682,14 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
 
 
 CRASH_ANALYSIS_URL = 'https://crash-analysis.mozilla.com/crash_analysis/'
+
+# At what point do we consider crontabber to be stale.
+# Ie. if it hasn't run for a certain number of minutes we'd consider
+# that a failing situation and it'll trigger monitoring.
+CRONTABBER_STALE_MINUTES = config(
+    'CRONTABBER_STALE_MINUTES',
+    # We have a lot of jobs that run every 1 hour, in case some job
+    # takes a very long time to finish, we'll bump this up a bit
+    # to a higher default.
+    default=60 * 2
+)
