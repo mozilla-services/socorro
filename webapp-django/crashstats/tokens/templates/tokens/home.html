@@ -46,7 +46,8 @@
                     <time class="ago" data-date="{{ token.created.isoformat() }}">{{ token.created.isoformat() }}</time>
                 </h4>
                 <p class="code">
-                    <code>{{ token.key[:12] }}
+                    <code>
+                        <span>{{ token.key[:12] }}</span>
                         <span class="rest-hidden">{{ token.key[12:] }}</span>
                         <span class="rest-cover">...</span>
                     </code>
