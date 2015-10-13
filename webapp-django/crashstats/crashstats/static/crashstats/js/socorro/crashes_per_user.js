@@ -48,20 +48,6 @@ $(function() {
         }
     }
 
-    $('#daily_search_version_form_products').change(function() {
-        var urlForm = $('#daily_search_version_form').attr('action'),
-            product = $(this).find(':selected').val(),
-            url = urlForm + '?p=' + product + window.location.hash;
-        window.location = url;
-    });
-
-    $('#daily_search_os_form_products').change(function() {
-        var urlForm = $('#daily_search_os_form').attr('action'),
-            product = $(this).find(':selected').val(),
-            url = urlForm + '?p=' + product + window.location.hash;
-        window.location = url;
-    });
-
     $('th.version').each(function() {
         $(this).css('color', COLORS.shift());
     });
