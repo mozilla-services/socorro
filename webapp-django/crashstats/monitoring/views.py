@@ -1,6 +1,7 @@
 import datetime
 import urlparse
 
+import isodate
 import requests
 
 from django.shortcuts import render
@@ -95,6 +96,21 @@ def crontabber_status(request):
     context = {'status': 'ALLGOOD'}
 
     all_apps = api.get()['state']
+    last_runs = [
+        isodate.parse_datetime(x['last_run']) for x in all_apps.values()
+    ]
+    if last_runs:
+        ancient_times = datetime.datetime.utcnow() - datetime.timedelta(
+            minutes=settings.CRONTABBER_STALE_MINUTES
+        )
+        most_recent_run = max(last_runs)
+        if most_recent_run < ancient_times:
+            context['status'] = 'Stale'
+            context['last_run'] = max(last_runs)
+    else:
+        # if it's never run, then it's definitely stale
+        context['status'] = 'Stale'
+
     broken = [
         name for name, state in all_apps.items()
         if state['error_count']

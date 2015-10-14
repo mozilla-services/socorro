@@ -127,11 +127,13 @@ class TestCrontabberStatusViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert '/crontabber_state/' in url
+            recently = datetime.datetime.utcnow().isoformat()
             return Response({
                 'state': {
                     'job1': {
                         'error_count': 0,
-                        'depends_on': []
+                        'depends_on': [],
+                        'last_run': recently,
                     }
                 }
             })
@@ -147,24 +149,29 @@ class TestCrontabberStatusViews(BaseTestViews):
     def test_crontabber_status_trouble(self, rget):
 
         def mocked_get(url, **options):
+            recently = datetime.datetime.utcnow().isoformat()
             assert '/crontabber_state/' in url
             return Response({
                 'state': {
                     'job1': {
                         'error_count': 1,
                         'depends_on': [],
+                        'last_run': recently,
                     },
                     'job2': {
                         'error_count': 0,
                         'depends_on': ['job1'],
+                        'last_run': recently,
                     },
                     'job3': {
                         'error_count': 0,
                         'depends_on': ['job2'],
+                        'last_run': recently,
                     },
                     'job1b': {
                         'error_count': 0,
                         'depends_on': [],
+                        'last_run': recently,
                     },
                 }
             })
@@ -178,3 +185,55 @@ class TestCrontabberStatusViews(BaseTestViews):
         eq_(data['status'], 'Broken')
         eq_(data['broken'], ['job1'])
         eq_(data['blocked'], ['job2', 'job3'])
+
+    @mock.patch('requests.get')
+    def test_crontabber_status_not_run_for_a_while(self, rget):
+
+        some_time_ago = (
+            datetime.datetime.utcnow() - datetime.timedelta(
+                minutes=settings.CRONTABBER_STALE_MINUTES
+            )
+        ).isoformat()
+
+        def mocked_get(url, **options):
+            assert '/crontabber_state/' in url
+            return Response({
+                'state': {
+                    'job1': {
+                        'error_count': 0,
+                        'depends_on': [],
+                        'last_run': some_time_ago,
+                    },
+                    'job2': {
+                        'error_count': 0,
+                        'depends_on': ['job1'],
+                        'last_run': some_time_ago,
+                    },
+                }
+            })
+
+        rget.side_effect = mocked_get
+
+        url = reverse('monitoring:crontabber_status')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['status'], 'Stale')
+        eq_(data['last_run'], some_time_ago)
+
+    @mock.patch('requests.get')
+    def test_crontabber_status_never_run(self, rget):
+
+        def mocked_get(url, **options):
+            assert '/crontabber_state/' in url
+            return Response({
+                'state': {}
+            })
+
+        rget.side_effect = mocked_get
+
+        url = reverse('monitoring:crontabber_status')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['status'], 'Stale')
