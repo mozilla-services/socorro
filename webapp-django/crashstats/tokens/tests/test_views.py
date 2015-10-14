@@ -112,10 +112,7 @@ class TestViews(BaseTestViews):
         # this should be listed on the home page now
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        # because the `token.key` is shown in a split way...
-        ok_(token.key not in response.content)
-        # but some of it is
-        ok_(token.key[:12] in response.content)
+        ok_('data-key="{}"'.format(token.key) in response.content)
 
     def test_delete_token(self):
         user = self._login()

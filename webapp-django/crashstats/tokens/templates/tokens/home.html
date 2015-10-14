@@ -45,12 +45,8 @@
                 <h4>Generated
                     <time class="ago" data-date="{{ token.created.isoformat() }}">{{ token.created.isoformat() }}</time>
                 </h4>
-                <p class="code">
-                    <code>
-                        <span>{{ token.key[:12] }}</span>
-                        <span class="rest-hidden">{{ token.key[12:] }}</span>
-                        <span class="rest-cover">...</span>
-                    </code>
+                <p class="code" data-key="{{ token.key }}">
+                    <!-- jQuery will put in the <code> tag here -->
                     <button type="button" data-toggle="Hide again">Show the whole token</button>
                 </p>
 
