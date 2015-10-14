@@ -6,6 +6,7 @@ import mock
 
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.utils import timezone
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 
@@ -127,7 +128,7 @@ class TestCrontabberStatusViews(BaseTestViews):
 
         def mocked_get(url, **options):
             assert '/crontabber_state/' in url
-            recently = datetime.datetime.utcnow().isoformat()
+            recently = timezone.now().isoformat()
             return Response({
                 'state': {
                     'job1': {
@@ -149,7 +150,7 @@ class TestCrontabberStatusViews(BaseTestViews):
     def test_crontabber_status_trouble(self, rget):
 
         def mocked_get(url, **options):
-            recently = datetime.datetime.utcnow().isoformat()
+            recently = timezone.now().isoformat()
             assert '/crontabber_state/' in url
             return Response({
                 'state': {
@@ -190,7 +191,7 @@ class TestCrontabberStatusViews(BaseTestViews):
     def test_crontabber_status_not_run_for_a_while(self, rget):
 
         some_time_ago = (
-            datetime.datetime.utcnow() - datetime.timedelta(
+            timezone.now() - datetime.timedelta(
                 minutes=settings.CRONTABBER_STALE_MINUTES
             )
         ).isoformat()

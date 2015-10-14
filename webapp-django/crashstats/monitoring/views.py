@@ -6,6 +6,7 @@ import requests
 
 from django.shortcuts import render
 from django.conf import settings
+from django.utils import timezone
 
 from crashstats.crashstats import utils
 from crashstats.crashstats.models import CrontabberState
@@ -100,7 +101,7 @@ def crontabber_status(request):
         isodate.parse_datetime(x['last_run']) for x in all_apps.values()
     ]
     if last_runs:
-        ancient_times = datetime.datetime.utcnow() - datetime.timedelta(
+        ancient_times = timezone.now() - datetime.timedelta(
             minutes=settings.CRONTABBER_STALE_MINUTES
         )
         most_recent_run = max(last_runs)
