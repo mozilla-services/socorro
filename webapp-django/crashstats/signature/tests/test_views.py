@@ -640,3 +640,129 @@ class TestViews(BaseTestViews):
             'product': ['WaterWolf'],
             'date': '<=2015-01-01'
         })
+
+    def test_signature_summary(self):
+
+        def mocked_supersearch_get(**params):
+            ok_('signature' in params)
+            eq_(params['signature'], ['=' + DUMB_SIGNATURE])
+
+            ok_('_histogram.uptime' in params)
+            ok_('_facets' in params)
+
+            res = {
+                "hits": [],
+                "total": 4,
+                "facets": {
+                    "platform": [
+                        {
+                            "count": 4,
+                            "term": "WaterWolf"
+                        }
+                    ],
+                    "cpu_name": [
+                        {
+                            "count": 4,
+                            "term": "x86"
+                        }
+                    ],
+                    "process_type": [
+                        {
+                            "count": 4,
+                            "term": "browser"
+                        }
+                    ],
+                    "flash_version": [
+                        {
+                            "count": 4,
+                            "term": "1.1.1.14"
+                        }
+                    ],
+                    "histogram_uptime": [
+                        {
+                            "count": 2,
+                            "term": 0,
+                        },
+                        {
+                            "count": 2,
+                            "term": 60,
+                        }
+                    ],
+                }
+            }
+
+            if '_histogram.date' in params:
+                res['facets']['histogram_date'] = [
+                    {
+                        "count": 2,
+                        "term": "2015-08-05T00:00:00+00:00",
+                        "facets": {
+                            "exploitability": [
+                                {
+                                    "count": 2,
+                                    "term": "high"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "count": 2,
+                        "term": "2015-08-06T00:00:00+00:00",
+                        "facets": {
+                            "exploitability": [
+                                {
+                                    "count": 2,
+                                    "term": "low"
+                                }
+                            ]
+                        }
+                    }
+                ]
+
+            return res
+
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        # Test with no results
+        url = reverse('signature:signature_summary')
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+
+        # Make sure all boxes are there.
+        ok_('Operating System' in response.content)
+        ok_('Uptime Range' in response.content)
+        ok_('Architecture' in response.content)
+        ok_('Process Type' in response.content)
+        ok_('Flash&trade; Version' in response.content)
+
+        # Logged out users can't see no exploitability
+        ok_('Exploitability' not in response.content)
+
+        # Check that some of the expected values are there.
+        ok_('WaterWolf' in response.content)
+        ok_('x86' in response.content)
+        ok_('browser' in response.content)
+        ok_('1.1.1.14' in response.content)
+        ok_('&lt; 1 min' in response.content)
+        ok_('1-5 min' in response.content)
+
+        user = self._login()
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+
+        # Logged in users without the permission can't see no exploitability
+        ok_('Exploitability' not in response.content)
+
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_exploitability')
+
+        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        eq_(response.status_code, 200)
+
+        # Logged in users with the permission can see exploitability
+        ok_('Exploitability' in response.content)

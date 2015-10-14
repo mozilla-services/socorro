@@ -124,6 +124,18 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_mandatory': False,
         'in_database_name': 'build',
     },
+    'uptime': {
+        'name': 'uptime',
+        'query_type': 'number',
+        'namespace': 'processed_crash',
+        'form_field_choices': None,
+        'permissions_needed': [],
+        'default_value': None,
+        'is_exposed': True,
+        'is_returned': True,
+        'is_mandatory': False,
+        'in_database_name': 'uptime',
+    },
     'reason': {
         'name': 'reason',
         'query_type': 'string',

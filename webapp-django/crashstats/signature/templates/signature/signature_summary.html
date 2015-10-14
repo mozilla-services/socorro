@@ -1,0 +1,161 @@
+<div class="panel">
+    <header class="title">
+        <h2>Operating System</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Operating System</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for platform in query.facets.platform %}
+                <tr>
+                    <td>{{ platform.term }}</td>
+                    <td>{{ platform.count }}</td>
+                    <td>{{ (100.0 * platform.count / query.total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <header class="title">
+        <h2>Uptime Range</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Uptime Range</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for uptime in uptimes %}
+                <tr>
+                    <td>{{ uptime.term }}</td>
+                    <td>{{ uptime.count }}</td>
+                    <td>{{ (100.0 * uptime.count / query.total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <header class="title">
+        <h2>Architecture</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Architecture</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cpu_name in query.facets.cpu_name %}
+                <tr>
+                    <td>{{ cpu_name.term }}</td>
+                    <td>{{ cpu_name.count }}</td>
+                    <td>{{ (100.0 * cpu_name.count / query.total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <header class="title">
+        <h2>Process Type</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Process Type</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for process_type in query.facets.process_type %}
+                <tr>
+                    <td>{{ process_type.term }}</td>
+                    <td>{{ process_type.count }}</td>
+                    <td>{{ (100.0 * process_type.count / query.total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <header class="title">
+        <h2>Flash&trade; Version</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Flash&trade; Version</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flash_version in query.facets.flash_version %}
+                <tr>
+                    <td>{{ flash_version.term }}</td>
+                    <td>{{ flash_version.count }}</td>
+                    <td>{{ (100.0 * flash_version.count / query.total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if query.facets.histogram_date %}
+<div class="panel">
+    <header class="title">
+        <h2>Exploitability</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Report Date</th>
+                    <th class="header">None</th>
+                    <th class="header">Low</th>
+                    <th class="header">Medium</th>
+                    <th class="header">High</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in query.facets.histogram_date %}
+                <tr>
+                    <td>{{ day.term[:10] }}</td>
+                    <td>{{ day.exploitability.none }}</td>
+                    <td>{{ day.exploitability.low }}</td>
+                    <td>{{ day.exploitability.medium }}</td>
+                    <td>{{ day.exploitability.high }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}

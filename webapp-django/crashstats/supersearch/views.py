@@ -44,6 +44,10 @@ EXCLUDED_FIELDS_FROM_FACETS = (
 )
 
 
+class ValidationError(Exception):
+    pass
+
+
 def get_allowed_fields(user):
     return tuple(
         x['name']
@@ -75,7 +79,7 @@ def get_params(request):
     form = get_supersearch_form(request)
 
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        raise ValidationError(str(form.errors))
 
     params = {}
     for key in form.cleaned_data:
@@ -140,10 +144,11 @@ def search(request, default_context=None):
 )
 def search_results(request):
     '''Return the results of a search. '''
-    params = get_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
+    try:
+        params = get_params(request)
+    except ValidationError as e:
         # There was an error in the form, let's return it.
-        return params
+        return http.HttpResponseBadRequest(str(e))
 
     data = {}
     data['query'] = {
@@ -211,7 +216,7 @@ def search_results(request):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError, e:
+    except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
@@ -347,18 +352,20 @@ def search_custom(request, default_context=None):
     '''Return the basic search page, without any result. '''
     error = None
     query = None
-    params = get_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
+
+    try:
+        params = get_params(request)
+    except ValidationError as e:
         # There was an error in the form, but we want to do the default
         # behavior and just display an error message.
-        error = params
+        error = str(e)
     else:
         # Get the JSON query that supersearch generates and show it.
         params['_return_query'] = 'true'
         api = SuperSearchUnredacted()
         try:
             query = api.get(**params)
-        except models.BadStatusCodeError, e:
+        except models.BadStatusCodeError as e:
             error = e
 
     schema = settings.ELASTICSEARCH_INDEX_SCHEMA
@@ -396,7 +403,7 @@ def search_query(request):
             query=form.cleaned_data['query'],
             indices=form.cleaned_data['indices']
         )
-    except models.BadStatusCodeError, e:
+    except models.BadStatusCodeError as e:
         return http.HttpResponseBadRequest(e.message)
 
     return results

@@ -30,6 +30,11 @@ urlpatterns = patterns(
         name='signature_graphs',
     ),
     url(
+        r'^summary/$',
+        views.signature_summary,
+        name='signature_summary',
+    ),
+    url(
         r'^$',
         views.signature_report,
         name='signature_report',

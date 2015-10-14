@@ -1,7 +1,8 @@
+import datetime
+import functools
+import isodate
 import math
 import urllib
-import isodate
-import datetime
 
 from django import http
 from django.core.urlresolvers import reverse
@@ -18,6 +19,7 @@ from crashstats.supersearch.models import (
     SuperSearchFields,
 )
 from crashstats.supersearch.views import (
+    ValidationError,
     get_allowed_fields,
     get_params,
     get_report_list_parameters,
@@ -35,35 +37,35 @@ DEFAULT_COLUMNS = (
 )
 
 
-def get_validated_params(request):
-    params = get_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
+def pass_validated_params(view):
+    @functools.wraps(view)
+    def inner(request, *args, **kwargs):
+        try:
+            params = get_params(request)
 
-    if len(params['signature']) > 1:
-        return http.HttpResponseBadRequest(
-            'Invalid value for "signature" parameter, '
-            'only one value is accepted'
-        )
+            if len(params['signature']) > 1:
+                raise ValidationError(
+                    'Invalid value for "signature" parameter, '
+                    'only one value is accepted'
+                )
 
-    if not params['signature'] or not params['signature'][0]:
-        return http.HttpResponseBadRequest(
-            '"signature" parameter is mandatory'
-        )
+            if not params['signature'] or not params['signature'][0]:
+                raise ValidationError(
+                    '"signature" parameter is mandatory'
+                )
+        except ValidationError as e:
+            return http.HttpResponseBadRequest(str(e))
 
-    return params
+        args += (params,)
+        return view(request, *args, **kwargs)
+    return inner
 
 
 @waffle_switch('signature-report')
+@pass_validated_params
 @pass_default_context
-def signature_report(request, default_context=None):
+def signature_report(request, params, default_context=None):
     context = default_context
-
-    params = get_validated_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
 
     signature = request.GET.get('signature')
     if not signature:
@@ -101,12 +103,9 @@ def signature_report(request, default_context=None):
 
 
 @waffle_switch('signature-report')
-def signature_reports(request):
+@pass_validated_params
+def signature_reports(request, params):
     '''Return the results of a search. '''
-    params = get_validated_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
 
     signature = params['signature'][0]
 
@@ -175,7 +174,7 @@ def signature_reports(request):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError, e:
+    except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
@@ -193,12 +192,9 @@ def signature_reports(request):
 
 
 @waffle_switch('signature-report')
-def signature_aggregation(request, aggregation):
+@pass_validated_params
+def signature_aggregation(request, params, aggregation):
     '''Return the aggregation of a field. '''
-    params = get_validated_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
 
     signature = params['signature'][0]
 
@@ -226,7 +222,7 @@ def signature_aggregation(request, aggregation):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError, e:
+    except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
@@ -242,12 +238,9 @@ def signature_aggregation(request, aggregation):
 
 @waffle_switch('signature-report')
 @utils.json_view
-def signature_graphs(request, field):
+@pass_validated_params
+def signature_graphs(request, params, field):
     '''Return a multi-line graph of crashes per day grouped by field. '''
-    params = get_validated_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
 
     signature = params['signature'][0]
 
@@ -276,7 +269,7 @@ def signature_graphs(request, field):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError, e:
+    except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
@@ -288,12 +281,9 @@ def signature_graphs(request, field):
 
 
 @waffle_switch('signature-report')
-def signature_comments(request):
+@pass_validated_params
+def signature_comments(request, params):
     '''Return a list of non-empty comments. '''
-    params = get_validated_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
 
     signature = params['signature'][0]
 
@@ -337,7 +327,7 @@ def signature_comments(request):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError, e:
+    except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
@@ -356,12 +346,9 @@ def signature_comments(request):
 
 @waffle_switch('signature-report')
 @utils.json_view
-def signature_graph_data(request, channel):
+@pass_validated_params
+def signature_graph_data(request, params, channel):
     '''Return data for the graph of crashes/ADU against build date'''
-    params = get_validated_params(request)
-    if isinstance(params, http.HttpResponseBadRequest):
-        # There was an error in the form, let's return it.
-        return params
 
     signature = params['signature'][0]
 
@@ -424,3 +411,92 @@ def signature_graph_data(request, channel):
     )
 
     return data
+
+
+@waffle_switch('signature-report')
+@pass_validated_params
+def signature_summary(request, params):
+    '''Return a list of specific aggregations. '''
+
+    data = {}
+
+    params['signature'] = '=' + params['signature'][0]
+    params['_results_number'] = 0
+    params['_facets'] = [
+        'platform',
+        'cpu_name',
+        'process_type',
+        'flash_version',
+    ]
+    params['_histogram.uptime'] = ['product']
+    params['_histogram_interval.uptime'] = 60
+
+    # If the user has permissions, show exploitability.
+    all_fields = SuperSearchFields().get()
+    if has_permissions(
+        request.user, all_fields['exploitability']['permissions_needed']
+    ):
+        params['_histogram.date'] = ['exploitability']
+
+    api = SuperSearchUnredacted()
+    try:
+        search_results = api.get(**params)
+    except models.BadStatusCodeError as e:
+        # We need to return the error message in some HTML form for jQuery to
+        # pick it up.
+        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+
+    facets = search_results['facets']
+
+    # Transform uptime data to be easier to consume.
+    # Keys are in minutes.
+    if 'histogram_uptime' in facets:
+        labels = {
+            0: '< 1 min',
+            1: '1-5 min',
+            5: '5-15 min',
+            15: '15-60 min',
+            60: '> 1 hour'
+        }
+        uptimes_count = dict((x, 0) for x in labels)
+
+        for uptime in facets['histogram_uptime']:
+            for uptime_minutes in sorted(uptimes_count.keys(), reverse=True):
+                uptime_seconds = uptime_minutes * 60
+
+                if uptime['term'] >= uptime_seconds:
+                    uptimes_count[uptime_minutes] += uptime['count']
+                    break
+
+        uptimes = [
+            {'term': labels.get(key), 'count': count}
+            for key, count in uptimes_count.items()
+            if count > 0
+        ]
+        uptimes = sorted(uptimes, key=lambda x: x['count'], reverse=True)
+        data['uptimes'] = uptimes
+
+    # Transform exploitability facet.
+    if 'histogram_date' in facets:
+        exploitability_base = {
+            'none': 0,
+            'low': 0,
+            'medium': 0,
+            'high': 0,
+        }
+        for day in facets['histogram_date']:
+            exploitability = dict(exploitability_base)
+            for expl in day['facets']['exploitability']:
+                if expl['term'] in exploitability:
+                    exploitability[expl['term']] = expl['count']
+            day['exploitability'] = exploitability
+
+        facets['histogram_date'] = sorted(
+            facets['histogram_date'],
+            key=lambda x: x['term'],
+            reverse=True
+        )
+
+    data['query'] = search_results
+
+    return render(request, 'signature/signature_summary.html', data)
