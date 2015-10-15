@@ -169,11 +169,15 @@ Top Crashers for {{ product }} {{ version }}
                         <td>{{ crash.mac_count }}</td>
                         {% endif %}
                         <td>{{ crash.is_gc_count }}</td>
+                        {% if crash.first_report %}
                         <td title="This crash signature first appeared at {{ crash.first_report }}" >
                             <time datetime="{{ crash.first_report }}">
                                 {{ crash.first_report.date() }}
                             </time>
                         </td>
+                        {% else %}
+                        <td title="No known first appearance date">-</td>
+                        {% endif %}
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
                             {{ show_bug_link(bug) }}

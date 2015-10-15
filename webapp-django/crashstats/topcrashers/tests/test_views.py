@@ -115,6 +115,31 @@ class TestViews(BaseTestViews):
                                     'count': 60,
                                 }],
                             }
+                        }, {
+                            'term': u'mozCool()',
+                            'count': 80,
+                            'facets': {
+                                'platform': [{
+                                    'term': 'WaterWolf',
+                                    'count': 50,
+                                }],
+                                'is_garbage_collecting': [{
+                                    'term': 't',
+                                    'count': 50,
+                                }],
+                                'hang_type': [{
+                                    'term': 1,
+                                    'count': 50,
+                                }],
+                                'process_type': [{
+                                    'term': 'browser',
+                                    'count': 50,
+                                }],
+                                'histogram_uptime': [{
+                                    'term': 0,
+                                    'count': 40,
+                                }],
+                            }
                         }]
                     },
                     'total': 250
