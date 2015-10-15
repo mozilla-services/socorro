@@ -189,6 +189,9 @@ urlpatterns = patterns(
     url(r'^graphics_report/$',
         views.graphics_report,
         name='graphics_report'),
+    url(r'^about/throttling/$',
+        views.about_throttling,
+        name='about_throttling'),
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
