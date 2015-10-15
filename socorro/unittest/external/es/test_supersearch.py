@@ -1527,3 +1527,11 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _results_number=0,
         )
         eq_(len(res['hits']), 0)
+
+    @minimum_es_version('1.0')
+    def test_get_with_too_many(self):
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            _results_number=1001,
+        )
