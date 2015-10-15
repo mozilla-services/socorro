@@ -44,7 +44,7 @@ class TestModels(DjangoTestCase):
 
     def setUp(self):
         super(TestModels, self).setUp()
-        # thanks to settings_test.py
+        # thanks to crashstats.settings.test
         assert settings.CACHE_MIDDLEWARE
         assert not settings.CACHE_MIDDLEWARE_FILES
         cache.clear()
