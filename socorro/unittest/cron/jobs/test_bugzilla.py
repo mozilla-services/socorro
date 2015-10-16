@@ -32,19 +32,21 @@ class IntegrationTestBugzilla(IntegrationTestBase):
 
     def tearDown(self):
         self.conn.cursor().execute("""
-        TRUNCATE TABLE reports CASCADE;
-        TRUNCATE TABLE bugs CASCADE;
-        TRUNCATE TABLE bug_associations CASCADE;
+        TRUNCATE
+            reports, bugs, bug_associations
+        CASCADE
         """)
         self.conn.commit()
         super(IntegrationTestBugzilla, self).tearDown()
 
     def _setup_config_manager(self, days_into_past):
         PST = tz.gettz('PST8PDT')
-        datestring = ((datetime.datetime.now(PST) -
-                       datetime.timedelta(days=days_into_past))
-                       .astimezone(PST)
-                       .strftime('%Y-%m-%d'))
+        datestring = (
+            (
+                datetime.datetime.now(PST) -
+                datetime.timedelta(days=days_into_past)
+            ).astimezone(PST).strftime('%Y-%m-%d')
+        )
         filename = os.path.join(self.tempdir, 'sample-%s.csv' % datestring)
         with open(filename, 'w') as f:
             f.write('\n'.join(SAMPLE_CSV))
@@ -130,7 +132,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         bug_ids = [x[0] for x in associations]
         eq_(bug_ids, [5, 8])
 
-    def test_basic_run_job_with_reports_with_existing_bugs_different(self):
+    def test_run_job_with_reports_with_existing_bugs_different(self):
         config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
@@ -185,7 +187,7 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         association = cursor.fetchone()
         eq_(association[0], 'legitimate(sig)')
 
-    def test_basic_run_job_with_reports_with_existing_bugs_same(self):
+    def test_run_job_with_reports_with_existing_bugs_same(self):
         config_manager = self._setup_config_manager(3)
 
         cursor = self.conn.cursor()
@@ -231,3 +233,148 @@ class IntegrationTestBugzilla(IntegrationTestBase):
         association = cursor.fetchone()
         eq_(association[0], 'legitimate(sig)')
         cursor.execute('select * from bug_associations')
+
+    def test_run_job_virgin_run(self):
+        """specifically setting 0 days back and no priror run
+        will pick it up from now's date"""
+        config_manager = self._setup_config_manager(0)
+
+        cursor = self.conn.cursor()
+        # these are matching the SAMPLE_CSV above
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
+        # exactly the same as the fixture
+        cursor.execute("""insert into bugs
+        (id,status,resolution,short_desc)
+        values
+        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
+        """)
+        cursor.execute("""insert into bug_associations
+        (bug_id,signature)
+        values
+        (8, 'legitimate(sig)');
+        """)
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+
+        cursor.execute('select id, short_desc from bugs where id = 8')
+        bug = cursor.fetchone()
+        eq_(bug[1], 'newlines in sigs')
+
+    def test_run_job_one_day_back(self):
+        """specifically setting 0 days back and no priror run
+        will pick it up from now's date"""
+        config_manager = self._setup_config_manager(1)
+
+        cursor = self.conn.cursor()
+        # these are matching the SAMPLE_CSV above
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
+        # exactly the same as the fixture
+        cursor.execute("""insert into bugs
+        (id,status,resolution,short_desc)
+        values
+        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
+        """)
+        cursor.execute("""insert into bug_associations
+        (bug_id,signature)
+        values
+        (8, 'legitimate(sig)');
+        """)
+        self.conn.commit()
+
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+
+        cursor.execute('select id, short_desc from bugs where id = 8')
+        bug = cursor.fetchone()
+        eq_(bug[1], 'newlines in sigs')
+
+    def test_run_job_based_on_last_success(self):
+        """specifically setting 0 days back and no priror run
+        will pick it up from now's date"""
+        config_manager = self._setup_config_manager(0)
+
+        cursor = self.conn.cursor()
+        # these are matching the SAMPLE_CSV above
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
+        # exactly the same as the fixture
+        cursor.execute("""insert into bugs
+        (id,status,resolution,short_desc)
+        values
+        (8, 'CLOSED', 'RESOLVED', 'newlines in sigs');
+        """)
+        cursor.execute("""insert into bug_associations
+        (bug_id,signature)
+        values
+        (8, 'legitimate(sig)');
+        """)
+        self.conn.commit()
+
+        # second time
+        config_manager = self._setup_config_manager(0)
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            state = tab.job_state_database.copy()
+            self._wind_clock(state, days=1)
+            tab.job_state_database.update(state)
+
+        # Create a CSV file for one day back.
+        # This'll make sure there's a .csv file whose day
+        # is that of the last run.
+        self._setup_config_manager(1)
+
+        config_manager = self._setup_config_manager(0)
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+
+        cursor.execute('select id, short_desc from bugs where id = 8')
+        bug = cursor.fetchone()
+        eq_(bug[1], 'newlines in sigs')
