@@ -107,12 +107,6 @@ class ReleaseRepositories(BaseTable):
             ['other-esr']]
 
 
-class CrontabberState(BaseTable):
-    table = 'crontabber_state'
-    columns = ['last_updated', 'state']
-    rows = [['2012-05-16 00:00:00', '{}']]
-
-
 class CrashTypes(BaseTable):
     table = 'crash_types'
     columns = [
@@ -202,5 +196,5 @@ class Skiplist(BaseTable):
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
           ReleaseChannelMatches, UptimeLevels, WindowsVersions,
-          OSVersions, ReleaseRepositories, CrontabberState,
+          OSVersions, ReleaseRepositories,
           CrashTypes, ReportPartitionInfo, Skiplist]

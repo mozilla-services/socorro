@@ -595,20 +595,6 @@ class CrashesByUserBuild(DeclarativeBase):
     crash_types = relationship('CrashType', primaryjoin='CrashesByUserBuild.crash_type_id==CrashType.crash_type_id')
 
 
-class CrontabberState(DeclarativeBase):
-    __tablename__ = 'crontabber_state'
-
-    #column definitions
-    last_updated = Column(u'last_updated', TIMESTAMP(timezone=True), primary_key=True, nullable=False)
-    state = Column(u'state', TEXT(), nullable=False)
-
-    #__table_args__ = (
-        #Index('crontabber_state_one_row', DDL('((state IS NOT NULL))'), unique=True),
-    #)
-
-    #relationship definitions
-
-
 class DataDictionary(DeclarativeBase):
     __tablename__ = 'data_dictionary'
 

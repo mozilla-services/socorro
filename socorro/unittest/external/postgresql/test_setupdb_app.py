@@ -104,7 +104,6 @@ class IntegrationTestSetupDB(PostgreSQLTestCase):
     def _drop_database(self):
         conn = self._get_connection('template1', self.super_dsn)
         cursor = conn.cursor()
-        # double-check there is a crontabber_state row
         conn.set_isolation_level(0)
         try:
             cursor.execute('DROP DATABASE %s' % self.dsn['database_name'])
