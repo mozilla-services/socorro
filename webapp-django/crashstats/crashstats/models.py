@@ -1499,7 +1499,8 @@ class CrontabberState(SocorroMiddleware):
 
     URL_PREFIX = '/crontabber_state/'
 
-    cache_seconds = 60 * 5  # 5 minutes
+    # make it small but but non-zero
+    cache_seconds = 60  # 1 minute
 
     # will never contain PII
     API_WHITELIST = None
