@@ -220,6 +220,7 @@ class TestSocorroWelcomeApp(TestCase):
     def test_app_replacement(self):
         config = DotDict()
         config.application = MyProcessor
+        config.number_of_submissions = 1
 
         with mock.patch(
             'socorro.app.socorro_app.command_line',

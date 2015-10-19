@@ -16,11 +16,13 @@ from os import (
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
+from socorro.app.fetch_transform_save_app import (
+    FetchTransformSaveWithSeparateNewCrashSourceApp,
+    main
+)
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     FileDumpsMapping,
-    MemoryDumpsMapping,
 )
 from socorro.external.filesystem.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
@@ -212,7 +214,7 @@ class DBSamplingCrashSource(RequiredConfig):
 
 
 #==============================================================================
-class SubmitterApp(FetchTransformSaveApp):
+class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'submitter_app'
     app_version = '3.1'
     app_description = __doc__
@@ -231,19 +233,6 @@ class SubmitterApp(FetchTransformSaveApp):
         short_form='D',
         default=False
     )
-    required_config.submitter.add_option(
-        'number_of_submissions',
-        doc="the number of crashes to submit (all, forever, 1...)",
-        short_form='n',
-        default='all'
-    )
-    required_config.namespace('new_crash_source')
-    required_config.new_crash_source.add_option(
-        'new_crash_source_class',
-        doc='an iterable that will stream crash_ids needing processing',
-        default='',
-        from_string_converter=class_converter
-    )
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -253,17 +242,31 @@ class SubmitterApp(FetchTransformSaveApp):
             "destination.crashstorage_class":
                 'socorro.collector.breakpad_submitter_utilities'
                 '.BreakpadPOSTDestination',
+            "number_of_submissions": "all",
         }
 
     #--------------------------------------------------------------------------
-    def __init__(self, config):
-        super(SubmitterApp, self).__init__(config)
-        if config.submitter.number_of_submissions == 'forever':
-            self._crash_set_iter = self._infinite_iterator
-        elif config.submitter.number_of_submissions == 'all':
-            self._crash_set_iter = self._all_iterator
-        else:
-            self._crash_set_iter = self._limited_iterator
+    def _action_between_each_iteration(self):
+        if self.config.submitter.delay:
+            time.sleep(self.config.submitter.delay)
+
+    #--------------------------------------------------------------------------
+    def _action_after_iteration_completes(self):
+        self.config.logger.info(
+            'the queuing iterator is exhausted - waiting to quit'
+        )
+        self.task_manager.wait_for_empty_queue(
+            5,
+            "waiting for the queue to drain before quitting"
+        )
+        time.sleep(self.config.producer_consumer.number_of_threads * 2)
+
+    #--------------------------------------------------------------------------
+    def _filter_disallowed_values(self, current_value):
+        """in this base class there are no disallowed values coming from the
+        iterators.  Other users of these iterator may have some standards and
+        can detect and reject them here"""
+        return current_value is None
 
     #--------------------------------------------------------------------------
     def _transform(self, crash_id):
@@ -289,64 +292,6 @@ class SubmitterApp(FetchTransformSaveApp):
                 dumps,
                 crash_id
             )
-
-    #--------------------------------------------------------------------------
-    def source_iterator(self):
-        """this iterator yields pathname pairs for raw crashes and raw dumps"""
-        for x in self._crash_set_iter():
-            if x is None:
-                break
-            elif isinstance(x, tuple):
-                yield x  # already in (args, kwargs) form
-            else:
-                yield ((x,), {})  # (args, kwargs)
-            if self.config.submitter.delay:
-                time.sleep(self.config.submitter.delay)
-        self.config.logger.info(
-            'the queuing iterator is exhausted - waiting to quit'
-        )
-        self.task_manager.wait_for_empty_queue(
-            5,
-            "waiting for the queue to drain before quitting"
-        )
-        time.sleep(self.config.producer_consumer.number_of_threads * 2)
-
-    #--------------------------------------------------------------------------
-    def _infinite_iterator(self):
-        while True:
-            for crash_id in self.new_crash_source.new_crashes():
-                yield crash_id
-
-    #--------------------------------------------------------------------------
-    def _all_iterator(self):
-        for crash_id in self.new_crash_source.new_crashes():
-            yield crash_id
-
-    #--------------------------------------------------------------------------
-    def _limited_iterator(self):
-        i = 0
-        while True:
-            for crash_id in self.new_crash_source.new_crashes():
-                if i == int(self.config.submitter.number_of_submissions):
-                    break
-                i += 1
-                yield crash_id
-            if i == int(self.config.submitter.number_of_submissions):
-                break
-
-    #--------------------------------------------------------------------------
-    def _setup_source_and_destination(self):
-        """instantiate the classes that implement the source and destination
-        crash storage systems."""
-        super(SubmitterApp, self)._setup_source_and_destination()
-        if self.config.new_crash_source.new_crash_source_class:
-            self.new_crash_source = \
-                self.config.new_crash_source.new_crash_source_class(
-                    self.config.new_crash_source,
-                    'submitter'
-                )
-        else:
-            self.new_crash_source = self.source
 
 
 if __name__ == '__main__':

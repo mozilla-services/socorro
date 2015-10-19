@@ -21,7 +21,7 @@ class TestCrashMoverApp(TestCase):
             def _setup_source_and_destination(self):
                 pass
 
-            def source_iterator(self):
+            def _basic_iterator(self):
                 for x in xrange(5):
                     yield ((x,), {})
 
@@ -33,6 +33,7 @@ class TestCrashMoverApp(TestCase):
           'logger': logger,
           'number_of_threads': 2,
           'maximum_queue_size': 2,
+          'number_of_submissions': "all",
           'source': DotDict({'crashstorage_class': None}),
           'destination': DotDict({'crashstorage_class': None}),
           'producer_consumer': DotDict({'producer_consumer_class':
@@ -54,7 +55,7 @@ class TestCrashMoverApp(TestCase):
 
     def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(CrashMoverApp):
-            def source_iterator(self):
+            def _basic_iterator(self):
                 for x in self.source.new_crashes():
                     yield ((x,), {})
 
@@ -100,6 +101,7 @@ class TestCrashMoverApp(TestCase):
           'logger': logger,
           'number_of_threads': 2,
           'maximum_queue_size': 2,
+          'number_of_submissions': "all",
           'source': DotDict({'crashstorage_class':
                                  FakeStorageSource}),
           'destination': DotDict({'crashstorage_class':
@@ -157,6 +159,7 @@ class TestCrashMoverApp(TestCase):
           'logger': logger,
           'number_of_threads': 2,
           'maximum_queue_size': 2,
+          'number_of_submissions': "all",
           'source': DotDict({'crashstorage_class':
                                  FakeStorageSource}),
           'destination': DotDict({'crashstorage_class':
@@ -204,6 +207,7 @@ class TestCrashMoverApp(TestCase):
           'logger': logger,
           'number_of_threads': 2,
           'maximum_queue_size': 2,
+          'number_of_submissions': "all",
           'source': DotDict({'crashstorage_class':
                                  None}),
           'destination': DotDict({'crashstorage_class':
@@ -255,6 +259,7 @@ class TestCrashMoverApp(TestCase):
           'logger': logger,
           'number_of_threads': 2,
           'maximum_queue_size': 2,
+          'number_of_submissions': "all",
           'source': DotDict({'crashstorage_class':
                                  FakeStorageSource}),
           'destination': DotDict({'crashstorage_class':

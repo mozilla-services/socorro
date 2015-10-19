@@ -4,14 +4,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """this app will move crashes from one storage location to another"""
 
-from configman import Namespace, class_converter
+from configman import Namespace
 
-from socorro.app.fetch_transform_save_app import FetchTransformSaveApp, main
+from socorro.app.fetch_transform_save_app import (
+    FetchTransformSaveApp,
+    FetchTransformSaveWithSeparateNewCrashSourceApp,
+    main
+)
 from socorro.external.crashstorage_base import (
-    PolyCrashStorage,
     CrashIDNotFound,
 )
-from socorro.external.es.crashstorage import ESCrashStorageNoStackwalkerOutput
 
 
 #==============================================================================
@@ -24,24 +26,12 @@ class CrashMoverApp(FetchTransformSaveApp):
 
 
 #==============================================================================
-class ProcessedCrashCopierApp(FetchTransformSaveApp):
+class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'processed_crash_copier'
     app_version = '1.0'
     app_description = __doc__
 
     required_config = Namespace()
-    #--------------------------------------------------------------------------
-    # new_crash_source namespace
-    #     this namespace is for config parameter having to do with the source
-    #     of new crash_ids.
-    #--------------------------------------------------------------------------
-    required_config.namespace('new_crash_source')
-    required_config.new_crash_source.add_option(
-      'new_crash_source_class',
-      doc='an iterable that will stream crash_ids needing copying',
-      default='socorro.processor.timemachine.PGQueryNewCrashSource',
-      from_string_converter=class_converter
-    )
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -67,26 +57,6 @@ class ProcessedCrashCopierApp(FetchTransformSaveApp):
             'new_crash_source.new_crash_source_class':
                 'socorro.processor.timemachine.PGQueryNewCrashSource'
         }
-
-    #--------------------------------------------------------------------------
-    def source_iterator(self):
-        """this iterator yields individual crash_ids from the source
-        crashstorage class's 'new_crash_ids' method."""
-        self.iterator = self.config.new_crash_source.new_crash_source_class(
-          self.config.new_crash_source,
-          'not-a-processor',
-          self.quit_check
-        )
-        for x in self.iterator():
-            if x is None:
-                self.config.logger.debug('yielding %s', x)
-                yield None
-            elif isinstance(x, tuple):
-                self.config.logger.debug('yielding %s', x)
-                yield x  # (args, kwargs) or None
-            else:
-                yield (x, {})  # ensure (args, kwargs) form
-
 
     #--------------------------------------------------------------------------
     def _transform(self, crash_id):
@@ -117,7 +87,7 @@ class ProcessedCrashCopierApp(FetchTransformSaveApp):
 
 
 #==============================================================================
-class RawAndProcessedCopierApp(ProcessedCrashCopierApp):
+class RawAndProcessedCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     """copy raw & processed crashes from a source to a destination"""
     app_name = 'raw_and_processed_crash_copier'
     app_version = '1.0'
