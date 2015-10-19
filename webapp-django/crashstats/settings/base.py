@@ -57,6 +57,8 @@ INSTALLED_APPS = (
 )
 
 
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
 funfactory_JINJA_CONFIG = JINJA_CONFIG  # that from funfactory
 
 
@@ -660,7 +662,7 @@ SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
 )
 
 # Config for when the models pull directly from socorro.external classes.
-# NOTE: This is overwritten, for tests in settings_test.py
+# NOTE: This is overwritten, for tests in crashstats.settings.test
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
     'elasticsearch': {
         # All of these settings are repeated with sensible defaults

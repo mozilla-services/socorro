@@ -1,11 +1,18 @@
-## This is automatically imported by test-utils to make sure tests are run in
-## a consistent way across different platforms and different developers.
+"""
+When you run tests with `./manage.py test` these settings are ALWAYS
+imported last and overrides any other base or environment variable
+settings.
+
+The purpose of this is to guarantee that certain settings are always
+set for test suite runs no matter what you do on the local system.
+
+Ultimately, it helps make sure you never actually use real URLs. For
+example, if a test incorrectly doesn't mock `requests.get()` for
+example, it shouldn't actually try to reach out to a real valid URL.
+"""
 
 CACHE_MIDDLEWARE = True
 CACHE_MIDDLEWARE_FILES = False
-
-import os
-os.environ['FORCE_DB'] = 'true'
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
@@ -15,7 +22,7 @@ BZAPI_BASE_URL = 'https://bugzilla.testrunner/rest'
 
 # by scrubbing this to something unreal, we can be certain the tests never
 # actually go out on the internet when `request.get` should always be mocked
-MWARE_BASE_URL = 'http://shouldnotactuallybeused'
+MWARE_BASE_URL = 'http://shouldnotactuallybeused.com'
 
 STATSD_CLIENT = 'django_statsd.clients.null'
 

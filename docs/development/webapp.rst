@@ -142,10 +142,10 @@ but it's not the ``.js``, ``.css`` and ``.less`` files you might be
 editing when you're doing development.
 
 To make the tests run much faster you'll first need to edit your
-``crashstats/settings/local.py`` and add these two lines::
+``.env`` and add these two lines::
 
-    COMPRESS_ENABLED = True
-    COMPRESS_OFFLINE = True
+    COMPRESS_ENABLED=True
+    COMPRESS_OFFLINE=True
 
 Now, before you run the tests you need to manually compress all
 static assets. To do that, run this command::

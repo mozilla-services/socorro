@@ -135,8 +135,6 @@ fancy-tag==0.2.0
 https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
 # sha256: UvCV-GFHuwtfYjva-VJVLReOu8XqyI2RsvWR09IsO4A
 funfactory==2.3.0
-# sha256: ih29HHrehSBq53DJzl9DCBoJjJX5lK8RP2Q06QBVmmc
-https://github.com/jbalogh/test-utils/archive/e42e031.zip#egg=test-utils
 # sha256: xJWo39CpwdPY7QISG7sotsnTTU2jCqk6fmOcDz17Bjk
 jingo==0.7.1
 # sha256: fjEbGTXZzUaSH2AmQWeicWQX00adBDuSIR7AwpQiKO8
