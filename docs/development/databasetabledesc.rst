@@ -454,10 +454,6 @@ replication_test
 
 These tables support scheduled tasks which are run in Socorro.
 
-crontabber_state
-	contains a JSON file and a timestamp with a backup of
-	the latest crontabber state information.
-
 report_partition_info
 	contains configuration information on how the partitioning cronjob
 	needs to partition the various partitioned database tables.
@@ -468,8 +464,3 @@ socorro_db_version
 
 socorro_db_version_history
 	contains the history of version upgrades of the current database.
-
-
-
-
-
