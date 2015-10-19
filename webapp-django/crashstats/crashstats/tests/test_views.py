@@ -5208,3 +5208,13 @@ class TestViews(BaseTestViews):
         response = self.client.get(reverse('api:documentation'))
         eq_(response.status_code, 200)
         ok_(api_url not in response.content)
+
+    def test_about_throttling(self):
+        # the old url used to NOT have a trailing slash
+        response = self.client.get('/about/throttling')
+        eq_(response.status_code, 301)
+        self.assertRedirects(
+            response,
+            reverse('crashstats:about_throttling'),
+            status_code=301
+        )

@@ -2616,3 +2616,10 @@ def graphics_report(request):
         response.write(payload)
         response['Content-Length'] = len(payload)
     return response
+
+
+@pass_default_context
+def about_throttling(request, default_context=None):
+    """Return a simple page that explains about how throttling works."""
+    context = default_context or {}
+    return render(request, 'crashstats/about_throttling.html', context)
