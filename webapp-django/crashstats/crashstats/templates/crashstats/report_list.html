@@ -1,180 +1,193 @@
 {% extends "crashstats/report_list_base.html" %}
 
 {% block site_css %}
-  {{ super() }}
-
-  {% compress css %}
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
-  {% endcompress %}
-
-  {% compress css %}
-  <link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
-  <link media="screen" href="{{ static('crashstats/css/accordion.less') }}" type="text/less" rel="stylesheet" />
-  {% endcompress %}
+{{ super() }}
+{% compress css %}
+<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
+<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
+<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
+{% endcompress %}
+{% compress css %}
+<link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
+<link media="screen" href="{{ static('crashstats/css/accordion.less') }}" type="text/less" rel="stylesheet" />
+{% endcompress %}
 {% endblock %}
-
 
 {% block report %}
 <div id="report-list" class="no-border ui-tabs ui-widget ui-widget-content ui-corner-all">
     <ul id="report-list-nav" class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
-        <li class="ui-state-default ui-corner-top"><a href="#sigsummary" class="ui-tabs-anchor"><span>Signature Summary</span></a></li>
-        <li class="ui-state-default ui-corner-top"><a href="#graph" class="ui-tabs-anchor"><span>Graph</span></a></li>
-        <li class="ui-state-default ui-corner-top"><a href="#table" class="ui-tabs-anchor"><span>Table</span></a></li>
-        <li class="ui-state-default ui-corner-top"><a href="#reports" class="ui-tabs-anchor"><span>Reports</span></a></li>
-        <li class="ui-state-default ui-corner-top"><a href="#bugzilla" class="ui-tabs-anchor"><span>Bugzilla</span></a></li>
-        <li class="ui-state-default ui-corner-top"><a href="#comments" class="ui-tabs-anchor"><span>Comments</span></a></li>
-        <li class="ui-state-default ui-corner-top"><a id="correlations-report-list" href="#correlations" class="ui-tabs-anchor"><span>Correlations</span></a></li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#sigsummary" class="ui-tabs-anchor">
+                <span>Signature Summary</span>
+            </a>
+        </li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#graph" class="ui-tabs-anchor">
+                <span>Graph</span>
+            </a>
+        </li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#table" class="ui-tabs-anchor">
+                <span>Table</span>
+            </a>
+        </li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#reports" class="ui-tabs-anchor">
+                <span>Reports</span>
+            </a>
+        </li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#bugzilla" class="ui-tabs-anchor">
+                <span>Bugzilla</span>
+            </a>
+        </li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#comments" class="ui-tabs-anchor">
+                <span>Comments</span>
+            </a>
+        </li>
+        <li class="ui-state-default ui-corner-top">
+            <a id="correlations-report-list" href="#correlations" class="ui-tabs-anchor">
+                <span>Correlations</span>
+            </a>
+        </li>
         {% if request.user.has_perm('crashstats.view_pii') %}
-        <li class="ui-state-default ui-corner-top"><a href="#sigurls" class="ui-tabs-anchor"><span>URLs</span></a></li>
+        <li class="ui-state-default ui-corner-top">
+            <a href="#sigurls" class="ui-tabs-anchor">
+                <span>URLs</span>
+            </a>
+        </li>
         {% endif %}
     </ul>
 
     <div id="sigsummary" data-url="{{ url('crashstats:signature_summary') }}?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date | urlencode }}">
 
-       <p class="loading-placeholder">
-         <img src="{{ static('img/loading.png') }}" alt="Loading">
-         Loading signature summary...
-       </p>
-
-       <p class="loading-failed">
-         Unable to load signature summary. Please try again later.
-       </p>
-
-      <div class="inner">
-      {# the signature_summary.html doesn't contain any generated data so no point in loading it as a partial #}
-      {% include "crashstats/signature_summary.html" %}
-      </div>
-
-    </div>
-
-    <div id="graph" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}"
-         data-jsonurl="{{ url('crashstats:adu_by_signature_json') }}"
-         data-signature="{{ signature }}"
-         data-product="{{ product }}">
-
-      <p class="loading-placeholder">
-        <img src="{{ static('img/loading.png') }}" alt="Loading">
-        Loading content...
-      </p>
-
-       <p class="loading-failed">
-         Unable to load graph data. Please try again later.
-       </p>
-
-       <div class="inner"></div>
-
-    </div>
-
-    <div id="table" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'table') }}">
-
-       <p class="loading-placeholder">
-         <img src="{{ static('img/loading.png') }}" alt="Loading">
-         Loading build table...
-       </p>
-       <p class="loading-failed">
-         Unable to load build table. Please try again later.
-       </p>
-
-       <div class="inner"></div>
-
-    </div>
-
-    <div id="reports" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'reports') }}">
-
-       <p class="loading-placeholder">
-         <img src="{{ static('img/loading.png') }}" alt="Loading">
-         Loading reports...
-       </p>
-       <p class="loading-failed">
-         Unable to load reports. Please try again later.
-       </p>
-
-       {% include "crashstats/reports_columns_form_hint.html" %}
-
-       <div class="inner"></div>
-
-       {% include "crashstats/reports_columns_form.html" %}
-
-    </div><!-- /reports -->
-
-    <div id="bugzilla" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'bugzilla') }}">
-
-       <p class="loading-placeholder">
-         <img src="{{ static('img/loading.png') }}" alt="Loading">
-         Loading bugs...
-       </p>
-       <p class="loading-failed">
-         Unable to load bugs. Please try again later.
-       </p>
-
-       <div class="inner"></div>
-
-    </div><!-- /bugzilla -->
-
-    <div id="comments" class="ui-tabs-hide"
-          data-partial-url="{{ url('crashstats:report_list_partial', 'comments') }}">
-
-       <p class="loading-placeholder">
-         <img src="{{ static('img/loading.png') }}" alt="Loading">
-         Loading comments...
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading signature summary...
         </p>
 
-       <div class="inner"></div>
+        <p class="loading-failed">
+            Unable to load signature summary. Please try again later.
+        </p>
+
+        <div class="inner">
+            {# the signature_summary.html doesn't contain any generated data so no point in loading it as a partial #} {% include "crashstats/signature_summary.html" %}
+        </div>
 
     </div>
 
-    <div id="correlations" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'correlations') }}">
+    <div id="graph" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}" data-jsonurl="{{ url('crashstats:adu_by_signature_json') }}" data-signature="{{ signature }}" data-product="{{ product }}">
 
-      <p class="loading-placeholder">
-        <img src="{{ static('img/loading.png') }}" alt="Loading">
-        Loading correlations...
-      </p>
-      <p class="loading-failed">
-        Unable to load correlations. Please try again later.
-      </p>
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading content...
+        </p>
 
-      <div class="inner"></div>
+        <p class="loading-failed">
+            Unable to load graph data. Please try again later.
+        </p>
 
-    </div><!-- /correlation -->
+        <div class="inner"></div>
+
+    </div>
+
+    <div id="table" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'table') }}">
+
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading build table...
+        </p>
+        <p class="loading-failed">
+            Unable to load build table. Please try again later.
+        </p>
+
+        <div class="inner"></div>
+
+    </div>
+
+    <div id="reports" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'reports') }}">
+
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading reports...
+        </p>
+        <p class="loading-failed">
+            Unable to load reports. Please try again later.
+        </p>
+
+        {% include "crashstats/reports_columns_form_hint.html" %}
+
+        <div class="inner"></div>
+
+        {% include "crashstats/reports_columns_form.html" %}
+
+    </div>
+    <!-- /reports -->
+
+    <div id="bugzilla" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'bugzilla') }}">
+
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading bugs...
+        </p>
+        <p class="loading-failed">
+            Unable to load bugs. Please try again later.
+        </p>
+
+        <div class="inner"></div>
+
+    </div>
+    <!-- /bugzilla -->
+
+    <div id="comments" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'comments') }}">
+
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading comments...
+        </p>
+
+        <div class="inner"></div>
+
+    </div>
+
+    <div id="correlations" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'correlations') }}">
+
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading correlations...
+        </p>
+        <p class="loading-failed">
+            Unable to load correlations. Please try again later.
+        </p>
+
+        <div class="inner"></div>
+
+    </div>
+    <!-- /correlation -->
 
     {% if request.user.has_perm('crashstats.view_pii') %}
-    <div id="sigurls" class="ui-tabs-hide"
-         data-partial-url="{{ url('crashstats:report_list_partial', 'sigurls') }}">
+    <div id="sigurls" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'sigurls') }}">
 
-      <p class="loading-placeholder">
-        <img src="{{ static('img/loading.png') }}" alt="Loading">
-	Loading signature URLs...
-      </p>
-      <p class="loading-failed">
-        Unable to load signature URLs. Please try again later.
-      </p>
+        <p class="loading-placeholder">
+            <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading signature URLs...
+        </p>
+        <p class="loading-failed">
+            Unable to load signature URLs. Please try again later.
+        </p>
 
-      <div class="inner"></div>
+        <div class="inner"></div>
 
-    </div><!-- /sigurls -->
+    </div>
+    <!-- /sigurls -->
     {% endif %}
 
 </div>
 
 {% endblock %}
 
+
 {% block site_js %}
 {{ super() }}
-
 <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
 
 {% compress js %}
 <script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
 <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
 {% endcompress %}
-
 {% compress js %}
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
 <script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
@@ -194,11 +207,11 @@
 {% endcompress %}
 
 <script type="text/javascript">
-var SocReport = {
-    base: '{{ url('crashstats:correlations_json') }}',
-    product: '{{ product }}',
-    signature: '{{ signature|urlencode }}'
-};
+    var SocReport = {
+        base: '{{ url('crashstats:correlations_json') }}',
+        product: '{{ product }}',
+        signature: '{{ signature|urlencode }}'
+    };
 </script>
 
 {% endblock %}
