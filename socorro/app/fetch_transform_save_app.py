@@ -86,15 +86,6 @@ class FetchTransformSaveApp(App):
         default='forever'
     )
 
-    ###########################################################################
-    ### TODO: add a feature where clients of this class may register a waiting
-    ### function.  The MainThread will run all the registered waiting
-    ### functions at their configured interval.  A first application of this
-    ### feature will be to allow periodic reloading of config data from a
-    ### database.  Specifically, the skip list rules could be reloaded without
-    ### having to restart the processor.
-    ###########################################################################
-
     #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
@@ -234,10 +225,18 @@ class FetchTransformSaveApp(App):
             for crash_id in self._basic_iterator():
                 if self._filter_disallowed_values(crash_id):
                     continue
+                if crash_id is None:
+                    # it's ok to yield None, however, we don't want it to
+                    # be counted as a yielded value
+                    yield crash_id
+                    continue
                 if i == int(self.config.number_of_submissions):
+                    # break out of inner loop, abandoning the wrapped iter
                     break
                 i += 1
                 yield crash_id
+            # repeat the quit test, to break out of the outer loop and
+            # if necessary, prevent recycling the wrapped iter
             if i == int(self.config.number_of_submissions):
                 break
 
@@ -357,9 +356,13 @@ class FetchTransformSaveApp(App):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
         self.config.logger.info('installing signal handers')
+        # set up the signal handler for dealing with SIGTERM. the target should
+        # be this app instance so the signal handler can reach in and set the
+        # quit flag to be True.  See the 'respond_to_SIGTERM' method for the
+        # more information
         respond_to_SIGTERM_with_logging = partial(
             respond_to_SIGTERM,
-            logger=self.config.logger
+            target=self
         )
         signal.signal(signal.SIGTERM, respond_to_SIGTERM_with_logging)
         self.task_manager = \
@@ -385,6 +388,7 @@ class FetchTransformSaveApp(App):
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self._cleanup()
+        self.config.logger.info('done.')
 
 
 #==============================================================================
