@@ -245,10 +245,19 @@ class ThreadedTaskManager(TaskManager):
         except KeyboardInterrupt:
             self.logger.debug('queuingThread gets quit request')
         finally:
-            self.quit = True
             self.logger.debug("we're quitting queuingThread")
             self._kill_worker_threads()
             self.logger.debug("all worker threads stopped")
+            # now that we've killed all the workers, we can set the quit flag
+            # to True.  This will cause any other threads to die and shut down
+            # the application.  Originally, the setting of this flag was at the
+            # start of this "finally" block.  However, that meant that the
+            # workers would abort their currently running jobs.  In the case of
+            # of the natural ending of an application where an iterater ran to
+            # exhaustion, the workers would die before completing their tasks.
+            # Moving the setting of the flag to this location allows the
+            # workers to finish and then the app shuts down.
+            self.quit = True
 
     #--------------------------------------------------------------------------
     def executor_identity(self):
@@ -328,6 +337,9 @@ class TaskThread(threading.Thread):
             while True:
                 function, arguments = self.task_queue.get()
                 if function is None:
+                    # this allows us to watch the threads die and identify
+                    # threads that may be hanging or deadlocked
+                    self.config.logger.info('quits')
                     break
                 if quit_request_detected:
                     continue

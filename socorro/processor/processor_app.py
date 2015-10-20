@@ -74,12 +74,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         }
 
     #--------------------------------------------------------------------------
-    def quit_check(self):
-        """the quit polling function.  This method, used as a callback, will
-        propagate to any thread that loops."""
-        self.task_manager.quit_check()
-
-    #--------------------------------------------------------------------------
     def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
@@ -181,7 +175,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         """when  the processor shutsdown, this function cleans up"""
         if self.companion_process:
             self.companion_process.close()
-        self.iterator.close()
 
 
 if __name__ == '__main__':

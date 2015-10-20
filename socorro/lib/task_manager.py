@@ -24,7 +24,7 @@ def default_iterator():
         yield None
 
 #------------------------------------------------------------------------------
-def respond_to_SIGTERM(signal_number, frame, logger=None):
+def respond_to_SIGTERM(signal_number, frame, target=None):
     """ these classes are instrumented to respond to a KeyboardInterrupt by
     cleanly shutting down.  This function, when given as a handler to for
     a SIGTERM event, will make the program respond to a SIGTERM as neatly
@@ -39,10 +39,18 @@ def respond_to_SIGTERM(signal_number, frame, logger=None):
     parameters:
         signal_number - unused in this function but required by the api.
         frame - unused in this function but required by the api.
+        target - an instance of a class that has a member called 'task_manager'
+                 that is a derivative of the TaskManager class below.
     """
-    if logger:
-        logger.info('detected SIGTERM')
-    raise KeyboardInterrupt
+    if target:
+        target.config.logger.info('detected SIGTERM')
+        # by setting the quit flag to true, any calls to the 'quit_check'
+        # method that is so liberally passed around in this framework will
+        # result in raising the quit exception.  The current quit exception
+        # is KeyboardInterrupt
+        target.task_manager.quit = True
+    else:
+        raise KeyboardInterrupt
 
 
 #==============================================================================
