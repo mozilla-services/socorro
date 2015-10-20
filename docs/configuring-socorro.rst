@@ -7,7 +7,7 @@ Storing configuration in Consul
 -------------------------------
 
 Socorro apps get their configuration from environment variables. We suggest
-using Consul to hold configuration: 
+using Consul to hold configuration:
 https://consul.io/intro/getting-started/install.html
 
 Consul must be running in order for Socorro apps to start up and access
@@ -36,11 +36,13 @@ Below is the minimum viable configuration to get collection working on a
 single node:
 
 .. code-block:: bash
+    # Tell the Socorro app dispatcher which collector App to use
+    application=socorro.collector.collector_app.CollectorApp
 
     # Run collector in WSGI mode, instead of the default dev server
     web_server__wsgi_server_class='socorro.webapi.servers.WSGIServer'
 
-Put this into a file named "collector.conf" in your socorro-config folder. 
+Put this into a file named "collector.conf" in your socorro-config folder.
 
 Now, configure processor:
 
@@ -65,7 +67,7 @@ or you can change this location if necessary:
 Make sure to change `@@@PATH_TO_YOUR_SYMBOLS@@@` to the real absolute path
 to your symbols.
 
-Put this into a file named "processor.conf" in your socorro-config folder. 
+Put this into a file named "processor.conf" in your socorro-config folder.
 
 Now load the contents of your socorro-config directory into Consul::
 
@@ -73,7 +75,7 @@ Now load the contents of your socorro-config directory into Consul::
   sudo setup-socorro.sh consul
 
 Note that Consul also has a Web UI you can use to get/set keys if you prefer,
-or you can use the REST interface directly. See the consul docs for more 
+or you can use the REST interface directly. See the consul docs for more
 information: https://consul.io
 
 You can see that the keys are getting set in the environment correctly
@@ -95,7 +97,7 @@ Configure Nginx
 Public-facing services like socorro-collector should be fronted by Nginx.
 
 This is so we can run Socorro components under the
-socorro user and not need to listen on privileged port 80, and also to 
+socorro user and not need to listen on privileged port 80, and also to
 protect from slow clients. Nginx is also more efficient at handling static
 assets.
 
@@ -150,7 +152,7 @@ Then, configure Socorro Processor to use Elasticsearch:
   destination__crashstorage_class='socorro.external.es.crashstorage.ESCrashStorage'
   resource__elasticsearch__elasticsearch_index='socorro_reports'
 
-Put this into the "processor.conf" in your socorro-config folder. 
+Put this into the "processor.conf" in your socorro-config folder.
 
 Next, set the Elasticsearch hostname:
 
@@ -170,7 +172,7 @@ No need to restart socorro-processor, envconsul will take care of this.
 
 Now processed crashes will also be written to Elasticsearch.
 
-You can download the latest version of Kibana from 
+You can download the latest version of Kibana from
 https://www.elastic.co/products/kibana and use it to explore the data.
 
 Note - you will want to use the "socorro_reports" index, configured above,
@@ -183,7 +185,7 @@ You can see an example of how Mozilla configures a fully distributed Socorro
 in AWS using Consul at https://github.com/mozilla/socorro-infra/
 
 Socorro has a very powerful and expressive configuration system, and can
-be configured to read from and write to a number of different data stores 
+be configured to read from and write to a number of different data stores
 (S3, Elasticsearch, HBase, PostgreSQL) and use queues (RabbitMQ)
 
 For instance, to have processor store crashes to both to the filesystem and to
@@ -200,7 +202,7 @@ ElasticSearch:
   # Store in Elasticsearch second
   destination__storage1__crashstorage_class='socorro.external.es.crashstorage.ESCrashStorage'
 
-Put this into the "processor.conf" in your socorro-config folder. 
+Put this into the "processor.conf" in your socorro-config folder.
 
 Now load the contents of your socorro-config directory into Consul::
 
@@ -224,7 +226,7 @@ support for Processor to put both unprocessed and processed crashes into S3:
   # Store in Elasticsearch second
   destination__storage1__crashstorage_class='socorro.external.es.crashstorage.ESCrashStorage'
 
-Put this into the "processor.conf" in your socorro-config folder. 
+Put this into the "processor.conf" in your socorro-config folder.
 
 Next, set the AWS bucket name, access key and secret access key:
 
