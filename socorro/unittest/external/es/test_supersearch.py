@@ -7,6 +7,7 @@ from nose.tools import assert_raises, eq_, ok_
 
 from socorro.external import BadArgumentError
 from socorro.external.es.supersearch import SuperSearch
+from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib import datetimeutil, search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
@@ -20,6 +21,12 @@ from socorro.unittest.external.es.base import (
 # logging.getLogger('requests').setLevel(logging.ERROR)
 
 
+class SuperSearchWithFields(SuperSearch):
+    def get(self, **kwargs):
+        kwargs['_fields'] = SuperSearchFields(config=self.config).get_fields()
+        return super(SuperSearchWithFields, self).get(**kwargs)
+
+
 class IntegrationTestSuperSearch(ElasticsearchTestCase):
     """Test SuperSearch with an elasticsearch database containing fake
     data. """
@@ -27,7 +34,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
     def setUp(self):
         super(IntegrationTestSuperSearch, self).setUp()
 
-        self.api = SuperSearch(config=self.config)
+        self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()
 
     def test_get_indices(self):
@@ -44,7 +51,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         eq_(res, ['socorro_integration_test_reports'])
 
         config = self.get_base_config(es_index='socorro_%Y%W')
-        api = SuperSearch(config=config)
+        api = SuperSearchWithFields(config=config)
 
         dates = [
             search_common.SearchParam('date', now, '<'),
@@ -1489,7 +1496,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
     def test_get_against_nonexistent_index(self):
         config = self.get_base_config(es_index='socorro_test_reports_%W')
-        api = SuperSearch(config=config)
+        api = SuperSearchWithFields(config=config)
         params = {
             'date': ['>2000-01-01T00:00:00', '<2000-01-10T00:00:00']
         }

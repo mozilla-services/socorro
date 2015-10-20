@@ -107,6 +107,12 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
 }
 
 
+class SearchBaseWithFields(SearchBase):
+    def get_parameters(self, **kwargs):
+        kwargs['_fields'] = SUPERSEARCH_FIELDS_MOCKED_RESULTS
+        return super(SearchBaseWithFields, self).get_parameters(**kwargs)
+
+
 def _get_config_manager():
     required_config = Namespace()
 
@@ -128,9 +134,8 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         args = {
@@ -181,9 +186,8 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters_with_not(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         args = {
@@ -208,9 +212,8 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters_date_defaults(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         now = datetimeutil.utc_now()
@@ -266,9 +269,8 @@ class TestSearchBase(TestCase):
 
     def test_get_parameters_date_max_range(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         assert_raises(
@@ -279,9 +281,8 @@ class TestSearchBase(TestCase):
 
     def test_process_type_parameter_correction(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         args = {
@@ -296,9 +297,8 @@ class TestSearchBase(TestCase):
 
     def test_hang_type_parameter_correction(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         args = {
@@ -319,9 +319,8 @@ class TestSearchBase(TestCase):
 
     def test_version_parameter_correction(self):
         with _get_config_manager().context() as config:
-            search = SearchBase(
+            search = SearchBaseWithFields(
                 config=config,
-                fields=SUPERSEARCH_FIELDS_MOCKED_RESULTS,
             )
 
         args = {

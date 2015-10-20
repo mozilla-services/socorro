@@ -15,6 +15,7 @@ SUPERSEARCH_META_PARAMS = (
     ('_columns', list),
     ('_facets', list),
     ('_facets_size', int),
+    '_fields',
     ('_results_offset', int),
     ('_results_number', int),
     '_return_query',
@@ -72,35 +73,35 @@ class SuperSearch(models.SocorroMiddleware):
     )
 
     def __init__(self):
-        all_fields = SuperSearchFields().get()
+        self.all_fields = SuperSearchFields().get()
 
         # These fields contain lists of other fields. Later on, we want to
         # make sure that none of those listed fields are restricted.
         self.parameters_listing_fields = list(PARAMETERS_LISTING_FIELDS)
 
         self.required_params = tuple(
-            (x['name'], list) for x in all_fields.values()
+            (x['name'], list) for x in self.all_fields.values()
             if x['is_exposed']
             and not x['permissions_needed']
             and x['is_mandatory']
         )
 
-        self.histogram_fields = self._get_extended_params(all_fields)
+        self.histogram_fields = self._get_extended_params()
         for field in self.histogram_fields:
             if '_histogram.' in field[0]:
                 self.parameters_listing_fields.append(field[0])
 
         self.possible_params = tuple(
-            (x['name'], list) for x in all_fields.values()
+            (x['name'], list) for x in self.all_fields.values()
             if x['is_exposed']
             and not x['permissions_needed']
             and not x['is_mandatory']
         ) + SUPERSEARCH_META_PARAMS + tuple(self.histogram_fields)
 
-    def _get_extended_params(self, all_fields):
+    def _get_extended_params(self):
         # Add histogram fields for all 'date' or 'number' fields.
         histogram_fields = []
-        for field in all_fields.values():
+        for field in self.all_fields.values():
             if (
                 field['is_exposed']
                 and not field['permissions_needed']
@@ -126,14 +127,13 @@ class SuperSearch(models.SocorroMiddleware):
     def get(self, **kwargs):
         # Sanitize all parameters listing fields and make sure no private data
         # is requested.
-        all_fields = SuperSearchFields().get()
 
         # Initialize the list of allowed fields with all the fields we know
         # that are returned and do not require any permission.
         allowed_fields = set(
-            x for x in all_fields
-            if all_fields[x]['is_returned']
-            and not all_fields[x]['permissions_needed']
+            x for x in self.all_fields
+            if self.all_fields[x]['is_returned']
+            and not self.all_fields[x]['permissions_needed']
         )
 
         # Extend that list with the special fields, like `_histogram.*`.
@@ -145,9 +145,9 @@ class SuperSearch(models.SocorroMiddleware):
 
             field_name = histogram[len('_histogram.'):]
             if (
-                field_name in all_fields
-                and all_fields[field_name]['is_returned']
-                and not all_fields[field_name]['permissions_needed']
+                field_name in self.all_fields
+                and self.all_fields[field_name]['is_returned']
+                and not self.all_fields[field_name]['permissions_needed']
             ):
                 allowed_fields.add(histogram)
 
@@ -161,6 +161,9 @@ class SuperSearch(models.SocorroMiddleware):
             ]
             kwargs[param] = filtered_values
 
+        # SuperSearch requires that the list of fields be passed to it.
+        kwargs['_fields'] = self.all_fields
+
         return super(SuperSearch, self).get(**kwargs)
 
 
@@ -173,28 +176,31 @@ class SuperSearchUnredacted(SuperSearch):
     API_CLEAN_SCRUB = None
 
     def __init__(self):
-        all_fields = SuperSearchFields().get()
+        self.all_fields = SuperSearchFields().get()
 
         self.required_params = tuple(
-            (x['name'], list) for x in all_fields.values()
+            (x['name'], list) for x in self.all_fields.values()
             if x['is_exposed'] and x['is_mandatory']
         )
 
-        histogram_fields = self._get_extended_params(all_fields)
+        histogram_fields = self._get_extended_params()
 
         self.possible_params = tuple(
-            (x['name'], list) for x in all_fields.values()
+            (x['name'], list) for x in self.all_fields.values()
             if x['is_exposed'] and not x['is_mandatory']
         ) + SUPERSEARCH_META_PARAMS + histogram_fields
 
         permissions = {}
-        for field_data in all_fields.values():
+        for field_data in self.all_fields.values():
             for perm in field_data['permissions_needed']:
                 permissions[perm] = True
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
 
     def get(self, **kwargs):
+        # SuperSearch requires that the list of fields be passed to it.
+        kwargs['_fields'] = self.all_fields
+
         # Notice that here we use `SuperSearch` as the class, so that we
         # shortcut the `get` function in that class. The goal is to avoid
         # the _facets field cleaning.
