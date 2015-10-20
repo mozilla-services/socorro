@@ -9,6 +9,7 @@ from elasticsearch.exceptions import NotFoundError
 
 from socorro.external import (
     BadArgumentError,
+    MissingArgumentError,
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.lib import datetimeutil
@@ -26,18 +27,14 @@ class SuperSearch(SearchBase):
             self.config.elasticsearch
         )
 
-        self.all_fields = SuperSearchFields(config=self.config).get_fields()
+        super(SuperSearch, self).__init__(*args, **kwargs)
 
+    def build_fields(self):
         # Create a map to associate a field's name in the database to its
         # exposed name (in the results and facets).
         self.database_name_to_field_name_map = dict(
             (x['in_database_name'], x['name'])
             for x in self.all_fields.values()
-        )
-
-        kwargs.update(fields=self.all_fields)
-        super(SuperSearch, self).__init__(
-            *args, **kwargs
         )
 
     def get_connection(self):
@@ -195,6 +192,12 @@ class SuperSearch(SearchBase):
         The list of accepted parameters (with types and default values) is in
         the database and can be accessed with the super_search_fields service.
         """
+        # Require that the list of fields be passed.
+        if not kwargs.get('_fields'):
+            raise MissingArgumentError('_fields')
+        self.all_fields = kwargs['_fields']
+        self.build_fields()
+
         # Filter parameters and raise potential errors.
         params = self.get_parameters(**kwargs)
 

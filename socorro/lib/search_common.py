@@ -99,14 +99,10 @@ class SearchBase(object):
             context = self.context
         self.config = context
 
+    def build_filters(self, fields):
         self.filters = []
         self.histogram_fields = []
 
-        fields = kwargs.get('fields')
-        if fields:
-            self.build_filters(fields)
-
-    def build_filters(self, fields):
         for field in fields.values():
             self.filters.append(SearchFilter(
                 field['name'],
@@ -139,6 +135,11 @@ class SearchBase(object):
 
     def get_parameters(self, **kwargs):
         parameters = {}
+
+        fields = kwargs.get('_fields')
+        assert fields
+        if fields:
+            self.build_filters(fields)
 
         for param in self.filters:
             values = kwargs.get(param.name, param.default)
