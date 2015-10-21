@@ -4,6 +4,13 @@ import urllib
 import jinja2
 from jingo import register
 
+from django.contrib.staticfiles.storage import staticfiles_storage
+
+
+@register.function
+def static(path):
+    return staticfiles_storage.url(path)
+
 
 @register.function
 @jinja2.contextfunction
