@@ -10,6 +10,8 @@ from dateutil import tz
 from configman import Namespace
 from crontabber.base import BaseCronApp
 from crontabber.mixins import with_postgres_transactions
+
+from socorro.lib.datetimeutil import utc_now
 from socorro.external.postgresql.dbapi2_util import (
     single_row_sql,
     execute_query_fetchall,
@@ -56,17 +58,23 @@ class BugzillaCronApp(BaseCronApp):
         'days_into_past',
         default=0,
         doc='number of days to look into the past for bugs (0 - use last '
-            'run time)')
+            'run time, >0 ignore when it last ran successfully)')
 
     def run(self):
-        # record_associations
-        try:
-            # KeyError if it's never run successfully
-            # TypeError if self.job_information is None
-            last_run = self.job_information['last_success']
-        except (KeyError, TypeError):
-            last_run = (datetime.datetime.now(tz.gettz('UTC')) -
-                        datetime.timedelta(days=self.config.days_into_past))
+        # if this is non-zero, we use it.
+        if self.config.days_into_past:
+            last_run = (
+                utc_now() -
+                datetime.timedelta(days=self.config.days_into_past)
+            )
+        else:
+            try:
+                # KeyError if it's never run successfully
+                # TypeError if self.job_information is None
+                last_run = self.job_information['last_success']
+            except (KeyError, TypeError):
+                # basically, the "virgin run" of this job
+                last_run = utc_now()
 
         # bugzilla runs on PST, so we need to communicate in its time zone
         PST = tz.gettz('PST8PDT')
