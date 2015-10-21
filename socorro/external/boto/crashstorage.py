@@ -17,6 +17,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.lib.util import DotDict
+from socorro.lib.converters import change_default
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
@@ -470,14 +471,21 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
        bug 1066058
     """
 
-    # intially we wanted the support reason class to use a different bucket,
-    # but the following override interferes with the base class.  I suspect
-    # we'll end up using a prefix instead of differing bucket name in the
-    # future.  Leaving this code in place for the moment
-    #BotoS3CrashStorage.required_config.bucket_name.set_default(
-        #val='mozilla-support-reason',
-        #force=True
-    #)
+    # intially we wanted the support reason class to use a different bucket
+    # I suspect that we'll end up using a prefix instead of differing bucket
+    # name in the future.  Leaving this code in place for the moment
+
+##    required_config = Namespace()
+##    required_config.bucket_name = change_default(
+##        BotoS3CrashStorage,
+##        'bucket_name',
+##        'mozilla-support-reason'
+##    )
+##    required_config.prefix = change_default(
+##        BotoS3CrashStorage,
+##        'prefix',
+##        'mozilla-support-reason'
+##    )
 
     #--------------------------------------------------------------------------
     @staticmethod

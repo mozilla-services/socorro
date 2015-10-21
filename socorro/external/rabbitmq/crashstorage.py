@@ -20,6 +20,7 @@ from socorro.external.rabbitmq.connection_context import (
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
 )
+from socorro.lib.converters import change_default
 
 
 #==============================================================================
@@ -286,10 +287,15 @@ class RabbitMQCrashStorage(CrashStorageBase):
 
 #==============================================================================
 class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
-    RabbitMQCrashStorage.required_config.routing_key.set_default(
-        'socorro.reprocessing',
-        force=True
+    required_config = Namespace()
+    required_config.routing_key = change_default(
+        RabbitMQCrashStorage,
+        'routing_key',
+        'socorro.reprocessing'
     )
-    RabbitMQCrashStorage.required_config.filter_on_legacy_processing \
-        .set_default('socorro.reprocessing', force=True)
+    required_config.filter_on_legacy_processing = change_default(
+        RabbitMQCrashStorage,
+        'filter_on_legacy_processing',
+        False
+    )
 
