@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,19 +10,18 @@ function techo(){
 }
 
 . /etc/socorro/socorrorc
-. /etc/socorro/socorro-monitor.conf
 
 techo "lock cron_libraries"
 NAME=`basename $0 .sh`
 lock $NAME
 
-PGPASSWORD=$databasePassword
+PGPASSWORD=$SECRETS_POSTGRESQL_DATABASE_PASSWORD
 export PGPASSWORD
 
 DATE=`date '+%Y%m%d'`
 WEEK=`date -d 'last monday' '+%Y%m%d'`
 
-TMPDIR=`mktemp -d`
+TMPDIR=`mktemp -d -p /mnt/crashanalysis/crash_analysis/tmp`
 
 # gnu date does not seem to be able to do 'last monday' with a relative date
 if [ -n "$1" ]
@@ -49,12 +48,12 @@ for I in Firefox Thunderbird SeaMonkey
 do
   techo "Phase 1: Product: $I"
   techo "Running psql query for version list."
-  VERSIONS=`psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select version, count(*) as counts from reports_${WEEK}  where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' group by version order by counts desc limit 3" | awk '{print $1}'`
+  VERSIONS=`psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "select version, count(*) as counts from reports_${WEEK}  where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' group by version order by counts desc limit 3" | awk '{print $1}'`
   for J in $VERSIONS
   do
     techo "Phase 1: Version: $J start"
     techo "Pulling processed JSON from PostgreSQL"
-    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /home/socorro/tar_crashes.py $TMPDIR/${I}_${J}.tar
+    psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /data/socorro/application/scripts/crons/tar_crashes.py $TMPDIR/${I}_${J}.tar
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
@@ -79,7 +78,7 @@ do
   do
     techo "Phase 1: Version: $J start"
     techo "Pulling processed JSON from PostgreSQL"
-    psql -t -U $databaseUserName -h $databaseHost $databaseName -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /home/socorro/tar_crashes.py $TMPDIR/${I}_${J}.tar
+    psql -t -U $SECRETS_POSTGRESQL_DATABASE_USERNAME -h $RESOURCE_POSTGRESQL_DATABASE_HOSTNAME breakpad -c "copy (select processed_crashes.uuid, processed_crash from processed_crashes join reports_${WEEK} on (reports_${WEEK}.uuid::uuid = processed_crashes.uuid) where completed_datetime < $SQL_DATE and completed_datetime > ($SQL_DATE - interval '24 hours') and product = '${I}' and version = '${J}') to stdout with csv quote e'\x01' delimiter e'\x02'" | /data/socorro/application/scripts/crons/tar_crashes.py $TMPDIR/${I}_${J}.tar
     techo "per-crash-core-count.py > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt"
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f $TMPDIR/${I}_${J}.tar > $TMPDIR/${DATE}_${I}_${J}-core-counts.txt
     techo "per-crash-interesting-modules.py > $TMPDIR/${DATE}_${I}_${J}-interesting-modules.txt"
