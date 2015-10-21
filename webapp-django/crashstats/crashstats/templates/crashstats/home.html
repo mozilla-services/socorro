@@ -68,15 +68,6 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
                         </li>
                         <li>
                             <a href="{{ url(
-                                'crashstats:topchangers',
-                                product=product,
-                                versions=version.version,
-                            ) }}?days={{days}}">
-                                Top Changers
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url(
                                 'crashstats:topcrasher',
                                 product=product,
                                 versions=version.version,
