@@ -4,6 +4,20 @@
 
 {% block content %}
 <div id="mainbody">
+    <div class="panel">
+        <header class="title">
+            <h2><img src="{{ static('img/3rdparty/silk/error.png') }}"> Deprecation notice</h2>
+        </header>
+
+        <div class="body">
+            <p>
+                Dear user, this page is being deprecated and will be removed soon.
+                For more information, please read
+                <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1185055">bug 1185055</a>.
+            </p>
+        </div>
+    </div>
+
     <div class="page-heading">
         <h2>Top Changers</h2>
         <ul class="options">
