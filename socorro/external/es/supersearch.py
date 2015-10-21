@@ -29,7 +29,7 @@ class SuperSearch(SearchBase):
 
         super(SuperSearch, self).__init__(*args, **kwargs)
 
-    def build_fields(self):
+    def _build_fields(self):
         # Create a map to associate a field's name in the database to its
         # exposed name (in the results and facets).
         self.database_name_to_field_name_map = dict(
@@ -196,7 +196,7 @@ class SuperSearch(SearchBase):
         if not kwargs.get('_fields'):
             raise MissingArgumentError('_fields')
         self.all_fields = kwargs['_fields']
-        self.build_fields()
+        self._build_fields()
 
         # Filter parameters and raise potential errors.
         params = self.get_parameters(**kwargs)

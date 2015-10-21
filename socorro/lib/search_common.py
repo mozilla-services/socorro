@@ -136,7 +136,7 @@ class SearchBase(object):
     def get_parameters(self, **kwargs):
         parameters = {}
 
-        fields = kwargs.get('_fields')
+        fields = kwargs['_fields']
         assert fields
         if fields:
             self.build_filters(fields)
