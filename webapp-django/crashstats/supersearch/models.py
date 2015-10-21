@@ -205,6 +205,8 @@ class SuperSearchFields(models.SocorroMiddleware):
 
     implementation = super_search_fields.SuperSearchFields
 
+    API_WHITELIST = None
+
     # The only reason this data will change is if a user changes it via the UI.
     # If that happens, the cache will be reset automatically. We can thus
     # increase the cache a lot here.

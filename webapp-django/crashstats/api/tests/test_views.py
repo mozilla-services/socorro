@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 
 import mock
+import pyquery
 from nose.tools import eq_, ok_
 
 from socorro.external import BadArgumentError, MissingArgumentError
@@ -54,9 +55,11 @@ class TestDocumentationViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+        doc = pyquery.PyQuery(response.content)
+
         from crashstats.api import views
-        for each in views.BLACKLIST:
-            ok_(each not in response.content)
+        for elt in doc('#mainbody .panel .title h2 a'):
+            ok_(elt.text not in views.BLACKLIST)
 
 
 class TestViews(BaseTestViews):
