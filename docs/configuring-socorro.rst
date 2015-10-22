@@ -51,6 +51,7 @@ Now, configure processor:
 
     new_crash_source__crashstorage_class='socorro.external.fs.crashstorage.FSDatedPermanentStorage'
     source__crashstorage_class='socorro.external.fs.crashstorage.FSPermanentStorage'
+    new_crash_source__new_crash_source_class='socorro.external.fs.fs_new_crash_source.FSNewCrashSource'
 
 Put this into a file named "processor.conf" in your socorro-config folder.
 
