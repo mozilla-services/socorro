@@ -26,7 +26,7 @@ import sys
 #
 EXCEPTIONS = (
     # has a exceptional use of `...import *`
-    'settings/base.py:4:',
+    'settings/base.py:5:',
 
     # has a well known `...import *` trick that we like
     'settings/__init__.py',
