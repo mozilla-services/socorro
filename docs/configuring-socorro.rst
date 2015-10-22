@@ -36,6 +36,7 @@ Below is the minimum viable configuration to get collection working on a
 single node:
 
 .. code-block:: bash
+
     # Tell the Socorro app dispatcher which collector App to use
     application=socorro.collector.collector_app.CollectorApp
 
