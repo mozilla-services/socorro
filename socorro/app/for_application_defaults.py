@@ -59,7 +59,9 @@ class ApplicationDefaultsProxy(object):
             'copy_raw_and_processed':
                 'socorro.collector.crashmover_app.RawAndProcessedCopierApp',
             'reprocess_crashlist':
-                'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp'
+                'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp',
+            'purge_rmq':
+                'socorro.external.rabbitmq.purge_queue_app.PurgeRabbitMQQueueApp',
         }
 
 
