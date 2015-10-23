@@ -12,7 +12,7 @@
 
 ./scripts/test.sh
 
-./scripts/integration-test.sh
+./scripts/integration-test.sh --destroy
 
 ./scripts/install.sh
 
