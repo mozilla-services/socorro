@@ -326,7 +326,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     required_config.add_option(
         'base_url',
-        default='http://ftp.mozilla.org/pub/mozilla.org',
+        default='https://archive.mozilla.org/pub/mozilla.org',
         doc='The base url to use for fetching builds')
 
     required_config.add_option(

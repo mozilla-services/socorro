@@ -840,10 +840,13 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             assert not information['ftpscraper']['last_error']
             assert information['ftpscraper']['last_success']
 
+            base_url = config.crontabber['class-FTPScraperCronApp'].base_url
             config.logger.warning.assert_called_with(
                 'BuildID not found for %s on %s',
                 '10.0b4-candidates/',
-                'http://ftp.mozilla.org/pub/mozilla.org/mobile/candidates/',
+                '%s/mobile/candidates/' % (
+                    base_url,
+                )
             )
 
         cursor = self.conn.cursor()
@@ -1134,11 +1137,14 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 exc_info=True
             )
 
+            base_url = config.crontabber['class-FTPScraperCronApp'].base_url
             config.logger.warning.assert_any_call(
                 'warning, unsupported JSON file: %s',
-                'http://ftp.mozilla.org/pub/mozilla.org/firefox/candidates/'
+                '%s/firefox/candidates/'
                 '10.0b4-candidates/build1/linux-i686/en-US/firefox-10.0b4.e'
-                'n-US.linux-i686.mozinfo.json'
+                'n-US.linux-i686.mozinfo.json' % (
+                    base_url,
+                )
             )
 
         cursor = self.conn.cursor()
