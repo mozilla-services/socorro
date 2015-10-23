@@ -4,14 +4,17 @@
 
 import datetime
 import urllib2
+import json
 from functools import wraps
 from cStringIO import StringIO
+
 import mock
 from nose.tools import eq_, ok_, assert_raises
 from crontabber.app import CronTabber
+from crontabber.tests.base import TestCaseBase
+
 from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
-from crontabber.tests.base import TestCaseBase
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.lib.util import DotDict
 from socorro.unittest.cron.setup_configman import (
@@ -21,8 +24,8 @@ from socorro.unittest.cron.setup_configman import (
 
 def stringioify(func):
     @wraps(func)
-    def wrapper(*a, **k):
-        return StringIO(func(*a, **k))
+    def wrapper(*args, **kwargs):
+        return StringIO(func(*args, **kwargs))
     return wrapper
 
 
@@ -48,29 +51,6 @@ class TestFTPScraper(TestCaseBase):
         super(TestFTPScraper, self).tearDown()
         self.psycopg2_patcher.stop()
         self.urllib2_patcher.stop()
-
-    def test_urljoin(self):
-
-        eq_(
-            ftpscraper.urljoin('http://google.com', '/page.html'),
-            'http://google.com/page.html'
-        )
-        eq_(
-            ftpscraper.urljoin('http://google.com/', '/page.html'),
-            'http://google.com/page.html'
-        )
-        eq_(
-            ftpscraper.urljoin('http://google.com/', 'page.html'),
-            'http://google.com/page.html'
-        )
-        eq_(
-            ftpscraper.urljoin('http://google.com', 'page.html'),
-            'http://google.com/page.html'
-        )
-        eq_(
-            ftpscraper.urljoin('http://google.com', 'dir1', ''),
-            'http://google.com/dir1/'
-        )
 
     @mock.patch('socorro.cron.jobs.ftpscraper.time')
     def test_patient_urlopen(self, mocked_time):
@@ -121,10 +101,7 @@ class TestFTPScraper(TestCaseBase):
                 raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
             if len(mock_calls) == 2:
                 raise urllib2.HTTPError(url, 504, "Timeout", {}, None)
-            if len(mock_calls) == 3:
-                raise urllib2.URLError("BadStatusLine")
-
-            return "<html>content</html>"
+            raise NotImplementedError(url)
 
         self.urllib2.side_effect = mocked_urlopener
         # very impatient version
@@ -215,7 +192,7 @@ class TestFTPScraper(TestCaseBase):
         )
         ok_(len(mock_calls) > 1)
 
-    def test_getLinks(self):
+    def test_get_links(self):
         @stringioify
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
@@ -228,40 +205,59 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            self.scrapers.getLinks('ONE'),
-            []
-        )
-        eq_(
-            self.scrapers.getLinks('ONE', startswith='One'),
+            self.scrapers.get_links('ONE', starts_with='One'),
             ['One.html']
         )
         eq_(
-            self.scrapers.getLinks('ONE', endswith='.html'),
+            self.scrapers.get_links('ONE', ends_with='.html'),
             ['One.html']
         )
         eq_(
-            self.scrapers.getLinks('ONE', startswith='Two'),
+            self.scrapers.get_links('ONE', starts_with='Two'),
             []
+        )
+        assert_raises(
+            NotImplementedError,
+            self.scrapers.get_links,
+            'ONE'
         )
 
-    def test_getLinks_with_page_not_found(self):
+    def test_get_links_advanced_startswith(self):
+        @stringioify
+        def mocked_urlopener(url):
+            html_wrap = "<html><body>\n%s\n</body></html>"
+            if '/' in url:
+                return html_wrap % """
+                <a href='/some/dir/mypage/'>My page</a>
+                <a href='/some/dir/otherpage/'>Other page</a>
+                """
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+
+        eq_(
+            self.scrapers.get_links('http://x/some/dir/', starts_with='myp'),
+            ['http://x/some/dir/mypage/']
+        )
+
+    def test_get_links_with_page_not_found(self):
         @stringioify
         def mocked_urlopener(url):
             raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
 
         self.urllib2.side_effect = mocked_urlopener
         eq_(
-            self.scrapers.getLinks('ONE'),
+            self.scrapers.get_links('ONE'),
             []
         )
 
-    def test_parseInfoFile(self):
+    def test_parse_info_file(self):
         @stringioify
         def mocked_urlopener(url):
             if 'ONE' in url:
                 return 'BUILDID=123'
             if 'TWO' in url:
-                return 'BUILDID=123\nbuildID=456'
+                return 'BUILDID=123\n\nbuildID=456'  # deliberate double \n
             if 'THREE' in url:
                 return '123\nhttp://hg.mozilla.org/123'
             if 'FOUR' in url:
@@ -276,33 +272,33 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            self.scrapers.parseInfoFile('ONE'),
+            self.scrapers.parse_info_file('ONE'),
             ({'BUILDID': '123'}, [])
         )
         eq_(
-            self.scrapers.parseInfoFile('TWO'),
+            self.scrapers.parse_info_file('TWO'),
             ({'BUILDID': '123',
               'buildID': '456'}, [])
         )
         eq_(
-            self.scrapers.parseInfoFile('THREE', nightly=True),
+            self.scrapers.parse_info_file('THREE', nightly=True),
             ({'buildID': '123',
               'rev': 'http://hg.mozilla.org/123'}, [])
         )
         eq_(
-            self.scrapers.parseInfoFile('FOUR', nightly=True),
+            self.scrapers.parse_info_file('FOUR', nightly=True),
             ({'buildID': '123',
               'rev': 'http://hg.mozilla.org/123',
               'altrev': 'http://git.mozilla.org/123'}, [])
         )
         eq_(
-            self.scrapers.parseB2GFile('FIVE', nightly=True),
+            self.scrapers.parse_b2g_file('FIVE'),
             ({"buildid": "20130309070203",
               "update_channel": "nightly",
               "version": "18.0",
               'build_type': 'nightly'}))
 
-    def test_parseInfoFile_with_bad_lines(self):
+    def test_parse_info_file_with_bad_lines(self):
         @stringioify
         def mocked_urlopener(url):
             if 'ONE' in url:
@@ -313,16 +309,16 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            self.scrapers.parseInfoFile('ONE'),
+            self.scrapers.parse_info_file('ONE'),
             ({}, ['BUILDID'])
         )
 
         eq_(
-            self.scrapers.parseInfoFile('TWO'),
+            self.scrapers.parse_info_file('TWO'),
             ({'BUILDID': '123'}, ['buildID'])
         )
 
-    def test_parseInfoFile_with_page_not_found(self):
+    def test_parse_info_file_with_page_not_found(self):
 
         @stringioify
         def mocked_urlopener(url):
@@ -331,11 +327,11 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            self.scrapers.parseInfoFile('ONE'),
+            self.scrapers.parse_info_file('ONE'),
             ({}, [])
         )
 
-    def test_getRelease(self):
+    def test_get_release(self):
         @stringioify
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
@@ -343,7 +339,7 @@ class TestFTPScraper(TestCaseBase):
                 return 'BUILDID=123'
             if 'build-11' in url:
                 return html_wrap % """
-                <a href="linux_info.txt">l</a>
+                <a href="ONE-candidates/linux_info.txt">l</a>
                 """
             if 'ONE' in url:
                 return html_wrap % """
@@ -359,27 +355,82 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(self.scrapers.getRelease('TWO', 'http://x')),
+            list(self.scrapers.get_release('http://x/TWO')),
             []
         )
         eq_(
-            list(self.scrapers.getRelease('ONE', 'http://x')),
+            list(self.scrapers.get_release('http://x/ONE')),
             [('linux', 'ONE',
              {'BUILDID': '123', 'version_build': 'build-11'}, [])]
         )
 
-    def test_parseB2GFile_with_page_not_found(self):
+    def test_parse_b2g_file(self):
+        @stringioify
+        def mocked_urlopener(url):
+            if 'ZERO' in url:
+                return ''
+            if 'ONE' in url:
+                return json.dumps({
+                    'update_channel': 'nightly',
+                    'version': '123.0',
+                    'buildid': '12345678',
+                })
+            if 'BETA' in url:
+                return json.dumps({
+                    'update_channel': 'beta',
+                    'version': '123.0b',
+                    'buildid': '123456789',
+                })
+            if 'DEFAULT' in url:
+                return json.dumps({
+                    'update_channel': 'default',
+                    'version': '123.0',
+                    'buildid': '12345678',
+                })
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+
+        eq_(
+            self.scrapers.parse_b2g_file('ZERO'),
+            None
+        )
+        eq_(
+            self.scrapers.parse_b2g_file('ONE'),
+            {
+                'buildid': '12345678',
+                'update_channel': 'nightly',
+                'version': '123.0',
+                'build_type': 'nightly'
+            }
+        )
+        eq_(
+            self.scrapers.parse_b2g_file('DEFAULT'),
+            None  # because of bug #869564
+        )
+        eq_(
+            self.scrapers.parse_b2g_file('BETA'),
+            {
+                'buildid': '123456789',
+                'update_channel': 'beta',
+                'version': '123.0b',
+                'build_type': 'beta',
+                'beta_number': 1,
+            }
+        )
+
+    def test_parse_b2g_file_with_page_not_found(self):
         @stringioify
         def mocked_urlopener(url):
             raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            self.scrapers.parseB2GFile('FIVE', nightly=True),
+            self.scrapers.parse_b2g_file('FIVE'),
             None
         )
 
-    def test_getNightly(self):
+    def test_get_nightly(self):
         @stringioify
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
@@ -389,11 +440,7 @@ class TestFTPScraper(TestCaseBase):
                 return html_wrap % """
                 <a href="firefox.en-US.linux.txt">l</a>
                 <a href="firefox.multi.linux.txt">l</a>
-                """
-            if 'ONE' in url:
-                return html_wrap % """
-                <a href="build-10/">build-10</a>
-                <a href="build-11/">build-11</a>
+                <a href="otherstuff.txt">X</a>
                 """
             if 'TWO' in url:
                 return html_wrap % """
@@ -404,64 +451,109 @@ class TestFTPScraper(TestCaseBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(self.scrapers.getNightly('TWO', 'http://x')),
+            list(self.scrapers.get_nightly('http://x/TWO/', 'TWO')),
             []
         )
+        builds = list(self.scrapers.get_nightly('http://x/ONE/', 'ONE'))
+        assert len(builds) == 2
         eq_(
-            list(self.scrapers.getNightly('ONE', 'http://x')),
-            [('linux', 'ONE', 'firefox',
-              {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, []),
-             ('linux', 'ONE', 'firefox',
-              {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, [])]
+            builds[0],
+            (
+                'linux', 'ONE', 'firefox',
+                {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, []
+            )
+        )
+        eq_(
+            builds[1],
+            (
+                'linux', 'ONE', 'firefox',
+                {'buildID': '123', 'rev': 'http://hg.mozilla.org/123'}, []
+            )
         )
 
-    def test_getB2G(self):
+    def test_get_json_nightly(self):
         @stringioify
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if '.json' in url:
-                return (
-                    '{"buildid": "20130309070203", '
-                    '"update_channel": "nightly", "version": "18.0"}'
-                )
+                return json.dumps({
+                    'buildid': '20151006004017',
+                    'moz_source_repo': 'mozilla-aurora',
+                    'moz_update_channel': 'aurora',
+                })
             if 'ONE' in url:
-                return '{}'
-            if 'TWO' in url:
                 return html_wrap % """
-                <a href="socorro_unagi_date_version.json">l</a>
-                <a href="socorro_unagi_date2_version.json">l</a>
-                <a href="somethingelse_unagi_date3_version.json">l</a>
+                <a href="firefox-43.0a2.multi.linux-i686.json">1</a>
+                <a href="firefox-43.0a2.en-US.linux-i686.mozinfo.json">2</a>
+                <a href="firefox-43.0a2.en-US.linux-i686.json">3</a>
+                <a href="some-other-stuff.json">X</a>
                 """
             if 'TWO' in url:
                 return html_wrap % """
-                <a href="build-10/">build-10</a>
-                <a href="build-11/">build-11</a>
+                <a href="ignore/">ignore</a>
                 """
             raise NotImplementedError(url)
 
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(self.scrapers.getB2G('ONE', 'http://x')),
+            list(self.scrapers.get_json_nightly('http://x/TWO/', 'TWO')),
             []
         )
+        builds = list(self.scrapers.get_json_nightly('http://x/ONE/', 'ONE'))
+        assert len(builds) == 2
+
+        kvpairs = {
+            'buildID': '20151006004017',
+            'buildid': '20151006004017',
+            'build_type': 'aurora',
+            'moz_update_channel': 'aurora',
+            'repository': 'mozilla-aurora',
+            'moz_source_repo': 'mozilla-aurora',
+        }
+        eq_(builds[0], ('linux-i686', 'ONE', '43.0a2', kvpairs))
+
+    def test_get_b2g(self):
+        @stringioify
+        def mocked_urlopener(url):
+            html_wrap = "<html><body>\n%s\n</body></html>"
+            if '.json' in url:
+                if 'date2' in url:
+                    # deliberately empty
+                    return ''
+                else:
+                    return json.dumps({
+                        'buildid': '20130309070203',
+                        'update_channel': 'nightly',
+                        'version': '18.0',
+                    })
+            if 'ONE' in url:
+                return '{}'
+            if '/TWO/' in url:
+                return html_wrap % """
+                <a href="socorro_unagi_date_version.json">l</a>
+                <a href="socorro_unagi_date2_version.json">
+                    eventually ignored</a>
+                <a href="socorro_unagi.json">ignored</a>
+                <a href="somethingelse_unagi_date3_version.json">ignored</a>
+                """
+            raise NotImplementedError(url)
+
+        self.urllib2.side_effect = mocked_urlopener
+
         eq_(
-            list(self.scrapers.getB2G('TWO', 'http://x')),
-            [
-                ('unagi', 'b2g-release', u'18.0', {
-                    u'buildid': u'20130309070203',
-                    u'update_channel': u'nightly',
-                    u'version': u'18.0',
-                    'build_type': u'nightly'
-                }),
-                ('unagi', 'b2g-release', u'18.0', {
-                    u'buildid': u'20130309070203',
-                    u'update_channel': u'nightly',
-                    u'version': u'18.0',
-                    'build_type': u'nightly'
-                })
-            ]
+            list(self.scrapers.get_b2g('http://x/ONE/')),
+            []
         )
+        scrapes = list(self.scrapers.get_b2g('http://x/TWO/'))
+        assert len(scrapes) == 1, len(scrapes)
+        kvpairs = {
+            'buildid': u'20130309070203',
+            'update_channel': u'nightly',
+            'version': u'18.0',
+            'build_type': u'nightly'
+        }
+        eq_(scrapes[0], ('unagi', 'b2g-release', u'18.0', kvpairs))
 
 
 class TestIntegrationFTPScraper(IntegrationTestBase):
@@ -576,7 +668,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
     def _setup_config_manager_firefox(self):
         # Set a completely bogus looking base_url so it can never
         # accidentally work if the network request mocking leaks
-        base_url = 'https://archive.muzilla.hej/pub/muzilla.org'
+        base_url = 'https://archive.muzilla.hej/pub/'
         return get_config_manager_for_crontabber(
             jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
             overrides={
@@ -617,13 +709,17 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 return html_wrap % """
                 <a href="10.0b4-candidates/">10.0b4-candidiates</a>
                 """
-            if (url.endswith('/mobile/nightly/10.0-candidates/') or
-                url.endswith('/mobile/candidates/10.0b4-candidates/')):
+            if (
+                url.endswith('/mobile/nightly/10.0-candidates/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/')
+            ):
                 return html_wrap % """
                 <a href="build1/">build1</a>
                 """
-            if (url.endswith('/mobile/nightly/10.0-candidates/build1/') or
-                url.endswith('/mobile/candidates/10.0b4-candidates/build1/')):
+            if (
+                url.endswith('/mobile/nightly/10.0-candidates/build1/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/build1/')
+            ):
                 return html_wrap % """
                 <a href="linux_info.txt">linux_info.txt</a>
                 """
@@ -720,14 +816,10 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         }])
 
         assert len(build_ids) == 4
-        eq_(build_ids['20120516114455']['build_type'],
-                         'beta')
-        eq_(build_ids['20120516113045']['build_type'],
-                         'release')
-        eq_(build_ids['20120505030510']['build_type'],
-                         'nightly')
-        eq_(build_ids['20120505443322']['build_type'],
-                         'aurora')
+        eq_(build_ids['20120516114455']['build_type'], 'beta')
+        eq_(build_ids['20120516113045']['build_type'], 'release')
+        eq_(build_ids['20120505030510']['build_type'], 'nightly')
+        eq_(build_ids['20120505443322']['build_type'], 'aurora')
 
         # just one more time, pretend that we run it immediately again
         cursor.execute('select count(*) from releases_raw')
@@ -776,13 +868,17 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 return html_wrap % """
                 <a href="10.0b4-candidates/">10.0b4-candidiates</a>
                 """
-            if (url.endswith('/mobile/nightly/10.0-candidates/') or
-                url.endswith('/mobile/candidates/10.0b4-candidates/')):
+            if (
+                url.endswith('/mobile/nightly/10.0-candidates/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/')
+            ):
                 return html_wrap % """
                 <a href="build1/">build1</a>
                 """
-            if (url.endswith('/mobile/nightly/10.0-candidates/build1/') or
-                url.endswith('/mobile/candidates/10.0b4-candidates/build1/')):
+            if (
+                url.endswith('/mobile/nightly/10.0-candidates/build1/') or
+                url.endswith('/mobile/candidates/10.0b4-candidates/build1/')
+            ):
                 return html_wrap % """
                 <a href="linux_info.txt">linux_info.txt</a>
                 """
@@ -845,12 +941,11 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             assert information['ftpscraper']['last_success']
 
             base_url = config.crontabber['class-FTPScraperCronApp'].base_url
+            assert base_url.endswith('/')  # know thy defaults
             config.logger.warning.assert_called_with(
                 'BuildID not found for %s on %s',
-                '10.0b4-candidates/',
-                '%s/mobile/candidates/' % (
-                    base_url,
-                )
+                base_url + 'mobile/candidates/10.0b4-candidates/',
+                base_url + 'mobile/candidates/'
             )
 
         cursor = self.conn.cursor()
@@ -867,7 +962,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         ok_('20120505443322' in build_ids)
         eq_(len(build_ids), 2)
 
-    def test_getJsonRelease(self):
+    def test_get_json_release(self):
         @stringioify
         def mocked_urlopener(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
@@ -876,36 +971,35 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 <a href="../firefox/candidates/">candidates</a>
                 """
             if 'firefox-27.0b6.json' in url:
-                return """
-                {
-                    "buildid": "20140113161826",
-                    "moz_app_maxversion": "27.0.*",
-                    "moz_app_name": "firefox",
-                    "moz_app_vendor": "Mozilla",
-                    "moz_app_version": "27.0",
-                    "moz_pkg_platform": "win32",
-                    "moz_source_repo":
-                        "http://hg.mozilla.org/releases/mozilla-beta",
-                    "moz_update_channel": "beta"
-                }
-                """
+                return json.dumps({
+                    'buildid': '20140113161826',
+                    'moz_app_maxversion': '27.0.*',
+                    'moz_app_name': 'firefox',
+                    'moz_app_vendor': 'Mozilla',
+                    'moz_app_version': '27.0',
+                    'moz_pkg_platform': 'win32',
+                    'moz_source_repo': (
+                        'http://hg.mozilla.org/releases/mozilla-beta'
+                    ),
+                    'moz_update_channel': 'beta',
+                })
             if 'firefox-27.0b7.json' in url:
-                return """ """
-            if 'THREE/build-11/win32/en-US' in url:
+                return ' '
+            if 'THREE/build-11/win/en-US' in url:
                 return html_wrap % """
                 <a href="firefox-27.0b7.json">f</a>
                 """
-            if 'ONE/build-12/win32/en-US' in url:
+            if 'ONE/build-12/win/en-US' in url:
                 return html_wrap % """
                 <a href="firefox-27.0b6.json">f</a>
                 """
             if 'ONE/build-12' in url:
                 return html_wrap % """
-                <a href="win32">w</a>
+                <a href="win/">w</a>
                 """
             if 'THREE/build-11' in url:
                 return html_wrap % """
-                <a href="win32">w</a>
+                <a href="win/">w</a>
                 """
             if 'ONE' in url:
                 return html_wrap % """
@@ -925,12 +1019,14 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         self.urllib2.side_effect = mocked_urlopener
 
         eq_(
-            list(self.scrapers.getJsonRelease('TWO', 'http://x')),
+            list(self.scrapers.get_json_release('http://x/TWO/', 'TWO')),
             []
         )
+        scrapes = list(self.scrapers.get_json_release('http://x/ONE/', 'ONE'))
+        assert len(scrapes) == 1, len(scrapes)
         eq_(
-            list(self.scrapers.getJsonRelease('ONE', 'http://x')),
-            [('win', 'ONE', {
+            scrapes[0],
+            ('win', 'ONE', {
                 u'moz_app_version': u'27.0',
                 u'moz_app_name': u'firefox',
                 u'moz_app_vendor': u'Mozilla',
@@ -945,21 +1041,19 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 'build_type': u'beta',
                 u'moz_app_maxversion': u'27.0.*',
                 'version_build': 'build-12'
-            })]
+            })
         )
         eq_(
-            list(self.scrapers.getJsonRelease('THREE', 'http://x')),
+            list(self.scrapers.get_json_release('http://x/THREE/', 'THREE')),
             []
         )
 
-    def test_scrapeJsonReleases(self):
+    def test_scrape_json_releases(self):
         @stringioify
         def mocked_urlopener(url, today=None):
             if today is None:
                 today = utc_now()
             html_wrap = "<html><body>\n%s\n</body></html>"
-            if url.endswith('/mobile/'):
-                return ''
             if url.endswith('/firefox/'):
                 return html_wrap % """
                 <a href="candidates/">candidates</a>
@@ -977,7 +1071,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 """
             if url.endswith('/build1/'):
                 return html_wrap % """
-                <a href="linux-i686">linux-i686</a>
+                <a href="linux-i686/">linux-i686</a>
                 """
             if url.endswith('/firefox/candidates/28.0-candidates/'
                             'build1/linux-i686/en-US/'):
@@ -1039,10 +1133,6 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 return html_wrap % """
                     <a href="2014/">2014</a>
                 """
-            if url.endswith(today.strftime('/firefox/nightly/%Y/')):
-                return html_wrap % """
-                    <a href="02/">02</a>
-                """
             if url.endswith(today.strftime('/firefox/nightly/%Y/%m/')):
                 return html_wrap % """
                     <a href="%s-03-02-03-mozilla-central/">txt</a>
@@ -1053,14 +1143,16 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 return html_wrap % """
                     <a href="firefox-30.0a1.en-US.linux-i686.json">txt</a>
                 """
-            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
-                            '%Y-%m-%d-03-02-04-mozilla-central/')):
+            if url.endswith(today.strftime(
+                '/firefox/nightly/%Y/%m/%Y-%m-%d-03-02-04-mozilla-central/'
+            )):
                 return html_wrap % """
                     <a href="firefox-30.0a2.en-US.linux-i686.json">txt</a>
                 """
-            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
-                            '%Y-%m-%d-03-02-04-mozilla-central/'
-                            'firefox-30.0a2.en-US.linux-i686.json')):
+            if url.endswith(today.strftime(
+                '/firefox/nightly/%Y/%m/%Y-%m-%d-03-02-04-mozilla-central/'
+                'firefox-30.0a2.en-US.linux-i686.json'
+            )):
                 return """
                     {
 
@@ -1090,9 +1182,10 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
 
                     }
                 """
-            if url.endswith(today.strftime('/firefox/nightly/%Y/%m/'
-                            '%Y-%m-%d-03-02-03-mozilla-central/'
-                            'firefox-30.0a1.en-US.linux-i686.json')):
+            if url.endswith(today.strftime(
+                '/firefox/nightly/%Y/%m/%Y-%m-%d-03-02-03-mozilla-central/'
+                'firefox-30.0a1.en-US.linux-i686.json'
+            )):
                 return """
                     {
 
@@ -1122,7 +1215,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
 
                     }
                 """
-                raise NotImplementedError(url)
+            raise NotImplementedError(url)
 
         self.urllib2.side_effect = mocked_urlopener
         config_manager = self._setup_config_manager_firefox()
@@ -1144,11 +1237,9 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             base_url = config.crontabber['class-FTPScraperCronApp'].base_url
             config.logger.warning.assert_any_call(
                 'warning, unsupported JSON file: %s',
-                '%s/firefox/candidates/'
+                base_url + 'firefox/candidates/'
                 '10.0b4-candidates/build1/linux-i686/en-US/firefox-10.0b4.e'
-                'n-US.linux-i686.mozinfo.json' % (
-                    base_url,
-                )
+                'n-US.linux-i686.mozinfo.json'
             )
 
         cursor = self.conn.cursor()

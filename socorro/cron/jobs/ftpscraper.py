@@ -1,16 +1,25 @@
+import datetime
+import sys
 import re
 import urllib2
-import lxml.html
+import os
 import json
 import time
-from configman import Namespace
+import urlparse
+
+import mock
+import lxml.html
+
+from configman import Namespace, class_converter
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
     as_backfill_cron_app,
     with_postgres_transactions
 )
+from socorro.app.socorro_app import App, main
+from socorro.lib.datetimeutil import string_to_datetime
 from socorro.lib import buildutil
-import os
+
 
 """
  Socket timeout to prevent FTP from hanging indefinitely
@@ -20,9 +29,8 @@ import os
 import socket
 socket.setdefaulttimeout(60)
 
+
 #==============================================================================
-
-
 class RetriedError(IOError):
 
     def __init__(self, attempts, url):
@@ -34,17 +42,6 @@ class RetriedError(IOError):
             '<%s: %s attempts at downloading %s>' %
             (self.__class__.__name__, self.attempts, self.url)
         )
-
-
-def urljoin(*parts):
-    url = parts[0]
-    for part in parts[1:]:
-        if not url.endswith('/'):
-            url += '/'
-        if part.startswith('/'):
-            part = part[1:]
-        url += part
-    return url
 
 
 def patient_urlopen(url, max_attempts=4, sleep_time=20):
@@ -71,25 +68,44 @@ def patient_urlopen(url, max_attempts=4, sleep_time=20):
 
 class ScrapersMixin(object):
 
-    def getLinks(self, url, startswith=None, endswith=None):
+    def get_links(self, url, starts_with=None, ends_with=None):
 
-        html = ''
         results = []
         content = patient_urlopen(url, sleep_time=30)
         if not content:
             return []
+
+        if not (starts_with or ends_with):
+            raise NotImplementedError(
+                'get_links requires either `startswith` or `endswith`'
+            )
+
         html = lxml.html.document_fromstring(content)
 
-        for element, attribute, link, pos in html.iterlinks():
-            if startswith:
-                if link.startswith(startswith):
-                    results.append(link)
-            elif endswith:
-                if link.endswith(endswith):
-                    results.append(link)
+        path = urlparse.urlparse(url).path
+
+        def url_match(link):
+            # The link might be something like "/pub/mobile/nightly/"
+            # but we're looking for a path that starts with "nightly".
+            # So first we need to remove what's part of the base URL
+            # to make a fair comparison.
+            if starts_with is not None:
+                # If the current URL is http://example.com/some/dir/
+                # and the link is /some/dir/mypage/ and the thing
+                # we're looking for is "myp" then this should be true
+                if link.startswith(path):
+                    link = link.replace(path, '')
+                return link.startswith(starts_with)
+            elif ends_with:
+                return link.endswith(ends_with)
+            return False
+
+        for _, _, link, _ in html.iterlinks():
+            if url_match(link):
+                results.append(urlparse.urljoin(url, link))
         return results
 
-    def parseBuildJsonFile(self, url, nightly=False):
+    def parse_build_json_file(self, url, nightly=False):
         content = patient_urlopen(url)
         if content:
             try:
@@ -119,7 +135,7 @@ class ScrapersMixin(object):
                     exc_info=True
                 )
 
-    def parseInfoFile(self, url, nightly=False):
+    def parse_info_file(self, url, nightly=False):
         content = patient_urlopen(url)
         results = {}
         bad_lines = []
@@ -143,7 +159,7 @@ class ScrapersMixin(object):
 
         return results, bad_lines
 
-    def parseB2GFile(self, url, nightly=False):
+    def parse_b2g_file(self, url):
         """
           Parse the B2G manifest JSON file
           Example: {"buildid": "20130125070201", "update_channel":
@@ -172,45 +188,44 @@ class ScrapersMixin(object):
 
         return results
 
-    def getJsonRelease(self, dirname, url):
-        candidate_url = urljoin(url, dirname)
+    def get_json_release(self, candidate_url, dirname):
         version = dirname.split('-candidates')[0]
 
-        builds = self.getLinks(candidate_url, startswith='build')
-
+        builds = self.get_links(candidate_url, starts_with='build')
         if not builds:
             return
 
         latest_build = builds.pop()
-        build_url = urljoin(candidate_url, latest_build)
         version_build = os.path.basename(os.path.normpath(latest_build))
 
         for platform in ['linux', 'mac', 'win', 'debug']:
-            platform_urls = self.getLinks(build_url, startswith=platform)
-            for p in platform_urls:
-                platform_url = urljoin(build_url, p)
-                platform_local_url = urljoin(platform_url, 'en-US/')
-                json_files = self.getLinks(
+            platform_urls = self.get_links(latest_build, starts_with=platform)
+            for platform_url in platform_urls:
+                platform_local_url = urlparse.urljoin(platform_url, 'en-US/')
+                json_files = self.get_links(
                     platform_local_url,
-                    endswith='.json'
+                    ends_with='.json'
                 )
-                for f in json_files:
-                    json_url = urljoin(platform_local_url, f)
-                    kvpairs = self.parseBuildJsonFile(json_url)
+                for json_url in json_files:
+                    kvpairs = self.parse_build_json_file(json_url)
                     if not kvpairs:
                         continue
                     kvpairs['version_build'] = version_build
                     yield (platform, version, kvpairs)
 
-    def getJsonNightly(self, dirname, url):
-        nightly_url = urljoin(url, dirname)
-
-        json_files = self.getLinks(nightly_url, endswith='.json')
-        for f in json_files:
-            if 'en-US' in f:
-                pv, platform = re.sub('\.json$', '', f).split('.en-US.')
-            elif 'multi' in f:
-                pv, platform = re.sub('\.json$', '', f).split('.multi.')
+    def get_json_nightly(self, nightly_url, dirname):
+        json_files = self.get_links(nightly_url, ends_with='.json')
+        for url in json_files:
+            if url.endswith('.mozinfo.json'):
+                # Not sure what this file is, but it's never the file
+                # we need to extract juicy things like `buildid` and
+                # `moz_source_repo`.
+                continue
+            basename = os.path.basename(url)
+            if '.en-US.' in url:
+                pv, platform = re.sub('\.json$', '', basename).split('.en-US.')
+            elif '.multi.' in url:
+                pv, platform = re.sub('\.json$', '', basename).split('.multi.')
             else:
                 continue
 
@@ -222,83 +237,84 @@ class ScrapersMixin(object):
                     repository.append(field)
             repository = '-'.join(repository).strip('/')
 
-            json_url = urljoin(nightly_url, f)
-            kvpairs = self.parseBuildJsonFile(json_url, nightly=True)
+            kvpairs = self.parse_build_json_file(url, nightly=True)
 
             yield (platform, repository, version, kvpairs)
 
-    def getRelease(self, dirname, url):
-        candidate_url = urljoin(url, dirname)
-        builds = self.getLinks(candidate_url, startswith='build')
+    def get_release(self, candidate_url):
+        builds = self.get_links(candidate_url, starts_with='build')
         if not builds:
             self.config.logger.info('No build dirs in %s', candidate_url)
             return
 
         latest_build = builds.pop()
-        build_url = urljoin(candidate_url, latest_build)
         version_build = os.path.basename(os.path.normpath(latest_build))
-        info_files = self.getLinks(build_url, endswith='_info.txt')
+        info_files = self.get_links(latest_build, ends_with='_info.txt')
+        for info_url in info_files:
+            kvpairs, bad_lines = self.parse_info_file(info_url)
+            # os.path.basename works on URL looking things too
+            # and not just file path
+            platform = os.path.basename(info_url).split('_info.txt')[0]
 
-        for f in info_files:
-            info_url = urljoin(build_url, f)
-            kvpairs, bad_lines = self.parseInfoFile(info_url)
-
-            platform = f.split('_info.txt')[0]
-
-            version = dirname.split('-candidates')[0]
+            # suppose the `info_url` is something like
+            # "https://archive.moz.../40.0.3-candidates/..11_info.txt"
+            # then look for the "40.0.3-candidates" part and remove
+            # "-candidates" part.
+            version, = [
+                x.split('-candidates')[0]
+                for x in urlparse.urlparse(info_url).path.split('/')
+                if x.endswith('-candidates')
+            ]
             kvpairs['version_build'] = version_build
 
             yield (platform, version, kvpairs, bad_lines)
 
-    def getNightly(self, dirname, url):
-        nightly_url = urljoin(url, dirname)
-
-        info_files = self.getLinks(nightly_url, endswith='.txt')
-        for f in info_files:
-            if 'en-US' in f:
-                pv, platform = re.sub('\.txt$', '', f).split('.en-US.')
-            elif 'multi' in f:
-                pv, platform = re.sub('\.txt$', '', f).split('.multi.')
+    def get_nightly(self, nightly_url, dirname):
+        info_files = self.get_links(nightly_url, ends_with='.txt')
+        for url in info_files:
+            basename = os.path.basename(url)
+            if '.en-US.' in url:
+                pv, platform = re.sub('\.txt$', '', basename).split('.en-US.')
+            elif '.multi.' in url:
+                pv, platform = re.sub('\.txt$', '', basename).split('.multi.')
             else:
-                ##return
                 continue
 
             version = pv.split('-')[-1]
             repository = []
-
             for field in dirname.split('-'):
                 if not field.isdigit():
                     repository.append(field)
             repository = '-'.join(repository).strip('/')
-
-            info_url = urljoin(nightly_url, f)
-            kvpairs, bad_lines = self.parseInfoFile(info_url, nightly=True)
+            kvpairs, bad_lines = self.parse_info_file(url, nightly=True)
 
             yield (platform, repository, version, kvpairs, bad_lines)
 
-    def getB2G(self, dirname, url, backfill_date=None):
+    def get_b2g(self, url, backfill_date=None):
         """
-         Last mile of B2G scraping, calls parseB2G on .json
-         Files look like:  socorro_unagi-stable_2013-01-25-07.json
+        Last mile of B2G scraping, calls parse_b2g on .json
+        Files look like:  socorro_unagi-stable_2013-01-25-07.json
         """
-        url = '%s/%s' % (url, dirname)
-        info_files = self.getLinks(url, endswith='.json')
+        info_files = self.get_links(url, ends_with='.json')
         platform = None
         version = None
         repository = 'b2g-release'
-        for f in info_files:
+        for url in info_files:
             # Pull platform out of the filename
-            jsonfilename = os.path.splitext(f)[0].split('_')
 
+            jsonfilename = os.path.basename(url).split('_')
+            # We only want to consider .json files that look like this:
+            #  socorro_something_YYYY-MM-DD.json
+            # So, basically it needs to be at least 3 parts split by _
+            # and the first part must be 'socorro'
             # Skip if this file isn't for socorro!
-            if jsonfilename[0] != 'socorro':
+            if jsonfilename[0] != 'socorro' or len(jsonfilename) < 3:
                 continue
+
             platform = jsonfilename[1]
+            kvpairs = self.parse_b2g_file(url)
 
-            info_url = '%s/%s' % (url, f)
-            kvpairs = self.parseB2GFile(info_url, nightly=True)
-
-            # parseB2GFile() returns None when a file is
+            # parse_b2g_file() returns None when a file is
             #    unable to be parsed or we ignore the file
             if kvpairs is None:
                 continue
@@ -326,7 +342,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
 
     required_config.add_option(
         'base_url',
-        default='https://archive.mozilla.org/pub/mozilla.org',
+        default='https://archive.mozilla.org/pub/',
         doc='The base url to use for fetching builds')
 
     required_config.add_option(
@@ -344,7 +360,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             )
             if product_name == 'b2g':
                 self.database_transaction_executor(
-                    self.scrapeB2G,
+                    self.scrape_b2g,
                     product_name,
                     date
                 )
@@ -362,8 +378,8 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 )
 
     def _scrape_releases_and_nightlies(self, connection, product_name, date):
-        self.scrapeReleases(connection, product_name)
-        self.scrapeNightlies(connection, product_name, date)
+        self.scrape_releases(connection, product_name)
+        self.scrape_nightlies(connection, product_name, date)
 
     def _scrape_json_releases_and_nightlies(
         self,
@@ -371,16 +387,14 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         product_name,
         date
     ):
-        self.scrapeJsonReleases(connection, product_name)
-        self.scrapeJsonNightlies(connection, product_name, date)
+        self.scrape_json_releases(connection, product_name)
+        self.scrape_json_nightlies(connection, product_name, date)
 
     def _insert_build(self, cursor, *args, **kwargs):
         if self.config.dry_run:
             print "INSERT BUILD"
-            for arg in args:
-                print "\t", repr(arg)
-            for key in kwargs:
-                print "\t%s=" % key, repr(kwargs[key])
+            print args
+            print kwargs
         else:
             buildutil.insert_build(cursor, *args, **kwargs)
 
@@ -390,21 +404,25 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         # Make a special exception for the out-of-cycle 38.0.5
         return version.endswith('.0') or version == '38.0.5'
 
-    def scrapeJsonReleases(self, connection, product_name):
-        prod_url = urljoin(self.config.base_url, product_name, '')
+    def scrape_json_releases(self, connection, product_name):
+        prod_url = urlparse.urljoin(self.config.base_url, product_name + '/')
         logger = self.config.logger
         cursor = connection.cursor()
 
         for directory in ('nightly', 'candidates'):
-            if not self.getLinks(prod_url, startswith=directory):
+            try:
+                url, = self.get_links(prod_url, starts_with=directory)
+            except IndexError:
                 logger.debug('Dir %s not found for %s',
                              directory, product_name)
                 continue
 
-            url = urljoin(self.config.base_url, product_name, directory, '')
-            releases = self.getLinks(url, endswith='-candidates/')
+            releases = self.get_links(url, ends_with='-candidates/')
             for release in releases:
-                for info in self.getJsonRelease(release, url):
+                dirname = release.replace(url, '')
+                if dirname.endswith('/'):
+                    dirname = dirname[:-1]
+                for info in self.get_json_release(release, dirname):
                     platform, version, kvpairs = info
                     build_type = 'release'
                     beta_number = None
@@ -456,16 +474,26 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                             ignore_duplicates=True
                         )
 
-    def scrapeJsonNightlies(self, connection, product_name, date):
-        nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
-                              date.strftime('%Y'),
-                              date.strftime('%m'),
-                              '')
+    def scrape_json_nightlies(self, connection, product_name, date):
+        directories = (
+            product_name,
+            'nightly',
+            date.strftime('%Y'),
+            date.strftime('%m'),
+        )
+        nightly_url = self.config.base_url
+        for part in directories:
+            nightly_url = urlparse.urljoin(
+                nightly_url, part + '/'
+            )
         cursor = connection.cursor()
         dir_prefix = date.strftime('%Y-%m-%d')
-        nightlies = self.getLinks(nightly_url, startswith=dir_prefix)
+        nightlies = self.get_links(nightly_url, starts_with=dir_prefix)
         for nightly in nightlies:
-            for info in self.getJsonNightly(nightly, nightly_url):
+            dirname = nightly.replace(nightly_url, '')
+            if dirname.endswith('/'):
+                dirname = dirname[:-1]
+            for info in self.get_json_nightly(nightly, dirname):
                 platform, repository, version, kvpairs = info
 
                 build_type = 'nightly'
@@ -486,22 +514,26 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         ignore_duplicates=True
                     )
 
-    def scrapeReleases(self, connection, product_name):
-        prod_url = urljoin(self.config.base_url, product_name, '')
+    def scrape_releases(self, connection, product_name):
+        prod_url = urlparse.urljoin(self.config.base_url, product_name + '/')
         # releases are sometimes in nightly, sometimes in candidates dir.
         # look in both.
         logger = self.config.logger
         cursor = connection.cursor()
         for directory in ('nightly', 'candidates'):
-            if not self.getLinks(prod_url, startswith=directory):
+            # expect only one directory link for each
+            try:
+                url, = self.get_links(prod_url, starts_with=directory)
+            except IndexError:
                 logger.debug('Dir %s not found for %s',
                              directory, product_name)
                 continue
 
-            url = urljoin(self.config.base_url, product_name, directory, '')
-            releases = self.getLinks(url, endswith='-candidates/')
+            releases = self.get_links(url, ends_with='-candidates/')
+            if not releases:
+                self.config.logger.debug('No releases for %s', url)
             for release in releases:
-                for info in self.getRelease(release, url):
+                for info in self.get_release(release):
                     platform, version, kvpairs, bad_lines = info
                     if kvpairs.get('buildID') is None:
                         self.config.logger.warning(
@@ -551,16 +583,26 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                             ignore_duplicates=True
                         )
 
-    def scrapeNightlies(self, connection, product_name, date):
-        nightly_url = urljoin(self.config.base_url, product_name, 'nightly',
-                              date.strftime('%Y'),
-                              date.strftime('%m'),
-                              '')
+    def scrape_nightlies(self, connection, product_name, date):
+        directories = (
+            product_name,
+            'nightly',
+            date.strftime('%Y'),
+            date.strftime('%m'),
+        )
+        nightly_url = self.config.base_url
+        for part in directories:
+            nightly_url = urlparse.urljoin(
+                nightly_url, part + '/'
+            )
         cursor = connection.cursor()
         dir_prefix = date.strftime('%Y-%m-%d')
-        nightlies = self.getLinks(nightly_url, startswith=dir_prefix)
+        nightlies = self.get_links(nightly_url, starts_with=dir_prefix)
         for nightly in nightlies:
-            for info in self.getNightly(nightly, nightly_url):
+            dirname = nightly.replace(nightly_url, '')
+            if dirname.endswith('/'):
+                dirname = dirname[:-1]
+            for info in self.get_nightly(nightly, dirname):
                 platform, repository, version, kvpairs, bad_lines = info
                 for bad_line in bad_lines:
                     self.config.logger.warning(
@@ -584,37 +626,33 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         ignore_duplicates=True
                     )
 
-    def scrapeB2G(self, connection, product_name, date):
-
-        if not product_name == 'b2g':
+    def scrape_b2g(self, connection, product_name, date):
+        if product_name != 'b2g':
             return
-        cursor = connection.cursor()
-        b2g_manifests = urljoin(
-            self.config.base_url,
+
+        directories = (
             product_name,
             'manifests',
-            'nightly'
+            'nightly',
         )
-
+        b2g_manifests = self.config.base_url
+        for part in directories:
+            b2g_manifests = urlparse.urljoin(b2g_manifests, part + '/')
         dir_prefix = date.strftime('%Y-%m-%d')
-        version_dirs = self.getLinks(b2g_manifests, startswith='1.')
+        cursor = connection.cursor()
+        version_dirs = self.get_links(b2g_manifests, ends_with='/')
         for version_dir in version_dirs:
-            prod_url = urljoin(
-                b2g_manifests,
-                version_dir,
-                date.strftime('%Y'),
-                date.strftime('%m')
+            prod_url = urlparse.urljoin(
+                version_dir, date.strftime('%Y/%m/')
             )
-            nightlies = self.getLinks(prod_url, startswith=dir_prefix)
-
+            nightlies = self.get_links(prod_url, starts_with=dir_prefix)
             for nightly in nightlies:
-                b2gs = self.getB2G(
+                b2gs = self.get_b2g(
                     nightly,
-                    prod_url,
                     backfill_date=None,
                 )
                 for info in b2gs:
-                    (platform, repository, version, kvpairs) = info
+                    platform, repository, version, kvpairs = info
                     build_id = kvpairs['buildid']
                     build_type = kvpairs['build_type']
                     self._insert_build(
@@ -630,40 +668,58 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                     )
 
 
-import datetime
-import sys
-from socorro.app.generic_app import main
+class FTPScraperCronAppDryRunner(App):  # pragma: no cover
+    """This is a utility class that makes it easy to run the scraping
+    and ALWAYS do so in a "dry run" fashion such that stuff is never
+    stored in the database but instead found releases are just printed
+    out stdout.
 
+    To run it, simply execute this file:
 
-class _MockConnection(object):  # pragma: no cover
-    """When running the FTPScraperCronAppRunner app, it never actually
-    needs a database connection because instead of doing an insert
-    it just prints. However, it primes the connection by getting a cursor
-    out first (otherwise it'd have to do it every time in a loo[).
+        $ python socorro/cron/jobs/ftpscraper.py
+
+    If you want to override what date to run it for (by default it's
+    "now") you simply use this format:
+
+        $ python socorro/cron/jobs/ftpscraper.py --date=2015-10-23
+
+    By default it runs for every, default configured, product
+    (see the configuration set up in the FTPScraperCronApp above). You
+    can override that like this:
+
+        $ python socorro/cron/jobs/ftpscraper.py --product=mobile,b2g
+
     """
-
-    def cursor(self):
-        pass
-
-
-class FTPScraperCronAppRunner(FTPScraperCronApp):  # pragma: no cover
 
     required_config = Namespace()
     required_config.add_option(
         'date',
-        default=datetime.datetime.utcnow(),
+        default=datetime.datetime.utcnow().date(),
         doc='Date to run for',
-        from_string_converter='socorro.lib.datetimeutil.string_to_datetime'
+        from_string_converter=string_to_datetime
     )
+    required_config.add_option(
+        'crontabber_job_class',
+        default='socorro.cron.jobs.ftpscraper.FTPScraperCronApp',
+        doc='bla',
+        from_string_converter=class_converter,
+    )
+
+    @staticmethod
+    def get_application_defaults():
+        return {
+            'database.database_class': mock.MagicMock()
+        }
 
     def __init__(self, config):
         self.config = config
         self.config.dry_run = True
+        self.ftpscraper = config.crontabber_job_class(config, {})
 
     def main(self):
         assert self.config.dry_run
-        self.run(_MockConnection(), self.config.date)
+        self.ftpscraper.run(self.config.date)
 
 
 if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main(FTPScraperCronAppRunner))
+    sys.exit(main(FTPScraperCronAppDryRunner))
