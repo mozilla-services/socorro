@@ -139,7 +139,6 @@ def getListOfTopCrashersBySignature(connection, dbParams):
         order_by,
         dbParams["limit"]
     )
-    cursor = connection.cursor()
     params = (
         dbParams['product'],
         dbParams['version'],
@@ -147,6 +146,7 @@ def getListOfTopCrashersBySignature(connection, dbParams):
         dbParams['to_date'],
     )
     try:
+        cursor =  connection.cursor()
         return db.execute(cursor, sql, params)
     except Exception:
         connection.rollback()

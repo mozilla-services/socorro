@@ -15,8 +15,11 @@ if [ "$BUILD_TYPE" != "tar" ]; then
     # FIXME could we replace w/ consul?
     cp scripts/crons/socorrorc $BUILD_DIR/etc/socorro/
 
-    # Copy system configs into place
-    rsync -a config/package/ $BUILD_DIR/
+    # Copy systemd service files into place
+    cp config/systemd/* $BUILD_DIR/usr/lib/systemd/system/
+
+    # Copy in production-style defaults
+    cp -rp config/package/* $BUILD_DIR/etc/
 
     # Copy in Socorro setup script
     cp scripts/setup-socorro.sh $BUILD_DIR/usr/bin
@@ -28,22 +31,6 @@ else
     mkdir -p $BUILD_DIR/application
     rsync -a config $BUILD_DIR/application
 fi
-
-# record current git revision in root of install dir
-git rev-parse HEAD > socorro_revision.txt
-cp stackwalk/revision.txt breakpad_revision.txt
-
-# Write down build number, if ran by Jenkins
-if [ -n "$BUILD_NUMBER" ]
-then
-  echo "$BUILD_NUMBER" > JENKINS_BUILD_NUMBER
-else
-  echo "unknown" > JENKINS_BUILD_NUMBER
-fi
-
-# install socorro in local virtualenv
-# this must run at the end to capture any generated files above
-${VIRTUAL_ENV}/bin/python setup.py install
 
 # copy to install directory
 rsync -a ${VIRTUAL_ENV} $BUILD_DIR
@@ -60,15 +47,16 @@ rsync -a webapp-django $BUILD_DIR/
 # because this file is served from the parent of the `webapp-django/` directory
 cp contribute.json $BUILD_DIR/
 
-# TODO remove these when we no longer need to support pre-RPM releases
-cp socorro_revision.txt $BUILD_DIR/application/socorro
-cp breakpad_revision.txt $BUILD_DIR/application/socorro
+# record current git revision in install dir
+git rev-parse HEAD > $BUILD_DIR/application/socorro/external/postgresql/socorro_revision.txt
+cp $BUILD_DIR/stackwalk/revision.txt $BUILD_DIR/application/socorro/external/postgresql/breakpad_revision.txt
 
+# Write down build number, if ran by Jenkins
+if [ -n "$BUILD_NUMBER" ]
+then
+  echo "$BUILD_NUMBER" > $BUILD_DIR/JENKINS_BUILD_NUMBER
+fi
 
-if [ "$BUILD_TYPE" == "tar" ]; then
-    pushd $BUILD_DIR/application/scripts/config
-    for file in *.py.dist; do cp $file `basename $file .dist`; done
-    popd
-else
+if [ "$BUILD_TYPE" != "tar" ]; then
     BUILD_DIR=${BUILD_DIR%%/data/socorro}
 fi
