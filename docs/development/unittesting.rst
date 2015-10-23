@@ -411,3 +411,34 @@ readability::
           """A brief description about this test."""
 
           assert True
+
+...............
+
+Old instructions (What is important about it?)
+
+* We must either provide for a postgreql account with name and
+  password that matches the config file or edit the test config file
+  to provide an appropriate test account and password. That file is
+  socorro/unittest/config/commonconfig.py. If you add a new test
+  config file that needs database access, you should import the
+  details from commonconfig, as exemplified in the existing config
+  files.
+* We must provide a a database appropriate for the test user
+  (default: test. That database must support PLPGSQL. As the owner of
+  the test database, while connected to that database, invoke ``CREATE
+  LANGUAGE PLPGSQL;``
+
+* What is red?
+
+  Short for ``redo`` or ``do it again``.  There is a bash shell file
+  called ``socorro/unittest/red`` which may sourced to provide a bash
+  function called ``red`` that simplifies watching test logfiles in a
+  separate terminal window. In that window, cd to the unittest
+  sub-directory of interest, then source the file: . ../red, then call
+  ``red``. The effect is to clear the screen, then tail -F the logfile
+  associated with tests in that directory. You may chant red --help to
+  be reminded.
+
+  The red file also provides a function noseErrors which simplifies
+  the examination of nosetests output. Chant noseErrors --help for a
+  brief summary.

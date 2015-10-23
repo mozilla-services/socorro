@@ -24,7 +24,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     FileDumpsMapping,
 )
-from socorro.external.fs.filesystem import findFileGenerator
+from socorro.external.filesystem.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
 from socorro.external.postgresql.dbapi2_util import execute_query_iter
 

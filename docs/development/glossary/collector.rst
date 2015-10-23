@@ -23,3 +23,33 @@ system.
 
 After a crash is saved, there is an app called :ref:`crashmover-chapter` that
 will transfer the crashes to HBase.
+
+Collector Python Configuration
+------------------------------
+
+Like all the Socorro applications, the configuration is actually
+executable Python code. Two configuration files are relevant for
+collector
+
+* Copy ``.../scripts/config/commonconfig.py.dist`` to
+  `.../config/commonconfig.py`. This configuration file contains
+  constants used by many of the Socorro applications.
+* Copy ``.../scripts/config/collectorconfig.py.dist`` to
+  ``.../config/collectorconfig.py``
+
+Common Configuration
+--------------------
+
+There are two constants in '.../scripts/config/commonconfig.py' of
+interest to collector: `jsonFileSuffix`, and `dumpFileSuffix`. Other
+constants in this file are ignored.
+
+To setup the common configuration, see :ref:`commonconfig-chapter`.
+
+Collector Configuration
+-----------------------
+
+collectorconfig.py has several options to adjust how files are stored:
+
+`See sample config code on Github
+<https://github.com/mozilla/socorro/blob/master/scripts/config/collectorconfig.py.dist>`_
