@@ -574,10 +574,14 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         super(TestIntegrationFTPScraper, self).tearDown()
 
     def _setup_config_manager_firefox(self):
+        # Set a completely bogus looking base_url so it can never
+        # accidentally work if the network request mocking leaks
+        base_url = 'https://archive.muzilla.hej/pub/muzilla.org'
         return get_config_manager_for_crontabber(
             jobs='socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1d',
             overrides={
                 'crontabber.class-FTPScraperCronApp.products': 'firefox',
+                'crontabber.class-FTPScraperCronApp.base_url': base_url,
             }
         )
 
