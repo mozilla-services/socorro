@@ -1,6 +1,8 @@
-from ujson import dumps
+import ujson
+from configman import Namespace
 
 from socorro.processor.processor_2015 import Processor2015
+from socorro.lib.converters import change_default
 
 #------------------------------------------------------------------------------
 # these are the steps that define processing a crash at Mozilla.
@@ -97,8 +99,9 @@ mozilla_processor_rule_sets = [
 class MozillaProcessorAlgorithm2015(Processor2015):
     """this is the class that processor uses to transform """
 
-    Processor2015.required_config.rule_sets.set_default(
-        dumps(mozilla_processor_rule_sets),
-        force=True
+    required_config = Namespace()
+    required_config.rule_sets = change_default(
+        Processor2015,
+        'rule_sets',
+        ujson.dumps(mozilla_processor_rule_sets)
     )
-
