@@ -14,10 +14,6 @@ chmod 0755 /run/uwsgi /run/uwsgi/socorro
 mkdir /home/socorro/temp
 chown socorro /home/socorro/temp
 
-# Link the local Django settings to the distributed settings.
-ln -fs /etc/socorro/local.py \
-    /data/socorro/webapp-django/crashstats/settings/local.py
-
 # make sure systemd reads the latest service files
 systemctl daemon-reload
 

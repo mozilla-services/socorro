@@ -1,4 +1,3 @@
-*/settings/local.py
 *.py[co]
 .coverage
 pip-log.txt

@@ -12,17 +12,6 @@ import sys
 
 from .base import *  # NOQA
 
-# TODO remove this whole try/except when we can safely stop using local.py
-try:
-    from .local import *  # NOQA
-    import warnings
-    warnings.warn(
-        "Use environment variables or a .env file instead of local.py",
-        DeprecationWarning
-    )
-except ImportError:
-    pass
-
 
 if len(sys.argv) > 1 and sys.argv[1] == 'test':
     from .test import *  # NOQA
