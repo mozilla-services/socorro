@@ -1059,4 +1059,3 @@ class TestCase(socorro.unittest.testbase.TestCase):
             boto_s3_store.get_raw_crash,
             '0bba929f-dead-dead-dead-a43c20071027'
         )
-

@@ -6,10 +6,6 @@ import boto
 import boto.s3.connection
 import boto.exception
 import json
-import os
-import socket
-import datetime
-import contextlib
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -18,10 +14,9 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.external.boto.connection_context import (
     ConnectionContext,
-    BotoNotFound
+    S3KeyNotFound
 )
 from socorro.lib.util import DotDict
-from socorro.lib.converters import change_default
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
@@ -89,7 +84,6 @@ class BotoS3CrashStorage(CrashStorageBase):
             quit_check_callback
         )
 
-##        self._bucket_name = config.bucket_name
         self.connection_source = config.resource_class(config)
         self.transaction = config.transaction_executor_class(
             config,
@@ -106,7 +100,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         self.transaction_for_get = config.transaction_executor_class_for_get(
             config,
-            self.connection_source,  # we are our own connection
+            self.connection_source,
             quit_check_callback
         )
 
@@ -185,7 +179,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 "raw_crash"
             )
             return json.loads(raw_crash_as_string, object_hook=DotDict)
-        except (boto.exception.StorageResponseError, BotoNotFound), x:
+        except (boto.exception.StorageResponseError, S3KeyNotFound), x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -330,5 +324,3 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
         nothing; however it is necessary for compatibility purposes.
         """
         pass
-
-

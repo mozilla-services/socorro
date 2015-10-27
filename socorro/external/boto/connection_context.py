@@ -2,23 +2,28 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import boto
-import boto.s3.connection
-import boto.exception
-
 import json
-import os
 import socket
 import datetime
 import contextlib
 
-from configman import Namespace, RequiredConfig, class_converter
-from configman.converters import class_converter, py_obj_to_str
-from socorro.lib.util import DotDict
-from socorro.lib.converters import change_default
+import boto
+import boto.s3.connection
+import boto.exception
 
-class BotoNotFound(Exception):
+from configman import Namespace, RequiredConfig, class_converter
+
+
+class S3KeyNotFound(Exception):
     pass
+
+
+class JSONISOEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime.date):
+            return obj.isoformat()
+        raise NotImplementedError("Don't know about {0!r}".format(obj))
 
 
 #==============================================================================
@@ -49,6 +54,7 @@ class ConnectionContext(RequiredConfig):
         default="",
         secret=True,
         reference_value_from='secrets.boto',
+        likely_to_be_changed=True,
     )
     required_config.add_option(
         'bucket_name',
@@ -93,9 +99,7 @@ class ConnectionContext(RequiredConfig):
             # exception should never be used with a transaction executor that
             # has infinite back off.
             return True
-        #elif   # for further cases...
         return False
-
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -105,52 +109,47 @@ class ConnectionContext(RequiredConfig):
         self._calling_format = config.calling_format
         self._CreateError = boto.exception.S3CreateError
         self._S3ResponseError = boto.exception.S3ResponseError
-        self._open = open
 
+        self._bucket_cache = {}
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def build_s3_dirs(prefix, name_of_thing, id):
+    def build_key(prefix, name_of_thing, id, version='v1'):
         """
         Use S3 pseudo-directories to make it easier to list/expire later
-        {{prefix}}/{{version}}/{{name_of_thing}}/{{id}}
+        {prefix}/{version}/{name_of_thing}/{id}
         """
-        version = 'v1'
         return '%s/%s/%s/%s' % (prefix, version, name_of_thing, id)
 
     #--------------------------------------------------------------------------
     def _get_bucket(self, conn, bucket_name):
         try:
-            return self._bucket_cache
-        except AttributeError:
-            self._bucket_cache = conn.get_bucket(bucket_name)
-            return self._bucket_cache
+            return self._bucket_cache[bucket_name]
+        except KeyError:
+            self._bucket_cache[bucket_name] = conn.get_bucket(bucket_name)
+            return self._bucket_cache[bucket_name]
 
     #--------------------------------------------------------------------------
     def _get_or_create_bucket(self, conn, bucket_name):
         try:
-            return self._bucket_cache
-        except AttributeError:
-            try:
-                self._bucket_cache = conn.get_bucket(bucket_name)
-            except self._S3ResponseError:
-                self._bucket_cache = conn.create_bucket(bucket_name)
-            return self._bucket_cache
+            return self._get_bucket(conn, bucket_name)
+        except self._S3ResponseError:
+            self._bucket_cache[bucket_name] = conn.create_bucket(bucket_name)
+            return self._bucket_cache[bucket_name]
 
     #--------------------------------------------------------------------------
     def submit_to_boto_s3(self, id, name_of_thing, thing):
         """submit something to boto.
         """
-        if not isinstance(thing, basestring):
-            raise Exception('can only submit strings to boto')
+        # can only submit strings to boto
+        assert isinstance(thing, basestring), type(thing)
 
         conn = self._connect()
         bucket = self._get_or_create_bucket(conn, self.config.bucket_name)
 
-        key = self.build_s3_dirs(self.config.prefix, name_of_thing, id)
-
-        storage_key = bucket.new_key(key)
-        storage_key.set_contents_from_string(thing)
+        key = self.build_key(self.config.prefix, name_of_thing, id)
+        key_object = bucket.new_key(key)
+        key_object.set_contents_from_string(thing)
 
     #--------------------------------------------------------------------------
     def fetch_from_boto_s3(self, id, name_of_thing):
@@ -159,12 +158,12 @@ class ConnectionContext(RequiredConfig):
         conn = self._connect()
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
-        key = self.build_s3_dirs(self.config.prefix, name_of_thing, id)
+        key = self.build_key(self.config.prefix, name_of_thing, id)
 
-        storage_key = bucket.get_key(key)
-        if storage_key is None:
-            raise BotoNotFound('%s not found, no value returned' % id)
-        return storage_key.get_contents_as_string()
+        key_object = bucket.get_key(key)
+        if key_object is None:
+            raise S3KeyNotFound('%s not found, no value returned' % id)
+        return key_object.get_contents_as_string()
 
     #--------------------------------------------------------------------------
     def _connect(self):
@@ -172,22 +171,21 @@ class ConnectionContext(RequiredConfig):
             return self.connection
         except AttributeError:
             kwargs = {
-                "aws_access_key_id": self.config.access_key,
-                "aws_secret_access_key": self.config.secret_access_key,
-                "is_secure": True,
-                "calling_format": self._calling_format(),
+                'aws_access_key_id': self.config.access_key,
+                'aws_secret_access_key': self.config.secret_access_key,
+                'is_secure': True,
+                'calling_format': self._calling_format(),
             }
             if self.config.host:
-                kwargs["host"] = self.config.host
+                kwargs['host'] = self.config.host
             if self.config.port:
-                kwargs["port"] = self.config.port
+                kwargs['port'] = self.config.port
             self.connection = self._connect_to_endpoint(**kwargs)
             return self.connection
 
     #--------------------------------------------------------------------------
     def _convert_mapping_to_string(self, a_mapping):
-        self._stringify_dates_in_dict(a_mapping)
-        return json.dumps(a_mapping)
+        return json.dumps(a_mapping, cls=JSONISOEncoder)
 
     #--------------------------------------------------------------------------
     def _convert_list_to_string(self, a_list):
@@ -196,14 +194,6 @@ class ConnectionContext(RequiredConfig):
     #--------------------------------------------------------------------------
     def _convert_string_to_list(self, a_string):
         return json.loads(a_string)
-
-    #--------------------------------------------------------------------------
-    @staticmethod
-    def _stringify_dates_in_dict(items):
-        for k, v in items.iteritems():
-            if isinstance(v, datetime.datetime):
-                items[k] = v.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return items
 
     # because this crashstorage class operates as its own connection class
     # these function must be present.  The transaction executor will use them
@@ -241,5 +231,3 @@ class ConnectionContext(RequiredConfig):
         except AttributeError:
             # already deleted, ignorable
             pass
-
-

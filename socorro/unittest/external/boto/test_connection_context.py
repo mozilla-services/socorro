@@ -1,33 +1,18 @@
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
 import json
-import tempfile
-import shutil
-from os.path import join
 
-import boto.exception
+import mock
 
 from socorro.lib.util import DotDict
-from socorro.external.crashstorage_base import (
-    Redactor,
-    MemoryDumpsMapping
-)
 from socorro.external.boto.connection_context import (
     ConnectionContext
 )
-from socorro.external.boto.crashstorage import (
-    BotoS3CrashStorage,
-    SupportReasonAPIStorage
-)
 from socorro.database.transaction_executor import (
     TransactionExecutor,
-    TransactionExecutorWithLimitedBackoff,
 )
-from socorro.external.crashstorage_base import CrashIDNotFound
 import socorro.unittest.testbase
 
 
@@ -44,8 +29,9 @@ class ABadDeal(Exception):
 class ConditionallyABadDeal(Exception):
     pass
 
-ConnectionContext.operational_exceptions = (ABadDeal, )
-ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
+
+ConnectionContext.operational_exceptions = (ABadDeal,)
+ConnectionContext.conditional_exceptions = (ConditionallyABadDeal,)
 
 a_thing = {
     'a': 'some a',
@@ -57,6 +43,7 @@ a_thing = {
     },
 }
 thing_as_str = json.dumps(a_thing)
+
 
 class TestCase(socorro.unittest.testbase.TestCase):
 
@@ -107,7 +94,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             host='somewhere.sometime.someone',
             port=666,
         )
-        c =  connection._connect()
+        connection._connect()
         self.assert_s3_connection_parameters(
             connection,
             host='somewhere.sometime.someone',
@@ -119,8 +106,11 @@ class TestCase(socorro.unittest.testbase.TestCase):
         prefix = 'dev'
         name_of_thing = 'dump'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
-        good = connection_source.build_s3_dirs(prefix, name_of_thing, crash_id)
-        self.assertEqual("dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114", good)
+        good = connection_source.build_key(prefix, name_of_thing, crash_id)
+        self.assertEqual(
+            'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114',
+            good
+        )
 
     def test_submit_to_boto_s3(self):
         connection_source = self.setup_mocked_s3_storage()
