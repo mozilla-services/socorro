@@ -39,14 +39,14 @@ class TestConnection(TestCase):
     #--------------------------------------------------------------------------
     def test_constructor(self):
         config = self._setup_config()
-        ncs = RMQNewCrashSource(config, "ignored_processor_name")
+        ncs = RMQNewCrashSource(config, name="ignored_processor_name")
         ok_(isinstance(ncs.crash_store, FakeCrashStore))
         ok_(ncs.crash_store.config is config)
 
     #--------------------------------------------------------------------------
     def test__iter__(self):
         config = self._setup_config()
-        ncs = RMQNewCrashSource(config, "ignored_processor_name")
+        ncs = RMQNewCrashSource(config)
         for i, (args, kwargs) in zip(range(10), ncs()):
             crash_id = args[0]
             eq_(str(i), crash_id)

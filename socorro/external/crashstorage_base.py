@@ -13,7 +13,7 @@ import datetime
 
 from socorro.lib.util import DotDict as SocorroDotDict
 
-from configman import Namespace,  RequiredConfig
+from configman import Namespace, RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
                                  class_converter
 from configman.dotdict import DotDict as ConfigmanDotDict
@@ -132,7 +132,6 @@ class Redactor(RequiredConfig):
         reference_value_from='resource.redactor',
     )
 
-
     #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
@@ -238,7 +237,8 @@ class CrashStorageBase(RequiredConfig):
     def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
         """this method that saves  both the raw_crash and the dump and must be
         overridden in any implementation that wants a different behavior.  It
-        assumes that the crashes are in the form of paths to files.
+        assumes that the dumps are in the form of paths to files and need to
+        be converted to memory_dumps
 
         parameters:
             raw_crash - a mapping containing the raw crash meta data.  It is
@@ -247,11 +247,11 @@ class CrashStorageBase(RequiredConfig):
             dumps - a dict of dump name keys and paths to file system locations
                     for the dump data
             crash_id - the crash key to use for this crash"""
-        in_memory_dumps = {}
-        for dump_key, dump_path in dumps.iteritems():
-            with open(dump_path) as f:
-                in_memory_dumps[dump_key] = f.read()
-        self.save_raw_crash(raw_crash, in_memory_dumps, crash_id)
+        self.save_raw_crash(
+            raw_crash,
+            dumps.as_memory_dumps_mapping(),
+            crash_id
+        )
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
@@ -365,7 +365,6 @@ class CrashStorageBase(RequiredConfig):
         """overridden by subclasses that must acknowledge a successful use of
         an item pulled from the 'new_crashes' generator. """
         return crash_id
-
 
 
 #==============================================================================
@@ -1084,7 +1083,6 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
         """fetch an unredacted processed crash from the underlying
         storage implementation"""
         return self.processed_store.get_unredacted_processed(crash_id)
-
 
 
 #==============================================================================

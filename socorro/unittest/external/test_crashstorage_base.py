@@ -123,11 +123,11 @@ class TestBase(TestCase):
                    .side_effect = open_function
                 crashstorage.save_raw_crash_with_file_dumps(
                     "fake raw crash",
-                    {
+                    FileDumpsMapping({
                         'one': 'eins',
                         'two': 'zwei',
                         'three': 'drei'
-                    },
+                    }),
                     'fake_id'
                 )
 

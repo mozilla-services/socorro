@@ -423,7 +423,8 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
             self.new_crash_source = \
                 self.config.new_crash_source.new_crash_source_class(
                     self.config.new_crash_source,
-                    self.app_instance_name
+                    name=self.app_instance_name,
+                    quit_check_callback=self.quit_check
                 )
         else:
             # the configuration failed to provide a "new_crash_source", fall
