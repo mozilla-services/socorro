@@ -34,6 +34,7 @@ from socorro.processor.mozilla_transform_rules import (
     TopMostFilesRule,
     MissingSymbolsRule,
     BetaVersionRule,
+    OSPrettyVersionRule,
 )
 
 canonical_standard_raw_crash = DotDict({
@@ -1778,7 +1779,7 @@ class TestTopMostFilesRule(TestCase):
 
         rule = TopMostFilesRule(config)
 
-         # the call to be tested
+        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         eq_(processed_crash.topmost_filenames, 'wilma.cpp')
@@ -1798,7 +1799,7 @@ class TestTopMostFilesRule(TestCase):
 
         rule = TopMostFilesRule(config)
 
-         # the call to be tested
+        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         eq_(processed_crash.topmost_filenames, None)
@@ -1830,7 +1831,7 @@ class TestTopMostFilesRule(TestCase):
 
         rule = TopMostFilesRule(config)
 
-         # the call to be tested
+        # the call to be tested
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         eq_(processed_crash.topmost_filenames, None)
@@ -2011,3 +2012,118 @@ class TestBetaVersion(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         eq_(processed_crash['version'], '3.0b0')
         eq_(len(processor_meta.processor_notes), 2)
+
+
+#==============================================================================
+class TestOsPrettyName(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = False
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    def test_everything_we_hoped_for(self):
+        config = self.get_basic_config()
+        config.database_class = Mock()
+        config.transaction_executor_class = Mock()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {}
+
+        processor_meta = self.get_basic_processor_meta()
+
+        transaction = Mock()
+        config.transaction_executor_class.return_value = transaction
+        transaction.return_value = (
+            ('Windows XP', '5', '0'),
+            ('Windows 8', '8', '11'),
+            ('Windows 10', '10', '2'),
+        )
+
+        rule = OSPrettyVersionRule(config)
+
+        # A known Windows version.
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Windows'
+        processed_crash.os_version = '10.2.11.7600'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'Windows 10')
+
+        # An unknown Windows version.
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Windows'
+        processed_crash.os_version = '15.2'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'Windows Unknown')
+
+        # A valid version of Mac OS X.
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Mac OS X'
+        processed_crash.os_version = '10.18.324'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'OS X 10.18')
+
+        # An invalid version of Mac OS X.
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Mac OS X'
+        processed_crash.os_version = '12.1'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'OS X Unknown')
+
+        # Any version of Linux.
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Linux'
+        processed_crash.os_version = '0.0.12.13'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'Linux')
+
+        # Now try some bogus processed_crashes.
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Lunix'
+        processed_crash.os_version = None
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'Lunix')
+
+        processed_crash = DotDict()
+        processed_crash.os_name = None
+        processed_crash.os_version = None
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], None)
+
+        processed_crash = DotDict()
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], None)
+
+        processed_crash = DotDict()
+        processed_crash.os_name = 'Windows'
+        processed_crash.os_version = 'NaN'
+
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        ok_('os_pretty_version' in processed_crash)
+        eq_(processed_crash['os_pretty_version'], 'Windows')

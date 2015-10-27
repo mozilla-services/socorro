@@ -426,8 +426,8 @@ class ProductRewrite(Rule):
     required_config.add_option(
         'database_class',
         doc="the class of the database",
-        default=
-        'socorro.external.postgresql.connection_context.ConnectionContext',
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
         from_string_converter=str_to_python_object,
         reference_value_from='resource.postgresql',
     )
@@ -757,8 +757,8 @@ class MissingSymbolsRule(Rule):
     required_config.add_option(
         'database_class',
         doc="the class of the database",
-        default=
-        'socorro.external.postgresql.connection_context.ConnectionContext',
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
         from_string_converter=str_to_python_object,
         reference_value_from='resource.postgresql',
     )
@@ -780,7 +780,8 @@ class MissingSymbolsRule(Rule):
             self.database,
         )
         self.sql = (
-            "INSERT INTO missing_symbols_%s (date_processed, debug_file, debug_id)"
+            "INSERT INTO missing_symbols_%s"
+            " (date_processed, debug_file, debug_id)"
             " VALUES (%%s, %%s, %%s)"
         )
 
@@ -806,7 +807,7 @@ class MissingSymbolsRule(Rule):
                                 module['debug_id']
                             )
                         )
-                except self.database.ProgrammingError as e:
+                except self.database.ProgrammingError:
                     processor_meta.processor_notes.append(
                         "WARNING: missing symbols rule failed for"
                         " %s" % raw_crash.uuid
@@ -824,8 +825,8 @@ class BetaVersionRule(Rule):
     required_config.add_option(
         'database_class',
         doc="the class of the database",
-        default=
-        'socorro.external.postgresql.connection_context.ConnectionContext',
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
         from_string_converter=str_to_python_object,
         reference_value_from='resource.postgresql',
     )
@@ -949,3 +950,102 @@ class FennecBetaError20150430(Rule):
         return True
 
 
+#==============================================================================
+class OSPrettyVersionRule(Rule):
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        doc="the class of the database",
+        default='socorro.external.postgresql.connection_context.'
+                'ConnectionContext',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+                "TransactionExecutorWithInfiniteBackoff",
+        doc='a class that will manage transactions',
+        from_string_converter=str_to_python_object,
+        reference_value_from='resource.postgresql',
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(OSPrettyVersionRule, self).__init__(config)
+        database = config.database_class(config)
+        self.transaction = config.transaction_executor_class(
+            config,
+            database,
+        )
+        self._windows_versions = self._get_windows_versions()
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _get_windows_versions(self):
+        sql = """
+            SELECT windows_version_name, major_version, minor_version
+            FROM windows_versions
+        """
+        results = self.transaction(
+            execute_query_fetchall,
+            sql,
+        )
+        versions = {}
+        for (version, major, minor) in results:
+            key = '%s.%s' % (major, minor)
+            versions[key] = version
+
+        return versions
+
+    #--------------------------------------------------------------------------
+    def _get_pretty_os_version(self, processed_crash):
+        try:
+            pretty_name = processed_crash['os_name']
+        except KeyError:
+            # There is nothing we can do if the `os_name` is missing.
+            return None
+
+        if not processed_crash.get('os_version'):
+            # The version number is missing, there's nothing to do.
+            return pretty_name
+
+        version_split = processed_crash.os_version.split('.')
+
+        if len(version_split) < 2:
+            # The version number is invalid, there's nothing to do.
+            return pretty_name
+
+        major_version = int(version_split[0])
+        minor_version = int(version_split[1])
+
+        if processed_crash.os_name == 'Windows':
+            # Get corresponding Windows version.
+            key = '%s.%s' % (major_version, minor_version)
+            if key in self._windows_versions:
+                pretty_name = self._windows_versions[key]
+            else:
+                pretty_name = 'Windows Unknown'
+
+        elif processed_crash.os_name == 'Mac OS X':
+            if (
+                major_version >= 10
+                and major_version < 11
+                and minor_version >= 0
+                and minor_version < 20
+            ):
+                pretty_name = 'OS X %s.%s' % (major_version, minor_version)
+            else:
+                pretty_name = 'OS X Unknown'
+
+        return pretty_name
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash['os_pretty_version'] = self._get_pretty_os_version(
+            processed_crash
+        )
+        return True

@@ -52,6 +52,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.BetaVersionRule, "
         "socorro.processor.mozilla_transform_rules.ExploitablityRule, "
         "socorro.processor.mozilla_transform_rules.FlashVersionRule, "
+        "socorro.processor.mozilla_transform_rules.OSPrettyVersionRule, "
         "socorro.processor.mozilla_transform_rules.TopMostFilesRule, "
         "socorro.processor.mozilla_transform_rules.MissingSymbolsRule, "
         "socorro.processor.signature_utilities.SignatureGenerationRule,"
