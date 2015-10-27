@@ -19,6 +19,5 @@ Contributing
    fs
    database
    package
-   commonconfig
    python-dependencies
    addaservice

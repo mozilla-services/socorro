@@ -6,6 +6,8 @@
 
 # Jenkins build script for running tests and packaging build
 
+echo "this is build.sh"
+
 ./scripts/clean.sh
 
 ./scripts/bootstrap.sh

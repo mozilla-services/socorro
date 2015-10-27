@@ -66,8 +66,7 @@ To run the unit tests in a Vagrant VM, do the following::
     make test
 
 This installs all the dependencies needed and run all the tests. You need to
-have a running PostgreSQL instance for this to work, with a specific config
-file for the tests in ``socorro/unittest/config/commonconfig.py``.
+have a running PostgreSQL instance for this to work.
 
 For further documentation on unit tests, please read :ref:`unittesting-chapter`.
 

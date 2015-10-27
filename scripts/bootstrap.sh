@@ -1,5 +1,7 @@
 #! /bin/bash -ex
 
+echo "this is bootstrap.sh"
+
 source scripts/defaults
 
 git submodule update --init --recursive

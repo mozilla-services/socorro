@@ -58,8 +58,6 @@ Here are descriptions of every submodule in there:
 +-------------------+---------------------------------------------------------------+
 | database          | PostgreSQL related code.                                      |
 +-------------------+---------------------------------------------------------------+
-| deferredcleanup   | Osolete.                                                      |
-+-------------------+---------------------------------------------------------------+
 | external          | Here are APIs related to external resources like databases.   |
 +-------------------+---------------------------------------------------------------+
 | integrationtest   | Osolete.                                                      |

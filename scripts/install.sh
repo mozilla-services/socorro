@@ -2,6 +2,8 @@
 
 source scripts/defaults
 
+echo "this is install.sh"
+
 if [ "$BUILD_TYPE" != "tar" ]; then
     # create base directories
     mkdir -p $BUILD_DIR/usr/bin
@@ -67,7 +69,8 @@ cp breakpad_revision.txt $BUILD_DIR/application/socorro
 
 if [ "$BUILD_TYPE" == "tar" ]; then
     pushd $BUILD_DIR/application/scripts/config
-    for file in *.py.dist; do cp $file `basename $file .dist`; done
+    echo "py config files no longer exist, ignoring"
+    #for file in *.py.dist; do cp $file `basename $file .dist`; done
     popd
 else
     BUILD_DIR=${BUILD_DIR%%/data/socorro}

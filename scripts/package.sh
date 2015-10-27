@@ -6,6 +6,8 @@
 
 # Package Socorro for redistribution
 
+echo "this is package.sh"
+
 source scripts/defaults
 
 DESC="A distributed system for collecting, processing,
