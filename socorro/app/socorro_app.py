@@ -287,7 +287,6 @@ class SocorroApp(RequiredConfig):
             # whew, finally run the app that we wanted
 
             return_code = fix_exit_code(app_to_run.main())
-            config.logger.debug('returning errorcode %d',  return_code)
             return return_code
 
 
