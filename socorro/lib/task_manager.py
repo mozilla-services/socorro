@@ -92,7 +92,10 @@ class TaskManager(RequiredConfig):
         self.job_param_source_iter = job_source_iterator
         self.task_func = task_func
         self.quit = False
-        self.logger.debug('TaskManager finished init')
+        self.logger.debug(
+            'TaskManager finished init using worker method %s',
+            task_func
+        )
 
     #--------------------------------------------------------------------------
     def quit_check(self):

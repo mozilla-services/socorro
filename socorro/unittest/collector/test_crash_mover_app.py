@@ -2,9 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import mock
+
 from nose.tools import eq_, ok_, assert_raises
 
+from configman.dotdict import DotDictWithAcquisition
+
 from socorro.collector.crashmover_app import CrashMoverApp
+from socorro.app.fts_worker_methods import RawCrashMoveWorkerMethod
+from socorro.external.crashstorage_base import NullCrashStorage
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
 from socorro.lib.util import DotDict, SilentFakeLogger
 from socorro.unittest.testbase import TestCase
@@ -13,35 +19,52 @@ from socorro.unittest.testbase import TestCase
 class TestCrashMoverApp(TestCase):
 
     def test_bogus_source_iter_and_worker(self):
+
+        class FakeEchoStorageSource(object):
+            def __init__(self, config, quit_check_callback):
+                pass
+
+            def get_raw_crash(self, crash_id):
+                return crash_id
+
+            def get_raw_dumps(self, crash_id):
+                return {crash_id: ''}
+
+            def close(self):
+                pass
+
         class TestCrashMoverClass(CrashMoverApp):
             def __init__(self, config):
                 super(TestCrashMoverClass, self).__init__(config)
                 self.the_list = []
 
-            def _setup_source_and_destination(self):
-                pass
-
-            def _basic_iterator(self):
+            def _create_iter(self):
                 for x in xrange(5):
                     yield ((x,), {})
 
-            def transform(self, anItem):
-                self.the_list.append(anItem)
+            def _setup_source_and_destination(self, transform_fn=None):
+                super(TestCrashMoverClass, self)._setup_source_and_destination(
+                    lambda raw_crash, raw_dumps: self.the_list.append(raw_crash)
+                )
 
         logger = SilentFakeLogger()
-        config = DotDict({
+        config = DotDictWithAcquisition({
           'logger': logger,
+          'redactor_class': mock.Mock(),
           'number_of_threads': 2,
           'maximum_queue_size': 2,
           'number_of_submissions': "all",
-          'source': DotDict({'crashstorage_class': None}),
-          'destination': DotDict({'crashstorage_class': None}),
-          'producer_consumer': DotDict({'producer_consumer_class':
+          'source': DotDictWithAcquisition({'crashstorage_class': FakeEchoStorageSource}),
+          'destination': DotDictWithAcquisition({'crashstorage_class': NullCrashStorage}),
+          'producer_consumer': DotDictWithAcquisition({'producer_consumer_class':
                                           ThreadedTaskManager,
                                         'logger': logger,
                                         'number_of_threads': 1,
                                         'maximum_queue_size': 1}
-                                      )
+                                      ),
+          'dry_run': False,
+          'worker_task': DotDict({"worker_task_impl":
+                                  RawCrashMoveWorkerMethod,}),
         })
 
         fts_app = TestCrashMoverClass(config)
@@ -86,6 +109,9 @@ class TestCrashMoverApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
+            def close(self):
+                pass
+
         class FakeStorageDestination(object):
 
             def __init__(self, config, quit_check_callback):
@@ -96,22 +122,29 @@ class TestCrashMoverApp(TestCase):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dumps
 
+            def close(self):
+                pass
+
         logger = SilentFakeLogger()
-        config = DotDict({
+        config = DotDictWithAcquisition({
           'logger': logger,
+          'redactor_class': mock.Mock(),
           'number_of_threads': 2,
           'maximum_queue_size': 2,
           'number_of_submissions': "all",
-          'source': DotDict({'crashstorage_class':
+          'source': DotDictWithAcquisition({'crashstorage_class':
                                  FakeStorageSource}),
-          'destination': DotDict({'crashstorage_class':
+          'destination': DotDictWithAcquisition({'crashstorage_class':
                                      FakeStorageDestination}),
-          'producer_consumer': DotDict({'producer_consumer_class':
+          'producer_consumer': DotDictWithAcquisition({'producer_consumer_class':
                                           ThreadedTaskManager,
                                         'logger': logger,
                                         'number_of_threads': 1,
                                         'maximum_queue_size': 1}
-                                      )
+                                      ),
+          'dry_run': False,
+          'worker_task': DotDictWithAcquisition({"worker_task_impl":
+                                  RawCrashMoveWorkerMethod,}),
         })
 
         fts_app = NonInfiniteFTSAppClass(config)
@@ -157,6 +190,7 @@ class TestCrashMoverApp(TestCase):
         logger = SilentFakeLogger()
         config = DotDict({
           'logger': logger,
+          'redactor_class': mock.Mock(),
           'number_of_threads': 2,
           'maximum_queue_size': 2,
           'number_of_submissions': "all",
@@ -169,7 +203,10 @@ class TestCrashMoverApp(TestCase):
                                         'logger': logger,
                                         'number_of_threads': 1,
                                         'maximum_queue_size': 1}
-                                      )
+                                      ),
+          'dry_run': False,
+          'worker_task': DotDictWithAcquisition({"worker_task_impl":
+                                  RawCrashMoveWorkerMethod,}),
         })
 
         fts_app = CrashMoverApp(config)
@@ -205,6 +242,7 @@ class TestCrashMoverApp(TestCase):
         logger = SilentFakeLogger()
         config = DotDict({
           'logger': logger,
+          'redactor_class': mock.Mock(),
           'number_of_threads': 2,
           'maximum_queue_size': 2,
           'number_of_submissions': "all",
@@ -217,7 +255,10 @@ class TestCrashMoverApp(TestCase):
                                         'logger': logger,
                                         'number_of_threads': 1,
                                         'maximum_queue_size': 1}
-                                      )
+                                      ),
+          'dry_run': False,
+          'worker_task': DotDictWithAcquisition({"worker_task_impl":
+                                  RawCrashMoveWorkerMethod,}),
         })
 
         fts_app = CrashMoverApp(config)
@@ -252,14 +293,14 @@ class TestCrashMoverApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
-
-
         logger = SilentFakeLogger()
         config = DotDict({
           'logger': logger,
+          'redactor_class': mock.Mock(),
           'number_of_threads': 2,
           'maximum_queue_size': 2,
           'number_of_submissions': "all",
+          'redactor': mock.Mock(),
           'source': DotDict({'crashstorage_class':
                                  FakeStorageSource}),
           'destination': DotDict({'crashstorage_class':
@@ -269,7 +310,10 @@ class TestCrashMoverApp(TestCase):
                                         'logger': logger,
                                         'number_of_threads': 1,
                                         'maximum_queue_size': 1}
-                                      )
+                                      ),
+          'dry_run': False,
+          'worker_task': DotDictWithAcquisition({"worker_task_impl":
+                                  RawCrashMoveWorkerMethod,}),
 
         })
 

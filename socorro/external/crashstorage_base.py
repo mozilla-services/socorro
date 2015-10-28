@@ -66,6 +66,13 @@ class MemoryDumpsMapping(dict):
         without having to do any conversion."""
         return self
 
+    #--------------------------------------------------------------------------
+    def remove_temp_files(self):
+        """there are no tempfiles, this call can be ignored.  This method
+        exists so that FileDumpsMapping & MemoryDumpsMapping can be perfectly
+        interchangable."""
+        pass
+
 
 #==============================================================================
 class FileDumpsMapping(dict):
@@ -111,6 +118,19 @@ class FileDumpsMapping(dict):
                 in_memory_dumps[dump_key] = f.read()
         return in_memory_dumps
 
+    #--------------------------------------------------------------------------
+    def remove_temp_files(self):
+        """if any of the files in this FileDumpsMapping are temporary,
+        delete them"""
+        for dump_key, dump_path in self.iteritems():
+            if "TEMPORARY" in dump_path:
+                try:
+                    os.unlink(dump_path)
+                except OSError:
+                    self.config.logger.warning(
+                        'unable to delete %s. manual deletion is required.',
+                        dump_path
+                    )
 
 #==============================================================================
 class Redactor(RequiredConfig):
@@ -419,6 +439,54 @@ class NullCrashStorage(CrashStorageBase):
         parameters:
            crash_id - the id of a crash to fetch"""
         pass
+
+
+#==============================================================================
+class DryRunCrashStorage(CrashStorageBase):
+    """a testing crashstorage that just announces what it was told to do on
+    stdout, but actually does nothing
+    """
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        print "save_raw_crash: crash_id"
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
+        print "save_raw_crash_with_file_dumps: crash_id"
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        print "save_processed: crash_id"
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, crash_id):
+        print "get_raw_crash: %s" % crash_id
+        return SocorroDotDict()
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, crash_id, name):
+        print "get_raw_dump: %s" % crash_id
+        return ''
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps(self, crash_id):
+        print "get_raw_dumps: %s" % crash_id
+        return SocorroDotDict()
+
+    #--------------------------------------------------------------------------
+    def get_raw_dumps_as_files(self, crash_id):
+        print "get_raw_dumps_as_files: %s" % crash_id
+        return SocorroDotDict()
+
+    #--------------------------------------------------------------------------
+    def get_unredacted_processed(self, crash_id):
+        print "get_unredacted_processed: %s" % crash_id
+        return SocorroDotDict()
+
+    #--------------------------------------------------------------------------
+    def remove(self, crash_id):
+        print "remove: %s" % crash_id
+
 
 
 #==============================================================================

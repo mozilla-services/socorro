@@ -208,6 +208,8 @@ class Processor2015(RequiredConfig):
 
         processed_crash.success = False
         processed_crash.started_datetime = utc_now()
+        processor_meta_data.started_timestamp = \
+            processed_crash.started_datetime
         # for backwards compatibility:
         processed_crash.startedDateTime = processed_crash.started_datetime
         processed_crash.signature = 'EMPTY: crash failed to process'
@@ -217,10 +219,6 @@ class Processor2015(RequiredConfig):
             # quit_check calls ought to be scattered around the code to allow
             # the processor to be responsive to requests to shut down.
             self.quit_check()
-
-            processor_meta_data.started_timestamp = self._log_job_start(
-                crash_id
-            )
 
             # apply transformations
             #    step through each of the rule sets to apply the rules.
@@ -262,26 +260,16 @@ class Processor2015(RequiredConfig):
         # for backwards compatibility:
         processed_crash.completeddatetime = completed_datetime
 
-        self._log_job_end(
-            processed_crash.success,
-            crash_id
-        )
         return processed_crash
 
     #--------------------------------------------------------------------------
-    def reject_raw_crash(self, crash_id, reason):
-        self._log_job_start(crash_id)
-        self.config.logger.warning('%s rejected: %s', crash_id, reason)
-        self._log_job_end(False, crash_id)
-
-    #--------------------------------------------------------------------------
-    def _log_job_start(self, crash_id):
-        self.config.logger.info("starting job: %s", crash_id)
-
-    #--------------------------------------------------------------------------
-    def _log_job_end(self, success, crash_id):
-        self.config.logger.info(
-            "finishing %s job: %s",
-            'successful' if success else 'failed',
-            crash_id
-        )
+    def close(self):
+        self.config.logger.debug('Procesor2015 closes')
+        for a_rule_set_name, a_rule_set in self.rule_system.iteritems():
+            self.config.logger.debug('closing %s', a_rule_set_name)
+            try:
+                a_rule_set.close()
+            except AttributeError:
+                # guess we don't need to close that rule
+                pass
+        self.config.logger.debug('done closing rules')

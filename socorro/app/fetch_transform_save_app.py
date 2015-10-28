@@ -32,6 +32,7 @@ from functools import partial
 from configman import Namespace
 from configman.converters import class_converter
 
+from socorro.external.crashstorage_base import DryRunCrashStorage
 from socorro.lib.task_manager import respond_to_SIGTERM
 from socorro.app.generic_app import App, main  # main not used here, but
                                                # is imported from generic_app
@@ -50,28 +51,43 @@ class FetchTransformSaveApp(App):
     required_config = Namespace()
     # the required config is broken into two parts: the source and the
     # destination.  Each of those gets assigned a crasnstorage class.
-    required_config.source = Namespace()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # source namespace
     # For source, the storage class should be one that defines a method
     # of fetching new crashes through the three storage api methods: the
     # iterator 'new_crashes' and the accessors 'get_raw_crash' and
     # 'get_raw_dumps'
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    required_config.source = Namespace()
     required_config.source.add_option(
         'crashstorage_class',
         doc='the source storage class',
         default=None,
         from_string_converter=class_converter
     )
-    required_config.destination = Namespace()
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # destination namespace
     # For destination, the storage class should implement the 'save_raw_crash'
     # method.  Of course, a subclass may redefine either the source_iterator
     # or transform methods and therefore completely redefine what api calls
     # are relevant.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    required_config.destination = Namespace()
     required_config.destination.add_option(
         'crashstorage_class',
         doc='the destination storage class',
         default=None,
         from_string_converter=class_converter
     )
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # producer/consumer namespace
+    # this is for configuration requirements of a producer/consumer system of
+    # of workers to apply transformations of the crashes drawn from the source
+    # and saved to the destination
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     required_config.producer_consumer = Namespace()
     required_config.producer_consumer.add_option(
         'producer_consumer_class',
@@ -79,11 +95,44 @@ class FetchTransformSaveApp(App):
         default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
         from_string_converter=class_converter
     )
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # worker_task namespace
+    # this configuration namespace is for parameter for the system that defines
+    # the framework for what the workers are going to do.  For example, the
+    # fts worker methods for the crashmover reads raw_crash and raw dumps from
+    # the source and then just turns around and writes them to the destination.
+    # On the other hand, the processor's fts worker methods reads raw_crash,
+    # raw_dumps & any exsiting processed crash, applies the processor
+    # transformation to them (Processor2015 Rules) and then saves them to the
+    # destination. There are a family of fts working method classes, that
+    # read/write various combinations of the raw_crashes, raw_dumps and
+    # processed crashes. This class is key to getting the FTS apps to do just
+    # about anything, even outside the domain of crash reporting.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    required_config.namespace('worker_task')
+    required_config.worker_task.add_option(
+        'worker_task_impl',
+        doc='the class implements the goal of the FTSApp from the perspective'
+            ' of the worker that runs it',
+        default='socorro.app.fts_worker_methods.RawCrashCopyWorkerMethod',
+        from_string_converter=class_converter
+    )
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # misc parameters
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     required_config.add_option(
         'number_of_submissions',
         doc="the number of crashes to submit (all, forever, 1...)",
         short_form='n',
         default='forever'
+    )
+    required_config.add_option(
+        'dry_run',
+        doc="don't just announce what would have happen rather than doing it",
+        short_form='D',
+        default=False
     )
 
     #--------------------------------------------------------------------------
@@ -101,9 +150,9 @@ class FetchTransformSaveApp(App):
 
         return {
             'source.crashstorage_class':
-            'socorro.external.fs.crashstorage.FSPermanentStorage',
+                'socorro.external.fs.crashstorage.FSPermanentStorage',
             'destination.crashstorage_class':
-            'socorro.external.fs.crashstorage.FSPermanentStorage',
+                'socorro.external.fs.crashstorage.FSPermanentStorage',
         }
 
     #--------------------------------------------------------------------------
@@ -247,14 +296,34 @@ class FetchTransformSaveApp(App):
         can detect and reject them here"""
         return False
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # worker method section
+    # In this section a worker method is defined that will be employed by the
+    # application to operate on an individual crash. For the processor, this is
+    # the method that will transform a raw crash into a processed crash.  For
+    # the submitter and crashmover-like apps, this method just reads from its
+    # source storage and pushes to the destination storage without changing the
+    # crash.
+    #
+    # when running using a multitasking model like multithreaded, multiprocess
+    # or cooperative multitasking, this is the method run by individual workers
+    # to operate on a single crash.  There are definitions of several different
+    # worker methods in classes in the 'fts_worker_methods' module.
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     #--------------------------------------------------------------------------
-    def transform(
+    def worker_method(
         self,
         crash_id,
         finished_func=(lambda: None),
     ):
+        """this is the method run by the workers to accomplish the goal of the
+        app.  The member '_worker_method' is an instance of a class from the
+        'fts_worker_methods' module.  The implementation of this functor call
+        is selected through configuration using the key
+        'worker_task.worker_task_impl'"""
         try:
-            self._transform(crash_id)
+            self._worker_method(crash_id)
         finally:
             # no matter what causes this method to end, we need to make sure
             # that the finished_func gets called. If the new crash source is
@@ -264,57 +333,91 @@ class FetchTransformSaveApp(App):
             except Exception, x:
                 # when run in a thread, a failure here is not a problem, but if
                 # we're running all in the same thread, a failure here could
-                # derail the the whole processor. Best just log the problem
+                # derail the the whole app. Best just log the problem
                 # so that we can continue.
                 self.config.logger.error(
-                    'Error completing job %s: %s',
+                    'Error completing job %s: %r',
                     crash_id,
                     x,
                     exc_info=True
                 )
 
     #--------------------------------------------------------------------------
-    def _transform(self, crash_id):
-        """this default transform function only transfers raw data from the
-        source to the destination without changing the data.  While this may
-        be good enough for the raw crashmover, the processor would override
-        this method to create and save processed crashes"""
-        try:
-            raw_crash = self.source.get_raw_crash(crash_id)
-        except Exception as x:
-            self.config.logger.error(
-                "reading raw_crash: %s",
-                str(x),
-                exc_info=True
-            )
-            raw_crash = {}
-        try:
-            dumps = self.source.get_raw_dumps(crash_id)
-        except Exception as x:
-            self.config.logger.error(
-                "reading dump: %s",
-                str(x),
-                exc_info=True
-            )
-            dumps = {}
-        try:
-            self.destination.save_raw_crash(raw_crash, dumps, crash_id)
-            self.config.logger.info('saved - %s', crash_id)
-        except Exception as x:
-            self.config.logger.error(
-                "writing raw: %s",
-                str(x),
-                exc_info=True
-            )
-        else:
+    def _setup_source_and_destination(self, transform_fn=None):
+        """instantiate the classes that implement the source and destination
+        crash storage systems. This method is also responsible for associating
+        the transformation of a crash into its final form.  For the processor,
+        the 'transform_fn' will be the 'process_crash' method of the selected
+        processor implementation class (see Processor2015).  For apps that
+        simply copy or move crashes, the transform_fn may be None.
+
+        Subclasses may override this method to do setup themselves or override
+        and use cooperative inheritance to call this method to set the
+        'transform_fn'.
+
+        If the user has set the configuration parameter to 'dry_run' to True,
+        the normal crash storage classes are ignored and the source &
+        destination are set to be the DryRunCrashStorage.  That crashstore
+        just announces on stdout what it was asked to do, but actually does
+        nothing.
+        """
+        if transform_fn is None:
             try:
-                self.source.remove(crash_id)
-            except Exception as x:
-                self.config.logger.error(
-                    "removing raw: %s",
-                    str(x),
-                    exc_info=True
+                transnform_fn = self.transform_fn
+            except AttributeError:
+                def no_transform_fn(*args, **kwargs):
+                    pass
+                transform_fn = no_transform_fn
+
+        try:
+            self.source = self.config.source.crashstorage_class(
+                self.config.source,
+                quit_check_callback=self.quit_check
+            )
+        except Exception, x:
+            self.config.logger.critical(
+                'Error in creating crash source',
+                exc_info=True
+            )
+            raise
+
+        try:
+            if self.config.dry_run:
+                self.destination = DryRunCrashStorage(self.config.destination)
+            else:
+                self.destination = self.config.destination.crashstorage_class(
+                    self.config.destination,
+                    quit_check_callback=self.quit_check
                 )
+        except Exception:
+            self.config.logger.critical(
+                'Error in creating crash destination',
+                exc_info=True
+            )
+            raise
+
+        try:
+            self._worker_method = self.config.worker_task.worker_task_impl(
+                self.config.worker_task,
+                fetch_store=self.source,
+                save_store=self.destination,
+                transform_fn=transform_fn,
+                quit_check=self.quit_check
+            )
+        except Exception:
+            self.config.logger.critical(
+                'Error in creating worker_task',
+                exc_info=True
+            )
+            raise
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # multitasking section
+    # this section sets up the multitasking system. It is controlled by the
+    # configuration parameter 'producer_consumer.producer_consumer_class'
+    # which can load single task or multitasking classes (with threads,
+    # processes or cooperative multitasking implementations).
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     #--------------------------------------------------------------------------
     def quit_check(self):
@@ -323,33 +426,6 @@ class FetchTransformSaveApp(App):
     #--------------------------------------------------------------------------
     def signal_quit(self):
         self.task_manager.stop()
-
-    #--------------------------------------------------------------------------
-    def _setup_source_and_destination(self):
-        """instantiate the classes that implement the source and destination
-        crash storage systems."""
-        try:
-            self.source = self.config.source.crashstorage_class(
-                self.config.source,
-                quit_check_callback=self.quit_check
-            )
-        except Exception:
-            self.config.logger.critical(
-                'Error in creating crash source',
-                exc_info=True
-            )
-            raise
-        try:
-            self.destination = self.config.destination.crashstorage_class(
-                self.config.destination,
-                quit_check_callback=self.quit_check
-            )
-        except Exception:
-            self.config.logger.critical(
-                'Error in creating crash destination',
-                exc_info=True
-            )
-            raise
 
     #--------------------------------------------------------------------------
     def _setup_task_manager(self):
@@ -369,13 +445,14 @@ class FetchTransformSaveApp(App):
             self.config.producer_consumer.producer_consumer_class(
                 self.config.producer_consumer,
                 job_source_iterator=self.source_iterator,
-                task_func=self.transform
+                task_func=self.worker_method
             )
         self.config.executor_identity = self.task_manager.executor_identity
 
     #--------------------------------------------------------------------------
     def _cleanup(self):
-        pass
+        for a_store in (self.source, self.destination):
+            a_store.close()
 
     #--------------------------------------------------------------------------
     def main(self):
@@ -384,8 +461,8 @@ class FetchTransformSaveApp(App):
         starts a flock of threads that are ready to shepherd crashes from
         the source to the destination."""
 
-        self._setup_task_manager()
         self._setup_source_and_destination()
+        self._setup_task_manager()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
         self._cleanup()
         self.config.logger.info('done.')
@@ -414,11 +491,11 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
         return self.new_crash_source.new_crashes()
 
     #--------------------------------------------------------------------------
-    def _setup_source_and_destination(self):
+    def _setup_source_and_destination(self, transform_fn=None):
         """use the base class to setup the source and destinations but add to
         that setup the instantiation of the "new_crash_source" """
         super(FetchTransformSaveWithSeparateNewCrashSourceApp, self) \
-            ._setup_source_and_destination()
+            ._setup_source_and_destination(transform_fn)
         if self.config.new_crash_source.new_crash_source_class:
             self.new_crash_source = \
                 self.config.new_crash_source.new_crash_source_class(

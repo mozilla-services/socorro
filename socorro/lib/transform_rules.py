@@ -471,6 +471,14 @@ class TransformRuleSystem(RequiredConfig):
                 return False
         return None
 
+    #--------------------------------------------------------------------------
+    def close(self):
+        for a_rule in self.rules:
+            try:
+                a_rule.close()
+            except AttributeError:
+                # it's ok for a rule to not have a close method
+                pass
 
 #------------------------------------------------------------------------------
 # Useful rule predicates and actions

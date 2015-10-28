@@ -55,35 +55,10 @@ class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 'socorro.lib.task_manager.TaskManager',
             'producer_consumer.quit_on_empty_queue': True,
             'new_crash_source.new_crash_source_class':
-                'socorro.processor.timemachine.PGQueryNewCrashSource'
+                'socorro.processor.timemachine.PGQueryNewCrashSource',
+            "worker_task.worker_task_impl":
+                "socorro.app.fts_worker_methods.ProcessedCrashCopyWorkerMethod",
         }
-
-    #--------------------------------------------------------------------------
-    def _transform(self, crash_id):
-        """this default transform function only transfers raw data from the
-        source to the destination without changing the data.  While this may
-        be good enough for the raw crashmover, the processor would override
-        this method to create and save processed crashes"""
-        self.config.logger.debug('trying %s', crash_id)
-        try:
-            self.config.logger.debug('get_unredacted_processed')
-            processed_crash = self.source.get_unredacted_processed(crash_id)
-        except Exception as x:
-            self.config.logger.error(
-                "reading processed_crash: %s",
-                str(x),
-                exc_info=True
-            )
-            processed_crash = {}
-        try:
-            self.config.logger.debug('save_processed')
-            self.destination.save_processed(processed_crash)
-        except Exception as x:
-            self.config.logger.error(
-                "writing processed_crash: %s",
-                str(x),
-                exc_info=True
-            )
 
 
 #==============================================================================
@@ -102,48 +77,10 @@ class RawAndProcessedCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             "destination.crashstorage_class":
                 'socorro.external.es.crashstorage.'
                 'ESCrashStorageNoStackwalkerOutput',
+            "worker_task.worker_task_impl":
+                "socorro.app.fts_worker_methods.ProcessorWorkerMethod",
         }
 
-    #--------------------------------------------------------------------------
-    def _transform(self, crash_id):
-        """this implementation is the framework on how a raw crash is
-        converted into a processed crash.  The 'crash_id' passed in is used as
-        a key to fetch the raw crash from the 'source', the conversion funtion
-        implemented by the 'processor_class' is applied, the
-        processed crash is saved to the 'destination', and then 'finished_func'
-        is called."""
-        try:
-            raw_crash = self.source.get_raw_crash(crash_id)
-            processed_crash = self.source.get_processed(
-                crash_id
-            )
-        except CrashIDNotFound:
-            self.processor.reject_raw_crash(
-                crash_id,
-                'this crash cannot be found in raw crash storage'
-            )
-            return
-        except Exception, x:
-            self.config.logger.warning(
-                'error loading crash %s',
-                crash_id,
-                exc_info=True
-            )
-            self.processor.reject_raw_crash(
-                crash_id,
-                'error in loading: %s' % x
-            )
-            return
-
-        if 'uuid' not in raw_crash:
-            raw_crash.uuid = crash_id
-        self.destination.save_raw_and_processed(
-            raw_crash,
-            None,
-            processed_crash,
-            crash_id
-        )
-        self.config.logger.info('saved - %s', crash_id)
 
 if __name__ == '__main__':
     main(CrashMoverApp)
