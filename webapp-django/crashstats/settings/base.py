@@ -1,29 +1,64 @@
 # This is your project's main settings file that can be committed to your
-# repo. If you need to override a setting locally, use .env or
-# straight up environment variables.
+# repo. If you need to override a setting locally, use .env or environment
+# variables.
 
-from funfactory.settings_base import *
+import os
+import logging
 
 import dj_database_url
 from decouple import config, Csv
 
+
+ROOT = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        '..',
+        '..'
+    ))
+
+
+def path(*dirs):
+    return os.path.join(ROOT, *dirs)
+
+
+SITE_ID = 1
+
+LANGUAGE_CODE = 'en-US'
+
+# Absolute path to the directory that holds media.
+MEDIA_ROOT = path('media')
+
+# URL that handles the media served from MEDIA_ROOT. Make sure to use a
+# trailing slash if there is a path component (optional in other cases).
+MEDIA_URL = '/media/'
+
+# Absolute path to the directory static files should be collected to.
+STATIC_ROOT = path('static')
+
+# URL prefix for static files
+STATIC_URL = '/static/'
+
+
+TEMPLATE_LOADERS = (
+    'jingo.Loader',
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+)
+
+TEMPLATE_DIRS = (
+    path('templates'),
+)
+
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
 
-# This unset DATABASE_ROUTERS from funfactory because we're not
-# interested in using multiple database for the webapp part.
-DATABASE_ROUTERS = ()
 
 # Name of the top-level module where you put all your apps.
-# If you did not install Playdoh with the funfactory installer script
-# you may need to edit this value. See the docs about installing from a
-# clone.
 PROJECT_MODULE = 'crashstats'
 
 # Defines the views served for root URLs.
 ROOT_URLCONF = '%s.urls' % PROJECT_MODULE
 
 INSTALLED_APPS = (
-    'funfactory',
     'compressor',
     'django_browserid',
     'django.contrib.auth',
@@ -60,23 +95,38 @@ INSTALLED_APPS = (
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-funfactory_JINJA_CONFIG = JINJA_CONFIG  # that from funfactory
+COMPRESS_ROOT = STATIC_ROOT
+
+COMPRESS_CSS_FILTERS = (
+    'compressor.filters.css_default.CssAbsoluteFilter',
+    'compressor.filters.cssmin.CSSMinFilter'
+)
+
+COMPRESS_PRECOMPILERS = (
+    ('text/less', 'lessc {infile} {outfile}'),
+)
 
 
 def JINJA_CONFIG():
-    # different from that in funfactory in that we don't want to
-    # load the `tower` extension
-    config = funfactory_JINJA_CONFIG()
-    config['extensions'].remove('tower.template.i18n')
+    config = {
+        'extensions': [
+            'jinja2.ext.do',
+            'jinja2.ext.with_',
+            'jinja2.ext.loopcontrols'
+        ],
+        'finalize': lambda x: x if x is not None else '',
+    }
     return config
 
 
 def COMPRESS_JINJA2_GET_ENVIRONMENT():
+    """This function is automatically called by django-compressor"""
     from jingo import env
     from compressor.contrib.jinja2ext import CompressorExtension
     env.add_extension(CompressorExtension)
 
     return env
+
 
 # Because Jinja2 is the default template loader, add any non-Jinja templated
 # apps here:
@@ -113,15 +163,29 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
-    'crashstats.base.context_processors.google_analytics',
-    'crashstats.base.context_processors.pingdom_rum',
-    'crashstats.base.context_processors.browserid',
+    '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
+    '%s.base.context_processors.pingdom_rum' % PROJECT_MODULE,
+    '%s.base.context_processors.browserid' % PROJECT_MODULE,
 )
 
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
-LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
+LOG_LEVEL = logging.INFO
+
+HAS_SYSLOG = True  # XXX needed??
+
+LOGGING_CONFIG = None
+
+# This disables all mail_admins on all django.request errors.
+# We can do this because we use Sentry now instead
+LOGGING = {
+    'loggers': {
+        'django.request': {
+            'handlers': []
+        }
+    }
+}
 
 # Some products have a different name in bugzilla and Socorro.
 BUG_PRODUCT_MAP = {
@@ -158,6 +222,8 @@ NIGHTLY_RELEASE_TYPES = (
 # No need to load it because we don't do i18n in this project
 USE_I18N = False
 
+USE_L10N = False
+
 # True if old legacy URLs we handle should be permanent 301 redirects.
 # Transitionally it might be safer to set this to False as we roll out the new
 # django re-write of Socorro.
@@ -167,12 +233,6 @@ LOGIN_URL = '/login/'
 
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-
-# we don't need bcrypt since we don't store real passwords
-PWD_ALGORITHM = 'sha512'
-
-# must be set but not applicable because we don't use bcrypt
-HMAC_KEYS = {'any': 'thing'}
 
 # Types of query that can be run in search
 QUERY_TYPES = (
@@ -337,7 +397,7 @@ API_RATE_LIMIT = '100/m'
 RATELIMIT_SUPERSEARCH = '10/m'
 
 # Path to the view that gets executed if you hit upon a ratelimit block
-RATELIMIT_VIEW = 'crashstats.crashstats.views.ratelimit_blocked'
+RATELIMIT_VIEW = '%s.crashstats.views.ratelimit_blocked' % PROJECT_MODULE
 
 # When we pull platforms from the Platforms API we later decide which of
 # these to display at various points in the UI.
@@ -542,6 +602,18 @@ COMPRESS_ENABLED = config('COMPRESS_ENABLED', True, cast=bool)
 #     ./manage.py compress --force --engine=jinja2
 # at least once every time any of the static files change.
 COMPRESS_OFFLINE = config('COMPRESS_OFFLINE', True, cast=bool)
+
+COMPRESS_ROOT = STATIC_ROOT
+COMPRESS_CSS_FILTERS = (
+    'compressor.filters.css_default.CssAbsoluteFilter',
+    'compressor.filters.cssmin.CSSMinFilter'
+)
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+)
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 # FIXME remove this default when we are out of PHX

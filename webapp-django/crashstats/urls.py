@@ -4,12 +4,13 @@ from django.conf import settings
 from django.conf.urls import patterns, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+from .base.monkeypatches import patch
 from .crashstats import urls
 from .supersearch import urls as supersearch_urls
 from .authentication import urls as auth_urls
 from .monitoring import urls as monitoring_urls
 
-from funfactory.monkeypatches import patch
+
 patch()
 
 handler500 = 'crashstats.base.views.handler500'

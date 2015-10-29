@@ -25,9 +25,6 @@ import sys
 # Only blanket whole files if you desperately have to
 #
 EXCEPTIONS = (
-    # has a exceptional use of `...import *`
-    'settings/base.py:5:',
-
     # has a well known `...import *` trick that we like
     'settings/__init__.py',
 

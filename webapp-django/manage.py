@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 import os
-import warnings
+import sys
 
-# Edit this if necessary or override the variable in your environment.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crashstats.settings')
+if __name__ == '__main__':
+    # Note! If you for some reason change that change the wsgi
+    # starting-point script too.
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crashstats.settings')
 
-from funfactory import manage
+    from django.core.management import execute_from_command_line
 
-# re-enable deprecation warnings per https://code.djangoproject.com/ticket/18985
-warnings.simplefilter("default", DeprecationWarning)
-manage.setup_environ(__file__, more_pythonic=True)
-
-if __name__ == "__main__":
-    manage.main()
+    execute_from_command_line(sys.argv)
