@@ -8,7 +8,7 @@ import mock
 
 from socorro.lib.util import DotDict
 from socorro.external.boto.connection_context import (
-    ConnectionContext
+    S3ConnectionContext
 )
 from socorro.database.transaction_executor import (
     TransactionExecutor,
@@ -30,13 +30,13 @@ class ConditionallyABadDeal(Exception):
     pass
 
 
-ConnectionContext.operational_exceptions = (ABadDeal,)
-ConnectionContext.conditional_exceptions = (ConditionallyABadDeal,)
+S3ConnectionContext.operational_exceptions = (ABadDeal,)
+S3ConnectionContext.conditional_exceptions = (ConditionallyABadDeal,)
 
 a_thing = {
     'a': 'some a',
     'b': 'some b',
-    'c':  16,
+    'c': 16,
     'd': {
         'da': 'some da',
         'db': 'same db',
@@ -56,7 +56,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
         port=0
     ):
         config = DotDict({
-            'resource_class': ConnectionContext,
+            'resource_class': S3ConnectionContext,
             'logger': mock.Mock(),
             'host': host,
             'port': port,
@@ -66,12 +66,12 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'prefix': 'dev',
             'calling_format': mock.Mock()
         })
-        s3_conn = ConnectionContext(config)
+        s3_conn = S3ConnectionContext(config)
         s3_conn._connect_to_endpoint = mock.Mock()
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
         s3_conn._calling_format.return_value = mock.Mock()
         s3_conn._CreateError = mock.Mock()
-        s3_conn._S3ResponseError = mock.Mock()
+        s3_conn.ResponseError = mock.Mock()
         s3_conn._open = mock.MagicMock()
 
         return s3_conn
@@ -89,19 +89,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             kwargs['port'] = port
         connection_source._connect_to_endpoint.assert_called_with(**kwargs)
 
-    def test_connect_with_host_port(self):
-        connection = self.setup_mocked_s3_storage(
-            host='somewhere.sometime.someone',
-            port=666,
-        )
-        connection._connect()
-        self.assert_s3_connection_parameters(
-            connection,
-            host='somewhere.sometime.someone',
-            port=666,
-        )
-
-    def test_s3_dir_builder(self):
+    def test_dir_builder(self):
         connection_source = self.setup_mocked_s3_storage()
         prefix = 'dev'
         name_of_thing = 'dump'
@@ -112,11 +100,11 @@ class TestCase(socorro.unittest.testbase.TestCase):
             good
         )
 
-    def test_submit_to_boto_s3(self):
+    def test_submit(self):
         connection_source = self.setup_mocked_s3_storage()
 
         # the call to be tested
-        connection_source.submit_to_boto_s3(
+        connection_source.submit(
             'this_is_an_id',
             'name_of_thing',
             thing_as_str
@@ -155,7 +143,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             '{"db": "same db", "da": "some da"}}'
         )
 
-    def test_get_fetch_from_boto(self):
+    def test_fetch(self):
         # setup some internal behaviors and fake outs
         connection_source = self.setup_mocked_s3_storage()
         mocked_get_contents_as_string = (
@@ -163,10 +151,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
             .get_bucket.return_value.get_key.return_value
             .get_contents_as_string
         )
-        mocked_get_contents_as_string.side_effect = [ thing_as_str ]
+        mocked_get_contents_as_string.side_effect = [thing_as_str]
 
         # the tested call
-        result = connection_source.fetch_from_boto_s3(
+        result = connection_source.fetch(
             'name_of_thing',
             'this_is_an_id'
         )

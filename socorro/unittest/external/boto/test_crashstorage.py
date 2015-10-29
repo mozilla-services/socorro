@@ -16,7 +16,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping
 )
 from socorro.external.boto.connection_context import (
-    ConnectionContext
+    S3ConnectionContext
 )
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
@@ -39,11 +39,12 @@ a_raw_crash_as_string = json.dumps(a_raw_crash)
 class ABadDeal(Exception):
     pass
 
+
 class ConditionallyABadDeal(Exception):
     pass
 
-ConnectionContext.operational_exceptions = (ABadDeal, )
-ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
+S3ConnectionContext.operational_exceptions = (ABadDeal, )
+S3ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
 
 
 class TestCase(socorro.unittest.testbase.TestCase):
@@ -126,7 +127,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             },
             'transaction_executor_class': executor,
             'transaction_executor_class_for_get': executor_for_gets,
-            'resource_class': ConnectionContext,
+            'resource_class': S3ConnectionContext,
             'backoff_delays': [0, 0, 0],
             'redactor_class': Redactor,
             'forbidden_keys': Redactor.required_config.forbidden_keys.default,
@@ -151,38 +152,20 @@ class TestCase(socorro.unittest.testbase.TestCase):
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
         s3_conn._calling_format.return_value = mock.Mock()
         s3_conn._CreateError = mock.Mock()
-        s3_conn._S3ResponseError = mock.Mock()
+##        s3_conn.ResponseError = mock.Mock()
         s3_conn._open = mock.MagicMock()
 
         return s3
 
-    def assert_s3_connection_parameters(self, boto_s3_store, host='', port=0):
+    def assert_s3_connection_parameters(self, boto_s3_store):
         kwargs = {
             "aws_access_key_id": boto_s3_store.config.access_key,
             "aws_secret_access_key": boto_s3_store.config.secret_access_key,
             "is_secure": True,
             "calling_format": boto_s3_store.connection_source._calling_format.return_value
         }
-        if host:
-            kwargs['host'] = host
-        if port:
-            kwargs['port'] = port
-        boto_s3_store.connection_source._connect_to_endpoint.assert_called_with(**kwargs)
-
-    def test_connect_with_host_port(self):
-        boto_s3_store = self.setup_mocked_s3_storage(
-            host='somewhere.sometime.someplace',
-            port=666,
-        )
-        boto_s3_store.save_raw_crash(
-            {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            MemoryDumpsMapping(),
-            "0bba929f-8721-460c-dead-a43c20071027"
-        )
-        self.assert_s3_connection_parameters(
-            boto_s3_store,
-            host='somewhere.sometime.someplace',
-            port=666,
+        boto_s3_store.connection_source._connect_to_endpoint.assert_called_with(
+            **kwargs
         )
 
     def test_save_raw_crash_1(self):
@@ -297,10 +280,10 @@ class TestCase(socorro.unittest.testbase.TestCase):
 
     def test_save_raw_crash_3_failing_get_bucket(self):
         boto_s3_store = self.setup_mocked_s3_storage()
-        boto_s3_store.connection_source._S3ResponseError = ABadDeal
+        boto_s3_store.connection_source.ResponseError = ABadDeal
 
         boto_s3_store.connection_source._mocked_connection.get_bucket.side_effect = (
-            boto_s3_store.connection_source._S3ResponseError
+            boto_s3_store.connection_source.ResponseError
         )
 
         # the tested call
@@ -631,8 +614,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
                 raise action
             return action
 
-        boto_s3_store.connection_source.fetch_from_boto_s3 = mock.Mock()
-        boto_s3_store.connection_source.fetch_from_boto_s3 \
+        boto_s3_store.connection_source.fetch = mock.Mock()
+        boto_s3_store.connection_source.fetch \
             .side_effect = temp_failure_fn
 
         # the tested call
@@ -641,8 +624,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         # what should have happened internally
-        self.assertEqual(boto_s3_store.connection_source.fetch_from_boto_s3.call_count, 3)
-        boto_s3_store.connection_source.fetch_from_boto_s3.has_calls([
+        self.assertEqual(boto_s3_store.connection_source.fetch.call_count, 3)
+        boto_s3_store.connection_source.fetch.has_calls([
             mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
             mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
             mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
@@ -668,8 +651,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
                 raise action
             return action
 
-        boto_s3_store.connection_source.fetch_from_boto_s3 = mock.Mock()
-        boto_s3_store.connection_source.fetch_from_boto_s3 \
+        boto_s3_store.connection_source.fetch = mock.Mock()
+        boto_s3_store.connection_source.fetch \
             .side_effect = temp_failure_fn
 
         # the tested call
@@ -680,8 +663,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         # what should have happened internally
-        self.assertEqual(boto_s3_store.connection_source.fetch_from_boto_s3.call_count, 3)
-        boto_s3_store.connection_source.fetch_from_boto_s3.has_calls([
+        self.assertEqual(boto_s3_store.connection_source.fetch.call_count, 3)
+        boto_s3_store.connection_source.fetch.has_calls([
             mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
             mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),
             mock.call("936ce666-ff3b-4c7a-9674-367fe2120408", "raw_crash"),

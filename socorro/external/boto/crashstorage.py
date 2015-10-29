@@ -2,9 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import boto
-import boto.s3.connection
-import boto.exception
 import json
 
 from socorro.external.crashstorage_base import (
@@ -12,26 +9,22 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.external.boto.connection_context import (
-    ConnectionContext,
-    S3KeyNotFound
-)
 from socorro.lib.util import DotDict
+from socorro.lib.converters import change_default
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
 
 
 #==============================================================================
-class BotoS3CrashStorage(CrashStorageBase):
+class BotoCrashStorage(CrashStorageBase):
     """This class sends processed crash reports to an end point reachable
     by the boto S3 library.
     """
-
     required_config = Namespace()
     required_config.add_option(
         "resource_class",
-        default=ConnectionContext,
+        default='socorro.external.boto.connection_context.ConnectionContextBase',
         doc="fully qualified dotted Python classname to handle Boto connections",
         from_string_converter=class_converter,
         reference_value_from='resource.boto'
@@ -79,7 +72,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
-        super(BotoS3CrashStorage, self).__init__(
+        super(BotoCrashStorage, self).__init__(
             config,
             quit_check_callback
         )
@@ -87,7 +80,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         self.connection_source = config.resource_class(config)
         self.transaction = config.transaction_executor_class(
             config,
-            self.connection_source,  # we are our own connection
+            self.connection_source,
             quit_check_callback
         )
         if config.transaction_executor_class_for_get.is_infinite:
@@ -104,7 +97,6 @@ class BotoS3CrashStorage(CrashStorageBase):
             quit_check_callback
         )
 
-
     #--------------------------------------------------------------------------
     @staticmethod
     def do_save_raw_crash(boto_connection, raw_crash, dumps, crash_id):
@@ -113,7 +105,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         raw_crash_as_string = boto_connection._convert_mapping_to_string(
             raw_crash
         )
-        boto_connection.submit_to_boto_s3(
+        boto_connection.submit(
             crash_id,
             "raw_crash",
             raw_crash_as_string
@@ -121,7 +113,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         dump_names_as_string = boto_connection._convert_list_to_string(
             dumps.keys()
         )
-        boto_connection.submit_to_boto_s3(
+        boto_connection.submit(
             crash_id,
             "dump_names",
             dump_names_as_string
@@ -134,7 +126,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         for dump_name, dump in dumps.iteritems():
             if dump_name in (None, '', 'upload_file_minidump'):
                 dump_name = 'dump'
-            boto_connection.submit_to_boto_s3(crash_id, dump_name, dump)
+            boto_connection.submit(crash_id, dump_name, dump)
 
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
@@ -147,7 +139,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         processed_crash_as_string = boto_connection._convert_mapping_to_string(
             processed_crash
         )
-        boto_connection.submit_to_boto_s3(
+        boto_connection.submit(
             crash_id,
             "processed_crash",
             processed_crash_as_string
@@ -174,12 +166,12 @@ class BotoS3CrashStorage(CrashStorageBase):
     @staticmethod
     def do_get_raw_crash(boto_connection, crash_id):
         try:
-            raw_crash_as_string = boto_connection.fetch_from_boto_s3(
+            raw_crash_as_string = boto_connection.fetch(
                 crash_id,
                 "raw_crash"
             )
             return json.loads(raw_crash_as_string, object_hook=DotDict)
-        except (boto.exception.StorageResponseError, S3KeyNotFound), x:
+        except boto_connection.ResponseError, x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -194,9 +186,9 @@ class BotoS3CrashStorage(CrashStorageBase):
         try:
             if name in (None, '', 'upload_file_minidump'):
                 name = 'dump'
-            a_dump = boto_connection.fetch_from_boto_s3(crash_id, name)
+            a_dump = boto_connection.fetch(crash_id, name)
             return a_dump
-        except boto.exception.StorageResponseError, x:
+        except boto_connection.ResponseError, x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -209,7 +201,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     @staticmethod
     def do_get_raw_dumps(boto_connection, crash_id):
         try:
-            dump_names_as_string = boto_connection.fetch_from_boto_s3(
+            dump_names_as_string = boto_connection.fetch(
                 crash_id,
                 "dump_names"
             )
@@ -222,12 +214,12 @@ class BotoS3CrashStorage(CrashStorageBase):
             for dump_name in dump_names:
                 if dump_name in (None, '', 'upload_file_minidump'):
                     dump_name = 'dump'
-                dumps[dump_name] = boto_connection.fetch_from_boto_s3(
+                dumps[dump_name] = boto_connection.fetch(
                     crash_id,
                     dump_name
                 )
             return dumps
-        except boto.exception.StorageResponseError, x:
+        except boto_connection.ResponseError, x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -251,7 +243,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id):
         try:
-            processed_crash_as_string = boto_connection.fetch_from_boto_s3(
+            processed_crash_as_string = boto_connection.fetch(
                 crash_id,
                 "processed_crash"
             )
@@ -259,7 +251,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 processed_crash_as_string,
                 object_hook=DotDict
             )
-        except boto.exception.StorageResponseError, x:
+        except boto_connection.ResponseError, x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
@@ -267,6 +259,17 @@ class BotoS3CrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         return self.transaction_for_get(self._do_get_unredacted_processed, crash_id)
+
+
+#==============================================================================
+class BotoS3CrashStorage(BotoCrashStorage):
+    required_config = Namespace()
+    required_config.resource_class = change_default(
+        BotoCrashStorage,
+        'resource_class',
+        'socorro.external.boto.connection_context.S3ConnectionContext'
+    )
+
 
 #==============================================================================
 class SupportReasonAPIStorage(BotoS3CrashStorage):
@@ -311,7 +314,7 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
             return
 
         # Submit the data chunk to S3.
-        boto_connection.submit_to_boto_s3(
+        boto_connection.submit(
             crash_id,
             'support_reason',
             json.dumps(content)
@@ -324,3 +327,4 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
         nothing; however it is necessary for compatibility purposes.
         """
         pass
+
