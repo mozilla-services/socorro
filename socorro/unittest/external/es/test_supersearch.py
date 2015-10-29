@@ -734,6 +734,84 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
     @minimum_es_version('1.0')
+    def test_get_with_cardinality(self):
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Windows NT',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'NightTrain',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'foo(bar)',
+            'product': 'EarthRacoon',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+
+        # Index a lot of distinct values.
+        number_of_crashes = 51
+        processed_crash = {
+            'version': '10.%s',
+            'date_processed': self.now,
+        }
+        self.index_many_crashes(
+            number_of_crashes,
+            processed_crash,
+            loop_field='version',
+        )
+        # Note: index_many_crashes does the index refreshing.
+
+        # Test a simple cardinality.
+        kwargs = {
+            '_facets': ['_cardinality.platform']
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('facets' in res)
+        ok_('cardinality_platform' in res['facets'])
+        eq_(res['facets']['cardinality_platform'], {'value': 2})
+
+        # Test more distinct values.
+        kwargs = {
+            '_facets': ['_cardinality.version']
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('facets' in res)
+        ok_('cardinality_version' in res['facets'])
+        eq_(res['facets']['cardinality_version'], {'value': 51})
+
+        # Test as a level 2 aggregation.
+        kwargs = {
+            '_aggs.signature': ['_cardinality.platform']
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('facets' in res)
+        ok_('signature' in res['facets'])
+        for facet in res['facets']['signature']:
+            ok_('cardinality_platform' in facet['facets'])
+
+        # Test errors
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            _facets=['_cardinality.unknownfield']
+        )
+
+    @minimum_es_version('1.0')
     def test_get_with_signature_aggregations(self):
         self.index_crash({
             'signature': 'js::break_your_browser',

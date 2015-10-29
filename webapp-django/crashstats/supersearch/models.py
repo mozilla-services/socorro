@@ -151,6 +151,9 @@ class SuperSearch(models.SocorroMiddleware):
             ):
                 allowed_fields.add(histogram)
 
+        for field in set(allowed_fields):
+            allowed_fields.add('_cardinality.%s' % field)
+
         # Now make sure all fields listing fields only have unrestricted
         # values.
         for param in self.parameters_listing_fields:

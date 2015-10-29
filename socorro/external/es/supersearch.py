@@ -153,6 +153,10 @@ class SuperSearch(SearchBase):
         """
         aggs = aggregations.to_dict()
         for agg in aggs:
+            if 'buckets' not in aggs[agg]:
+                # This is a cardinality aggregation, there are no terms.
+                continue
+
             for i, bucket in enumerate(aggs[agg]['buckets']):
                 sub_aggs = {}
                 for key in bucket:
@@ -161,18 +165,21 @@ class SuperSearch(SearchBase):
                     if key in ('key', 'key_as_string', 'doc_count'):
                         continue
 
-                    sub_aggs[key] = [
-                        {
-                            # For date data, Elasticsearch exposes a timestamp
-                            # in 'key' and a human-friendly string in
-                            # 'key_as_string'. We thus check if the later
-                            # exists to expose it, and return the normal
-                            # 'key' if not.
-                            'term': x.get('key_as_string', x['key']),
-                            'count': x['doc_count'],
-                        }
-                        for x in bucket[key]['buckets']
-                    ]
+                    if 'buckets' not in bucket[key]:
+                        sub_aggs[key] = bucket[key]
+                    else:
+                        sub_aggs[key] = [
+                            {
+                                # For date data, Elasticsearch exposes a
+                                # timestamp in 'key' and a human-friendly
+                                # string in 'key_as_string'. We thus check if
+                                # the later exists to expose it, and return
+                                # the normal 'key' if not.
+                                'term': x.get('key_as_string', x['key']),
+                                'count': x['doc_count'],
+                            }
+                            for x in bucket[key]['buckets']
+                        ]
 
                 aggs[agg]['buckets'][i] = {
                     'term': bucket.get('key_as_string', bucket['key']),
@@ -392,83 +399,43 @@ class SuperSearch(SearchBase):
 
         # Create facets.
         for param in params['_facets']:
-            for value in param.value:
-                if not value:
-                    continue
-
-                field_name = self.get_field_name(value)
-                search.aggs.bucket(
-                    value,
-                    'terms',
-                    field=field_name,
-                    size=facets_size,
-                )
+            self._add_second_level_aggs(
+                param,
+                search.aggs,
+                facets_size,
+                histogram_intervals,
+            )
 
         # Create signature aggregations.
         if params.get('_aggs.signature'):
-            sig_bucket = A(
-                'terms',
-                field=self.get_field_name('signature'),
-                size=facets_size,
-            )
+            sig_bucket = self._get_fields_agg('signature', facets_size)
+
             for param in params['_aggs.signature']:
-                for value in param.value:
-                    if not value:
-                        continue
-
-                    if value.startswith('_histogram.'):
-                        # This is a histogram aggregation we want to run,
-                        # not a terms aggregation.
-                        field_name = value[len('_histogram.'):]
-                        if field_name not in self.histogram_fields:
-                            continue
-
-                        histogram_type = (
-                            self.all_fields[field_name]['query_type'] == 'date'
-                            and 'date_histogram' or 'histogram'
-                        )
-                        sig_bucket.bucket(
-                            'histogram_%s' % field_name,
-                            histogram_type,
-                            field=self.get_field_name(field_name),
-                            interval=histogram_intervals[field_name],
-                        )
-                    else:
-                        sig_bucket.bucket(
-                            value,
-                            'terms',
-                            field=self.get_field_name(value),
-                            size=facets_size,
-                        )
+                self._add_second_level_aggs(
+                    param,
+                    sig_bucket,
+                    facets_size,
+                    histogram_intervals,
+                )
 
             search.aggs.bucket('signature', sig_bucket)
 
         # Create histograms.
         for f in self.histogram_fields:
             if params.get('_histogram.%s' % f):
-                histogram_type = (
-                    self.all_fields[f]['query_type'] == 'date'
-                    and 'date_histogram' or 'histogram'
+                histogram_bucket = self._get_histogram_agg(
+                    f, histogram_intervals
                 )
-                date_bucket = A(
-                    histogram_type,
-                    field=self.get_field_name(f),
-                    interval=histogram_intervals[f],
-                )
+
                 for param in params['_histogram.%s' % f]:
-                    for value in param.value:
-                        if not value:
-                            continue
+                    self._add_second_level_aggs(
+                        param,
+                        histogram_bucket,
+                        facets_size,
+                        histogram_intervals,
+                    )
 
-                        field_name = self.get_field_name(value)
-                        val_bucket = A(
-                            'terms',
-                            field=field_name,
-                            size=facets_size,
-                        )
-                        date_bucket.bucket(value, val_bucket)
-
-                search.aggs.bucket('histogram_%s' % f, date_bucket)
+                search.aggs.bucket('histogram_%s' % f, histogram_bucket)
 
         # Query and compute results.
         hits = []
@@ -523,6 +490,62 @@ class SuperSearch(SearchBase):
             'total': total,
             'facets': aggregations,
         }
+
+    def _get_histogram_agg(self, field, intervals):
+        histogram_type = (
+            self.all_fields[field]['query_type'] == 'date'
+            and 'date_histogram' or 'histogram'
+        )
+        return A(
+            histogram_type,
+            field=self.get_field_name(field),
+            interval=intervals[field],
+        )
+
+    def _get_cardinality_agg(self, field):
+        return A(
+            'cardinality',
+            field=self.get_field_name(field),
+        )
+
+    def _get_fields_agg(self, field, facets_size):
+        return A(
+            'terms',
+            field=self.get_field_name(field),
+            size=facets_size,
+        )
+
+    def _add_second_level_aggs(
+        self, param, recipient, facets_size, histogram_intervals
+    ):
+        for field in param.value:
+            if not field:
+                continue
+
+            if field.startswith('_histogram'):
+                field_name = field[len('_histogram.'):]
+                if field_name not in self.histogram_fields:
+                    continue
+
+                bucket_name = 'histogram_%s' % field_name
+                bucket = self._get_histogram_agg(
+                    field_name, histogram_intervals
+                )
+
+            elif field.startswith('_cardinality'):
+                field_name = field[len('_cardinality.'):]
+
+                bucket_name = 'cardinality_%s' % field_name
+                bucket = self._get_cardinality_agg(field_name)
+
+            else:
+                bucket_name = field
+                bucket = self._get_fields_agg(field, facets_size)
+
+            recipient.bucket(
+                bucket_name,
+                bucket
+            )
 
     # For backwards compatibility with the previous elasticsearch module.
     # All those methods used to live in this file, but have been moved to

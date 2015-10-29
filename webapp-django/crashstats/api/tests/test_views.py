@@ -1666,6 +1666,7 @@ class TestViews(BaseTestViews):
                 if key in params:
                     ok_('url' not in params[key])
                     ok_('email' not in params[key])
+                    ok_('_cardinality.email' not in params[key])
 
             if 'product' in params:
                 eq_(params['product'], ['WaterWolf', 'NightTrain'])
@@ -1709,9 +1710,13 @@ class TestViews(BaseTestViews):
         # Verify it's not possible to use restricted parameters.
         response = self.client.get(url, {
             'exploitability': 'high',
-            '_facets': ['url', 'email', 'product'],
-            '_aggs.signature': ['url', 'email', 'product'],
-            '_histogram.date': ['url', 'email', 'product'],
+            '_facets': ['url', 'email', 'product', '_cardinality.email'],
+            '_aggs.signature': [
+                'url', 'email', 'product', '_cardinality.email'
+            ],
+            '_histogram.date': [
+                'url', 'email', 'product', '_cardinality.email'
+            ],
         })
         eq_(response.status_code, 200)
 
