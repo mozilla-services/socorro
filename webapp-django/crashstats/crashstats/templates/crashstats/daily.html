@@ -241,11 +241,7 @@
 <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
 {% endcompress %}
 <script>
-    var data = {
-        {
-            graph_data | json_dumps
-        }
-    };
+    var data = {{ graph_data | json_dumps }};
     window.socGraphByReportType = false;
 </script>
 {% endblock %}
