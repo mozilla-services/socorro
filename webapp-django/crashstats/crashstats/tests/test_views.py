@@ -5,6 +5,7 @@ import json
 import mock
 import re
 import urllib
+import random
 
 import pyquery
 
@@ -15,6 +16,7 @@ from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.utils import timezone
 from django.contrib.auth.models import (
     User,
     AnonymousUser,
@@ -2003,6 +2005,338 @@ class TestViews(BaseTestViews):
             'p': 'WaterWolf',
         })
         eq_(response.status_code, 200)
+
+    @mock.patch('requests.get')
+    def test_crashes_per_user(self, rget):
+        url = reverse('crashstats:crashes_per_user')
+
+        def mocked_get(url, params, **options):
+            if '/adi/' in url:
+                eq_(params['versions'], ['20.0', '19.0'])
+                end_date = timezone.now().date()
+                # the default is two weeks
+                start_date = end_date - datetime.timedelta(weeks=2)
+                eq_(params['start_date'], start_date.strftime('%Y-%m-%d'))
+                eq_(params['end_date'], end_date.strftime('%Y-%m-%d'))
+                eq_(params['product'], 'WaterWolf')
+                eq_(params['platforms'], ['Windows', 'Mac OS X', 'Linux'])
+                response = {
+                    'total': 4,
+                    'hits': []
+                }
+                while start_date < end_date:
+                    for version in ['20.0', '19.0']:
+                        for build_type in ['beta', 'release']:
+                            response['hits'].append({
+                                'adi_count': random.randint(100, 1000),
+                                'build_type': build_type,
+                                'date': start_date.strftime('%Y-%m-%d'),
+                                'version': version
+                            })
+                    start_date += datetime.timedelta(days=1)
+                return Response(response)
+            if '/products/build_types/' in url:
+                return Response({
+                    'hits': {
+                        'release': 0.1,
+                        'beta': 1.0,
+                    }
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            eq_(params['product'], ['WaterWolf'])
+            eq_(params['version'], ['20.0', '19.0'])
+            end_date = timezone.now().date()
+            start_date = end_date - datetime.timedelta(weeks=2)  # the default
+            expected_dates = [
+                start_date.strftime('>=%Y-%m-%d'),
+                end_date.strftime('<%Y-%m-%d'),
+            ]
+            eq_(params['date'], expected_dates)
+            eq_(params['_histogram.date'], ['version'])
+            eq_(params['_facets'], ['version'])
+            eq_(params['_results_number'], 0)
+            eq_(params['_columns'], ('date', 'version', 'platform', 'product'))
+            assert params['_fields']
+
+            response = {
+                'facets': {
+                    'histogram_date': [],
+                    'signature': [],
+                    'version': []
+                },
+                'hits': [],
+                'total': 21187
+            }
+            totals = {
+                '19.0': 0,
+                '20.0': 0,
+            }
+            while start_date < end_date:
+                counts = dict(
+                    (version, random.randint(0, 100))
+                    for version in ['20.0', '19.0']
+                )
+                date = {
+                    'count': sum(counts.values()),
+                    'facets': {
+                        'version': [
+                            {'count': v, 'term': k}
+                            for k, v in counts.items()
+                        ]
+                    },
+                    'term': start_date.isoformat()
+                }
+                for version, count in counts.items():
+                    totals[version] += count
+                response['facets']['histogram_date'].append(date)
+                start_date += datetime.timedelta(days=1)
+            response['facets']['version'] = [
+                {'count': v, 'term': k}
+                for k, v in totals.items()
+            ]
+            return response
+
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+
+        response = self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['20.0', '19.0']
+        })
+        eq_(response.status_code, 200)
+
+        # There's not a whole lot we can easily test in the output
+        # because it's random numbers in the mock functions
+        # and trying to not use random numbers and looking for
+        # exact sums or whatnot is error prone because we might
+        # asset that the number appears anywhere.
+        doc = pyquery.PyQuery(response.content)
+        # Table headers for each version
+        th_texts = [x.text for x in doc('th')]
+        ok_('19.0' in th_texts)
+        ok_('20.0' in th_texts)
+
+        # There should be 14 days worth of content in the main table.
+        # Plus two for the standard headers
+        eq_(doc('table.crash_data tr').size(), 14 + 2)
+
+        # check that the CSV version is working too
+        response = self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['20.0', '19.0'],
+            'format': 'csv'
+        })
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'text/csv')
+
+        # also, I should be able to read it
+        reader = csv.reader(response)
+        # because response is an iterator that will return a blank line first
+        # we skip till the next time
+        rows = list(reader)[1:]
+        eq_(len(rows), 14 + 1)  # +1 for the header
+        head_row = rows[0]
+        eq_(
+            head_row,
+            [
+                'Date',
+                'WaterWolf 20.0 Crashes',
+                'WaterWolf 20.0 ADI',
+                'WaterWolf 20.0 Throttle',
+                'WaterWolf 20.0 Ratio',
+                'WaterWolf 19.0 Crashes',
+                'WaterWolf 19.0 ADI',
+                'WaterWolf 19.0 Throttle',
+                'WaterWolf 19.0 Ratio'
+            ]
+        )
+        first_row = rows[1]
+        yesterday = timezone.now() - datetime.timedelta(days=1)
+
+        def is_percentage(thing):
+            return thing.endswith('%') and float(thing.replace('%', ''))
+
+        eq_(first_row[0], yesterday.strftime('%Y-%m-%d'))
+        ok_(first_row[1].isdigit())  # crashes
+        ok_(first_row[2].isdigit())  # adi
+        ok_(is_percentage(first_row[3]))  # throttle
+        ok_(is_percentage(first_row[4]))  # ratio
+
+    @mock.patch('requests.get')
+    def test_crashes_per_user_with_beta_versions(self, rget):
+        """This is a variation on test_crashes_per_user() (above)
+        but with fewer basic assertions. The point of this
+        test is to request it for '18.0b' and '19.0'. The '18.0b'
+        is actual a beta version that needs to be exploded into its
+        actual releases which are, in this test '18.0b1' and '18.0b2'.
+        """
+
+        models.CurrentProducts.cache_seconds = 0
+
+        url = reverse('crashstats:crashes_per_user')
+
+        def mocked_get(url, params, **options):
+            if '/adi/' in url:
+                eq_(params['versions'], ['19.0', '18.0b'])
+                end_date = timezone.now().date()
+                # the default is two weeks
+                start_date = end_date - datetime.timedelta(weeks=2)
+                response = {
+                    'total': 4,
+                    'hits': []
+                }
+                while start_date < end_date:
+                    for version in ['18.0b1', '18.0b2', '19.0']:
+                        for build_type in ['beta', 'release']:
+                            response['hits'].append({
+                                'adi_count': random.randint(100, 1000),
+                                'build_type': build_type,
+                                'date': start_date.strftime('%Y-%m-%d'),
+                                'version': version
+                            })
+                    start_date += datetime.timedelta(days=1)
+                return Response(response)
+            if '/products/build_types/' in url:
+                return Response({
+                    'hits': {
+                        'release': 0.1,
+                        'beta': 1.0,
+                    }
+                })
+            #
+            if '/products/' in url:
+                end_date = timezone.now().strftime('%Y-%m-%d')
+                return Response({
+                    "products": [
+                        "WaterWolf",
+                    ],
+                    "hits": {
+                        "WaterWolf": [
+                            {
+                                "product": "WaterWolf",
+                                "throttle": "100.00",
+                                "end_date": end_date,
+                                "start_date": "2012-03-08",
+                                "featured": True,
+                                "version": "19.0",
+                                "release": "Beta",
+                                "id": 922
+                            },
+                            {
+                                "product": "WaterWolf",
+                                "throttle": "100.00",
+                                "end_date": end_date,
+                                "start_date": "2012-03-08",
+                                "featured": True,
+                                "version": "18.0b1",
+                                "release": "Beta",
+                                "id": 923
+                            },
+                            {
+                                "product": "WaterWolf",
+                                "throttle": "100.00",
+                                "end_date": end_date,
+                                "start_date": "2012-03-08",
+                                "featured": True,
+                                "version": "18.0b",
+                                "release": "Beta",
+                                "id": 924
+                            },
+                            {
+                                "product": "WaterWolf",
+                                "throttle": "100.00",
+                                "end_date": end_date,
+                                "start_date": "2012-03-08",
+                                "featured": True,
+                                "version": "18.0b2",
+                                "release": "Beta",
+                                "id": 925
+                            }
+                        ],
+                    },
+                    "total": 3
+                })
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            eq_(params['product'], ['WaterWolf'])
+            eq_(params['version'], ['19.0', '18.0b'])
+            end_date = timezone.now().date()
+            start_date = end_date - datetime.timedelta(weeks=2)  # the default
+            assert params['_fields']
+
+            response = {
+                'facets': {
+                    'histogram_date': [],
+                    'signature': [],
+                    'version': []
+                },
+                'hits': [],
+                'total': 21187
+            }
+            totals = {
+                '18.0b1': 0,
+                '18.0b2': 0,
+                '19.0': 0,
+            }
+            while start_date < end_date:
+                counts = dict(
+                    (version, random.randint(0, 100))
+                    for version in ['18.0b1', '18.0b2', '19.0']
+                )
+                date = {
+                    'count': sum(counts.values()),
+                    'facets': {
+                        'version': [
+                            {'count': v, 'term': k}
+                            for k, v in counts.items()
+                        ]
+                    },
+                    'term': start_date.isoformat()
+                }
+                for version, count in counts.items():
+                    totals[version] += count
+                response['facets']['histogram_date'].append(date)
+                start_date += datetime.timedelta(days=1)
+            response['facets']['version'] = [
+                {'count': v, 'term': k}
+                for k, v in totals.items()
+            ]
+            return response
+
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+
+        response = self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['18.0b', '19.0']
+        })
+        eq_(response.status_code, 200)
+
+        # There's not a whole lot we can easily test in the output
+        # because it's random numbers in the mock functions
+        # and trying to not use random numbers and looking for
+        # exact sums or whatnot is error prone because we might
+        # asset that the number appears anywhere.
+        doc = pyquery.PyQuery(response.content)
+        # Table headers for each version
+        th_texts = [x.text for x in doc('th')]
+        ok_('19.0' in th_texts)
+        ok_('18.0b' in th_texts)
+        ok_('18.0b1' not in th_texts)
+        ok_('18.0b2' not in th_texts)
+
+        # There should be 14 days worth of content in the main table.
+        # Plus two for the standard headers
+        eq_(doc('table.crash_data tr').size(), 14 + 2)
+
+        # put it back some something > 0
+        models.CurrentProducts.cache_seconds = 60
 
     def test_quick_search(self):
         url = reverse('crashstats:quick_search')
