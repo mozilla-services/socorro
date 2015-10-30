@@ -1192,11 +1192,21 @@ def crashes_per_user(request, default_context=None):
                 else:
                     ratio = 0.0
 
+                # Why do we divide the count by the throttle?!
+                # Consider the case of Release. That one we throttle to 10%
+                # meaning that if we received 123 crashes, it happened to
+                # about 1230 people actually. We just "discarded" 90% of the
+                # records.
+                # But, why divide? Because throttle is a floating point
+                # number between 0 and 1.0. If it's 1.0 it means we're taking
+                # 100% and 234/1.0 == 234. If it's 0.1 it means that
+                # 123/0.1 == 1230.
+                report_count = int(count / throttle)
                 item = {
                     'adi': total,
                     'date': date,
                     'ratio': ratio,
-                    'report_count': count,
+                    'report_count': report_count,
                     'product': params['product'],
                     'throttle': throttle,
                     'version': term,
