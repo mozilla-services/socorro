@@ -350,7 +350,7 @@ function start_minimal_socorro_apps() {
   echo "INFO: starting up *** start_minimal_socorro_apps *** "
   echo "      * in this test we're using the older collector capable of accepting only breakpad crashes"
   echo "      * the collector writes to only the filesystem using FSTemporaryStorage"
-  echo "      * the processor used Processor2015 with the MozillaProcessorAlgorithm2015"
+  echo "      * the processor used Processor2015 with the SocorroLiteProcessorAlgorithm2015"
   echo "      * the processor sources from FSTemporaryStorage"
   echo "      * the processor writes only to FSPermanentStorage"
   socorro collector \
@@ -362,7 +362,7 @@ function start_minimal_socorro_apps() {
       --source.crashstorage_class=socorro.external.fs.crashstorage.FSTemporaryStorage \
       --new_crash_source.new_crash_source_class=socorro.external.fs.fs_new_crash_source.FSNewCrashSource \
       --new_crash_source.crashstorage_class=socorro.external.fs.crashstorage.FSTemporaryStorage \
-      --processor.processor_class=socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015 \
+      --processor.processor_class=socorro.processor.socorrolite_processor_2015.SocorroLiteProcessorAlgorithm2015 \
       --destination.crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage \
       --destination.fs_root=./processedCrashStore \
       > processor.log 2>&1 &

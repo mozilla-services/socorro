@@ -1,6 +1,9 @@
 import ujson
+
 from socorro.processor.processor_2015 import Processor2015
 from socorro.lib.converters import change_default
+
+from configman import Namespace
 
 #------------------------------------------------------------------------------
 # these are the steps that define minimal processing of a crash.
