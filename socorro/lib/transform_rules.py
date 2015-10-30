@@ -286,6 +286,7 @@ class TransformRule(Rule):
 
     #--------------------------------------------------------------------------
     def close(self):
+        self.config.logger.debug('null close on rule %s', self.__class__)
         pass
 
 #==============================================================================
@@ -478,8 +479,10 @@ class TransformRuleSystem(RequiredConfig):
     def close(self):
         for a_rule in self.rules:
             try:
+                self.config.logger.debug('trying to close %s', to_str(a_rule.__class__))
                 a_rule.close()
             except AttributeError:
+                self.config.logger.debug('%s has no close',  to_str(a_rule.__class__))
                 # no close method mean no need to close
                 pass
 

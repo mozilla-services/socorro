@@ -94,7 +94,7 @@ class PGPVNewCrashSource(PGQueryNewCrashSource):
         "from reports_clean rc join product_versions pv "
         "    on rc.product_version_id = pv.product_version_id "
         "where "
-        "%s <= date_processed and date_processed < %s"
+        "%s <= date_processed and date_processed < %s "
         "and %s between pv.build_date and pv.sunset_date"
     )
     required_config.add_option(
