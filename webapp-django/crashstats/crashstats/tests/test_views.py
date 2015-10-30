@@ -32,7 +32,7 @@ from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
 )
-from crashstats.supersearch.models import SuperSearchFields
+from crashstats.supersearch.models import SuperSearchFields, SuperSearch
 from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
 from .test_models import Response
 
@@ -1610,6 +1610,148 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 404)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    def test_exploitability_report(self, rpost):
+        url = reverse('crashstats:exploitability_report')
+        rpost.side_effect = mocked_post_threesigs
+
+        queried_versions = []
+
+        def mocked_supersearch_get(**params):
+            eq_(params['product'], ['WaterWolf'])
+            queried_versions.append(params.get('version'))
+            eq_(params['_aggs.signature'], ['exploitability'])
+            eq_(params['_facets_size'], settings.EXPLOITABILITY_BATCH_SIZE)
+            ok_(params['exploitability'])
+            assert params['_fields']
+            facets = [
+                {
+                    'count': 229,
+                    'facets': {
+                        'exploitability': [
+                            {'count': 210, 'term': u'none'},
+                            {'count': 19, 'term': u'low'},
+                        ]
+                    },
+                    'term': 'FakeSignature 1'
+                },
+                {
+                    'count': 124,
+                    'facets': {
+                        'exploitability': [
+                            {'count': 120, 'term': u'none'},
+                            {'count': 1, 'term': 'high'},
+                            {'count': 4, 'term': 'interesting'},
+                        ]
+                    },
+                    'term': 'FakeSignature 3'
+                },
+                {
+                    'count': 104,
+                    'facets': {
+                        'exploitability': [
+                            {'count': 93, 'term': u'low'},
+                            {'count': 11, 'term': u'medium'},
+                        ]
+                    },
+                    'term': 'Other Signature',
+                },
+                {
+                    'count': 222,
+                    'facets': {
+                        'exploitability': [
+                            # one that doesn't add up to 4
+                            {'count': 10, 'term': u'null'},
+                            {'count': 20, 'term': u'none'},
+                        ]
+                    },
+                    'term': 'FakeSignature',
+                },
+            ]
+            return {
+                'facets': {
+                    'signature': facets,
+                },
+                'hits': [],
+                'total': 1234
+            }
+
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+
+        response = self.client.get(url, {'product': 'WaterWolf'})
+        ok_(response.status_code, 302)
+
+        user = self._login()
+        response = self.client.get(url, {'product': 'WaterWolf'})
+        eq_(response.status_code, 302)
+
+        group = self._create_group_with_permission('view_exploitability')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_exploitability')
+
+        # unrecognized product
+        response = self.client.get(url, {'product': 'XXXX'})
+        eq_(response.status_code, 400)
+
+        # unrecognized version
+        response = self.client.get(
+            url,
+            {'product': 'WaterWolf', 'version': '0000'}
+        )
+        eq_(response.status_code, 400)
+
+        # valid version but not for WaterWolf
+        response = self.client.get(
+            url,
+            {'product': 'WaterWolf', 'version': '1.5'}
+        )
+        eq_(response.status_code, 400)
+
+        # if you omit the product, it'll redirect and set the default product
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        ok_(response['Location'].endswith(
+            url + '?product=%s' % settings.DEFAULT_PRODUCT
+        ))
+
+        response = self.client.get(
+            url,
+            {'product': 'WaterWolf', 'version': '19.0'}
+        )
+        eq_(response.status_code, 200)
+
+        doc = pyquery.PyQuery(response.content)
+
+        # We expect a table with 3 different signatures
+        # The signature with the highest high+medium count is
+        # 'Other Signature' etc.
+        tds = doc('table.data-table tbody td:first-child a')
+        texts = [x.text for x in tds]
+        eq_(texts, ['Other Signature', 'FakeSignature 3', 'FakeSignature 1'])
+
+        # The first signature doesn't have any bug associations,
+        # but the second and the third does.
+        rows = doc('table.data-table tbody tr')
+        texts = [
+            [x.text for x in doc('td.bug_ids_more a', row)]
+            for row in rows
+        ]
+        eq_(
+            texts,
+            [
+                [],
+                ['222222222'],
+                ['111111111']
+            ]
+        )
+
+        assert queried_versions == [['19.0']]
+        response = self.client.get(url, {'product': 'WaterWolf'})
+        eq_(response.status_code, 200)
+
+        assert queried_versions == [['19.0'], None]
 
     @mock.patch('requests.get')
     def test_daily(self, rget):

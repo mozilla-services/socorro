@@ -1323,6 +1323,8 @@ def exploitable_crashes(
     versions=None,
     default_context=None
 ):
+    """This function is now deprecated in favor of the new one called
+    exploitability_report"""
     context = default_context or {}
 
     if product is None:
@@ -1364,7 +1366,146 @@ def exploitable_crashes(
     ))
     context['version'] = versions
     context['report'] = 'exploitable'
+    context['new_link_url'] = reverse('crashstats:exploitability_report')
+    query_string = {'product': product}
+    if versions:
+        query_string['version'] = versions
+    context['new_link_url'] += '?' + urllib.urlencode(query_string, True)
     return render(request, 'crashstats/exploitability.html', context)
+
+
+@pass_default_context
+@permission_required('crashstats.view_exploitability')
+def exploitability_report(request, default_context=None):
+    context = default_context or {}
+
+    if not request.GET.get('product'):
+        url = reverse('crashstats:exploitability_report')
+        url += '?' + urllib.urlencode({
+            'product': settings.DEFAULT_PRODUCT
+        })
+        return redirect(url)
+
+    available_products = {}
+    for product, versions in context['releases'].items():
+        if product not in available_products:
+            available_products[product] = []
+        for version_info in versions:
+            available_products[product].append(version_info['version'])
+
+    form = forms.ExploitabilityReportForm(
+        request.GET,
+        available_products=available_products,
+    )
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(str(form.errors))
+
+    product = form.cleaned_data['product']
+    version = form.cleaned_data['version']
+
+    api = SuperSearchUnredacted()
+    params = {
+        'product': product,
+        'version': version,
+        '_results_number': 0,
+        # This aggregates on crashes that do NOT contain these
+        # key words. For example, if a crash has
+        # {'exploitability': 'error: unable to analyze dump'}
+        # then it won't get included.
+        'exploitability': ['!error', '!interesting'],
+        '_aggs.signature': 'exploitability',
+        '_facets_size': settings.EXPLOITABILITY_BATCH_SIZE,
+    }
+    results = api.get(**params)
+
+    base_signature_report_dict = {
+        'product': product,
+    }
+    if version:
+        base_signature_report_dict['version'] = version
+
+    crashes = []
+    categories = ('high', 'none', 'low', 'medium', 'null')
+    for signature_facet in results['facets']['signature']:
+        # this 'signature_facet' will look something like this:
+        #
+        #  {
+        #      'count': 1234,
+        #      'term': 'My | Signature',
+        #      'facets': {
+        #          'exploitability': [
+        #              {'count': 1, 'term': 'high'},
+        #              {'count': 23, 'term': 'medium'},
+        #              {'count': 11, 'term': 'other'},
+        #
+        # And we only want to include those where:
+        #
+        #   low or medium or high are greater than 0
+        #
+
+        exploitability = signature_facet['facets']['exploitability']
+        if not any(
+            x['count']
+            for x in exploitability
+            if x['term'] in ('high', 'medium', 'low')
+        ):
+            continue
+        crash = {
+            'bugs': [],
+            'signature': signature_facet['term'],
+            'high_count': 0,
+            'medium_count': 0,
+            'low_count': 0,
+            'none_count': 0,
+            'url': (
+                reverse('signature:signature_report') + '?' +
+                urllib.urlencode(dict(
+                    base_signature_report_dict,
+                    signature=signature_facet['term']
+                ))
+            ),
+        }
+        for cluster in exploitability:
+            if cluster['term'] in categories:
+                crash['{}_count'.format(cluster['term'])] = (
+                    cluster['count']
+                )
+        crash['med_or_high'] = (
+            crash.get('high_count', 0) +
+            crash.get('medium_count', 0)
+        )
+        crashes.append(crash)
+
+    # Sort by the 'med_or_high' key first (descending),
+    # and by the signature second (ascending).
+    crashes.sort(key=lambda x: (-x['med_or_high'], x['signature']))
+
+    # now, let's go back and fill in the bugs
+    signatures = [x['signature'] for x in crashes]
+    if signatures:
+        api = models.Bugs()
+        bugs = defaultdict(list)
+        for b in api.get(signatures=signatures)['hits']:
+            bugs[b['signature']].append(b['id'])
+
+        for crash in crashes:
+            crash['bugs'] = bugs.get(crash['signature'], [])
+
+    context['crashes'] = crashes
+    context['product'] = product
+    context['version'] = version
+    if context['product'] and context['version']:
+        context['old_link_url'] = reverse(
+            'crashstats:exploitable_crashes',
+            args=(context['product'], context['version'])
+        )
+    else:
+        context['old_link_url'] = reverse(
+            'crashstats:exploitable_crashes',
+            args=(context['product'],)
+        )
+    context['report'] = 'exploitable'
+    return render(request, 'crashstats/exploitability_report.html', context)
 
 
 @pass_default_context
