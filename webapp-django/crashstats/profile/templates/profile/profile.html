@@ -17,8 +17,6 @@
 <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
 
     {% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
-<script type="text/javascript" src="{{ static('tokens/js/home.js') }}"></script>
 <script type="text/javascript" src="{{ static('profile/js/profile.js') }}"></script>
     {% endcompress %}
 
@@ -30,12 +28,77 @@
 
     <div class="page-heading">
         <p class="profile-email">
-            <b>{{ request.user.email }}</b>
+            {{ request.user.email }} -
+            {{ browserid_logout(text='Sign out') }}
         </p>
         <h2>Your Profile</h2>
     </div>
 
     <div class="panel">
+        <div class="body">
+            <ul class="links">
+                {% if request.user.is_superuser %}
+                <li>
+                    <a href="{{ url('manage:home') }}">Admin</a>
+                </li>
+                {% endif %}
+                <li>
+                    <a href="{{ url('tokens:home') }}">API Tokens</a>
+                </li>
+                <li>
+                    <a href="{{ url('symbols:home') }}">Symbols Upload</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="panel page-section">
+        <div class="title">
+            <h2>Your Crash Reports</h2>
+        </div>
+        <div class="body">
+            {% if crashes_list %}
+
+            <p>
+                Here is a list of the crash reports we have received from you,
+                and processed, in the last 4 weeks:
+            </p>
+
+            <table class="crashes_list data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Crash ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for crash in crashes_list %}
+                    <tr>
+                        <td><time datetime="{{ crash.date }}">{{ crash.date }}</time></td>
+                        <td>
+                            <a href="{{ url('crashstats:report_index', crash.crash_id) }}">
+                                {{ crash.crash_id }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% else %}
+
+            <p>
+                It seems we have received or processed <strong>no crash report
+                from you in the last 4 weeks</strong>. It's either good news,
+                or you do not provide your email address when you send us
+                crash reports.
+            </p>
+
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel page-section">
         <div class="title">
             <h2>Your Permissions</h2>
         </div>
@@ -67,126 +130,6 @@
             </tbody>
         </table>
         {% endif %}
-        </div>
-    </div>
-
-    <div class="page-section">
-        <div class="panel">
-            <div class="title">
-                <h2>Your Crash Reports</h2>
-            </div>
-            <div class="body">
-                {% if crashes_list %}
-
-                <p>
-                    Here is a list of the crash reports we have received from you,
-                    and processed, in the last 4 weeks:
-                </p>
-
-                <table class="crashes_list data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Crash ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for crash in crashes_list %}
-                        <tr>
-                            <td><time datetime="{{ crash.date }}">{{ crash.date }}</time></td>
-                            <td>
-                                <a href="{{ url('crashstats:report_index', crash.crash_id) }}">
-                                    {{ crash.crash_id }}
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                {% else %}
-
-                <p>
-                    It seems we have received or processed <strong>no crash report
-                    from you in the last 4 weeks</strong>. It's either good news,
-                    or you do not provide your email address when you send us
-                    crash reports.
-                </p>
-
-                {% endif %}
-            </div>
-        </div>
-    </div><!--
-
- --><div class="page-section">
-        <div class="panel">
-            <div class="title">
-                <h2>Your API Tokens</h2>
-            </div>
-
-            <div class="body">
-                {% if your_tokens %}
-                <p>Here is a list of your currently generated tokens. <a href="{{ url('tokens:home') }}">Manage your API tokens</a></p>
-                {% endif %}
-                {% for token in your_tokens %}
-                <div class="token">
-                    <h4>Generated <time class="ago" data-date="{{ token.created.isoformat() }}">{{ token.created.isoformat() }}</time></h4>
-                    <p class="code">
-                        <code>{{ token.key[:12] }}<span class="rest-hidden">{{ token.key[12:] }}</span><span class="rest-cover">...</span></code>
-                        <button type="button" data-toggle="Hide again">Show the whole token</button>
-                    </p>
-
-                    {% if token.is_expired %}
-                    <p class="is-expired">Token has expired and will not work any more.</p>
-                    {% endif %}
-
-                    <table class="meta-data">
-                        <tr>
-                            <th>Permissions:</th>
-                            <td>
-                                <ul>
-                                    {% for permission in token.permissions.all() %}
-                                        <li><code>{{ permission.name }}</code></li>
-                                    {% else %}
-                                        <li><em>None</em></li>
-                                    {% endfor %}
-                                </ul>
-                            </td>
-                        </tr>
-                        {% if token.is_expired %}
-                        <tr>
-                            <th>Expired:</th>
-                            <td>
-                                {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }}
-                                (<time class="ago" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time>)
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <th>Expires:</th>
-                            <td>
-                                {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }}
-                                (<time class="in" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time> from now)
-                            </td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <th>Notes:</th>
-                            <td>
-                                {% if token.notes %}
-                                    {{ token.notes | nl2br }}
-                                {% else %}
-                                    <i>no notes</i>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                {% else %}
-                <p>You currently have no tokens generated. <a href="{{ url('tokens:home') }}">Manage your API tokens</a>.</p>
-                {% endfor %}
-            </div>
-        </div>
         </div>
     </div>
 

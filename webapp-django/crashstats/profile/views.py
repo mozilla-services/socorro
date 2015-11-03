@@ -6,7 +6,6 @@ from django.contrib.auth.models import Permission
 
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.supersearch.models import SuperSearchUnredacted
-from crashstats.tokens import models
 
 
 @pass_default_context
@@ -34,11 +33,5 @@ def profile(request, default_context=None):
         dict(zip(('crash_id', 'date'), (x['uuid'], x['date'])))
         for x in results['hits']
     ]
-
-    context['your_tokens'] = (
-        models.Token.objects
-        .filter(user=request.user)
-        .order_by('-created')
-    )
 
     return render(request, 'profile/profile.html', context)
