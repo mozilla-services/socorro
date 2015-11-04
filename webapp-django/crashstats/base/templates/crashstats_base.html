@@ -11,7 +11,7 @@
             {% endcompress %}
             {{ browserid_css() }}
         {% endblock %}
-  {% if GOOGLE_ANALYTICS_ID %}
+    {% if GOOGLE_ANALYTICS_ID %}
         <script type="text/javascript">
           (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
           (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -21,8 +21,8 @@
           ga('create', '{{ GOOGLE_ANALYTICS_ID }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}');
           ga('send', 'pageview');
         </script>
-  {% endif %}
-  {% if PINGDOM_RUM_ID %}
+    {% endif %}
+    {% if PINGDOM_RUM_ID %}
         <script>
           var _prum = [['id', '{{ PINGDOM_RUM_ID }}'],
                  ['mark', 'firstbyte', (new Date()).getTime()]];
@@ -34,8 +34,9 @@
           s.parentNode.insertBefore(p, s);
           })();
         </script>
-  {% endif %}
+    {% endif %}
     </head>
+
     <body>
     {{ browserid_info() }}
     <div class="page-header">
@@ -59,7 +60,7 @@
         <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
         <input type="hidden" id="url_site" name="url_site" value="/" />
 
-  {% block product_nav_filter %}
+    {% block product_nav_filter %}
         <ul class="filter">
             <li>
                 <label for="products_select">Product:</label>
@@ -77,16 +78,22 @@
                     </optgroup>
                     <optgroup label=" ">
                     {% for release in releases[product] %}
-                      {% if release.featured %}
-                      <option value="{{ release.version }}" {% if release.version == version %}selected{% endif %}>{{ release.version }}</option>
-                      {% endif %}
+                        {% if release.featured %}
+                        <option
+                            value="{{ release.version }}"
+                            {% if release.version == version %}selected{% endif %}
+                        >{{ release.version }}</option>
+                        {% endif %}
                     {% endfor  %}
                     </optgroup>
                     <optgroup label=" ">
                     {% for release in releases[product] %}
-                      {% if not release.featured %}
-                      <option value="{{ release.version }}" {% if release.version == version %}selected{% endif %}>{{ release.version }}</option>
-                      {% endif %}
+                        {% if not release.featured %}
+                        <option
+                            value="{{ release.version }}"
+                            {% if release.version == version %}selected{% endif %}
+                        >{{ release.version }}</option>
+                        {% endif %}
                     {% endfor  %}
                     </optgroup>
                 </select>
@@ -95,21 +102,51 @@
                 <label for="report_select">Report:</label>
                 <select id="report_select">
                     <optgroup label=" ">
-                        <option value="{{ url('crashstats:home', product) }}" {% if report == 'products' %}selected{% endif %}>Overview</option>
+                        <option
+                            value="products"
+                            data-url-product="{{ url('crashstats:home', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:home', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'products' %}selected{% endif %}
+                        >Overview</option>
                     </optgroup>
                     <optgroup label=" ">
-                        <option value="{{ url('crashstats:daily') }}?p={{ product }}" {% if report == 'daily' %}selected{% endif %}>Crashes per User</option>
-                        <option value="{{ url('crashstats:topcrasher', product) }}" {% if report == 'topcrasher' %}selected{% endif %}>Top Crashers</option>
-                        <option value="{{ url('crashstats:gccrashes', product)}}" {% if report == 'gccrashes' %}selected{% endif %}>GC Crashes</option>
-                        <option value="{{ url('crashstats:explosive', product) }}" {% if report == 'explosive' %}selected{% endif %}>Explosive Crashes</option>
+                        <option
+                            value="daily"
+                            data-url-product="{{ url('crashstats:daily') }}?p=__PRODUCT__"
+                            data-url-version="{{ url('crashstats:daily') }}?p=__PRODUCT__&v=__VERSION__"
+                            {% if report == 'daily' %}selected{% endif %}
+                        >Crashes per User</option>
+                        <option
+                            value="topcrasher"
+                            data-url-product="{{ url('crashstats:topcrasher', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:topcrasher', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'topcrasher' %}selected{% endif %}
+                        >Top Crashers</option>
+                        <option
+                            value="gccrashes"
+                            data-url-product="{{ url('crashstats:gccrashes', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:gccrashes', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'gccrashes' %}selected{% endif %}
+                        >GC Crashes</option>
+                        <option
+                            value="explosive"
+                            data-url-product="{{ url('crashstats:explosive', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:explosive', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'explosive' %}selected{% endif %}
+                        >Explosive Crashes</option>
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
-                        <option value="{{ url('crashstats:exploitable_crashes', product) }}" {% if report == 'exploitable' %}selected{% endif %}>Exploitable Crashes</option>
+                        <option
+                            value="exploitable"
+                            data-url-product="{{ url('crashstats:exploitable_crashes', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:exploitable_crashes', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'exploitable' %}selected{% endif %}
+                        >Exploitable Crashes</option>
                         {% endif %}
                     </optgroup>
                 </select>
             </li>
         </ul>
-  {% endblock %}
+    {% endblock %}
 
         <div class="search">
             <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
