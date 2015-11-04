@@ -751,7 +751,7 @@ class TestViews(BaseTestViews):
         # Testing with unknown version for product
         url = reverse('crashstats:home', args=('WaterWolf', '99'))
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 302)
 
         # Testing with valid version for product
         url = reverse('crashstats:home', args=('WaterWolf', '19.0'))
@@ -1385,7 +1385,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:topcrasher',
                       args=('WaterWolf', '0.1'))
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 302)
 
     def test_topcrasher_with_product_sans_release(self):
         # SnowLion is not a product at all
@@ -1611,7 +1611,7 @@ class TestViews(BaseTestViews):
         assert user.has_perm('crashstats.view_exploitability')
 
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 302)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_exploitability_report(self, rpost):
@@ -2612,11 +2612,11 @@ class TestViews(BaseTestViews):
 
         # invalid version for the product name
         response = self.client.get(bad_url)
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 302)
 
         # invalid version for the product name
         response = self.client.get(bad_url2)
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 302)
 
         response = self.client.get(url)
         eq_(response.status_code, 200)

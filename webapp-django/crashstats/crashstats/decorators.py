@@ -50,8 +50,16 @@ def pass_default_context(view):
                 product,
                 versions
             )
-        except Http404:
-            if request.user.is_superuser:
+        except Http404 as e:
+            # A 404 will be raised if the product doesn't exist, or if the
+            # version does not exist for that product.
+            # In the latter case, we want to redirect the user to that
+            # product's home page. If the product is missing, superusers
+            # should be sent to the admin panel to add that product, while
+            # regular users will see a 404.
+            if 'version' in str(e):
+                return redirect(reverse('crashstats:home', args=(product,)))
+            elif request.user.is_superuser:
                 url = '%s?product=%s' % (reverse('manage:products'), product)
                 return redirect(url)
             raise

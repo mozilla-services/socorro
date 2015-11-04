@@ -339,6 +339,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     context['tcbs'] = tcbs
     context['days'] = days
+    context['report'] = 'topcrasher'
     context['possible_days'] = possible_days
     context['total_crashing_signatures'] = len(signatures)
     context['total_number_of_crashes'] = api_results['total']

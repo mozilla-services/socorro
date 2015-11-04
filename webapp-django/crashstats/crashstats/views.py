@@ -468,6 +468,9 @@ def explosive(request, product=None, versions=None, default_context=None):
         d += datetime.timedelta(1)
         context['tomorrow'][t] = d.strftime('%Y-%m-%d')
 
+    context['report'] = 'explosive'
+    context['version'] = versions
+
     return render(request, 'crashstats/explosive_crashes.html', context)
 
 
@@ -2615,6 +2618,7 @@ def gccrashes(request, product, version=None, default_context=None):
     current_products = context['currentproducts']['products']
 
     context['report'] = 'gccrashes'
+    context['version'] = version
     context['versions'] = versions
     context['products'] = current_products
     context['selected_version'] = version
