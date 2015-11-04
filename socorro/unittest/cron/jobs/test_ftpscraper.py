@@ -725,11 +725,11 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 """
             if url.endswith(today.strftime('/mobile/nightly/%Y/%m/')):
                 return html_wrap % today.strftime("""
-                <a href="%Y-%m-%d-trunk/">%Y-%m-%d-trunk</a>
+                <a href="%Y-%m-%d-trunk-11/">%Y-%m-%d-trunk-11</a>
                 """)
             if url.endswith(
                 today.strftime(
-                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk-11/'
                 )
             ):
                 return html_wrap % """
@@ -738,7 +738,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 """
             if url.endswith(
                 today.strftime(
-                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk-11/'
                     'mozilla-nightly-15.0a1.en-US.linux-x86_64.txt'
                 )
             ):
@@ -748,7 +748,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 )
             if url.endswith(
                 today.strftime(
-                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk/'
+                    '/mobile/nightly/%Y/%m/%Y-%m-%d-trunk-11/'
                     'mozilla-nightly-15.0a2.en-US.linux-x86_64.txt'
                 )
             ):
@@ -782,7 +782,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
 
         cursor = self.conn.cursor()
 
-        columns = 'product_name', 'build_id', 'build_type'
+        columns = 'product_name', 'build_id', 'build_type', 'repository'
         cursor.execute("""
             select %s
             from releases_raw
@@ -796,23 +796,28 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         eq_(builds, [{
             'build_id': 20120516113045,
             'product_name': 'mobile',
-            'build_type': 'release'
+            'build_type': 'release',
+            'repository': 'mozilla-release',
         }, {
             'build_id': 20120516113045,
             'product_name': 'mobile',
-            'build_type': 'release'
+            'build_type': 'release',
+            'repository': 'mozilla-beta',
         }, {
             'build_id': 20120516114455,
             'product_name': 'mobile',
-            'build_type': 'beta'
+            'build_type': 'beta',
+            'repository': 'mozilla-beta',
         }, {
             'build_id': 20120505030510,
             'product_name': 'mobile',
-            'build_type': 'nightly'
+            'build_type': 'nightly',
+            'repository': 'trunk-11',
         }, {
             'build_id': 20120505443322,
             'product_name': 'mobile',
-            'build_type': 'aurora'
+            'build_type': 'aurora',
+            'repository': 'trunk-11',
         }])
 
         assert len(build_ids) == 4
