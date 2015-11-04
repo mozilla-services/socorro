@@ -21,6 +21,8 @@ class TestFetchTransformSaveApp(TestCase):
                 self.the_list = []
 
             def _setup_source_and_destination(self):
+                self.source = Mock()
+                self.destination = Mock()
                 pass
 
             def _create_iter(self):
@@ -76,6 +78,7 @@ class TestFetchTransformSaveApp(TestCase):
                                                        'Product': 'Fennicky',
                                                        'Version': '1.0'}),
                                      })
+                self.number_of_close_calls = 0
 
             def get_raw_crash(self, ooid):
                 return self.store[ooid]
@@ -87,15 +90,22 @@ class TestFetchTransformSaveApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
+            def close(self):
+                self.number_of_close_calls += 1
+
         class FakeStorageDestination(object):
 
             def __init__(self, config, quit_check_callback):
                 self.store = DotDict()
                 self.dumps = DotDict()
+                self.number_of_close_calls = 0
 
             def save_raw_crash(self, raw_crash, dump, crash_id):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dump
+
+            def close(self):
+                self.number_of_close_calls += 1
 
         logger = SilentFakeLogger()
         config = DotDict({
@@ -125,6 +135,10 @@ class TestFetchTransformSaveApp(TestCase):
         eq_(len(destination.dumps), 4)
         eq_(destination.dumps['1237'],
                          source.get_raw_dumps('1237'))
+        # ensure that each storage system had its close called
+        eq_(source.number_of_close_calls, 1)
+        eq_(destination.number_of_close_calls, 1)
+
 
     def test_source_iterator(self):
 
