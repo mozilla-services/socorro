@@ -2054,7 +2054,7 @@ class TestOsPrettyName(TestCase):
 
         # A known Windows version.
         processed_crash = DotDict()
-        processed_crash.os_name = 'Windows'
+        processed_crash.os_name = 'Windows NT'
         processed_crash.os_version = '10.2.11.7600'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -2063,7 +2063,7 @@ class TestOsPrettyName(TestCase):
 
         # An unknown Windows version.
         processed_crash = DotDict()
-        processed_crash.os_name = 'Windows'
+        processed_crash.os_name = 'Windows NT'
         processed_crash.os_version = '15.2'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
@@ -2121,9 +2121,9 @@ class TestOsPrettyName(TestCase):
         eq_(processed_crash['os_pretty_version'], None)
 
         processed_crash = DotDict()
-        processed_crash.os_name = 'Windows'
+        processed_crash.os_name = 'Windows NT'
         processed_crash.os_version = 'NaN'
 
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         ok_('os_pretty_version' in processed_crash)
-        eq_(processed_crash['os_pretty_version'], 'Windows')
+        eq_(processed_crash['os_pretty_version'], 'Windows NT')

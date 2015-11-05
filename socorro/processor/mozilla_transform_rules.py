@@ -1009,6 +1009,10 @@ class OSPrettyVersionRule(Rule):
             # There is nothing we can do if the `os_name` is missing.
             return None
 
+        if not isinstance(processed_crash.os_name, basestring):
+            # This data is bogus, there's nothing we can do.
+            return None
+
         if not processed_crash.get('os_version'):
             # The version number is missing, there's nothing to do.
             return pretty_name
@@ -1022,7 +1026,7 @@ class OSPrettyVersionRule(Rule):
         major_version = int(version_split[0])
         minor_version = int(version_split[1])
 
-        if processed_crash.os_name == 'Windows':
+        if processed_crash.os_name.lower().startswith('windows'):
             # Get corresponding Windows version.
             key = '%s.%s' % (major_version, minor_version)
             if key in self._windows_versions:
