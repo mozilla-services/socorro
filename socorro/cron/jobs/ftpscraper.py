@@ -291,7 +291,6 @@ class ScrapersMixin(object):
                 # appended at least one, keep adding.
                 if not field.isdigit() or repository:
                     repository.append(field)
-            print ('nightly', dirname, repository)
             repository = '-'.join(repository).strip('/')
             kvpairs, bad_lines = self.parse_info_file(url, nightly=True)
 
