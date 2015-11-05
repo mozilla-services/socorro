@@ -27,7 +27,6 @@ SUPERSEARCH_META_PARAMS = (
 # sent to the middleware, so that no private field can be accessed.
 PARAMETERS_LISTING_FIELDS = (
     '_facets',
-    '_aggs.signature',
 )
 
 
@@ -86,9 +85,9 @@ class SuperSearch(models.SocorroMiddleware):
             and x['is_mandatory']
         )
 
-        self.histogram_fields = self._get_extended_params()
-        for field in self.histogram_fields:
-            if '_histogram.' in field[0]:
+        self.extended_fields = self._get_extended_params()
+        for field in self.extended_fields:
+            if '_histogram.' in field[0] or '_aggs.' in field[0]:
                 self.parameters_listing_fields.append(field[0])
 
         self.possible_params = tuple(
@@ -96,18 +95,21 @@ class SuperSearch(models.SocorroMiddleware):
             if x['is_exposed']
             and not x['permissions_needed']
             and not x['is_mandatory']
-        ) + SUPERSEARCH_META_PARAMS + tuple(self.histogram_fields)
+        ) + SUPERSEARCH_META_PARAMS + tuple(self.extended_fields)
 
     def _get_extended_params(self):
         # Add histogram fields for all 'date' or 'number' fields.
-        histogram_fields = []
+        extended_fields = []
         for field in self.all_fields.values():
-            if (
-                field['is_exposed']
-                and not field['permissions_needed']
-                and field['query_type'] in ('date', 'number')
-            ):
-                histogram_fields.append(
+            if not field['is_exposed'] or field['permissions_needed']:
+                continue
+
+            extended_fields.append(
+                ('_aggs.%s' % field['name'], list)
+            )
+
+            if field['query_type'] in ('date', 'number'):
+                extended_fields.append(
                     ('_histogram.%s' % field['name'], list)
                 )
 
@@ -118,11 +120,11 @@ class SuperSearch(models.SocorroMiddleware):
                     'number': int
                 }.get(field['query_type'])
 
-                histogram_fields.append(
+                extended_fields.append(
                     ('_histogram_interval.%s' % field['name'], interval_type)
                 )
 
-        return tuple(histogram_fields)
+        return tuple(extended_fields)
 
     def get(self, **kwargs):
         # Sanitize all parameters listing fields and make sure no private data
@@ -138,7 +140,7 @@ class SuperSearch(models.SocorroMiddleware):
 
         # Extend that list with the special fields, like `_histogram.*`.
         # Those are accepted values for fields listing other fields.
-        for field in self.histogram_fields:
+        for field in self.extended_fields:
             histogram = field[0]
             if not histogram.startswith('_histogram.'):
                 continue

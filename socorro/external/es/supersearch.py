@@ -406,28 +406,31 @@ class SuperSearch(SearchBase):
                 histogram_intervals,
             )
 
-        # Create signature aggregations.
-        if params.get('_aggs.signature'):
-            sig_bucket = self._get_fields_agg('signature', facets_size)
+        # Create sub-aggregations.
+        for f in self.all_fields.keys():
+            key = '_aggs.%s' % f
+            if params.get(key):
+                agg_bucket = self._get_fields_agg(f, facets_size)
 
-            for param in params['_aggs.signature']:
-                self._add_second_level_aggs(
-                    param,
-                    sig_bucket,
-                    facets_size,
-                    histogram_intervals,
-                )
+                for param in params[key]:
+                    self._add_second_level_aggs(
+                        param,
+                        agg_bucket,
+                        facets_size,
+                        histogram_intervals,
+                    )
 
-            search.aggs.bucket('signature', sig_bucket)
+                search.aggs.bucket(f, agg_bucket)
 
         # Create histograms.
         for f in self.histogram_fields:
-            if params.get('_histogram.%s' % f):
+            key = '_histogram.%s' % f
+            if params.get(key):
                 histogram_bucket = self._get_histogram_agg(
                     f, histogram_intervals
                 )
 
-                for param in params['_histogram.%s' % f]:
+                for param in params[key]:
                     self._add_second_level_aggs(
                         param,
                         histogram_bucket,

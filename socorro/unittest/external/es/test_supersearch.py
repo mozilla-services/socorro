@@ -812,7 +812,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
     @minimum_es_version('1.0')
-    def test_get_with_signature_aggregations(self):
+    def test_get_with_sub_aggregations(self):
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'WaterWolf',
@@ -909,6 +909,51 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             },
         ]
         eq_(res['facets']['signature'], expected_terms)
+
+        # Test a different field.
+        kwargs = {
+            '_aggs.platform': ['product'],
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('facets' in res)
+        ok_('platform' in res['facets'])
+
+        expected_terms = [
+            {
+                'term': 'Linux',
+                'count': 3,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'EarthRacoon',
+                            'count': 1
+                        },
+                        {
+                            'term': 'NightTrain',
+                            'count': 1
+                        },
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        },
+                    ],
+                }
+            },
+            {
+                'term': 'Windows NT',
+                'count': 1,
+                'facets': {
+                    'product': [
+                        {
+                            'term': 'WaterWolf',
+                            'count': 1
+                        }
+                    ],
+                }
+            },
+        ]
+        eq_(res['facets']['platform'], expected_terms)
 
         # Test one facet with filters
         kwargs = {

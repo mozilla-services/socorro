@@ -78,7 +78,6 @@ class SearchFilter(object):
 
 class SearchBase(object):
     meta_filters = [
-        SearchFilter('_aggs.signature', default=''),
         SearchFilter('_columns', default=[
             'uuid', 'date', 'signature', 'product', 'version'
         ]),
@@ -109,6 +108,11 @@ class SearchBase(object):
                 default=field['default_value'],
                 data_type=field['data_validation_type'],
                 mandatory=field['is_mandatory'],
+            ))
+
+            # Add a field to get a list of other fields to aggregate.
+            self.meta_filters.append(SearchFilter(
+                '_aggs.%s' % field['name']
             ))
 
             # Generate all histogram meta filters.
