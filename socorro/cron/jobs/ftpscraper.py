@@ -233,7 +233,9 @@ class ScrapersMixin(object):
             repository = []
 
             for field in dirname.split('-'):
-                if not field.isdigit():
+                # Skip until something is not a digit and once we've
+                # appended at least one, keep adding.
+                if not field.isdigit() or repository:
                     repository.append(field)
             repository = '-'.join(repository).strip('/')
 
@@ -270,6 +272,7 @@ class ScrapersMixin(object):
             yield (platform, version, kvpairs, bad_lines)
 
     def get_nightly(self, nightly_url, dirname):
+
         info_files = self.get_links(nightly_url, ends_with='.txt')
         for url in info_files:
             basename = os.path.basename(url)
@@ -282,9 +285,13 @@ class ScrapersMixin(object):
 
             version = pv.split('-')[-1]
             repository = []
+
             for field in dirname.split('-'):
-                if not field.isdigit():
+                # Skip until something is not a digit and once we've
+                # appended at least one, keep adding.
+                if not field.isdigit() or repository:
                     repository.append(field)
+            print ('nightly', dirname, repository)
             repository = '-'.join(repository).strip('/')
             kvpairs, bad_lines = self.parse_info_file(url, nightly=True)
 
