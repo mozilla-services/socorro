@@ -654,7 +654,7 @@ class TestViews(BaseTestViews):
                 "hits": [],
                 "total": 4,
                 "facets": {
-                    "platform": [
+                    "platform_pretty_version": [
                         {
                             "count": 4,
                             "term": "WaterWolf"
