@@ -423,7 +423,7 @@ def signature_summary(request, params):
     params['signature'] = '=' + params['signature'][0]
     params['_results_number'] = 0
     params['_facets'] = [
-        'platform',
+        'platform_pretty_version',
         'cpu_name',
         'process_type',
         'flash_version',

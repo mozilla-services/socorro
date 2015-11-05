@@ -12,7 +12,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for platform in query.facets.platform %}
+                {% for platform in query.facets.platform_pretty_version %}
                 <tr>
                     <td>{{ platform.term }}</td>
                     <td>{{ platform.count }}</td>
