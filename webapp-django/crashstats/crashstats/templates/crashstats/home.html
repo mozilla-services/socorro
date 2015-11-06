@@ -51,16 +51,15 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
 
         <div class="body">
             <div id="release_channels">
-                {% for version in currentversions %}
-                {% if version.product == product and version.featured %}
+                {% for version in versions %}
                 <div class='release_channel'>
-                    <h4>{{product}} {{version.version}}</h4>
+                    <h4>{{product}} {{version}}</h4>
                     <ul>
                         <li>
                             <a href="{{ url(
                                 'crashstats:topcrasher',
                                 product=product,
-                                versions=version.version,
+                                versions=version,
                                 date_range_type=default_date_range_type,
                             ) }}?days={{days}}">
                                 Top Crashers
@@ -70,7 +69,7 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
                             <a href="{{ url(
                                 'crashstats:topcrasher',
                                 product=product,
-                                versions=version.version,
+                                versions=version,
                                 date_range_type=default_date_range_type,
                                 crash_type='plugin',
                             ) }}?days={{days}}">
@@ -79,7 +78,6 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
                         </li>
                     </ul>
                 </div>
-                {% endif %}
                 {% endfor %}
             </div>
             <br class="clear" />
