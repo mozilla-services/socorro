@@ -27,16 +27,12 @@
 <div id="mainbody">
 
     <div class="page-heading">
-        <p class="profile-email">
-            {{ request.user.email }} -
-            {{ browserid_logout(text='Sign out') }}
-        </p>
         <h2>Your Profile</h2>
     </div>
 
     <div class="panel">
         <div class="body">
-            <ul class="links">
+            <ul class="links left">
                 {% if request.user.is_superuser %}
                 <li>
                     <a href="{{ url('manage:home') }}">Admin</a>
@@ -49,6 +45,15 @@
                     <a href="{{ url('symbols:home') }}">Symbols Upload</a>
                 </li>
             </ul>
+            <ul class="links right">
+                <li>
+                    {{ request.user.email }} -
+                    {{ browserid_logout(text='Sign out') }}
+                </li>
+            </ul>
+
+            <!-- clear after two floats -->
+            <div style="clear: both;"></div>
         </div>
     </div>
 

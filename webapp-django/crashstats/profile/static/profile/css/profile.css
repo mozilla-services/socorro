@@ -7,12 +7,16 @@ div.page-section {
     float: right;
 }
 
-p.profile-email {
-    float: right;
-}
-
 .panel .links li {
     display: inline-block;
     font-size: 1.1em;
     margin: 10px;
+}
+
+ul.links.left {
+    float: left;
+}
+
+ul.links.right {
+    float: right;
 }
