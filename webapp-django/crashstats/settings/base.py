@@ -164,7 +164,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
-    '%s.base.context_processors.pingdom_rum' % PROJECT_MODULE,
     '%s.base.context_processors.browserid' % PROJECT_MODULE,
 )
 
@@ -661,9 +660,6 @@ BROWSERID_AUDIENCES = config(
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
 # Root domain. Required iff you're providing an analytics ID.
 GOOGLE_ANALYTICS_DOMAIN = config('GOOGLE_ANALYTICS_DOMAIN', 'auto')
-
-# Optional Pingdom Real User Monitoring ID
-PINGDOM_RUM_ID = config('PINGDOM_RUM_ID', None)
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)

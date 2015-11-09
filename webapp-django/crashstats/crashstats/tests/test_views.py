@@ -557,38 +557,6 @@ class TestAnalytics(BaseTestViews):
         ok_('xyz123' in response.content)
         ok_('test.biz' in response.content)
 
-    @override_settings(PINGDOM_RUM_ID='abc123')
-    @mock.patch('requests.get')
-    def test_pingdom_rum(self, rget):
-        url = reverse('crashstats:home', args=('WaterWolf',))
-
-        def mocked_get(url, params, **options):
-            if 'products' in url:
-                return Response("""
-                    {
-                        "hits": [{
-                            "is_featured": true,
-                            "throttle": 100.0,
-                            "end_date": "2012-11-27",
-                            "product": "WaterWolf",
-                            "build_type": "Nightly",
-                            "version": "19.0",
-                            "has_builds": true,
-                            "start_date": "2012-09-25"
-                        }],
-                        "total": 1
-                    }
-                """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('abc123' in response.content)
-        ok_('pingdom.net/prum.min.js' in response.content)
-
 
 class TestViews(BaseTestViews):
 
