@@ -358,10 +358,18 @@ EXPLOITABILITY_BATCH_SIZE = 250
 EXPLOSIVE_REPORT_DAYS = 10
 
 # how many seconds to sleep when getting a ConnectionError
-MIDDLEWARE_RETRY_SLEEPTIME = 3
+MIDDLEWARE_RETRY_SLEEPTIME = config(
+    'MIDDLEWARE_RETRY_SLEEPTIME',
+    default=3,
+    cast=int,
+)
 
 # how many times to re-attempt on ConnectionError after some sleep
-MIDDLEWARE_RETRIES = 10
+MIDDLEWARE_RETRIES = config(
+    'MIDDLEWARE_RETRIES',
+    default=10,
+    cast=int,
+)
 
 # Overridden so we can control the redirects better
 BROWSERID_VERIFY_CLASS = (

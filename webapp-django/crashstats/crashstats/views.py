@@ -352,8 +352,8 @@ def home(request, product, versions=None,
 
     if versions is None:
         versions = []
-        for release in default_context['currentversions']:
-            if release['product'] == product and release['featured']:
+        for release in context['releases'][product]:
+            if release['featured']:
                 versions.append(release['version'])
         contains_builds = has_builds(product, versions)
     else:
@@ -361,6 +361,7 @@ def home(request, product, versions=None,
         contains_builds = has_builds(product, versions)
 
     context['versions'] = versions
+    context['product'] = product
     if len(versions) == 1:
         context['version'] = versions[0]
 

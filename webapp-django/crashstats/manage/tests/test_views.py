@@ -59,10 +59,11 @@ class TestViews(BaseTestViews):
         from crashstats.crashstats.models import (
             CurrentProducts, CurrentVersions
         )
+        from crashstats.crashstats.utils import build_releases
+        releases = build_releases(CurrentVersions().get())
         versions = '+'.join([
-            '%s:%s' % (ver['product'], ver['version'])
-            for ver in CurrentVersions().get()
-            if ver['product'] == settings.DEFAULT_PRODUCT
+            '%s:%s' % (settings.DEFAULT_PRODUCT, x['version'])
+            for x in releases[settings.DEFAULT_PRODUCT]
         ])
         api = CurrentProducts()
         # because WaterWolf is the default product and because
