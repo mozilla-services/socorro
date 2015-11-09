@@ -519,3 +519,39 @@ class GraphicsReportForm(BaseForm):
 
     date = forms.DateField()
     product = forms.CharField(required=False)
+
+
+class ExploitabilityReportForm(BaseForm):
+
+    product = forms.ChoiceField()
+    version = forms.ChoiceField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.available_products = kwargs.pop('available_products')
+        super(ExploitabilityReportForm, self).__init__(*args, **kwargs)
+
+        self.fields['product'].choices = [
+            (k, k) for k in self.available_products
+        ]
+        all_versions = []
+        [all_versions.extend(v) for v in self.available_products.values()]
+
+        self.fields['version'].choices = [
+            (v, v) for v in set(
+                x for line in self.available_products.values() for x in line
+            )
+        ]
+
+    def clean(self):
+        cleaned_data = super(ExploitabilityReportForm, self).clean()
+        if 'product' in cleaned_data and 'version' in cleaned_data:
+            product = cleaned_data['product']
+            version = cleaned_data['version']
+            if version and version not in self.available_products[product]:
+                raise forms.ValidationError(
+                    '{} is not an available version for {}'.format(
+                        version,
+                        product,
+                    )
+                )
+        return cleaned_data
