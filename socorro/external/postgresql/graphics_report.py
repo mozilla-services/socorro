@@ -98,8 +98,9 @@ SELECT
 FROM
     reports r
 WHERE
-    r.date_processed BETWEEN %(yesterday)s AND %(date)s
-    AND r.product = %(product)s
+    r.date_processed BETWEEN %(date)s AND %(tomorrow)s
+    AND
+    r.product = %(product)s
 ORDER BY 5 -- r.date_processed, munged
 """.strip()
 
@@ -125,7 +126,7 @@ class GraphicsReport(PostgreSQLBase):
             ('product', 'Firefox', 'str'),
         ]
         params = external_common.parse_arguments(filters, kwargs)
-        params['yesterday'] = params['date'] - datetime.timedelta(days=1)
+        params['tomorrow'] = params['date'] + datetime.timedelta(days=1)
         results = self.query(SQL, params)
         hits = results.zipped()
         return {

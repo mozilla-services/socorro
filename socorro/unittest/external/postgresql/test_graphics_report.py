@@ -4,7 +4,6 @@
 
 import datetime
 
-from nose.plugins.attrib import attr
 from nose.tools import eq_, ok_
 
 from socorro.external.postgresql.graphics_report import GraphicsReport
@@ -13,7 +12,6 @@ from .unittestbase import PostgreSQLTestCase
 
 
 #==============================================================================
-@attr(integration='postgres')  # for nosetests
 class IntegrationTestGraphicsReport(PostgreSQLTestCase):
     """Test socorro.external.postgresql.graphics_report.GraphicsReport
      class. """
@@ -22,7 +20,6 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
     def setUpClass(cls):
         """ Populate product_info table with fake data """
         super(IntegrationTestGraphicsReport, cls).setUpClass()
-
         cursor = cls.connection.cursor()
 
         cursor.execute("""
@@ -49,6 +46,11 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
             );
         """)
         yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        # To make it safe, make this be the 0th hour of the day
+        # so when we insert the second one, which is 60 seconds later
+        # it can't be the next day
+        yesterday = yesterday.replace(hour=0)
+
         cursor.execute("""
             INSERT INTO reports
             (id, signature, date_processed, uuid, product,
@@ -99,7 +101,8 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
     #--------------------------------------------------------------------------
     def test_get(self):
         api = GraphicsReport(config=self.config)
-        res = api.get(product='Firefox')
+        yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        res = api.get(product='Firefox', date=yesterday.date())
         assert res['hits']
         assert len(res['hits']) == res['total']
         ok_(isinstance(res['hits'], list))

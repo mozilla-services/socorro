@@ -2547,14 +2547,14 @@ def graphics_report(request):
         )
     form = forms.GraphicsReportForm(
         request.GET,
-        initial={'product': 'Firefox'}
     )
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
+
     api = models.GraphicsReport()
     data = api.get(
-        product='Firefox',
-        date=datetime.datetime.utcnow().date(),
+        product=form.cleaned_data['product'] or settings.DEFAULT_PRODUCT,
+        date=form.cleaned_data['date']
     )
     assert 'hits' in data
 
