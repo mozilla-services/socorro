@@ -79,11 +79,7 @@ SELECT
     NULL as user_comments, --15
     r.uptime as uptime_seconds, --16
     NULL as email, --17
-    (select sum(adi_count) from raw_adi adi
-       where adi.date = %(date)s
-         and r.product = adi.product_name and r.version = adi.product_version
-         and substring(r.os_name from 1 for 3) = substring(adi.product_os_platform from 1 for 3)
-         and r.os_version LIKE '%%'||adi.product_os_version||'%%') as adu_count, --18
+    NULL as adu_count, --18
     r.topmost_filenames, --19
     NULL as addons_checked, --20
     NULL as flash_version, --21
