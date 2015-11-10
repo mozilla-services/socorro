@@ -41,7 +41,27 @@ class ADI(PostgreSQLBase):
         if missing:
             raise MissingArgumentError(', '.join(missing))
 
-        SQL = """
+        sql_versions = []
+        for i, version in enumerate(params['versions'], start=1):
+            key = 'version{}'.format(i)
+            # We make a very special exception for versions that end with
+            # the letter 'b'. It means it's a beta version and when some
+            # queries on that version they actually mean all
+            # the "sub-versions". For example version="19.0b" actually
+            # means "all versions starting with '19.0b'".
+            # This is succinct with what we do in SuperSearch.
+            if version.endswith('b'):
+                # exception!
+                sql_versions.append('pv.version_string LIKE %({})s'.format(
+                    key
+                ))
+                version += '%'
+            else:
+                # the norm
+                sql_versions.append('pv.version_string = %({})s'.format(key))
+            params[key] = version
+
+        sql = """
             SELECT
                 SUM(adu_count) AS adi_count,
                 adu_date AS date,
@@ -52,18 +72,20 @@ class ADI(PostgreSQLBase):
             LEFT OUTER JOIN product_versions pv USING (product_version_id)
             WHERE
                 pv.product_name = %(product)s
-                AND pv.version_string IN %(versions)s
+                AND ({})
                 AND os_name IN %(platforms)s
                 AND adu_date BETWEEN %(start_date)s AND %(end_date)s
             GROUP BY
                 adu_date,
                 build_type,
                 version_string
-        """
+        """.format(
+            ' OR '.join(sql_versions)
+        )
 
-        params['versions'] = tuple(params['versions'])
         params['platforms'] = tuple(params['platforms'])
-        results = self.query(SQL, params)
+        assert isinstance(params, dict)
+        results = self.query(sql, params)
 
         rows = []
         for row in results.zipped():

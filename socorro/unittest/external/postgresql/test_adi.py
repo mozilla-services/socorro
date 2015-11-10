@@ -25,7 +25,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
         yesterday = self.date - datetime.timedelta(hours=24)
         products = ('Firefox', 'Thunderbird')
 
-        versions = ('39.0', '40.0')
+        versions = ('39.0b1', '40.0')
         platforms = ('Linux', 'Windows')
         channels = ('release', 'beta')
 
@@ -178,3 +178,28 @@ class IntegrationTestADI(PostgreSQLTestCase):
             'version': '40.0',
             'build_type': 'release'
         })
+
+        stats = impl.get(
+            start_date=start,
+            end_date=end,
+            product='Firefox',
+            versions=['39.0b'],
+            platforms=['Linux', 'Windows'],
+        )
+        eq_(stats['total'], 1)
+        hit, = stats['hits']
+        eq_(hit, {
+            'adi_count': 4 + 1L,
+            'date': start_formatted,
+            'version': '39.0b1',
+            'build_type': 'release'
+        })
+
+        stats = impl.get(
+            start_date=start,
+            end_date=end,
+            product='Firefox',
+            versions=['39.0b', '40.0'],
+            platforms=['Linux', 'Windows'],
+        )
+        eq_(stats['total'], 2)
