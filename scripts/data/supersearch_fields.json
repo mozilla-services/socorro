@@ -1209,6 +1209,30 @@
             "type": "string"
         }
     },
+    "platform_pretty_version": {
+        "data_validation_type": "str",
+        "default_value": null,
+        "form_field_choices": null,
+        "has_full_version": false,
+        "in_database_name": "os_pretty_version",
+        "is_exposed": true,
+        "is_mandatory": false,
+        "is_returned": true,
+        "name": "platform_pretty_version",
+        "namespace": "processed_crash",
+        "permissions_needed": [],
+        "query_type": "string",
+        "storage_mapping": {
+            "index": "analyzed",
+            "type": "string",
+            "fields": {
+                "full": {
+                    "index": "not_analyzed",
+                    "type": "string"
+                }
+            }
+        }
+    },
     "plugin_cpu_usage": {
         "data_validation_type": "int",
         "default_value": null,

@@ -647,8 +647,15 @@ class TestViews(BaseTestViews):
             ok_('signature' in params)
             eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
-            ok_('_histogram.uptime' in params)
-            ok_('_facets' in params)
+            if (
+                '_aggs.product' in params
+                and params['_aggs.product'] == ['version']
+            ):
+                ok_('product' not in params)
+                ok_('version' not in params)
+            else:
+                ok_('_histogram.uptime' in params)
+                ok_('_facets' in params)
 
             res = {
                 "hits": [],
@@ -657,7 +664,7 @@ class TestViews(BaseTestViews):
                     "platform_pretty_version": [
                         {
                             "count": 4,
-                            "term": "WaterWolf"
+                            "term": "Windows 7"
                         }
                     ],
                     "cpu_name": [
@@ -670,6 +677,24 @@ class TestViews(BaseTestViews):
                         {
                             "count": 4,
                             "term": "browser"
+                        }
+                    ],
+                    "product": [
+                        {
+                            "count": 4,
+                            "term": "WaterWolf",
+                            "facets": {
+                                "version": [
+                                    {
+                                        "term": "2.1b99",
+                                        "count": 2
+                                    },
+                                    {
+                                        "term": "1.0",
+                                        "count": 2
+                                    }
+                                ]
+                            }
                         }
                     ],
                     "flash_version": [
@@ -728,12 +753,17 @@ class TestViews(BaseTestViews):
         # Test with no results
         url = reverse('signature:signature_summary')
 
-        response = self.client.get(url, {'signature': DUMB_SIGNATURE})
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'product': 'WaterWolf',
+            'version': '1.0',
+        })
         eq_(response.status_code, 200)
 
         # Make sure all boxes are there.
         ok_('Operating System' in response.content)
         ok_('Uptime Range' in response.content)
+        ok_('Product' in response.content)
         ok_('Architecture' in response.content)
         ok_('Process Type' in response.content)
         ok_('Flash&trade; Version' in response.content)
@@ -742,8 +772,10 @@ class TestViews(BaseTestViews):
         ok_('Exploitability' not in response.content)
 
         # Check that some of the expected values are there.
-        ok_('WaterWolf' in response.content)
+        ok_('Windows 7' in response.content)
         ok_('x86' in response.content)
+        ok_('WaterWolf' in response.content)
+        ok_('2.1b99' in response.content)
         ok_('browser' in response.content)
         ok_('1.1.1.14' in response.content)
         ok_('&lt; 1 min' in response.content)

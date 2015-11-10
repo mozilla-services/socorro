@@ -52,6 +52,36 @@
 
 <div class="panel">
     <header class="title">
+        <h2>Product</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Product</th>
+                    <th class="header">Version</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in query.facets.product %}
+                {% for version in product.facets.version %}
+                <tr>
+                    <td>{{ product.term }}</td>
+                    <td>{{ version.term }}</td>
+                    <td>{{ version.count }}</td>
+                    <td>{{ (100.0 * version.count / product_version_total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <header class="title">
         <h2>Architecture</h2>
     </header>
     <div class="content">

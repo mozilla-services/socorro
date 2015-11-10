@@ -439,6 +439,8 @@ def signature_summary(request, params):
         params['_histogram.date'] = ['exploitability']
 
     api = SuperSearchUnredacted()
+
+    # Now make the actual request with all expected parameters.
     try:
         search_results = api.get(**params)
     except models.BadStatusCodeError as e:
@@ -447,6 +449,27 @@ def signature_summary(request, params):
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     facets = search_results['facets']
+
+    # We need to make a separate query so that we can show all versions and
+    # not just the one asked for.
+    params_copy = {
+        'signature': params['signature'],
+        '_aggs.product': ['version'],
+    }
+
+    try:
+        product_results = api.get(**params_copy)
+    except models.BadStatusCodeError as e:
+        # We need to return the error message in some HTML form for jQuery
+        # to pick it up.
+        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+
+    if 'product' in product_results['facets']:
+        facets['product'] = product_results['facets']['product']
+    else:
+        facets['product'] = []
+
+    data['product_version_total'] = product_results['total']
 
     # Transform uptime data to be easier to consume.
     # Keys are in minutes.
