@@ -18,6 +18,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
 from django.utils.http import urlquote
+from django.contrib import messages
 
 from session_csrf import anonymous_csrf
 
@@ -978,6 +979,25 @@ def crashes_per_user(request, default_context=None):
     context = default_context or {}
     context['products'] = context['currentproducts']['products']
 
+    # This report does not currently support doing a graph by **build date**.
+    # So we hardcode the choice to always be regular report.
+    # The reason for not entirely deleting the functionality is because
+    # we might support it later in the future.
+    # The only reason people might get to this page with a
+    # date_range_type=build set is if they used the old daily report
+    # and clicked on the link to the new Crashes per User report.
+    if request.GET.get('date_range_type') == 'build':
+        params = dict(request.GET)
+        params.pop('date_range_type')
+        url = reverse('crashstats:crashes_per_user')
+        url += '?' + urllib.urlencode(params, True)
+        messages.warning(
+            request,
+            'The Crashes per User report does not support filtering '
+            'by *build* date. '
+        )
+        return redirect(url)
+
     platforms_api = models.Platforms()
     platforms = platforms_api.get()
 
@@ -1049,8 +1069,7 @@ def crashes_per_user(request, default_context=None):
 
     context['hang_type'] = params.get('hang_type') or 'any'
 
-    default = request.session.get('date_range_type', 'report')
-    context['date_range_type'] = params.get('date_range_type') or default
+    context['date_range_type'] = params.get('date_range_type') or 'report'
 
     beta_versions = [x for x in params['versions'] if x.endswith('b')]
 
