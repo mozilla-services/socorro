@@ -15,28 +15,32 @@ class GraphicsDevices(PostgreSQLBase):
 
     def get(self, **kwargs):
         filters = [
-            ("vendor_hex", None, "str"),
-            ("adapter_hex", None, "str"),
+            ("vendor_hex", None, ["list", "str"]),
+            ("adapter_hex", None, ["list", "str"]),
         ]
         params = external_common.parse_arguments(filters, kwargs)
         for key in ('vendor_hex', 'adapter_hex'):
-            if not params[key]:
+            param = params[key]
+            if not param:
                 raise MissingArgumentError(key)
 
-        sql_where = """
-            WHERE
-                vendor_hex = %(vendor_hex)s
-                AND
-                adapter_hex = %(adapter_hex)s
-        """
+            params[key] = tuple(params[key])
+
         sql_query = """
             SELECT
                 vendor_hex, adapter_hex, vendor_name, adapter_name
             FROM graphics_device
+            WHERE vendor_hex IN %(vendor_hex)s
+            AND adapter_hex IN %(adapter_hex)s
         """
-        results = self.query(sql_query + sql_where, params)
+
+        results = self.query(sql_query, params)
         hits = results.zipped()
-        return {'hits': hits, 'total': len(hits)}
+
+        return {
+            'hits': hits,
+            'total': len(hits)
+        }
 
     def post(self, **kwargs):
         try:

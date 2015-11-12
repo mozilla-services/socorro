@@ -87,6 +87,37 @@ class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
+        # Test with several values.
+        params = {
+            'vendor_hex': ['0x1002', '0x1222'],
+            'adapter_hex': ['0x0166', '0xc064'],
+        }
+        res = api.get(**params)
+        res_expected = {
+            'hits': [
+                {
+                    'vendor_hex': '0x1002',
+                    'adapter_hex': '0x0166',
+                    'vendor_name': 'Logitech Inc.',
+                    'adapter_name': 'Unknown Webcam Pro 9000',
+                },
+                {
+                    'vendor_hex': '0x1002',
+                    'adapter_hex': '0xc064',
+                    'vendor_name': 'Logitech Inc.',
+                    'adapter_name': 'k251d DELL 6-Button mouse',
+                },
+                {
+                    'vendor_hex': '0x1222',
+                    'adapter_hex': '0x0166',
+                    'vendor_name': 'Chicony Electronics Co.',
+                    'adapter_name': 'Unknown Webcam Pro 9000',
+                },
+            ],
+            'total': 3
+        }
+        eq_(res, res_expected)
+
     def test_get_missing_arguments(self):
         """on .get() the adapter_hex and the vendor_hex is mandatory"""
         api = GraphicsDevices(config=self.config)

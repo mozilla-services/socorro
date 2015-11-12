@@ -56,7 +56,7 @@ def parse_arguments(filters, arguments):
 
             for t in reversed(types):
                 if t == "list" and not isinstance(param, list):
-                    if param is None:
+                    if param is None or param == '':
                         param = []
                     else:
                         param = [param]
