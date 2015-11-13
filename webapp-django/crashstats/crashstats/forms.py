@@ -374,7 +374,7 @@ class FrontpageJSONForm(forms.Form):
 
 
 class CorrelationsJSONFormBase(BaseForm):
-    correlation_report_type = forms.ChoiceField(
+    correlation_report_types = forms.MultipleChoiceField(
         required=True,
         choices=make_choices(settings.CORRELATION_REPORT_TYPES),
     )

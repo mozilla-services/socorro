@@ -2,13 +2,17 @@
 
     'use strict';
 
-    var accordion = {
-        container: null,
+    var Accordion = function(accordionContainer) {
+        // var self = this;
+
+        this.container = accordionContainer;
+
+
         /**
          * Hides all content panes in current accordion container.
          * @params {array} contentPanes - The panes to hide.
          */
-        hidePanes: function(contentPanes) {
+        this.hidePanes = function(contentPanes) {
             var panesLength = contentPanes.length;
 
             for (var i = 0; i < panesLength; i++) {
@@ -24,23 +28,26 @@
                 }
                 contentPanes[i].setAttribute('class', classArray.join(' '));
             }
-        },
-         /**
+        }.bind(this);
+
+        /**
          * Shows the triggered content pane.
          * @params {object} pane - The pane to show.
          */
-        showPane: function(pane) {
+        this.showPane = function(pane) {
             var classes = pane.getAttribute('class');
             pane.setAttribute('class', classes + ' show');
             // as this pane is now expanded, update aria-hidden.
             pane.setAttribute('aria-hidden', 'false');
             pane.focus();
-        },
+        }.bind(this);
+
         /**
          * Handles all events triggered within the accordion container.
          * @params {object} event - The event that was fired.
          */
-        handleEvent: function(event) {
+        this.handleEvent = function(event) {
+
             var anchor = event.target;
             var contentPanelId = anchor.getAttribute('href');
 
@@ -72,12 +79,13 @@
                 // show the selected pane
                 this.showPane(document.querySelector(contentPanelId));
             }
-        },
+        }.bind(this);
+
         /**
          * Handles events delegated to the accordion.
          * @param {object} event - The event to handle
          */
-        handleKeyboardEvent: function(event) {
+        this.handleKeyboardEvent = function(event) {
             // Chrome does not support event.key so, we fallback to keyCode
             var key = event.key ? event.key : event.keyCode;
 
@@ -86,16 +94,17 @@
                 (key === 'Enter' || key === 'Spacebar')) {
                 this.handleEvent(event);
             }
-        },
+        }.bind(this);
+
         /**
          * Delegates keyboard events either back to the browser or, stops propogation
          * and calls handleKeyboardEvent to handle the key event.
          * @params {object} event - The event to delegate
          */
-        delegateKeyEvents: function(event) {
+        this.delegateKeyEvents = function(event) {
             var key = event.key ? event.key : event.keyCode;
 
-            switch(key) {
+            switch (key) {
                 case 13:
                 case 32:
                 case 'Enter':
@@ -105,35 +114,37 @@
                     return false;
             }
             return true;
-        },
-        init: function(accordionContainer) {
+        }.bind(this);
 
-            this.container = accordionContainer;
+        this.init = function() {
+
+            // this.container = accordionContainer;
 
             this.container.addEventListener('click', function(event) {
                 // handle edge cases where the original event.targer is removed
                 // riht after the event was trigered causing event.target.parentNode
                 // in handleEvent to be null.
-                if(event.target.parentNode) {
-                    accordion.handleEvent(event);
+                if (event.target.parentNode) {
+                    this.handleEvent(event);
                 }
-            }, false);
+            }.bind(this), false);
 
             this.container.addEventListener('keyup', function(event) {
-                if(event.target.parentNode) {
-                    accordion.delegateKeyEvents(event);
+                if (event.target.parentNode) {
+                    this.delegateKeyEvents(event);
                 }
-            });
+            }.bind(this), false);
 
             this.container.addEventListener('keydown', function(event) {
-                if(event.target.parentNode) {
-                    accordion.delegateKeyEvents(event);
+                if (event.target.parentNode) {
+                    this.delegateKeyEvents(event);
                 }
-            });
-        }
+            }.bind(this), false);
+        }.bind(this);
+
     };
 
     // Expose accordion to the global object
-    window.accordion = accordion;
+    window.Accordion = Accordion;
 
 })(window);

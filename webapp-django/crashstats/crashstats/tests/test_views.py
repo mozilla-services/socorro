@@ -4060,7 +4060,7 @@ class TestViews(BaseTestViews):
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
-                      "version": "5.0a1",
+                      "version": "19.0",
                       "os_version": "1.2.3.4",
                       "build": "20120901000007",
                       "install_age": 1234,
@@ -4084,7 +4084,7 @@ class TestViews(BaseTestViews):
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
-                      "version": "5.0a1",
+                      "version": "19.0",
                       "os_version": "1.2.3.4",
                       "build": "20120822000007",
                       "install_age": 1234,
@@ -4115,7 +4115,7 @@ class TestViews(BaseTestViews):
                       "process_type": "browser",
                       "hangid": null,
                       "reason": "reason7",
-                      "version": "5.0a1",
+                      "version": "19.0",
                       "os_version": "1.2.3.4",
                       "build": "20120901000007",
                       "install_age": 1234,
@@ -4139,7 +4139,7 @@ class TestViews(BaseTestViews):
                       "process_type": "content",
                       "hangid": null,
                       "reason": "reason7",
-                      "version": "5.0a1",
+                      "version": "19.0",
                       "os_version": "1.2.3.4",
                       "build": "20120822000007",
                       "install_age": 1234,
@@ -4163,20 +4163,81 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
         # relevant data is put into 'data' attributes
-        ok_('data-correlation_version="5.0a1"' in response.content)
-        ok_('data-correlation_os="Mac OS X"' in response.content)
+        doc = pyquery.PyQuery(response.content)
+        combos = doc('.correlation-combo')
+        eq_(combos.size(), settings.MAX_CORRELATION_COMBOS_PER_SIGNATURE)
+        first, = combos[:1]
+        eq_(first.attrib['data-correlation-product'], 'WaterWolf')
+        eq_(first.attrib['data-correlation-version'], '19.0')
+        eq_(first.attrib['data-correlation-os'], 'Mac OS X')
 
     @mock.patch('requests.get')
     def test_report_list_partial_correlations_no_data(self, rget):
+        """This time, in the fixture we return a version (0.1) which
+        is NOT one of the known releases (18.0, 19.0, 20.0) for WaterWolf.
+        """
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [],
-                  "total": 2
-                }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": None,
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "release_channel": "Release",
+                            "process_type": "content",
+                            "hangid": None,
+                            "reason": "reason7",
+                            "version": "0.1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:0",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": None,
+                        }
+                    ],
+                    "total": 1
+                })
+            if 'correlations/signatures' in url:
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": None,
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "release_channel": "Release",
+                            "process_type": "browser",
+                            "hangid": None,
+                            "reason": "reason7",
+                            "version": "0.1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": None
+                        },
+                    ],
+                    "total": 1
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4187,9 +4248,13 @@ class TestViews(BaseTestViews):
             'range_value': 3
         })
         eq_(response.status_code, 200)
-        # relevant data is put into 'data' attributes
-        ok_('data-correlation_version=""' in response.content)
-        ok_('data-correlation_os=""' in response.content)
+        doc = pyquery.PyQuery(response.content)
+        combos = doc('.correlation-combo')
+        eq_(combos.size(), 0)
+        ok_(
+            'No product &amp; version &amp; OS combination for all reports '
+            'under this signature' in response.content
+        )
 
     @mock.patch('requests.get')
     def test_report_list_partial_sigurls(self, rget):
@@ -5395,7 +5460,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(
             url,
-            {'correlation_report_type': 'core-counts',
+            {'correlation_report_types': ['core-counts'],
              'product': 'WaterWolf',
              'version': '19.0',
              'platform': 'Windows NT',
@@ -5405,7 +5470,10 @@ class TestViews(BaseTestViews):
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
-        eq_(struct['reason'], 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS')
+        eq_(
+            struct['core-counts']['reason'],
+            'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS'
+        )
 
     @mock.patch('requests.get')
     def test_correlations_signatures_json(self, rget):
@@ -5425,7 +5493,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(
             url,
-            {'correlation_report_type': 'core-counts',
+            {'correlation_report_types': ['core-counts'],
              'product': 'WaterWolf',
              'version': '19.0',
              'platforms': 'Windows NT,Linux'}
@@ -5433,7 +5501,7 @@ class TestViews(BaseTestViews):
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
-        eq_(struct['total'], 2)
+        eq_(struct['core-counts']['total'], 2)
 
     def test_unauthenticated_user_redirected_from_protected_page(self):
         url = reverse(
