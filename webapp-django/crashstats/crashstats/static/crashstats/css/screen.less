@@ -565,8 +565,7 @@ html.production {
 div#message {
     margin: 1em;
 }
-div.error,
-div.success,
+.message,
 .info {
     margin: 1.5% 2% 0;
     padding: 1em;
@@ -577,17 +576,20 @@ div.success,
     background-color: #bde5f8;
     border: 1px solid #39B2EA;
 }
-div.error {
+.message.error {
     background-color: #ffbaba;
     border: 1px solid #d8000c;
 }
-div.success {
+.message.success {
     background-color: green;
     border: 1px solid #eee;
     color: #eee;
 }
-div.error h2,
-div.success h2 {
+.message.warning {
+    background-color: #ffe3be;
+    border: 1px solid #f69e53;
+}
+.message h2 {
     margin: .5em 0;
     font-size: 1.2em;
 }

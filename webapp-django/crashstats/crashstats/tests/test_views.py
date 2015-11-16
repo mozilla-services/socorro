@@ -6,6 +6,7 @@ import mock
 import re
 import urllib
 import random
+import urlparse
 
 import pyquery
 
@@ -2165,6 +2166,25 @@ class TestViews(BaseTestViews):
         ok_(first_row[2].isdigit())  # adi
         ok_(is_percentage(first_row[3]))  # throttle
         ok_(is_percentage(first_row[4]))  # ratio
+
+    def test_crashes_per_user_legacy_by_build_date(self):
+        url = reverse('crashstats:crashes_per_user')
+
+        response = self.client.get(url, {
+            'date_range_type': 'build',
+            'product': 'Whatever',
+            'foo': 'bar'
+        })
+        # If we use self.assertRedirects() it will actually go to the
+        # redirected URL which we haven't set up mocking for yet.
+        eq_(response.status_code, 302)
+        redirect_url = response['Location']
+        parsed = urlparse.urlparse(redirect_url)
+        eq_(parsed.path, url)
+        ok_('product=Whatever'in parsed.query)
+        ok_('foo=bar'in parsed.query)
+        ok_('date_range_type=build' not in parsed.query)
+        ok_('date_range_type=' not in parsed.query)
 
     @mock.patch('requests.get')
     def test_crashes_per_user_with_beta_versions(self, rget):
