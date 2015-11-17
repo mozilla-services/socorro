@@ -430,6 +430,7 @@ def signature_summary(request, params):
     ]
     params['_histogram.uptime'] = ['product']
     params['_histogram_interval.uptime'] = 60
+    params['_aggs.adapter_vendor_id'] = ['adapter_device_id']
 
     # If the user has permissions, show exploitability.
     all_fields = SuperSearchFields().get()
@@ -498,6 +499,55 @@ def signature_summary(request, params):
         ]
         uptimes = sorted(uptimes, key=lambda x: x['count'], reverse=True)
         data['uptimes'] = uptimes
+
+    # Augment graphics adapter with data from another service.
+    if 'adapter_vendor_id' in facets:
+        vendor_hexes = set()
+        adapter_hexes = set()
+        for vendor in facets['adapter_vendor_id']:
+            vendor_hexes.add(vendor['term'])
+            for adapter in vendor['facets']['adapter_device_id']:
+                adapter_hexes.add(adapter['term'])
+        devices_api = models.GraphicsDevices()
+        try:
+            devices_results = devices_api.get(
+                vendor_hex=vendor_hexes,
+                adapter_hex=adapter_hexes,
+            )
+        except models.BadStatusCodeError as e:
+            # We need to return the error message in some HTML form for jQuery
+            # to pick it up.
+            return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+
+        hexes = {}
+        for hit in devices_results['hits']:
+            key = '{}:{}'.format(hit['vendor_hex'], hit['adapter_hex'])
+            hexes[key] = (hit['vendor_name'], hit['adapter_name'])
+
+        graphics = []
+        for vendor in facets['adapter_vendor_id']:
+            for adapter in vendor['facets']['adapter_device_id']:
+                entry = {
+                    'vendor': vendor['term'],
+                    'adapter': adapter['term'],
+                    'count': adapter['count'],
+                }
+                key = '{}:{}'.format(vendor['term'], adapter['term'])
+                names = hexes.get(key)
+                if names and names[0]:
+                    entry['vendor'] = '{} ({})'.format(
+                        names[0],
+                        vendor['term'],
+                    )
+                if names and names[1]:
+                    entry['adapter'] = '{} ({})'.format(
+                        names[1],
+                        adapter['term'],
+                    )
+
+                graphics.append(entry)
+
+        facets['adapter_vendor_id'] = graphics
 
     # Transform exploitability facet.
     if 'histogram_date' in facets:

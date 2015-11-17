@@ -641,7 +641,32 @@ class TestViews(BaseTestViews):
             'date': '<=2015-01-01'
         })
 
-    def test_signature_summary(self):
+    @mock.patch('requests.get')
+    def test_signature_summary(self, rget):
+
+        def mocked_get(url, params, **options):
+            if '/graphics_devices' in url:
+                return Response({
+                    'hits': [
+                        {
+                            'vendor_hex': '0x0086',
+                            'adapter_hex': '0x1234',
+                            'vendor_name': 'Intel',
+                            'adapter_name': 'Device',
+                        },
+                        {
+                            'vendor_hex': '0x0086',
+                            'adapter_hex': '0x1239',
+                            'vendor_name': 'Intel',
+                            'adapter_name': 'Other',
+                        }
+                    ],
+                    'total': 2
+                })
+
+            raise NotImplementedError()
+
+        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             ok_('signature' in params)
@@ -701,6 +726,24 @@ class TestViews(BaseTestViews):
                         {
                             "count": 4,
                             "term": "1.1.1.14"
+                        }
+                    ],
+                    "adapter_vendor_id": [
+                        {
+                            "term": "Intel (0x0086)",
+                            "count": 4,
+                            "facets": {
+                                "adapter_device_id": [
+                                    {
+                                        "term": "Device (0x1234)",
+                                        "count": 2,
+                                    },
+                                    {
+                                        "term": "Other (0x1239)",
+                                        "count": 2,
+                                    }
+                                ]
+                            }
                         }
                     ],
                     "histogram_uptime": [
@@ -766,6 +809,7 @@ class TestViews(BaseTestViews):
         ok_('Product' in response.content)
         ok_('Architecture' in response.content)
         ok_('Process Type' in response.content)
+        ok_('Graphics Adapter' in response.content)
         ok_('Flash&trade; Version' in response.content)
 
         # Logged out users can't see no exploitability
@@ -780,6 +824,7 @@ class TestViews(BaseTestViews):
         ok_('1.1.1.14' in response.content)
         ok_('&lt; 1 min' in response.content)
         ok_('1-5 min' in response.content)
+        ok_('Intel (0x0086)' in response.content)
 
         user = self._login()
 

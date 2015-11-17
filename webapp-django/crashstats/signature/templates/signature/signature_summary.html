@@ -158,6 +158,34 @@
     </div>
 </div>
 
+<div class="panel">
+    <header class="title">
+        <h2>Graphics Adapter</h2>
+    </header>
+    <div class="content">
+        <table class="tablesorter data-table">
+            <thead>
+                <tr>
+                    <th class="header">Vendor</th>
+                    <th class="header">Adapter</th>
+                    <th class="header">Count</th>
+                    <th class="header">Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adapter in query.facets.adapter_vendor_id %}
+                <tr>
+                    <td>{{ adapter.vendor }}</td>
+                    <td>{{ adapter.adapter }}</td>
+                    <td>{{ adapter.count }}</td>
+                    <td>{{ (100.0 * adapter.count / query.total) | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% if query.facets.histogram_date %}
 <div class="panel">
     <header class="title">
