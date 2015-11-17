@@ -3,9 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import gzip
 import shutil
 import os
 import tempfile
+import io
 
 import mock
 from nose.tools import eq_, ok_, assert_raises
@@ -25,9 +27,20 @@ SAMPLE_CORE_COUNTS_WITH_HANGS = open(
 
 
 class Response(object):
-    def __init__(self, content=None, status_code=200):
-        self.content = content
+    def __init__(self, content=None, status_code=200, compress=False):
+        self._content = content
         self.status_code = status_code
+        self.compress = compress
+
+    @property
+    def content(self):
+        if self.compress:
+            out = io.BytesIO()
+            with gzip.GzipFile(fileobj=out, mode='wb') as buffer_:
+                buffer_.write(self._content)
+            return out.getvalue()
+        else:
+            return self._content
 
 
 class TestCorrelations(TestCase):
@@ -86,6 +99,36 @@ class TestCorrelations(TestCase):
         eq_(result['count'], 2551)
         eq_(result['reason'], 'EXCEPTION_ACCESS_VIOLATION_READ')
         eq_(len(result['load'].splitlines()), 17)
+
+    @mock.patch('requests.get')
+    def test_gzip_download(self, rget):
+
+        def mocked_get(url, **kwargs):
+            if url.endswith('.txt'):
+                return Response('not found', 404)
+            if url.endswith('core-counts.txt.gz'):
+                return Response(SAMPLE_CORE_COUNTS, compress=True)
+            raise NotImplementedError
+
+        rget.side_effect = mocked_get
+
+        model = self._get_model({
+            'base_url': 'http://doesntmatter/',
+            'save_download': False,
+        })
+
+        base_params = {
+            'platform': 'Windows NT',
+            'product': 'Firefox',
+            'report_type': 'core-counts',
+            'version': '24.0a1',
+        }
+        signature = 'js::types::IdToTypeId(int)'
+        result = model.get(**dict(base_params, signature=signature))
+        # it's not so important to test the content here,
+        # just that it worked
+        ok_(result['count'])
+        ok_(result['load'])
 
     @mock.patch('requests.get')
     def test_failing_download_no_error(self, rget):
