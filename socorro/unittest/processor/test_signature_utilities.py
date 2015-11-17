@@ -957,6 +957,126 @@ frames_from_json_dump_with_templates = {
     u'total_frames': 32
 }
 
+frames_from_json_dump_with_templates_and_special_case = {
+    u'frames': [
+        {
+            u'frame': 0,
+            u'function': u'NtWaitForMultipleObjects',
+            u'function_offset': u'0x15',
+            u'module': u'ntdll.dll',
+            u'module_offset': u'0x2015d',
+            u'offset': u'0x77ad015d',
+            u'registers': {
+                u'eax': u'0x00000040',
+                u'ebp': u'0x0025e968',
+                u'ebx': u'0x0025e91c',
+                u'ecx': u'0x00000000',
+                u'edi': u'0x00000000',
+                u'edx': u'0x00000000',
+                u'efl': u'0x00200246',
+                u'eip': u'0x77ad015d',
+                u'esi': u'0x00000004',
+                u'esp': u'0x0025e8cc'
+            },
+            u'trust': u'context'
+        },
+        {
+            u'frame': 1,
+            u'function': u'<name omitted>',
+            u'function_offset': u'0xff',
+            u'module': u'KERNELBASE.dll',
+            u'module_offset': u'0x115f6',
+            u'offset': u'0x775e15f6',
+            u'trust': u'cfi'
+        },
+        {
+            u'frame': 2,
+            u'function': u'WaitForMultipleObjectsExImplementation',
+            u'function_offset': u'0x8d',
+            u'module': u'kernel32.dll',
+            u'module_offset': u'0x119f7',
+            u'offset': u'0x766119f7',
+            u'trust': u'cfi'
+        },
+        {
+            u'frame': 3,
+            u'function': u'RealMsgWaitForMultipleObjectsEx(void **fakeargs)',
+            u'function_offset': u'0xe1',
+            u'module': u'user32.dll',
+            u'module_offset': u'0x20869',
+            u'offset': u'0x77370869',
+            u'trust': u'cfi'
+        },
+        {
+            u'frame': 4,
+            u'function': u'MsgWaitForMultipleObjects',
+            u'function_offset': u'0x1e',
+            u'module': u'user32.dll',
+            u'module_offset': u'0x20b68',
+            u'offset': u'0x77370b68',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F117835525________________________________________',
+            u'frame': 5,
+            u'function': u'F_1152915508__________________________________',
+            u'function_offset': u'0xbb',
+            u'line': 118,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x36a13b',
+            u'offset': u'0x5e3aa13b',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_851861807_______________________________________',
+            u'frame': 6,
+            u'function': u'F2166389______________________________________',
+            u'function_offset': u'0xe5',
+            u'line': 552,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x35faf5',
+            u'offset': u'0x5e39faf5',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_851861807_______________________________________',
+            u'frame': 7,
+            u'function': u'F_917831355___________________________________',
+            u'function_offset': u'0x29b',
+            u'line': 488,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x360a7b',
+            u'offset': u'0x5e3a0a7b',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_851861807_______________________________________',
+            u'frame': 8,
+            u'function': u'F1315696776________________________________',
+            u'function_offset': u'0xd',
+            u'line': 439,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x35e2fd',
+            u'offset': u'0x5e39e2fd',
+            u'trust': u'cfi'
+        },
+        {
+            u'file': u'F_766591945_______________________________________',
+            u'frame': 9,
+            u'function': u'F_1428703866________________________________',
+            u'function_offset': u'0xc1',
+            u'line': 203,
+            u'module': u'NPSWF32_14_0_0_125.dll',
+            u'module_offset': u'0x35bf21',
+            u'offset': u'0x5e39bf21',
+            u'trust': u'cfi'
+        }
+    ],
+    u'threads_index': 0,
+    u'total_frames': 32
+}
+
+
 
 sample_json_dump = {
     u'json_dump': {
@@ -990,6 +1110,22 @@ sample_json_dump_with_templates = {
     }
 }
 
+sample_json_dump_with_templates_and_special_case = {
+    u'json_dump': {
+        u'system_info': {
+            'os': 'Windows NT'
+        },
+        u'crash_info': {
+            u'address': u'0x77ad015d',
+            u'crashing_thread': 0,
+            u'type': u'EXCEPTION_BREAKPOINT'
+        },
+        u'crashing_thread':
+            frames_from_json_dump_with_templates_and_special_case,
+        u'threads':  [ frames_from_json_dump_with_templates_and_special_case ]
+
+    }
+}
 
 csig_config = DotDict()
 csig_config.irrelevant_signature_re = ''
@@ -1190,6 +1326,46 @@ class TestSignatureGeneration(TestCase):
             'F_1428703866________________________________'
         )
         eq_(processor_meta.processor_notes, [])
+
+    #--------------------------------------------------------------------------
+    def test_action_2_with_templates_and_special_case(self):
+        config = self.get_config()
+        sgr = SignatureGenerationRule(config)
+
+        raw_crash = CDotDict()
+        raw_dumps = {}
+        processed_crash = CDotDict(
+            sample_json_dump_with_templates_and_special_case
+        )
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        # the call to be tested
+        ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
+
+        eq_(
+            processed_crash.signature,
+            '<name omitted> | '
+            'RealMsgWaitForMultipleObjectsEx | '
+            'MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________'
+        )
+        eq_(
+            processed_crash.proto_signature,
+            'NtWaitForMultipleObjects | '
+            '<name omitted> | '
+            'WaitForMultipleObjectsExImplementation | '
+            'RealMsgWaitForMultipleObjectsEx | '
+            'MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________ | '
+            'F2166389______________________________________ | '
+            'F_917831355___________________________________ | '
+            'F1315696776________________________________ | '
+            'F_1428703866________________________________'
+        )
+        eq_(processor_meta.processor_notes, [])
+
 
 
     #--------------------------------------------------------------------------
