@@ -152,44 +152,36 @@ class SuperSearch(SearchBase):
         needed for backwards compatibility.
         """
         aggs = aggregations.to_dict()
-        for agg in aggs:
-            if 'buckets' not in aggs[agg]:
-                # This is a cardinality aggregation, there are no terms.
-                continue
 
-            for i, bucket in enumerate(aggs[agg]['buckets']):
-                sub_aggs = {}
+        def _format(aggregation):
+            if 'buckets' not in aggregation:
+                # This is a cardinality aggregation, there are no terms.
+                return aggregation
+
+            for i, bucket in enumerate(aggregation['buckets']):
+                new_bucket = {
+                    'term': bucket.get('key_as_string', bucket['key']),
+                    'count': bucket['doc_count'],
+                }
+                facets = {}
+
                 for key in bucket:
                     # Go through all sub aggregations. Those are contained in
                     # all the keys that are not 'key' or 'count'.
                     if key in ('key', 'key_as_string', 'doc_count'):
                         continue
 
-                    if 'buckets' not in bucket[key]:
-                        sub_aggs[key] = bucket[key]
-                    else:
-                        sub_aggs[key] = [
-                            {
-                                # For date data, Elasticsearch exposes a
-                                # timestamp in 'key' and a human-friendly
-                                # string in 'key_as_string'. We thus check if
-                                # the later exists to expose it, and return
-                                # the normal 'key' if not.
-                                'term': x.get('key_as_string', x['key']),
-                                'count': x['doc_count'],
-                            }
-                            for x in bucket[key]['buckets']
-                        ]
+                    facets[key] = _format(bucket[key])
 
-                aggs[agg]['buckets'][i] = {
-                    'term': bucket.get('key_as_string', bucket['key']),
-                    'count': bucket['doc_count'],
-                }
+                if facets:
+                    new_bucket['facets'] = facets
 
-                if sub_aggs:
-                    aggs[agg]['buckets'][i]['facets'] = sub_aggs
+                aggregation['buckets'][i] = new_bucket
 
-            aggs[agg] = aggs[agg]['buckets']
+            return aggregation['buckets']
+
+        for agg in aggs:
+            aggs[agg] = _format(aggs[agg])
 
         return aggs
 
@@ -407,20 +399,31 @@ class SuperSearch(SearchBase):
             )
 
         # Create sub-aggregations.
-        for f in self.all_fields.keys():
-            key = '_aggs.%s' % f
-            if params.get(key):
-                agg_bucket = self._get_fields_agg(f, facets_size)
+        for key in params:
+            if not key.startswith('_aggs.'):
+                continue
 
-                for param in params[key]:
-                    self._add_second_level_aggs(
-                        param,
-                        agg_bucket,
-                        facets_size,
-                        histogram_intervals,
-                    )
+            fields = key.split('.')[1:]
 
-                search.aggs.bucket(f, agg_bucket)
+            if fields[0] not in self.all_fields:
+                continue
+
+            base_bucket = self._get_fields_agg(fields[0], facets_size)
+            sub_bucket = base_bucket
+
+            if len(fields) >= 2 and fields[1] in self.all_fields:
+                sub_bucket = self._get_fields_agg(fields[1], facets_size)
+                base_bucket.bucket(fields[1], sub_bucket)
+
+            for value in params[key]:
+                self._add_second_level_aggs(
+                    value,
+                    sub_bucket,
+                    facets_size,
+                    histogram_intervals,
+                )
+
+            search.aggs.bucket(fields[0], base_bucket)
 
         # Create histograms.
         for f in self.histogram_fields:

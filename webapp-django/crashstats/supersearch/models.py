@@ -11,7 +11,7 @@ from crashstats.crashstats import models
 
 
 SUPERSEARCH_META_PARAMS = (
-    ('_aggs.signature', list),
+    ('_aggs.product.version', list),
     ('_columns', list),
     ('_facets', list),
     ('_facets_size', int),
@@ -26,6 +26,7 @@ SUPERSEARCH_META_PARAMS = (
 # Those parameters contain list of fields and thus need to be verified before
 # sent to the middleware, so that no private field can be accessed.
 PARAMETERS_LISTING_FIELDS = (
+    '_aggs.product.version',
     '_facets',
 )
 

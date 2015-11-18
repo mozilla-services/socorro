@@ -78,6 +78,7 @@ class SearchFilter(object):
 
 class SearchBase(object):
     meta_filters = [
+        SearchFilter('_aggs.product.version'),
         SearchFilter('_columns', default=[
             'uuid', 'date', 'signature', 'product', 'version'
         ]),

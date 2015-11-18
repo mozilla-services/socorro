@@ -816,24 +816,28 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'WaterWolf',
+            'version': '2.1',
             'os_name': 'Windows NT',
             'date_processed': self.now,
         })
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'WaterWolf',
+            'version': '2.1',
             'os_name': 'Linux',
             'date_processed': self.now,
         })
         self.index_crash({
             'signature': 'js::break_your_browser',
             'product': 'NightTrain',
+            'version': '2.1',
             'os_name': 'Linux',
             'date_processed': self.now,
         })
         self.index_crash({
             'signature': 'foo(bar)',
             'product': 'EarthRacoon',
+            'version': '2.1',
             'os_name': 'Linux',
             'date_processed': self.now,
         })
@@ -1056,6 +1060,20 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         version_sub_facet = res['facets']['signature'][0]['facets']['version']
         eq_(len(version_sub_facet), number_of_crashes)
+
+        # Test with a third level aggregation.
+        kwargs = {
+            '_aggs.product.version': ['_cardinality.signature'],
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('product' in res['facets'])
+        product_facet = res['facets']['product']
+        for pf in product_facet:
+            ok_('version' in pf['facets'])
+            version_facet = pf['facets']['version']
+            for vf in version_facet:
+                ok_('cardinality_signature' in vf['facets'])
 
         # Test errors
         args = {}
