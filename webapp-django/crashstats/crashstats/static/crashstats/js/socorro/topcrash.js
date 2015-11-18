@@ -15,23 +15,25 @@ var Correlations = (function() {
     // a hash table where we keep all unique signatures that have correlations
     var all_signatures = {};
 
-    function loadCorrelations(type, callback) {
-        var url = SocReport.sig_base + '?correlation_report_type=' + type +
-                  '&' + SocReport.path + '&platforms=';
+    function loadCorrelations(types, callback) {
         var data = {
-            correlation_report_type: type,
+            correlation_report_types: types,
             product: SocReport.product,
-            version: SocReport.version
+            version: SocReport.version,
+            platforms: [],
         };
-        // osnames is a dictionary so...
-        data.platforms = $.map(osnames, function(i, osname) {
-            return osname;
-        }).join(',');
-
-        $.getJSON(SocReport.sig_base, data, function (json) {
-            $.each(json.hits, function(i, sig) {
-                all_signatures[sig] = 1;
-            });
+        for (var platform in osnames) {
+            data.platforms.push(platform);
+        }
+        $.getJSON(SocReport.sig_base + '?' + $.param(data, true))
+        .done(function (json) {
+            for (var type in json) {
+                json[type].hits.forEach(function(sig) {
+                    all_signatures[sig] = 1;
+                });
+            }
+        })
+        .always(function() {
             if (callback) callback();
         });
     }
@@ -45,24 +47,24 @@ var Correlations = (function() {
             platform: osname,
             signature: signature,
             product: SocReport.product,
-            version: SocReport.version
+            version: SocReport.version,
+            correlation_report_types: correlations,
         };
-        var types_done = 0;
-        $.each(correlations, function(i, type) {
-            data.correlation_report_type = type;
-            $.getJSON(SocReport.base, data, function(json) {
-                var report = '<h3>' + json.reason + '</h3>';
-                report += json.load.split("\n").join("<br>");
-                row.find('.' + type).html(report);
-                types_done += 1;
 
-                if (types_done === correlations.length) {
-                    $('.correlation-cell .top span', row).html('');
-                    $('.correlation-cell div div.complete', row).show();
-                    $element.text('Show Less');
-                }
-            });
+        $.getJSON(SocReport.base + '?' + $.param(data, true))
+        .done(function(json) {
+            for (var i in correlations) {
+                var type = correlations[i];
+                var report = '<h3>' + json[type].reason + '</h3>';
+                report += json[type].load.split("\n").join("<br>");
+                row.find('.' + type).html(report);
+            }
+
+            $('.correlation-cell .top span', row).html('');
+            $('.correlation-cell div div.complete', row).show();
+            $element.text('Show Less');
         });
+
 
         return false;
     }
@@ -111,29 +113,20 @@ var Correlations = (function() {
 
            // for each type of correlation start downloading all signatures that
            // have correlations
-           var correlation_types_loaded = 0;
            function correlationsTypeLoaded() {
-               correlation_types_loaded += 1;
-               if (correlation_types_loaded === correlations.length) {
-                   // all correlation types have fully called back,
-                   // let's finish up things
-                   $('.signature').each(function() {
-                       var signature = $(this).attr('title');
-                       if (all_signatures[signature] || false ) {
-                           $(this).parents('tr')
-                             .find('.correlation-toggler')
-                               .show();
-                       }
-                   });
-
-                   $('.correlation-cell .top span').html('');
-               }
-
+               // all correlation types have fully called back,
+               // let's finish up things
+               $('.signature').each(function() {
+                   var signature = $(this).attr('title');
+                   if (all_signatures[signature] || false ) {
+                       $(this).parents('tr')
+                         .find('.correlation-toggler')
+                           .show();
+                   }
+               });
+               $('.correlation-cell .top span').html('');
            }
-           for (var i in correlations) {
-               loadCorrelations(correlations[i], correlationsTypeLoaded);
-           }
-
+           loadCorrelations(correlations, correlationsTypeLoaded);
        }
     };
 })();

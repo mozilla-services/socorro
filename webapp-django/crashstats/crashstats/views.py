@@ -2049,15 +2049,14 @@ def report_list(request, partial=None, default_context=None):
         context['report_list']['total_count'] = context['report_list']['total']
 
     if partial == 'correlations':
-        os_count = defaultdict(int)
-        version_count = defaultdict(int)
+        counts = defaultdict(int)
 
         for report in context['report_list']['hits']:
+            product = report['product']
             os_name = report['os_name']
             version = report['version']
 
-            os_count[os_name] += 1
-            version_count[version] += 1
+            counts[(product, os_name, version)] += 1
 
             report['date_processed'] = isodate.parse_datetime(
                 report['date_processed']
@@ -2082,35 +2081,46 @@ def report_list(request, partial=None, default_context=None):
                     '%Y-%m-%d %H:%M:%S'
                 )
 
-        if os_count:
-            correlation_os = max(os_count.iterkeys(),
-                                 key=lambda k: os_count[k])
-        else:
-            correlation_os = None
-        context['correlation_os'] = correlation_os
+        # First gather a map of product->versions where the product
+        # and versions are only those that are "active", which means
+        # they have an sunset date that is >= now.
+        release_versions = {}
+        for product, versions in context['releases'].items():
+            release_versions[product] = [x['version'] for x in versions]
 
-        if version_count:
-            correlation_version = max(version_count.iterkeys(),
-                                      key=lambda k: version_count[k])
-        else:
-            correlation_version = None
-        if correlation_version is None:
-            correlation_version = ''
-        context['correlation_version'] = correlation_version
+        # Sort all found product/os/version combinations by number
+        # of crashes and filter out those not in the releases
+        # (mentioned above). Then limit number of combinations
+        # by the MAX_CORRELATION_COMBOS_PER_SIGNATURE setting.
+        context['correlation_combos'] = [
+            {
+                'product': k[0],
+                'os': k[1],
+                'version': k[2],
+            }
+            for k, v in sorted(
+                counts.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )
+            if k[2] in release_versions.get(k[0], [])
+        ][:settings.MAX_CORRELATION_COMBOS_PER_SIGNATURE]
 
         correlations_api = models.CorrelationsSignatures()
         total_correlations = 0
-        if correlation_version and correlation_os:
-            for report_type in settings.CORRELATION_REPORT_TYPES:
-                correlations = correlations_api.get(
-                    report_type=report_type,
-                    product=context['product'],
-                    version=correlation_version,
-                    platforms=correlation_os
-                )
-                hits = correlations['hits'] if correlations else []
-                if context['signature'] in hits:
-                    total_correlations += 1
+        if context['correlation_combos']:
+            for combo in context['correlation_combos']:
+                # this should ideally be turned into 1 query
+                for report_type in settings.CORRELATION_REPORT_TYPES:
+                    correlations = correlations_api.get(
+                        report_type=report_type,
+                        product=context['product'],
+                        version=combo['version'],
+                        platforms=combo['os']
+                    )
+                    hits = correlations['hits'] if correlations else []
+                    if context['signature'] in hits:
+                        total_correlations += 1
         context['total_correlations'] = total_correlations
 
     versions = []
@@ -2743,7 +2753,7 @@ def correlations_json(request):
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
-    report_type = form.cleaned_data['correlation_report_type']
+    report_types = form.cleaned_data['correlation_report_types']
     product = form.cleaned_data['product']
     version = form.cleaned_data['version']
     # correlations does not differentiate betas since it works on raw data
@@ -2753,8 +2763,21 @@ def correlations_json(request):
     signature = form.cleaned_data['signature']
 
     api = models.Correlations()
-    return api.get(report_type=report_type, product=product, version=version,
-                   platform=platform, signature=signature)
+    context = {}
+    for report_type in report_types:
+        # To keep things simple,
+        # the actual middleware query only supports querying by 1 report
+        # type at a time. At some point we ought to change that so it
+        # takes in a list instead.
+        # One big change at a time!
+        context[report_type] = api.get(
+            report_type=report_type,
+            product=product,
+            version=version,
+            platform=platform,
+            signature=signature
+        )
+    return context
 
 
 @utils.json_view
@@ -2769,23 +2792,27 @@ def correlations_signatures_json(request):
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
-    report_type = form.cleaned_data['correlation_report_type']
+    report_types = form.cleaned_data['correlation_report_types']
     product = form.cleaned_data['product']
     version = form.cleaned_data['version']
     platforms = form.cleaned_data['platforms']
 
     api = models.CorrelationsSignatures()
-    result = api.get(
-        report_type=report_type,
-        product=product,
-        version=version,
-        platforms=platforms
-    )
-    # if the product and/or version is completely unrecognized, you
-    # don't get an error or an empty list, you get NULL
-    if result is None:
-        result = {'hits': [], 'total': 0}
-    return result
+    context = {}
+    for report_type in report_types:
+        result = api.get(
+            report_type=report_type,
+            product=product,
+            version=version,
+            platforms=platforms
+        )
+        # if the product and/or version is completely unrecognized, you
+        # don't get an error or an empty list, you get NULL
+
+        if result is None:
+            result = {'hits': [], 'total': 0}
+        context[report_type] = result
+    return context
 
 
 def graphics_report(request):
