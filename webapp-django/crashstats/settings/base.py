@@ -503,10 +503,10 @@ SYMBOLS_COMPRESS_EXTENSIONS = config(
 # Below are settings that can be overridden using
 # environment variables.
 
-CACHE_MIDDLEWARE = config('CACHE_MIDDLEWARE', False, cast=bool)
+CACHE_MIDDLEWARE = config('CACHE_MIDDLEWARE', True, cast=bool)
 # creates "./models-cache" dir
 # only applicable if CACHE_MIDDLEWARE is True
-CACHE_MIDDLEWARE_FILES = config('CACHE_MIDDLEWARE_FILES', True, cast=bool)
+CACHE_MIDDLEWARE_FILES = config('CACHE_MIDDLEWARE_FILES', False, cast=bool)
 
 # Socorro middleware instance to use
 MWARE_BASE_URL = config('MWARE_BASE_URL', 'http://localhost:5200')
