@@ -184,3 +184,5 @@ datadog==0.5.0
 # sha256: x4ZXPEj73ejlDlVeXiWoNkQ-Zm1sz_bLDSAIYVNYsOM
 # sha256: 7lmy7t1AEe6q6Kle7DGql37DVd9_TsoQZ_QCy3lCngo
 freezegun==0.3.5
+# sha256: tYAUqlZA40Vup9vzPxUaHEud9HKJdocwwKAwYaRxOGU
+newrelic==2.56.0.42
