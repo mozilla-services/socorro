@@ -175,7 +175,14 @@ class CSignatureToolBase(SignatureTool):
         if normalized is not None:
             return normalized
         if function:
-            function = self._collapse(function, '<', '<', '>', 'T>')
+            function = self._collapse(
+                function,
+                '<',
+                '<',
+                '>',
+                'T>',
+                ('name omitted', )
+            )
             if self.config.collapse_arguments:
                 function = self._collapse(
                     function,
@@ -425,6 +432,7 @@ class CSignatureTool(CSignatureToolBase):
           'moz_xmalloc',
           'moz_xrealloc',
           'msvcr120\.dll@0x.*',
+          '\<name omitted\>',
           'NP_Shutdown',
           '(NS_)?(Lossy)?(Copy|Append|Convert).*UTF.*',
           'nsACString_internal::Assign.*',
