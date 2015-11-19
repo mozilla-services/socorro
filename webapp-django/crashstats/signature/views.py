@@ -502,22 +502,31 @@ def signature_summary(request, params):
 
     # Augment graphics adapter with data from another service.
     if 'adapter_vendor_id' in facets:
-        vendor_hexes = set()
-        adapter_hexes = set()
+        vendor_hexes = []
+        adapter_hexes = []
         for vendor in facets['adapter_vendor_id']:
-            vendor_hexes.add(vendor['term'])
             for adapter in vendor['facets']['adapter_device_id']:
-                adapter_hexes.add(adapter['term'])
+                vendor_hexes.append(vendor['term'])
+                adapter_hexes.append(adapter['term'])
+
         devices_api = models.GraphicsDevices()
-        try:
-            devices_results = devices_api.get(
-                vendor_hex=vendor_hexes,
-                adapter_hex=adapter_hexes,
+
+        devices_results = {
+            'hits': [],
+            'total': 0,
+        }
+        # In order to avoid hitting the maximum URL size limit, we split the
+        # query in smaller chunks, and then we reconstruct the results.
+        max_number_of_hexes = 50
+        for i in range(0, len(vendor_hexes), max_number_of_hexes):
+            vendors = set(vendor_hexes[i:i + max_number_of_hexes])
+            adapters = set(adapter_hexes[i:i + max_number_of_hexes])
+            res = devices_api.get(
+                vendor_hex=vendors,
+                adapter_hex=adapters,
             )
-        except models.BadStatusCodeError as e:
-            # We need to return the error message in some HTML form for jQuery
-            # to pick it up.
-            return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+            devices_results['hits'].extend(res['hits'])
+            devices_results['total'] += res['total']
 
         hexes = {}
         for hit in devices_results['hits']:

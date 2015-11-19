@@ -664,7 +664,7 @@ class TestViews(BaseTestViews):
                     'total': 2
                 })
 
-            raise NotImplementedError()
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
 
@@ -730,16 +730,16 @@ class TestViews(BaseTestViews):
                     ],
                     "adapter_vendor_id": [
                         {
-                            "term": "Intel (0x0086)",
+                            "term": "0x0086",
                             "count": 4,
                             "facets": {
                                 "adapter_device_id": [
                                     {
-                                        "term": "Device (0x1234)",
+                                        "term": "0x1234",
                                         "count": 2,
                                     },
                                     {
-                                        "term": "Other (0x1239)",
+                                        "term": "0x1239",
                                         "count": 2,
                                     }
                                 ]
@@ -843,3 +843,69 @@ class TestViews(BaseTestViews):
 
         # Logged in users with the permission can see exploitability
         ok_('Exploitability' in response.content)
+
+    @mock.patch('requests.get')
+    def test_signature_summary_with_many_hexes(self, rget):
+
+        def mocked_get(url, params, **options):
+            if '/graphics_devices' in url:
+                ok_(len(params['vendor_hex']) <= 50)
+                ok_(len(params['adapter_hex']) <= 50)
+
+                return Response({
+                    'hits': [],
+                    'total': 0
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_supersearch_get(**params):
+            ok_('signature' in params)
+            eq_(params['signature'], ['=' + DUMB_SIGNATURE])
+
+            adapters = [
+                {
+                    'term': '0x{0:0>4}'.format(i),
+                    'count': 1
+                }
+                for i in range(50)
+            ]
+            vendors = [
+                {
+                    'term': '0x{0:0>4}'.format(i),
+                    'count': 50,
+                    'facets': {
+                        'adapter_device_id': adapters
+                    }
+                }
+                for i in range(3)
+            ]
+
+            res = {
+                'hits': [],
+                'total': 4,
+                'facets': {
+                    'adapter_vendor_id': vendors,
+                }
+            }
+
+            return res
+
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        # Test with no results
+        url = reverse('signature:signature_summary')
+
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+            'product': 'WaterWolf',
+            'version': '1.0',
+        })
+        eq_(response.status_code, 200)
+
+        # There are 150 different hexes, there should be 3 calls to the API.
+        eq_(rget.call_count, 3)
