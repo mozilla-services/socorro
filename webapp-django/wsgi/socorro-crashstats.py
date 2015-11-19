@@ -1,4 +1,5 @@
 import os
+import sys
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crashstats.settings')
 
@@ -15,5 +16,11 @@ except ImportError:
 if newrelic:
     newrelic_ini = os.getenv('NEWRELIC_PYTHON_INI_FILE', None)
     if newrelic_ini:
-        newrelic.agent.initialize(newrelic_ini)
-        application = newrelic.agent.wsgi_application()(application)
+        if os.path.isfile(newrelic_ini):
+            newrelic.agent.initialize(newrelic_ini)
+            application = newrelic.agent.wsgi_application()(application)
+        else:
+            print >>sys.stderr, (
+                "NEWRELIC_PYTHON_INI_FILE set but file does not exist. "
+                "Skipping to initialize newrelic agent."
+            )
