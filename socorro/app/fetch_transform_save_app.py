@@ -374,8 +374,17 @@ class FetchTransformSaveApp(App):
         self.config.executor_identity = self.task_manager.executor_identity
 
     #--------------------------------------------------------------------------
-    def _cleanup(self):
-        pass
+    def close(self):
+        try:
+            self.source.close()
+        except AttributeError:
+            # this source class has no close, we can ignore that & move on
+            pass
+        try:
+            self.destination.close()
+        except AttributeError:
+            # this destination class has no close, we can ignore that & move on
+            pass
 
     #--------------------------------------------------------------------------
     def main(self):
@@ -387,7 +396,7 @@ class FetchTransformSaveApp(App):
         self._setup_task_manager()
         self._setup_source_and_destination()
         self.task_manager.blocking_start(waiting_func=self.waiting_func)
-        self._cleanup()
+        self.close()
         self.config.logger.info('done.')
 
 
@@ -430,3 +439,13 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
             # the configuration failed to provide a "new_crash_source", fall
             # back to tying the "new_crash_source" to the "source".
             self.new_crash_source = self.source
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        super(FetchTransformSaveWithSeparateNewCrashSourceApp, self).close()
+        if self.source != self.new_crash_source:
+            try:
+                self.new_crash_source.close()
+            except AttributeError:
+                # the new_crash_source has no close, move on without it
+                pass

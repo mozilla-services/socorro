@@ -171,10 +171,20 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
 
     #--------------------------------------------------------------------------
-    def _cleanup(self):
+    def close(self):
         """when  the processor shutsdown, this function cleans up"""
-        if self.companion_process:
+        try:
             self.companion_process.close()
+        except AttributeError:
+            # there is either no companion or it doesn't have a close method
+            # we can skip on
+            pass
+        try:
+            self.processor.close()
+        except AttributeError:
+            # the processor implementation does not have a close method
+            # we can blithely skip on
+            pass
 
 
 if __name__ == '__main__':

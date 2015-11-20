@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.tools import eq_, ok_, assert_raises
+from mock import Mock
 
 from socorro.collector.crashmover_app import CrashMoverApp
 from socorro.lib.threaded_task_manager import ThreadedTaskManager
@@ -19,6 +20,8 @@ class TestCrashMoverApp(TestCase):
                 self.the_list = []
 
             def _setup_source_and_destination(self):
+                self.source = Mock()
+                self.destination = Mock()
                 pass
 
             def _basic_iterator(self):
@@ -74,6 +77,10 @@ class TestCrashMoverApp(TestCase):
                                                        'Product': 'Fennicky',
                                                        'Version': '1.0'}),
                                      })
+                self.number_of_close_calls = 0
+
+            def close():
+                self.number_of_close_calls += 1
 
             def get_raw_crash(self, ooid):
                 return self.store[ooid]
@@ -86,15 +93,23 @@ class TestCrashMoverApp(TestCase):
                 for k in self.store.keys():
                     yield k
 
+            def close(self):
+                self.number_of_close_calls += 1
+                pass
+
         class FakeStorageDestination(object):
 
             def __init__(self, config, quit_check_callback):
                 self.store = DotDict()
                 self.dumps = DotDict()
+                self.number_of_close_calls = 0
 
             def save_raw_crash(self, raw_crash, dumps, crash_id):
                 self.store[crash_id] = raw_crash
                 self.dumps[crash_id] = dumps
+
+            def close(self):
+                self.number_of_close_calls += 1
 
         logger = SilentFakeLogger()
         config = DotDict({
@@ -124,6 +139,10 @@ class TestCrashMoverApp(TestCase):
         eq_(len(destination.dumps), 4)
         eq_(destination.dumps['1237'],
                          source.get_raw_dumps('1237'))
+
+        # ensure that each storage system had its close called
+        eq_(source.number_of_close_calls, 1)
+        eq_(destination.number_of_close_calls, 1)
 
     def test_source_iterator(self):
 

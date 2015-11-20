@@ -284,6 +284,9 @@ class TransformRule(Rule):
         else:
             return False
 
+    #--------------------------------------------------------------------------
+    def close(self):
+        pass
 
 #==============================================================================
 class TransformRuleSystem(RequiredConfig):
@@ -470,6 +473,15 @@ class TransformRuleSystem(RequiredConfig):
             if not predicate_result:
                 return False
         return None
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        for a_rule in self.rules:
+            try:
+                a_rule.close()
+            except AttributeError:
+                # no close method mean no need to close
+                pass
 
 
 #------------------------------------------------------------------------------

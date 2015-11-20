@@ -35,6 +35,13 @@ class TestRuleTestLaughable(transform_rules.Rule):
     def _predicate(self, *args, **kwargs):
         return self.config.laughable != 'fred'
 
+    def close(self):
+        try:
+            self.close_counter += 1
+        except AttributeError:
+            self.close_counter = 1
+
+
 
 #==============================================================================
 class TestRuleTestDangerous(transform_rules.Rule):
@@ -43,6 +50,12 @@ class TestRuleTestDangerous(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
         return self.config.dangerous != 'sally'
+
+    def close(self):
+        try:
+            self.close_counter += 1
+        except AttributeError:
+            self.close_counter = 1
 
 
 #==============================================================================
@@ -578,3 +591,31 @@ class TestTransformRules(TestCase):
         ok_(isinstance(trs.rules[1], TestRuleTestDangerous))
         ok_(trs.rules[0].predicate(None))
         ok_(trs.rules[1].action(None))
+
+    def test_rules_close(self):
+        config = DotDict()
+        config.chatty_rules = False
+        config.chatty = False
+        config.tag = 'test.rule'
+        config.action = 'apply_all_rules'
+        config['TestRuleTestLaughable.laughable'] = 'wilma'
+        config['TestRuleTestDangerous.dangerous'] = 'dwight'
+        config.rules_list = DotDict()
+        config.rules_list.class_list = [
+            (
+                'TestRuleTestLaughable',
+                TestRuleTestLaughable,
+                'TestRuleTestLaughable'
+            ),
+            (
+                'TestRuleTestDangerous',
+                TestRuleTestDangerous,
+                'TestRuleTestDangerous'
+            )
+        ]
+        trs = transform_rules.TransformRuleSystem(config)
+
+        trs.close()
+
+        eq_(trs.rules[0].close_counter, 1)
+        eq_(trs.rules[1].close_counter, 1)
