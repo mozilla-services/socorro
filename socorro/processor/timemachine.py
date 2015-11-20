@@ -62,51 +62,7 @@ class DateProcessedTimeMachine(Rule):
         )
         return True
 
-
 #==============================================================================
-class PGQueryNewCrashSource(RequiredConfig):
-    required_config = Namespace()
-    required_config.add_option(
-        'crashstorage_class',
-        doc='the source storage class',
-        default='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage',
-        from_string_converter=class_converter,
-        reference_value_from='resource.postgresql'
-    )
-    required_config.add_option(
-        'crash_id_query',
-        doc='sql to get a list of crash_ids',
-        default="select uuid from reports_20141020 where uuid like '%142022' and date_processed > '2014-10-23'",
-    )
-
-    #--------------------------------------------------------------------------
-    def __init__(self, config, processor_name, quit_check_callback=None):
-        self.crash_store = config.crashstorage_class(
-            config,
-            quit_check_callback
-        )
-        self.config = config
-
-    #--------------------------------------------------------------------------
-    def close(self):
-        pass
-
-    #--------------------------------------------------------------------------
-    def __iter__(self):
-        crash_ids = self.crash_store.transaction(
-            execute_query_fetchall,
-            self.config.crash_id_query
-        )
-
-        for a_crash_id in crash_ids:
-            yield a_crash_id
-
-        while True:
-            yield None
-
-    #--------------------------------------------------------------------------
-    new_crashes =  __iter__
-
-    #--------------------------------------------------------------------------
-    def __call__(self):
-        return self.__iter__()
+# this class was relocated to a more appropriate module.  This import is
+# offered for backwards compatibility
+from socorro.external.postgresql.new_crash_source import PGQueryNewCrashSource

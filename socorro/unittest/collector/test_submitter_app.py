@@ -11,10 +11,8 @@ from nose.tools import eq_, ok_, assert_raises
 from socorro.collector.submitter_app import (
     SubmitterApp,
     SubmitterFileSystemWalkerSource,
-    DBSamplingCrashSource
 )
 from configman.dotdict import DotDict
-from socorro.external.postgresql import dbapi2_util
 from socorro.external.crashstorage_base import Redactor
 from socorro.unittest.testbase import TestCase
 
@@ -202,102 +200,6 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
                 sub_walker = SubmitterFileSystemWalkerSource(config)
                 result = [x for x in sub_walker.new_crashes()]
                 eq_(result, expected)
-
-
-#==============================================================================
-class TestDBSamplingCrashSource(TestCase):
-
-    #--------------------------------------------------------------------------
-    def get_standard_config(self):
-        config = DotDict()
-
-        mocked_source_implementation = mock.Mock()
-        mocked_source_implementation.quit_check_callback = None
-        config.source_implementation = mock.Mock(
-            return_value=mocked_source_implementation
-        )
-
-        config.sql = 'select uuid from jobs order by \
-                      queueddatetime DESC limit 1000'
-
-        config.logger = mock.MagicMock()
-        return config
-
-    #--------------------------------------------------------------------------
-    def test_setup(self):
-        config = self.get_standard_config()
-        db_sampling = DBSamplingCrashSource(config)
-        eq_(db_sampling.config, config)
-        eq_(db_sampling.config.logger, config.logger)
-
-    #--------------------------------------------------------------------------
-    def test_new_crashes(self):
-        config = self.get_standard_config()
-        db_sampling = DBSamplingCrashSource(config)
-
-        m_execute = mock.MagicMock()
-        sequence =  [
-            '114559a5-d8e6-428c-8b88-1c1f22120314',
-            'c44245f4-c93b-49b8-86a2-c15dc3a695cb'
-        ]
-        expected = sequencer(*tuple(sequence))
-
-        conn = mock.MagicMock()
-        conn.cursor.return_value.__enter__().fetchone =  expected
-
-        for a_row in dbapi2_util.execute_query_iter(conn, config.sql):
-            eq_(a_row, sequence.pop())
-
-        conn.cursor.assert_called_once_with()
-        conn.cursor.return_value.__enter__.return_value.execute \
-            .assert_called_once_with(
-                config.sql,
-                None
-            )
-
-    #--------------------------------------------------------------------------
-    def test_get_raw_crash(self):
-        config = self.get_standard_config()
-        db_sampling = DBSamplingCrashSource(config)
-
-        crash_id = '86b58ff2-9708-487d-bfc4-9dac32121214'
-        raw = ('{"name":"Gabi", ''"submitted_timestamp":"%d"}' % time.time())
-        fake_raw_crash = DotDict(json.loads(raw))
-
-        mocked_get_raw_crash = mock.Mock(return_value=fake_raw_crash)
-
-        db_sampling._implementation = mock.Mock()
-        db_sampling._implementation.get_raw_crash = mocked_get_raw_crash
-
-        raw_crash = db_sampling._implementation.get_raw_crash(crash_id)
-        ok_(isinstance(raw_crash, DotDict))
-        eq_(raw_crash['name'], 'Gabi')
-        db_sampling._implementation.get_raw_crash.assert_called_with(crash_id)
-
-    #--------------------------------------------------------------------------
-    def test_get_raw_dumps_as_files(self):
-        config = self.get_standard_config()
-        db_sampling = DBSamplingCrashSource(config)
-
-        crash_id = '86b58ff2-9708-487d-bfc4-9dac32121214'
-        fake_dumps_as_files = {'upload_file_minidump':
-                               '86b58ff2-9708-487d-bfc4-9dac32121214.' \
-                               'upload_file_minidump.TEMPORARY.dump'
-                              }
-        mocked_as_files = mock.Mock(return_value=fake_dumps_as_files)
-
-        db_sampling._implementation = mock.Mock()
-        db_sampling._implementation.get_raw_dumps_as_files = mocked_as_files
-
-        raw_dumps_as_files = \
-            db_sampling._implementation.get_raw_dumps_as_files(crash_id)
-        ok_(isinstance(raw_dumps_as_files, dict))
-        eq_(raw_dumps_as_files['upload_file_minidump'],
-                         '86b58ff2-9708-487d-bfc4-9dac32121214.' \
-                         'upload_file_minidump.TEMPORARY.dump'
-                        )
-        db_sampling._implementation.get_raw_dumps_as_files \
-            .assert_called_with(crash_id)
 
 
 #==============================================================================

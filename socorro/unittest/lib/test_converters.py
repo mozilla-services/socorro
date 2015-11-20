@@ -1,7 +1,11 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from nose.tools import eq_, ok_
 
 from configman import ConfigurationManager, RequiredConfig, Namespace
-from configman.converters import to_str, str_to_python_object
+from configman.converters import to_str
 
 from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
@@ -218,6 +222,7 @@ class TestConverters(TestCase):
             self.assertEqual(a_class_name, a_class.__name__)
             self.assertEqual(ns_name, "%s_%02d" % (a_class_name, i))
 
+    #--------------------------------------------------------------------------
     def test_change_default(self):
         class Alpha(RequiredConfig):
             required_config = Namespace()
@@ -246,6 +251,7 @@ class TestConverters(TestCase):
             19
         )
 
+    #--------------------------------------------------------------------------
     def test_web_services_from_str(self):
         some_services_as_string = """[
             {

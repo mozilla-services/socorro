@@ -13,8 +13,7 @@ from os import (
     listdir
 )
 
-from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
+from configman import Namespace
 
 from socorro.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp,
@@ -26,7 +25,6 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.external.fs.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
-from socorro.external.postgresql.dbapi2_util import execute_query_iter
 
 
 #==============================================================================
@@ -146,71 +144,14 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             # this (args, kwargs) form instead
             yield (((prefix, crash_pathnames), ), {})
 
-
 #==============================================================================
-class DBSamplingCrashSource(RequiredConfig):
-    """this class will take a random sample of crashes in the jobs table
-    and then pull them from whatever primary storages is in use. """
-
-    required_config = Namespace()
-    required_config.add_option(
-        'source_implementation',
-        default='socorro.external.boto.crashstorage.BotoS3CrashStorage',
-        doc='a class for a source of raw crashes',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        'database_class',
-        default='socorro.external.postgresql.connection_context'
-                '.ConnectionContext',
-        doc='the class that connects to the database',
-        from_string_converter=class_converter
-    )
-    required_config.add_option(
-        'sql',
-        default='select uuid from jobs order by queueddatetime DESC '
-                'limit 1000',
-        doc='an sql string that selects crash_ids',
-    )
-
-    #--------------------------------------------------------------------------
-    def __init__(self, config, quit_check_callback=None):
-        if isinstance(quit_check_callback, basestring):
-            # this class is being used as a 'new_crash_source' and the name
-            # of the app has been passed - we can ignore it
-            quit_check_callback = None
-        self._implementation = config.source_implementation(
-            config,
-            quit_check_callback
-        )
-        self.config = config
-        if quit_check_callback:
-            self.quit_check = quit_check_callback
-        else:
-            self.quit_check = lambda: None
-
-    #--------------------------------------------------------------------------
-    def new_crashes(self):
-        self.config.logger.debug('starting new_crashes')
-        with self.config.database_class(self.config)() as conn:
-            self.quit_check()
-            yield_did_not_happen = True
-            for a_crash_id in execute_query_iter(conn, self.config.sql):
-                self.quit_check()
-                yield a_crash_id[0]
-                yield_did_not_happen = False
-            if yield_did_not_happen:
-                yield None
-
-    #--------------------------------------------------------------------------
-    def get_raw_crash(self, crash_id):
-        """forward the request to the underlying implementation"""
-        return self._implementation.get_raw_crash(crash_id)
-
-    #--------------------------------------------------------------------------
-    def get_raw_dumps_as_files(self, crash_id):
-        """forward the request to the underlying implementation"""
-        return self._implementation.get_raw_dumps_as_files(crash_id)
+# this class was relocated to a more appropriate module and given a new name.
+# This import is offered for backwards compatibilty.  Note, that there has also
+# been an internal change to the required config, with the source
+# implementation moved into a namespace
+from socorro.external.postgresql.new_crash_source import (
+    DBCrashStorageWrapperNewCrashSource as DBSamplingCrashSource
+)
 
 
 #==============================================================================
@@ -272,20 +213,10 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     def _transform(self, crash_id):
         """this transform function only transfers raw data from the
         source to the destination without changing the data."""
-        paths = None
         if self.config.submitter.dry_run:
             print crash_id
         else:
-            # in the case where the path has a non-None value, that means
-            # we need to lookup the crash using something other than the
-            # crash_id.  This is the case when the old
-            # SubmitterFileSystemWalkerSource class is the source.  It returns
-            # a list of file paths.  If 'paths' is None, then we can use the
-            # crash_id to lookup the crash. If 'paths' is not None, then we
-            # have to use it to lookup the crash rather than the crash_id.
-            self.config.logger.debug('paths: %s', paths)
             raw_crash = self.source.get_raw_crash(crash_id)
-            self.config.logger.debug('raw_crash: %s', raw_crash)
             dumps = self.source.get_raw_dumps_as_files(crash_id)
             self.destination.save_raw_crash_with_file_dumps(
                 raw_crash,
