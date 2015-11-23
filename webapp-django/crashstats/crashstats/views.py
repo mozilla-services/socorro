@@ -369,8 +369,6 @@ def home(request, product, versions=None,
     context['has_builds'] = contains_builds
     context['days'] = days
     context['possible_days'] = possible_days
-    default_date_range_type = request.session.get('date_range_type', 'report')
-    context['default_date_range_type'] = default_date_range_type
 
     return render(request, 'crashstats/home.html', context)
 
@@ -405,10 +403,10 @@ def frontpage_json(request, default_context=None):
                 if end_date.date() <= current_end_date.date():
                     versions.append(release['version'])
 
-    default = request.session.get('date_range_type', 'report')
-    date_range_type = form.cleaned_data['date_range_type'] or default
+    # FIXME: This form element is not exposed visually anyhwere
+    # on the home page.
+    date_range_type = form.cleaned_data['date_range_type'] or 'report'
     assert date_range_type in date_range_types
-    request.session['date_range_type'] = date_range_type
 
     api = models.CrashesPerAdu()
     crashes = api.get(
@@ -589,8 +587,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
     if product not in context['releases']:
         raise http.Http404('Unrecognized product')
 
-    if date_range_type is None:
-        date_range_type = request.session.get('date_range_type', 'report')
+    date_range_type = date_range_type or 'report'
 
     if not versions:
         # :(
@@ -692,7 +689,6 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
     context['possible_days'] = possible_days
     context['total_crashing_signatures'] = len(signatures)
     context['date_range_type'] = date_range_type
-    request.session['date_range_type'] = date_range_type
 
     if request.GET.get('format') == 'csv':
         return _render_topcrasher_csv(request, context, product)
@@ -826,8 +822,7 @@ def daily(request, default_context=None):
 
     context['hang_type'] = params.get('hang_type') or 'any'
 
-    default = request.session.get('date_range_type', 'report')
-    context['date_range_type'] = params.get('date_range_type') or default
+    context['date_range_type'] = params.get('date_range_type') or 'report'
 
     if params.get('hang_type') == 'any':
         hang_type = None
