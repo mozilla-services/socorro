@@ -556,7 +556,14 @@ def signature_summary(request, params):
 
                 graphics.append(entry)
 
-        facets['adapter_vendor_id'] = graphics
+        # By default, results are sorted by vendor count then adapter count.
+        # We instead need to sort them by adapter count only. That cannot be
+        # done in SuperSearch directly, so we do it here.
+        facets['adapter_vendor_id'] = sorted(
+            graphics,
+            key=lambda x: x['count'],
+            reverse=True
+        )
 
     # Transform exploitability facet.
     if 'histogram_date' in facets:
