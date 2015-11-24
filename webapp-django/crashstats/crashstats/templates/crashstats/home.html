@@ -59,8 +59,7 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
                             <a href="{{ url(
                                 'crashstats:topcrasher',
                                 product=product,
-                                versions=version,
-                                date_range_type=default_date_range_type,
+                                versions=version
                             ) }}?days={{days}}">
                                 Top Crashers
                             </a>
@@ -70,7 +69,6 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
                                 'crashstats:topcrasher',
                                 product=product,
                                 versions=version,
-                                date_range_type=default_date_range_type,
                                 crash_type='plugin',
                             ) }}?days={{days}}">
                                 Top Plugin Crashers
