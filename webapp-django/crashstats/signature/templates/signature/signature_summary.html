@@ -62,6 +62,7 @@
                     <th class="header">Version</th>
                     <th class="header">Count</th>
                     <th class="header">Percentage</th>
+                    <th class="header">Installations</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,6 +73,7 @@
                     <td>{{ version.term }}</td>
                     <td>{{ version.count }}</td>
                     <td>{{ (100.0 * version.count / product_version_total) | round(1) }}%</td>
+                    <td>{{ version.facets.cardinality_install_time.value }}</td>
                 </tr>
                 {% endfor %}
                 {% endfor %}
