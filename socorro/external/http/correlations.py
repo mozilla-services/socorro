@@ -8,6 +8,8 @@ import re
 import stat
 import tempfile
 import time
+import gzip
+from cStringIO import StringIO
 
 import requests
 
@@ -92,7 +94,6 @@ class Correlations(object):
             save_dir,
             '%s.txt' % url_start.split('/')[-1]
         )
-
         if (
             save_download and
             os.path.isfile(tmp_filepath) and
@@ -108,13 +109,17 @@ class Correlations(object):
 
     @staticmethod
     def _download(url_start):
-        response = requests.get(url_start + '.txt', verify=False)
+        response = requests.get(url_start + '.txt')
         if response.status_code == 200:
             return response.content
         else:
-            response = requests.get(url_start + '.txt.gz', verify=False)
+            response = requests.get(url_start + '.txt.gz')
             if response.status_code == 200:
-                return response.content
+                # if what we downloaded was gzipped, let's return the
+                # unpacked content
+                buffer_ = StringIO(response.content)
+                with gzip.GzipFile(fileobj=buffer_, mode='rb') as decompressed:
+                    return decompressed.read()
             elif response.status_code == 404:
                 raise NotFoundError(url_start + '(.txt|.txt.gz)')
             else:
