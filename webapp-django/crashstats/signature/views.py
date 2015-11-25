@@ -431,6 +431,9 @@ def signature_summary(request, params):
     params['_histogram.uptime'] = ['product']
     params['_histogram_interval.uptime'] = 60
     params['_aggs.adapter_vendor_id'] = ['adapter_device_id']
+    params['_aggs.android_cpu_abi.android_manufacturer.android_model'] = [
+        'android_version'
+    ]
 
     # If the user has permissions, show exploitability.
     all_fields = SuperSearchFields().get()
@@ -472,34 +475,17 @@ def signature_summary(request, params):
 
     data['product_version_total'] = product_results['total']
 
-    # Transform uptime data to be easier to consume.
-    # Keys are in minutes.
-    if 'histogram_uptime' in facets:
-        labels = {
-            0: '< 1 min',
-            1: '1-5 min',
-            5: '5-15 min',
-            15: '15-60 min',
-            60: '> 1 hour'
-        }
-        uptimes_count = dict((x, 0) for x in labels)
+    _transform_uptime_summary(facets)
+    _transform_graphics_summary(facets)
+    _transform_mobile_summary(facets)
+    _transform_exploitability_summary(facets)
 
-        for uptime in facets['histogram_uptime']:
-            for uptime_minutes in sorted(uptimes_count.keys(), reverse=True):
-                uptime_seconds = uptime_minutes * 60
+    data['query'] = search_results
 
-                if uptime['term'] >= uptime_seconds:
-                    uptimes_count[uptime_minutes] += uptime['count']
-                    break
+    return render(request, 'signature/signature_summary.html', data)
 
-        uptimes = [
-            {'term': labels.get(key), 'count': count}
-            for key, count in uptimes_count.items()
-            if count > 0
-        ]
-        uptimes = sorted(uptimes, key=lambda x: x['count'], reverse=True)
-        data['uptimes'] = uptimes
 
+def _transform_graphics_summary(facets):
     # Augment graphics adapter with data from another service.
     if 'adapter_vendor_id' in facets:
         vendor_hexes = []
@@ -565,6 +551,58 @@ def signature_summary(request, params):
             reverse=True
         )
 
+
+def _transform_uptime_summary(facets):
+    # Transform uptime data to be easier to consume.
+    # Keys are in minutes.
+    if 'histogram_uptime' in facets:
+        labels = {
+            0: '< 1 min',
+            1: '1-5 min',
+            5: '5-15 min',
+            15: '15-60 min',
+            60: '> 1 hour'
+        }
+        uptimes_count = dict((x, 0) for x in labels)
+
+        for uptime in facets['histogram_uptime']:
+            for uptime_minutes in sorted(uptimes_count.keys(), reverse=True):
+                uptime_seconds = uptime_minutes * 60
+
+                if uptime['term'] >= uptime_seconds:
+                    uptimes_count[uptime_minutes] += uptime['count']
+                    break
+
+        uptimes = [
+            {'term': labels.get(key), 'count': count}
+            for key, count in uptimes_count.items()
+            if count > 0
+        ]
+        uptimes = sorted(uptimes, key=lambda x: x['count'], reverse=True)
+
+        facets['histogram_uptime'] = uptimes
+
+
+def _transform_mobile_summary(facets):
+    if 'android_cpu_abi' in facets:
+        mobile_devices = []
+
+        for cpu_abi in facets['android_cpu_abi']:
+            for manufacturer in cpu_abi['facets']['android_manufacturer']:
+                for model in manufacturer['facets']['android_model']:
+                    for version in model['facets']['android_version']:
+                        mobile_devices.append({
+                            'cpu_abi': cpu_abi['term'],
+                            'manufacturer': manufacturer['term'],
+                            'model': model['term'],
+                            'version': version['term'],
+                            'count': version['count'],
+                        })
+
+        facets['android_cpu_abi'] = mobile_devices
+
+
+def _transform_exploitability_summary(facets):
     # Transform exploitability facet.
     if 'histogram_date' in facets:
         exploitability_base = {
@@ -585,7 +623,3 @@ def signature_summary(request, params):
             key=lambda x: x['term'],
             reverse=True
         )
-
-    data['query'] = search_results
-
-    return render(request, 'signature/signature_summary.html', data)

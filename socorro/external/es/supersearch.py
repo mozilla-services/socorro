@@ -411,9 +411,13 @@ class SuperSearch(SearchBase):
             base_bucket = self._get_fields_agg(fields[0], facets_size)
             sub_bucket = base_bucket
 
-            if len(fields) >= 2 and fields[1] in self.all_fields:
-                sub_bucket = self._get_fields_agg(fields[1], facets_size)
-                base_bucket.bucket(fields[1], sub_bucket)
+            for field in fields[1:]:
+                # For each field, make a bucket, then include that bucket in
+                # the latest one, and then make that new bucket the latest.
+                if field in self.all_fields:
+                    tmp_bucket = self._get_fields_agg(field, facets_size)
+                    sub_bucket.bucket(field, tmp_bucket)
+                    sub_bucket = tmp_bucket
 
             for value in params[key]:
                 self._add_second_level_aggs(

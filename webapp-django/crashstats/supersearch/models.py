@@ -12,6 +12,7 @@ from crashstats.crashstats import models
 
 SUPERSEARCH_META_PARAMS = (
     ('_aggs.product.version', list),
+    ('_aggs.android_cpu_abi.android_manufacturer.android_model', list),
     ('_columns', list),
     ('_facets', list),
     ('_facets_size', int),
@@ -27,6 +28,7 @@ SUPERSEARCH_META_PARAMS = (
 # sent to the middleware, so that no private field can be accessed.
 PARAMETERS_LISTING_FIELDS = (
     '_aggs.product.version',
+    '_aggs.android_cpu_abi.android_manufacturer.android_model',
     '_facets',
 )
 

@@ -79,6 +79,10 @@ class SearchFilter(object):
 class SearchBase(object):
     meta_filters = [
         SearchFilter('_aggs.product.version'),
+        SearchFilter('_aggs.product.version.platform'),  # convenient for tests
+        SearchFilter(
+            '_aggs.android_cpu_abi.android_manufacturer.android_model'
+        ),
         SearchFilter('_columns', default=[
             'uuid', 'date', 'signature', 'product', 'version'
         ]),

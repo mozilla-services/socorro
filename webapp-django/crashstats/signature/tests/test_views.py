@@ -746,6 +746,36 @@ class TestViews(BaseTestViews):
                             }
                         }
                     ],
+                    "android_cpu_abi": [
+                        {
+                            "term": "armeabi-v7a",
+                            "count": 4,
+                            "facets": {
+                                "android_manufacturer": [
+                                    {
+                                        "term": "ZTE",
+                                        "count": 4,
+                                        "facets": {
+                                            "android_model": [
+                                                {
+                                                    "term": "roamer2",
+                                                    "count": 4,
+                                                    "facets": {
+                                                        "android_version": [
+                                                            {
+                                                                "term": "15",
+                                                                "count": 4,
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ],
                     "histogram_uptime": [
                         {
                             "count": 2,
@@ -809,6 +839,7 @@ class TestViews(BaseTestViews):
         ok_('Product' in response.content)
         ok_('Architecture' in response.content)
         ok_('Process Type' in response.content)
+        ok_('Mobile Devices' in response.content)
         ok_('Graphics Adapter' in response.content)
         ok_('Flash&trade; Version' in response.content)
 
@@ -824,6 +855,7 @@ class TestViews(BaseTestViews):
         ok_('1.1.1.14' in response.content)
         ok_('&lt; 1 min' in response.content)
         ok_('1-5 min' in response.content)
+        ok_('ZTE' in response.content)
         ok_('Intel (0x0086)' in response.content)
 
         user = self._login()

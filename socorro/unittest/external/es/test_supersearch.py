@@ -1075,6 +1075,23 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             for vf in version_facet:
                 ok_('cardinality_signature' in vf['facets'])
 
+        # Test with a fourth level aggregation.
+        kwargs = {
+            '_aggs.product.version.platform': ['_cardinality.signature'],
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('product' in res['facets'])
+        product_facet = res['facets']['product']
+        for pf in product_facet:
+            ok_('version' in pf['facets'])
+            version_facet = pf['facets']['version']
+            for vf in version_facet:
+                ok_('platform' in vf['facets'])
+                platform_facet = vf['facets']['platform']
+                for lf in platform_facet:
+                    ok_('cardinality_signature' in lf['facets'])
+
         # Test errors
         args = {}
         args['_aggs.signature'] = ['unknownfield']
