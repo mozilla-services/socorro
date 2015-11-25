@@ -40,20 +40,6 @@ class TestForms(DjangoTestCase):
                 "release": "Beta"
             }
         ]
-        self.current_platforms = [
-            {
-                'code': 'windows',
-                'name': 'Windows'
-            },
-            {
-                'code': 'mac',
-                'name': 'Mac OS X'
-            },
-            {
-                'code': 'linux',
-                'name': 'Linux'
-            }
-        ]
         self.current_channels = (
             'release',
             'beta',
@@ -68,7 +54,6 @@ class TestForms(DjangoTestCase):
             return forms.ReportListForm(
                 self.current_products,
                 self.current_versions,
-                self.current_platforms,
                 data
             )
 
@@ -101,12 +86,6 @@ class TestForms(DjangoTestCase):
 
         form = get_new_form({
             'signature': 'sig',
-            'platform': ['winux']
-        })
-        ok_(not form.is_valid())  # invalid platform
-
-        form = get_new_form({
-            'signature': 'sig',
             'plugin_query_type': 'invalid'
         })
         ok_(not form.is_valid())  # invalid query type
@@ -123,7 +102,6 @@ class TestForms(DjangoTestCase):
             'signature': 'sig',
             'product': ['WaterWolf', 'SeaMonkey', 'NightTrain'],
             'version': ['WaterWolf:20.0'],
-            'platform': ['linux', 'mac'],
             'date': '01/02/2012 12:23:34',
             'range_unit': 'weeks',
             'range_value': 12,
@@ -142,7 +120,6 @@ class TestForms(DjangoTestCase):
         ok_(isinstance(form.cleaned_data['range_value'], int))
         ok_(isinstance(form.cleaned_data['product'], list))
         ok_(isinstance(form.cleaned_data['version'], list))
-        ok_(isinstance(form.cleaned_data['platform'], list))
 
         # Test default values
         form = get_new_form({'signature': 'sig',
@@ -154,7 +131,6 @@ class TestForms(DjangoTestCase):
 
         eq_(form.cleaned_data['product'], [])
         eq_(form.cleaned_data['version'], [])
-        eq_(form.cleaned_data['platform'], [])
         eq_(form.cleaned_data['range_unit'], 'weeks')
         eq_(form.cleaned_data['process_type'], 'any')
         eq_(form.cleaned_data['hang_type'], 'any')
@@ -166,7 +142,6 @@ class TestForms(DjangoTestCase):
             return forms.ReportListForm(
                 self.current_products,
                 self.current_versions,
-                self.current_platforms,
                 data
             )
 

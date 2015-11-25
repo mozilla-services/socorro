@@ -1828,11 +1828,9 @@ def report_pending(request, crash_id):
 @pass_default_context
 def report_list(request, partial=None, default_context=None):
     context = default_context or {}
-
     form = forms.ReportListForm(
-        models.ProductsVersions().get(),
-        models.CurrentVersions().get(),
-        models.Platforms().get(),
+        context['currentproducts']['hits'],
+        context['currentversions'],
         request.GET
     )
     if not form.is_valid():
@@ -2005,7 +2003,6 @@ def report_list(request, partial=None, default_context=None):
             signature=context['signature'],
             products=context['selected_products'],
             versions=context['product_versions'],
-            os=form.cleaned_data['platform'],
             start_date=start_date,
             end_date=end_date,
             build_ids=form.cleaned_data['build_id'],
@@ -2177,7 +2174,6 @@ def report_list(request, partial=None, default_context=None):
             signature=context['signature'],
             products=form.cleaned_data['product'],
             versions=context['product_versions'],
-            os=form.cleaned_data['platform'],
             start_date=start_date,
             end_date=end_date,
             build_ids=form.cleaned_data['build_id'],
@@ -2262,12 +2258,10 @@ def report_list(request, partial=None, default_context=None):
             {'value': x[0], 'label': x[1], 'default': x[2]}
             for x in ALL_REPORTS_COLUMNS
         ]
-
         super_search_params = get_super_search_style_params(
             signature=context['signature'],
             product=context['selected_products'],
             version=context['product_versions'],
-            platform=form.cleaned_data['platform'],
             start_date=start_date,
             end_date=end_date,
         )
@@ -2478,11 +2472,12 @@ def plot_signature(request, product, versions, start_date, end_date,
     return graph_data
 
 
-def signature_summary(request):
-
+@pass_default_context
+def signature_summary(request, default_context=None):
+    context = default_context or {}
     form = forms.SignatureSummaryForm(
-        models.ProductsVersions().get(),
-        models.CurrentVersions().get(),
+        context['currentproducts']['hits'],
+        context['currentversions'],
         request.GET
     )
 
@@ -2737,11 +2732,13 @@ def raw_data(request, crash_id, extension, name=None):
 
 
 @utils.json_view
-def correlations_json(request):
+@pass_default_context
+def correlations_json(request, default_context=None):
+    context = default_context or {}
 
     form = forms.CorrelationsJSONForm(
-        models.ProductsVersions().get(),
-        models.CurrentVersions().get(),
+        context['currentproducts']['hits'],
+        context['currentversions'],
         models.Platforms().get(),
         request.GET
     )
@@ -2776,11 +2773,13 @@ def correlations_json(request):
 
 
 @utils.json_view
-def correlations_signatures_json(request):
+@pass_default_context
+def correlations_signatures_json(request, default_context=None):
+    context = default_context or {}
 
     form = forms.CorrelationsSignaturesJSONForm(
-        models.ProductsVersions().get(),
-        models.CurrentVersions().get(),
+        context['currentproducts']['hits'],
+        context['currentversions'],
         models.Platforms().get(),
         request.GET
     )
