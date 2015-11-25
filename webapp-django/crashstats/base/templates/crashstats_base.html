@@ -124,8 +124,8 @@
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
                         <option
                             value="exploitable"
-                            data-url-product="{{ url('crashstats:exploitable_crashes', '__PRODUCT__') }}"
-                            data-url-version="{{ url('crashstats:exploitable_crashes', '__PRODUCT__', '__VERSION__') }}"
+                            data-url-product="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__"
+                            data-url-version="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__&amp;version=__VERSION__"
                             {% if report == 'exploitable' %}selected{% endif %}
                         >Exploitable Crashes</option>
                         {% endif %}
