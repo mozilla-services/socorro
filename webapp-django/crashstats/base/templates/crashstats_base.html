@@ -105,8 +105,8 @@
                         >Crashes per User</option>
                         <option
                             value="topcrasher"
-                            data-url-product="{{ url('crashstats:topcrasher', '__PRODUCT__') }}"
-                            data-url-version="{{ url('crashstats:topcrasher', '__PRODUCT__', '__VERSION__') }}"
+                            data-url-product="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__"
+                            data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"
                             {% if report == 'topcrasher' %}selected{% endif %}
                         >Top Crashers</option>
                         <option
