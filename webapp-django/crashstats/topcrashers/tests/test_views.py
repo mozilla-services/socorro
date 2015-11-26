@@ -157,9 +157,10 @@ class TestViews(BaseTestViews):
         response = self.client.get(self.base_url, {'product': 'WaterWolf'})
         ok_(url in response['Location'])
 
+        # Test that several versions do not raise an error.
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
-            'version': '19.0',
+            'version': '19.0;20.0',
         })
         eq_(response.status_code, 200)
 
