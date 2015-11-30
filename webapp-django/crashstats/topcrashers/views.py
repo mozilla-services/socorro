@@ -205,6 +205,8 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     if product not in context['releases']:
         raise http.Http404('Unrecognized product')
 
+    context['product'] = product
+
     if not versions:
         # :(
         # simulate what the nav.js does which is to take the latest version
