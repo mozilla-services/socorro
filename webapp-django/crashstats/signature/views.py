@@ -458,7 +458,7 @@ def signature_summary(request, params):
     # not just the one asked for.
     params_copy = {
         'signature': params['signature'],
-        '_aggs.product': ['version'],
+        '_aggs.product.version': ['_cardinality.install_time'],
     }
 
     try:

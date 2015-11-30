@@ -672,10 +672,7 @@ class TestViews(BaseTestViews):
             ok_('signature' in params)
             eq_(params['signature'], ['=' + DUMB_SIGNATURE])
 
-            if (
-                '_aggs.product' in params
-                and params['_aggs.product'] == ['version']
-            ):
+            if '_aggs.product.version' in params:
                 ok_('product' not in params)
                 ok_('version' not in params)
             else:
@@ -712,11 +709,21 @@ class TestViews(BaseTestViews):
                                 "version": [
                                     {
                                         "term": "2.1b99",
-                                        "count": 2
+                                        "count": 2,
+                                        "facets": {
+                                            "cardinality_install_time": {
+                                                "value": 2
+                                            }
+                                        }
                                     },
                                     {
                                         "term": "1.0",
-                                        "count": 2
+                                        "count": 2,
+                                        "facets": {
+                                            "cardinality_install_time": {
+                                                "value": 2
+                                            }
+                                        }
                                     }
                                 ]
                             }
