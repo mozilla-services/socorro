@@ -220,8 +220,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     else:
         versions = versions.split(';')
 
-    if len(versions) == 1:
-        context['version'] = versions[0]
+    context['version'] = versions[0]
 
     release_versions = [x['version'] for x in context['releases'][product]]
     if context['version'] not in release_versions:
