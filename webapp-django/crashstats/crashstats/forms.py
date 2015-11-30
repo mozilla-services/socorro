@@ -87,7 +87,6 @@ class ReportListForm(BaseForm):
     signature = form_fields.SignatureField(required=True)
     product = forms.MultipleChoiceField(required=False)
     version = forms.MultipleChoiceField(required=False)
-    platform = forms.MultipleChoiceField(required=False)
     date = forms.DateTimeField(required=False)
     range_value = forms.IntegerField(required=False)
     reason = forms.CharField(required=False)
@@ -115,12 +114,10 @@ class ReportListForm(BaseForm):
     )
     plugin_query = forms.CharField(required=False)
 
-    def __init__(self, current_products, current_versions, current_platforms,
-                 *args, **kwargs):
+    def __init__(self, current_products, current_versions, *args, **kwargs):
         super(ReportListForm, self).__init__(*args, **kwargs)
 
         # Default values
-        platforms = [(x['code'], x['name']) for x in current_platforms]
         products = [(x, x) for x in current_products]
         versions = [(self.all_param, self.all_param)]
         for version in current_versions:
@@ -129,7 +126,6 @@ class ReportListForm(BaseForm):
 
         self.fields['product'].choices = products
         self.fields['version'].choices = versions
-        self.fields['platform'].choices = platforms
 
     def clean_version(self):
         versions = self.cleaned_data['version']
