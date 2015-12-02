@@ -328,12 +328,9 @@ html.production {
         float: right;
     }
 }
-.page-heading {
-    h2 {
-        display: inline;
-        margin-bottom: .7em;
-        font-size: 21px;
-    }
+
+nav {
+    display: inline;
     .options {
         display: inline;
         margin-left: 1em;
@@ -345,18 +342,26 @@ html.production {
         }
         a {
             color: #254b5f;
-            padding: .25em .5em;
+            padding: .3em .7em;
             text-decoration: none;
             white-space: nowrap;
-            .rounded-corners(.5em);
+            .rounded-corners(.4em);
+
+            &:hover {
+                background-color: #DFECF2;
+            }
+            &.selected {
+                background-color: #2e5d74;
+                color: #fff;
+            }
         }
-        a:hover {
-            background-color: #DFECF2;
-        }
-        a.selected {
-            background-color: #2e5d74;
-            color: #fff;
-        }
+    }
+}
+.page-heading {
+    h2 {
+        display: inline;
+        margin-bottom: .7em;
+        font-size: 21px;
     }
     p.old-new-report-link {
         float: right;

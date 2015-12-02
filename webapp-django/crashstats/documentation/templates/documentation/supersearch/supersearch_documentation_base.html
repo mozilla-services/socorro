@@ -1,0 +1,54 @@
+{% extends "crashstats_base.html" %}
+
+{% block site_css %}
+    {{ super() }}
+    {% stylesheet 'documentation' %}
+{% endblock %}
+
+{% block site_js %}
+    {{ super() }}
+    {% javascript 'documentation' %}
+{% endblock %}
+
+{% block content %}
+
+<div id="mainbody">
+
+    <div class="page-heading">
+        <h2>{% block page_title %}Super Search Documentation{% endblock %}</h2>
+    </div>
+
+    <div class="panel">
+        <div class="body">
+            <nav>
+                <ul class="options">
+                    <li>
+                        <a href="{{ url('documentation:supersearch_home') }}" {% if request.path.endswith(url('documentation:supersearch_home')) %}class="selected"{% endif %}>
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('documentation:supersearch_examples') }}" {% if request.path.endswith(url('documentation:supersearch_examples')) %}class="selected"{% endif %}>
+                            Examples
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url('documentation:supersearch_api') }}" {% if request.path.endswith(url('documentation:supersearch_api')) %}class="selected"{% endif %}>
+                            API Reference
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div id="table-of-content">
+            <h2>Table of content</h2>
+        </div>
+
+        {% block doc_content %}{% endblock %}
+    </div>
+</div>
+
+{% endblock %}

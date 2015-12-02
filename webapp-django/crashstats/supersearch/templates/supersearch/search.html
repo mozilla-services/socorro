@@ -12,12 +12,15 @@
 <div id="mainbody">
     <div class="page-heading">
         <h2>Super Search</h2>
-        <ul class="options">
-            <li><a href="{{ url('supersearch.search') }}" class="selected">Search by fields</a></li>
-            {% if not waffle.switch('supersearch-custom-query-disabled') and request.user.has_perm('crashstats.run_custom_queries') %}
-            <li><a href="{{ url('supersearch.search_custom') }}">Custom query</a></li>
-            {% endif %}
-        </ul>
+
+        <nav>
+            <ul class="options">
+                <li><a href="{{ url('supersearch.search') }}" class="selected">Search by fields</a></li>
+                {% if not waffle.switch('supersearch-custom-query-disabled') and request.user.has_perm('crashstats.run_custom_queries') %}
+                <li><a href="{{ url('supersearch.search_custom') }}">Custom query</a></li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
 
     <section id="search-form">
@@ -83,8 +86,9 @@
                     Show columns:
                     <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
                     <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+
                     <div class="public-api-url">
-                        Public API URL:
+                        Public API URL: (<a href="{{ url('documentation:supersearch_home') }}">Super Search API Documentation</a>)
                         <input type="text" name="_public_api_url">
                     </div>
                 </div>

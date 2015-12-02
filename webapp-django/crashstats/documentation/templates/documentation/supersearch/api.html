@@ -1,0 +1,302 @@
+{% extends "documentation/supersearch/supersearch_documentation_base.html" %}
+
+{% block page_title %}Super Search API Reference{% endblock %}
+
+{% macro table_content(fields, columns_number, prefix = None) %}
+<tr>
+{% for i in range(0, fields | length) %}
+    {% if i % columns_number == 0 %}
+</tr><tr>
+    {% endif %}
+    <td>
+        {% if fields[i].is_exposed %}
+        <a href="#param-{{ fields[i].name }}">{{ prefix }}{{ fields[i].name }}</a>
+        {% else %}
+        {{ prefix }}{{ fields[i].name }}
+        {% endif %}
+    </td>
+{% endfor %}
+{% if (fields | length) % columns_number %}
+    {% for j in range(0, columns_number - ((fields | length) % columns_number)) %}
+        <td></td>
+    {% endfor %}
+{% endif %}
+</tr>
+{%- endmacro %}
+
+{% block doc_content %}
+<div class="body">
+    <section class="controls">
+        <header>
+            <h1 id="section-controls">Controls</h1>
+        </header>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_columns">_columns</h2>
+                <p>
+                    <span class="type">list of strings</span>
+                    <span class="default"><code>['uuid', 'date', 'signature', 'product', 'version']</code></span>
+                </p>
+            </header>
+
+            <p class="description">
+                List of fields to return in each result under the <code>hits</code> key.
+            </p>
+
+            <p class="description">
+                The values you can use here are described in the <a href="#section-list-of-fields">List of fields</a> section below.
+            </p>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_results_number">_results_number</h2>
+                <p>
+                    <span class="type">integer</span>
+                    <span class="default"><code>100</code></span>
+                </p>
+            </header>
+
+            <p class="description">
+                Number of results the query will return under the <code>hits</code> key.
+            </p>
+            <p class="description">
+                To get a large number of results, it is recommended to use the <code>_results_offset</code> parameter and a loop of queries instead of setting a big number here. Notably, since the first query will set some caching in the back-end, the following queries will be faster. Note as well that you should not be running any aggregations while getting a large amount of results in a loop, since those aggregations will be recalculated in each query.
+            </p>
+            <p class="description">
+                To optimize your queries, if you are not using the content of the <code>hits</code> key, it is recommended to set <code>_results_number</code> to <code>0</code>. That will save processing time and bandwidth.
+            </p>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_results_offset">_results_offset</h2>
+                <p>
+                    <span class="type">integer</span>
+                    <span class="default"><code>0</code></span>
+                </p>
+            </header>
+
+            <p class="description">
+                Index of the first result to return under the <code>hits</code> key.
+            </p>
+
+            <p class="description">
+                Use this parameter to get a large number of results instead of setting an arbitraty big <code>_results_number</code> value. Run queries in a loop, incrementing this by the value of <code>_results_number</code>, and concatenate the content of the <code>hits</code> key.
+            </p>
+
+            <p class="description">
+                Note that aggregations are run on the entire dataset corresponding to your filters, and not just on the restricted results defined by <code>_results_offset</code> and <code>_results_number</code>.
+            </p>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_sort">_sort</h2>
+                <p>
+                    <span class="type">list of strings</span>
+                </p>
+            </header>
+
+            <p class="description">
+                List of fields used to sort the results under the <code>hits</code> key.
+            </p>
+
+            <p class="description">
+                By default, the sorting is done by ascending order. Add a minus sign (<code>-</code>) before a field to sort it in descending order.
+            </p>
+
+        </article>
+    </section>
+
+    <section class="aggregations">
+        <header>
+            <h1 id="section-aggregations">Aggregations</h1>
+        </header>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_aggs.*">_aggs.*</h2>
+                <p>
+                    <span class="type">list of strings</span>
+                </p>
+            </header>
+
+            <p class="description">
+                A parameter to run nested aggregations.
+            </p>
+
+            <p class="description">
+                The structure is as follows: <code>_aggs.field_1[.field_2]=field_3</code>. Super Search is going to run an aggregation on <code>field_1</code>, then for each bucket of that aggregation, it will aggregate on <code>field_2</code>, and then for each bucket of that sub-aggregation, it will aggregate on <code>field_3</code>. Theoratically, we could have any number of levels of aggregations, but in practice we only allow all "level 1" aggregations, and a few "level 2" and "level 3".
+            </p>
+
+            <table>
+                <caption>All parameters</caption>
+                {{ table_content(aggs_fields, 3, '_aggs.') }}
+            </table>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_cardinality.*">_cardinality.*</h2>
+
+            </header>
+
+            <p class="description">
+                A way to count the number of distinct values of a field (as opposed to counting the number of occurrences of each value).
+            </p>
+
+            <p class="description">
+                Note that this <b>is not an actual parameter</b>. It has to be used as the value of another aggregation parameter, such as <code>_facets</code>, <code>_aggs.*</code> or <code>_histogram.*</code>.
+            </p>
+
+            <table>
+                <caption>All parameters</caption>
+                {{ table_content(all_fields, 3, '_cardinality.') }}
+            </table>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_facets">_facets</h2>
+                <p>
+                    <span class="type">list of strings</span>
+                    <span class="default"><code>['signature']</code></span>
+                </p>
+            </header>
+
+            <p class="description">
+                The most basic aggregation parameter. Pass it a list of field names to count the different terms of those fields in the dataset. For each field, it will return a list of terms, sorted in descending order of count.
+            </p>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_facets_size">_facets_size</h2>
+                <p>
+                    <span class="type">integer</span>
+                    <span class="default"><code>50</code></span>
+                </p>
+            </header>
+
+            <p class="description">
+                Number of terms returned in aggregations.
+            </p>
+
+            <p class="description">
+                This parameter controls the size of all aggregations. It is not possible to paginate over aggregations. Note that the bigger this number is, the slower your request will return.
+            </p>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_histogram.*">_histogram.*</h2>
+                <p>
+                    <span class="type">list of strings</span>
+                </p>
+            </header>
+
+            <p class="description">
+                Run aggregations by range (instead of by terms) for date and number fields.
+            </p>
+
+            <p class="description">
+                Instead of aggregating over terms (which doesn't make much sense for a datetime for example), histograms allow to create buckets per ranges of a defined size. That size is controlled by the <code>_histogram_interval.*</code> parameter. Each bucket's term is the lower bound of the range. If a bucket contains zero results, it will not be returned in the results.
+            </p>
+
+            <table>
+                <caption>All parameters</caption>
+                {{ table_content(date_number_fields, 3, '_histogram.') }}
+            </table>
+
+        </article>
+
+        <article class="parameter">
+            <header>
+                <h2 id="param-_histogram_interval.*">_histogram_interval.*</h2>
+                <p>
+                    <span class="type">string</span>
+                    <span class="default"><code>'1d'</code> for date fields, <code>1</code> for number fields</span>
+                </p>
+            </header>
+
+            <p class="description">
+                Controls the size of the interval of the associated <code>_histogram.*</code> parameter.
+            </p>
+
+            <p class="description">
+                For number fields, the value has to be an integer. For dates and datetimes, it has to be a string composed of an integer followed by a unit. To see the list of all accepted units, please see the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units">Elasticsearch documentation</a>.
+            </p>
+
+            <table>
+                <caption>All parameters</caption>
+                {{ table_content(date_number_fields, 3, '_histogram_interval.') }}
+            </table>
+
+        </article>
+
+    </section>
+
+    <section class="filters">
+        <header>
+            <h1 id="section-filters">Filters</h1>
+        </header>
+
+        {% for filter in all_fields %}
+        {% if filter.is_exposed %}
+        <article class="parameter" id="param-{{ filter.name }}">
+            <header>
+                <h2 id="param-{{ filter.name }}">{{ filter.name }}</h1>
+                <p>
+                    <span class="type">{{ filter.query_type }}</span>
+                    {% if filter.default %}
+                    <span class="default"><code>{{ filter.default }}</code></span>
+                    {% endif %}
+                </p>
+            </header>
+
+            <p class="operators">
+                {% for op in operators[filter.query_type] %}
+                <code>{{ op }}</code>
+                {% endfor %}
+            </p>
+
+            {% if filter.permissions_needed %}
+            <p class="permissions">{{ filter.permissions_needed | join(', ') }}</p>
+            {% endif %}
+
+            <p class="description">
+                {{ filter.description }}
+            </p>
+
+        </article>
+        {% endif %}
+        {% endfor %}
+
+    </section>
+
+    <section class="fields" id="section-list-of-fields">
+        <header>
+            <h1 id="section-list of fields">List of fields</h1>
+        </header>
+
+        <p>
+            This is the list of field names you can use in all parameters that accept a list of fields, as well as in composed aggregation parameters.
+        </p>
+
+        <table>
+            <caption>All fields</caption>
+            {{ table_content(all_fields, 4) }}
+        </table>
+    </section>
+
+</div>
+{% endblock %}

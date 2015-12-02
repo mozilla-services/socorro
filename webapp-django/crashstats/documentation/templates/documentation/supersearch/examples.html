@@ -1,0 +1,72 @@
+{% extends "documentation/supersearch/supersearch_documentation_base.html" %}
+
+{% block page_title %}Super Search Examples{% endblock %}
+
+
+{% block doc_content %}
+<div class="body examples">
+    <h1 id="examples">Examples</h1>
+
+    <h2 id="list-of-signatures">List of signatures</h2>
+
+    <h3>Goal</h3>
+    <p>Get the top 20 signatures for {{ product }} {{ releases[product][0].version }}. </p>
+
+    <h3>Solution</h3>
+    <div class="example">
+        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ releases[product][0].version }}&amp;_facets=signature&amp;_facets_size=20</span></code></pre>
+    </div>
+
+    <h3>Tips</h3>
+    <p>The <code>_facets_size</code> parameter allows you to set the number of results in all aggregations. Setting too big a number will of course make the request take longer. Note that there are no ways of paginating over results of an aggregation. </p>
+
+    <h2 id="time-range">Time range</h2>
+
+    <h3>Goal</h3>
+    <p>Get the first 100 crash reports for {{ product }} between {{ three_days_ago.strftime('%B %d, %Y') }} and {{ yesterday.strftime('%B %d, %Y') }}. </p>
+
+    <h3>Solution</h3>
+    <div class="example">
+        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;date=&gt;={{ three_days_ago }}&amp;date=&lt;{{ yesterday }}</span></code></pre>
+    </div>
+
+    <h3>Tips</h3>
+    <p>We are passing dates here, as opposed to datetimes. They will automatically be transformed into datetimes with hour, minute, second and milisecond set to 0 and a UTC timezone. </p>
+    <p>We did not specify <code>_results_number</code> so we will get 100 results as that is the default value. </p>
+    <p>We did not specify <code>_columns</code> so each result will have the default set of keys, namely <code>uuid</code>, <code>date</code>, <code>signature</code>, <code>product</code> and <code>version</code>.</p>
+
+    <h2 id="many-results">Many results</h2>
+
+    <h3>Goal</h3>
+    <p>Get the first 600 crash reports for release channel {{ releases[product][0].release }}. </p>
+
+    <h3>Solution</h3>
+    <div class="example">
+        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=0</span></code>
+<code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=200</span></code>
+<code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=400</span></code></pre>
+    </div>
+
+    <h3>Tips</h3>
+    <p>It's a bad idea to try to get too many results at once. It will make Elasticsearch slower to respond, and will generate a big response for our web servers to return. That can quite easily lead to timeouts. Instead, it is much more efficient to make several small requests, and to then combine their results. This is what we do here, by incrementing <code>_results_offset</code> of the value of <code>_results_number</code> in every request. </p>
+
+    <p>Note that Elasticsearch caches the results of filters, so all requests following the first one should be a lot faster. However, since the <code>date</code> parameter has default values based on the current time, it might be a good idea to give it a value, in order to fully use the caching mechanism. For example, add <code>&amp;date=&lt;{{ today }}</code> to all your URLs. </p>
+
+    <h2 id="installations">Installations</h2>
+
+    <h3>Goal</h3>
+    <p>Count the number of different installations for each version of a product. </p>
+
+    <h3>Solution</h3>
+    <div class="example">
+        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_aggs.product.version=_cardinality.install_time</span></code></pre>
+    </div>
+
+    <h3>Tips</h3>
+    <p>To count the number of different installations, we count the number of distinct install times. Since it is unlikely that two software have been installed at the exact same time, it gives us a good estimate. </p>
+
+    <p>It is possible to use special aggregations as parameters of an aggregation, like here we use a "cardinality" aggregation inside a nested aggregation. This query will perform an aggregation on products, and for each product it will aggregate on versions, and for each version it will count the distinct number of install times. </p>
+
+</div>
+
+{% endblock %}

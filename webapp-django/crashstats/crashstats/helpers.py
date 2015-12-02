@@ -7,6 +7,7 @@ import urllib
 from jingo import register
 
 from django.core.cache import cache
+from django.core.urlresolvers import reverse
 
 from crashstats import scrubber
 
@@ -155,6 +156,17 @@ def bugzilla_submit_url(**kwargs):
         kwargs['format'] = '__default__'
     url += '?' + urllib.urlencode(kwargs, True)
     return url
+
+
+@register.function
+def full_url(request, *args, **kwargs):
+    """Just like the `url` method of jinja, but with a scheme and host.
+    """
+    return '{}://{}{}'.format(
+        request.scheme,
+        request.get_host(),
+        reverse(*args, args=kwargs.values())
+    )
 
 
 @register.function

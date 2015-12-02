@@ -87,6 +87,7 @@ INSTALLED_APPS = (
     '%s.symbols' % PROJECT_MODULE,
     '%s.profile' % PROJECT_MODULE,
     '%s.monitoring' % PROJECT_MODULE,
+    '%s.documentation' % PROJECT_MODULE,
 
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',

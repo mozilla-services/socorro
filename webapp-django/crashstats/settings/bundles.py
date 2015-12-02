@@ -60,6 +60,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/daily.min.css',
     },
+    'documentation': {
+        'source_filenames': (
+            'documentation/css/documentation.less',
+        ),
+        'output_filename': 'css/documentation.min.css',
+    },
     'gccrashes': {
         'source_filenames': (
             'crashstats/css/gccrashes.less',
@@ -249,6 +255,12 @@ PIPELINE_JS = {
             'crashstats/js/socorro/daily.js',
         ),
         'output_filename': 'js/daily.min.js',
+    },
+    'documentation': {
+        'source_filenames': (
+            'documentation/js/documentation.js',
+        ),
+        'output_filename': 'js/documentation.min.js',
     },
     'exploitability_report': {  # deprecated
         'source_filenames': (

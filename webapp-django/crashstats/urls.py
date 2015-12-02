@@ -47,6 +47,10 @@ urlpatterns = patterns(
         'crashstats.profile.urls',
         namespace='profile'
     )),
+    (r'^documentation/', include(
+        'crashstats.documentation.urls',
+        namespace='documentation'
+    )),
 )
 
 # In DEBUG mode, serve media files through Django.

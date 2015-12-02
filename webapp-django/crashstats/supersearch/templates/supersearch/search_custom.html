@@ -6,10 +6,13 @@
 <div id="mainbody">
     <div class="page-heading">
         <h2>Super Search</h2>
-        <ul class="options">
-            <li><a href="{{ url('supersearch.search') }}">Search by fields</a></li>
-            <li><a href="{{ url('supersearch.search_custom') }}" class="selected">Custom query</a></li>
-        </ul>
+
+        <nav>
+            <ul class="options">
+                <li><a href="{{ url('supersearch.search') }}">Search by fields</a></li>
+                <li><a href="{{ url('supersearch.search_custom') }}" class="selected">Custom query</a></li>
+            </ul>
+        </nav>
     </div>
 
     <section id="search-form">
