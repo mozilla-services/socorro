@@ -1,0 +1,15 @@
+{
+    "date_key": "151130", 
+    "notes": [], 
+    "os_counters": {
+        "Windows NT": {
+            "count": 1, 
+            "signatures": {
+                "shutdownhang | WaitForSingleObjectEx | WaitForSingleObject | PR_Wait | mozilla::ReentrantMonitor::Wait | nsThread::ProcessNextEvent | NS_ProcessNextEvent | mozilla::MediaShutdownManager::Shutdown|EXCEPTION_BREAKPOINT": {
+                    "count": 1, 
+                    "modules": {}
+                }
+            }
+        }
+    }
+}

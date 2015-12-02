@@ -1,0 +1,23 @@
+{
+    "Windows NT": {
+        "count": 3, 
+        "signatures": {
+            "fsdomnodefirefox.dll@0x67e7|EXCEPTION_ACCESS_VIOLATION_WRITE": {
+                "cores": {
+                    "x86 with 4 cores": {
+                        "in_os_count": 3, 
+                        "in_os_ratio": 1.0, 
+                        "in_sig_count": 3, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 100, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 3, 
+                "name": "fsdomnodefirefox.dll@0x67e7|EXCEPTION_ACCESS_VIOLATION_WRITE"
+            }
+        }
+    }, 
+    "date_key": "151130", 
+    "notes": []
+}

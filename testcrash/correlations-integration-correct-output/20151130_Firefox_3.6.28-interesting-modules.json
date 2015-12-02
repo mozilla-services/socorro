@@ -1,0 +1,15 @@
+{
+    "date_key": "151130", 
+    "notes": [], 
+    "os_counters": {
+        "Windows NT": {
+            "count": 1, 
+            "signatures": {
+                "BaseThreadInitThunk|EXCEPTION_ACCESS_VIOLATION_EXEC": {
+                    "count": 1, 
+                    "modules": {}
+                }
+            }
+        }
+    }
+}

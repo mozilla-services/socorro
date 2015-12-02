@@ -1,0 +1,2532 @@
+{
+    "PluginFilename": "libflashplayer.so",
+    "PluginName": "",
+    "PluginVersion": "",
+    "ReleaseChannel": "release",
+    "Winsock_LSP": null,
+    "additional_minidumps": [],
+    "addons": [
+        [
+            "globalmenu@ubuntu.com",
+            "3.7.2"
+        ],
+        [
+            "ubufox@ubuntu.com",
+            "2.6"
+        ],
+        [
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
+            "19.0.2"
+        ]
+    ],
+    "addons_checked": true,
+    "address": "0xffc0c001",
+    "app_notes": "OpenGL: Tungsten Graphics, Inc -- Mesa DRI Intel(R) 865G x86/MMX/SSE2 -- 1.3 Mesa 8.0.4 -- texture_from_pixmap\r\n",
+    "build": "20130307122853",
+    "client_crash_date": "2015-11-29T23:59:56+00:00",
+    "completed_datetime": "2015-11-30T00:00:21.672335+00:00",
+    "completeddatetime": "2015-11-30T00:00:21.672335+00:00",
+    "cpu_info": "GenuineInte family 15 model 2 stepping 9 | 1",
+    "cpu_name": "x86",
+    "crash_id": "51011379-0517-47ff-940f-e7b272151130",
+    "crash_time": 1448841596,
+    "crashedThread": 0,
+    "date_processed": "2015-11-30T00:00:04.018772+00:00",
+    "distributor": null,
+    "distributor_version": null,
+    "email": null,
+    "flash_version": "[blank]",
+    "hang_type": 0,
+    "hangid": null,
+    "install_age": 85018174,
+    "java_stack_trace": null,
+    "json_dump": {
+        "crash_info": {
+            "address": "0xffc0c001",
+            "crashing_thread": 0,
+            "type": "SIGSEGV"
+        },
+        "crashing_thread": {
+            "frames": [
+                {
+                    "frame": 0,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x798f4d",
+                    "offset": "0x3e79f4d",
+                    "registers": {
+                        "eax": "0xb3fa9020",
+                        "ebp": "0xbf9789e8",
+                        "ebx": "0x0474c680",
+                        "ecx": "0x00000004",
+                        "edi": "0xffc0c0c0",
+                        "edx": "0xffc0c0c0",
+                        "efl": "0x00210286",
+                        "eip": "0x03e79f4d",
+                        "esi": "0xffc0c000",
+                        "esp": "0xbf9789d0"
+                    },
+                    "trust": "context"
+                },
+                {
+                    "frame": 1,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x6e46d9",
+                    "offset": "0x3dc56d9",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 2,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x79a49e",
+                    "offset": "0x3e7b49e",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 3,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x79c80f",
+                    "offset": "0x3e7d80f",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 4,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x797b87",
+                    "offset": "0x3e78b87",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 5,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x303717",
+                    "offset": "0x39e4717",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 6,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x2b86e6",
+                    "offset": "0x39996e6",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 7,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x342850",
+                    "offset": "0x3a23850",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 8,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x342ecf",
+                    "offset": "0x3a23ecf",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 9,
+                    "missing_symbols": true,
+                    "module": "libflashplayer.so",
+                    "module_offset": "0x34381c",
+                    "offset": "0x3a2481c",
+                    "trust": "frame_pointer"
+                }
+            ],
+            "threads_index": 0,
+            "total_frames": 29
+        },
+        "lsb_release": {
+            "codename": "precise",
+            "description": "Ubuntu 12.04.2 LTS",
+            "id": "Ubuntu",
+            "release": "12.04"
+        },
+        "main_module": 25,
+        "modules": [
+            {
+                "base_addr": "0x110000",
+                "code_id": "id",
+                "debug_file": "libpthread-2.15.so",
+                "debug_id": "EA1FE696007C67DA20D2C73307924DDA0",
+                "end_addr": "0x129000",
+                "filename": "libpthread-2.15.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x12b000",
+                "code_id": "id",
+                "debug_file": "libsmime3.so",
+                "debug_id": "E3223BC1251FFEDBDD195B843112C2330",
+                "end_addr": "0x155000",
+                "filename": "libsmime3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x155000",
+                "code_id": "id",
+                "debug_file": "librt-2.15.so",
+                "debug_id": "54623F3F5813D2229B35185F6C7351D40",
+                "end_addr": "0x15e000",
+                "filename": "librt-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x15e000",
+                "code_id": "id",
+                "debug_file": "ld-2.15.so",
+                "debug_id": "1E082F40E6B591CC9D06EF2EFBFAFFF80",
+                "end_addr": "0x180000",
+                "filename": "ld-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x180000",
+                "code_id": "id",
+                "debug_file": "libc-2.15.so",
+                "debug_id": "87BB99BC1345340FA31106951CECCFD90",
+                "end_addr": "0x327000",
+                "filename": "libc-2.15.so",
+                "missing_symbols": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x32a000",
+                "code_id": "id",
+                "debug_file": "libnss3.so",
+                "debug_id": "8411733FE495571E39186101CA141A140",
+                "end_addr": "0x455000",
+                "filename": "libnss3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x456000",
+                "code_id": "id",
+                "debug_file": "libnssutil3.so",
+                "debug_id": "9F0691496B38CBA4672F43D8D3370DAB0",
+                "end_addr": "0x478000",
+                "filename": "libnssutil3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x478000",
+                "code_id": "id",
+                "debug_file": "libasound.so.2.0.0",
+                "debug_id": "16A061CD849EC4E6734E83080C3447EF0",
+                "end_addr": "0x56a000",
+                "filename": "libasound.so.2.0.0",
+                "missing_symbols": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x56a000",
+                "code_id": "id",
+                "debug_file": "libnspr4.so",
+                "debug_id": "0864970FF053C21487ABCBBE30D7E48D0",
+                "end_addr": "0x5a6000",
+                "filename": "libnspr4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5a8000",
+                "code_id": "id",
+                "debug_file": "libplc4.so",
+                "debug_id": "36B762203136C86574F4B00020371BFC0",
+                "end_addr": "0x5ae000",
+                "filename": "libplc4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5ae000",
+                "code_id": "id",
+                "debug_file": "libmozalloc.so",
+                "debug_id": "75E3F5D4550045BF1FA33735274B182B0",
+                "end_addr": "0x5b2000",
+                "filename": "libmozalloc.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5b2000",
+                "code_id": "id",
+                "debug_file": "libXext.so.6.4.0",
+                "debug_id": "6A7CB054FBC00C264AE5E89824F18A810",
+                "end_addr": "0x5c4000",
+                "filename": "libXext.so.6.4.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5c4000",
+                "code_id": "id",
+                "debug_file": "libstartup-notification-1.so.0.0.0",
+                "debug_id": "5444416FE27E20BCAEC62427707041AF0",
+                "end_addr": "0x5ce000",
+                "filename": "libstartup-notification-1.so.0.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5d0000",
+                "code_id": "id",
+                "debug_file": "libplds4.so",
+                "debug_id": "C1E5C35A0B9DF9DEAA7A74ECD17A223D0",
+                "end_addr": "0x5d5000",
+                "filename": "libplds4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5d5000",
+                "code_id": "id",
+                "debug_file": "libdbus-glib-1.so.2.2.2",
+                "debug_id": "4D2741302CC23D0791A4D65E7D4490290",
+                "end_addr": "0x5fb000",
+                "filename": "libdbus-glib-1.so.2.2.2",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5fb000",
+                "code_id": "id",
+                "debug_file": "libdbus-1.so.3.5.8",
+                "debug_id": "62A15ED8B244554B69CBC1E7A20FE6840",
+                "end_addr": "0x644000",
+                "filename": "libdbus-1.so.3.5.8",
+                "version": ""
+            },
+            {
+                "base_addr": "0x644000",
+                "code_id": "id",
+                "debug_file": "libgobject-2.0.so.0.3200.3",
+                "debug_id": "30C828FD0A58F07D0C6718E6CA16DFB40",
+                "end_addr": "0x693000",
+                "filename": "libgobject-2.0.so.0.3200.3",
+                "version": ""
+            },
+            {
+                "base_addr": "0x693000",
+                "code_id": "id",
+                "debug_file": "libpangoft2-1.0.so.0.3000.0",
+                "debug_id": "4D614EB4FC0DF72BCC7890B7DB72D3AD0",
+                "end_addr": "0x6bf000",
+                "filename": "libpangoft2-1.0.so.0.3000.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x6bf000",
+                "code_id": "id",
+                "debug_file": "libfontconfig.so.1.4.4",
+                "debug_id": "00637648BD3021D4476974CF2F8F63F30",
+                "end_addr": "0x6f3000",
+                "filename": "libfontconfig.so.1.4.4",
+                "version": ""
+            },
+            {
+                "base_addr": "0x6f3000",
+                "code_id": "id",
+                "debug_file": "libpangocairo-1.0.so.0.3000.0",
+                "debug_id": "B054CE97BD6035CFBAC70FFECFC47B400",
+                "end_addr": "0x700000",
+                "filename": "libpangocairo-1.0.so.0.3000.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x700000",
+                "code_id": "id",
+                "debug_file": "libatk-1.0.so.0.20409.1",
+                "debug_id": "ED71578BF29BE67F729AD7127E5182FE0",
+                "end_addr": "0x720000",
+                "filename": "libatk-1.0.so.0.20409.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x720000",
+                "code_id": "id",
+                "debug_file": "libdl-2.15.so",
+                "debug_id": "D4590A3BB758E1F95A6A119A692CF6D30",
+                "end_addr": "0x725000",
+                "filename": "libdl-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x725000",
+                "code_id": "id",
+                "debug_file": "libgmodule-2.0.so.0.3200.3",
+                "debug_id": "29D6391C16D35869BB80727F6BC3E7240",
+                "end_addr": "0x72a000",
+                "filename": "libgmodule-2.0.so.0.3200.3",
+                "version": ""
+            },
+            {
+                "base_addr": "0x72a000",
+                "code_id": "id",
+                "debug_file": "libxcb-shm.so.0.0.0",
+                "debug_id": "534FCE74485D8A9046C43BE67C3153750",
+                "end_addr": "0x72e000",
+                "filename": "libxcb-shm.so.0.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x72e000",
+                "code_id": "id",
+                "debug_file": "libxcb-render.so.0.0.0",
+                "debug_id": "AF7EA79B043637B45FC5EAB5F8C4BFE90",
+                "end_addr": "0x738000",
+                "filename": "libxcb-render.so.0.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x739000",
+                "code_id": "id",
+                "debug_file": "plugin-container",
+                "debug_id": "5A34E75457F2AE6394CA66C2C2850AAB0",
+                "end_addr": "0x74a000",
+                "filename": "plugin-container",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": false,
+                "symbol_fetch_time": 60.33100128173828,
+                "version": ""
+            },
+            {
+                "base_addr": "0x74c000",
+                "code_id": "id",
+                "debug_file": "libglib-2.0.so.0.3200.3",
+                "debug_id": "B93B9D77511617465811C97D266056E70",
+                "end_addr": "0x845000",
+                "filename": "libglib-2.0.so.0.3200.3",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": false,
+                "symbol_fetch_time": 98.71099853515625,
+                "version": ""
+            },
+            {
+                "base_addr": "0x845000",
+                "code_id": "id",
+                "debug_file": "libpango-1.0.so.0.3000.0",
+                "debug_id": "8B85E8C0BA0CDF4ADB284A10E53DCE110",
+                "end_addr": "0x88f000",
+                "filename": "libpango-1.0.so.0.3000.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x88f000",
+                "code_id": "id",
+                "debug_file": "libXfixes.so.3.1.0",
+                "debug_id": "7003DB83FF64E89580740EB9485325B40",
+                "end_addr": "0x895000",
+                "filename": "libXfixes.so.3.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x897000",
+                "code_id": "id",
+                "debug_file": "libgcc_s.so.1",
+                "debug_id": "93EAA6FB49916574DF2CD980873E48510",
+                "end_addr": "0x8b5000",
+                "filename": "libgcc_s.so.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x8b5000",
+                "code_id": "id",
+                "debug_file": "libfreetype.so.6.8.0",
+                "debug_id": "3C0B9A3C40C396AF0DAC2A3259ACAAE40",
+                "end_addr": "0x94f000",
+                "filename": "libfreetype.so.6.8.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x94f000",
+                "code_id": "id",
+                "debug_file": "libz.so.1.2.3.4",
+                "debug_id": "087458BB1C3A7A23D37E270EBAD010760",
+                "end_addr": "0x965000",
+                "filename": "libz.so.1.2.3.4",
+                "version": ""
+            },
+            {
+                "base_addr": "0x965000",
+                "code_id": "id",
+                "debug_file": "libXinerama.so.1.0.0",
+                "debug_id": "6E7010385B0066B2D4A939F7DC62A0040",
+                "end_addr": "0x969000",
+                "filename": "libXinerama.so.1.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x969000",
+                "code_id": "id",
+                "debug_file": "libXcomposite.so.1.0.0",
+                "debug_id": "03E0A654C5F42235DD064EABC5522E410",
+                "end_addr": "0x96d000",
+                "filename": "libXcomposite.so.1.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x96f000",
+                "code_id": "id",
+                "debug_file": "libmozsqlite3.so",
+                "debug_id": "10F390ABCDD215A42793B55B864CB5000",
+                "end_addr": "0x9f7000",
+                "filename": "libmozsqlite3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x9f8000",
+                "code_id": "id",
+                "debug_file": "libgdk_pixbuf-2.0.so.0.2600.1",
+                "debug_id": "49DB412CA3F5483B15A4A773FE46F8F80",
+                "end_addr": "0xa19000",
+                "filename": "libgdk_pixbuf-2.0.so.0.2600.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0xa19000",
+                "code_id": "id",
+                "debug_file": "libXt.so.6.0.0",
+                "debug_id": "7D46C1F7A576360AB738B0D4015839D70",
+                "end_addr": "0xa75000",
+                "filename": "libXt.so.6.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xa75000",
+                "code_id": "id",
+                "debug_file": "libXi.so.6.1.0",
+                "debug_id": "A5E1E5707167198E271A383636CD36D60",
+                "end_addr": "0xa85000",
+                "filename": "libXi.so.6.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xa85000",
+                "code_id": "id",
+                "debug_file": "libXdamage.so.1.1.0",
+                "debug_id": "7F76203A4B72B3550F17173302A33E670",
+                "end_addr": "0xa89000",
+                "filename": "libXdamage.so.1.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xa8a000",
+                "code_id": "id",
+                "debug_file": "libstdc++.so.6.0.16",
+                "debug_id": "6BCBB9962D5465ACF995FF4B2A6821360",
+                "end_addr": "0xb68000",
+                "filename": "libstdc++.so.6.0.16",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb6f000",
+                "code_id": "id",
+                "debug_file": "libgdk-x11-2.0.so.0.2400.10",
+                "debug_id": "13DFC5589D11FF4EA2CDE3EE345F057D0",
+                "end_addr": "0xc1e000",
+                "filename": "libgdk-x11-2.0.so.0.2400.10",
+                "version": ""
+            },
+            {
+                "base_addr": "0xc1e000",
+                "code_id": "id",
+                "debug_file": "libXrandr.so.2.2.0",
+                "debug_id": "27A59FC9BE1DF2D7F6BC6DA6DC12373F0",
+                "end_addr": "0xc27000",
+                "filename": "libXrandr.so.2.2.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xc27000",
+                "code_id": "id",
+                "debug_file": "libXrender.so.1.3.0",
+                "debug_id": "62C06CCDE559F7ED33AC39A4C4DE35AC0",
+                "end_addr": "0xc31000",
+                "filename": "libXrender.so.1.3.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xc31000",
+                "code_id": "id",
+                "debug_file": "libX11.so.6.3.0",
+                "debug_id": "9853BA2A77F7AFCDBA76DFAF3900BD790",
+                "end_addr": "0xd64000",
+                "filename": "libX11.so.6.3.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xd67000",
+                "code_id": "id",
+                "debug_file": "libssl3.so",
+                "debug_id": "75A0E26C9C2FE301B127F06EFFC23FA00",
+                "end_addr": "0xda8000",
+                "filename": "libssl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0xda8000",
+                "code_id": "id",
+                "debug_file": "libXcursor.so.1.0.2",
+                "debug_id": "A5C251DDC850FF99323E9C232D4B63910",
+                "end_addr": "0xdb3000",
+                "filename": "libXcursor.so.1.0.2",
+                "version": ""
+            },
+            {
+                "base_addr": "0xdb3000",
+                "code_id": "id",
+                "debug_file": "libX11-xcb.so.1.0.0",
+                "debug_id": "D30DA383517CE0BA949EF4E471B6BF6B0",
+                "end_addr": "0xdb6000",
+                "filename": "libX11-xcb.so.1.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xdb9000",
+                "code_id": "id",
+                "debug_file": "libgthread-2.0.so.0.3200.3",
+                "debug_id": "09C8F9849374946A7C29ABA58FD025CB0",
+                "end_addr": "0xdbc000",
+                "filename": "libgthread-2.0.so.0.3200.3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xdbc000",
+                "code_id": "id",
+                "debug_file": "libxcb.so.1.1.0",
+                "debug_id": "F55A45A2D9ADB67784D0C961DEC122FD0",
+                "end_addr": "0xddd000",
+                "filename": "libxcb.so.1.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xddd000",
+                "code_id": "id",
+                "debug_file": "libSM.so.6.0.1",
+                "debug_id": "9FC92034363C6484586796D643C7B0800",
+                "end_addr": "0xde6000",
+                "filename": "libSM.so.6.0.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0xde9000",
+                "code_id": "id",
+                "debug_file": "libm-2.15.so",
+                "debug_id": "7021C7A54F78CAAF3EE7EA66AEB9D17C0",
+                "end_addr": "0xe15000",
+                "filename": "libm-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0xe15000",
+                "code_id": "id",
+                "debug_file": "libcairo.so.2.11000.2",
+                "debug_id": "B0AF5B0EABB974FF721DF5350D23DE6D0",
+                "end_addr": "0xede000",
+                "filename": "libcairo.so.2.11000.2",
+                "version": ""
+            },
+            {
+                "base_addr": "0xee0000",
+                "code_id": "id",
+                "debug_file": "libresolv-2.15.so",
+                "debug_id": "18B075C32AA95A1ABA75B8103BF14C820",
+                "end_addr": "0xef6000",
+                "filename": "libresolv-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0xef8000",
+                "code_id": "id",
+                "debug_file": "libXau.so.6.0.0",
+                "debug_id": "6802674864D21048FCAE28EC78D934CE0",
+                "end_addr": "0xefc000",
+                "filename": "libXau.so.6.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xefe000",
+                "code_id": "id",
+                "debug_file": "libffi.so.6.0.0",
+                "debug_id": "1A6C21634316D024C8AB6A5EB56CBA290",
+                "end_addr": "0xf05000",
+                "filename": "libffi.so.6.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xf05000",
+                "code_id": "id",
+                "debug_file": "libexpat.so.1.5.2",
+                "debug_id": "DF7078915456AAD0FFBE3E4BD3A8E7CB0",
+                "end_addr": "0xf2f000",
+                "filename": "libexpat.so.1.5.2",
+                "version": ""
+            },
+            {
+                "base_addr": "0xf2f000",
+                "code_id": "id",
+                "debug_file": "libuuid.so.1.3.0",
+                "debug_id": "BA595D5D594603E7DA2C4B25FA08F5560",
+                "end_addr": "0xf35000",
+                "filename": "libuuid.so.1.3.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xf35000",
+                "code_id": "id",
+                "debug_file": "linux-gate.so",
+                "debug_id": "90F7755880CD800EBEFE1E73CCDF74610",
+                "end_addr": "0xf36000",
+                "filename": "linux-gate.so",
+                "missing_symbols": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0xf36000",
+                "code_id": "id",
+                "debug_file": "libxul.so",
+                "debug_id": "270A25DD658776750B790E5F8D09CF850",
+                "end_addr": "0x335e000",
+                "filename": "libxul.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": false,
+                "symbol_fetch_time": 1629.337036132812,
+                "version": ""
+            },
+            {
+                "base_addr": "0x34c4000",
+                "code_id": "id",
+                "debug_file": "libgio-2.0.so.0.3200.3",
+                "debug_id": "95C8E3F64A6BC6D9F00F69539497F34E0",
+                "end_addr": "0x361a000",
+                "filename": "libgio-2.0.so.0.3200.3",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": false,
+                "symbol_fetch_time": 146.2489929199219,
+                "version": ""
+            },
+            {
+                "base_addr": "0x361b000",
+                "code_id": "id",
+                "debug_file": "libpcre.so.3.12.1",
+                "debug_id": "309D598A665A15BB6CC782DB5FF388630",
+                "end_addr": "0x3657000",
+                "filename": "libpcre.so.3.12.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x3657000",
+                "code_id": "id",
+                "debug_file": "libpng12.so.0.46.0",
+                "debug_id": "20EABCAACC2094A809AB26239263ACF30",
+                "end_addr": "0x3681000",
+                "filename": "libpng12.so.0.46.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x3681000",
+                "code_id": "id",
+                "debug_file": "libnsl-2.15.so",
+                "debug_id": "E3C068851298BB67949D8066D61CA6320",
+                "end_addr": "0x3699000",
+                "filename": "libnsl-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x369b000",
+                "code_id": "id",
+                "debug_file": "libmurrine.so",
+                "debug_id": "EC98DA96ACBEDD56567C366F6867CB220",
+                "end_addr": "0x36d2000",
+                "filename": "libmurrine.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x36d2000",
+                "code_id": "id",
+                "debug_file": "libcanberra-gtk-module.so",
+                "debug_id": "94F0CBF7C8A04B37BACA6E50EEFD6ADA0",
+                "end_addr": "0x36d9000",
+                "filename": "libcanberra-gtk-module.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x36d9000",
+                "code_id": "id",
+                "debug_file": "libogg.so.0.7.1",
+                "debug_id": "DC6A8B1C672F9003BDDC49CE8771044C0",
+                "end_addr": "0x36e1000",
+                "filename": "libogg.so.0.7.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x36e1000",
+                "code_id": "id",
+                "debug_file": "libflashplayer.so",
+                "debug_id": "4BF9B68C9D1E5A731BED644FDCC000350",
+                "end_addr": "0x4777000",
+                "filename": "libflashplayer.so",
+                "missing_symbols": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x486f000",
+                "code_id": "id",
+                "debug_file": "libk5crypto.so.3.1",
+                "debug_id": "0FFE30F3030BEDA59497C1A4BC827B970",
+                "end_addr": "0x4897000",
+                "filename": "libk5crypto.so.3.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x4897000",
+                "code_id": "id",
+                "debug_file": "libkrb5.so.26.0.0",
+                "debug_id": "87517E4CC6FA591731992FD79ECD856F0",
+                "end_addr": "0x491a000",
+                "filename": "libkrb5.so.26.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x491a000",
+                "code_id": "id",
+                "debug_file": "libhcrypto.so.4.1.0",
+                "debug_id": "99E183D7991096A3D35127D64B26D7FD0",
+                "end_addr": "0x494e000",
+                "filename": "libhcrypto.so.4.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x494f000",
+                "code_id": "id",
+                "debug_file": "libwind.so.0.0.0",
+                "debug_id": "A797DB191D54F0F3ED2F3C030DDC62750",
+                "end_addr": "0x4978000",
+                "filename": "libwind.so.0.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x4978000",
+                "code_id": "id",
+                "debug_file": "libjson.so.0.0.1",
+                "debug_id": "B328E4F4A69D973F5D9F2D9FA923BA020",
+                "end_addr": "0x4980000",
+                "filename": "libjson.so.0.0.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x4980000",
+                "code_id": "id",
+                "debug_file": "libgvfsdbus.so",
+                "debug_id": "251E3ACA59F56000E1AEE42109F5D6030",
+                "end_addr": "0x49ab000",
+                "filename": "libgvfsdbus.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x49ab000",
+                "code_id": "id",
+                "debug_file": "libgvfscommon.so",
+                "debug_id": "8AAF104C74B38DE1FFBFAA769C02F3E60",
+                "end_addr": "0x49c2000",
+                "filename": "libgvfscommon.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x5028000",
+                "code_id": "id",
+                "debug_file": "libkrb5.so.3.3",
+                "debug_id": "7107EA9B14528F9EDD5C57749BD4CDC00",
+                "end_addr": "0x50f7000",
+                "filename": "libkrb5.so.3.3",
+                "version": ""
+            },
+            {
+                "base_addr": "0x6149000",
+                "code_id": "id",
+                "debug_file": "libICE.so.6.3.0",
+                "debug_id": "71E1EF71AC457299212E256A19FBECB90",
+                "end_addr": "0x6161000",
+                "filename": "libICE.so.6.3.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x678f000",
+                "code_id": "id",
+                "debug_file": "libcom_err.so.2.1",
+                "debug_id": "8078E2374AE687A08C0F09E0B03DD8A50",
+                "end_addr": "0x6794000",
+                "filename": "libcom_err.so.2.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x6f7a000",
+                "code_id": "id",
+                "debug_file": "libnss_files-2.15.so",
+                "debug_id": "4CFB988B3DC826B066E42BF7497B85D20",
+                "end_addr": "0x6f87000",
+                "filename": "libnss_files-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x7f0a000",
+                "code_id": "id",
+                "debug_file": "libgcrypt.so.11.7.0",
+                "debug_id": "585DE4D57C1D9F17DB093A4C1B011A9F0",
+                "end_addr": "0x7f8f000",
+                "filename": "libgcrypt.so.11.7.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x8165000",
+                "code_id": "id",
+                "debug_file": "libvorbisfile.so.3.3.4",
+                "debug_id": "430D74729595BBAF5498AE7DF935F6BF0",
+                "end_addr": "0x816f000",
+                "filename": "libvorbisfile.so.3.3.4",
+                "version": ""
+            },
+            {
+                "base_addr": "0x882f000",
+                "code_id": "id",
+                "debug_file": "libkrb5support.so.0.1",
+                "debug_id": "BCEED86C71E1A86C5270BE5D6058C1970",
+                "end_addr": "0x8838000",
+                "filename": "libkrb5support.so.0.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x9068000",
+                "code_id": "id",
+                "debug_file": "libwrap.so.0.7.6",
+                "debug_id": "7004BDA2DAAB51FF496EE0F2A86C09BF0",
+                "end_addr": "0x9072000",
+                "filename": "libwrap.so.0.7.6",
+                "version": ""
+            },
+            {
+                "base_addr": "0x9712000",
+                "code_id": "id",
+                "debug_file": "libpixman-1.so.0.24.4",
+                "debug_id": "349B2EBEDBCD91346CDCF3D6B6FE72EB0",
+                "end_addr": "0x97aa000",
+                "filename": "libpixman-1.so.0.24.4",
+                "version": ""
+            },
+            {
+                "base_addr": "0xa1cf000",
+                "code_id": "id",
+                "debug_file": "libdconfsettings.so",
+                "debug_id": "B05165DEB8E7C6BDFAD94BEDC05DC0420",
+                "end_addr": "0xa1d8000",
+                "filename": "libdconfsettings.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0xa64c000",
+                "code_id": "id",
+                "debug_file": "libsndfile.so.1.0.25",
+                "debug_id": "9BD51A855612359EE95E11172585398B0",
+                "end_addr": "0xa6ba000",
+                "filename": "libsndfile.so.1.0.25",
+                "version": ""
+            },
+            {
+                "base_addr": "0xa91f000",
+                "code_id": "id",
+                "debug_file": "liboverlay-scrollbar-0.2.so.0.0.16",
+                "debug_id": "4172875B13E31F01AD07D347A2D816930",
+                "end_addr": "0xa931000",
+                "filename": "liboverlay-scrollbar-0.2.so.0.0.16",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb0bf000",
+                "code_id": "id",
+                "debug_file": "libgssapi_krb5.so.2.2",
+                "debug_id": "51DDB4A9F306A41AE631C80A282D33F00",
+                "end_addr": "0xb0fd000",
+                "filename": "libgssapi_krb5.so.2.2",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb921000",
+                "code_id": "id",
+                "debug_file": "libp11-kit.so.0.0.0",
+                "debug_id": "ABC7F723FD883922BFCDA08641F173450",
+                "end_addr": "0xb933000",
+                "filename": "libp11-kit.so.0.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0xd26c000",
+                "code_id": "id",
+                "debug_file": "libgtk-x11-2.0.so.0.2400.10",
+                "debug_id": "3D6A01CB3C9D2381029E99E7170C7D5B0",
+                "end_addr": "0xd6d2000",
+                "filename": "libgtk-x11-2.0.so.0.2400.10",
+                "version": ""
+            },
+            {
+                "base_addr": "0xf738000",
+                "code_id": "id",
+                "debug_file": "libvorbisenc.so.2.0.8",
+                "debug_id": "10B66D1C97AFAC5377495A02BFDC4D070",
+                "end_addr": "0xf8b0000",
+                "filename": "libvorbisenc.so.2.0.8",
+                "version": ""
+            },
+            {
+                "base_addr": "0x10425000",
+                "code_id": "id",
+                "debug_file": "libkeyutils.so.1.4",
+                "debug_id": "64697FFBE2F34A4A6339043C8A135E2F0",
+                "end_addr": "0x10429000",
+                "filename": "libkeyutils.so.1.4",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1069d000",
+                "code_id": "id",
+                "debug_file": "libldap_r-2.4.so.2.8.1",
+                "debug_id": "A3C42F635AD2F7E2F861B312A6C8709D0",
+                "end_addr": "0x106ee000",
+                "filename": "libldap_r-2.4.so.2.8.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x10fb8000",
+                "code_id": "id",
+                "debug_file": "libasn1.so.8.0.0",
+                "debug_id": "1700F01768ED85DFCF653CC6B9BA2FDF0",
+                "end_addr": "0x1105d000",
+                "filename": "libasn1.so.8.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1144b000",
+                "code_id": "id",
+                "debug_file": "liblber-2.4.so.2.8.1",
+                "debug_id": "8C33EA635C2C38DFB8F85A83786B0C9F0",
+                "end_addr": "0x1145a000",
+                "filename": "liblber-2.4.so.2.8.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x11cb5000",
+                "code_id": "id",
+                "debug_file": "libltdl.so.7.3.0",
+                "debug_id": "4A1C5A69AF765F6D50C75F7E208AE3470",
+                "end_addr": "0x11cbf000",
+                "filename": "libltdl.so.7.3.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x12240000",
+                "code_id": "id",
+                "debug_file": "libasyncns.so.0.3.1",
+                "debug_id": "73CDA635115A0D7F6D038BCC6DE743160",
+                "end_addr": "0x12247000",
+                "filename": "libasyncns.so.0.3.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x12556000",
+                "code_id": "id",
+                "debug_file": "libcanberra-gtk.so.0.1.8",
+                "debug_id": "5F04E65C86A662C559A60667EF7FA4B20",
+                "end_addr": "0x1255c000",
+                "filename": "libcanberra-gtk.so.0.1.8",
+                "version": ""
+            },
+            {
+                "base_addr": "0x12cbe000",
+                "code_id": "id",
+                "debug_file": "libcrypto.so.1.0.0",
+                "debug_id": "5C9D1692012F60AC46643D4D4461423C0",
+                "end_addr": "0x12e66000",
+                "filename": "libcrypto.so.1.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x136c5000",
+                "code_id": "id",
+                "debug_file": "libibus-1.0.so.0.401.0",
+                "debug_id": "1A4CF8CEB5C84E17AA42B5AE4B1CC20E0",
+                "end_addr": "0x1370b000",
+                "filename": "libibus-1.0.so.0.401.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x138d7000",
+                "code_id": "id",
+                "debug_file": "libXdmcp.so.6.0.0",
+                "debug_id": "A839916B1E4D734D2D0982F50EE1E1420",
+                "end_addr": "0x138de000",
+                "filename": "libXdmcp.so.6.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x14cc7000",
+                "code_id": "id",
+                "debug_file": "libheimbase.so.1.0.0",
+                "debug_id": "EF45A0DEB41338D2C17EA0EB8EBAA9030",
+                "end_addr": "0x14cd6000",
+                "filename": "libheimbase.so.1.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x15ce5000",
+                "code_id": "id",
+                "debug_file": "libvorbis.so.0.4.5",
+                "debug_id": "3147CEEAAC46CB0640815E0E292AA4AE0",
+                "end_addr": "0x15d10000",
+                "filename": "libvorbis.so.0.4.5",
+                "version": ""
+            },
+            {
+                "base_addr": "0x164f3000",
+                "code_id": "id",
+                "debug_file": "libudev.so.0.13.0",
+                "debug_id": "0CBF7313584833084DF834AE9CD65B930",
+                "end_addr": "0x16503000",
+                "filename": "libudev.so.0.13.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x16ab1000",
+                "code_id": "id",
+                "debug_file": "libsqlite3.so.0.8.6",
+                "debug_id": "FE4F11D6270466CCE7C4104F407EBFB80",
+                "end_addr": "0x16b55000",
+                "filename": "libsqlite3.so.0.8.6",
+                "version": ""
+            },
+            {
+                "base_addr": "0x17f71000",
+                "code_id": "id",
+                "debug_file": "im-ibus.so",
+                "debug_id": "F13CC51E9AC523404C73BC3409E6EE9D0",
+                "end_addr": "0x17f79000",
+                "filename": "im-ibus.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x18ace000",
+                "code_id": "id",
+                "debug_file": "libnss_nis-2.15.so",
+                "debug_id": "AC17AA1BC8EEF5D34D6C3141D68973670",
+                "end_addr": "0x18ada000",
+                "filename": "libnss_nis-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x18d87000",
+                "code_id": "id",
+                "debug_file": "libcurl.so.4.2.0",
+                "debug_id": "BD113C5C2F85AFDE5B1BFF87ABC91D060",
+                "end_addr": "0x18de4000",
+                "filename": "libcurl.so.4.2.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x18eda000",
+                "code_id": "id",
+                "debug_file": "libssl.so.1.0.0",
+                "debug_id": "9C31435FC51ED048A8F0BECC1D53B5040",
+                "end_addr": "0x18f30000",
+                "filename": "libssl.so.1.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x197f0000",
+                "code_id": "id",
+                "debug_file": "libxcb-util.so.0.0.0",
+                "debug_id": "D7128A9D26E288272F413690D459B2010",
+                "end_addr": "0x197f7000",
+                "filename": "libxcb-util.so.0.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x19ae3000",
+                "code_id": "id",
+                "debug_file": "libnssdbm3.so",
+                "debug_id": "10C7DE868FAAE818EF81DAAA374A028C0",
+                "end_addr": "0x19b0c000",
+                "filename": "libnssdbm3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1a6ad000",
+                "code_id": "id",
+                "debug_file": "librtmp.so.0",
+                "debug_id": "851B3779A1792B80A7D67AD335C7907A0",
+                "end_addr": "0x1a6c7000",
+                "filename": "librtmp.so.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1a731000",
+                "code_id": "id",
+                "debug_file": "libidn.so.11.6.6",
+                "debug_id": "0B7399C3C84277E2D2CECAC02790F42F0",
+                "end_addr": "0x1a765000",
+                "filename": "libidn.so.11.6.6",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1a8dd000",
+                "code_id": "id",
+                "debug_file": "libasound_module_pcm_pulse.so",
+                "debug_id": "7EAA1B4A4232478C2187DEDC90D9D8760",
+                "end_addr": "0x1a8e4000",
+                "filename": "libasound_module_pcm_pulse.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1ac49000",
+                "code_id": "id",
+                "debug_file": "libheimntlm.so.0.1.0",
+                "debug_id": "53629FA6DB8C5B9C068A50290D94E00B0",
+                "end_addr": "0x1ac51000",
+                "filename": "libheimntlm.so.0.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1b648000",
+                "code_id": "id",
+                "debug_file": "libhx509.so.5.0.0",
+                "debug_id": "C7411A59F6409AD6A1D3079BF3E3AB000",
+                "end_addr": "0x1b68f000",
+                "filename": "libhx509.so.5.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1b94b000",
+                "code_id": "id",
+                "debug_file": "libtasn1.so.3.1.12",
+                "debug_id": "141A81884B6083A8B5290B67D7ECA1460",
+                "end_addr": "0x1b95d000",
+                "filename": "libtasn1.so.3.1.12",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1bfbc000",
+                "code_id": "id",
+                "debug_file": "libnss_compat-2.15.so",
+                "debug_id": "EAB1C86A9C37D4B4C024432742F6A2700",
+                "end_addr": "0x1bfc5000",
+                "filename": "libnss_compat-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1c666000",
+                "code_id": "id",
+                "debug_file": "libpulsecommon-1.1.so",
+                "debug_id": "CBB2C79DB29E99B207709BFE55555C4C0",
+                "end_addr": "0x1c6cb000",
+                "filename": "libpulsecommon-1.1.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x1cadb000",
+                "code_id": "id",
+                "debug_file": "libgpg-error.so.0.8.0",
+                "debug_id": "5C8ED875E193484FCF98FAC61382A1AE0",
+                "end_addr": "0x1cae0000",
+                "filename": "libgpg-error.so.0.8.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1cd17000",
+                "code_id": "id",
+                "debug_file": "libgssapi.so.3.0.0",
+                "debug_id": "0659AC87E3ABB32D3566057D63BDAB200",
+                "end_addr": "0x1cd54000",
+                "filename": "libgssapi.so.3.0.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1d51e000",
+                "code_id": "id",
+                "debug_file": "libroken.so.18.1.0",
+                "debug_id": "E6DFC8983D110B4B159471049ECEA4E50",
+                "end_addr": "0x1d534000",
+                "filename": "libroken.so.18.1.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1d6a7000",
+                "code_id": "id",
+                "debug_file": "libselinux.so.1",
+                "debug_id": "0A3C4A412694FE88D9A07041C3650A200",
+                "end_addr": "0x1d6c6000",
+                "filename": "libselinux.so.1",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1d866000",
+                "code_id": "id",
+                "debug_file": "libpulse.so.0.13.5",
+                "debug_id": "192DA3BA2A341F4E66FCC07694FF9AEB0",
+                "end_addr": "0x1d8b4000",
+                "filename": "libpulse.so.0.13.5",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x1e273000",
+                "code_id": "id",
+                "debug_file": "libcanberra.so.0.2.5",
+                "debug_id": "7A0E75D4DECC9CD4F871190BC8B50F770",
+                "end_addr": "0x1e284000",
+                "filename": "libcanberra.so.0.2.5",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1e96e000",
+                "code_id": "id",
+                "debug_file": "libsasl2.so.2.0.25",
+                "debug_id": "64DCDBDADF3BDBE6CC088A962EC0315C0",
+                "end_addr": "0x1e98a000",
+                "filename": "libsasl2.so.2.0.25",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1e9f8000",
+                "code_id": "id",
+                "debug_file": "libtdb.so.1.2.9",
+                "debug_id": "C39CFCB9A68B97C3B5765971DF48EC7F0",
+                "end_addr": "0x1ea0b000",
+                "filename": "libtdb.so.1.2.9",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1ee52000",
+                "code_id": "id",
+                "debug_file": "libFLAC.so.8.2.0",
+                "debug_id": "052CF2022451D9C3C959D85B4F033B060",
+                "end_addr": "0x1eea0000",
+                "filename": "libFLAC.so.8.2.0",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1f4e6000",
+                "code_id": "id",
+                "debug_file": "libsoftokn3.so",
+                "debug_id": "4296F586BC73E1DDAFA825DD6AC1E2460",
+                "end_addr": "0x1f527000",
+                "filename": "libsoftokn3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x1f80d000",
+                "code_id": "id",
+                "debug_file": "UTF-16.so",
+                "debug_id": "9AC9699090EC72A40390E1860915441D0",
+                "end_addr": "0x1f812000",
+                "filename": "UTF-16.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x2028a000",
+                "code_id": "id",
+                "debug_file": "libgnutls.so.26.21.8",
+                "debug_id": "E929B4389A981438116DB6C7016168930",
+                "end_addr": "0x2034e000",
+                "filename": "libgnutls.so.26.21.8",
+                "version": ""
+            },
+            {
+                "base_addr": "0x20e44000",
+                "code_id": "id",
+                "debug_file": "libfreebl3.so",
+                "debug_id": "69D5F03E0B57E17F6444C57069DDBDB10",
+                "end_addr": "0x20e9e000",
+                "filename": "libfreebl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x20fd0000",
+                "code_id": "id",
+                "debug_file": "libcrypt-2.15.so",
+                "debug_id": "9B2EC2DD05BD70B2EDB99DA4D400C5A90",
+                "end_addr": "0x20fda000",
+                "filename": "libcrypt-2.15.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0xab9ff000",
+                "code_id": "id",
+                "debug_file": "pulse-shm-1634411169",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xafa00000",
+                "filename": "pulse-shm-1634411169",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb3ac3000",
+                "code_id": "id",
+                "debug_file": "SYSV00000000 (deleted)",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb3c98000",
+                "filename": "SYSV00000000 (deleted)",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb518f000",
+                "code_id": "id",
+                "debug_file": "n021003l.pfb",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb51a8000",
+                "filename": "n021003l.pfb",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb51a8000",
+                "code_id": "id",
+                "debug_file": "SYSVb2535a5a (deleted)",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb51b8000",
+                "filename": "SYSVb2535a5a (deleted)",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb51b8000",
+                "code_id": "id",
+                "debug_file": "c05880de57d1f5e948fdfacc138775d9-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb51b9000",
+                "filename": "c05880de57d1f5e948fdfacc138775d9-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb51b9000",
+                "code_id": "id",
+                "debug_file": "945677eb7aeaf62f1d50efc3fb3ec7d8-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb51bf000",
+                "filename": "945677eb7aeaf62f1d50efc3fb3ec7d8-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb63c1000",
+                "code_id": "id",
+                "debug_file": "locale-archive",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb65c1000",
+                "filename": "locale-archive",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb6dc2000",
+                "code_id": "id",
+                "debug_file": "omni.ja",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7500000",
+                "filename": "omni.ja",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7601000",
+                "code_id": "id",
+                "debug_file": "99e8ed0e538f840c565b6ed5dad60d56-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7603000",
+                "filename": "99e8ed0e538f840c565b6ed5dad60d56-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7603000",
+                "code_id": "id",
+                "debug_file": "2cd17615ca594fa2959ae173292e504c-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7606000",
+                "filename": "2cd17615ca594fa2959ae173292e504c-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7606000",
+                "code_id": "id",
+                "debug_file": "e7071f4a29fa870f4323321c154eba04-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7607000",
+                "filename": "e7071f4a29fa870f4323321c154eba04-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7607000",
+                "code_id": "id",
+                "debug_file": "0d8c3b2ac0904cb8a57a757ad11a4a08-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7608000",
+                "filename": "0d8c3b2ac0904cb8a57a757ad11a4a08-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7608000",
+                "code_id": "id",
+                "debug_file": "a755afe4a08bf5b97852ceb7400b47bc-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb760c000",
+                "filename": "a755afe4a08bf5b97852ceb7400b47bc-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb760c000",
+                "code_id": "id",
+                "debug_file": "6d41288fd70b0be22e8c3a91e032eec0-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb760f000",
+                "filename": "6d41288fd70b0be22e8c3a91e032eec0-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb760f000",
+                "code_id": "id",
+                "debug_file": "04aabc0a78ac019cf9454389977116d2-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb761a000",
+                "filename": "04aabc0a78ac019cf9454389977116d2-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb761a000",
+                "code_id": "id",
+                "debug_file": "385c0604a188198f04d133e54aba7fe7-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb761d000",
+                "filename": "385c0604a188198f04d133e54aba7fe7-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb761d000",
+                "code_id": "id",
+                "debug_file": "4794a0821666d79190d59a36cb4f44b5-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb761e000",
+                "filename": "4794a0821666d79190d59a36cb4f44b5-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb761e000",
+                "code_id": "id",
+                "debug_file": "8801497958630a81b71ace7c5f9b32a8-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7621000",
+                "filename": "8801497958630a81b71ace7c5f9b32a8-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7621000",
+                "code_id": "id",
+                "debug_file": "3047814df9a2f067bd2d96a2b9c36e5a-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7625000",
+                "filename": "3047814df9a2f067bd2d96a2b9c36e5a-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7625000",
+                "code_id": "id",
+                "debug_file": "d52a8644073d54c13679302ca1180695-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7632000",
+                "filename": "d52a8644073d54c13679302ca1180695-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7632000",
+                "code_id": "id",
+                "debug_file": "user",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7636000",
+                "filename": "user",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7636000",
+                "code_id": "id",
+                "debug_file": "user",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7637000",
+                "filename": "user",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7637000",
+                "code_id": "id",
+                "debug_file": "gschemas.compiled",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb765b000",
+                "filename": "gschemas.compiled",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb776e000",
+                "code_id": "id",
+                "debug_file": "56cf4f4769d0f4abc89a4895d7bd3ae1-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb776f000",
+                "filename": "56cf4f4769d0f4abc89a4895d7bd3ae1-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb776f000",
+                "code_id": "id",
+                "debug_file": "b9d506c9ac06c20b433354fa67a72993-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7770000",
+                "filename": "b9d506c9ac06c20b433354fa67a72993-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7770000",
+                "code_id": "id",
+                "debug_file": "b47c4e1ecd0709278f4910c18777a504-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7774000",
+                "filename": "b47c4e1ecd0709278f4910c18777a504-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7774000",
+                "code_id": "id",
+                "debug_file": "e13b20fdb08344e0e664864cc2ede53d-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7776000",
+                "filename": "e13b20fdb08344e0e664864cc2ede53d-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7776000",
+                "code_id": "id",
+                "debug_file": "7ef2298fde41cc6eeb7af42e48b7d293-le32d4.cache-3",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7779000",
+                "filename": "7ef2298fde41cc6eeb7af42e48b7d293-le32d4.cache-3",
+                "version": ""
+            },
+            {
+                "base_addr": "0xb7779000",
+                "code_id": "id",
+                "debug_file": "gconv-modules.cache",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0xb7780000",
+                "filename": "gconv-modules.cache",
+                "version": ""
+            }
+        ],
+        "status": "OK",
+        "system_info": {
+            "cpu_arch": "x86",
+            "cpu_count": 1,
+            "cpu_info": "GenuineInte family 15 model 2 stepping 9",
+            "os": "Linux",
+            "os_ver": "0.0.0 Linux 3.2.0-38-generic-pae #61-Ubuntu SMP Tue Feb 19 12:39:51 UTC 2013 i686"
+        },
+        "thread_count": 7,
+        "threads": [
+            {
+                "frame_count": 29,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x798f4d",
+                        "normalized": "libflashplayer.so@0x798f4d",
+                        "offset": "0x3e79f4d",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x6e46d9",
+                        "normalized": "libflashplayer.so@0x6e46d9",
+                        "offset": "0x3dc56d9",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 2,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x79a49e",
+                        "normalized": "libflashplayer.so@0x79a49e",
+                        "offset": "0x3e7b49e",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 3,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x79c80f",
+                        "normalized": "libflashplayer.so@0x79c80f",
+                        "offset": "0x3e7d80f",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 4,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x797b87",
+                        "normalized": "libflashplayer.so@0x797b87",
+                        "offset": "0x3e78b87",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x303717",
+                        "normalized": "libflashplayer.so@0x303717",
+                        "offset": "0x39e4717",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 6,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x2b86e6",
+                        "normalized": "libflashplayer.so@0x2b86e6",
+                        "offset": "0x39996e6",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 7,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x342850",
+                        "normalized": "libflashplayer.so@0x342850",
+                        "offset": "0x3a23850",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 8,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x342ecf",
+                        "normalized": "libflashplayer.so@0x342ecf",
+                        "offset": "0x3a23ecf",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 9,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x34381c",
+                        "normalized": "libflashplayer.so@0x34381c",
+                        "offset": "0x3a2481c",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x344260",
+                        "normalized": "libflashplayer.so@0x344260",
+                        "offset": "0x3a25260",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 11,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x346ebb",
+                        "normalized": "libflashplayer.so@0x346ebb",
+                        "offset": "0x3a27ebb",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 12,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x391a0f",
+                        "normalized": "libflashplayer.so@0x391a0f",
+                        "offset": "0x3a72a0f",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 13,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x3927f5",
+                        "normalized": "libflashplayer.so@0x3927f5",
+                        "offset": "0x3a737f5",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 14,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x5958c2",
+                        "normalized": "libflashplayer.so@0x5958c2",
+                        "offset": "0x3c768c2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 15,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x53352a",
+                        "normalized": "libflashplayer.so@0x53352a",
+                        "offset": "0x3c1452a",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 16,
+                        "function": "g_timeout_dispatch",
+                        "function_offset": "0x2e",
+                        "line": 3882,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x47a7e",
+                        "normalized": "g_timeout_dispatch",
+                        "offset": "0x793a7e",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 17,
+                        "function": "g_main_context_dispatch",
+                        "function_offset": "0x145",
+                        "line": 2539,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x46d85",
+                        "normalized": "g_main_context_dispatch",
+                        "offset": "0x792d85",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 18,
+                        "function": "g_main_context_iterate",
+                        "function_offset": "0x1f4",
+                        "line": 3146,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x47124",
+                        "normalized": "g_main_context_iterate",
+                        "offset": "0x793124",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 19,
+                        "function": "g_main_context_iteration",
+                        "function_offset": "0x40",
+                        "line": 3207,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x47200",
+                        "normalized": "g_main_context_iteration",
+                        "offset": "0x793200",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/message_pump_glib.cc",
+                        "frame": 20,
+                        "function": "base::MessagePumpForUI::RunWithDispatcher(base::MessagePump::Delegate*, base::MessagePumpForUI::Dispatcher*)",
+                        "function_offset": "0x6c",
+                        "line": 195,
+                        "module": "libxul.so",
+                        "module_offset": "0x101e42a",
+                        "normalized": "base::MessagePumpForUI::RunWithDispatcher",
+                        "offset": "0x1f5442a",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/./ipc/chromium/src/base/message_pump_glib.h",
+                        "frame": 21,
+                        "function": "base::MessagePumpForUI::Run(base::MessagePump::Delegate*)",
+                        "function_offset": "0x1e",
+                        "line": 59,
+                        "module": "libxul.so",
+                        "module_offset": "0x101e312",
+                        "normalized": "base::MessagePumpForUI::Run",
+                        "offset": "0x1f54312",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/message_loop.cc",
+                        "frame": 22,
+                        "function": "MessageLoop::RunInternal()",
+                        "function_offset": "0x15",
+                        "line": 215,
+                        "module": "libxul.so",
+                        "module_offset": "0x1008efb",
+                        "normalized": "MessageLoop::RunInternal",
+                        "offset": "0x1f3eefb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/message_loop.cc",
+                        "frame": 23,
+                        "function": "MessageLoop::Run()",
+                        "function_offset": "0x1f",
+                        "line": 208,
+                        "module": "libxul.so",
+                        "module_offset": "0x1009023",
+                        "normalized": "MessageLoop::Run",
+                        "offset": "0x1f3f023",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/toolkit/xre/nsEmbedFunctions.cpp",
+                        "frame": 24,
+                        "function": "XRE_InitChildProcess",
+                        "function_offset": "0x356",
+                        "line": 485,
+                        "module": "libxul.so",
+                        "module_offset": "0x298f07",
+                        "normalized": "XRE_InitChildProcess",
+                        "offset": "0x11cef07",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/app/MozillaRuntimeMain.cpp",
+                        "frame": 25,
+                        "function": "main",
+                        "function_offset": "0x41",
+                        "line": 48,
+                        "module": "plugin-container",
+                        "module_offset": "0x1611",
+                        "normalized": "main",
+                        "offset": "0x73a611",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 26,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0x194d2",
+                        "normalized": "libc-2.15.so@0x194d2",
+                        "offset": "0x1994d2",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 27,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0x1a5ff3",
+                        "normalized": "libc-2.15.so@0x1a5ff3",
+                        "offset": "0x325ff3",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 28,
+                        "normalized": "@0xbf97a7b2",
+                        "offset": "0xbf97a7b2",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            },
+            {
+                "frame_count": 12,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "linux-gate.so",
+                        "module_offset": "0x416",
+                        "offset": "0xf35416",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeae76",
+                        "offset": "0x26ae76",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/third_party/libevent/epoll_sub.c",
+                        "frame": 2,
+                        "function": "epoll_wait",
+                        "function_offset": "0x3a",
+                        "line": 51,
+                        "module": "libxul.so",
+                        "module_offset": "0x1004300",
+                        "offset": "0x1f3a300",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/third_party/libevent/epoll.c",
+                        "frame": 3,
+                        "function": "epoll_dispatch",
+                        "function_offset": "0x6c",
+                        "line": 208,
+                        "module": "libxul.so",
+                        "module_offset": "0x1003e42",
+                        "offset": "0x1f39e42",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/third_party/libevent/event.c",
+                        "frame": 4,
+                        "function": "event_base_loop",
+                        "function_offset": "0x1d6",
+                        "line": 513,
+                        "module": "libxul.so",
+                        "module_offset": "0x10028f4",
+                        "offset": "0x1f388f4",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/message_pump_libevent.cc",
+                        "frame": 5,
+                        "function": "base::MessagePumpLibevent::Run(base::MessagePump::Delegate*)",
+                        "function_offset": "0x10a",
+                        "line": 340,
+                        "module": "libxul.so",
+                        "module_offset": "0x101582c",
+                        "offset": "0x1f4b82c",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/message_loop.cc",
+                        "frame": 6,
+                        "function": "MessageLoop::RunInternal()",
+                        "function_offset": "0x15",
+                        "line": 215,
+                        "module": "libxul.so",
+                        "module_offset": "0x1008efb",
+                        "offset": "0x1f3eefb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/message_loop.cc",
+                        "frame": 7,
+                        "function": "MessageLoop::Run()",
+                        "function_offset": "0x1f",
+                        "line": 208,
+                        "module": "libxul.so",
+                        "module_offset": "0x1009023",
+                        "offset": "0x1f3f023",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/thread.cc",
+                        "frame": 8,
+                        "function": "base::Thread::ThreadMain()",
+                        "function_offset": "0x8a",
+                        "line": 156,
+                        "module": "libxul.so",
+                        "module_offset": "0x100d8f2",
+                        "offset": "0x1f438f2",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/firefox-19.0.2+build1/ipc/chromium/src/base/platform_thread_posix.cc",
+                        "frame": 9,
+                        "function": "ThreadFunc",
+                        "function_offset": "0xe",
+                        "line": 39,
+                        "module": "libxul.so",
+                        "module_offset": "0x1015d80",
+                        "offset": "0x1f4bd80",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/eglibc-2.15/nptl/pthread_create.c",
+                        "frame": 10,
+                        "function": "start_thread",
+                        "function_offset": "0xcb",
+                        "line": 308,
+                        "module": "libpthread-2.15.so",
+                        "module_offset": "0x6d4b",
+                        "offset": "0x116d4b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 11,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeed3d",
+                        "offset": "0x26ed3d",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            },
+            {
+                "frame_count": 11,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "linux-gate.so",
+                        "module_offset": "0x416",
+                        "offset": "0xf35416",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xe05ef",
+                        "offset": "0x2605ef",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gthread-posix.c",
+                        "frame": 2,
+                        "function": "g_mutex_unlock",
+                        "function_offset": "0x5",
+                        "line": 224,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x863f5",
+                        "offset": "0x7d23f5",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 3,
+                        "offset": "0x0",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gpoll.c",
+                        "frame": 4,
+                        "function": "g_poll",
+                        "function_offset": "0x2a",
+                        "line": 132,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x54a7a",
+                        "offset": "0x7a0a7a",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 5,
+                        "function": "g_main_context_iterate",
+                        "function_offset": "0x17d",
+                        "line": 3440,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x470ad",
+                        "offset": "0x7930ad",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 6,
+                        "function": "g_main_loop_run",
+                        "function_offset": "0x7a",
+                        "line": 3340,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x4756a",
+                        "offset": "0x79356a",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "dconfcontext.c",
+                        "frame": 7,
+                        "function": "dconf_context_thread",
+                        "function_offset": "0x33",
+                        "line": 11,
+                        "module": "libdconfsettings.so",
+                        "module_offset": "0x4133",
+                        "offset": "0xa1d3133",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gthread.c",
+                        "frame": 8,
+                        "function": "g_thread_proxy",
+                        "function_offset": "0x72",
+                        "line": 801,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x6a6b2",
+                        "offset": "0x7b66b2",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/eglibc-2.15/nptl/pthread_create.c",
+                        "frame": 9,
+                        "function": "start_thread",
+                        "function_offset": "0xcb",
+                        "line": 308,
+                        "module": "libpthread-2.15.so",
+                        "module_offset": "0x6d4b",
+                        "offset": "0x116d4b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeed3d",
+                        "offset": "0x26ed3d",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            },
+            {
+                "frame_count": 11,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "linux-gate.so",
+                        "module_offset": "0x416",
+                        "offset": "0xf35416",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xe05ef",
+                        "offset": "0x2605ef",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gthread-posix.c",
+                        "frame": 2,
+                        "function": "g_mutex_unlock",
+                        "function_offset": "0x5",
+                        "line": 224,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x863f5",
+                        "offset": "0x7d23f5",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 3,
+                        "offset": "0x2",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gpoll.c",
+                        "frame": 4,
+                        "function": "g_poll",
+                        "function_offset": "0x2a",
+                        "line": 132,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x54a7a",
+                        "offset": "0x7a0a7a",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 5,
+                        "function": "g_main_context_iterate",
+                        "function_offset": "0x17d",
+                        "line": 3440,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x470ad",
+                        "offset": "0x7930ad",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+                        "frame": 6,
+                        "function": "g_main_loop_run",
+                        "function_offset": "0x7a",
+                        "line": 3340,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x4756a",
+                        "offset": "0x79356a",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./gio/gdbusprivate.c",
+                        "frame": 7,
+                        "function": "gdbus_shared_thread_func",
+                        "function_offset": "0x29",
+                        "line": 277,
+                        "module": "libgio-2.0.so.0.3200.3",
+                        "module_offset": "0xcf1b9",
+                        "offset": "0x35931b9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/glib2.0-2.32.3/./glib/gthread.c",
+                        "frame": 8,
+                        "function": "g_thread_proxy",
+                        "function_offset": "0x72",
+                        "line": 801,
+                        "module": "libglib-2.0.so.0.3200.3",
+                        "module_offset": "0x6a6b2",
+                        "offset": "0x7b66b2",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/eglibc-2.15/nptl/pthread_create.c",
+                        "frame": 9,
+                        "function": "start_thread",
+                        "function_offset": "0xcb",
+                        "line": 308,
+                        "module": "libpthread-2.15.so",
+                        "module_offset": "0x6d4b",
+                        "offset": "0x116d4b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeed3d",
+                        "offset": "0x26ed3d",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            },
+            {
+                "frame_count": 8,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "linux-gate.so",
+                        "module_offset": "0x416",
+                        "offset": "0xf35416",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "offset": "0x2045476d",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 2,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x106b67f",
+                        "offset": "0x474c67f",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 3,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x4f0342",
+                        "offset": "0x3bd1342",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 4,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x5abb9b",
+                        "offset": "0x3c8cb9b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "missing_symbols": true,
+                        "module": "libflashplayer.so",
+                        "module_offset": "0x5ac245",
+                        "offset": "0x3c8d245",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "/build/buildd/eglibc-2.15/nptl/pthread_create.c",
+                        "frame": 6,
+                        "function": "start_thread",
+                        "function_offset": "0xcb",
+                        "line": 308,
+                        "module": "libpthread-2.15.so",
+                        "module_offset": "0x6d4b",
+                        "offset": "0x116d4b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 7,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeed3d",
+                        "offset": "0x26ed3d",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            },
+            {
+                "frame_count": 11,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "linux-gate.so",
+                        "module_offset": "0x416",
+                        "offset": "0xf35416",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xe05ef",
+                        "offset": "0x2605ef",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 2,
+                        "module": "libpulse.so.0.13.5",
+                        "module_offset": "0x3547f",
+                        "offset": "0x1d89b47f",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "pulse/thread-mainloop.c",
+                        "frame": 3,
+                        "function": "poll_func",
+                        "function_offset": "0x45",
+                        "line": 69,
+                        "module": "libpulse.so.0.13.5",
+                        "module_offset": "0x354c5",
+                        "offset": "0x1d89b4c5",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "pulse/mainloop.c",
+                        "frame": 4,
+                        "function": "pa_mainloop_poll",
+                        "function_offset": "0xc9",
+                        "line": 875,
+                        "module": "libpulse.so.0.13.5",
+                        "module_offset": "0x23759",
+                        "offset": "0x1d889759",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "pulse/mainloop.c",
+                        "frame": 5,
+                        "function": "pa_mainloop_iterate",
+                        "function_offset": "0x46",
+                        "line": 957,
+                        "module": "libpulse.so.0.13.5",
+                        "module_offset": "0x23fb6",
+                        "offset": "0x1d889fb6",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "pulse/mainloop.c",
+                        "frame": 6,
+                        "function": "pa_mainloop_run",
+                        "function_offset": "0x33",
+                        "line": 975,
+                        "module": "libpulse.so.0.13.5",
+                        "module_offset": "0x24093",
+                        "offset": "0x1d88a093",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "pulse/thread-mainloop.c",
+                        "frame": 7,
+                        "function": "thread",
+                        "function_offset": "0x6d",
+                        "line": 88,
+                        "module": "libpulse.so.0.13.5",
+                        "module_offset": "0x3544d",
+                        "offset": "0x1d89b44d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "pulsecore/thread-posix.c",
+                        "frame": 8,
+                        "function": "internal_thread_func",
+                        "function_offset": "0x75",
+                        "line": 83,
+                        "module": "libpulsecommon-1.1.so",
+                        "module_offset": "0x46245",
+                        "offset": "0x1c6ac245",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "/build/buildd/eglibc-2.15/nptl/pthread_create.c",
+                        "frame": 9,
+                        "function": "start_thread",
+                        "function_offset": "0xcb",
+                        "line": 308,
+                        "module": "libpthread-2.15.so",
+                        "module_offset": "0x6d4b",
+                        "offset": "0x116d4b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeed3d",
+                        "offset": "0x26ed3d",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            },
+            {
+                "frame_count": 4,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "linux-gate.so",
+                        "module_offset": "0x416",
+                        "offset": "0xf35416",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libasound.so.2.0.0",
+                        "module_offset": "0x45453",
+                        "offset": "0x4bd453",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "/build/buildd/eglibc-2.15/nptl/pthread_create.c",
+                        "frame": 2,
+                        "function": "start_thread",
+                        "function_offset": "0xcb",
+                        "line": 308,
+                        "module": "libpthread-2.15.so",
+                        "module_offset": "0x6d4b",
+                        "offset": "0x116d4b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 3,
+                        "missing_symbols": true,
+                        "module": "libc-2.15.so",
+                        "module_offset": "0xeed3d",
+                        "offset": "0x26ed3d",
+                        "trust": "frame_pointer"
+                    }
+                ]
+            }
+        ]
+    },
+    "last_crash": null,
+    "mdsw_return_code": 0,
+    "mdsw_status_string": "OK",
+    "os_name": "Linux",
+    "os_pretty_version": "Linux",
+    "os_version": "0.0.0 Linux 3.2.0-38-generic-pae #61-Ubuntu SMP Tue Feb 19 12:39:51 UTC 2013 i686",
+    "process_type": "plugin",
+    "processor_notes": "processor_prod-processor-i-9b956941_1507; MozillaProcessorAlgorithm2015; non-integer value of \"SecondsSinceLastCrash\"; skunk_classifier: reject - not a plugin hang",
+    "product": "Firefox",
+    "productid": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+    "proto_signature": "libflashplayer.so@0x798f4d | libflashplayer.so@0x6e46d9 | libflashplayer.so@0x79a49e | libflashplayer.so@0x79c80f | libflashplayer.so@0x797b87 | libflashplayer.so@0x303717 | libflashplayer.so@0x2b86e6 | libflashplayer.so@0x342850 | libflashplayer.so@0x342ecf | libflashplayer.so@0x34381c | libflashplayer.so@0x344260 | libflashplayer.so@0x346ebb | libflashplayer.so@0x391a0f | libflashplayer.so@0x3927f5 | libflashplayer.so@0x5958c2 | libflashplayer.so@0x53352a | g_timeout_dispatch | g_main_context_dispatch | g_main_context_iterate | g_main_context_iteration | base::MessagePumpForUI::RunWithDispatcher | base::MessagePumpForUI::Run | MessageLoop::RunInternal | MessageLoop::Run | XRE_InitChildProcess | main | libc-2.15.so@0x194d2 | libc-2.15.so@0x1a5ff3 | @0xbf97a7b2",
+    "reason": "SIGSEGV",
+    "release_channel": "release",
+    "signature": "libflashplayer.so@0x798f4d",
+    "startedDateTime": "2015-11-30T00:00:11.913955+00:00",
+    "started_datetime": "2015-11-30T00:00:11.913955+00:00",
+    "submitted_timestamp": "2015-11-30T00:00:04.018772+00:00",
+    "success": true,
+    "topmost_filenames": "/build/buildd/glib2.0-2.32.3/./glib/gmain.c",
+    "truncated": false,
+    "uptime": 852,
+    "url": null,
+    "user_comments": null,
+    "user_id": "",
+    "uuid": "51011379-0517-47ff-940f-e7b272151130",
+    "version": "19.0.2"
+}

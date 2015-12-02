@@ -1,0 +1,15 @@
+{
+    "date_key": "151130", 
+    "notes": [], 
+    "os_counters": {
+        "Linux": {
+            "count": 1, 
+            "signatures": {
+                "libflashplayer.so@0x798f4d|SIGSEGV": {
+                    "count": 1, 
+                    "modules": {}
+                }
+            }
+        }
+    }
+}

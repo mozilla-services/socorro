@@ -1,0 +1,354 @@
+{
+    "date_key": "151130", 
+    "notes": [], 
+    "os_counters": {
+        "Linux": {
+            "count": 2, 
+            "signatures": {
+                "OOM | small|SIGSEGV": {
+                    "count": 1, 
+                    "modules": {
+                        "appbar@alot.com": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }
+                    }
+                }, 
+                "shutdownhang | libpthread-2.21.so@0xcda0|SIGSEGV": {
+                    "count": 1, 
+                    "modules": {
+                        "jid1-KYgT07tufVQH4w@jetpack": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "langpack-en-GB@firefox.mozilla.org": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "langpack-en-ZA@firefox.mozilla.org": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "langpack-ru@firefox.mozilla.org": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "langpack-uk@firefox.mozilla.org": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "netvideohunter@netvideohunter.com": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "superstart@enjoyfreeware.org": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "{46551EC9-40F0-4e47-8E18-8E5CF550CFB8}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }, 
+                        "{e7c7d1b3-5984-410e-9f1e-54e3f8490e8e}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 2
+                        }
+                    }
+                }
+            }
+        }, 
+        "Mac OS X": {
+            "count": 4, 
+            "signatures": {
+                "js::GCMarker::processMarkStackTop|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS": {
+                    "count": 1, 
+                    "modules": {
+                        "pado4yeaa@okkmo-ay.net": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "uw9xddfzczlw@k-xzeou.co.uk": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }
+                    }
+                }, 
+                "libdispatch.dylib@0x216b|EXC_BAD_INSTRUCTION / 0x00000001": {
+                    "count": 1, 
+                    "modules": {
+                        "firefox@ghostery.com": {
+                            "in_os_count": 2, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "unloadtab@firefox.ext": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }
+                    }
+                }, 
+                "mozilla::CycleCollectedJSRuntime::DeferredFinalize|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS": {
+                    "count": 1, 
+                    "modules": {
+                        "clickclean@hotcleaner.com": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "client@anonymox.net": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "firefox@ghostery.com": {
+                            "in_os_count": 2, 
+                            "in_os_ratio": 50, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "jid1-F9UJ2thwoAm5gQ@jetpack": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "jid1-G80Ec8LLEbK5fQ@jetpack": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "jid1-HdwPLukcGQeOSh@jetpack": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "jid1-ZAdIEUB7XOzOJw@jetpack": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "{6BB5760D-F97E-421B-AF5B-8457A90C3CED}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "{73a6fe31-595d-460b-a920-fcc0f8843232}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "{DDC359D1-844A-42a7-9AA1-88A850A938A8}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "{E6C1199F-E687-42da-8C24-E7770CC3AE66}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }, 
+                        "{d40f5e7b-d2cf-4856-b441-cc613eeffbe3}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 25, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 4
+                        }
+                    }
+                }, 
+                "shutdownhang | memset | arena_dalloc | mozilla::net::CacheFileChunk::~CacheFileChunk|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS": {
+                    "count": 1, 
+                    "modules": {}
+                }
+            }
+        }, 
+        "Windows NT": {
+            "count": 11, 
+            "signatures": {
+                "OOM | unknown | js::CrashAtUnhandlableOOM | js::irregexp::InterpretedRegExpMacroAssembler::Expand|EXCEPTION_BREAKPOINT": {
+                    "count": 4, 
+                    "modules": {}
+                }, 
+                "mozalloc_abort | NS_DebugBreak | mozilla::layers::PImageBridgeChild::Write|EXCEPTION_BREAKPOINT": {
+                    "count": 1, 
+                    "modules": {
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}": {
+                            "in_os_count": 7, 
+                            "in_os_ratio": 64, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }
+                    }
+                }, 
+                "nvwgf2um.dll@0xe2294|EXCEPTION_ACCESS_VIOLATION_READ": {
+                    "count": 4, 
+                    "modules": {
+                        "light_plugin_D772DC8D6FAF43A29B25C4EBAA5AD1DE@kaspersky.com": {
+                            "in_os_count": 4, 
+                            "in_os_ratio": 36, 
+                            "in_sig_count": 4, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "mozilla_cc2@internetdownloadmanager.com": {
+                            "in_os_count": 4, 
+                            "in_os_ratio": 36, 
+                            "in_sig_count": 4, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}": {
+                            "in_os_count": 7, 
+                            "in_os_ratio": 64, 
+                            "in_sig_count": 4, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }
+                    }
+                }, 
+                "shutdownhang | KiIntSystemCall|EXCEPTION_BREAKPOINT": {
+                    "count": 1, 
+                    "modules": {
+                        "firefox@ghostery.com": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 9, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "https-everywhere@eff.org": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 9, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "{73a6fe31-595d-460b-a920-fcc0f8843232}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 9, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}": {
+                            "in_os_count": 7, 
+                            "in_os_ratio": 64, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }
+                    }
+                }, 
+                "shutdownhang | je_free | nsStringBuffer::Release|EXCEPTION_BREAKPOINT": {
+                    "count": 1, 
+                    "modules": {
+                        "jid0-UVAeBCfd34Kk5usS8A1CBiobvM8@jetpack": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 9, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "{82AF8DCA-6DE9-405D-BD5E-43525BDAD38A}": {
+                            "in_os_count": 1, 
+                            "in_os_ratio": 9, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }, 
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}": {
+                            "in_os_count": 7, 
+                            "in_os_ratio": 64, 
+                            "in_sig_count": 1, 
+                            "in_sig_ratio": 100, 
+                            "osys_count": 11
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
