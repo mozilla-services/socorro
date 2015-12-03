@@ -4,42 +4,40 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Jenkins build script for building Breakpad
+# Build script for building Breakpad
+# Generally run in Taskcluster, but split out to a separate script
+# so it can be run for local builds if necessary without assuming
+# the Taskcluster environment.
 
 # any failures in this script should cause the build to fail
-set -e
+set -v -e -x
+
+export MAKEFLAGS=-j$(getconf _NPROCESSORS_ONLN)
+
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+export PATH=`pwd`/depot_tools:$PATH
 
 # Checkout and build Breakpad
 echo "PREFIX: ${PREFIX:=`pwd`/build/breakpad}"
-svn co http://google-breakpad.googlecode.com/svn/trunk google-breakpad
-cd google-breakpad
+mkdir breakpad
+cd breakpad
+fetch breakpad
+cd src
 mkdir -p ${PREFIX}
-rsync -a --exclude="*.svn" ./src ${PREFIX}/
+rsync -a --exclude="*.git" ./src ${PREFIX}/
 ./configure --prefix=${PREFIX}
 make install
 if test -z "${SKIP_CHECK}"; then
-  #FIXME: Breakpad tests hang on Jenkins CI   
+  #FIXME: get this working again
   #make check
   true
 fi
-svn info | grep Revision | cut -d' ' -f 2 > ${PREFIX}/revision.txt
-cd ..
+git rev-parse master > ${PREFIX}/revision.txt
+cd ../..
 
-# Clone and build exploitable
-if test -d exploitable; then
-  hg -R exploitable pull -u
-else
-  hg clone http://hg.mozilla.org/users/tmielczarek_mozilla.com/exploitable/
-fi
-cd exploitable
-make BREAKPAD_SRCDIR=../google-breakpad BREAKPAD_OBJDIR=../google-breakpad
-cp exploitable ${PREFIX}/bin
-cd ..
-
-cp google-breakpad/src/third_party/libdisasm/libdisasm.a ${PREFIX}/lib/
+cp breakpad/src/src/third_party/libdisasm/libdisasm.a ${PREFIX}/lib/
 
 # Optionally package everything up
 if test -z "${SKIP_TAR}"; then
-  echo "Creating breakpad.tar.gz"
   tar -C ${PREFIX}/.. --mode 755 --owner 0 --group 0 -zcf breakpad.tar.gz `basename ${PREFIX}`
 fi
