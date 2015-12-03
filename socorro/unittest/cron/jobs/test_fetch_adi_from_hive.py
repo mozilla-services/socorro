@@ -14,6 +14,7 @@ from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
+from socorro.cron.jobs.fetch_adi_from_hive import NoRowsWritten
 
 
 class TestFetchADIFromHive(IntegrationTestBase):
@@ -329,3 +330,47 @@ class TestFetchADIFromHive(IntegrationTestBase):
         # We make sure the secondary database class gets used
         # for a `cursor.copy_from()` call.
         ok_(MockedPGConnectionContext.connection.cursor().copy_from.called)
+
+    @mock.patch('socorro.cron.jobs.fetch_adi_from_hive.pyhs2')
+    def test_fetch_with_zero_hive_results(self, fake_hive):
+        config_manager = self._setup_config_manager()
+
+        def return_test_data(fake):
+            # a generator that yields literally nothing
+            # http://stackoverflow.com/a/13243870/205832
+            return
+            yield
+
+        fake_hive.connect.return_value \
+            .cursor.return_value.__iter__ = return_test_data
+
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = self._load_structure()
+            assert information['fetch-adi-from-hive']
+
+            assert information['fetch-adi-from-hive']['last_error']
+            ok_(
+                NoRowsWritten.__name__ in
+                information['fetch-adi-from-hive']['last_error']['type']
+            )
+            assert information['fetch-adi-from-hive']['last_error']
+
+        fake_hive.connect.assert_called_with(
+            database='default',
+            authMechanism='PLAIN',
+            host='localhost',
+            user='socorro',
+            password='ignored',
+            port=10000,
+            timeout=1800000,
+        )
+
+        pgcursor = self.conn.cursor()
+        pgcursor.execute(
+            "select count(*) from raw_adi_logs"
+        )
+        count, = pgcursor.fetchone()
+        eq_(count, 0)

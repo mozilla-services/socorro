@@ -17,6 +17,11 @@ from crontabber.mixins import as_backfill_cron_app
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.external.postgresql.dbapi2_util import execute_no_results
 
+
+class NoRowsWritten(Exception):
+    pass
+
+
 """
  Detailed documentation on columns avaiable from our Hive system at:
  https://intranet.mozilla.org/Metrics/Blocklist
@@ -269,7 +274,8 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                 # By default, if not explicitly set, it'll pick up the same
                 # resource values as the first one.
                 tx_class = (
-                    self.config.secondary_destination.transaction_executor_class
+                    self.config.secondary_destination
+                    .transaction_executor_class
                 )
                 secondary_transaction = tx_class(
                     self.config,
@@ -302,6 +308,7 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                 cur = hive.cursor()
                 query = self.config.query % target_date
                 cur.execute(query)
+                rows_written = 0
                 for row in cur:
                     if None in row:
                         continue
@@ -316,6 +323,10 @@ class FetchADIFromHiveCronApp(BaseCronApp):
                         )
                     )
                     f.write("\n")
+                    rows_written += 1
+
+            if not rows_written:
+                raise NoRowsWritten('hive yielded no rows to write')
 
             for transaction in transactions:
                 transaction(
