@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# This script destroys and then creates a Heroku stage database 
+# This script destroys and then creates a Heroku stage database
 # from a minimal set of tables drawn from our PHX1 stage database.
 
 # To use:
 #
 # 1. Run this script as the 'postgres' user on PHX1 stage
 # 2. Export PGPASSWORD and HEROKU_STAGE_APP
-# 3. Set up ~/.netrc 
+# 3. Set up ~/.netrc
 
 set -e
 set -u
@@ -22,7 +22,7 @@ PYTHON="${VIRTUAL_ENV}/bin/python"
 SLIM_DUMP=slim_socorro_db.dump
 FULL_DUMP=full_socorro_db.dump
 
-# Databases 
+# Databases
 SOURCE_DATABASE=${database:-'breakpad'}
 TEMP_DATABASE=${temp_database:-'socorro_stage_temp'}
 
@@ -109,7 +109,6 @@ pg_dump \
         -t signatures \
         -t skiplist \
         -t special_product_platforms \
-        -t suspicious_crash_signatures \
         -t transform_rules \
         -t update_channel_map \
         -t uptime_levels \
@@ -142,7 +141,7 @@ popd
 
 log "INFO: Removing old ADI to speed up restore"
 # Remove old ADI to help make restore time finite
-$PSQL ${TEMP_DATABASE} -c "DELETE FROM raw_adi where date < now() - '7 days'::interval" 
+$PSQL ${TEMP_DATABASE} -c "DELETE FROM raw_adi where date < now() - '7 days'::interval"
 $PSQL ${TEMP_DATABASE} -c "DELETE FROM raw_adi_logs where report_date < now() - '7 days'::interval"
 
 log "INFO: Creating a full dump of ${TEMP_DATABASE} for restore into Heroku into file ${FULL_DUMP}"

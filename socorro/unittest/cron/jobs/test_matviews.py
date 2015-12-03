@@ -144,7 +144,6 @@ class TestMatviews(IntegrationTestBase):
           'socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|02:00\n'
         )
 
@@ -164,7 +163,6 @@ class TestMatviews(IntegrationTestBase):
                              'home-page-graph-matview',
                              'home-page-graph-matview-build',
                              'tcbs-build-matview',
-                             'explosiveness-matview',
                              'graphics-device-matview',):
 
                 ok_(app_name in information, app_name)

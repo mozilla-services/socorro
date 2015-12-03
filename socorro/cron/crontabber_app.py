@@ -23,13 +23,11 @@ DEFAULT_JOBS = '''
   socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|07:30
   socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|07:30
   socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|05:00
-  socorro.cron.jobs.matviews.ExplosivenessCronApp|1d|07:30
   socorro.cron.jobs.matviews.AndroidDevicesCronApp|1d|05:00
   socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|05:00
   socorro.cron.jobs.matviews.ExploitabilityCronApp|1d|05:00
   socorro.cron.jobs.matviews.CrashAduByBuildSignatureCronApp|1d|07:30
   socorro.cron.jobs.ftpscraper.FTPScraperCronApp|1h
-  socorro.cron.jobs.suspicious_crashes.SuspiciousCrashesApp|1d
   socorro.cron.jobs.serverstatus.ServerStatusCronApp|5m
   socorro.cron.jobs.reprocessingjobs.ReprocessingJobsApp|5m
   socorro.cron.jobs.matviews.SignatureSummaryProductsCronApp|1d|05:00
