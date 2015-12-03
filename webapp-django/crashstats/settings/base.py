@@ -327,8 +327,11 @@ CRASH_ID_PREFIX = 'bp-'
 
 
 # If true, allow robots to spider the site
-ENGAGE_ROBOTS = False
-
+ENGAGE_ROBOTS = config(
+    'ENGAGE_ROBOTS',
+    default=False,
+    cast=bool,
+)
 
 # Base URL for when we use the Bugzilla API
 BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
