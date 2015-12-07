@@ -440,13 +440,6 @@ def frontpage_json(request, default_context=None):
 
 
 @pass_default_context
-def products_list(request, default_context=None):
-    context = default_context or {}
-    context['products'] = context['currentproducts']['products']
-    return render(request, 'crashstats/products_list.html', context)
-
-
-@pass_default_context
 def explosive(request, product=None, versions=None, default_context=None):
     context = default_context or {}
 
