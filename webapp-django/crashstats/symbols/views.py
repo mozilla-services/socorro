@@ -85,7 +85,7 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
     bucket = conn.lookup(bucket_name)
     if bucket is None:
         try:
-            bucket = conn.create_bucket(bucket_name, bucket_location)
+            bucket = conn.create_bucket(bucket_name, location=bucket_location)
         except AttributeError as exception:
             # This extra exception trap is temporary until we can figure
             # out why sometimes we get AttributeErrors here.
