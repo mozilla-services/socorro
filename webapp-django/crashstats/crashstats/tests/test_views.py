@@ -928,42 +928,6 @@ class TestViews(BaseTestViews):
         eq_(selected_product['version'], '20.0')
 
     @mock.patch('requests.get')
-    def test_products_list(self, rget):
-        url = reverse('crashstats:products_list')
-
-        def mocked_get(url, params, **options):
-            if '/products' in url:
-                return Response("""
-                {
-                  "products": [
-                    "WaterWolf",
-                    "Fennec"
-                  ],
-                  "hits": [
-                    {
-                        "sort": "1",
-                        "default_version": "15.0.1",
-                        "release_name": "firefox",
-                        "rapid_release_version": "5.0",
-                        "product_name": "WaterWolf"
-                    },
-                    {
-                        "sort": "3",
-                        "default_version": "10.0.6esr",
-                        "release_name": "mobile",
-                        "rapid_release_version": "5.0",
-                        "product_name": "Fennec"
-                    }],
-                    "total": "2"
-                }
-                """)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-
-    @mock.patch('requests.get')
     def test_gccrashes(self, rget):
         url = reverse('crashstats:gccrashes', args=('WaterWolf',))
         unknown_product_url = reverse('crashstats:gccrashes',
