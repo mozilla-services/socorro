@@ -1,9 +1,7 @@
 {% extends "crashstats_base.html" %}
 {% block site_css %}
   {{ super() }}
-  {% compress css %}
-    <link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/tcr_bybug.less') }}" media="screen" />
-  {% endcompress %}
+  {% stylesheet 'tcr_bybug' %}
 {% endblock %}
 
 {% block page_title %}
@@ -78,8 +76,6 @@ Top Crashing Signatures {% if bug_number %}For Bug {{ bug_number }} {% endif %}
 
 {% block site_js %}
   {{ super() }}
-  {% compress js %}
-  <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/tcr_bybug.js') }}"></script>
-  {% endcompress %}
+  {% javascript 'socorro_utils' %}
+  {% javascript 'tcr_bybug' %}
 {% endblock %}

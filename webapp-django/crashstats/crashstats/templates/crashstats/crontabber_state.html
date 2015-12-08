@@ -6,16 +6,8 @@
 
 {% block site_css %}
   {{ super() }}
-
-  {% compress css %}
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
-  <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
-  {% endcompress %}
-
-  {% compress css %}
-  <link media="screen" href="{{ static('crashstats/css/crontabber_state.css') }}" type="text/css" rel="stylesheet">
-  {% endcompress %}
+  {% stylesheet 'jquery_ui' %}
+  {% stylesheet 'crontabber_state' %}
 {% endblock %}
 
 
@@ -59,12 +51,8 @@
 
 {% block site_js %}
   {{ super() }}
-  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-  <script src="{{ static('crashstats/js/moment.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/underscore-min.js') }}"></script>
-  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-  {% compress js %}
-  <script src="{{ static('crashstats/js/lib/sankey.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/crontabber_state.js') }}"></script>
-  {% endcompress %}
+  {% javascript 'd3' %}
+  {% javascript 'moment' %}
+  {% javascript 'jquery_tablesorter' %}
+  {% javascript 'crontabber_state' %}
 {% endblock %}

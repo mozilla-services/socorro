@@ -102,19 +102,9 @@
 
 {% block site_js %}
   {{ super() }}
-  <!--[if IE]><script type="text/javascript" src="{{ static('crashstats/js/flot-0.7/excanvas.pack.js') }}"></script><![endif]-->
-  <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-
-  {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-  {% endcompress %}
-
-  {% compress js %}
-  <script src="{{ static('crashstats/js/lib/filesize.min.js') }}"></script>
-  <script src="{{ static('crashstats/js/flot-0.7/jquery.flot.pack.js') }}"></script>
-  <script src="{{ static('crashstats/js/timeago/jquery.timeago.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/server_status.js') }}"></script>
-  {% endcompress %}
+  {% javascript 'd3' %}
+  {% javascript 'jquery_tablesorter' %}
+  {% javascript 'status' %}
   <script>
     var waiting_job_count = {{ plot_data.waiting_job_count | json_dumps }};
     var processors_count = {{ plot_data.processors_count | json_dumps }};

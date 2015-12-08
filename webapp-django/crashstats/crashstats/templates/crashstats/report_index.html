@@ -2,32 +2,17 @@
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
-{% endcompress %}
-{% compress css %}
-<style type="text/css">
-    #details th,
-    #metadata th {
-        width: 15%;
-    }
-</style>
-{% endcompress %}
+{% stylesheet 'jquery_ui' %}
+{% stylesheet 'report_index' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
-{% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-{% endcompress %}
-{% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
-{% endcompress %}
+{% javascript 'jquery_ui' %}
+{% javascript 'jquery_tablesorter' %}
+{% javascript 'bugzilla' %}
+{% javascript 'correlation' %}
+{% javascript 'report_index' %}
 {% endblock %}
 
 {% block page_title %}[@ {{ report.signature }}] - {{ report.product }} {{ report.version }} Crash Report - Report ID: {{ report.uuid }}{% endblock %}

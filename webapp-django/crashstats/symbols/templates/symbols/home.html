@@ -2,17 +2,13 @@
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" href="{{ static('symbols/css/home.css') }}" type="text/css">
-{% endcompress %}
+{% stylesheet 'symbols' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
-<script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
-{% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
-{% endcompress %}
+{% javascript 'moment' %}
+{% javascript 'timeutils' %}
 {% endblock %}
 
 {% block content_inner %}

@@ -2,16 +2,9 @@
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/metricsgraphics.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/metricsgraphics_custom.css') }}">
-{% endcompress %}
-{% compress css %}
-<link rel="stylesheet" type="text/less" href="{{ static('crashstats/css/daily.less') }}">
-{% endcompress %}
+{% stylesheet 'jquery_ui' %}
+{% stylesheet 'metricsgraphics' %}
+{% stylesheet 'daily' %}
 {% endblock %}
 
 {% block page_title %}Crashes per Active Daily Install for {{ product }}{% endblock %}
@@ -232,14 +225,10 @@
 
 {% block site_js %}
 {{ super() }}
-{% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-{% endcompress %}
-{% compress js %}
-<script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-<script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
-{% endcompress %}
+{% javascript 'd3' %}
+{% javascript 'metricsgraphics' %}
+{% javascript 'jquery_ui' %}
+{% javascript 'daily' %}
 <script>
     var data = {{ graph_data | json_dumps }};
     window.socGraphByReportType = false;

@@ -2,7 +2,8 @@
 
 {% block page_title %}{{ super() }} - Groups{% endblock %}
 
-{% block site_css %} {{ super() }}
+{% block site_css %}
+{{ super() }}
 <style type="text/css">
     td {
         vertical-align: top
@@ -14,15 +15,7 @@
 
 {% block site_js %}
 {{ super() }}
-{% compress js %}
-<script type="text/javascript">
-    $(function() {
-        $('button[name="edit"]').click(function() {
-            location.href = location.pathname + $(this).val() + '/';
-        });
-    });
-</script>
-{% endcompress %}
+{% javascript 'manage:groups' %}
 {% endblock %}
 
 {% block mainbody %}

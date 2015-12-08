@@ -4,9 +4,7 @@
 
 {% block site_js %}
 {{ super() }}
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/skiplist.js') }}"></script>
-{% endcompress %}
+{% javascript 'manage:skiplist' %}
 {% endblock %}
 
 {% block site_css %}

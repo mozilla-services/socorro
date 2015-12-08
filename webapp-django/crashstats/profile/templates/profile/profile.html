@@ -4,22 +4,13 @@
 
 {% block site_css %}
     {{ super() }}
-
-    {% compress css %}
-<link type="text/css" rel="stylesheet" href="{{ static('profile/css/profile.css') }}">
-    {% endcompress %}
-
+    {% stylesheet 'profile' %}
 {% endblock %}
 
 {% block site_js %}
     {{ super() }}
-
-<script src="{{ static('crashstats/js/moment.min.js') }}"></script>
-
-    {% compress js %}
-<script type="text/javascript" src="{{ static('profile/js/profile.js') }}"></script>
-    {% endcompress %}
-
+    {% javascript 'moment' %}
+    {% javascript 'profile' %}
 {% endblock %}
 
 {% block content %}

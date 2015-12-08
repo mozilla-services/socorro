@@ -14,9 +14,7 @@
 
 {% block site_js %}
 {{ super() }}
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/graphics_devices.js') }}"></script>
-{% endcompress %}
+{% javascript 'manage:graphics_devices' %}
 {% endblock %}
 
 {% block mainbody %}

@@ -6,18 +6,14 @@
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" href="{{ static('tokens/css/home.css') }}" type="text/css">
-{% endcompress %}
+{% stylesheet 'tokens' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
-<script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
-{% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/timeutils.js') }}"></script>
-<script type="text/javascript" src="{{ static('tokens/js/home.js') }}"></script>
-{% endcompress %}
+{% javascript 'moment' %}
+{% javascript 'timeutils' %}
+{% javascript 'tokens' %}
 {% endblock %}
 
 {% block content %}

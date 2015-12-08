@@ -6,12 +6,8 @@
 
 {% block site_js %}
     {{ super() }}
-
-    {% compress js %}
-<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
-<script src="{{ static('manage/js/supersearch_field.js') }}"></script>
-    {% endcompress %}
-
+    {% javascript 'select2' %}
+    {% javascript 'manage:supersearch_field' %}
 <script>
 var ALL_PERMISSIONS = {{ all_permissions | json_dumps }};
 </script>
@@ -19,13 +15,8 @@ var ALL_PERMISSIONS = {{ all_permissions | json_dumps }};
 
 {% block site_css %}
     {{ super() }}
-
-    {% compress css %}
-<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
-    {% endcompress %}
-    {% compress css %}
-<link href="{{ static('manage/css/supersearch_fields.less') }}" type="text/less" rel="stylesheet">
-    {% endcompress %}
+    {% stylesheet 'select2' %}
+    {% stylesheet 'manage:supersearch_fields' %}
 {% endblock %}
 
 {% block mainbody %}
