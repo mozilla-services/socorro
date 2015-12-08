@@ -9,5 +9,7 @@ set -ex
 wget --no-check-certificate 'https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.4.5.tar.gz'
 tar zxf elasticsearch-1.4.5.tar.gz
 echo "script.disable_dynamic: false" > elasticsearch.yml
+echo "index.number_of_shards: 1" >> elasticsearch.yml
+echo "index.number_of_replicas: 0" >> elasticsearch.yml
 # the -d flag starts it as a daemon in the background
 ./elasticsearch-1.4.5/bin/elasticsearch -d --config=elasticsearch.yml
