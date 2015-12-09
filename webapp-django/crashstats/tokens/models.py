@@ -19,7 +19,7 @@ def make_key():
 class TokenManager(models.Manager):
 
     def active(self):
-        return self.get_query_set().filter(expires__gt=timezone.now())
+        return self.get_queryset().filter(expires__gt=timezone.now())
 
 
 class Token(models.Model):
