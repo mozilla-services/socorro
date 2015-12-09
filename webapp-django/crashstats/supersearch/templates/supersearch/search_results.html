@@ -32,7 +32,6 @@
                             {{ crash[column] | human_readable_iso_date }}
                         {% elif column == 'signature' %}
                         <a
-                        {% if waffle.switch('signature-report') %}
                             href="{{ url('signature:signature_report') }}{{ change_query_string(
                                 _no_base=True,
                                 signature=crash.signature,
@@ -40,9 +39,6 @@
                                 _columns=None,
                                 _facets=None
                             ) }}"
-                        {% else %}
-                            href="{{ url('crashstats:report_list') }}?signature={{ crash.signature | urlencode }}&amp;{{ report_list_query_string }}"
-                        {% endif %}
                             title="Click to leave this search and go to this signature report"
                         >
                             {{ crash[column] }}

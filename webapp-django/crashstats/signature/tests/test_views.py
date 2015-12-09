@@ -5,8 +5,6 @@ from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
-from waffle.models import Switch
-
 from crashstats.supersearch.models import SuperSearch
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 
@@ -15,39 +13,6 @@ DUMB_SIGNATURE = 'mozilla::wow::such_signature(smth*)'
 
 
 class TestViews(BaseTestViews):
-
-    @classmethod
-    def setUpClass(cls):
-        super(cls, TestViews).setUpClass()
-        TestViews.switch = Switch.objects.create(
-            name='signature-report',
-            active=True,
-        )
-
-    @classmethod
-    def tearDownClass(cls):
-        TestViews.switch.delete()
-        super(cls, TestViews).tearDownClass()
-
-    def test_waffle_switch(self):
-        # Deactivate the switch to verify it's not accessible.
-        TestViews.switch.active = False
-        TestViews.switch.save()
-
-        url = reverse('signature:signature_report')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        url = reverse('signature:signature_reports')
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        url = reverse('signature:signature_aggregation', args=('some_agg',))
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        TestViews.switch.active = True
-        TestViews.switch.save()
 
     def test_signature_report(self):
         url = reverse('signature:signature_report')

@@ -9,8 +9,6 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render
 from django.conf import settings
 
-from waffle.decorators import waffle_switch
-
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
@@ -61,7 +59,6 @@ def pass_validated_params(view):
     return inner
 
 
-@waffle_switch('signature-report')
 @pass_validated_params
 @pass_default_context
 def signature_report(request, params, default_context=None):
@@ -102,7 +99,6 @@ def signature_report(request, params, default_context=None):
     return render(request, 'signature/signature_report.html', context)
 
 
-@waffle_switch('signature-report')
 @pass_validated_params
 def signature_reports(request, params):
     '''Return the results of a search. '''
@@ -191,7 +187,6 @@ def signature_reports(request, params):
     return render(request, 'signature/signature_reports.html', data)
 
 
-@waffle_switch('signature-report')
 @pass_validated_params
 def signature_aggregation(request, params, aggregation):
     '''Return the aggregation of a field. '''
@@ -236,7 +231,6 @@ def signature_aggregation(request, params, aggregation):
     return render(request, 'signature/signature_aggregation.html', data)
 
 
-@waffle_switch('signature-report')
 @utils.json_view
 @pass_validated_params
 def signature_graphs(request, params, field):
@@ -280,7 +274,6 @@ def signature_graphs(request, params, field):
     return data
 
 
-@waffle_switch('signature-report')
 @pass_validated_params
 def signature_comments(request, params):
     '''Return a list of non-empty comments. '''
@@ -344,7 +337,6 @@ def signature_comments(request, params):
     return render(request, 'signature/signature_comments.html', data)
 
 
-@waffle_switch('signature-report')
 @utils.json_view
 @pass_validated_params
 def signature_graph_data(request, params, channel):
@@ -413,7 +405,6 @@ def signature_graph_data(request, params, channel):
     return data
 
 
-@waffle_switch('signature-report')
 @pass_validated_params
 def signature_summary(request, params):
     '''Return a list of specific aggregations. '''
