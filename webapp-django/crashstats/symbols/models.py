@@ -61,9 +61,21 @@ class UploadedSymbols(crashstats_models.SocorroMiddleware):
     def get(self, **kwargs):
         # Note! This API is not cached.
 
+        # We're going to compare a datetime.date with a timezone aware
+        # datetime.datetime object, so we need to convert the datetime.date.
+        start_date = datetime.datetime.combine(
+            kwargs['start_date'],
+            datetime.datetime.min.time()
+        )
+        end_date = datetime.datetime.combine(
+            kwargs['end_date'],
+            datetime.datetime.min.time()
+        )
+        start_date = start_date.replace(tzinfo=timezone.utc)
+        end_date = end_date.replace(tzinfo=timezone.utc)
         query = SymbolsUpload.objects.filter(
-            created__gte=kwargs['start_date'],
-            created__lt=kwargs['end_date'] + datetime.timedelta(days=1),
+            created__gte=start_date,
+            created__lt=end_date + datetime.timedelta(days=1),
         ).order_by('-created')
         if kwargs.get('user_search'):
             query = query.filter(user__email__icontains=kwargs['user_search'])
