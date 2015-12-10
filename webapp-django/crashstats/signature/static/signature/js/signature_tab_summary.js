@@ -18,3 +18,13 @@ SignatureReport.SummaryTab = function(tabName) {
 };
 
 SignatureReport.SummaryTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
+
+SignatureReport.SummaryTab.prototype.onAjaxSuccess = function (contentElement, data) {
+    SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
+
+    $(contentElement).on('click', '.panel header', function (e) {
+        e.preventDefault();
+        $('.content', $(this).parent()).toggle();
+        $('.options', this).toggleClass('hide');
+    });
+};

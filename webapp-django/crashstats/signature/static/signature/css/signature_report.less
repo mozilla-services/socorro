@@ -112,6 +112,14 @@ section.summary-panel {
         }
     }
 }
+section.summary-panel .panel {
+    header {
+        cursor: pointer;
+    }
+    .content {
+        display: none;
+    }
+}
 
 .graph-panel {
     .controls {
@@ -135,8 +143,7 @@ section.summary-panel {
 }
 
 .tab-inner-panel {
-    .delete {
-        background-image: url('../../img/3rdparty/silk/cross.png');
+    .options {
         display: inline-block;
         float: right;
         height: 16px;
@@ -144,8 +151,18 @@ section.summary-panel {
         padding: 4px;
         text-indent: -9999px;
         width: 16px;
+
+        &.delete {
+            background-image: url('../../img/3rdparty/silk/cross.png');
+        }
+        &.show {
+            background-image: url('../../img/3rdparty/silk/resultset_previous.png');
+        }
+        &.hide {
+            background-image: url('../../img/3rdparty/silk/arrow_bottom.png');
+        }
     }
-    .delete:hover {
+    .options:hover {
         cursor: pointer;
     }
 }
