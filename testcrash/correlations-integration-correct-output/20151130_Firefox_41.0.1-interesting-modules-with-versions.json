@@ -1,0 +1,15 @@
+{
+    "date_key": "151130", 
+    "notes": [], 
+    "os_counters": {
+        "Windows NT": {
+            "count": 3, 
+            "signatures": {
+                "fsdomnodefirefox.dll@0x67e7|EXCEPTION_ACCESS_VIOLATION_WRITE": {
+                    "count": 3, 
+                    "modules": {}
+                }
+            }
+        }
+    }
+}

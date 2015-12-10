@@ -1,0 +1,15 @@
+{
+    "date_key": "151130", 
+    "notes": [], 
+    "os_counters": {
+        "Linux": {
+            "count": 1, 
+            "signatures": {
+                "js_compare_strings|SIGSEGV": {
+                    "count": 1, 
+                    "modules": {}
+                }
+            }
+        }
+    }
+}

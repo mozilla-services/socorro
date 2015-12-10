@@ -1,0 +1,2108 @@
+{
+    "ReleaseChannel": "release",
+    "Winsock_LSP": null,
+    "additional_minidumps": [],
+    "addons": [],
+    "addons_checked": true,
+    "address": "0x44d00000",
+    "app_notes": "",
+    "build": "20110415172201",
+    "client_crash_date": "2015-11-29T23:59:55+00:00",
+    "completed_datetime": "2015-11-30T00:00:32.598350+00:00",
+    "completeddatetime": "2015-11-30T00:00:32.598350+00:00",
+    "cpu_info": "ARMv0 | 0",
+    "cpu_name": "arm",
+    "crash_id": "66c85e0e-8947-48bb-b3c1-a73a62151130",
+    "crash_time": 1448841595,
+    "crashedThread": 0,
+    "date_processed": "2015-11-30T00:00:22.981651+00:00",
+    "distributor": null,
+    "distributor_version": null,
+    "email": null,
+    "flash_version": "[blank]",
+    "hang_type": 0,
+    "hangid": null,
+    "install_age": 5617189,
+    "java_stack_trace": null,
+    "json_dump": {
+        "crash_info": {
+            "address": "0x44d00000",
+            "crashing_thread": 0,
+            "type": "SIGSEGV"
+        },
+        "crashing_thread": {
+            "frames": [
+                {
+                    "frame": 0,
+                    "missing_symbols": true,
+                    "module": "libc.so",
+                    "module_offset": "0xe324",
+                    "offset": "0x40012324",
+                    "registers": {
+                        "fp": "0x44491168",
+                        "lr": "0x01010101",
+                        "pc": "0x40012324",
+                        "r0": "0x01000101",
+                        "r1": "0x44cffffd",
+                        "r10": "0x46473400",
+                        "r12": "0x444911a8",
+                        "r2": "0x4300736a",
+                        "r3": "0x2e396636",
+                        "r4": "0x4b2ac363",
+                        "r5": "0x434ca900",
+                        "r6": "0x44cfffb0",
+                        "r7": "0x4647349c",
+                        "r8": "0x4647349c",
+                        "r9": "0x00000027",
+                        "sp": "0xbeffcfe4"
+                    },
+                    "trust": "context"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsscript.cpp:adb5ab01eb86",
+                    "frame": 1,
+                    "function": "js_compare_strings",
+                    "function_offset": "0x5",
+                    "line": 802,
+                    "module": "libxul.so",
+                    "module_offset": "0xa86ee1",
+                    "offset": "0x71a86ee1",
+                    "trust": "scan"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jshash.cpp:adb5ab01eb86",
+                    "frame": 2,
+                    "function": "JS_HashTableRawLookup",
+                    "function_offset": "0x41",
+                    "line": 179,
+                    "module": "libxul.so",
+                    "module_offset": "0xa2a571",
+                    "offset": "0x71a2a571",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsscript.cpp:adb5ab01eb86",
+                    "frame": 3,
+                    "function": "JSScript::NewScriptFromCG",
+                    "function_offset": "0x2e9",
+                    "line": 927,
+                    "module": "libxul.so",
+                    "module_offset": "0xa89c0d",
+                    "offset": "0x71a89c0d",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                    "frame": 4,
+                    "function": "js_EmitFunctionScript",
+                    "function_offset": "0x9d",
+                    "line": 3671,
+                    "module": "libxul.so",
+                    "module_offset": "0xa16e69",
+                    "offset": "0x71a16e69",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                    "frame": 5,
+                    "function": "js_EmitTree",
+                    "function_offset": "0x3a11",
+                    "line": 4633,
+                    "module": "libxul.so",
+                    "module_offset": "0xa14b8d",
+                    "offset": "0x71a14b8d",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                    "frame": 6,
+                    "function": "EmitVariables",
+                    "function_offset": "0x337",
+                    "line": 4280,
+                    "module": "libxul.so",
+                    "module_offset": "0xa10eaf",
+                    "offset": "0x71a10eaf",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                    "frame": 7,
+                    "function": "js_EmitTree",
+                    "function_offset": "0xd83",
+                    "line": 5758,
+                    "module": "libxul.so",
+                    "module_offset": "0xa11eff",
+                    "offset": "0x71a11eff",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsparse.cpp:adb5ab01eb86",
+                    "frame": 8,
+                    "function": "js::Compiler::compileScript",
+                    "function_offset": "0x365",
+                    "line": 1032,
+                    "module": "libxul.so",
+                    "module_offset": "0xa67c79",
+                    "offset": "0x71a67c79",
+                    "trust": "cfi"
+                },
+                {
+                    "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsapi.cpp:adb5ab01eb86",
+                    "frame": 9,
+                    "function": "JS_EvaluateUCScriptForPrincipalsVersion",
+                    "function_offset": "0x79",
+                    "line": 5053,
+                    "module": "libxul.so",
+                    "module_offset": "0x9df599",
+                    "offset": "0x719df599",
+                    "trust": "cfi"
+                }
+            ],
+            "threads_index": 0,
+            "total_frames": 44
+        },
+        "main_module": 0,
+        "modules": [
+            {
+                "base_addr": "0x8000",
+                "code_id": "id",
+                "debug_file": "plugin-container",
+                "debug_id": "1C17541FEE0083D261A250776CD7C6850",
+                "end_addr": "0xb000",
+                "filename": "plugin-container",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x40000000",
+                "code_id": "id",
+                "debug_file": "liblog.so",
+                "debug_id": "B6EEF73AF6F95BFA3BB6F2724AAB9EA40",
+                "end_addr": "0x40003000",
+                "filename": "liblog.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40004000",
+                "code_id": "id",
+                "debug_file": "libc.so",
+                "debug_id": "EFAD7F1A07FB04323E360DB63D38990D0",
+                "end_addr": "0x40046000",
+                "filename": "libc.so",
+                "missing_symbols": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x40054000",
+                "code_id": "id",
+                "debug_file": "__properties__ (deleted)",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0x4005f000",
+                "filename": "__properties__ (deleted)",
+                "version": ""
+            },
+            {
+                "base_addr": "0x4005f000",
+                "code_id": "id",
+                "debug_file": "libstdc++.so",
+                "debug_id": "8C977A85FD643F8C05BE719C0757167C0",
+                "end_addr": "0x40060000",
+                "filename": "libstdc++.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40061000",
+                "code_id": "id",
+                "debug_file": "libm.so",
+                "debug_id": "3E59540B9C24EE84316520DA66D4919C0",
+                "end_addr": "0x40076000",
+                "filename": "libm.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40078000",
+                "code_id": "id",
+                "debug_file": "libmozutils.so",
+                "debug_id": "40857F9FDA5961BA465B3F63A0D241770",
+                "end_addr": "0x40082000",
+                "filename": "libmozutils.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x4008b000",
+                "code_id": "id",
+                "debug_file": "libz.so",
+                "debug_id": "8CAF68B6ABE39522E68DA71F364D991B0",
+                "end_addr": "0x400a2000",
+                "filename": "libz.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x400a3000",
+                "code_id": "id",
+                "debug_file": "mozilla.firefox.apk",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0x40e7a000",
+                "filename": "mozilla.firefox.apk",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40e7a000",
+                "code_id": "id",
+                "debug_file": "libGLESv2.so",
+                "debug_id": "FE1D03D6F67A0FC22F302CFB24B160150",
+                "end_addr": "0x40e7e000",
+                "filename": "libGLESv2.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40e8b000",
+                "code_id": "id",
+                "debug_file": "libplc4.so",
+                "debug_id": "D4F3C8E9B2EC9DE78F4359C6DF0DABEF0",
+                "end_addr": "0x40e8d000",
+                "filename": "libplc4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40e8e000",
+                "code_id": "id",
+                "debug_file": "libplds4.so",
+                "debug_id": "A9BE3ED19F7F441CF2547B0E578C7DF60",
+                "end_addr": "0x40e90000",
+                "filename": "libplds4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40e9b000",
+                "code_id": "id",
+                "debug_file": "libmozalloc.so",
+                "debug_id": "B6A1099C193E18FBA87E2060821B2BBA0",
+                "end_addr": "0x40ea7000",
+                "filename": "libmozalloc.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40ea9000",
+                "code_id": "id",
+                "debug_file": "libnspr4.so",
+                "debug_id": "3EB2F5604A1E3692FDF6C645F54D645D0",
+                "end_addr": "0x40ec9000",
+                "filename": "libnspr4.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x40ecc000",
+                "code_id": "id",
+                "debug_file": "libmozsqlite3.so",
+                "debug_id": "C5DEE8A4A05027233EA5CE59B33B559A0",
+                "end_addr": "0x40f24000",
+                "filename": "libmozsqlite3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40f26000",
+                "code_id": "id",
+                "debug_file": "libsmime3.so",
+                "debug_id": "80E7DD4B91ADC045DA70F26975607AE10",
+                "end_addr": "0x40f3a000",
+                "filename": "libsmime3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40f3d000",
+                "code_id": "id",
+                "debug_file": "libssl3.so",
+                "debug_id": "E7232AB0C46A945FB9C6A8ED210C4A3F0",
+                "end_addr": "0x40f59000",
+                "filename": "libssl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40f66000",
+                "code_id": "id",
+                "debug_file": "libnssutil3.so",
+                "debug_id": "1DA667D74538ED0303FFADCB23B89B7F0",
+                "end_addr": "0x40f74000",
+                "filename": "libnssutil3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x40f78000",
+                "code_id": "id",
+                "debug_file": "libnss3.so",
+                "debug_id": "6AD798EB0CA4C5672AD6E97BB23AA43E0",
+                "end_addr": "0x4100e000",
+                "filename": "libnss3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x41013000",
+                "code_id": "id",
+                "debug_file": "mozilla.firefox.apk",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0x41dea000",
+                "filename": "mozilla.firefox.apk",
+                "version": ""
+            },
+            {
+                "base_addr": "0x41fdb000",
+                "code_id": "id",
+                "debug_file": "libcutils.so",
+                "debug_id": "A880DE3280E0304585EAAFE9948496A20",
+                "end_addr": "0x41fea000",
+                "filename": "libcutils.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x41ffa000",
+                "code_id": "id",
+                "debug_file": "libEGL.so",
+                "debug_id": "D327FA7C205BEA32FA8BA8EC745A84C80",
+                "end_addr": "0x4201a000",
+                "filename": "libEGL.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x42020000",
+                "code_id": "id",
+                "debug_file": "libutils.so",
+                "debug_id": "CB05E5B01A0BE3C27D597C9C428F67C60",
+                "end_addr": "0x4204d000",
+                "filename": "libutils.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x4204f000",
+                "code_id": "id",
+                "debug_file": "libGLESv2_dbg.so",
+                "debug_id": "CA9529136EF86A9A7093786C7D006D850",
+                "end_addr": "0x4206f000",
+                "filename": "libGLESv2_dbg.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x42071000",
+                "code_id": "id",
+                "debug_file": "libstlport.so",
+                "debug_id": "4348887652A439E3BCCCBC796E5BBC600",
+                "end_addr": "0x420a3000",
+                "filename": "libstlport.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x42300000",
+                "code_id": "id",
+                "debug_file": "libxul.so",
+                "debug_id": "19CA7F32A5ACE9FBBBEB618A01DAC8650",
+                "end_addr": "0x43192000",
+                "filename": "libxul.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x45d00000",
+                "code_id": "id",
+                "debug_file": "ashmem (deleted)",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0x46071000",
+                "filename": "ashmem (deleted)",
+                "version": ""
+            },
+            {
+                "base_addr": "0x46071000",
+                "code_id": "id",
+                "debug_file": "ashmem (deleted)",
+                "debug_id": "000000000000000000000000000000000",
+                "end_addr": "0x463e2000",
+                "filename": "ashmem (deleted)",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70000000",
+                "code_id": "id",
+                "debug_file": "libmozalloc.so",
+                "debug_id": "B6A1099C193E18FBA87E2060821B2BBA0",
+                "end_addr": "0x7000c000",
+                "filename": "libmozalloc.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x7000c000",
+                "code_id": "id",
+                "debug_file": "libmozalloc.so",
+                "debug_id": "B6A1099C193E18FBA87E2060821B2BBA0",
+                "end_addr": "0x7000d000",
+                "filename": "libmozalloc.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70100000",
+                "code_id": "id",
+                "debug_file": "libnspr4.so",
+                "debug_id": "3EB2F5604A1E3692FDF6C645F54D645D0",
+                "end_addr": "0x70120000",
+                "filename": "libnspr4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70120000",
+                "code_id": "id",
+                "debug_file": "libnspr4.so",
+                "debug_id": "3EB2F5604A1E3692FDF6C645F54D645D0",
+                "end_addr": "0x70122000",
+                "filename": "libnspr4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70200000",
+                "code_id": "id",
+                "debug_file": "libplc4.so",
+                "debug_id": "D4F3C8E9B2EC9DE78F4359C6DF0DABEF0",
+                "end_addr": "0x70202000",
+                "filename": "libplc4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70202000",
+                "code_id": "id",
+                "debug_file": "libplc4.so",
+                "debug_id": "D4F3C8E9B2EC9DE78F4359C6DF0DABEF0",
+                "end_addr": "0x70203000",
+                "filename": "libplc4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70300000",
+                "code_id": "id",
+                "debug_file": "libplds4.so",
+                "debug_id": "A9BE3ED19F7F441CF2547B0E578C7DF60",
+                "end_addr": "0x70302000",
+                "filename": "libplds4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70302000",
+                "code_id": "id",
+                "debug_file": "libplds4.so",
+                "debug_id": "A9BE3ED19F7F441CF2547B0E578C7DF60",
+                "end_addr": "0x70303000",
+                "filename": "libplds4.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70400000",
+                "code_id": "id",
+                "debug_file": "libmozsqlite3.so",
+                "debug_id": "C5DEE8A4A05027233EA5CE59B33B559A0",
+                "end_addr": "0x70458000",
+                "filename": "libmozsqlite3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70458000",
+                "code_id": "id",
+                "debug_file": "libmozsqlite3.so",
+                "debug_id": "C5DEE8A4A05027233EA5CE59B33B559A0",
+                "end_addr": "0x7045a000",
+                "filename": "libmozsqlite3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70500000",
+                "code_id": "id",
+                "debug_file": "libnssutil3.so",
+                "debug_id": "1DA667D74538ED0303FFADCB23B89B7F0",
+                "end_addr": "0x7050e000",
+                "filename": "libnssutil3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x7050e000",
+                "code_id": "id",
+                "debug_file": "libnssutil3.so",
+                "debug_id": "1DA667D74538ED0303FFADCB23B89B7F0",
+                "end_addr": "0x70511000",
+                "filename": "libnssutil3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70600000",
+                "code_id": "id",
+                "debug_file": "libnss3.so",
+                "debug_id": "6AD798EB0CA4C5672AD6E97BB23AA43E0",
+                "end_addr": "0x70696000",
+                "filename": "libnss3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70696000",
+                "code_id": "id",
+                "debug_file": "libnss3.so",
+                "debug_id": "6AD798EB0CA4C5672AD6E97BB23AA43E0",
+                "end_addr": "0x7069a000",
+                "filename": "libnss3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70700000",
+                "code_id": "id",
+                "debug_file": "libssl3.so",
+                "debug_id": "E7232AB0C46A945FB9C6A8ED210C4A3F0",
+                "end_addr": "0x7071c000",
+                "filename": "libssl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x7071c000",
+                "code_id": "id",
+                "debug_file": "libssl3.so",
+                "debug_id": "E7232AB0C46A945FB9C6A8ED210C4A3F0",
+                "end_addr": "0x7071e000",
+                "filename": "libssl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70800000",
+                "code_id": "id",
+                "debug_file": "libsmime3.so",
+                "debug_id": "80E7DD4B91ADC045DA70F26975607AE10",
+                "end_addr": "0x70814000",
+                "filename": "libsmime3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70814000",
+                "code_id": "id",
+                "debug_file": "libsmime3.so",
+                "debug_id": "80E7DD4B91ADC045DA70F26975607AE10",
+                "end_addr": "0x70817000",
+                "filename": "libsmime3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70900000",
+                "code_id": "id",
+                "debug_file": "libxpcom.so",
+                "debug_id": "681BC1987613DC4D04D1298ADC7DA0A50",
+                "end_addr": "0x70902000",
+                "filename": "libxpcom.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70902000",
+                "code_id": "id",
+                "debug_file": "libxpcom.so",
+                "debug_id": "681BC1987613DC4D04D1298ADC7DA0A50",
+                "end_addr": "0x70904000",
+                "filename": "libxpcom.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70a00000",
+                "code_id": "id",
+                "debug_file": "libnssckbi.so",
+                "debug_id": "E98700F8A09547DECA4B91E4AE357BFD0",
+                "end_addr": "0x70a47000",
+                "filename": "libnssckbi.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70a47000",
+                "code_id": "id",
+                "debug_file": "libnssckbi.so",
+                "debug_id": "E98700F8A09547DECA4B91E4AE357BFD0",
+                "end_addr": "0x70a54000",
+                "filename": "libnssckbi.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70b00000",
+                "code_id": "id",
+                "debug_file": "libfreebl3.so",
+                "debug_id": "AEEF48C6326C05028B0460076F1838BD0",
+                "end_addr": "0x70b44000",
+                "filename": "libfreebl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70b44000",
+                "code_id": "id",
+                "debug_file": "libfreebl3.so",
+                "debug_id": "AEEF48C6326C05028B0460076F1838BD0",
+                "end_addr": "0x70b45000",
+                "filename": "libfreebl3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70c00000",
+                "code_id": "id",
+                "debug_file": "libsoftokn3.so",
+                "debug_id": "692EE4AA77D32E0754F757DF319D59470",
+                "end_addr": "0x70c21000",
+                "filename": "libsoftokn3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x70c21000",
+                "code_id": "id",
+                "debug_file": "libsoftokn3.so",
+                "debug_id": "692EE4AA77D32E0754F757DF319D59470",
+                "end_addr": "0x70c23000",
+                "filename": "libsoftokn3.so",
+                "version": ""
+            },
+            {
+                "base_addr": "0x71000000",
+                "code_id": "id",
+                "debug_file": "libxul.so",
+                "debug_id": "19CA7F32A5ACE9FBBBEB618A01DAC8650",
+                "end_addr": "0x71e92000",
+                "filename": "libxul.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": false,
+                "symbol_fetch_time": 664.5889892578125,
+                "version": ""
+            },
+            {
+                "base_addr": "0x71e92000",
+                "code_id": "id",
+                "debug_file": "libxul.so",
+                "debug_id": "19CA7F32A5ACE9FBBBEB618A01DAC8650",
+                "end_addr": "0x71fbd000",
+                "filename": "libxul.so",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": false,
+                "symbol_fetch_time": 664.5889892578125,
+                "version": ""
+            }
+        ],
+        "status": "OK",
+        "system_info": {
+            "cpu_arch": "arm",
+            "cpu_count": 0,
+            "cpu_info": "ARMv0",
+            "os": "Linux",
+            "os_ver": "0.0.0 Linux 3.0.8-svn544 #11 SMP PREEMPT Tue Sep 18 19:24:50 HKT 2012 armv7l"
+        },
+        "thread_count": 9,
+        "threads": [
+            {
+                "frame_count": 44,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xe324",
+                        "normalized": "libc.so@0xe324",
+                        "offset": "0x40012324",
+                        "trust": "context"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsscript.cpp:adb5ab01eb86",
+                        "frame": 1,
+                        "function": "js_compare_strings",
+                        "function_offset": "0x5",
+                        "line": 802,
+                        "module": "libxul.so",
+                        "module_offset": "0xa86ee1",
+                        "normalized": "js_compare_strings",
+                        "offset": "0x71a86ee1",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jshash.cpp:adb5ab01eb86",
+                        "frame": 2,
+                        "function": "JS_HashTableRawLookup",
+                        "function_offset": "0x41",
+                        "line": 179,
+                        "module": "libxul.so",
+                        "module_offset": "0xa2a571",
+                        "normalized": "JS_HashTableRawLookup",
+                        "offset": "0x71a2a571",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsscript.cpp:adb5ab01eb86",
+                        "frame": 3,
+                        "function": "JSScript::NewScriptFromCG",
+                        "function_offset": "0x2e9",
+                        "line": 927,
+                        "module": "libxul.so",
+                        "module_offset": "0xa89c0d",
+                        "normalized": "JSScript::NewScriptFromCG",
+                        "offset": "0x71a89c0d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                        "frame": 4,
+                        "function": "js_EmitFunctionScript",
+                        "function_offset": "0x9d",
+                        "line": 3671,
+                        "module": "libxul.so",
+                        "module_offset": "0xa16e69",
+                        "normalized": "js_EmitFunctionScript",
+                        "offset": "0x71a16e69",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                        "frame": 5,
+                        "function": "js_EmitTree",
+                        "function_offset": "0x3a11",
+                        "line": 4633,
+                        "module": "libxul.so",
+                        "module_offset": "0xa14b8d",
+                        "normalized": "js_EmitTree",
+                        "offset": "0x71a14b8d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                        "frame": 6,
+                        "function": "EmitVariables",
+                        "function_offset": "0x337",
+                        "line": 4280,
+                        "module": "libxul.so",
+                        "module_offset": "0xa10eaf",
+                        "normalized": "EmitVariables",
+                        "offset": "0x71a10eaf",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsemit.cpp:adb5ab01eb86",
+                        "frame": 7,
+                        "function": "js_EmitTree",
+                        "function_offset": "0xd83",
+                        "line": 5758,
+                        "module": "libxul.so",
+                        "module_offset": "0xa11eff",
+                        "normalized": "js_EmitTree",
+                        "offset": "0x71a11eff",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsparse.cpp:adb5ab01eb86",
+                        "frame": 8,
+                        "function": "js::Compiler::compileScript",
+                        "function_offset": "0x365",
+                        "line": 1032,
+                        "module": "libxul.so",
+                        "module_offset": "0xa67c79",
+                        "normalized": "js::Compiler::compileScript",
+                        "offset": "0x71a67c79",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsapi.cpp:adb5ab01eb86",
+                        "frame": 9,
+                        "function": "JS_EvaluateUCScriptForPrincipalsVersion",
+                        "function_offset": "0x79",
+                        "line": 5053,
+                        "module": "libxul.so",
+                        "module_offset": "0x9df599",
+                        "normalized": "JS_EvaluateUCScriptForPrincipalsVersion",
+                        "offset": "0x719df599",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:dom/base/nsJSEnvironment.cpp:adb5ab01eb86",
+                        "frame": 10,
+                        "function": "nsJSContext::EvaluateString",
+                        "function_offset": "0x1ef",
+                        "line": 1460,
+                        "module": "libxul.so",
+                        "module_offset": "0x5253e7",
+                        "normalized": "nsJSContext::EvaluateString",
+                        "offset": "0x715253e7",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:content/base/src/nsScriptLoader.cpp:adb5ab01eb86",
+                        "frame": 11,
+                        "function": "nsScriptLoader::EvaluateScript",
+                        "function_offset": "0x145",
+                        "line": 906,
+                        "module": "libxul.so",
+                        "module_offset": "0x42f185",
+                        "normalized": "nsScriptLoader::EvaluateScript",
+                        "offset": "0x7142f185",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:content/base/src/nsScriptLoader.cpp:adb5ab01eb86",
+                        "frame": 12,
+                        "function": "nsScriptLoader::ProcessRequest",
+                        "function_offset": "0x111",
+                        "line": 799,
+                        "module": "libxul.so",
+                        "module_offset": "0x42f329",
+                        "normalized": "nsScriptLoader::ProcessRequest",
+                        "offset": "0x7142f329",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:content/base/src/nsScriptLoader.cpp:adb5ab01eb86",
+                        "frame": 13,
+                        "function": "nsScriptLoader::ProcessPendingRequests",
+                        "function_offset": "0x23",
+                        "line": 949,
+                        "module": "libxul.so",
+                        "module_offset": "0x4305cb",
+                        "normalized": "nsScriptLoader::ProcessPendingRequests",
+                        "offset": "0x714305cb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:content/base/src/nsScriptLoader.cpp:adb5ab01eb86",
+                        "frame": 14,
+                        "function": "nsScriptLoader::OnStreamComplete",
+                        "function_offset": "0xad",
+                        "line": 1183,
+                        "module": "libxul.so",
+                        "module_offset": "0x430841",
+                        "normalized": "nsScriptLoader::OnStreamComplete",
+                        "offset": "0x71430841",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/base/src/nsStreamLoader.cpp:adb5ab01eb86",
+                        "frame": 15,
+                        "function": "nsStreamLoader::OnStopRequest",
+                        "function_offset": "0x29",
+                        "line": 125,
+                        "module": "libxul.so",
+                        "module_offset": "0x233995",
+                        "normalized": "nsStreamLoader::OnStopRequest",
+                        "offset": "0x71233995",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/streamconv/converters/nsHTTPCompressConv.cpp:adb5ab01eb86",
+                        "frame": 16,
+                        "function": "nsHTTPCompressConv::OnStopRequest",
+                        "function_offset": "0xd",
+                        "line": 127,
+                        "module": "libxul.so",
+                        "module_offset": "0x23f995",
+                        "normalized": "nsHTTPCompressConv::OnStopRequest",
+                        "offset": "0x7123f995",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/protocol/http/HttpChannelChild.cpp:adb5ab01eb86",
+                        "frame": 17,
+                        "function": "mozilla::net::HttpChannelChild::OnStopRequest",
+                        "function_offset": "0x6b",
+                        "line": 385,
+                        "module": "libxul.so",
+                        "module_offset": "0x27c503",
+                        "normalized": "mozilla::net::HttpChannelChild::OnStopRequest",
+                        "offset": "0x7127c503",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/protocol/http/HttpChannelChild.cpp:adb5ab01eb86",
+                        "frame": 18,
+                        "function": "mozilla::net::HttpChannelChild::RecvOnStopRequest",
+                        "function_offset": "0x49",
+                        "line": 364,
+                        "module": "libxul.so",
+                        "module_offset": "0x27c5a9",
+                        "normalized": "mozilla::net::HttpChannelChild::RecvOnStopRequest",
+                        "offset": "0x7127c5a9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "PHttpChannelChild.cpp",
+                        "frame": 19,
+                        "function": "mozilla::net::PHttpChannelChild::OnMessageReceived",
+                        "function_offset": "0x4a3",
+                        "line": 573,
+                        "module": "libxul.so",
+                        "module_offset": "0x902887",
+                        "normalized": "mozilla::net::PHttpChannelChild::OnMessageReceived",
+                        "offset": "0x71902887",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "PContentChild.cpp",
+                        "frame": 20,
+                        "function": "mozilla::dom::PContentChild::OnMessageReceived",
+                        "function_offset": "0x3d",
+                        "line": 1133,
+                        "module": "libxul.so",
+                        "module_offset": "0x8ef3ed",
+                        "normalized": "mozilla::dom::PContentChild::OnMessageReceived",
+                        "offset": "0x718ef3ed",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/glue/AsyncChannel.cpp:adb5ab01eb86",
+                        "frame": 21,
+                        "function": "mozilla::ipc::AsyncChannel::OnDispatchMessage",
+                        "function_offset": "0x47",
+                        "line": 262,
+                        "module": "libxul.so",
+                        "module_offset": "0x8ac66b",
+                        "normalized": "mozilla::ipc::AsyncChannel::OnDispatchMessage",
+                        "offset": "0x718ac66b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/glue/RPCChannel.cpp:adb5ab01eb86",
+                        "frame": 22,
+                        "function": "mozilla::ipc::RPCChannel::OnMaybeDequeueOne",
+                        "function_offset": "0xc1",
+                        "line": 433,
+                        "module": "libxul.so",
+                        "module_offset": "0x8af241",
+                        "normalized": "mozilla::ipc::RPCChannel::OnMaybeDequeueOne",
+                        "offset": "0x718af241",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/tuple.h:adb5ab01eb86",
+                        "frame": 23,
+                        "function": "RunnableMethod<mozilla::ipc::RPCChannel, bool (mozilla::ipc::RPCChannel::*)(), Tuple0>::Run",
+                        "function_offset": "0x1b",
+                        "line": 383,
+                        "module": "libxul.so",
+                        "module_offset": "0x8afb83",
+                        "normalized": "RunnableMethod<T>::Run",
+                        "offset": "0x718afb83",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "../../dist/include/mozilla/ipc/RPCChannel.h",
+                        "frame": 24,
+                        "function": "mozilla::ipc::RPCChannel::DequeueTask::Run",
+                        "function_offset": "0xb",
+                        "line": 450,
+                        "module": "libxul.so",
+                        "module_offset": "0x8afb2f",
+                        "normalized": "mozilla::ipc::RPCChannel::DequeueTask::Run",
+                        "offset": "0x718afb2f",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 25,
+                        "function": "MessageLoop::RunTask",
+                        "function_offset": "0x19",
+                        "line": 343,
+                        "module": "libxul.so",
+                        "module_offset": "0x9576d1",
+                        "normalized": "MessageLoop::RunTask",
+                        "offset": "0x719576d1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 26,
+                        "function": "MessageLoop::DeferOrRunPendingTask",
+                        "function_offset": "0x15",
+                        "line": 351,
+                        "module": "libxul.so",
+                        "module_offset": "0x957af5",
+                        "normalized": "MessageLoop::DeferOrRunPendingTask",
+                        "offset": "0x71957af5",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 27,
+                        "function": "MessageLoop::DoWork",
+                        "function_offset": "0x6f",
+                        "line": 451,
+                        "module": "libxul.so",
+                        "module_offset": "0x957d5f",
+                        "normalized": "MessageLoop::DoWork",
+                        "offset": "0x71957d5f",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/glue/MessagePump.cpp:adb5ab01eb86",
+                        "frame": 28,
+                        "function": "mozilla::ipc::DoWorkRunnable::Run",
+                        "function_offset": "0x1f",
+                        "line": 70,
+                        "module": "libxul.so",
+                        "module_offset": "0x8ae30f",
+                        "normalized": "mozilla::ipc::DoWorkRunnable::Run",
+                        "offset": "0x718ae30f",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 29,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x121",
+                        "line": 633,
+                        "module": "libxul.so",
+                        "module_offset": "0x930ef1",
+                        "normalized": "nsThread::ProcessNextEvent",
+                        "offset": "0x71930ef1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 30,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "normalized": "NS_ProcessNextEvent_P",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/glue/MessagePump.cpp:adb5ab01eb86",
+                        "frame": 31,
+                        "function": "mozilla::ipc::MessagePump::Run",
+                        "function_offset": "0xa1",
+                        "line": 134,
+                        "module": "libxul.so",
+                        "module_offset": "0x8ae1e9",
+                        "normalized": "mozilla::ipc::MessagePump::Run",
+                        "offset": "0x718ae1e9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/glue/MessagePump.cpp:adb5ab01eb86",
+                        "frame": 32,
+                        "function": "mozilla::ipc::MessagePumpForChildProcess::Run",
+                        "function_offset": "0x17",
+                        "line": 229,
+                        "module": "libxul.so",
+                        "module_offset": "0x8ae223",
+                        "normalized": "mozilla::ipc::MessagePumpForChildProcess::Run",
+                        "offset": "0x718ae223",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 33,
+                        "function": "MessageLoop::RunInternal",
+                        "function_offset": "0x11",
+                        "line": 219,
+                        "module": "libxul.so",
+                        "module_offset": "0x9577bd",
+                        "normalized": "MessageLoop::RunInternal",
+                        "offset": "0x719577bd",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 34,
+                        "function": "MessageLoop::Run",
+                        "function_offset": "0x23",
+                        "line": 202,
+                        "module": "libxul.so",
+                        "module_offset": "0x95781b",
+                        "normalized": "MessageLoop::Run",
+                        "offset": "0x7195781b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:widget/src/xpwidgets/nsBaseAppShell.cpp:adb5ab01eb86",
+                        "frame": 35,
+                        "function": "nsBaseAppShell::Run",
+                        "function_offset": "0x1f",
+                        "line": 192,
+                        "module": "libxul.so",
+                        "module_offset": "0x867be7",
+                        "normalized": "nsBaseAppShell::Run",
+                        "offset": "0x71867be7",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:toolkit/xre/nsEmbedFunctions.cpp:adb5ab01eb86",
+                        "frame": 36,
+                        "function": "XRE_RunAppShell",
+                        "function_offset": "0x27",
+                        "line": 678,
+                        "module": "libxul.so",
+                        "module_offset": "0x210b87",
+                        "normalized": "XRE_RunAppShell",
+                        "offset": "0x71210b87",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/glue/MessagePump.cpp:adb5ab01eb86",
+                        "frame": 37,
+                        "function": "mozilla::ipc::MessagePumpForChildProcess::Run",
+                        "function_offset": "0x11",
+                        "line": 215,
+                        "module": "libxul.so",
+                        "module_offset": "0x8ae21d",
+                        "normalized": "mozilla::ipc::MessagePumpForChildProcess::Run",
+                        "offset": "0x718ae21d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 38,
+                        "function": "MessageLoop::RunInternal",
+                        "function_offset": "0x11",
+                        "line": 219,
+                        "module": "libxul.so",
+                        "module_offset": "0x9577bd",
+                        "normalized": "MessageLoop::RunInternal",
+                        "offset": "0x719577bd",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 39,
+                        "function": "MessageLoop::Run",
+                        "function_offset": "0x23",
+                        "line": 202,
+                        "module": "libxul.so",
+                        "module_offset": "0x95781b",
+                        "normalized": "MessageLoop::Run",
+                        "offset": "0x7195781b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:toolkit/xre/nsEmbedFunctions.cpp:adb5ab01eb86",
+                        "frame": 40,
+                        "function": "XRE_InitChildProcess",
+                        "function_offset": "0x1b3",
+                        "line": 515,
+                        "module": "libxul.so",
+                        "module_offset": "0x210ee3",
+                        "offset": "0x71210ee3",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:other-licenses/android/APKOpen.cpp:0d759421479d",
+                        "frame": 41,
+                        "function": "ChildProcessInit",
+                        "function_offset": "0x115",
+                        "line": 792,
+                        "module": "libmozutils.so",
+                        "module_offset": "0x5595",
+                        "offset": "0x4007d595",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-release:ipc/app/MozillaRuntimeMainAndroid.cpp:a88efef154df",
+                        "frame": 42,
+                        "function": "main",
+                        "function_offset": "0x53",
+                        "line": 68,
+                        "module": "plugin-container",
+                        "module_offset": "0x11a3",
+                        "offset": "0x91a3",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 43,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x16805",
+                        "offset": "0x4001a805",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 10,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xe420",
+                        "offset": "0x40012420",
+                        "trust": "context"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/third_party/libevent/epoll.c:adb5ab01eb86",
+                        "frame": 1,
+                        "function": "epoll_dispatch",
+                        "function_offset": "0x43",
+                        "line": 208,
+                        "module": "libxul.so",
+                        "module_offset": "0x951677",
+                        "offset": "0x71951677",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/third_party/libevent/event.c:adb5ab01eb86",
+                        "frame": 2,
+                        "function": "event_base_loop",
+                        "function_offset": "0x181",
+                        "line": 513,
+                        "module": "libxul.so",
+                        "module_offset": "0x94d5f1",
+                        "offset": "0x7194d5f1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_pump_libevent.cc:adb5ab01eb86",
+                        "frame": 3,
+                        "function": "base::MessagePumpLibevent::Run",
+                        "function_offset": "0xa5",
+                        "line": 338,
+                        "module": "libxul.so",
+                        "module_offset": "0x96a9e9",
+                        "offset": "0x7196a9e9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 4,
+                        "function": "MessageLoop::RunInternal",
+                        "function_offset": "0x11",
+                        "line": 219,
+                        "module": "libxul.so",
+                        "module_offset": "0x9577bd",
+                        "offset": "0x719577bd",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/message_loop.cc:adb5ab01eb86",
+                        "frame": 5,
+                        "function": "MessageLoop::Run",
+                        "function_offset": "0x23",
+                        "line": 202,
+                        "module": "libxul.so",
+                        "module_offset": "0x95781b",
+                        "offset": "0x7195781b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/thread.cc:adb5ab01eb86",
+                        "frame": 6,
+                        "function": "base::Thread::ThreadMain",
+                        "function_offset": "0x45",
+                        "line": 156,
+                        "module": "libxul.so",
+                        "module_offset": "0x95f805",
+                        "offset": "0x7195f805",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:ipc/chromium/src/base/platform_thread_posix.cc:adb5ab01eb86",
+                        "frame": 7,
+                        "function": "ThreadFunc",
+                        "function_offset": "0x7",
+                        "line": 26,
+                        "module": "libxul.so",
+                        "module_offset": "0x96af3f",
+                        "offset": "0x7196af3f",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 8,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 9,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 10,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xd6e8",
+                        "offset": "0x400116e8",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x126fe",
+                        "offset": "0x400166fe",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 2,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x8f",
+                        "line": 417,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16c5b",
+                        "offset": "0x40ebfc5b",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "../../dist/include/mozilla/CondVar.h",
+                        "frame": 3,
+                        "function": "nsCycleCollectorRunner::Run",
+                        "function_offset": "0x2b",
+                        "line": 101,
+                        "module": "libxul.so",
+                        "module_offset": "0x93a9f3",
+                        "offset": "0x7193a9f3",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 4,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x121",
+                        "line": 633,
+                        "module": "libxul.so",
+                        "module_offset": "0x930ef1",
+                        "offset": "0x71930ef1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 5,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 6,
+                        "function": "nsThread::ThreadFunc",
+                        "function_offset": "0x55",
+                        "line": 278,
+                        "module": "libxul.so",
+                        "module_offset": "0x9315d9",
+                        "offset": "0x719315d9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 7,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 8,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 9,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 11,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xd6ec",
+                        "offset": "0x400116ec",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x126fe",
+                        "offset": "0x400166fe",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 2,
+                        "function": "pt_TimedWait",
+                        "function_offset": "0x6f",
+                        "line": 292,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1669f",
+                        "offset": "0x40ebf69f",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 3,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x33",
+                        "line": 419,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16bff",
+                        "offset": "0x40ebfbff",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/TimerThread.cpp:adb5ab01eb86",
+                        "frame": 4,
+                        "function": "TimerThread::Run",
+                        "function_offset": "0x17f",
+                        "line": 375,
+                        "module": "libxul.so",
+                        "module_offset": "0x933f23",
+                        "offset": "0x71933f23",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 5,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x121",
+                        "line": 633,
+                        "module": "libxul.so",
+                        "module_offset": "0x930ef1",
+                        "offset": "0x71930ef1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 6,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 7,
+                        "function": "nsThread::ThreadFunc",
+                        "function_offset": "0x55",
+                        "line": 278,
+                        "module": "libxul.so",
+                        "module_offset": "0x9315d9",
+                        "offset": "0x719315d9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 8,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 9,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 7,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xd6e8",
+                        "offset": "0x400116e8",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x126fe",
+                        "offset": "0x400166fe",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 2,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x8f",
+                        "line": 417,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16c5b",
+                        "offset": "0x40ebfc5b",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsgc.cpp:adb5ab01eb86",
+                        "frame": 3,
+                        "function": "js::GCHelperThread::threadMain",
+                        "function_offset": "0xb9",
+                        "line": 2084,
+                        "module": "libxul.so",
+                        "module_offset": "0xa2381d",
+                        "offset": "0x71a2381d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 4,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 5,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 6,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 8,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xd6ec",
+                        "offset": "0x400116ec",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x126fe",
+                        "offset": "0x400166fe",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 2,
+                        "function": "pt_TimedWait",
+                        "function_offset": "0x6f",
+                        "line": 292,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1669f",
+                        "offset": "0x40ebf69f",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 3,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x33",
+                        "line": 419,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16bff",
+                        "offset": "0x40ebfbff",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/xpconnect/src/xpcjsruntime.cpp:adb5ab01eb86",
+                        "frame": 4,
+                        "function": "XPCJSRuntime::WatchdogMain",
+                        "function_offset": "0x4f",
+                        "line": 988,
+                        "module": "libxul.so",
+                        "module_offset": "0x6fcf83",
+                        "offset": "0x716fcf83",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 5,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 6,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 7,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 11,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xd6e8",
+                        "offset": "0x400116e8",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x126fe",
+                        "offset": "0x400166fe",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 2,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x8f",
+                        "line": 417,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16c5b",
+                        "offset": "0x40ebfc5b",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 3,
+                        "function": "PR_Wait",
+                        "function_offset": "0x17",
+                        "line": 614,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16c83",
+                        "offset": "0x40ebfc83",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "../../dist/include/nsAutoLock.h",
+                        "frame": 4,
+                        "function": "nsEventQueue::GetEvent",
+                        "function_offset": "0x37",
+                        "line": 346,
+                        "module": "libxul.so",
+                        "module_offset": "0x9304db",
+                        "offset": "0x719304db",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.h:adb5ab01eb86",
+                        "frame": 5,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x109",
+                        "line": 114,
+                        "module": "libxul.so",
+                        "module_offset": "0x930ed9",
+                        "offset": "0x71930ed9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 6,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 7,
+                        "function": "nsThread::ThreadFunc",
+                        "function_offset": "0x55",
+                        "line": 278,
+                        "module": "libxul.so",
+                        "module_offset": "0x9315d9",
+                        "offset": "0x719315d9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 8,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 9,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 14,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xc8d0",
+                        "offset": "0x400108d0",
+                        "trust": "context"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptio.c:0d759421479d",
+                        "frame": 1,
+                        "function": "PR_Poll",
+                        "function_offset": "0x1a1",
+                        "line": 3917,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x17e8d",
+                        "offset": "0x40ec0e8d",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/base/src/nsSocketTransportService2.cpp:adb5ab01eb86",
+                        "frame": 2,
+                        "function": "nsSocketTransportService::Poll",
+                        "function_offset": "0x73",
+                        "line": 358,
+                        "module": "libxul.so",
+                        "module_offset": "0x232727",
+                        "offset": "0x71232727",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/base/src/nsSocketTransportService2.cpp:adb5ab01eb86",
+                        "frame": 3,
+                        "function": "nsSocketTransportService::DoPollIteration",
+                        "function_offset": "0x147",
+                        "line": 673,
+                        "module": "libxul.so",
+                        "module_offset": "0x232ad7",
+                        "offset": "0x71232ad7",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/base/src/nsSocketTransportService2.cpp:adb5ab01eb86",
+                        "frame": 4,
+                        "function": "nsSocketTransportService::OnProcessNextEvent",
+                        "function_offset": "0x2f",
+                        "line": 552,
+                        "module": "libxul.so",
+                        "module_offset": "0x232c5f",
+                        "offset": "0x71232c5f",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 5,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x71",
+                        "line": 597,
+                        "module": "libxul.so",
+                        "module_offset": "0x930e41",
+                        "offset": "0x71930e41",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 6,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:netwerk/base/src/nsSocketTransportService2.cpp:adb5ab01eb86",
+                        "frame": 7,
+                        "function": "nsSocketTransportService::Run",
+                        "function_offset": "0x8b",
+                        "line": 594,
+                        "module": "libxul.so",
+                        "module_offset": "0x2328a3",
+                        "offset": "0x712328a3",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 8,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x121",
+                        "line": 633,
+                        "module": "libxul.so",
+                        "module_offset": "0x930ef1",
+                        "offset": "0x71930ef1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 9,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 10,
+                        "function": "nsThread::ThreadFunc",
+                        "function_offset": "0x55",
+                        "line": 278,
+                        "module": "libxul.so",
+                        "module_offset": "0x9315d9",
+                        "offset": "0x719315d9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 11,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 12,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 13,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            },
+            {
+                "frame_count": 12,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0xd6ec",
+                        "offset": "0x400116ec",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x126fe",
+                        "offset": "0x400166fe",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 2,
+                        "function": "pt_TimedWait",
+                        "function_offset": "0x6f",
+                        "line": 292,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1669f",
+                        "offset": "0x40ebf69f",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 3,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x33",
+                        "line": 419,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16bff",
+                        "offset": "0x40ebfbff",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptsynch.c:0d759421479d",
+                        "frame": 4,
+                        "function": "PR_Wait",
+                        "function_offset": "0x17",
+                        "line": 614,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x16c83",
+                        "offset": "0x40ebfc83",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "../../dist/include/nsAutoLock.h",
+                        "frame": 5,
+                        "function": "nsThreadPool::Run",
+                        "function_offset": "0xbd",
+                        "line": 346,
+                        "module": "libxul.so",
+                        "module_offset": "0x932671",
+                        "offset": "0x71932671",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 6,
+                        "function": "nsThread::ProcessNextEvent",
+                        "function_offset": "0x121",
+                        "line": 633,
+                        "module": "libxul.so",
+                        "module_offset": "0x930ef1",
+                        "offset": "0x71930ef1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "nsThreadUtils.cpp",
+                        "frame": 7,
+                        "function": "NS_ProcessNextEvent_P",
+                        "function_offset": "0x15",
+                        "line": 250,
+                        "module": "libxul.so",
+                        "module_offset": "0x90b4e1",
+                        "offset": "0x7190b4e1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:xpcom/threads/nsThread.cpp:adb5ab01eb86",
+                        "frame": 8,
+                        "function": "nsThread::ThreadFunc",
+                        "function_offset": "0x55",
+                        "line": 278,
+                        "module": "libxul.so",
+                        "module_offset": "0x9315d9",
+                        "offset": "0x719315d9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-2.1:nsprpub/pr/src/pthreads/ptthread.c:0d759421479d",
+                        "frame": 9,
+                        "function": "_pt_root",
+                        "function_offset": "0x6f",
+                        "line": 187,
+                        "module": "libnspr4.so",
+                        "module_offset": "0x1a5df",
+                        "offset": "0x40ec35df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 10,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12f06",
+                        "offset": "0x40016f06",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 11,
+                        "missing_symbols": true,
+                        "module": "libc.so",
+                        "module_offset": "0x12a5a",
+                        "offset": "0x40016a5a",
+                        "trust": "scan"
+                    }
+                ]
+            }
+        ]
+    },
+    "last_crash": null,
+    "mdsw_return_code": 0,
+    "mdsw_status_string": "OK",
+    "os_name": "Linux",
+    "os_pretty_version": "Linux",
+    "os_version": "0.0.0 Linux 3.0.8-svn544 #11 SMP PREEMPT Tue Sep 18 19:24:50 HKT 2012 armv7l",
+    "process_type": "content",
+    "processor_notes": "processor_prod-processor-i-9a956940_1515; MozillaProcessorAlgorithm2015; non-integer value of \"SecondsSinceLastCrash\"; skunk_classifier: reject - not a plugin hang",
+    "product": "Fennec",
+    "productid": "",
+    "proto_signature": "libc.so@0xe324 | js_compare_strings | JS_HashTableRawLookup | JSScript::NewScriptFromCG | js_EmitFunctionScript | js_EmitTree | EmitVariables | js_EmitTree | js::Compiler::compileScript | JS_EvaluateUCScriptForPrincipalsVersion | nsJSContext::EvaluateString | nsScriptLoader::EvaluateScript | nsScriptLoader::ProcessRequest | nsScriptLoader::ProcessPendingRequests | nsScriptLoader::OnStreamComplete | nsStreamLoader::OnStopRequest | nsHTTPCompressConv::OnStopRequest | mozilla::net::HttpChannelChild::OnStopRequest | mozilla::net::HttpChannelChild::RecvOnStopRequest | mozilla::net::PHttpChannelChild::OnMessageReceived | mozilla::dom::PContentChild::OnMessageReceived | mozilla::ipc::AsyncChannel::OnDispatchMessage | mozilla::ipc::RPCChannel::OnMaybeDequeueOne | RunnableMethod<T>::Run | mozilla::ipc::RPCChannel::DequeueTask::Run | MessageLoop::RunTask | MessageLoop::DeferOrRunPendingTask | MessageLoop::DoWork | mozilla::ipc::DoWorkRunnable::Run | nsThread::ProcessNextEvent | NS_ProcessNextEvent_P | mozilla::ipc::MessagePump::Run | mozilla::ipc::MessagePumpForChildProcess::Run | MessageLoop::RunInternal | MessageLoop::Run | nsBaseAppShell::Run | XRE_RunAppShell | mozilla::ipc::MessagePumpForChildProcess::Run | MessageLoop::RunInternal | MessageLoop::Run",
+    "reason": "SIGSEGV",
+    "release_channel": "release",
+    "signature": "js_compare_strings",
+    "startedDateTime": "2015-11-30T00:00:29.754193+00:00",
+    "started_datetime": "2015-11-30T00:00:29.754193+00:00",
+    "submitted_timestamp": "2015-11-30T00:00:22.981651+00:00",
+    "success": true,
+    "topmost_filenames": "hg:hg.mozilla.org/releases/mozilla-2.1:js/src/jsscript.cpp:adb5ab01eb86",
+    "truncated": false,
+    "uptime": 6651,
+    "url": null,
+    "user_comments": null,
+    "user_id": "",
+    "uuid": "66c85e0e-8947-48bb-b3c1-a73a62151130",
+    "version": "4.0.1"
+}

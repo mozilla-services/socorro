@@ -1,0 +1,2829 @@
+{
+    "ReleaseChannel": "release",
+    "Winsock_LSP": null,
+    "additional_minidumps": [],
+    "addons": [
+        [
+            "ffxtlbr@delta.com",
+            "1.5.0"
+        ],
+        [
+            "ocr@babylon.com",
+            "1.1"
+        ],
+        [
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
+            "3.6.28"
+        ]
+    ],
+    "addons_checked": true,
+    "address": "0x63dcd4c9",
+    "app_notes": "",
+    "build": "20120306064154",
+    "classifications": {
+        "support": {
+            "classification": "update-firefox-latest-version",
+            "classification_data": null,
+            "classification_version": "1.0"
+        }
+    },
+    "client_crash_date": "2015-11-30T00:00:01+00:00",
+    "completed_datetime": "2015-11-30T00:00:21.384303+00:00",
+    "completeddatetime": "2015-11-30T00:00:21.384303+00:00",
+    "cpu_info": "GenuineIntel family 6 model 42 stepping 7 | 2",
+    "cpu_name": "x86",
+    "crash_id": "7ca49cf6-c01c-4c76-8b0c-60bf72151130",
+    "crash_time": 1448841601,
+    "crashedThread": 12,
+    "date_processed": "2015-11-30T00:00:09.511904+00:00",
+    "distributor": null,
+    "distributor_version": null,
+    "email": null,
+    "flash_version": "[blank]",
+    "hang_type": 0,
+    "hangid": null,
+    "install_age": 100732728,
+    "java_stack_trace": null,
+    "json_dump": {
+        "crash_info": {
+            "address": "0x63dcd4c9",
+            "crashing_thread": 12,
+            "type": "EXCEPTION_ACCESS_VIOLATION_EXEC"
+        },
+        "crashing_thread": {
+            "frames": [
+                {
+                    "frame": 0,
+                    "offset": "0x63dcd4c9",
+                    "registers": {
+                        "eax": "0x00000000",
+                        "ebp": "0x08e2fb58",
+                        "ebx": "0x00000000",
+                        "ecx": "0x7ff9f000",
+                        "edi": "0x08e2fc14",
+                        "edx": "0x0000006d",
+                        "efl": "0x00010246",
+                        "eip": "0x63dcd4c9",
+                        "esi": "0x08e2fc0c",
+                        "esp": "0x08e2fb4c"
+                    },
+                    "trust": "context"
+                },
+                {
+                    "frame": 1,
+                    "offset": "0x63dce727",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 2,
+                    "offset": "0x63dceaa8",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 3,
+                    "offset": "0x63dcec88",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 4,
+                    "offset": "0x63dc50b5",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 5,
+                    "offset": "0x63dcd152",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 6,
+                    "offset": "0x63dc1eca",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 7,
+                    "offset": "0x63dc20ef",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 8,
+                    "offset": "0x63dca559",
+                    "trust": "frame_pointer"
+                },
+                {
+                    "frame": 9,
+                    "function": "BaseThreadInitThunk",
+                    "function_offset": "0x11",
+                    "module": "kernel32.dll",
+                    "module_offset": "0x4ee6b",
+                    "offset": "0x75c3ee6b",
+                    "trust": "frame_pointer"
+                }
+            ],
+            "threads_index": 12,
+            "total_frames": 12
+        },
+        "main_module": 0,
+        "modules": [
+            {
+                "base_addr": "0x60000",
+                "code_id": "4F563B00e0000",
+                "debug_file": "firefox.pdb",
+                "debug_id": "9729CC6303964F199E07BF405CA5CB062",
+                "end_addr": "0x140000",
+                "filename": "firefox.exe",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "1.9.2.4448"
+            },
+            {
+                "base_addr": "0x10000000",
+                "code_id": "512CBD6140000",
+                "debug_file": "captlib.pdb",
+                "debug_id": "AB0506B82A1F49CD944B9B75638D39281",
+                "end_addr": "0x10040000",
+                "filename": "captlib.dll",
+                "version": "10.0.1.18"
+            },
+            {
+                "base_addr": "0x66510000",
+                "code_id": "4F563A55b60000",
+                "debug_file": "xul.pdb",
+                "debug_id": "8DEAE0D39C44482C8A013FAF5B37FB932",
+                "end_addr": "0x67070000",
+                "filename": "xul.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "1.9.2.4448"
+            },
+            {
+                "base_addr": "0x67530000",
+                "code_id": "4CE7B7BCeb000",
+                "debug_file": "dbghelp.pdb",
+                "debug_id": "6B19F261EE434AF59623D1791CE5A7D72",
+                "end_addr": "0x6761b000",
+                "filename": "dbghelp.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x6d4a0000",
+                "code_id": "4CE7B8D079000",
+                "debug_file": "mscms.pdb",
+                "debug_id": "93303CBC777E44A592376E1F326E20172",
+                "end_addr": "0x6d519000",
+                "filename": "mscms.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x6d5d0000",
+                "code_id": "4F56269Eb0000",
+                "debug_file": "MOZCRT19.pdb",
+                "debug_id": "0F7B26B1B0A1444280412D743CADCC7A1",
+                "end_addr": "0x6d680000",
+                "filename": "mozcrt19.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "8.0.0.0"
+            },
+            {
+                "base_addr": "0x6d680000",
+                "code_id": "4F5629297e000",
+                "debug_file": "sqlite3.pdb",
+                "debug_id": "590F30B3AAA745A6882758A376C1F37B1",
+                "end_addr": "0x6d6fe000",
+                "filename": "sqlite3.dll",
+                "version": "3.7.4.0"
+            },
+            {
+                "base_addr": "0x6deb0000",
+                "code_id": "4F5626A8af000",
+                "debug_file": "MOZCPP19.pdb",
+                "debug_id": "F55BCDE4750649C2ACF0FD5254AC1C251",
+                "end_addr": "0x6df5f000",
+                "filename": "mozcpp19.dll",
+                "version": "8.0.0.0"
+            },
+            {
+                "base_addr": "0x6ebc0000",
+                "code_id": "4A5BDAA05000",
+                "debug_file": "msimg32.pdb",
+                "debug_id": "13C89B70614E4E7FB1C677D443D15D182",
+                "end_addr": "0x6ebc5000",
+                "filename": "msimg32.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x6ec20000",
+                "code_id": "4F563AFA24000",
+                "debug_file": "brwsrcmp.pdb",
+                "debug_id": "4C968F3B31BC43A4BED60839ABD204C12",
+                "end_addr": "0x6ec44000",
+                "filename": "brwsrcmp.dll",
+                "version": "1.9.2.4448"
+            },
+            {
+                "base_addr": "0x6ec50000",
+                "code_id": "4F562DDE21000",
+                "debug_file": "ssl3.pdb",
+                "debug_id": "259DD87C3E934ED48BD1465D0AB53E441",
+                "end_addr": "0x6ec71000",
+                "filename": "ssl3.dll",
+                "version": "3.12.9.0"
+            },
+            {
+                "base_addr": "0x6f500000",
+                "code_id": "4A5BD9FD72000",
+                "debug_file": "dsound.pdb",
+                "debug_id": "F38F478065E247C68EDA699606F56EED2",
+                "end_addr": "0x6f572000",
+                "filename": "dsound.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x6fa80000",
+                "code_id": "51F1D7302f000",
+                "debug_file": "shdocvw.pdb",
+                "debug_id": "46C4B8A123D74F44BC21DA7D4613C8BB2",
+                "end_addr": "0x6faaf000",
+                "filename": "shdocvw.dll",
+                "version": "6.1.7601.18222"
+            },
+            {
+                "base_addr": "0x6fe30000",
+                "code_id": "4E5870283c000",
+                "debug_file": "oleacc.pdb",
+                "debug_id": "DC8A57A3E8C648228F2C3650F2BE1D672",
+                "end_addr": "0x6fe6c000",
+                "filename": "oleacc.dll",
+                "version": "7.0.0.0"
+            },
+            {
+                "base_addr": "0x701e0000",
+                "code_id": "4CE78A58b000",
+                "debug_file": "cscapi.pdb",
+                "debug_id": "CC82DBD0C27D422C8E970BD83ECE179F2",
+                "end_addr": "0x701eb000",
+                "filename": "cscapi.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x701f0000",
+                "code_id": "4F0412C970000",
+                "debug_file": "ntshrui.pdb",
+                "debug_id": "B1397869A4914797AEA1040E4BD4F1932",
+                "end_addr": "0x70260000",
+                "filename": "ntshrui.dll",
+                "version": "6.1.7601.17755"
+            },
+            {
+                "base_addr": "0x70260000",
+                "code_id": "4A5BD9E331000",
+                "debug_file": "EhStorshell.pdb",
+                "debug_id": "878E29FEBFDD46DBA28AA12389F37C741",
+                "end_addr": "0x70291000",
+                "filename": "EhStorShell.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x70580000",
+                "code_id": "4CE7BA4232000",
+                "debug_file": "winmm.pdb",
+                "debug_id": "7AFD98FCAAD34F6B8B31A4667C4E2BFC2",
+                "end_addr": "0x705b2000",
+                "filename": "winmm.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x705c0000",
+                "code_id": "55C39B97170000",
+                "debug_file": "ExplorerFrame.pdb",
+                "debug_id": "E38B99B3657C4EE6AEFAF6B82D1BC96D2",
+                "end_addr": "0x70730000",
+                "filename": "explorerframe.dll",
+                "version": "6.1.7601.18952"
+            },
+            {
+                "base_addr": "0x70970000",
+                "code_id": "4F562DD69d000",
+                "debug_file": "nss3.pdb",
+                "debug_id": "2D026773FD7F4022A7A26B0B84A530B81",
+                "end_addr": "0x70a0d000",
+                "filename": "nss3.dll",
+                "version": "3.12.9.0"
+            },
+            {
+                "base_addr": "0x71690000",
+                "code_id": "4A5BDB637000",
+                "debug_file": "wsock32.pdb",
+                "debug_id": "0AAE6683A7F540DFB265DCD12B7BD0FB2",
+                "end_addr": "0x71697000",
+                "filename": "wsock32.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x71790000",
+                "code_id": "4A5BDA6D10000",
+                "debug_file": "NapiNSP.pdb",
+                "debug_id": "35D1FB446B064C3C84108202E55B284A2",
+                "end_addr": "0x717a0000",
+                "filename": "NapiNSP.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x717e0000",
+                "code_id": "4A5BDB448000",
+                "debug_file": "winrnr.pdb",
+                "debug_id": "45F8B97B128548D788289C58E8C5B3CA2",
+                "end_addr": "0x717e8000",
+                "filename": "winrnr.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x71800000",
+                "code_id": "4A5BDAF612000",
+                "debug_file": "pnrpnsp.pdb",
+                "debug_id": "D02619BD04DB444D9215D3CE9D69F1062",
+                "end_addr": "0x71812000",
+                "filename": "pnrpnsp.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x718b0000",
+                "code_id": "4CE7BA061e000",
+                "debug_file": "t2embed.pdb",
+                "debug_id": "548E9B4ABB754311AE7E003B76116F401",
+                "end_addr": "0x718ce000",
+                "filename": "t2embed.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x71aa0000",
+                "code_id": "4F563AEE8000",
+                "debug_file": "browserdirprovider.pdb",
+                "debug_id": "A7201AA412AD449197CD3DCF1556F01F2",
+                "end_addr": "0x71aa8000",
+                "filename": "browserdirprovider.dll",
+                "version": "1.9.2.4448"
+            },
+            {
+                "base_addr": "0x71ad0000",
+                "code_id": "4A5BDAD66000",
+                "debug_file": "rasadhlp.pdb",
+                "debug_id": "9C177D0E6FD14D28BAE05D9757E8182F2",
+                "end_addr": "0x71ad6000",
+                "filename": "rasadhlp.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x71ae0000",
+                "code_id": "4CE7BA4B51000",
+                "debug_file": "winspool.pdb",
+                "debug_id": "B165BBE7CD8C4F39BE373C0D9DFCD77B2",
+                "end_addr": "0x71b31000",
+                "filename": "winspool.drv",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x72af0000",
+                "code_id": "5258ADA638000",
+                "debug_file": "fwpuclnt.pdb",
+                "debug_id": "1F1E56C7FD0A45B09A523FA4F0944F632",
+                "end_addr": "0x72b28000",
+                "filename": "FWPUCLNT.DLL",
+                "version": "6.1.7601.18283"
+            },
+            {
+                "base_addr": "0x72c00000",
+                "code_id": "4A5BDB437000",
+                "debug_file": "winnsi.pdb",
+                "debug_id": "F7A0C25B1B0E4FA6876494D3F6BFD1012",
+                "end_addr": "0x72c07000",
+                "filename": "winnsi.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x72c10000",
+                "code_id": "4CE7B8591c000",
+                "debug_file": "iphlpapi.pdb",
+                "debug_id": "F162D2E137ED42978BF38C99AEE2DAAB2",
+                "end_addr": "0x72c2c000",
+                "filename": "IPHLPAPI.DLL",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x72df0000",
+                "code_id": "4A5BDB0Da000",
+                "debug_file": "slc.pdb",
+                "debug_id": "8728388BE5444934AA1B81ADF065B0E41",
+                "end_addr": "0x72dfa000",
+                "filename": "slc.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x72e70000",
+                "code_id": "506C6B0010000",
+                "debug_file": "nlaapi.pdb",
+                "debug_id": "BDCA2602CD3B439CB2EB80CB896D25DD2",
+                "end_addr": "0x72e80000",
+                "filename": "nlaapi.dll",
+                "version": "6.1.7601.17964"
+            },
+            {
+                "base_addr": "0x73340000",
+                "code_id": "4F563A9D7000",
+                "debug_file": "xpcom.pdb",
+                "debug_id": "4E7D15FCB9F04662AF7B45A30A53FFCA2",
+                "end_addr": "0x73347000",
+                "filename": "xpcom.dll",
+                "version": "1.9.2.4448"
+            },
+            {
+                "base_addr": "0x73350000",
+                "code_id": "4F56270C7000",
+                "debug_file": "plds4.pdb",
+                "debug_id": "10554D2FE06541FBAC056BBAA2C0B47F1",
+                "end_addr": "0x73357000",
+                "filename": "plds4.dll",
+                "version": "4.8.7.0"
+            },
+            {
+                "base_addr": "0x73360000",
+                "code_id": "4F562DA114000",
+                "debug_file": "nssutil3.pdb",
+                "debug_id": "E375463E5B9E4313BA96090F62B919AC1",
+                "end_addr": "0x73374000",
+                "filename": "nssutil3.dll",
+                "version": "3.12.9.0"
+            },
+            {
+                "base_addr": "0x73380000",
+                "code_id": "4F56270A31000",
+                "debug_file": "nspr4.pdb",
+                "debug_id": "A9234523212A4625A744B187621498CA1",
+                "end_addr": "0x733b1000",
+                "filename": "nspr4.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "4.8.7.0"
+            },
+            {
+                "base_addr": "0x733c0000",
+                "code_id": "4F5631B8f9000",
+                "debug_file": "js3250.pdb",
+                "debug_id": "5136227C7BC44E909AC370D4A2DCD7A42",
+                "end_addr": "0x734b9000",
+                "filename": "js3250.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": ""
+            },
+            {
+                "base_addr": "0x734f0000",
+                "code_id": "4F56270D7000",
+                "debug_file": "plc4.pdb",
+                "debug_id": "793FAACE393146DB8F57D8C9F79DC6441",
+                "end_addr": "0x734f7000",
+                "filename": "plc4.dll",
+                "version": "4.8.7.0"
+            },
+            {
+                "base_addr": "0x73500000",
+                "code_id": "4F562DE518000",
+                "debug_file": "smime3.pdb",
+                "debug_id": "D247A28489DB4235BABF6DEED86690DC1",
+                "end_addr": "0x73518000",
+                "filename": "smime3.dll",
+                "version": "3.12.9.0"
+            },
+            {
+                "base_addr": "0x735c0000",
+                "code_id": "4A5BD9FA38000",
+                "debug_file": "icm32.pdb",
+                "debug_id": "189BAB60FB414E258DC5E4996497EEA91",
+                "end_addr": "0x735f8000",
+                "filename": "icm32.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x73a60000",
+                "code_id": "4A5BDB0C25000",
+                "debug_file": "powrprof.pdb",
+                "debug_id": "B1F8F66CCBAD4869BADFD20C1F24AC832",
+                "end_addr": "0x73a85000",
+                "filename": "powrprof.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x73e90000",
+                "code_id": "4A5BDAE921000",
+                "debug_file": "ntmarta.pdb",
+                "debug_id": "654E30BBAE864799893AF657FEA771722",
+                "end_addr": "0x73eb1000",
+                "filename": "ntmarta.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x73ec0000",
+                "code_id": "54C9BC62131000",
+                "debug_file": "WindowsCodecs.pdb",
+                "debug_id": "735D260CE39A4C5787A0281E3F1655041",
+                "end_addr": "0x73ff1000",
+                "filename": "WindowsCodecs.dll",
+                "version": "6.2.9200.17251"
+            },
+            {
+                "base_addr": "0x74030000",
+                "code_id": "559EB13D13000",
+                "debug_file": "dwmapi.pdb",
+                "debug_id": "3478583A5A88473EA647096A55E52C2A2",
+                "end_addr": "0x74043000",
+                "filename": "dwmapi.dll",
+                "version": "6.1.7601.18917"
+            },
+            {
+                "base_addr": "0x740e0000",
+                "code_id": "4A5BDA062f000",
+                "debug_file": "DUser.pdb",
+                "debug_id": "363E97D3DCE44C3786A74C5EF3BB268D2",
+                "end_addr": "0x7410f000",
+                "filename": "duser.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x74110000",
+                "code_id": "4A5BDA05b2000",
+                "debug_file": "DUI70.pdb",
+                "debug_id": "EF8C41DF5F4D4D1A99D40BCBE9C9DAB32",
+                "end_addr": "0x741c2000",
+                "filename": "dui70.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x74360000",
+                "code_id": "4A5BDB3840000",
+                "debug_file": "UxTheme.pdb",
+                "debug_id": "5BECAB35E7714835A6BF3DADD891BB3A2",
+                "end_addr": "0x743a0000",
+                "filename": "uxtheme.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x743a0000",
+                "code_id": "4CE7B983f5000",
+                "debug_file": "propsys.pdb",
+                "debug_id": "D0EDA507E53D4579A337F875012D7B482",
+                "end_addr": "0x74495000",
+                "filename": "propsys.dll",
+                "version": "7.0.7601.17514"
+            },
+            {
+                "base_addr": "0x744e0000",
+                "code_id": "553A834519e000",
+                "debug_file": "comctl32.pdb",
+                "debug_id": "6212F6372DFF46B389B1997A0E79C1F52",
+                "end_addr": "0x7467e000",
+                "filename": "comctl32.dll",
+                "version": "6.10.7601.18837"
+            },
+            {
+                "base_addr": "0x74b60000",
+                "code_id": "4A5BDB2B9000",
+                "debug_file": "version.pdb",
+                "debug_id": "52234E5C7EC44646B62D56357B2C94872",
+                "end_addr": "0x74b69000",
+                "filename": "version.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x74bf0000",
+                "code_id": "4A5BDB5A5000",
+                "debug_file": "wshtcpip.pdb",
+                "debug_id": "92A92FF293574B489795898561F007192",
+                "end_addr": "0x74bf5000",
+                "filename": "WSHTCPIP.DLL",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x74e60000",
+                "code_id": "4A5BDAE03b000",
+                "debug_file": "rsaenh.pdb",
+                "debug_id": "F03813E5A0554853A6BC085C17A3AB352",
+                "end_addr": "0x74e9b000",
+                "filename": "rsaenh.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x74f40000",
+                "code_id": "4D6F273344000",
+                "debug_file": "dnsapi.pdb",
+                "debug_id": "4B77BA91498A432F8DD6E52085C4C4232",
+                "end_addr": "0x74f84000",
+                "filename": "dnsapi.dll",
+                "version": "6.1.7601.17570"
+            },
+            {
+                "base_addr": "0x75070000",
+                "code_id": "4A5BDB566000",
+                "debug_file": "wship6.pdb",
+                "debug_id": "02E45101E951429F85676ADFCC0EA72A2",
+                "end_addr": "0x75076000",
+                "filename": "wship6.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x75080000",
+                "code_id": "522BDB3E3c000",
+                "debug_file": "mswsock.pdb",
+                "debug_id": "8038E175506747EBA8552A29BC46BF4A2",
+                "end_addr": "0x750bc000",
+                "filename": "mswsock.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.18254"
+            },
+            {
+                "base_addr": "0x750c0000",
+                "code_id": "54D03C4A17000",
+                "debug_file": "cryptsp.pdb",
+                "debug_id": "751AA139BF17468F9BAAD1D6A7913FAA1",
+                "end_addr": "0x750d7000",
+                "filename": "cryptsp.dll",
+                "version": "6.1.7601.18741"
+            },
+            {
+                "base_addr": "0x754a0000",
+                "code_id": "4CE7BA1F19000",
+                "debug_file": "srvcli.pdb",
+                "debug_id": "B83FAA07A5A644DEAF314DD746429E092",
+                "end_addr": "0x754b9000",
+                "filename": "srvcli.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x75580000",
+                "code_id": "56325A304c000",
+                "debug_file": "apphelp.pdb",
+                "debug_id": "086332A0927F42D189ABEA071EE447A12",
+                "end_addr": "0x755cc000",
+                "filename": "apphelp.dll",
+                "version": "6.1.7601.19050"
+            },
+            {
+                "base_addr": "0x755d0000",
+                "code_id": "56257C5Bc000",
+                "debug_file": "cryptbase.pdb",
+                "debug_id": "243A5DB512054C45B401B19BDA1CA68B2",
+                "end_addr": "0x755dc000",
+                "filename": "CRYPTBASE.dll",
+                "version": "6.1.7601.19045"
+            },
+            {
+                "base_addr": "0x75640000",
+                "code_id": "4CE7992Fe000",
+                "debug_file": "RpcRtRemote.pdb",
+                "debug_id": "16827EB67C584E0D8B17B60D76B2B0CE2",
+                "end_addr": "0x7564e000",
+                "filename": "RpcRtRemote.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x756b0000",
+                "code_id": "4A5BBF41b000",
+                "debug_file": "profapi.pdb",
+                "debug_id": "CA045CA9E5C74D899B90E776B38A18B32",
+                "end_addr": "0x756bb000",
+                "filename": "profapi.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x75800000",
+                "code_id": "4CE7B78727000",
+                "debug_file": "cfgmgr32.pdb",
+                "debug_id": "93B1A0A82F114743AF9AABB1A17382462",
+                "end_addr": "0x75827000",
+                "filename": "cfgmgr32.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x75830000",
+                "code_id": "50F322EB4000",
+                "debug_file": "api-ms-win-downlevel-version-l1-1-0.pdb",
+                "debug_id": "204B81C33A4D4100A32DE3BE94935E661",
+                "end_addr": "0x75834000",
+                "filename": "api-ms-win-downlevel-version-l1-1-0.dll",
+                "version": "6.2.9200.16492"
+            },
+            {
+                "base_addr": "0x75840000",
+                "code_id": "50F3244E3000",
+                "debug_file": "api-ms-win-downlevel-normaliz-l1-1-0.pdb",
+                "debug_id": "5402F63552F34E26A727BF0C479713EE1",
+                "end_addr": "0x75843000",
+                "filename": "api-ms-win-downlevel-normaliz-l1-1-0.dll",
+                "version": "6.2.9200.16492"
+            },
+            {
+                "base_addr": "0x75850000",
+                "code_id": "50F322F94000",
+                "debug_file": "api-ms-win-downlevel-user32-l1-1-0.pdb",
+                "debug_id": "02CB034817B44ABB99DA042A6008FE6C1",
+                "end_addr": "0x75854000",
+                "filename": "api-ms-win-downlevel-user32-l1-1-0.dll",
+                "version": "6.2.9200.16492"
+            },
+            {
+                "base_addr": "0x75860000",
+                "code_id": "4CE7BA2817000",
+                "debug_file": "userenv.pdb",
+                "debug_id": "FD47F51275F84FCAAA6071CB11CC4AB82",
+                "end_addr": "0x75877000",
+                "filename": "userenv.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x75880000",
+                "code_id": "50F3244F4000",
+                "debug_file": "api-ms-win-downlevel-shlwapi-l1-1-0.pdb",
+                "debug_id": "DC8C3E813E5B4491AFCB375F0F7CE0501",
+                "end_addr": "0x75884000",
+                "filename": "api-ms-win-downlevel-shlwapi-l1-1-0.dll",
+                "version": "6.2.9200.16492"
+            },
+            {
+                "base_addr": "0x75960000",
+                "code_id": "554D7B004b000",
+                "debug_file": "kernelbase.pdb",
+                "debug_id": "C04A610B6F9C493BA343FBD10B4E857B2",
+                "end_addr": "0x759ab000",
+                "filename": "KERNELBASE.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.18847"
+            },
+            {
+                "base_addr": "0x759b0000",
+                "code_id": "4A5BD9C512000",
+                "debug_file": "devobj.pdb",
+                "debug_id": "5EC40EC65C5045EB96F4CFDCFC6E19062",
+                "end_addr": "0x759c2000",
+                "filename": "devobj.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x759d0000",
+                "code_id": "50F3243A5000",
+                "debug_file": "api-ms-win-downlevel-advapi32-l1-1-0.pdb",
+                "debug_id": "815D3737568D4305842320735DA06F721",
+                "end_addr": "0x759d5000",
+                "filename": "api-ms-win-downlevel-advapi32-l1-1-0.dll",
+                "version": "6.2.9200.16492"
+            },
+            {
+                "base_addr": "0x759e0000",
+                "code_id": "55AFD611a1000",
+                "debug_file": "advapi32.pdb",
+                "debug_id": "4E8A4C370EB04E0FBCDC24BC1371D96F2",
+                "end_addr": "0x75a81000",
+                "filename": "advapi32.dll",
+                "version": "6.1.7601.18939"
+            },
+            {
+                "base_addr": "0x75a90000",
+                "code_id": "556362E419000",
+                "debug_file": "sechost.pdb",
+                "debug_id": "2C99B7B1394E4C64B66DE258B63C07F51",
+                "end_addr": "0x75aa9000",
+                "filename": "sechost.dll",
+                "version": "6.1.7601.18869"
+            },
+            {
+                "base_addr": "0x75ab0000",
+                "code_id": "4A5BD9B183000",
+                "debug_file": "CLBCatQ.pdb",
+                "debug_id": "00A720C79BAC402295B6EBDC147257182",
+                "end_addr": "0x75b33000",
+                "filename": "clbcatq.dll",
+                "version": "2001.12.8530.16385"
+            },
+            {
+                "base_addr": "0x75b40000",
+                "code_id": "56258DF3a2000",
+                "debug_file": "rpcrt4.pdb",
+                "debug_id": "5D0A79FBB9E741DA85EA5F955944E8F42",
+                "end_addr": "0x75be2000",
+                "filename": "rpcrt4.dll",
+                "version": "6.1.7601.19045"
+            },
+            {
+                "base_addr": "0x75bf0000",
+                "code_id": "554D7AFFd4000",
+                "debug_file": "kernel32.pdb",
+                "debug_id": "C848D96A612845D59DF065688B5496062",
+                "end_addr": "0x75cc4000",
+                "filename": "kernel32.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.18847"
+            },
+            {
+                "base_addr": "0x75cd0000",
+                "code_id": "4CE7B9E257000",
+                "debug_file": "shlwapi.pdb",
+                "debug_id": "E128B1CEE2EB438C8646E6967118F33E2",
+                "end_addr": "0x75d27000",
+                "filename": "shlwapi.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x75d30000",
+                "code_id": "5633E6511f3000",
+                "debug_file": "wininet.pdb",
+                "debug_id": "16BED61FCA4E44C59E0C7AEC73876B892",
+                "end_addr": "0x75f23000",
+                "filename": "wininet.dll",
+                "version": "11.0.9600.18098"
+            },
+            {
+                "base_addr": "0x75f90000",
+                "code_id": "5581AEF54e000",
+                "debug_file": "gdi32.pdb",
+                "debug_id": "A027FB856A954B0880C4CD5543993A752",
+                "end_addr": "0x75fde000",
+                "filename": "gdi32.dll",
+                "version": "6.1.7601.18898"
+            },
+            {
+                "base_addr": "0x75fe0000",
+                "code_id": "4CE7B82D7b000",
+                "debug_file": "comdlg32.pdb",
+                "debug_id": "96BC483CDFF04D1AAFE462F093B954EC2",
+                "end_addr": "0x7605b000",
+                "filename": "comdlg32.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x761b0000",
+                "code_id": "55981B9E15c000",
+                "debug_file": "ole32.pdb",
+                "debug_id": "DE14A7E1B047414B826E606585170A892",
+                "end_addr": "0x7630c000",
+                "filename": "ole32.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.18915"
+            },
+            {
+                "base_addr": "0x76310000",
+                "code_id": "4A5BDACE5000",
+                "debug_file": "psapi.pdb",
+                "debug_id": "A895A052F325481B9E2DA00A29E8D5DF2",
+                "end_addr": "0x76315000",
+                "filename": "psapi.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x76320000",
+                "code_id": "547549198f000",
+                "debug_file": "oleaut32.pdb",
+                "debug_id": "7B8A484D32F449DC99F82BF27DDD65E62",
+                "end_addr": "0x763af000",
+                "filename": "oleaut32.dll",
+                "version": "6.1.7601.18679"
+            },
+            {
+                "base_addr": "0x763b0000",
+                "code_id": "54B9C914cc000",
+                "debug_file": "msctf.pdb",
+                "debug_id": "8F352E9ADBAB43E592585B4F943B07842",
+                "end_addr": "0x7647c000",
+                "filename": "msctf.dll",
+                "version": "6.1.7601.18731"
+            },
+            {
+                "base_addr": "0x76480000",
+                "code_id": "55C39C76c4b000",
+                "debug_file": "shell32.pdb",
+                "debug_id": "5C42EE1D879B43178664BD1316C68EBB2",
+                "end_addr": "0x770cb000",
+                "filename": "shell32.dll",
+                "version": "6.1.7601.18952"
+            },
+            {
+                "base_addr": "0x770d0000",
+                "code_id": "4A5BDAD96000",
+                "debug_file": "nsi.pdb",
+                "debug_id": "D15A81679FAE4A7392344B6FD26867942",
+                "end_addr": "0x770d6000",
+                "filename": "nsi.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x770e0000",
+                "code_id": "4CE7BA6835000",
+                "debug_file": "ws2_32.pdb",
+                "debug_id": "18C960B958404C4F80F686EE978A33D42",
+                "end_addr": "0x77115000",
+                "filename": "ws2_32.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x77120000",
+                "code_id": "5359C2C99d000",
+                "debug_file": "usp10.pdb",
+                "debug_id": "3F67909EA38E4063BEF9EF452618321C1",
+                "end_addr": "0x771bd000",
+                "filename": "usp10.dll",
+                "version": "1.626.7601.18454"
+            },
+            {
+                "base_addr": "0x771c0000",
+                "code_id": "4A5BDAD43000",
+                "debug_file": "normaliz.pdb",
+                "debug_id": "9481804BB4FD4703AE6AE76F8B99B4761",
+                "end_addr": "0x771c3000",
+                "filename": "normaliz.dll",
+                "version": "6.1.7600.16385"
+            },
+            {
+                "base_addr": "0x77200000",
+                "code_id": "4EEAF722ac000",
+                "debug_file": "msvcrt.pdb",
+                "debug_id": "F1D253F9555C46DF8076400A52B3A9292",
+                "end_addr": "0x772ac000",
+                "filename": "msvcrt.dll",
+                "version": "7.0.7601.17744"
+            },
+            {
+                "base_addr": "0x772b0000",
+                "code_id": "5633F237232000",
+                "debug_file": "iertutil.pdb",
+                "debug_id": "460B2013ECF74803914AE5548DFBC5512",
+                "end_addr": "0x774e2000",
+                "filename": "iertutil.dll",
+                "version": "11.0.9600.18098"
+            },
+            {
+                "base_addr": "0x774f0000",
+                "code_id": "4CE7B9D919d000",
+                "debug_file": "setupapi.pdb",
+                "debug_id": "C6B7CC380FCD42C29EDB1B61757DFD922",
+                "end_addr": "0x7768d000",
+                "filename": "setupapi.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x77690000",
+                "code_id": "4CE7BA6245000",
+                "debug_file": "wldap32.pdb",
+                "debug_id": "A0183052C47E4652BFC983CC603C12442",
+                "end_addr": "0x776d5000",
+                "filename": "Wldap32.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x776e0000",
+                "code_id": "56258DBB141000",
+                "debug_file": "ntdll.pdb",
+                "debug_id": "052DC9B879F442B289C2DAAE63B555002",
+                "end_addr": "0x77821000",
+                "filename": "ntdll.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.19045"
+            },
+            {
+                "base_addr": "0x77830000",
+                "code_id": "4CE7B8451f000",
+                "debug_file": "imm32.pdb",
+                "debug_id": "91A0004474E24AA89F185029E31144892",
+                "end_addr": "0x7784f000",
+                "filename": "imm32.dll",
+                "version": "6.1.7601.17514"
+            },
+            {
+                "base_addr": "0x77850000",
+                "code_id": "55E661BFa000",
+                "debug_file": "lpk.pdb",
+                "debug_id": "2E1680B07077406CAC8ABD97274E11C72",
+                "end_addr": "0x7785a000",
+                "filename": "lpk.dll",
+                "version": "6.1.7601.18985"
+            },
+            {
+                "base_addr": "0x77860000",
+                "code_id": "4CE7BA26c9000",
+                "debug_file": "user32.pdb",
+                "debug_id": "DD74D86F12624845A42A6A5BAAB4D7A82",
+                "end_addr": "0x77929000",
+                "filename": "user32.dll",
+                "loaded_symbols": true,
+                "symbol_disk_cache_hit": true,
+                "version": "6.1.7601.17514"
+            }
+        ],
+        "status": "OK",
+        "system_info": {
+            "cpu_arch": "x86",
+            "cpu_count": 2,
+            "cpu_info": "GenuineIntel family 6 model 42 stepping 7",
+            "os": "Windows NT",
+            "os_ver": "6.1.7601 Service Pack 1"
+        },
+        "thread_count": 17,
+        "threads": [
+            {
+                "frame_count": 8,
+                "frames": [
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jstracer.cpp:b2576dbcd614",
+                        "frame": 0,
+                        "function": "PurgeScriptRecordingAttempts",
+                        "function_offset": "0x7",
+                        "line": 7459,
+                        "module": "js3250.dll",
+                        "module_offset": "0x7c847",
+                        "offset": "0x7343c847",
+                        "trust": "context"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jsdhash.cpp:b2576dbcd614",
+                        "frame": 1,
+                        "function": "JS_DHashTableEnumerate",
+                        "function_offset": "0x6b",
+                        "line": 743,
+                        "module": "js3250.dll",
+                        "module_offset": "0x3f61b",
+                        "offset": "0x733ff61b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jsfun.cpp:b2576dbcd614",
+                        "frame": 2,
+                        "function": "fun_finalize",
+                        "function_offset": "0x106",
+                        "line": 1783,
+                        "module": "js3250.dll",
+                        "module_offset": "0x531a6",
+                        "offset": "0x734131a6",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jsgc.cpp:b2576dbcd614",
+                        "frame": 3,
+                        "function": "js_GC",
+                        "function_offset": "0x51c",
+                        "line": 3622,
+                        "module": "js3250.dll",
+                        "module_offset": "0x5972c",
+                        "offset": "0x7341972c",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jsapi.cpp:b2576dbcd614",
+                        "frame": 4,
+                        "function": "JS_GC",
+                        "function_offset": "0x4b",
+                        "line": 2439,
+                        "module": "js3250.dll",
+                        "module_offset": "0x741bb",
+                        "offset": "0x734341bb",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/xpconnect/src/nsXPConnect.cpp:b2576dbcd614",
+                        "frame": 5,
+                        "function": "nsXPConnect::Collect()",
+                        "function_offset": "0x70",
+                        "line": 478,
+                        "module": "xul.dll",
+                        "module_offset": "0x1c67e9",
+                        "offset": "0x666d67e9",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/xpcom/build/nsCOMPtr.cpp:b2576dbcd614",
+                        "frame": 6,
+                        "function": "nsCOMPtr_base::assign_from_gs_contractid(nsGetServiceByContractID,nsID const &)",
+                        "function_offset": "0x48",
+                        "line": 134,
+                        "module": "xul.dll",
+                        "module_offset": "0x177018",
+                        "offset": "0x66687018",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:xpcom/base/nsCycleCollector.cpp:b2576dbcd614",
+                        "frame": 7,
+                        "function": "nsCycleCollector::Collect(unsigned int)",
+                        "function_offset": "0x8e",
+                        "line": 2434,
+                        "module": "xul.dll",
+                        "module_offset": "0x10860",
+                        "offset": "0x66520860",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 18,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "ZwClose",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x455bb",
+                        "offset": "0x777255bb",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "CloseHandle",
+                        "function_offset": "0x18",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x6be1",
+                        "offset": "0x75966be1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "Win32LiveSystemProvider::OpenMapping(unsigned short const *,unsigned long *,unsigned short *,unsigned long,void * *)",
+                        "function_offset": "0x1fd",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x4c126",
+                        "offset": "0x6757c126",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "Win32LiveSystemProvider::OpenMapping(unsigned short const *,unsigned long *,unsigned short *,unsigned long,void * *)",
+                        "function_offset": "0x21b",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x4c144",
+                        "offset": "0x6757c144",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "GenAllocateModuleObject(_MINIDUMP_STATE *,_INTERNAL_PROCESS *,unsigned short *,unsigned __int64,unsigned long,_INTERNAL_MODULE * *)",
+                        "function_offset": "0x3bd",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x47a9e",
+                        "offset": "0x67577a9e",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "frame": 6,
+                        "function": "RtlpFreeHeap",
+                        "function_offset": "0x417",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x56883",
+                        "offset": "0x77736883",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 7,
+                        "function": "ZwClose",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x455bb",
+                        "offset": "0x777255bb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 8,
+                        "function": "GenGetProcessInfo(_MINIDUMP_STATE *,_INTERNAL_PROCESS * *)",
+                        "function_offset": "0x53c",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x4a6ab",
+                        "offset": "0x6757a6ab",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "frame": 9,
+                        "function": "GenGetProcessInfo(_MINIDUMP_STATE *,_INTERNAL_PROCESS * *)",
+                        "function_offset": "0x567",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x4a6d6",
+                        "offset": "0x6757a6d6",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 10,
+                        "offset": "0x557",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 11,
+                        "function": "GetSystemType(_MINIDUMP_STATE *)",
+                        "function_offset": "0x38f",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x448ef",
+                        "offset": "0x675748ef",
+                        "trust": "scan"
+                    },
+                    {
+                        "frame": 12,
+                        "function": "MiniDumpWriteDump",
+                        "function_offset": "0xf1",
+                        "module": "dbghelp.dll",
+                        "module_offset": "0x45e29",
+                        "offset": "0x67575e29",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:toolkit/crashreporter/google-breakpad/src/client/windows/handler/exception_handler.cc:b2576dbcd614",
+                        "frame": 13,
+                        "function": "google_breakpad::ExceptionHandler::WriteMinidumpWithExceptionForProcess(unsigned long,_EXCEPTION_POINTERS *,MDRawAssertionInfo *,void *,unsigned long,bool)",
+                        "function_offset": "0xc6",
+                        "line": 920,
+                        "module": "xul.dll",
+                        "module_offset": "0x4477bf",
+                        "offset": "0x669577bf",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:toolkit/crashreporter/google-breakpad/src/client/windows/handler/exception_handler.cc:b2576dbcd614",
+                        "frame": 14,
+                        "function": "google_breakpad::ExceptionHandler::WriteMinidumpWithException(unsigned long,_EXCEPTION_POINTERS *,MDRawAssertionInfo *)",
+                        "function_offset": "0x60",
+                        "line": 839,
+                        "module": "xul.dll",
+                        "module_offset": "0x48988b",
+                        "offset": "0x6699988b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 15,
+                        "function": "google_breakpad::ExceptionHandler::ExceptionHandlerThreadMain(void *)",
+                        "function_offset": "0x17",
+                        "module": "xul.dll",
+                        "module_offset": "0x326c83",
+                        "offset": "0x66836c83",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 16,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 17,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 16,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtRemoveIoCompletion",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x4648b",
+                        "offset": "0x7772648b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "GetQueuedCompletionStatus",
+                        "function_offset": "0x28",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0xd6cb",
+                        "offset": "0x7596d6cb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_pump_win.cc:b2576dbcd614",
+                        "frame": 3,
+                        "function": "base::MessagePumpForIO::GetIOItem(unsigned long,base::MessagePumpForIO::IOItem *)",
+                        "function_offset": "0x36",
+                        "line": 528,
+                        "module": "xul.dll",
+                        "module_offset": "0x223c",
+                        "offset": "0x6651223c",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_pump_win.cc:b2576dbcd614",
+                        "frame": 4,
+                        "function": "base::MessagePumpForIO::WaitForIOCompletion(unsigned long,base::MessagePumpForIO::IOHandler *)",
+                        "function_offset": "0x1f",
+                        "line": 499,
+                        "module": "xul.dll",
+                        "module_offset": "0x2280",
+                        "offset": "0x66512280",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_pump_win.cc:b2576dbcd614",
+                        "frame": 5,
+                        "function": "base::MessagePumpForIO::WaitForWork()",
+                        "function_offset": "0x1b",
+                        "line": 492,
+                        "module": "xul.dll",
+                        "module_offset": "0x22e58d",
+                        "offset": "0x6673e58d",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_pump_win.cc:b2576dbcd614",
+                        "frame": 6,
+                        "function": "base::MessagePumpForIO::DoRunLoop()",
+                        "function_offset": "0x67",
+                        "line": 477,
+                        "module": "xul.dll",
+                        "module_offset": "0x2060bf",
+                        "offset": "0x667160bf",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_pump_win.cc:b2576dbcd614",
+                        "frame": 7,
+                        "function": "base::MessagePumpWin::RunWithDispatcher(base::MessagePump::Delegate *,base::MessagePumpWin::Dispatcher *)",
+                        "function_offset": "0x30",
+                        "line": 52,
+                        "module": "xul.dll",
+                        "module_offset": "0x23f9d2",
+                        "offset": "0x6674f9d2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_pump_win.h:b2576dbcd614",
+                        "frame": 8,
+                        "function": "base::MessagePumpWin::Run(base::MessagePump::Delegate *)",
+                        "function_offset": "0xb",
+                        "line": 78,
+                        "module": "xul.dll",
+                        "module_offset": "0x23f9e4",
+                        "offset": "0x6674f9e4",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_loop.cc:b2576dbcd614",
+                        "frame": 9,
+                        "function": "MessageLoop::RunHandler()",
+                        "function_offset": "0x25",
+                        "line": 199,
+                        "module": "xul.dll",
+                        "module_offset": "0x22e1af",
+                        "offset": "0x6673e1af",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/message_loop.cc:b2576dbcd614",
+                        "frame": 10,
+                        "function": "MessageLoop::Run()",
+                        "function_offset": "0x1e",
+                        "line": 173,
+                        "module": "xul.dll",
+                        "module_offset": "0x22e177",
+                        "offset": "0x6673e177",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/thread.cc:b2576dbcd614",
+                        "frame": 11,
+                        "function": "base::Thread::ThreadMain()",
+                        "function_offset": "0xbb",
+                        "line": 165,
+                        "module": "xul.dll",
+                        "module_offset": "0x22e113",
+                        "offset": "0x6673e113",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:ipc/chromium/src/base/platform_thread_win.cc:b2576dbcd614",
+                        "frame": 12,
+                        "function": "`anonymous namespace'::ThreadFunc(void *)",
+                        "function_offset": "0x8",
+                        "line": 26,
+                        "module": "xul.dll",
+                        "module_offset": "0x241bb8",
+                        "offset": "0x66751bb8",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 13,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 14,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 15,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 6,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtRemoveIoCompletion",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x4648b",
+                        "offset": "0x7772648b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "SockAsyncThread",
+                        "function_offset": "0x6d",
+                        "module": "mswsock.dll",
+                        "module_offset": "0x635b",
+                        "offset": "0x7508635b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 17,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "ZwWaitForSingleObject",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46b0b",
+                        "offset": "0x77726b0b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "WaitForSingleObjectEx",
+                        "function_offset": "0x6b",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x179b",
+                        "offset": "0x7596179b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "WaitForSingleObjectExImplementation",
+                        "function_offset": "0x42",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4c412",
+                        "offset": "0x75c3c412",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "WaitForSingleObject",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4c3c1",
+                        "offset": "0x75c3c3c1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/md/windows/w95cv.c:b2576dbcd614",
+                        "frame": 5,
+                        "function": "_PR_MD_WAIT_CV",
+                        "function_offset": "0xc8",
+                        "line": 280,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1f3f8",
+                        "offset": "0x7339f3f8",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/threads/combined/prucv.c:b2576dbcd614",
+                        "frame": 6,
+                        "function": "_PR_WaitCondVar",
+                        "function_offset": "0x57",
+                        "line": 204,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1af27",
+                        "offset": "0x7339af27",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/threads/combined/prucv.c:b2576dbcd614",
+                        "frame": 7,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x3a",
+                        "line": 547,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1b04a",
+                        "offset": "0x7339b04a",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jstask.cpp:b2576dbcd614",
+                        "frame": 8,
+                        "function": "JSBackgroundThread::work()",
+                        "function_offset": "0x27",
+                        "line": 91,
+                        "module": "js3250.dll",
+                        "module_offset": "0x12c7",
+                        "offset": "0x733c12c7",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/jstask.cpp:b2576dbcd614",
+                        "frame": 9,
+                        "function": "start",
+                        "function_offset": "0x9",
+                        "line": 43,
+                        "module": "js3250.dll",
+                        "module_offset": "0x1299",
+                        "offset": "0x733c1299",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/threads/combined/pruthr.c:b2576dbcd614",
+                        "frame": 10,
+                        "function": "_PR_NativeRunThread",
+                        "function_offset": "0x168",
+                        "line": 426,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1bdd8",
+                        "offset": "0x7339bdd8",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/md/windows/w95thred.c:b2576dbcd614",
+                        "frame": 11,
+                        "function": "pr_root",
+                        "function_offset": "0xc",
+                        "line": 122,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1e05c",
+                        "offset": "0x7339e05c",
+                        "trust": "scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/memory/jemalloc/crtsrc/threadex.c:b2576dbcd614",
+                        "frame": 12,
+                        "function": "_callthreadstartex",
+                        "function_offset": "0x47",
+                        "line": 348,
+                        "module": "mozcrt19.dll",
+                        "module_offset": "0x2c27",
+                        "offset": "0x6d5d2c27",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/memory/jemalloc/crtsrc/threadex.c:b2576dbcd614",
+                        "frame": 13,
+                        "function": "_threadstartex",
+                        "function_offset": "0x65",
+                        "line": 326,
+                        "module": "mozcrt19.dll",
+                        "module_offset": "0x2cb5",
+                        "offset": "0x6d5d2cb5",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 14,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 15,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 16,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 16,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "ZwWaitForSingleObject",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46b0b",
+                        "offset": "0x77726b0b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "WaitForSingleObjectEx",
+                        "function_offset": "0x6b",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x179b",
+                        "offset": "0x7596179b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "WaitForSingleObjectExImplementation",
+                        "function_offset": "0x42",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4c412",
+                        "offset": "0x75c3c412",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "WaitForSingleObject",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4c3c1",
+                        "offset": "0x75c3c3c1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/md/windows/w95cv.c:b2576dbcd614",
+                        "frame": 5,
+                        "function": "_PR_MD_WAIT_CV",
+                        "function_offset": "0xc8",
+                        "line": 280,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1f3f8",
+                        "offset": "0x7339f3f8",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/threads/combined/prucv.c:b2576dbcd614",
+                        "frame": 6,
+                        "function": "_PR_WaitCondVar",
+                        "function_offset": "0x57",
+                        "line": 204,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1af27",
+                        "offset": "0x7339af27",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/threads/combined/prucv.c:b2576dbcd614",
+                        "frame": 7,
+                        "function": "PR_WaitCondVar",
+                        "function_offset": "0x3a",
+                        "line": 547,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1b04a",
+                        "offset": "0x7339b04a",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:js/src/xpconnect/src/xpcjsruntime.cpp:b2576dbcd614",
+                        "frame": 8,
+                        "function": "XPCJSRuntime::WatchdogMain(void *)",
+                        "function_offset": "0x3c",
+                        "line": 808,
+                        "module": "xul.dll",
+                        "module_offset": "0x24930a",
+                        "offset": "0x6675930a",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/threads/combined/pruthr.c:b2576dbcd614",
+                        "frame": 9,
+                        "function": "_PR_NativeRunThread",
+                        "function_offset": "0x168",
+                        "line": 426,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1bdd8",
+                        "offset": "0x7339bdd8",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:nsprpub/pr/src/md/windows/w95thred.c:b2576dbcd614",
+                        "frame": 10,
+                        "function": "pr_root",
+                        "function_offset": "0xc",
+                        "line": 122,
+                        "module": "nspr4.dll",
+                        "module_offset": "0x1e05c",
+                        "offset": "0x7339e05c",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/memory/jemalloc/crtsrc/threadex.c:b2576dbcd614",
+                        "frame": 11,
+                        "function": "_callthreadstartex",
+                        "function_offset": "0x47",
+                        "line": 348,
+                        "module": "mozcrt19.dll",
+                        "module_offset": "0x2c27",
+                        "offset": "0x6d5d2c27",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/memory/jemalloc/crtsrc/threadex.c:b2576dbcd614",
+                        "frame": 12,
+                        "function": "_threadstartex",
+                        "function_offset": "0x65",
+                        "line": 326,
+                        "module": "mozcrt19.dll",
+                        "module_offset": "0x2cb5",
+                        "offset": "0x6d5d2cb5",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 13,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 14,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 15,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 6,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForMultipleObjects",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46aeb",
+                        "offset": "0x77726aeb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "TppWaiterpThread",
+                        "function_offset": "0x12b",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x2fe22",
+                        "offset": "0x7770fe22",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 11,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForMultipleObjects",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46aeb",
+                        "offset": "0x77726aeb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "BaseGetNamedObjectDirectory",
+                        "function_offset": "0xa3",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x6a8d",
+                        "offset": "0x75966a8d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "WaitForMultipleObjectsExImplementation",
+                        "function_offset": "0x8d",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4be75",
+                        "offset": "0x75c3be75",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "WaitForMultipleObjects",
+                        "function_offset": "0x17",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4bee3",
+                        "offset": "0x75c3bee3",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:toolkit/components/downloads/src/nsDownloadScanner.cpp:b2576dbcd614",
+                        "frame": 5,
+                        "function": "nsDownloadScannerWatchdog::WatchdogThread(void *)",
+                        "function_offset": "0x3e",
+                        "line": 704,
+                        "module": "xul.dll",
+                        "module_offset": "0x2484df",
+                        "offset": "0x667584df",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/memory/jemalloc/crtsrc/threadex.c:b2576dbcd614",
+                        "frame": 6,
+                        "function": "_callthreadstartex",
+                        "function_offset": "0x47",
+                        "line": 348,
+                        "module": "mozcrt19.dll",
+                        "module_offset": "0x2c27",
+                        "offset": "0x6d5d2c27",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "file": "hg:hg.mozilla.org/releases/mozilla-1.9.2:obj-firefox/memory/jemalloc/crtsrc/threadex.c:b2576dbcd614",
+                        "frame": 7,
+                        "function": "_threadstartex",
+                        "function_offset": "0x65",
+                        "line": 326,
+                        "module": "mozcrt19.dll",
+                        "module_offset": "0x2cb5",
+                        "offset": "0x6d5d2cb5",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 8,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 9,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 10,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 16,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForMultipleObjects",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46aeb",
+                        "offset": "0x77726aeb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "BaseGetNamedObjectDirectory",
+                        "function_offset": "0xa3",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x6a8d",
+                        "offset": "0x75966a8d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "WaitForMultipleObjectsExImplementation",
+                        "function_offset": "0x8d",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4be75",
+                        "offset": "0x75c3be75",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "RealMsgWaitForMultipleObjectsEx",
+                        "function_offset": "0xd6",
+                        "module": "user32.dll",
+                        "module_offset": "0x162f8",
+                        "offset": "0x778762f8",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 5,
+                        "offset": "0x63dcf7d5",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 6,
+                        "offset": "0x63dce9f1",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 7,
+                        "offset": "0x63dce47d",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 8,
+                        "offset": "0x63dc50b5",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 9,
+                        "offset": "0x63dcd152",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 10,
+                        "offset": "0x63dc1eca",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 11,
+                        "offset": "0x63dc20ef",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 12,
+                        "offset": "0x63dca559",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 13,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 14,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 15,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 15,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtRemoveIoCompletion",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x4648b",
+                        "offset": "0x7772648b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "GetQueuedCompletionStatus",
+                        "function_offset": "0x28",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0xd6cb",
+                        "offset": "0x7596d6cb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "offset": "0x63dcd4c8",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 4,
+                        "offset": "0x63dce727",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "offset": "0x63dceaa8",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 6,
+                        "offset": "0x63dcec88",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 7,
+                        "offset": "0x63dc50b5",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 8,
+                        "offset": "0x63dcd152",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 9,
+                        "offset": "0x63dc1eca",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 10,
+                        "offset": "0x63dc20ef",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 11,
+                        "offset": "0x63dca559",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 12,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 13,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 14,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 6,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForWorkViaWorkerFactory",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46b1b",
+                        "offset": "0x77726b1b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "RtlpTpTimerCallback",
+                        "function_offset": "0x108",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x314c6",
+                        "offset": "0x777114c6",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 16,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForMultipleObjects",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46aeb",
+                        "offset": "0x77726aeb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "BaseGetNamedObjectDirectory",
+                        "function_offset": "0xa3",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x6a8d",
+                        "offset": "0x75966a8d",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "WaitForMultipleObjectsExImplementation",
+                        "function_offset": "0x8d",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4be75",
+                        "offset": "0x75c3be75",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "RealMsgWaitForMultipleObjectsEx",
+                        "function_offset": "0xd6",
+                        "module": "user32.dll",
+                        "module_offset": "0x162f8",
+                        "offset": "0x778762f8",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "RtlpLowFragHeapAllocFromContext",
+                        "function_offset": "0x122",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x53086",
+                        "offset": "0x77733086",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "frame": 6,
+                        "offset": "0x63dce9f1",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 7,
+                        "offset": "0x63dce47d",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 8,
+                        "offset": "0x63dc50b5",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 9,
+                        "offset": "0x63dcd152",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 10,
+                        "offset": "0x63dc1eca",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 11,
+                        "offset": "0x63dc20ef",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 12,
+                        "offset": "0x63dca559",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 13,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 14,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 15,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 12,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "normalized": "@0x63dcd4c9",
+                        "offset": "0x63dcd4c9",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "normalized": "@0x63dce727",
+                        "offset": "0x63dce727",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 2,
+                        "normalized": "@0x63dceaa8",
+                        "offset": "0x63dceaa8",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 3,
+                        "normalized": "@0x63dcec88",
+                        "offset": "0x63dcec88",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 4,
+                        "normalized": "@0x63dc50b5",
+                        "offset": "0x63dc50b5",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "normalized": "@0x63dcd152",
+                        "offset": "0x63dcd152",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 6,
+                        "normalized": "@0x63dc1eca",
+                        "offset": "0x63dc1eca",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 7,
+                        "normalized": "@0x63dc20ef",
+                        "offset": "0x63dc20ef",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 8,
+                        "normalized": "@0x63dca559",
+                        "offset": "0x63dca559",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 9,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "normalized": "BaseThreadInitThunk",
+                        "offset": "0x75c3ee6b",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 10,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "normalized": "__RtlUserThreadStart",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 11,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "normalized": "_RtlUserThreadStart",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 6,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForWorkViaWorkerFactory",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46b1b",
+                        "offset": "0x77726b1b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "RtlpTpTimerCallback",
+                        "function_offset": "0x108",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x314c6",
+                        "offset": "0x777114c6",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 7,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtUserGetMessage",
+                        "function_offset": "0xb",
+                        "module": "user32.dll",
+                        "module_offset": "0x1cddf",
+                        "offset": "0x7787cddf",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "GetMessageA",
+                        "function_offset": "0x3f",
+                        "module": "user32.dll",
+                        "module_offset": "0x118d8",
+                        "offset": "0x778718d8",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "mciwindow",
+                        "function_offset": "0x7e",
+                        "module": "winmm.dll",
+                        "module_offset": "0x283f",
+                        "offset": "0x7058283f",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 6,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 6,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "NtWaitForWorkViaWorkerFactory",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x46b1b",
+                        "offset": "0x77726b1b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "RtlpTpTimerCallback",
+                        "function_offset": "0x108",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x314c6",
+                        "offset": "0x777114c6",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 4,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 5,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            },
+            {
+                "frame_count": 9,
+                "frames": [
+                    {
+                        "frame": 0,
+                        "function": "KiFastSystemCallRet",
+                        "function_offset": "0x0",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x471b4",
+                        "offset": "0x777271b4",
+                        "trust": "context"
+                    },
+                    {
+                        "frame": 1,
+                        "function": "ZwDelayExecution",
+                        "function_offset": "0xb",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x458bb",
+                        "offset": "0x777258bb",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 2,
+                        "function": "SleepEx",
+                        "function_offset": "0x54",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x1875",
+                        "offset": "0x75961875",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 3,
+                        "function": "Sleep",
+                        "function_offset": "0xe",
+                        "module": "KERNELBASE.dll",
+                        "module_offset": "0x1817",
+                        "offset": "0x75961817",
+                        "trust": "cfi"
+                    },
+                    {
+                        "file": "d:\\w7rtm\\com\\ole32\\com\\dcomrem\\refcache.cxx",
+                        "frame": 4,
+                        "function": "CROIDTable::WorkerThreadLoop(void *)",
+                        "function_offset": "0x13",
+                        "line": 1342,
+                        "module": "ole32.dll",
+                        "module_offset": "0x2d97c",
+                        "offset": "0x761dd97c",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "file": "d:\\w7rtm\\com\\ole32\\com\\dcomrem\\threads.cxx",
+                        "frame": 5,
+                        "function": "CRpcThreadCache::RpcWorkerThreadEntry(void *)",
+                        "function_offset": "0x15",
+                        "line": 59,
+                        "module": "ole32.dll",
+                        "module_offset": "0x2d869",
+                        "offset": "0x761dd869",
+                        "trust": "cfi_scan"
+                    },
+                    {
+                        "frame": 6,
+                        "function": "BaseThreadInitThunk",
+                        "function_offset": "0x11",
+                        "module": "kernel32.dll",
+                        "module_offset": "0x4ee6b",
+                        "offset": "0x75c3ee6b",
+                        "trust": "cfi"
+                    },
+                    {
+                        "frame": 7,
+                        "function": "__RtlUserThreadStart",
+                        "function_offset": "0x26",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63ab2",
+                        "offset": "0x77743ab2",
+                        "trust": "frame_pointer"
+                    },
+                    {
+                        "frame": 8,
+                        "function": "_RtlUserThreadStart",
+                        "function_offset": "0x1a",
+                        "module": "ntdll.dll",
+                        "module_offset": "0x63a85",
+                        "offset": "0x77743a85",
+                        "trust": "cfi"
+                    }
+                ]
+            }
+        ]
+    },
+    "last_crash": 4229612,
+    "mdsw_return_code": 0,
+    "mdsw_status_string": "OK",
+    "os_name": "Windows NT",
+    "os_pretty_version": "Windows 7",
+    "os_version": "6.1.7601 Service Pack 1",
+    "process_type": null,
+    "processor_notes": "processor_prod-processor-i-7f1f67bb_1442; MozillaProcessorAlgorithm2015; skunk_classifier: reject - not a plugin hang",
+    "product": "Firefox",
+    "productid": "",
+    "proto_signature": "@0x63dcd4c9 | @0x63dce727 | @0x63dceaa8 | @0x63dcec88 | @0x63dc50b5 | @0x63dcd152 | @0x63dc1eca | @0x63dc20ef | @0x63dca559 | BaseThreadInitThunk | __RtlUserThreadStart | _RtlUserThreadStart",
+    "reason": "EXCEPTION_ACCESS_VIOLATION_EXEC",
+    "release_channel": "release",
+    "signature": "BaseThreadInitThunk",
+    "startedDateTime": "2015-11-30T00:00:19.573841+00:00",
+    "started_datetime": "2015-11-30T00:00:19.573841+00:00",
+    "submitted_timestamp": "2015-11-30T00:00:09.511904+00:00",
+    "success": true,
+    "topmost_filenames": null,
+    "truncated": false,
+    "uptime": 1015,
+    "url": "about:blank",
+    "user_comments": null,
+    "user_id": "",
+    "uuid": "7ca49cf6-c01c-4c76-8b0c-60bf72151130",
+    "version": "3.6.28"
+}

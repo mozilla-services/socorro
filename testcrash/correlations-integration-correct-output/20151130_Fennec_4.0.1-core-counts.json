@@ -1,0 +1,23 @@
+{
+    "Linux": {
+        "count": 1, 
+        "signatures": {
+            "js_compare_strings|SIGSEGV": {
+                "cores": {
+                    "arm with 0 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 1.0, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 100, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 1, 
+                "name": "js_compare_strings|SIGSEGV"
+            }
+        }
+    }, 
+    "date_key": "151130", 
+    "notes": []
+}

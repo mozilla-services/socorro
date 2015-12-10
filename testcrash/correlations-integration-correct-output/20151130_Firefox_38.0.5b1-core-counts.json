@@ -1,0 +1,23 @@
+{
+    "Windows NT": {
+        "count": 1, 
+        "signatures": {
+            "shutdownhang | WaitForSingleObjectEx | WaitForSingleObject | PR_Wait | mozilla::ReentrantMonitor::Wait | nsThread::ProcessNextEvent | NS_ProcessNextEvent | mozilla::MediaShutdownManager::Shutdown|EXCEPTION_BREAKPOINT": {
+                "cores": {
+                    "x86 with 4 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 1.0, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 100, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 1, 
+                "name": "shutdownhang | WaitForSingleObjectEx | WaitForSingleObject | PR_Wait | mozilla::ReentrantMonitor::Wait | nsThread::ProcessNextEvent | NS_ProcessNextEvent | mozilla::MediaShutdownManager::Shutdown|EXCEPTION_BREAKPOINT"
+            }
+        }
+    }, 
+    "date_key": "151130", 
+    "notes": []
+}

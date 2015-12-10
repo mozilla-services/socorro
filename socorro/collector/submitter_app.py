@@ -72,6 +72,15 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             return DotDict(json.load(raw_crash_fp))
 
     #--------------------------------------------------------------------------
+    def get_unredacted_processed(self, (prefix, path_tuple)):
+        """the default implemntation of fetching a processed_crash
+        parameters:
+           path_tuple - a tuple of paths. the first element is the raw_crash
+                        pathname"""
+        with open(path_tuple[0]) as processed_crash_fp:
+            return DotDict(json.load(processed_crash_fp))
+
+    #--------------------------------------------------------------------------
     def get_raw_dumps(self, prefix_path_tuple):
         file_dumps_mapping = self.get_raw_dumps_as_files(prefix_path_tuple)
         return file_dumps_mapping.as_memory_dumps_mapping()
@@ -89,6 +98,8 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
                 dump_pathnames[1:]
             )
         )
+
+
 
     #--------------------------------------------------------------------------
     def _dump_names_from_pathnames(self, pathnames):

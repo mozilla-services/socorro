@@ -1,0 +1,341 @@
+{
+    "Linux": {
+        "count": 2, 
+        "signatures": {
+            "OOM | small|SIGSEGV": {
+                "cores": {
+                    "amd64 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.5, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 50, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.5, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 50, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 1, 
+                "name": "OOM | small|SIGSEGV"
+            }, 
+            "shutdownhang | libpthread-2.21.so@0xcda0|SIGSEGV": {
+                "cores": {
+                    "amd64 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.5, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 50, 
+                        "rounded_in_sig_ratio": 100
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.5, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 50, 
+                        "rounded_in_sig_ratio": 0
+                    }
+                }, 
+                "count": 1, 
+                "name": "shutdownhang | libpthread-2.21.so@0xcda0|SIGSEGV"
+            }
+        }
+    }, 
+    "Mac OS X": {
+        "count": 4, 
+        "signatures": {
+            "js::GCMarker::processMarkStackTop|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS": {
+                "cores": {
+                    "amd64 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.25, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 25, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "amd64 with 4 cores": {
+                        "in_os_count": 3, 
+                        "in_os_ratio": 0.75, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 75, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 1, 
+                "name": "js::GCMarker::processMarkStackTop|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
+            }, 
+            "libdispatch.dylib@0x216b|EXC_BAD_INSTRUCTION / 0x00000001": {
+                "cores": {
+                    "amd64 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.25, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 25, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "amd64 with 4 cores": {
+                        "in_os_count": 3, 
+                        "in_os_ratio": 0.75, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 75, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 1, 
+                "name": "libdispatch.dylib@0x216b|EXC_BAD_INSTRUCTION / 0x00000001"
+            }, 
+            "mozilla::CycleCollectedJSRuntime::DeferredFinalize|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS": {
+                "cores": {
+                    "amd64 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.25, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 25, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "amd64 with 4 cores": {
+                        "in_os_count": 3, 
+                        "in_os_ratio": 0.75, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 75, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 1, 
+                "name": "mozilla::CycleCollectedJSRuntime::DeferredFinalize|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
+            }, 
+            "shutdownhang | memset | arena_dalloc | mozilla::net::CacheFileChunk::~CacheFileChunk|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS": {
+                "cores": {
+                    "amd64 with 2 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.25, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 25, 
+                        "rounded_in_sig_ratio": 100
+                    }, 
+                    "amd64 with 4 cores": {
+                        "in_os_count": 3, 
+                        "in_os_ratio": 0.75, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 75, 
+                        "rounded_in_sig_ratio": 0
+                    }
+                }, 
+                "count": 1, 
+                "name": "shutdownhang | memset | arena_dalloc | mozilla::net::CacheFileChunk::~CacheFileChunk|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
+            }
+        }
+    }, 
+    "Windows NT": {
+        "count": 11, 
+        "signatures": {
+            "OOM | unknown | js::CrashAtUnhandlableOOM | js::irregexp::InterpretedRegExpMacroAssembler::Expand|EXCEPTION_BREAKPOINT": {
+                "cores": {
+                    "x86 with 1 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 5, 
+                        "in_os_ratio": 0.45454545454545453, 
+                        "in_sig_count": 4, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 45, 
+                        "rounded_in_sig_ratio": 100
+                    }, 
+                    "x86 with 4 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 8 cores": {
+                        "in_os_count": 4, 
+                        "in_os_ratio": 0.36363636363636365, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 36, 
+                        "rounded_in_sig_ratio": 0
+                    }
+                }, 
+                "count": 4, 
+                "name": "OOM | unknown | js::CrashAtUnhandlableOOM | js::irregexp::InterpretedRegExpMacroAssembler::Expand|EXCEPTION_BREAKPOINT"
+            }, 
+            "mozalloc_abort | NS_DebugBreak | mozilla::layers::PImageBridgeChild::Write|EXCEPTION_BREAKPOINT": {
+                "cores": {
+                    "x86 with 1 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 5, 
+                        "in_os_ratio": 0.45454545454545453, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 45, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 4 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 100
+                    }, 
+                    "x86 with 8 cores": {
+                        "in_os_count": 4, 
+                        "in_os_ratio": 0.36363636363636365, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 36, 
+                        "rounded_in_sig_ratio": 0
+                    }
+                }, 
+                "count": 1, 
+                "name": "mozalloc_abort | NS_DebugBreak | mozilla::layers::PImageBridgeChild::Write|EXCEPTION_BREAKPOINT"
+            }, 
+            "nvwgf2um.dll@0xe2294|EXCEPTION_ACCESS_VIOLATION_READ": {
+                "cores": {
+                    "x86 with 1 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 5, 
+                        "in_os_ratio": 0.45454545454545453, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 45, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 4 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 8 cores": {
+                        "in_os_count": 4, 
+                        "in_os_ratio": 0.36363636363636365, 
+                        "in_sig_count": 4, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 36, 
+                        "rounded_in_sig_ratio": 100
+                    }
+                }, 
+                "count": 4, 
+                "name": "nvwgf2um.dll@0xe2294|EXCEPTION_ACCESS_VIOLATION_READ"
+            }, 
+            "shutdownhang | KiIntSystemCall|EXCEPTION_BREAKPOINT": {
+                "cores": {
+                    "x86 with 1 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 100
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 5, 
+                        "in_os_ratio": 0.45454545454545453, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 45, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 4 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 8 cores": {
+                        "in_os_count": 4, 
+                        "in_os_ratio": 0.36363636363636365, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 36, 
+                        "rounded_in_sig_ratio": 0
+                    }
+                }, 
+                "count": 1, 
+                "name": "shutdownhang | KiIntSystemCall|EXCEPTION_BREAKPOINT"
+            }, 
+            "shutdownhang | je_free | nsStringBuffer::Release|EXCEPTION_BREAKPOINT": {
+                "cores": {
+                    "x86 with 1 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 2 cores": {
+                        "in_os_count": 5, 
+                        "in_os_ratio": 0.45454545454545453, 
+                        "in_sig_count": 1, 
+                        "in_sig_ratio": 1.0, 
+                        "rounded_in_os_ratio": 45, 
+                        "rounded_in_sig_ratio": 100
+                    }, 
+                    "x86 with 4 cores": {
+                        "in_os_count": 1, 
+                        "in_os_ratio": 0.09090909090909091, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 9, 
+                        "rounded_in_sig_ratio": 0
+                    }, 
+                    "x86 with 8 cores": {
+                        "in_os_count": 4, 
+                        "in_os_ratio": 0.36363636363636365, 
+                        "in_sig_count": 0, 
+                        "in_sig_ratio": 0.0, 
+                        "rounded_in_os_ratio": 36, 
+                        "rounded_in_sig_ratio": 0
+                    }
+                }, 
+                "count": 1, 
+                "name": "shutdownhang | je_free | nsStringBuffer::Release|EXCEPTION_BREAKPOINT"
+            }
+        }
+    }, 
+    "date_key": "151130", 
+    "notes": []
+}

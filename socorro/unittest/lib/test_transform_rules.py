@@ -594,6 +594,7 @@ class TestTransformRules(TestCase):
 
     def test_rules_close(self):
         config = DotDict()
+        config.logger = Mock().s
         config.chatty_rules = False
         config.chatty = False
         config.tag = 'test.rule'
