@@ -1359,61 +1359,6 @@ def crashes_per_user(request, default_context=None):
 
 
 @pass_default_context
-@check_days_parameter([3, 7, 14, 28], 7)
-def topchangers(request, product=None, versions=None,
-                days=None, possible_days=None,
-                default_context=None):
-    context = default_context or {}
-
-    if not versions:
-        versions = []
-        # select all current versions, if none are chosen
-        for release in context['currentversions']:
-            if release['product'] == product and release['featured']:
-                versions.append(release['version'])
-    else:
-        versions = versions.split(';')
-
-    context['days'] = days
-    context['possible_days'] = possible_days
-    context['versions'] = versions
-    if len(versions) == 1:
-        context['version'] = versions[0]
-
-    context['product_versions'] = []
-    for version in versions:
-        context['product_versions'].append('%s:%s' % (product, version))
-
-    end_date = datetime.datetime.utcnow()
-
-    # FIXME hardcoded crash_type
-    crash_type = 'browser'
-
-    changers = defaultdict(list)
-    api = models.TCBS()
-    for v in versions:
-        tcbs = api.get(
-            product=product,
-            version=v,
-            crash_type=crash_type,
-            end_date=end_date.date(),
-            date_range_type='report',
-            duration=days * 24,
-            limit='300'
-        )
-
-        for crash in tcbs['crashes']:
-            if crash['changeInRank'] != 'new' and crash['signature']:
-                change = int(crash['changeInRank'])
-                changers[change].append(crash)
-
-    context['topchangers'] = changers
-    context['report'] = 'topchangers'
-
-    return render(request, 'crashstats/topchangers.html', context)
-
-
-@pass_default_context
 @permission_required('crashstats.view_exploitability')
 def exploitable_crashes(
     request,

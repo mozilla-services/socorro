@@ -100,15 +100,6 @@ urlpatterns = patterns(
         views.crashes_per_user,
         name='crashes_per_user'),
     # handle old-style urls
-    url('^topchangers' + products + '$',
-        views.topchangers,
-        name='topchangers'),
-    url('^topchangers' + products + versions + '$',
-        views.topchangers,
-        name='topchangers'),
-    url('^topchangers' + products + versions + '$',
-        views.topchangers,
-        name='topchangers'),
     url(r'^report/list$',
         views.report_list,
         name='report_list'),
@@ -225,12 +216,6 @@ urlpatterns = patterns(
             url='/home/products/%(product)s/versions/%(versions)s',
             permanent=perm_legacy_redirect
         )),
-    url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/'
-        r'topchangers$',
-        RedirectView.as_view(
-            url='/topchangers/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
     url(r'^topcrasher/byversion/(?P<product>\w+)/(?P<versions>[;\w\.()]+)$',
         RedirectView.as_view(
             url='/topcrasher/products/%(product)s/versions/%(versions)s',
@@ -239,11 +224,6 @@ urlpatterns = patterns(
     url(r'^topcrasher' + products + '/versions/$',
         RedirectView.as_view(
             url='/topcrasher/products/%(product)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^topchangers' + products + '/versions/$',
-        RedirectView.as_view(
-            url='/topchangers/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
     url('^home' + products + '/versions/$',
