@@ -338,6 +338,7 @@ class CSignatureTool(CSignatureToolBase):
           'org\.mozilla\.f.*-\d\.apk@0x.*',
           'RaiseException',
           'RtlpAdjustHeapLookasideDepth',
+          'std::_Atomic_fetch_add_4',
           'system@framework@.*\.jar@classes\.dex@0x.*',
           '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
           'WaitForSingleObjectExImplementation',
