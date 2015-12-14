@@ -488,28 +488,7 @@ def _transform_graphics_summary(facets):
 
         devices_api = models.GraphicsDevices()
 
-        devices_results = {
-            'hits': [],
-            'total': 0,
-        }
-        # In order to avoid hitting the maximum URL size limit, we split the
-        # query in smaller chunks, and then we reconstruct the results.
-        max_number_of_hexes = 50
-        for i in range(0, len(vendor_hexes), max_number_of_hexes):
-            vendors = set(vendor_hexes[i:i + max_number_of_hexes])
-            adapters = set(adapter_hexes[i:i + max_number_of_hexes])
-            res = devices_api.get(
-                vendor_hex=vendors,
-                adapter_hex=adapters,
-            )
-            devices_results['hits'].extend(res['hits'])
-            devices_results['total'] += res['total']
-
-        hexes = {}
-        for hit in devices_results['hits']:
-            key = '{}:{}'.format(hit['vendor_hex'], hit['adapter_hex'])
-            hexes[key] = (hit['vendor_name'], hit['adapter_name'])
-
+        all_names = devices_api.get_pairs(adapter_hexes, vendor_hexes)
         graphics = []
         for vendor in facets['adapter_vendor_id']:
             for adapter in vendor['facets']['adapter_device_id']:
@@ -518,17 +497,17 @@ def _transform_graphics_summary(facets):
                     'adapter': adapter['term'],
                     'count': adapter['count'],
                 }
-                key = '{}:{}'.format(vendor['term'], adapter['term'])
-                names = hexes.get(key)
+                key = (adapter['term'], vendor['term'])
+                names = all_names.get(key)
                 if names and names[0]:
-                    entry['vendor'] = '{} ({})'.format(
+                    entry['adapter'] = '{} ({})'.format(
                         names[0],
-                        vendor['term'],
+                        adapter['term'],
                     )
                 if names and names[1]:
-                    entry['adapter'] = '{} ({})'.format(
+                    entry['vendor'] = '{} ({})'.format(
                         names[1],
-                        adapter['term'],
+                        vendor['term'],
                     )
 
                 graphics.append(entry)

@@ -1414,6 +1414,138 @@ class TestModels(DjangoTestCase):
         )
         eq_(r['total'], 2)
 
+    @mock.patch('requests.get')
+    def test_graphics_devices(self, rget):
+        api = models.GraphicsDevices()
+
+        def mocked_get(url, params, **options):
+            assert 'graphics_devices' in url
+            return Response({
+                'hits': [
+                    {
+                        'vendor_hex': 'vhex2',
+                        'vendor_name': 'V 2',
+                        'adapter_hex': 'ahex2',
+                        'adapter_name': 'A 2',
+                    },
+                    {
+                        'vendor_hex': 'vhex1',
+                        'vendor_name': 'V 1',
+                        'adapter_hex': 'ahex1',
+                        'adapter_name': 'A 1',
+                    },
+                ],
+                'total': 2
+            })
+
+        rget.side_effect = mocked_get
+        r = api.get(
+            vendor_hex=['vhex1', 'vhex2'],
+            adapter_hex=['ahex1', 'ahex2'],
+        )
+        eq_(r['total'], 2)
+        eq_(
+            r['hits'][0],
+            {
+                'vendor_hex': 'vhex2',
+                'vendor_name': 'V 2',
+                'adapter_hex': 'ahex2',
+                'adapter_name': 'A 2',
+            }
+        )
+
+    @mock.patch('requests.get')
+    def test_graphics_devices_get_pairs(self, rget):
+        """The GraphicsDevices.get_pairs() is an abstraction of
+        GraphicsDevices.get() on steroids. The input is similar as
+        GraphicsDevices.get() but instead it returns a dict where
+        each key is a (adapter hex, vendor hex) tuple and each key is
+        (adapter name, vendor name) tuple.
+        Internally it does some smart caching.
+        """
+        api = models.GraphicsDevices()
+
+        params_called = []
+
+        def mocked_get(url, params, **options):
+            assert 'graphics_devices' in url
+            params_called.append(params)
+
+            if 'vhex3' in params['vendor_hex']:
+                return Response({
+                    'hits': [
+                        {
+                            'vendor_hex': 'vhex3',
+                            'vendor_name': 'V 3',
+                            'adapter_hex': 'ahex3',
+                            'adapter_name': 'A 3',
+                        },
+                    ],
+                    'total': 1
+                })
+            else:
+                return Response({
+                    'hits': [
+                        {
+                            'vendor_hex': 'vhex2',
+                            'vendor_name': 'V 2',
+                            'adapter_hex': 'ahex2',
+                            'adapter_name': 'A 2',
+                        },
+                        {
+                            'vendor_hex': 'vhex1',
+                            'vendor_name': 'V 1',
+                            'adapter_hex': 'ahex1',
+                            'adapter_name': 'A 1',
+                        },
+                    ],
+                    'total': 2
+                })
+
+        rget.side_effect = mocked_get
+        r = api.get_pairs(
+            ['ahex1', 'ahex2'],
+            ['vhex1', 'vhex2'],
+        )
+        eq_(
+            r,
+            {
+                ('ahex1', 'vhex1'): ('A 1', 'V 1'),
+                ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+            }
+        )
+
+        r = api.get_pairs(
+            ['ahex2', 'ahex3'],
+            ['vhex2', 'vhex3'],
+        )
+        eq_(
+            r,
+            {
+                ('ahex2', 'vhex2'): ('A 2', 'V 2'),
+                ('ahex3', 'vhex3'): ('A 3', 'V 3'),
+            }
+        )
+
+        # In the second call to `api.get_pairs()` we repeated the
+        # (ahex2, vhex2) combo, so that second time, we could benefit from
+        # caching and only need to query for the (ahex3, vhex3) combo.
+        assert len(params_called) == 2
+        eq_(
+            params_called[0],
+            {
+                'adapter_hex': set(['ahex1', 'ahex2']),
+                'vendor_hex': set(['vhex2', 'vhex1']),
+            }
+        )
+        eq_(
+            params_called[1],
+            {
+                'adapter_hex': set(['ahex3']),
+                'vendor_hex': set(['vhex3']),
+            }
+        )
+
 
 class TestModelsWithFileCaching(TestCase):
 

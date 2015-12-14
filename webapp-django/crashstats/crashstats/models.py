@@ -1709,6 +1709,62 @@ class GraphicsDevices(SocorroMiddleware):
     def post(self, payload):
         return super(GraphicsDevices, self).post(self.URL_PREFIX, payload)
 
+    def get_pairs(self, adapter_hexes, vendor_hexes):
+        """return a dict where each tuple of (adapter_hex, vendor_hex)
+        corresponds to a (adapter_name, vendor_name) pair."""
+        assert len(adapter_hexes) == len(vendor_hexes)
+        names = {}
+        missing = {}
+        for i, adapter_hex in enumerate(adapter_hexes):
+            cache_key = (
+                'graphics_adapters' + adapter_hex + ':' + vendor_hexes[i]
+            )
+            name_pair = cache.get(cache_key)
+            key = (adapter_hex, vendor_hexes[i])
+            if name_pair is not None:
+                names[key] = name_pair
+            else:
+                missing[key] = cache_key
+
+        missing_vendor_hexes = []
+        missing_adapter_hexes = []
+        for adapter_hex, vendor_hex in missing:
+            missing_adapter_hexes.append(adapter_hex)
+            missing_vendor_hexes.append(vendor_hex)
+
+        hits = []
+        # In order to avoid hitting the maximum URL size limit, we split the
+        # query in smaller chunks, and then we reconstruct the results.
+        max_number_of_hexes = 50
+        for i in range(0, len(missing_vendor_hexes), max_number_of_hexes):
+            vendors = set(missing_vendor_hexes[i:i + max_number_of_hexes])
+            adapters = set(missing_adapter_hexes[i:i + max_number_of_hexes])
+            res = self.get(
+                vendor_hex=vendors,
+                adapter_hex=adapters,
+            )
+            hits.extend(res['hits'])
+
+        for group in hits:
+            name_pair = (group['adapter_name'], group['vendor_name'])
+            key = (group['adapter_hex'], group['vendor_hex'])
+            # This if statement is important.
+            # For example there repeated adapter hexes that have different
+            # vendor hexes. E.g.:
+            # breakpad=> select count(distinct vendor_hex) from
+            # breakpad-> graphics_device where adapter_hex='0x0102';
+            #  count
+            # -------
+            #     21
+            # Therefore it's important to only bother with specific
+            # ones that we asked for.
+            if key in missing:
+                cache_key = missing[key]
+                cache.set(cache_key, name_pair, 60 * 60 * 24)
+                names[key] = name_pair
+
+        return names
+
 
 class AduBySignature(SocorroMiddleware):
 
