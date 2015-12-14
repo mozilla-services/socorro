@@ -95,8 +95,8 @@ WHERE releases_recent.product_name = 'Firefox'
     AND major_version_sort(releases_recent.version)
         >= major_version_sort(products.rapid_release_version);
 
--- Insert WebRTmobile "releases", which are copies of Fennec releases,
--- only if the Fennec release is greater than the first release for WebRTmobile
+-- Insert WebRTmobile "releases", which are copies of FennecAndroid (aka mobile) releases,
+-- only if the FennecAndroid release is greater than the first release for WebRTmobile
 
 INSERT INTO releases_recent (
     product_name,
@@ -121,7 +121,7 @@ SELECT 'WebappRuntimeMobile',
 FROM releases_recent
     JOIN products
         ON products.product_name = 'WebappRuntimeMobile'
-WHERE releases_recent.product_name = 'Fennec'
+WHERE releases_recent.product_name = 'mobile'
     AND major_version_sort(releases_recent.version)
         >= major_version_sort(products.rapid_release_version);
 
