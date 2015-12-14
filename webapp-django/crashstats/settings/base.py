@@ -4,6 +4,7 @@
 
 import os
 import logging
+from pkg_resources import resource_string
 
 import dj_database_url
 from decouple import config, Csv
@@ -643,11 +644,22 @@ CEF_VENDOR = config('CEF_VENDOR', 'Mozilla')
 # then set this to False
 SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', True, cast=bool)
 
-# To get your Sentry key, go to https://errormill.mozilla.org/
-RAVEN_CONFIG = {
-    'dsn': config('RAVEN_DSN', '')  # see https://errormill.mozilla.org/
-}
+# When socorro is installed (python setup.py install), it will create
+# a file in site-packages for socorro called "socorro/socorro_revision.txt".
+# If this socorro was installed like that, let's pick it up and use it.
+try:
+    SOCORRO_REVISION = resource_string('socorro', 'socorro_revision.txt')
+except IOError:
+    SOCORRO_REVISION = None
 
+# Raven sends errors to Sentry.
+# The release is optional.
+raven_dsn = config('RAVEN_DSN', '')
+if raven_dsn:
+    RAVEN_CONFIG = {
+        'dsn': raven_dsn,
+        'release': SOCORRO_REVISION,
+    }
 
 # Specify the middleware implementation to use in the middleware
 SEARCH_MIDDLEWARE_IMPL = config('SEARCH_MIDDLEWARE_IMPL', 'elasticsearch')
