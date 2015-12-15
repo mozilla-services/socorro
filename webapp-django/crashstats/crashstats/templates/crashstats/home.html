@@ -56,12 +56,12 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
                     <h4>{{product}} {{version}}</h4>
                     <ul>
                         <li>
-                            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;versions={{ version }}&amp;days={{days}}">
+                            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ version }}&amp;days={{days}}">
                                 Top Crashers
                             </a>
                         </li>
                         <li>
-                            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;versions={{ version }}&amp;process_type=plugin&amp;days={{days}}">
+                            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ version }}&amp;process_type=plugin&amp;days={{days}}">
                                 Top Plugin Crashers
                             </a>
                         </li>
