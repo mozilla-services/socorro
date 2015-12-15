@@ -146,6 +146,10 @@ class TestFetchADIFromHive(IntegrationTestBase):
             assert information['fetch-adi-from-hive']
             assert not information['fetch-adi-from-hive']['last_error']
 
+            config.logger.info.assert_called_with(
+                'Wrote 4 rows from doing hive query'
+            )
+
         fake_hive.connect.assert_called_with(
             database='default',
             authMechanism='PLAIN',
