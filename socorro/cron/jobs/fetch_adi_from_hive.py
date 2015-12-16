@@ -328,6 +328,9 @@ class FetchADIFromHiveCronApp(BaseCronApp):
             if not rows_written:
                 raise NoRowsWritten('hive yielded no rows to write')
 
+            self.config.logger.info(
+                'Wrote %d rows from doing hive query' % rows_written
+            )
             for transaction in transactions:
                 transaction(
                     self._database_transaction,
