@@ -19,7 +19,6 @@ BACKFILL_PARAMETERS = {
     "crashes_by_user": ['update_day', 'check_period'],
     "daily_crashes": ['update_day'],
     "exploitability": ['update_day'],
-    "explosiveness": ['update_day'],
     "home_page_graph_build": ['update_day', 'check_period'],
     "home_page_graph": ['update_day', 'check_period'],
     "matviews": ['start_date', 'end_date', 'reports_clean', 'check_period'],

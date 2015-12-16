@@ -73,7 +73,6 @@ SERVICES_LIST = (
         'supersearch.SuperSearch'
     ),
     (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
-    (r'/suspicious/(.*)', 'suspicious.SuspiciousCrashSignatures'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/adi/(.*)', 'adi.ADI'),
     (r'/graphics_report/', 'graphics_report.GraphicsReport'),

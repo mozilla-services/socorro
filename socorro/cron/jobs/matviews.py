@@ -132,16 +132,6 @@ class TCBSBuildCronApp(_MatViewBackfillBase):
     depends_on = ('reports-clean',)
 
 
-class ExplosivenessCronApp(_MatViewBackfillBase):
-    proc_name = 'update_explosiveness'
-    app_name = 'explosiveness-matview'
-    depends_on = (
-        'tcbs-matview',
-        'adu-matview',
-        'reports-clean'
-    )
-
-
 class ReportsCleanCronApp(_MatViewBackfillBase):
     proc_name = 'update_reports_clean'
     app_name = 'reports-clean'

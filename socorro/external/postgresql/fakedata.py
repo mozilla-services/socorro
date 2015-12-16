@@ -302,8 +302,6 @@ class BaseTable(object):
             'FakeSignature9': 0.025
         }
 
-        self.explosive_signature = 'FakeSignature8'
-
         # flash version and probability.
         self.flash_versions = {
             '1.1.1.1': 0.25,
@@ -427,11 +425,6 @@ class BaseTable(object):
 
                     now = datetime.datetime.now()
                     amt = 1
-                    if (
-                        signature == self.explosive_signature and
-                        timestamp.date() == now.date()
-                    ):
-                        amt = 5
 
                     for i in xrange(amt):
                         url = weighted_choice(self.urls)

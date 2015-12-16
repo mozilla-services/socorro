@@ -175,13 +175,6 @@ class TestBackfill(PostgreSQLTestCase):
                 },
                 'res_expected': [(True,)],
             },
-            # Test backfill_explosiveness
-            'explosiveness': {
-                'params': {
-                    "update_day": yesterday_str,
-                },
-                'res_expected': [(True,)],
-            },
             # Test backfill_home_page_graph_build
             'home_page_graph_build': {
                 'params': {

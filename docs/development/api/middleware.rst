@@ -57,7 +57,6 @@ Documented services
 * `/signatureurls <#signature-urls-service>`_
 * `/skiplist/ <#skiplist-service>`_
 * `/supersearch/fields/ <#supersearch-fields-service>`_
-* `/suspicious/ <#suspicious-crash-signatures-service>`_
 
 
 .. ############################################################################
@@ -83,7 +82,7 @@ Mandatory parameters
 
 When ``backfill_type`` equals to ``adu``, ``build_adu``, ``correlations``,
 ``crashes_by_user_build``, ``daily_crashes``, ``exploitability``,
-``explosiveness``, ``hang_report``, ``home_page_graph_build``,
+``hang_report``, ``home_page_graph_build``,
 ``home_page_graph``, ``nightly_builds``, ``one_day``, ``signature_summary``,
 ``tcbs_build`` or ``tcbs``:
 
@@ -2782,69 +2781,6 @@ Returns a dictionary of ``field_name:field_data``, in this format::
         }
     }
 
-
-
-.. ############################################################################
-   Suspicious Crash Signatures API
-   ############################################################################
-
-Suspicious Crash Signatures service
------------------------------------
-
-Returns crashes that are explosive/suspicious. These crashes should be examined
-by people to make sure there are no regressions in product code base.
-
-Crash signatures are explosive if the count shot up by a huge amount.
-
-API specifications
-^^^^^^^^^^^^^^^^^^
-
-+----------------+--------------+
-| HTTP method    | GET          |
-+----------------+--------------+
-| URL            | /suspicious/ |
-+----------------+--------------+
-
-Mandatory parameters
-^^^^^^^^^^^^^^^^^^^^
-
-None.
-
-Optional parameters
-^^^^^^^^^^^^^^^^^^^
-
-+----------------+------------------+-------------------+--------------------+
-| Name           | Type of value    | Default value     | Description        |
-+================+==================+===================+====================+
-| start_date     | Date             | Today             | The start date to  |
-|                |                  |                   | get signatures     |
-|                |                  |                   | from.              |
-+----------------+------------------+-------------------+--------------------+
-| end_date       | Date             | Tomorrow          | The end date to    |
-|                |                  |                   | get signatures     |
-|                |                  |                   | to. Note that the  |
-|                |                  |                   | return value does  |
-|                |                  |                   | not include        |
-|                |                  |                   | signatures on the  |
-|                |                  |                   | end_date           |
-+----------------+------------------+-------------------+--------------------+
-
-Return value
-^^^^^^^^^^^^
-
-Returns in this format::
-
-    {
-        "hits": [
-          {"date": date,
-           "signatures": [signature1, signature2]},
-         ...
-        ],
-        "total": <number of records returned>
-    }
-
-Where ``date`` is in the format of ``YYYY-MM-DD`` and signatures are the raw
-strings of the signatures.
 
 
 .. ############################################################################

@@ -357,9 +357,6 @@ EXPLOITABILITY_BATCH_SIZE = config(
     cast=int
 )
 
-# Default number of days to show in explosive crashes reports
-EXPLOSIVE_REPORT_DAYS = 10
-
 # how many seconds to sleep when getting a ConnectionError
 MIDDLEWARE_RETRY_SLEEPTIME = config(
     'MIDDLEWARE_RETRY_SLEEPTIME',

@@ -115,12 +115,6 @@
                             data-url-version="{{ url('crashstats:gccrashes', '__PRODUCT__', '__VERSION__') }}"
                             {% if report == 'gccrashes' %}selected{% endif %}
                         >GC Crashes</option>
-                        <option
-                            value="explosive"
-                            data-url-product="{{ url('crashstats:explosive', '__PRODUCT__') }}"
-                            data-url-version="{{ url('crashstats:explosive', '__PRODUCT__', '__VERSION__') }}"
-                            {% if report == 'explosive' %}selected{% endif %}
-                        >Explosive Crashes</option>
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
                         <option
                             value="exploitable"
