@@ -426,7 +426,7 @@
 
                     {% if parsed_dump.threads %}
                     <div id="frames">
-                        <h2>Crashing Thread</h2>
+                        <h2>Crashing Thread ({{ parsed_dump.crash_info.crashing_thread }})</h2>
                         <table class="data-table">
                             <thead>
                                 <tr>
