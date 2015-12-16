@@ -222,10 +222,6 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
     context['version'] = versions[0]
 
-    release_versions = [x['version'] for x in context['releases'][product]]
-    if context['version'] not in release_versions:
-        raise http.Http404('Unrecognized version')
-
     if tcbs_mode == 'realtime':
         end_date = datetime.datetime.utcnow().replace(microsecond=0)
     elif tcbs_mode == 'byday':
