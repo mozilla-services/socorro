@@ -194,26 +194,11 @@ class TestViews(BaseTestViews):
         # Check the startup crash icon is there.
         ok_('Startup Crash' in response.content)
 
-    def test_topcrasher_with_invalid_version(self):
-        # 0.1 is not a valid release version
-        response = self.client.get(self.base_url, {
-            'product': 'WaterWolf',
-            'version': '0.1',
-        })
-        eq_(response.status_code, 404)
-
     def test_topcrasher_with_product_sans_release(self):
         # SnowLion is not a product at all
         response = self.client.get(self.base_url, {
             'product': 'SnowLion',
             'version': '0.1',
-        })
-        eq_(response.status_code, 404)
-
-        # SeaMonkey is a product but has no active releases
-        response = self.client.get(self.base_url, {
-            'product': 'SeaMonkey',
-            'version': '9.5',
         })
         eq_(response.status_code, 404)
 
