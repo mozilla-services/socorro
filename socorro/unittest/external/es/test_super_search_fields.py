@@ -144,7 +144,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
 
         # Test logging.
         self.api.config.logger.info.assert_called_with(
-            'elasticsearch mapping changed for field "%s", '
+            'Elasticsearch mapping changed for field "%s", '
             'was "%s", now "%s"',
             'super_field',
             {'type': 'boolean', 'null_value': False},

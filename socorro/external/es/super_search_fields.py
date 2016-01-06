@@ -153,20 +153,15 @@ class SuperSearchFields(ElasticsearchBase):
             if key not in kwargs:
                 del params[key]
 
-        # Before making the change, make sure it does not break indexing.
-        new_mapping = self.get_mapping(overwrite_mapping=params)
-
-        # Try the mapping. If there is an error, an exception will be raised.
-        # If an exception is raised, the new mapping will be rejected.
-        self.test_mapping(new_mapping)
-
         es_connection = self.get_connection()
+        es_index = self.config.elasticsearch.elasticsearch_default_index
+        es_doc_type = 'supersearch_fields'
 
         # First verify that the field does exist.
         try:
             old_value = es_connection.get(
-                index=self.config.elasticsearch.elasticsearch_default_index,
-                doc_type='supersearch_fields',
+                index=es_index,
+                doc_type=es_doc_type,
                 id=params['name'],
             )['_source']  # Only the actual document is of interest.
         except elasticsearch.exceptions.NotFoundError:
@@ -176,39 +171,71 @@ class SuperSearchFields(ElasticsearchBase):
                 'be created before it can be updated. ' % params['name']
             )
 
-        if 'storage_mapping' in params and old_value['storage_mapping']:
+        # Then, if necessary, verify the new mapping.
+        if (
+            (
+                'storage_mapping' in params
+                and params['storage_mapping'] != old_value['storage_mapping']
+            ) or (
+                'in_database_name' in params
+                and params['in_database_name'] != old_value['in_database_name']
+            )
+        ):
+            # This is a change that will have an impact on the Elasticsearch
+            # mapping, we first need to make sure it doesn't break.
+            new_mapping = self.get_mapping(overwrite_mapping=params)
+
+            # Try the mapping. If there is an error, an exception will be
+            # raised. If an exception is raised, the new mapping will be
+            # rejected.
+            self.test_mapping(new_mapping)
+
+        if (
+            'storage_mapping' in params
+            and params['storage_mapping'] != old_value['storage_mapping']
+        ):
             # The storage mapping is an object, and thus is treated
             # differently than other fields by Elasticsearch. If a user
             # changes the object by removing a field from it, that field won't
             # be removed as part of the update (which performs a merge of all
-            # objects in the back-end). We therefore want to remove that field
-            # before we do the merge, so that it is entirely overwritten.
-            es_connection.update(
-                index=self.config.elasticsearch.elasticsearch_default_index,
-                doc_type='supersearch_fields',
-                body={'script': 'ctx._source.remove("storage_mapping")'},
-                id=params['name'],
+            # objects in the back-end). We therefore want to perform the merge
+            # ourselves, and remove the field from the database before
+            # re-indexing it.
+            new_doc = old_value.copy()
+            new_doc.update(params)
+
+            es_connection.delete(
+                index=es_index,
+                doc_type=es_doc_type,
+                id=new_doc['name'],
+            )
+            es_connection.index(
+                index=es_index,
+                doc_type=es_doc_type,
+                body=new_doc,
+                id=new_doc['name'],
+                op_type='create',
+                refresh=True,
             )
 
-        # Then update the new field in the database. Note that Elasticsearch
-        # takes care of merging the new document into the old one, so missing
-        # values won't be changed.
-        es_connection.update(
-            index=self.config.elasticsearch.elasticsearch_default_index,
-            doc_type='supersearch_fields',
-            body={'doc': params},
-            id=params['name'],
-            refresh=True,
-        )
-
-        if 'storage_mapping' in params:
             # If we made a change to the storage_mapping, log that change.
             self.config.logger.info(
-                'elasticsearch mapping changed for field "%s", '
+                'Elasticsearch mapping changed for field "%s", '
                 'was "%s", now "%s"',
                 params['name'],
                 old_value['storage_mapping'],
-                params['storage_mapping'],
+                new_doc['storage_mapping'],
+            )
+        else:
+            # Then update the new field in the database. Note that
+            # Elasticsearch takes care of merging the new document into the
+            # old one, so missing values won't be changed.
+            es_connection.update(
+                index=es_index,
+                doc_type=es_doc_type,
+                body={'doc': params},
+                id=params['name'],
+                refresh=True,
             )
 
         return True
@@ -416,11 +443,11 @@ class SuperSearchFields(ElasticsearchBase):
                     doc_type=self.config.elasticsearch.elasticsearch_doctype,
                     body=crash,
                 )
-        except elasticsearch.exceptions.ElasticsearchException:
+        except elasticsearch.exceptions.ElasticsearchException as e:
             raise BadArgumentError(
                 'storage_mapping',
                 msg='Indexing existing data in Elasticsearch failed with the '
-                    'new mapping. ',
+                    'new mapping. Error is: %s' % str(e),
             )
         finally:
             try:
