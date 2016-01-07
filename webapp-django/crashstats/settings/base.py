@@ -68,7 +68,6 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'commonware.response.cookies',
     'django_nose',
     'session_csrf',
 
@@ -124,7 +123,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'session_csrf.CsrfMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'commonware.middleware.FrameOptionsHeader',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'waffle.middleware.WaffleMiddleware',
     'ratelimit.middleware.RatelimitMiddleware',
@@ -625,6 +624,15 @@ CEF_VENDOR = config('CEF_VENDOR', 'Mozilla')
 # If you intend to run WITHOUT HTTPS, such as local development,
 # then set this to False
 SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', True, cast=bool)
+
+# By default, use HTTPONLY cookies
+SESSION_COOKIE_HTTPONLY = config('SESSION_COOKIE_HTTPONLY', True, cast=bool)
+
+# By default, we don't want to be inside a frame.
+# If you need to override this you can use the
+# `django.views.decorators.clickjacking.xframe_options_sameorigin`
+# decorator on specific views that can be in a frame.
+X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', 'DENY')
 
 # When socorro is installed (python setup.py install), it will create
 # a file in site-packages for socorro called "socorro/socorro_revision.txt".
