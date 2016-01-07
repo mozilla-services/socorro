@@ -4,20 +4,14 @@
 
 {% block site_js %}
 {{ super() }}
-<script src="{{ static('crashstats/js/moment.min.js') }}"></script>
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
-{% endcompress %}
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/api_tokens.js') }}"></script>
-{% endcompress %}
+{% javascript 'moment' %}
+{% javascript 'pagination' %}
+{% javascript 'api_tokens' %}
 {% endblock %}
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ static('manage/css/api_tokens.css') }}">
-{% endcompress %}
+{% stylesheet 'api_tokens' %}
 {% endblock %}
 
 {% block admin_title %}{{ super() }} - API Tokens{% endblock %}

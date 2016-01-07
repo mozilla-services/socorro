@@ -1,10 +1,8 @@
 {% extends "crashstats_base.html" %}
 {% block site_css %}
-  {{ super() }}
+    {{ super() }}
 
-  {% compress css %}
-  <link href="{{ static('crashstats/css/topcrashers.less') }}" rel="stylesheet" type="text/less" media="screen" />
-  {% endcompress %}
+    {% stylesheet 'topcrashers' %}
 {% endblock %}
 
 {% block page_title %}
@@ -234,14 +232,9 @@ Top Crashers for {{ product }} {{ version }}
         };
 //]]>
 </script>
-  {{ super() }}
-  {% compress js %}
-  <script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-  {% endcompress %}
-  {% compress js %}
-  <script src="{{ static('crashstats/js/socorro/topcrash.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-  <script src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
-  {% endcompress %}
-
+    {{ super() }}
+    {% javascript 'jquery_tablesorter' %}
+    {% javascript 'bugzilla' %}
+    {% javascript 'correlation' %}
+    {% javascript 'topcrash' %}
 {% endblock %}

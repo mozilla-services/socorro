@@ -2,11 +2,7 @@
 
 {% block site_css %}
     {{ super() }}
-
-    {% compress css %}
-    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/metricsgraphics.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/metricsgraphics_custom.css') }}">
-    {% endcompress %}
+    {% stylesheet 'metricsgraphics' %}
 {% endblock %}
 
 {% block page_title %}
@@ -78,14 +74,9 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
 {% endblock %}
 {% block site_js %}
     {{ super() }}
-    {% compress js %}
-    <script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-    <script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
-    {% endcompress %}
-
-    {% compress js %}
-    <script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-    <script src="{{ static('crashstats/js/socorro/dashboard_graph.js') }}"></script>
-    <script src="{{ static('crashstats/js/socorro/daily.js') }}"></script>
-    {% endcompress %}
+    {% javascript 'd3' %}
+    {% javascript 'metricsgraphics' %}
+    {% javascript 'daily' %}
+    {% javascript 'socorro_utils' %}
+    {% javascript 'home' %}
 {% endblock %}

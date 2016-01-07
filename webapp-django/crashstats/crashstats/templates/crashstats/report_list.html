@@ -2,15 +2,8 @@
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
-<link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
-{% endcompress %}
-{% compress css %}
-<link media="screen" href="{{ static('crashstats/css/report_list.less') }}" type="text/less" rel="stylesheet" />
-<link media="screen" href="{{ static('crashstats/css/accordion.less') }}" type="text/less" rel="stylesheet" />
-{% endcompress %}
+{% stylesheet 'jquery_ui' %}
+{% stylesheet 'report_list' %}
 {% endblock %}
 
 {% block report %}
@@ -182,29 +175,13 @@
 
 {% block site_js %}
 {{ super() }}
-<script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-
-{% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-{% endcompress %}
-{% compress js %}
-<script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.cookie.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/correlation.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/lib/awty.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/lib/accordions.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_signature_summary.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_graph.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_reports.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_comments.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_correlations.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_sigurls.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_bugzilla.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/report_list_table.js') }}"></script>
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-{% endcompress %}
+{% javascript 'd3' %}
+{% javascript 'jquery_ui' %}
+{% javascript 'jquery_tablesorter' %}
+{% javascript 'correlation' %}
+{% javascript 'bugzilla' %}
+{% javascript 'socorro_utils' %}
+{% javascript 'report_list' %}
 
 <script type="text/javascript">
     var SocReport = {

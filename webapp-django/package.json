@@ -1,0 +1,14 @@
+{
+  "name": "socorro-webapp-django",
+  "description": "webapp for crash-stats",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/socorro.git"
+  },
+  "author": "Mozilla",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "less": "2.5.3",
+    "yuglify": "0.1.4"
+  }
+}

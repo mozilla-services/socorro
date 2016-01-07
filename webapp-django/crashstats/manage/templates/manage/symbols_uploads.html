@@ -34,13 +34,9 @@
 
 {% block site_js %}
 {{ super() }}
-<script type="text/javascript" src="{{ static('crashstats/js/moment.min.js') }}"></script>
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
-{% endcompress %}
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/symbols-uploads.js') }}"></script>
-{% endcompress %}
+{% javascript 'moment' %}
+{% javascript 'pagination' %}
+{% javascript 'manage:symbols_uploads' %}
 {% endblock %}
 
 {% block admin_title %}{{ super() }} - {{ page_title }}{% endblock %}

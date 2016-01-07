@@ -3,16 +3,10 @@
 
 {% block site_css %}
     {{ super() }}
-    {% compress css %}
-<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
-<link href="{{ static('crashstats/css/lib/metricsgraphics.css') }}" type="text/css" rel="stylesheet">
-<link href="{{ static('crashstats/css/metricsgraphics_custom.css') }}" type="text/css" rel="stylesheet">
-    {% endcompress %}
-
-    {% compress css %}
-<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
-<link href="{{ static('signature/css/signature_report.less') }}" type="text/less" rel="stylesheet">
-    {% endcompress %}
+    {% stylesheet 'select2' %}
+    {% stylesheet 'metricsgraphics' %}
+    {% stylesheet 'search' %}
+    {% stylesheet 'signature_report' %}
 {% endblock %}
 
 {% block content %}
@@ -90,30 +84,12 @@ var COLUMNS = {{ columns | join(', ') | json_dumps }};
 var DEFAULT_CHANNEL = '{{ channel }}';
 </script>
 
-<script src="{{ static('crashstats/js/lib/d3.min.js') }}"></script>
-<script src="{{ static('crashstats/js/lib/metricsgraphics.min.js') }}"></script>
-
-{% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-{% endcompress %}
-
-    {% compress js %}
-<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
-<script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-    {% endcompress %}
-
-    {% compress js %}
-<script src="{{ static('signature/js/signature_report.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab_summary.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab_graphs.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab_reports.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab_aggregations.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab_comments.js') }}"></script>
-<script src="{{ static('signature/js/signature_tab_graph.js') }}"></script>
-<script src="{{ static('signature/js/signature_panel.js') }}"></script>
-    {% endcompress %}
-
+{% javascript 'd3' %}
+{% javascript 'jquery_ui' %}
+{% javascript 'jquery_tablesorter' %}
+{% javascript 'select2' %}
+{% javascript 'dynamic_form' %}
+{% javascript 'socorro_utils' %}
+{% javascript 'metricsgraphics' %}
+{% javascript 'signature_report' %}
 {% endblock %}

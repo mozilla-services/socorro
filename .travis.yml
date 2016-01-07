@@ -14,7 +14,6 @@ services:
   - memcached
 
 before_install:
-  - npm install -g less
   - gem install puppet puppet-lint
   - ./scripts/start-travis-elasticsearch.sh
 

@@ -3,19 +3,9 @@
 
 {% block site_css %}
     {{ super() }}
-    {% compress css %}
-<link href="{{ static('crashstats/js/lib/select2/select2.css') }}" type="text/css" rel="stylesheet">
-    {% endcompress %}
-
-    {% compress css %}
-    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.css') }}" media="screen" />
-    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.structure.css') }}" media="screen" />
-    <link rel="stylesheet" type="text/css" href="{{ static('crashstats/css/lib/jquery-ui.theme.css') }}" media="screen" />
-    {% endcompress %}
-
-    {% compress css %}
-<link href="{{ static('supersearch/css/search.less') }}" type="text/less" rel="stylesheet">
-    {% endcompress %}
+    {% stylesheet 'select2' %}
+    {% stylesheet 'jquery_ui' %}
+    {% stylesheet 'search' %}
 {% endblock %}
 
 {% block content %}
@@ -122,21 +112,11 @@ var COLUMNS = {{ possible_columns | json_dumps }};
 var FACETS = {{ possible_facets | json_dumps }};
 var BASE_URL = location.protocol + '//' + location.host;
 </script>
-
-{% compress js %}
-<script src="{{ static('crashstats/js/jquery/plugins/jquery-ui.js') }}"></script>
-<script src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-{% endcompress %}
-
-    {% compress js %}
-<script src="{{ static('crashstats/js/lib/select2/select2.js') }}"></script>
-<script src="{{ static('supersearch/js/lib/dynamic_form.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/utils.js') }}"></script>
-    {% endcompress %}
-
-    {% compress js %}
-<script src="{{ static('supersearch/js/socorro/search.js') }}"></script>
-<script src="{{ static('crashstats/js/socorro/bugzilla.js') }}"></script>
-    {% endcompress %}
-
+    {% javascript 'select2' %}
+    {% javascript 'jquery_ui' %}
+    {% javascript 'jquery_tablesorter' %}
+    {% javascript 'dynamic_form' %}
+    {% javascript 'socorro_utils' %}
+    {% javascript 'bugzilla' %}
+    {% javascript 'search' %}
 {% endblock %}

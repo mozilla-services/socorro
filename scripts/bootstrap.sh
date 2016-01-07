@@ -6,10 +6,6 @@ source scripts/defaults
 
 git submodule update --init --recursive
 
-if [[ ! "$(type -p lessc)" ]]; then
-    printf "\e[0;32mlessc not found! less must be installed and lessc on your path to build socorro.\e[0m\n" && exit 1
-fi
-
 if [ ! -d "$VIRTUAL_ENV" ]; then
     virtualenv -p $PYTHON ${VIRTUAL_ENV}
 fi

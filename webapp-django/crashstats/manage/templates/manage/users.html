@@ -4,13 +4,9 @@
 
 {% block site_js %}
 {{ super() }}
-<script src="{{ static('crashstats/js/moment.min.js') }}"></script>
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/pagination_utils.js') }}"></script>
-{% endcompress %}
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/users.js') }}"></script>
-{% endcompress %}
+{% javascript 'moment' %}
+{% javascript 'pagination' %}
+{% javascript 'manage:users' %}
 {% endblock %}
 
 {% block site_css %}

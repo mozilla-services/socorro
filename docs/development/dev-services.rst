@@ -203,10 +203,6 @@ Install dependencies
   sudo pip-2.7 install docutils
   brew install mercurial
 
-Install lessc
-::
-  sudo npm install -g less
-
 Set your PATH
 ::
   export PATH=/usr/local/bin:/usr/local/sbin:$PATH

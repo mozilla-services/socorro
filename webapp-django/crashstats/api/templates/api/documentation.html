@@ -6,17 +6,12 @@
 
 {% block site_css %}
 {{ super() }}
-{% compress css %}
-<link rel="stylesheet" href="{{ static('api/css/documentation.css') }}" type="text/css">
-{% endcompress %}
+{% stylesheet 'api_documentation' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
-<script type="text/javascript" src="{{ static('api/js/lib/filesize.min.js') }}"></script>
-{% compress js %}
-<script type="text/javascript" src="{{ static('api/js/testdrive.js') }}"></script>
-{% endcompress %}
+{% javascript 'api_documentation' %}
 {% endblock %}
 
 {% block content %}

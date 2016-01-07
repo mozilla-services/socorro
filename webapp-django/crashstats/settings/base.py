@@ -9,6 +9,8 @@ from pkg_resources import resource_string
 import dj_database_url
 from decouple import config, Csv
 
+from bundles import PIPELINE_CSS, PIPELINE_JS  # NOQA
+
 
 ROOT = os.path.abspath(
     os.path.join(
@@ -60,10 +62,10 @@ PROJECT_MODULE = 'crashstats'
 ROOT_URLCONF = '%s.urls' % PROJECT_MODULE
 
 INSTALLED_APPS = (
-    'compressor',
+    'pipeline',
     'django_browserid',
-    'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'commonware.response.cookies',
@@ -96,37 +98,18 @@ INSTALLED_APPS = (
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-COMPRESS_ROOT = STATIC_ROOT
-
-COMPRESS_CSS_FILTERS = (
-    'compressor.filters.css_default.CssAbsoluteFilter',
-    'compressor.filters.cssmin.CSSMinFilter'
-)
-
-COMPRESS_PRECOMPILERS = (
-    ('text/less', 'lessc {infile} {outfile}'),
-)
-
 
 def JINJA_CONFIG():
     config = {
         'extensions': [
             'jinja2.ext.do',
             'jinja2.ext.with_',
-            'jinja2.ext.loopcontrols'
+            'jinja2.ext.loopcontrols',
+            'pipeline.templatetags.ext.PipelineExtension',
         ],
         'finalize': lambda x: x if x is not None else '',
     }
     return config
-
-
-def COMPRESS_JINJA2_GET_ENVIRONMENT():
-    """This function is automatically called by django-compressor"""
-    from jingo import env
-    from compressor.contrib.jinja2ext import CompressorExtension
-    env.add_extension(CompressorExtension)
-
-    return env
 
 
 # Because Jinja2 is the default template loader, add any non-Jinja templated
@@ -604,24 +587,26 @@ DEBUG_PROPAGATE_EXCEPTIONS = config(
 
 COMPRESS_ENABLED = config('COMPRESS_ENABLED', True, cast=bool)
 
-# By default compression is done in runtime, if you enable
-# offline compression, running the test suite will be 10 times faster
-# but you'll need to remember to first run:
-#     ./manage.py collectstatic --noinput
-#     ./manage.py compress --force --engine=jinja2
-# at least once every time any of the static files change.
-COMPRESS_OFFLINE = config('COMPRESS_OFFLINE', True, cast=bool)
-
-COMPRESS_ROOT = STATIC_ROOT
-COMPRESS_CSS_FILTERS = (
-    'compressor.filters.css_default.CssAbsoluteFilter',
-    'compressor.filters.cssmin.CSSMinFilter'
-)
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'compressor.finders.CompressorFinder',
+    'pipeline.finders.PipelineFinder',
+)
+
+STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+
+# You have to run `npm install` for this to be installed in `./node_modules`
+PIPELINE_YUGLIFY_BINARY = path('node_modules/.bin/yuglify')
+PIPELINE_LESS_BINARY = path('node_modules/.bin/lessc')
+
+# Don't wrap javascript code in... `(...code...)();`
+# because possibly much code has been built with the assumption that things
+# will be made available globally.
+PIPELINE_DISABLE_WRAPPER = True
+
+PIPELINE_COMPILERS = (
+    'pipeline.compilers.less.LessCompiler',
 )
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.

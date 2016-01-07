@@ -4,9 +4,7 @@
 
 {% block site_js %}
 {{ super() }}
-{% compress js %}
-<script type="text/javascript" src="{{ static('manage/js/fields.js') }}"></script>
-{% endcompress %}
+{% javascript 'manage:fields' %}
 {% endblock %}
 
 {% block site_css %}
