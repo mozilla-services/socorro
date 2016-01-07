@@ -111,12 +111,12 @@ Jinja2==2.5.5
 cssselect==0.9.1
 # sha256: l2sTklJ8dzg-uCfef9RNrK8Sl6Y6oN9Sb0evMC9HnVQ
 path.py==5.1
-# sha256: FbQhMbJfN2Fl0ZX-ThewooMRGCqvkzDV61dbvtpaaYk
-# sha256: Yuh_1UU1-5MrSk2Uho21IyV6EDHIvGvTWMIBVDPmRts
-pep8==1.5.7
-# sha256: P6gKELNtUWhr93RPXcmWIs1cmM6O1kAi5imGiq_Bd2k
-# sha256: rEVxaVwQzhU2vNuhopS58tPmzJ0OoXG2fVCghkzj4EI
-pyflakes==0.8.1
+# sha256: SqEp342QB7GSv4IBP0FVM5lGUtfKqTDQAmh-tCpsKkE
+# sha256: uLfjVjC1U54moZffxgBb6eHpoTVJazd3I6jrwBuby_8
+pep8==1.6.2
+# sha256: Bx0SHp57MwWKobpd57zpuXv6MUnP4ay7ZYfCH8HI7aE
+# sha256: 854zpMA77q2HdPAFvT7PDD8vJk-gIB3pZfzgr_HTQmM
+pyflakes==1.0.0
 # sha256: Fq70HMTj2aSj46WXSBRRqosmuj5ovaLIILH-9wggbiE
 pyhs2==0.6.0
 # sha256: TzJCJuHuhaxBUgV5up3nAylAEmAuU2IX_Q50VuFH2IY
@@ -164,12 +164,12 @@ pyasn1==0.1.7
 # sha256: Ik3Rv9j8259nJWxUMBR7TAEF1y9qyM47ymtIZEnsYGI
 # sha256: 6gWLBd1MYed3X8xk-j2j7kMPcT3gMsO7WvOpC_UbLro
 django-nose==1.4.1
-# sha256: wEJTewVQLw7kQNlQ1fONWjwROwPMpHPDnqkAAb2ayFc
-# sha256: 0mqdAlLan4Mbgne4JJYbsQsfnXn0dS0y5IFLe80eCJs
-flake8==2.4.0
-# sha256: ic9r9P9kT_i5EuL6fiq7aNV6jn6Rjjk8coQNMNLrzws
-# sha256: PYypv2XFAU9GkYBUTR3Vu1ud9wmq1jBPnC5DcK4Ke3w
-mccabe==0.3
+# sha256: NPE9CD-55bFyisw90QiGtA-iVO_gO5ftAc7ViSbDjb0
+# sha256: RIrtSLBnH-YGL0e5jDCB86Szb76Z3bisKjvm5ssTVgM
+flake8==2.5.1
+# sha256: vWwID7NyrrywzhnjXdrHRPKr9ae--iB9stEJfUjv5jo
+# sha256: X36m-zqpr-FG0H_W1c7feIdH2LDCnkRzJFPCstsePRY
+mccabe==0.3.1
 # sha256: ufv3R_qOcR0zDy9Da5suz17tnrZ6Y3yoGrzRHCq-3sg
 python-decouple==2.3
 # sha256: 8uJz7TSsu1YJYtXPEpF5NtjfAil98JvTCJuFRtRYQTg
