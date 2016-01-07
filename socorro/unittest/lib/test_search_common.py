@@ -210,6 +210,19 @@ class TestSearchBase(TestCase):
         eq_(params['user_comments'][0].operator, '__null__')
         ok_(params['user_comments'][0].operator_not)
 
+    def test_get_parameters_date_no_operator(self):
+        with _get_config_manager().context() as config:
+            search = SearchBaseWithFields(
+                config=config,
+            )
+
+        # the date parameter must always have a prefix operator
+        assert_raises(
+            BadArgumentError,
+            search.get_parameters,
+            date='2016-01-01'
+        )
+
     def test_get_parameters_date_defaults(self):
         with _get_config_manager().context() as config:
             search = SearchBaseWithFields(
