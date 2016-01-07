@@ -1,0 +1,6 @@
+# These are requirements that you can only install if you're on Linux.
+# Basically, all the other requirements in `requirements.txt` should
+# work on all platforms.
+
+# sha256: nJmKXXYGyoNQZc2rwBOubGbrnqdqAKHjvG4M_itPcfQ
+pyinotify==0.9.6

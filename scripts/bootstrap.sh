@@ -15,6 +15,11 @@ source "$VIRTUAL_ENV/bin/activate"
 ${VIRTUAL_ENV}/bin/pip install tools/peep-2.*tar.gz
 ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
 
+# only install `linux-requirements.txt` if you're on linux
+if [[ `uname` == 'Linux' ]]; then
+  ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r linux-requirements.txt
+fi
+
 if [ -n "${SOCORRO_DEVELOPMENT_ENV+1}" ]; then
     # install development egg in local virtualenv
     ${VIRTUAL_ENV}/bin/python setup.py develop

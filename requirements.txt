@@ -121,10 +121,6 @@ pyflakes==0.8.1
 pyhs2==0.6.0
 # sha256: TzJCJuHuhaxBUgV5up3nAylAEmAuU2IX_Q50VuFH2IY
 sasl==0.1.3
-# this is a temporary fork until https://github.com/seb-m/pyinotify/pull/92
-# is merged and a new pyinotify release is available
-# sha256: nRcVzSXV8H7KWbh-30BOtW37kRIs9HZQTN52I0LPN0c
-https://github.com/rhelmer/pyinotify/archive/208583041a.zip#egg=pyinotify
 # sha256: EAFkVWiXwSGfM3BuY6ZWuISNM9CbAWHi3u_MUJeM9i0
 # sha256: IDkUT86PG2A9A_paVkNXjfGtAHxO1BphfwKjlD9wWaE
 Django==1.7.11
