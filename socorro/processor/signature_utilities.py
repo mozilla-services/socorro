@@ -452,6 +452,7 @@ class CSignatureTool(CSignatureToolBase):
           'objc_exception_throw',
           'objc_msgSend',
           'operator new',
+          'PLDHashTable::.*',
           'PL_.*',
           'port_.*',
           'PORT_.*',
