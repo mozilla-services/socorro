@@ -260,7 +260,7 @@ PIPELINE_JS = {
         'source_filenames': (
             'crashstats/js/socorro/exploitability.js',
         ),
-        'output_filename': 'js/.min.js',
+        'output_filename': 'js/exploitability.min.js',
     },
     'gccrashes': {
         'source_filenames': (
@@ -442,6 +442,7 @@ for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
         out = v['output_filename']
         assert isinstance(v['source_filenames'], tuple), v
         assert isinstance(out, basestring), v
+        assert not out.split('/')[-1].startswith('.'), k
         assert '_' not in out
         assert out.endswith('.min.css') or out.endswith('.min.js')
         for asset_file in v['source_filenames']:
