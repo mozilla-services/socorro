@@ -844,8 +844,10 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             assert '/graphics_devices' in url
             if (
-                'adapter_hex' in params and params['adapter_hex'] == 'xyz123'
-                and 'vendor_hex' in params and params['vendor_hex'] == 'abc123'
+                'adapter_hex' in params and
+                params['adapter_hex'] == 'xyz123' and
+                'vendor_hex' in params and
+                params['vendor_hex'] == 'abc123'
             ):
                 return Response("""
                 {

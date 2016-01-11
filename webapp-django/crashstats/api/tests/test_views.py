@@ -510,7 +510,10 @@ class TestViews(BaseTestViews):
 
         now = datetime.datetime.utcnow()
         yesterday = now - datetime.timedelta(days=1)
-        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S')
+
+        def fmt(x):
+            return x.strftime('%Y-%m-%d %H:%M:%S')
+
         params = {
             'signature': 'one & two',
             'start_date': fmt(yesterday),
@@ -602,7 +605,10 @@ class TestViews(BaseTestViews):
 
         now = datetime.datetime.utcnow()
         yesterday = now - datetime.timedelta(days=1)
-        fmt = lambda x: x.strftime('%Y-%m-%d %H:%M:%S')
+
+        def fmt(x):
+            return x.strftime('%Y-%m-%d %H:%M:%S')
+
         params = {
             'signature': 'one & two',
             'start_date': fmt(yesterday),

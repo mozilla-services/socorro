@@ -78,7 +78,8 @@ class BugInfoForm(BaseForm):
         return include_fields
 
 
-make_choices = lambda seq: [(x, x) for x in seq]
+def make_choices(seq):
+    return [(x, x) for x in seq]
 
 
 class ReportListForm(BaseForm):
