@@ -52,8 +52,7 @@ def get_allowed_fields(user):
     return tuple(
         x['name']
         for x in SuperSearchFields().get().values()
-        if x['is_exposed']
-        and has_permissions(user, x['permissions_needed'])
+        if x['is_exposed'] and has_permissions(user, x['permissions_needed'])
     )
 
 

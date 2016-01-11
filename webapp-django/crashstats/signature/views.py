@@ -75,10 +75,10 @@ def signature_report(request, params, default_context=None):
     fields = sorted(
         x['name']
         for x in SuperSearchFields().get().values()
-        if x['is_exposed']
-        and x['is_returned']
-        and has_permissions(request.user, x['permissions_needed'])
-        and x['name'] != 'signature'  # exclude the signature field
+        if x['is_exposed'] and
+        x['is_returned'] and
+        has_permissions(request.user, x['permissions_needed']) and
+        x['name'] != 'signature'  # exclude the signature field
     )
     context['fields'] = [
         {'id': field, 'text': field.replace('_', ' ')} for field in fields

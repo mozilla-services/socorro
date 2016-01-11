@@ -83,9 +83,9 @@ class SuperSearch(models.SocorroMiddleware):
 
         self.required_params = tuple(
             (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed']
-            and not x['permissions_needed']
-            and x['is_mandatory']
+            if x['is_exposed'] and
+            not x['permissions_needed'] and
+            x['is_mandatory']
         )
 
         self.extended_fields = self._get_extended_params()
@@ -95,9 +95,9 @@ class SuperSearch(models.SocorroMiddleware):
 
         self.possible_params = tuple(
             (x['name'], list) for x in self.all_fields.values()
-            if x['is_exposed']
-            and not x['permissions_needed']
-            and not x['is_mandatory']
+            if x['is_exposed'] and
+            not x['permissions_needed'] and
+            not x['is_mandatory']
         ) + SUPERSEARCH_META_PARAMS + tuple(self.extended_fields)
 
     def _get_extended_params(self):
@@ -137,8 +137,8 @@ class SuperSearch(models.SocorroMiddleware):
         # that are returned and do not require any permission.
         allowed_fields = set(
             x for x in self.all_fields
-            if self.all_fields[x]['is_returned']
-            and not self.all_fields[x]['permissions_needed']
+            if self.all_fields[x]['is_returned'] and
+            not self.all_fields[x]['permissions_needed']
         )
 
         # Extend that list with the special fields, like `_histogram.*`.
@@ -150,9 +150,9 @@ class SuperSearch(models.SocorroMiddleware):
 
             field_name = histogram[len('_histogram.'):]
             if (
-                field_name in self.all_fields
-                and self.all_fields[field_name]['is_returned']
-                and not self.all_fields[field_name]['permissions_needed']
+                field_name in self.all_fields and
+                self.all_fields[field_name]['is_returned'] and
+                not self.all_fields[field_name]['permissions_needed']
             ):
                 allowed_fields.add(histogram)
 

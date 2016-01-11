@@ -480,8 +480,8 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
             for release in releases:
                 for current in context['currentversions']:
                     if (
-                        release['product_name'] == current['product']
-                        and release['version_string'] == current['version']
+                        release['product_name'] == current['product'] and
+                        release['version_string'] == current['version']
                     ):
                         current_end_date = (
                             datetime.datetime.strptime(current['end_date'],
