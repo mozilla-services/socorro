@@ -267,6 +267,9 @@ class SearchBase(object):
             lower_than = None
             greater_than = None
             for param in parameters['date']:
+                if not param.operator:
+                    # dates can't be a specific date
+                    raise BadArgumentError('date must have a prefix operator')
                 if (
                     '<' in param.operator and (
                         not lower_than or
