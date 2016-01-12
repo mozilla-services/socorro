@@ -597,8 +597,14 @@ STATICFILES_FINDERS = (
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
 
 # You have to run `npm install` for this to be installed in `./node_modules`
-PIPELINE_YUGLIFY_BINARY = path('node_modules/.bin/yuglify')
+
 PIPELINE_LESS_BINARY = path('node_modules/.bin/lessc')
+PIPELINE_JS_COMPRESSOR = 'pipeline.compressors.uglifyjs.UglifyJSCompressor'
+PIPELINE_UGLIFYJS_BINARY = path('node_modules/.bin/uglifyjs')
+PIPELINE_UGLIFYJS_ARGUMENTS = '--mangle'
+PIPELINE_CSS_COMPRESSOR = 'pipeline.compressors.cssmin.CSSMinCompressor'
+PIPELINE_CSSMIN_BINARY = path('node_modules/.bin/cssmin')
+
 
 # Don't wrap javascript code in... `(...code...)();`
 # because possibly much code has been built with the assumption that things
