@@ -155,6 +155,9 @@ class IntegrationTestFeaturedVersionsSync(IntegrationTestBase):
                         {'featured': True, 'version': '24.5.0'},
                         {'featured': False, 'version': '15.0'},
                     ],
+                    'Camino': [
+                        {'featured': False, 'version': '2.0.2'},
+                    ]
                 },
                 'total': 1
             })

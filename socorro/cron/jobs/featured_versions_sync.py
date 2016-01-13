@@ -28,11 +28,13 @@ class FeaturedVersionsSyncCronApp(BaseCronApp):
             for product, versions in hits.items()
         )
         for product in featured_products:
-            self.database_transaction_executor(
-                self.edit_featured_versions,
-                product,
-                featured_products[product]
-            )
+            versions = featured_products[product]
+            if versions:
+                self.database_transaction_executor(
+                    self.edit_featured_versions,
+                    product,
+                    featured_products[product]
+                )
 
     def edit_featured_versions(self, connection, product, versions):
         sql = """
