@@ -21,3 +21,6 @@ https://lists.mozilla.org/listinfo/tools-socorro
 
 Socorro/Breakpad IRC channel:
 irc://irc.mozilla.org/breakpad
+
+Deployment status:
+http://whatsdeployed.io/s-7M7
