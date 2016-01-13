@@ -46,8 +46,9 @@ isodate==0.4.7
 lxml==3.4.1
 # sha256: jjAivJYKpdX8fUxWR4YIdpOhqZ8V4CWtkg_AqjeOHWc
 pgxnclient==1.2.1
-# sha256: Zm_VIvShBZ1bi0mW5Xb6eGL1BVKOEc8e9VRjEcYMPk0
-pika==0.9.8
+# sha256: YxMaruxIpsjx2x_mV-HnTPOEw5J-t9FyXjHtrkIg3qQ
+# sha256: cne00SqZ76QFh4JhTYQTiYP5-J1pC9_OpmKQ2BCAZFk
+pika==0.10.0
 # sha256: as-au751fvddwuzZ2RunSVR5Qauv--af8ghqnjfUkEw
 psycopg2==2.6.1
 # sha256: U6gisBsElN-WWMBOhyFhgOXsvoWxeGc92Eix-AnVwQA
