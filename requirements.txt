@@ -28,10 +28,11 @@ sqlalchemy-citext==1.0-2
 mercurial==2.7.1
 # sha256: Yj_jJZOSGfYbQathJMV_SWDOT0hlFoRqqvfUd10qLto
 honcho==0.5.0
-# sha256: th84eGr2uNZEtTBVIBLWacdBX89YUt4yDykIANuXmD0
-gunicorn==18.0
-# sha256: wLOB1sItqTHoXj7-YSYp_jOgGsJbDwKKpjG4XYbVAos
-uWSGI==2.0.10
+# sha256: xX8bAFpLkJMzA8je7Zvt61CTMapqCpkAI6V5blK9iYg
+# sha256: U7WARHZK151zKvGMWAsaVLckrfTSkOwZxMp4qyKh7g0
+gunicorn==19.4.5
+# sha256: MGtR25dkjW0ju36s125aQTQ0V18iDawd4jHIwm0z5Ak
+uWSGI==2.0.12
 # sha256: RsjrEON7PfBBeJVwaZ6bRgyiLm39JWyiDkIE2wz7K8U
 # sha256: FnmOimdGf1D4-bCAyOcKQfD_fS3QYedEI-U7x-2S-40
 configman==1.2.11
@@ -132,17 +133,6 @@ fancy-tag==0.2.0
 https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
 # sha256: xJWo39CpwdPY7QISG7sotsnTTU2jCqk6fmOcDz17Bjk
 jingo==0.7.1
-# sha256: fjEbGTXZzUaSH2AmQWeicWQX00adBDuSIR7AwpQiKO8
-https://github.com/fwenzel/django-sha2/archive/3ba2b47.zip#egg=django-sha2
-# sha256: o2HP2_WwSljbspF8fp7FRyWPZqltTE5THiIoh7GFuxE
-https://github.com/jsocol/commonware/archive/b554418.zip#egg=commonware
-# sha256: LRy1WDkWc99RCaP-XoT95hYO3IskGz6xmrPTq-m43zE
-cef==0.5
-# sha256: aLzPfWX4LppstFym1qD3o35lVH9HUNrrmjq9wcvd9hI
-https://github.com/mozilla/nuggets/archive/ce50688.zip#egg=nuggets
-# sha256: UE5EGWeseGBKs18DABj8mm-icOam6YRx0jEf139wZ0s
-# sha256: smA0Iw78731g5SZ4kO2mVt_EnFZ_JxJdkH7uT-f5puw
-django-compressor==1.4
 # sha256: Eq491FQ_jcXMX0vdf2_RaPTRYkQU11OkQVc8zBh6jkM
 django-jsonfield==0.9.13
 # sha256: iTXjRYmmVJstzm7v-uQNInOetVtqmUow9mpCjW-YuBM
