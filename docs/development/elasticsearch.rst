@@ -30,10 +30,10 @@ Web app. Here is a list of those features:
       share a signature. Features include listing crash reports, listing user
       comments and showing aggregation on any field of the database.
     * *example*: https://crash-stats.mozilla.com/signature/?signature=nsTimeout::~nsTimeout%28%29
-* Your Crash Reports
-    * a very simple page based on Super Search that shows the recent crash
+* Profile page
+    * on the profile page, Super Search is used to show the recent crash
       reports that contain the user's email address.
-    * *example*: https://crash-stats.mozilla.com/your-crashes/
+    * *example*: https://crash-stats.mozilla.com/profile/
 
 Supported versions
 ------------------
@@ -51,20 +51,6 @@ tweak it to fit your needs, depending on the size of your cluster, the
 quantity of data you deal with, etc.
 
 .. _`Setting up elasticsearch`: https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html
-
-One of our services requires the use of Groovy, the scripting tool that
-Elasticsearch uses. However, because of some security issues,
-`Groovy has been disabled by default`_ in recent versions of ES. If your Elasticsearch is
-not publicly accessible, there is no risk with enabling it.
-
-.. _`Groovy has been disabled by default`: https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-scripting.html
-
-To enable Groovy, add to your ``elasticsearch.yml`` file
-(usually in ``/etc/elasticsearch/``)::
-
-    script.disable_dynamic: false
-
-Then restart Elasticsearch and you should be set.
 
 Once elasticsearch is installed, you will want to set up the basic data
 required by Socorro. There is a script that will do that for you::
@@ -163,7 +149,7 @@ Here is a list of the switches you need to turn on to use each feature:
 +-----------------------+-----------------------------------------------------+
 | Feature               | Switches                                            |
 +=======================+=====================================================+
-| Signature report      | signature-report                                    |
+|                       | there is no feature behind waffle at the moment     |
 +-----------------------+-----------------------------------------------------+
 
 Here are features that are enabled by default, that you need to switch
