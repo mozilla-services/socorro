@@ -2,7 +2,6 @@ import isodate
 import datetime
 import json
 import math
-import urllib
 from collections import defaultdict
 
 from django import http
@@ -243,12 +242,6 @@ def search_results(request):
     search_results['total_count'] = search_results['total']
 
     data['query'] = search_results
-    data['report_list_query_string'] = urllib.urlencode(
-        utils.sanitize_dict(
-            get_report_list_parameters(params)
-        ),
-        True
-    )
 
     return render(request, 'supersearch/search_results.html', data)
 
