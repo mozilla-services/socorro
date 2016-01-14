@@ -47,6 +47,12 @@
                         <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             Add term
                         </a>
+                        {% elif is_list(crash[column]) %}
+                            {% for val in crash[column] %}
+                            <a href="{{ current_url }}&amp;{{ column }}=%3D{{ val }}" class="term" data-field="{{ column }}" data-content="{{ val }}" title="Add this term to the search form">
+                                {{ val }}
+                            </a>
+                            {% endfor %}
                         {% else %}
                         <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             {{ crash[column] }}
