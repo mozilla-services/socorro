@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from datetime import timedelta
-from collections import Sequence
 
 from configman import Namespace, RequiredConfig, class_converter
 
@@ -32,8 +31,10 @@ class PGQueryNewCrashSource(RequiredConfig):
     )
     required_config.add_option(
         'database_class',
-        default='socorro.external.postgresql.connection_context'
-            '.ConnectionContext',
+        default=(
+            'socorro.external.postgresql.connection_context'
+            '.ConnectionContext'
+        ),
         doc='the class responsible for connecting to Postgres',
         from_string_converter=class_converter,
         reference_value_from='resource.postgresql',
@@ -47,7 +48,6 @@ class PGQueryNewCrashSource(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, name, quit_check_callback=None):
-
         self.database = config.database_class(
             config
         )

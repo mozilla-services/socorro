@@ -327,4 +327,3 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
         nothing; however it is necessary for compatibility purposes.
         """
         pass
-
