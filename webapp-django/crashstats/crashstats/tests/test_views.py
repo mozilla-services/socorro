@@ -1972,8 +1972,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
     @mock.patch('requests.get')
-    def test_crashes_per_user(self, rget):
-        url = reverse('crashstats:crashes_per_user')
+    def test_crashes_per_day(self, rget):
+        url = reverse('crashstats:crashes_per_day')
 
         def mocked_get(url, params, **options):
             if '/adi/' in url:
@@ -2131,8 +2131,8 @@ class TestViews(BaseTestViews):
         ok_(is_percentage(first_row[3]))  # throttle
         ok_(is_percentage(first_row[4]))  # ratio
 
-    def test_crashes_per_user_legacy_by_build_date(self):
-        url = reverse('crashstats:crashes_per_user')
+    def test_crashes_per_day_legacy_by_build_date(self):
+        url = reverse('crashstats:crashes_per_day')
 
         response = self.client.get(url, {
             'date_range_type': 'build',
@@ -2151,8 +2151,8 @@ class TestViews(BaseTestViews):
         ok_('date_range_type=' not in parsed.query)
 
     @mock.patch('requests.get')
-    def test_crashes_per_user_with_beta_versions(self, rget):
-        """This is a variation on test_crashes_per_user() (above)
+    def test_crashes_per_day_with_beta_versions(self, rget):
+        """This is a variation on test_crashes_per_day() (above)
         but with fewer basic assertions. The point of this
         test is to request it for '18.0b' and '19.0'. The '18.0b'
         is actual a beta version that needs to be exploded into its
@@ -2161,7 +2161,7 @@ class TestViews(BaseTestViews):
 
         models.CurrentProducts.cache_seconds = 0
 
-        url = reverse('crashstats:crashes_per_user')
+        url = reverse('crashstats:crashes_per_day')
 
         def mocked_get(url, params, **options):
             if '/adi/' in url:
@@ -2321,6 +2321,19 @@ class TestViews(BaseTestViews):
 
         # put it back some something > 0
         models.CurrentProducts.cache_seconds = 60
+
+    def test_crashes_per_user_redirect(self):
+        """At some point in 2018 we can remove this test."""
+        url = reverse('crashstats:crashes_per_user_redirect')
+        destination_url = reverse('crashstats:crashes_per_day')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 301)
+        ok_(response['location'].endswith(destination_url))
+
+        response = self.client.get(url, {'foo': 'bar'})
+        eq_(response.status_code, 301)
+        ok_(response['location'].endswith(destination_url + '?foo=bar'))
 
     def test_quick_search(self):
         url = reverse('crashstats:quick_search')
