@@ -85,14 +85,22 @@ class TestBugzillaSubmitURL(TestCase):
 
     def test_basic_url(self):
         url = bugzilla_submit_url()
-        eq_(url, 'https://bugzilla.mozilla.org/enter_bug.cgi')
+        eq_(
+            url,
+            'https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__'
+        )
 
     def test_kwargs(self):
         url = bugzilla_submit_url(foo='?&"', numbers=['one', 'two'])
         ok_(url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?'))
+        ok_('format=__default__' in url)
         ok_('foo=%3F%26%22' in url)
         ok_('numbers=one' in url)
         ok_('numbers=two' in url)
+
+        url = bugzilla_submit_url(format='different')
+        ok_('format=__default__' not in url)
+        ok_('format=different' in url)
 
     def test_truncate_certain_keys(self):
         url = bugzilla_submit_url(short_desc='x' * 1000)
