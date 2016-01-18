@@ -146,6 +146,12 @@ def bugzilla_submit_url(**kwargs):
     for key in limits:
         if kwargs.get(key) and len(kwargs.get(key)) > limits[key]:
             kwargs[key] = kwargs[key][:limits[key] - 3] + '...'
-    if kwargs:
-        url += '?' + urllib.urlencode(kwargs, True)
+    if 'format' not in kwargs:
+        # People who are new to bugzilla automatically get the more
+        # basic, "guided format". for entering bugs. This unfortunately
+        # means that all the parameters we pass along gets lost when
+        # the user makes it to the second page. Let's prevent that.
+        # See https://bugzilla.mozilla.org/show_bug.cgi?id=1238212
+        kwargs['format'] = '__default__'
+    url += '?' + urllib.urlencode(kwargs, True)
     return url
