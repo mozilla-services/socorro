@@ -130,8 +130,6 @@ Django==1.7.11
 django-browserid==0.10.1
 # sha256: akF58qKszaKyc7_Ybeb3AkzuIDBDzJp8BA_nswa74SA
 fancy-tag==0.2.0
-# sha256: vsCdiBnI0dPE-Z_55Mb4faMhyrJsYNMdbCvAlYdwGY8
-https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
 # sha256: xJWo39CpwdPY7QISG7sotsnTTU2jCqk6fmOcDz17Bjk
 jingo==0.7.1
 # sha256: Eq491FQ_jcXMX0vdf2_RaPTRYkQU11OkQVc8zBh6jkM
@@ -179,3 +177,6 @@ django-pipeline==1.5.4
 # sha256: BK-ioGq33MqdgXF7Qgp6FIJgYemyYUpcd90kx1zPl-Q
 # sha256: L-I0K7T-i44hfw0htZIcvlQIv5Ztn5ICXnB-iBsZi-0
 futures==3.0.3
+# sha256: AJ1XRZCu6_8jC9o9jBys2dSLIEzBp4Sl0742OHJ_jRY
+# sha256: zP3fv5R6UciwlaXmO-1DAFonelWB3pLtNz6wa3XO7Hc
+django-session-csrf==0.6
