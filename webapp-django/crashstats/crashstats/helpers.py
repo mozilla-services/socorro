@@ -155,3 +155,8 @@ def bugzilla_submit_url(**kwargs):
         kwargs['format'] = '__default__'
     url += '?' + urllib.urlencode(kwargs, True)
     return url
+
+
+@register.function
+def is_list(value):
+    return isinstance(value, (list, tuple))
