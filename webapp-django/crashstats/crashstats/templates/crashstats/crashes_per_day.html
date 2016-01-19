@@ -3,11 +3,11 @@
     {{ super() }}
     {% stylesheet 'jquery_ui' %}
     {% stylesheet 'metricsgraphics' %}
-    {% stylesheet 'crashes_per_user' %}
+    {% stylesheet 'crashes_per_day' %}
 {% endblock %}
 
 {% block page_title %}
-Crashes per User for {{ product }}
+Crashes per Day for {{ product }}
 {% endblock %}
 
 {% block content %}
@@ -15,9 +15,9 @@ Crashes per User for {{ product }}
 
 <div class="page-heading">
     <p class="old-new-report-link">
-        <a href="{{ old_daily_report_url }}">View the <b>old</b> <i>Crashes per user</i> report</a>
+        <a href="{{ old_daily_report_url }}">View the <b>old</b> <i>Crashes per Day</i> report</a>
     </p>
-    <h2>Crashes per User for {{ product }}</h2>
+    <h2>Crashes per Day for {{ product }}</h2>
 </div>
 
 
@@ -252,7 +252,7 @@ Crashes per User for {{ product }}
     {% javascript 'd3' %}
     {% javascript 'jquery_ui' %}
     {% javascript 'metricsgraphics' %}
-    {% javascript 'crashes_per_user' %}
+    {% javascript 'crashes_per_day' %}
     <script>
     var DATA = {{ graph_data | json_dumps }};
     window.socGraphByReportType = false;

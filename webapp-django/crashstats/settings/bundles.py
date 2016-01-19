@@ -42,11 +42,11 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-documentation.min.css',
     },
-    'crashes_per_user': {
+    'crashes_per_day': {
         'source_filenames': (
-            'crashstats/css/crashes_per_user.less',
+            'crashstats/css/crashes_per_day.less',
         ),
-        'output_filename': 'css/crashes-per-user.min.css',
+        'output_filename': 'css/crashes-per-day.min.css',
     },
     'crontabber_state': {
         'source_filenames': (
@@ -230,11 +230,11 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/api-documentation.min.js',
     },
-    'crashes_per_user': {
+    'crashes_per_day': {
         'source_filenames': (
-            'crashstats/js/socorro/crashes_per_user.js',
+            'crashstats/js/socorro/crashes_per_day.js',
         ),
-        'output_filename': 'js/crashes-per-user.min.js',
+        'output_filename': 'js/crashes-per-day.min.js',
     },
     'crontabber_state': {
         'source_filenames': (

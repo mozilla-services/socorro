@@ -168,7 +168,7 @@ def build_id_to_date(build_id):
     )
 
 
-def build_data_object_for_crashes_per_user_graph(
+def build_data_object_for_crashes_per_day_graph(
     start_date, end_date, facets, adi_by_term, date_range_type
 ):
     if date_range_type == 'build':
@@ -235,7 +235,7 @@ def build_data_object_for_crash_reports(response_items):
     return crash_reports
 
 
-def get_product_versions_for_crashes_per_user(facets, product):
+def get_product_versions_for_crashes_per_day(facets, product):
     versions = facets['version']
     versions = sorted(versions, key=itemgetter('term'), reverse=True)
     return [
@@ -839,7 +839,7 @@ def daily(request, default_context=None):
     context['graph_data'] = cadu
     context['report'] = 'daily'
 
-    url = reverse('crashstats:crashes_per_user')
+    url = reverse('crashstats:crashes_per_day')
     if request.META.get('QUERY_STRING'):
         url += '?{}'.format(request.META['QUERY_STRING'])
     context['new_daily_report_url'] = url
@@ -909,7 +909,7 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names):
 
 
 @pass_default_context
-def crashes_per_user(request, default_context=None):
+def crashes_per_day(request, default_context=None):
     context = default_context or {}
     context['products'] = context['currentproducts']['products']
 
@@ -923,7 +923,7 @@ def crashes_per_user(request, default_context=None):
     if request.GET.get('date_range_type') == 'build':
         params = dict(request.GET)
         params.pop('date_range_type')
-        url = reverse('crashstats:crashes_per_user')
+        url = reverse('crashstats:crashes_per_day')
         url += '?' + urllib.urlencode(params, True)
         messages.warning(
             request,
@@ -1186,14 +1186,14 @@ def crashes_per_user(request, default_context=None):
         })
 
     graph_data = {}
-    graph_data = build_data_object_for_crashes_per_user_graph(
+    graph_data = build_data_object_for_crashes_per_day_graph(
         context['start_date'],
         context['end_date'],
         results['facets'],
         adi_by_version,
         _date_range_type
     )
-    graph_data['product_versions'] = get_product_versions_for_crashes_per_user(
+    graph_data['product_versions'] = get_product_versions_for_crashes_per_day(
         results['facets'],
         params['product'],
     )
@@ -1301,7 +1301,7 @@ def crashes_per_user(request, default_context=None):
         url += '?{}'.format(request.META['QUERY_STRING'])
     context['old_daily_report_url'] = url
 
-    return render(request, 'crashstats/crashes_per_user.html', context)
+    return render(request, 'crashstats/crashes_per_day.html', context)
 
 
 @pass_default_context

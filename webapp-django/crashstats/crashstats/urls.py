@@ -83,9 +83,9 @@ urlpatterns = patterns(
     url('^daily$',
         views.daily,
         name='daily'),
-    url('^crashes-per-user/$',
-        views.crashes_per_user,
-        name='crashes_per_user'),
+    url('^crashes-per-day/$',
+        views.crashes_per_day,
+        name='crashes_per_day'),
     # handle old-style urls
     url(r'^report/list$',
         views.report_list,
@@ -179,6 +179,21 @@ urlpatterns = patterns(
             query_string=True,
             permanent=True
         )),
+
+    # Redirect from the old name "Crashes per User" to "Crashes per Day"
+    url(
+        r'^crashes-per-user/$',
+        RedirectView.as_view(
+            pattern_name='crashstats:crashes_per_day',
+            query_string=True,
+            # At some point in 2018, we can confidently change this to:
+            # `permanent=True` when we know the redirect is working correctly.
+            # In the transition time, it's safer to use a temporary redirect
+            # since permanent redirects tend to get very stuck in the brower.
+            permanent=not settings.DEBUG,
+        ),
+        name='crashes_per_user_redirect',
+    ),
 
     # Redirect old independant pages to the unified Profile page.
     url(r'^your-crashes/$',
