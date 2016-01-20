@@ -1,6 +1,7 @@
 import copy
 import json
 import datetime
+import elasticsearch
 import logging
 import math
 import urllib
@@ -17,6 +18,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
+from django.contrib.auth.models import Permission
 from django.utils.http import urlquote
 from django.contrib import messages
 
@@ -98,6 +100,28 @@ def robots_txt(request):
         '%s: /' % ('Allow' if settings.ENGAGE_ROBOTS else 'Disallow'),
         content_type='text/plain',
     )
+
+
+def healthcheck(request):
+    if not request.GET.get('elb') in ('1', 'true'):
+        # Perform some really basic DB queries.
+        # There will always be permissions created
+        assert Permission.objects.all().count() > 0
+
+        # We should also be able to set and get a cache value
+        cache_key = '__healthcheck__'
+        cache.set(cache_key, 1, 10)
+        assert cache.get(cache_key)
+        cache.delete(cache_key)
+
+        # Do a really basic Elasticsearch query
+        es_settings = settings.SOCORRO_IMPLEMENTATIONS_CONFIG['elasticsearch']
+        es = elasticsearch.Elasticsearch(
+            hosts=es_settings['elasticsearch_urls']
+        )
+        es.info()  # will raise an error if there's a problem with the cluster
+
+    return http.JsonResponse({'ok': True})
 
 
 def has_builds(product, versions):
