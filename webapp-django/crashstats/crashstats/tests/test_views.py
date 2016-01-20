@@ -571,48 +571,6 @@ class TestViews(BaseTestViews):
         ok_(json.loads(''.join(response.streaming_content)))
         eq_(response['Content-Type'], 'application/json')
 
-    def test_healthcheck_elb(self):
-        response = self.client.get('/healthcheck', {'elb': 'true'})
-        eq_(response.status_code, 200)
-        eq_(json.loads(response.content)['ok'], True)
-
-        # This time, ignoring the results, make sure that running
-        # this does not cause an DB queries.
-        self.assertNumQueries(
-            0,
-            self.client.get,
-            '/healthcheck',
-            {'elb': 'true'}
-        )
-
-    @mock.patch('crashstats.crashstats.views.elasticsearch')
-    def test_healthcheck(self, mocked_elasticsearch):
-
-        es_instance = mock.MagicMock()
-
-        def fake_es_instance(**config):
-            eq_(
-                config['hosts'],
-                settings.SOCORRO_IMPLEMENTATIONS_CONFIG
-                ['elasticsearch']['elasticsearch_urls']
-            )
-            return es_instance
-
-        mocked_elasticsearch.Elasticsearch.side_effect = fake_es_instance
-        response = self.client.get('/healthcheck')
-        eq_(response.status_code, 200)
-        eq_(json.loads(response.content)['ok'], True)
-
-        es_instance.info.assert_called_with()
-
-        self.assertNumQueries(
-            1,
-            self.client.get,
-            '/healthcheck',
-        )
-
-        eq_(es_instance.info.call_count, 2)
-
     @mock.patch('requests.get')
     def test_handler500(self, rget):
         root_urlconf = __import__(

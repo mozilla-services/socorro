@@ -1,12 +1,15 @@
 import datetime
 import urlparse
 
+import elasticsearch
 import isodate
 import requests
 
 from django.shortcuts import render
 from django.conf import settings
 from django.utils import timezone
+from django.contrib.auth.models import Permission
+from django.core.cache import cache
 
 from crashstats.crashstats import utils
 from crashstats.crashstats.models import CrontabberState
@@ -140,3 +143,26 @@ def crontabber_status(request):
         context['broken'] = broken
         context['blocked'] = blocked
     return context
+
+
+@utils.json_view
+def healthcheck(request):
+    if not request.GET.get('elb') in ('1', 'true'):
+        # Perform some really basic DB queries.
+        # There will always be permissions created
+        assert Permission.objects.all().count() > 0
+
+        # We should also be able to set and get a cache value
+        cache_key = '__healthcheck__'
+        cache.set(cache_key, 1, 10)
+        assert cache.get(cache_key)
+        cache.delete(cache_key)
+
+        # Do a really basic Elasticsearch query
+        es_settings = settings.SOCORRO_IMPLEMENTATIONS_CONFIG['elasticsearch']
+        es = elasticsearch.Elasticsearch(
+            hosts=es_settings['elasticsearch_urls']
+        )
+        es.info()  # will raise an error if there's a problem with the cluster
+
+    return {'ok': True}
