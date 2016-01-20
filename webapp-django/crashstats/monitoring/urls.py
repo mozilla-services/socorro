@@ -13,4 +13,7 @@ urlpatterns = patterns(
     url(r'^crontabber/$',
         views.crontabber_status,
         name='crontabber_status'),
+    url(r'^healthcheck/$',
+        views.healthcheck,
+        name='healthcheck'),
 )
