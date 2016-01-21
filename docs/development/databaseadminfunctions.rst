@@ -169,7 +169,7 @@ all of them depend on all of the hourly functions having completed for the day.
 	"signature_products_rollup","update_signatures","backfill_signature_counts",,
 	"tcbs","update_tcbs","backfill_tcbs",,
 	"tcbs_build","update_tcbs_build","backfill_tcbs_build",,
-	"explosiveness","update_explosiveness","backfill_explosiveness","tcbs","Last Day Only"
+	"tcbs","Last Day Only"
 
 Functions marked "last day only" do not accumulate data, but display it only for the last
 day they were run.  As such, there is no need to fill them in for each day.
@@ -241,7 +241,7 @@ update_product_versions
 -----------------------
 
 Purpose: updates the list of product_versions and product_version_builds
-based on the contents of releases_raw, products, release_repositories, special_product_platforms, 
+based on the contents of releases_raw, products, release_repositories, special_product_platforms,
 and for B2G: update_channel_map, raw_update_channels.
 
 Called By: daily cron job
@@ -257,7 +257,7 @@ Called By: daily cron job
 Notes: takes no parameters as the product update is always cumulative and by default is run daily.  As of 2.3.5, only looks at product_versions with build dates in the last 30 days.  There is no backfill function because it is always a cumulative update.
 
 This function is complex. If implementing this outside of Mozilla, a user may wish to create a simpler function that just inserts
-data into products and product_versions. 
+data into products and product_versions.
 
 
 update_rank_compare, backfill_rank_compare

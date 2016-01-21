@@ -485,14 +485,6 @@ class Report(DeclarativeBase):
     update_channel = Column(u'update_channel', TEXT())  # Replaces release_channel
 
 
-class SuspiciousCrashSignatures(DeclarativeBase):
-    __tablename__ = 'suspicious_crash_signatures'
-
-    id = Column(u'suspicious_crash_signature_id', Integer(), primary_key=True)
-    signature = Column(u'signature_id', Integer())
-    date = Column(u'report_date', TIMESTAMP(timezone=True))
-
-
 class Address(DeclarativeBase):
     __tablename__ = 'addresses'
 
@@ -651,27 +643,6 @@ class EmailContact(DeclarativeBase):
 
     #relationship definitions
     email_campaigns = relationship('EmailCampaign', primaryjoin='EmailContact.id==EmailCampaignsContact.email_contacts_id', secondary='EmailCampaignsContact', secondaryjoin='EmailCampaignsContact.email_campaigns_id==EmailCampaign.id')
-
-
-class Explosiveness(DeclarativeBase):
-    __tablename__ = 'explosiveness'
-
-    #column definitions
-    day0 = Column(u'day0', NUMERIC())
-    day1 = Column(u'day1', NUMERIC())
-    day2 = Column(u'day2', NUMERIC())
-    day3 = Column(u'day3', NUMERIC())
-    day4 = Column(u'day4', NUMERIC())
-    day5 = Column(u'day5', NUMERIC())
-    day6 = Column(u'day6', NUMERIC())
-    day7 = Column(u'day7', NUMERIC())
-    day8 = Column(u'day8', NUMERIC())
-    day9 = Column(u'day9', NUMERIC())
-    last_date = Column(u'last_date', DATE(), primary_key=True, nullable=False)
-    oneday = Column(u'oneday', NUMERIC())
-    product_version_id = Column(u'product_version_id', INTEGER(), primary_key=True, nullable=False, autoincrement=False, index=True)
-    signature_id = Column(u'signature_id', INTEGER(), primary_key=True, nullable=False, index=True)
-    threeday = Column(u'threeday', NUMERIC())
 
 
 class FlashVersion(DeclarativeBase):

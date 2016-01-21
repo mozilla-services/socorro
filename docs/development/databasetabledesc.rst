@@ -323,13 +323,6 @@ daily_hangs contains a correlation of hang crash reports with their related hang
 
 hang_report is a dynamic view which flattens daily_hangs and its related dimension tables.
 
-*explosiveness*
-
-Matview which contains mathematical calculations of the "most explosive" signatures for
-each product-version for the last 10 days.  Only contains the last 10 days.  Uses
-two different calculations, one based on the one-day total, the other based on a
-3-day average.
-
 *home_page_graph, home_page_graph_view*
 
 Summary of non-browser-hang crashes by report date and product-version, including ADU
