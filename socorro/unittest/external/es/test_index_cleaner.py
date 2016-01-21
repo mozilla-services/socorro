@@ -102,17 +102,16 @@ class IntegrationTestIndexCleaner(ElasticsearchTestCase):
 
     @minimum_es_version('1.0')
     def test_other_indices_are_not_deleted(self):
-        """Verify that non-week-based indices are not removed. For example,
-        the socorro_email index should not be deleted by the cron job.
+        """Verify that non-week-based indices are not removed.
         """
-        # Create the socorro emails index.
-        self.index_creator.create_emails_index()
-        self.indices.append('socorro_emails')
+        # Create a temporary index.
+        self.index_creator.create_index('socorro_test_temp', {})
+        self.indices.append('socorro_test_temp')
 
-        assert self.index_client.exists('socorro_emails')
+        assert self.index_client.exists('socorro_test_temp')
 
         api = IndexCleaner(self.config)
         api.delete_old_indices()
 
         # Verify the email index is still there.
-        ok_(self.index_client.exists('socorro_emails'))
+        ok_(self.index_client.exists('socorro_test_temp'))

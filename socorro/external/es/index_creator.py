@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import elasticsearch
-import json
 import os
 
 from configman import Namespace, RequiredConfig
@@ -21,18 +20,6 @@ class IndexCreator(RequiredConfig):
     """
 
     required_config = Namespace()
-    required_config.add_option(
-        'elasticsearch_emails_index_settings',
-        default='%s/mappings/socorro_emails_index_settings.json' % DIRECTORY,
-        doc='the file containing the mapping of the indexes receiving '
-            'email addresses for the automatic-emails cron job',
-    )
-    required_config.add_option(
-        'elasticsearch_emails_index',
-        default='socorro_emails',
-        doc='the index that handles data about email addresses for '
-            'the automatic-emails cron job',
-    )
 
     required_config.elasticsearch = Namespace()
     required_config.elasticsearch.add_option(
@@ -57,17 +44,6 @@ class IndexCreator(RequiredConfig):
     def create_socorro_index(self, es_index):
         """Create an index that will receive crash reports. """
         es_settings = SuperSearchFields(config=self.config).get_mapping()
-        self.create_index(es_index, es_settings)
-
-    def create_emails_index(self):
-        """Create an index that will receive email addresses for the
-        automatic-emails cron job. """
-        es_index = self.config.elasticsearch_emails_index
-        settings_json = open(
-            self.config.elasticsearch_emails_index_settings
-        ).read()
-        es_settings = json.loads(settings_json)
-
         self.create_index(es_index, es_settings)
 
     def create_index(self, es_index, es_settings):

@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import elasticsearch
-
 from nose.tools import ok_
 
 from socorro.external.es.index_creator import IndexCreator
@@ -22,19 +20,6 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
 
         self.config = self.get_tuned_config(IndexCreator)
 
-    def tearDown(self):
-        """Remove any indices that may have been created for a given test.
-        """
-        try:
-            self.index_client.delete(
-                self.config.elasticsearch.elasticsearch_emails_index
-            )
-        # "Missing" indices simply weren't created, so ignore.
-        except elasticsearch.exceptions.NotFoundError:
-            pass
-
-        super(IntegrationTestIndexCreator, self).tearDown()
-
     def test_create_index(self):
         index_creator = IndexCreator(config=self.config)
         index_creator.create_index(
@@ -45,16 +30,6 @@ class IntegrationTestIndexCreator(ElasticsearchTestCase):
         ok_(
             self.index_client.exists(
                 self.config.elasticsearch.elasticsearch_index
-            )
-        )
-
-    def test_create_emails_index(self):
-        index_creator = IndexCreator(config=self.config)
-        index_creator.create_emails_index()
-
-        ok_(
-            self.index_client.exists(
-                self.config.elasticsearch.elasticsearch_emails_index
             )
         )
 
