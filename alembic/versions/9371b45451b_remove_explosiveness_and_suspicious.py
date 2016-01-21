@@ -19,10 +19,10 @@ def upgrade():
         DROP TABLE suspicious_crash_signatures
     """)
     op.execute("""
-        DROP FUNCTION backfill_explosiveness
+        DROP FUNCTION IF EXISTS backfill_explosiveness (date)
     """)
     op.execute("""
-        DROP FUNCTION update_explosiveness
+        DROP FUNCTION IF EXISTS update_explosiveness (date, boolean, interval)
     """)
     op.execute('COMMIT')
     load_stored_proc(op, ['backfill_matviews.sql'])
