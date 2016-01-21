@@ -383,9 +383,11 @@ DISALLOWED_SYMBOLS_SNIPPETS = (
 
 # Rate limit for when using the Web API for anonymous hits
 API_RATE_LIMIT = '100/m'
+API_RATE_LIMIT_AUTHENTICATED = '1000/m'
 
 # Rate limit when using the supersearch web interface
 RATELIMIT_SUPERSEARCH = '10/m'
+RATELIMIT_SUPERSEARCH_AUTHENTICATED = '100/m'
 
 # Path to the view that gets executed if you hit upon a ratelimit block
 RATELIMIT_VIEW = '%s.crashstats.views.ratelimit_blocked' % PROJECT_MODULE

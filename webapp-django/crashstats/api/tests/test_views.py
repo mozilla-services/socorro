@@ -1634,29 +1634,43 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        # the rate limit is currently X/min so it's easy to hit the limit
-        current_limit = int(re.findall('\d+', settings.API_RATE_LIMIT)[0])
-        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
-        for __ in range(current_limit * 2):
-            response = self.client.get(url)
-        eq_(response.status_code, 429)
+        with self.settings(
+            API_RATE_LIMIT='3/m',
+            API_RATE_LIMIT_AUTHENTICATED='6/m'
+        ):
+            current_limit = 3  # see above mentioned settings override
+            # Double to avoid
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
+            for __ in range(current_limit * 2):
+                response = self.client.get(url)
+            eq_(response.status_code, 429)
 
-        # but it'll work if you use a different X-Forwarded-For IP
-        response = self.client.get(url, HTTP_X_FORWARDED_FOR='11.11.11.11')
-        eq_(response.status_code, 200)
+            # But it'll work if you use a different X-Forwarded-For IP
+            # because the rate limit is based on your IP address
+            response = self.client.get(url, HTTP_X_FORWARDED_FOR='11.11.11.11')
+            eq_(response.status_code, 200)
 
-        user = User.objects.create(username='test')
-        token = Token.objects.create(
-            user=user,
-            notes="Just for avoiding rate limit"
-        )
+            user = User.objects.create(username='test')
+            token = Token.objects.create(
+                user=user,
+                notes="Just for avoiding rate limit"
+            )
 
-        response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
-        eq_(response.status_code, 200)
+            response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
+            eq_(response.status_code, 200)
 
-        for __ in range(current_limit):
-            response = self.client.get(url)
-        eq_(response.status_code, 200)
+            for __ in range(current_limit):
+                response = self.client.get(url)
+            eq_(response.status_code, 200)
+
+            # But even being signed in has a limit.
+            authenticated_limit = 6  # see above mentioned settings override
+            assert authenticated_limit > current_limit
+            for __ in range(authenticated_limit * 2):
+                response = self.client.get(url)
+            # Even if you're authenticated - sure the limit is higher -
+            # eventually you'll run into the limit there too.
+            eq_(response.status_code, 429)
 
     def test_SuperSearch(self):
 

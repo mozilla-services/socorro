@@ -355,10 +355,15 @@ def ratelimit_rate(group, request):
     Otherwise return a number according to
     https://django-ratelimit.readthedocs.org/en/latest/rates.html#rates-chapter
     """
-    if not request.user.is_authenticated():
-        if group == 'crashstats.api.views.model_wrapper':
+    if group == 'crashstats.api.views.model_wrapper':
+        if request.user.is_authenticated():
+            return settings.API_RATE_LIMIT_AUTHENTICATED
+        else:
             return settings.API_RATE_LIMIT
-        elif group.startswith('crashstats.supersearch.views.search'):
-            # this applies to both the web view and ajax views
+    elif group.startswith('crashstats.supersearch.views.search'):
+        # this applies to both the web view and ajax views
+        if request.user.is_authenticated():
+            return settings.RATELIMIT_SUPERSEARCH_AUTHENTICATED
+        else:
             return settings.RATELIMIT_SUPERSEARCH
-        raise NotImplementedError(group)
+    raise NotImplementedError(group)
