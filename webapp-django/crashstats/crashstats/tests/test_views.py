@@ -2617,22 +2617,11 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Exploitability:' not in response.content)
 
-    @mock.patch('requests.get')
-    def test_status(self, rget):
-        def mocked_get(url, **options):
-            assert '/server_status' in url, url
-            return Response(SAMPLE_STATUS)
-
-        rget.side_effect = mocked_get
-
-        url = reverse('crashstats:status')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
-        ok_('schema_12345' in response.content)
-        ok_('017d7b3f7042ce76bc80949ae55b41d1e915ab62' in response.content)
-        ok_('1035' in response.content)
-        ok_('Sep 28 2012 20:30:01' in response.content)
+    def test_status_redirect(self):
+        response = self.client.get(reverse('crashstats:status_redirect'))
+        correct_url = reverse('monitoring:index')
+        eq_(response.status_code, 301)
+        ok_(response['location'].endswith(correct_url))
 
     @mock.patch('requests.get')
     def test_status_revision(self, rget):

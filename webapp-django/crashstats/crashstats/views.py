@@ -2206,51 +2206,6 @@ def adu_by_signature_json(request, default_context=None):
     return adu_by_sig_data
 
 
-@pass_default_context
-def status(request, default_context=None):
-    response = models.Status().get()
-    stats = response['hits']
-
-    # transform some of the data to be plotted, store it seperately
-    plot_data = {}
-    attributes = [
-        'avg_process_sec',
-        'avg_wait_sec',
-        'waiting_job_count',
-        'processors_count',
-        'date_created'
-    ]
-    for a in attributes:
-        plucked = list(reversed([x.get(a) for x in stats]))
-        if a is 'date_created':
-            plucked = map(lambda x: utils.parse_isodate(x, "%H:%M"), plucked)
-        plot_data[a] = [list(x) for x in enumerate(plucked)]
-
-    # format the dates in place for display in the table
-    attributes = ['date_created',
-                  'date_recently_completed',
-                  'date_oldest_job_queued']
-    for stat in stats:
-        for attribute in attributes:
-            stat[attribute] = utils.parse_isodate(stat[attribute])
-
-    if stats:
-        first_stat = stats[0]
-    else:
-        first_stat = None
-
-    context = default_context or {}
-    context.update({
-        'data': stats,
-        'stat': first_stat,
-        'plot_data': plot_data,
-        'socorro_revision': response['socorro_revision'],
-        'breakpad_revision': response['breakpad_revision'],
-        'schema_revision': response['schema_revision'],
-    })
-    return render(request, 'crashstats/status.html', context)
-
-
 def status_json(request):
     response = http.HttpResponse(
         models.Status().get(decode_json=False),

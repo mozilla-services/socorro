@@ -35,9 +35,6 @@ urlpatterns = patterns(
     url(r'^home/frontpage_json$',
         views.frontpage_json,
         name='frontpage_json'),
-    url(r'^status/$',
-        views.status,
-        name='status'),
     url(r'^status/json/$',
         views.status_json,
         name='status_json'),
@@ -206,6 +203,16 @@ urlpatterns = patterns(
             url='/profile/',
             permanent=perm_legacy_redirect
         )),
+
+    # Redirect deleted status page to monitoring page.
+    url(
+        r'^status/$',
+        RedirectView.as_view(
+            pattern_name='monitoring:index',
+            permanent=not settings.DEBUG,
+        ),
+        name='status_redirect',
+    ),
 
     # handle old-style URLs
     url(r'^products/(?P<product>\w+)/$',
