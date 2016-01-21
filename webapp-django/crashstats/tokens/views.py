@@ -29,35 +29,28 @@ def home(request):
             possible_permissions=possible_permissions
         )
         if form.is_valid():
-            for permission in form.cleaned_data['permissions']:
-                perm_name = 'crashstats.%s' % permission.codename
-                if not request.user.has_perm(perm_name):
-                    return http.HttpResponseForbidden(
-                        'You do not have this permission'
-                    )
+            if 'permissions' in form.cleaned_data:
+                for permission in form.cleaned_data['permissions']:
+                    perm_name = 'crashstats.%s' % permission.codename
+                    if not request.user.has_perm(perm_name):
+                        return http.HttpResponseForbidden(
+                            'You do not have this permission'
+                        )
             token = models.Token.objects.create(
                 user=request.user,
                 notes=form.cleaned_data['notes']
             )
-            for permission in form.cleaned_data['permissions']:
-                token.permissions.add(permission)
+            if 'permissions' in form.cleaned_data:
+                for permission in form.cleaned_data['permissions']:
+                    token.permissions.add(permission)
             return redirect('tokens:home')
 
     else:
-        if possible_permissions:
-            form = forms.GenerateTokenForm(
-                possible_permissions=possible_permissions
-            )
-        else:
-            # This is surprisingly important!
-            # If you *have* permissions, you can actually create a
-            # token without selecting *any* permissions. The point of
-            # that is to avoid the rate limiter.
-            # If you don't have any permissions attached to your user
-            # account means you haven't been hand curated by any
-            # administrator and if that's the case you shouldn't be able
-            # avoid the rate limiter.
-            form = None
+        form = forms.GenerateTokenForm(
+            possible_permissions=possible_permissions
+        )
+
+    context['possible_permissions'] = possible_permissions
 
     context['form'] = form
     context['your_tokens'] = (
