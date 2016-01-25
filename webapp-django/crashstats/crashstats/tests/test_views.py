@@ -2123,7 +2123,11 @@ class TestViews(BaseTestViews):
         yesterday = timezone.now() - datetime.timedelta(days=1)
 
         def is_percentage(thing):
-            return thing.endswith('%') and float(thing.replace('%', ''))
+            try:
+                float(thing.replace('%', ''))
+                return thing.endswith('%')
+            except ValueError:
+                return False
 
         eq_(first_row[0], yesterday.strftime('%Y-%m-%d'))
         ok_(first_row[1].isdigit())  # crashes
