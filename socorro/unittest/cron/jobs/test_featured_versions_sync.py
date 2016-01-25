@@ -196,6 +196,12 @@ class IntegrationTestFeaturedVersionsSync(IntegrationTestBase):
             assert not information['featured-versions-sync']['last_error']
             assert information['featured-versions-sync']['last_success']
 
+            config.logger.info.assert_called_with(
+                'Set featured versions for Firefox %r' % (
+                    [u'24.5.0'],
+                )
+            )
+
         rows = execute_query_fetchall(
             self.conn,
             'select product_name, version_string, featured_version '

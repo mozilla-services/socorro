@@ -41,8 +41,22 @@ class FeaturedVersionsSyncCronApp(BaseCronApp):
             SELECT
                 edit_featured_versions(%s, {})
         """.format(','.join('%s' for _ in versions))
-        assert single_value_sql(
+        worked = single_value_sql(
             connection,
             sql,
             [product] + versions
         )
+        if worked:
+            self.config.logger.info(
+                'Set featured versions for %s %r' % (
+                    product,
+                    versions
+                )
+            )
+        else:
+            self.config.logger.warning(
+                'Unable to set featured versions for %s %r' % (
+                    product,
+                    versions
+                )
+            )
