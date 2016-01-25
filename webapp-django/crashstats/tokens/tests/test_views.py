@@ -70,7 +70,7 @@ class TestViews(BaseTestViews):
     def test_generate_new_token(self):
         url = reverse('tokens:home')
         p1 = self._make_permission('Make a mess')
-        self._make_permission('Clean Things')
+        p2 = self._make_permission('Clean Things')
         p3 = self._make_permission('Play with sticks')
 
         response = self.client.post(url, {
@@ -86,13 +86,13 @@ class TestViews(BaseTestViews):
         user = self._login()
         response = self.client.post(url, {
             'notes': ' Some notes ',
-            'permissions': [p1.pk, p3.pk]
         })
-        # because you tried to assign this token permissions you
-        # don't have
-        eq_(response.status_code, 403)
+        eq_(response.status_code, 302)
+        token, = models.Token.objects.all()
+        eq_(token.notes, 'Some notes')
+        eq_(token.permissions.all().count(), 0)
+        token.delete()
 
-        #
         group = Group.objects.create(name='Cool people')
         group.permissions.add(p1)
         group.permissions.add(p3)
@@ -100,12 +100,17 @@ class TestViews(BaseTestViews):
 
         response = self.client.post(url, {
             'notes': ' Some notes ',
+            'permissions': [p1.pk, p2.pk, p3.pk]
+        })
+        # Because you tried to assign this token permissions you
+        # don't have.
+        eq_(response.status_code, 403)
+
+        response = self.client.post(url, {
+            'notes': ' Some notes ',
             'permissions': [p1.pk, p3.pk]
         })
-        # because you tried to assign this token permissions you
-        # don't have
         eq_(response.status_code, 302)
-
         token, = models.Token.objects.active().filter(user=user)
         eq_(set(token.permissions.all()), set([p1, p3]))
 
