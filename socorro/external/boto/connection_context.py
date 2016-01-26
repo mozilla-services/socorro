@@ -13,6 +13,8 @@ import boto.exception
 
 from configman import Namespace, RequiredConfig, class_converter
 
+from socorro.lib.converters import change_default
+
 
 class KeyNotFound(Exception):
     pass
@@ -156,10 +158,15 @@ class ConnectionContextBase(RequiredConfig):
         bucket = self._get_bucket(conn, self.config.bucket_name)
 
         key = self.build_key(self.config.prefix, name_of_thing, id)
-
         key_object = bucket.get_key(key)
         if key_object is None:
-            raise KeyNotFound('%s not found, no value returned' % id)
+            raise KeyNotFound(
+                '%s (bucket=%r key=%r) not found, no value returned' % (
+                    id,
+                    self.config.bucket_name,
+                    key,
+                )
+            )
         return key_object.get_contents_as_string()
 
     #--------------------------------------------------------------------------
@@ -252,3 +259,40 @@ class S3ConnectionContext(ConnectionContextBase):
             'is_secure': True,
             'calling_format': self._calling_format(),
         }
+
+
+#==============================================================================
+class RegionalS3ConnectionContext(S3ConnectionContext):
+    """This derviced class forces you to connect to a specific region
+    which means we can use the OrdinaryCallingFormat as a calling format
+    and then we'll be able to connect to S3 buckets with names in them.
+    """
+    required_config = Namespace()
+    required_config.add_option(
+        'region',
+        doc="Name of the S3 region (e.g. us-west-2)",
+        default='us-west-2',
+        reference_value_from='resource.boto',
+    )
+    required_config.calling_format = change_default(
+        S3ConnectionContext,
+        'calling_format',
+        'boto.s3.connection.OrdinaryCallingFormat'
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(RegionalS3ConnectionContext, self).__init__(config)
+        self._region = config.region
+        self._connect_to_endpoint = boto.s3.connect_to_region
+
+    #--------------------------------------------------------------------------
+    def _connect(self):
+        try:
+            return self.connection
+        except AttributeError:
+            self.connection = self._connect_to_endpoint(
+                self._region,
+                **self._get_credentials()
+            )
+            return self.connection

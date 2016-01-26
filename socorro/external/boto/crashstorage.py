@@ -267,7 +267,7 @@ class BotoS3CrashStorage(BotoCrashStorage):
     required_config.resource_class = change_default(
         BotoCrashStorage,
         'resource_class',
-        'socorro.external.boto.connection_context.S3ConnectionContext'
+        'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
     )
 
 
@@ -327,4 +327,3 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
         nothing; however it is necessary for compatibility purposes.
         """
         pass
-

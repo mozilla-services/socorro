@@ -8,7 +8,8 @@ import mock
 
 from socorro.lib.util import DotDict
 from socorro.external.boto.connection_context import (
-    S3ConnectionContext
+    S3ConnectionContext,
+    RegionalS3ConnectionContext,
 )
 from socorro.database.transaction_executor import (
     TransactionExecutor,
@@ -53,10 +54,12 @@ class TestCase(socorro.unittest.testbase.TestCase):
         executor_for_gets=TransactionExecutor,
         storage_class='BotoS3CrashStorage',
         host='',
-        port=0
+        port=0,
+        resource_class=S3ConnectionContext,
+        **extra
     ):
         config = DotDict({
-            'resource_class': S3ConnectionContext,
+            'resource_class': resource_class,
             'logger': mock.Mock(),
             'host': host,
             'port': port,
@@ -66,7 +69,8 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'prefix': 'dev',
             'calling_format': mock.Mock()
         })
-        s3_conn = S3ConnectionContext(config)
+        config.update(extra)
+        s3_conn = resource_class(config)
         s3_conn._connect_to_endpoint = mock.Mock()
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
         s3_conn._calling_format.return_value = mock.Mock()
@@ -76,17 +80,15 @@ class TestCase(socorro.unittest.testbase.TestCase):
 
         return s3_conn
 
-    def assert_s3_connection_parameters(self, connection_source, host='', port=0):
+    def assert_s3_connection_parameters(self, connection_source):
         kwargs = {
             "aws_access_key_id": connection_source.config.access_key,
-            "aws_secret_access_key": connection_source.config.secret_access_key,
+            "aws_secret_access_key": (
+                connection_source.config.secret_access_key
+            ),
             "is_secure": True,
             "calling_format": connection_source._calling_format.return_value
         }
-        if host:
-            kwargs['host'] = host
-        if port:
-            kwargs['port'] = port
         connection_source._connect_to_endpoint.assert_called_with(**kwargs)
 
     def test_dir_builder(self):
@@ -182,3 +184,37 @@ class TestCase(socorro.unittest.testbase.TestCase):
         )
 
         self.assertEqual(result, thing_as_str)
+
+    def assert_regional_s3_connection_parameters(
+        self,
+        region,
+        connection_source
+    ):
+        kwargs = {
+            "aws_access_key_id": connection_source.config.access_key,
+            "aws_secret_access_key": (
+                connection_source.config.secret_access_key
+            ),
+            "is_secure": True,
+            "calling_format": connection_source._calling_format.return_value
+        }
+        args = (region,)
+        connection_source._connect_to_endpoint.assert_called_with(
+            *args,
+            **kwargs
+        )
+
+    def test_fetch_with_regional_s3connection_context(self):
+        # setup some internal behaviors and fake outs
+        connection_source = self.setup_mocked_s3_storage(
+            resource_class=RegionalS3ConnectionContext,
+            region='us-south-3'
+        )
+        connection_source.fetch(
+            'name_of_thing',
+            'this_is_an_id'
+        )
+        self.assert_regional_s3_connection_parameters(
+            'us-south-3',
+            connection_source
+        )
