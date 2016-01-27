@@ -133,6 +133,7 @@ class TestMatviews(IntegrationTestBase):
         config_manager = self._setup_config_manager(
           'socorro.unittest.cron.jobs.test_matviews.ReportsCleanJob|1d\n'
           'socorro.unittest.cron.jobs.test_matviews.FTPScraperJob|1d\n'
+          'socorro.unittest.cron.jobs.test_matviews.FetchADIFromHiveCronApp|1d\n'
           ''
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
           'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
@@ -218,3 +219,7 @@ class ReportsCleanJob(_Job):
 
 class FTPScraperJob(_Job):
     app_name = 'ftpscraper'
+
+
+class FetchADIFromHiveCronApp(_Job):
+    app_name = 'fetch-adi-from-hive'
