@@ -81,7 +81,7 @@ class TCBSCronApp(_MatViewBackfillBase):
 class ADUCronApp(_MatViewBackfillBase):
     proc_name = 'update_adu'
     app_name = 'adu-matview'
-    depends_on = ('reports-clean',)
+    depends_on = ('fetch-adi-from-hive', 'reports-clean',)
 
 
 class BuildADUCronApp(_MatViewBackfillBase):
@@ -287,15 +287,18 @@ class RawUpdateChannelCronApp(_MatViewBackfillBase):
     app_version = '1.0'
     app_description = "Find new update_channels for B2G in reports"
 
+
 class CorrelationsAddonCronApp(_MatViewBackfillBase):
     proc_name = 'update_correlations_addon'
     app_name = 'correlations-addon-matview'
     depends_on = ('reports-clean',)
 
+
 class CorrelationsCoreCronApp(_MatViewBackfillBase):
     proc_name = 'update_correlations_core'
     app_name = 'correlations-core-matview'
     depends_on = ('reports-clean',)
+
 
 class CorrelationsModuleCronApp(_MatViewBackfillBase):
     proc_name = 'update_correlations_module'
