@@ -20,6 +20,7 @@ from django.core.cache import cache
 from django.utils.http import urlquote
 from django.contrib import messages
 
+import waffle
 from session_csrf import anonymous_csrf
 
 from . import forms, models, utils
@@ -221,6 +222,169 @@ def build_data_object_for_crashes_per_day_graph(
     return graph_data
 
 
+def _get_crashes_per_day_with_adu(
+    params, start_date, end_date, platforms, _date_range_type
+):
+    api = SuperSearchUnredacted()
+    results = api.get(**params)
+
+    platforms_api = models.Platforms()
+    platforms = platforms_api.get()
+
+    # now get the ADI for these product versions
+    api = models.ADI()
+    adi_counts = api.get(
+        product=params['product'],
+        versions=params['version'],
+        start_date=start_date,
+        end_date=end_date,
+        platforms=[x['name'] for x in platforms if x.get('display')],
+    )
+
+    api = models.ProductBuildTypes()
+    product_build_types = api.get(product=params['product'])['hits']
+
+    # This `adi_counts` is a list of dicts that looks like this:
+    #    {
+    #       'adi_count': 123,
+    #       'date': '2015-08-15',
+    #       'version': '40.0.2'
+    #       'build_type': 'beta',
+    #    }
+    # We need to turn this around so that it's like this:
+    #   {
+    #       '40.0.2': {
+    #           '2015-08-15': [123, 1.0],
+    #            ...
+    #       },
+    #       ...
+    #   }
+    # So it can easily be looked up how many counts there are per
+    # version per date.
+    #
+    # Note!! that the 1.0 in the example above is the throttle value
+    # for this build_type. We got that from the ProductBuildTypes API.
+    adi_by_version = {}
+
+    # If any of the versions end with a 'b' we want to collect
+    # and group them together under one.
+    # I.e. if we have adi count of '42.0b1':123 and '42.0b2':345
+    # then we want to combine that to just '42.0b':123+345
+
+    beta_versions = [x for x in params['version'] if x.endswith('b')]
+
+    def get_parent_version(ver):
+        try:
+            return [x for x in beta_versions if ver.startswith(x)][0]
+        except IndexError:
+            return None
+
+    for group in adi_counts['hits']:
+        version = group['version']
+        date = group['date']
+        parent_version = get_parent_version(version)
+        if parent_version is not None:
+            version = parent_version
+
+        build_type = group['build_type']
+        throttle = product_build_types[build_type]
+        if version not in adi_by_version:
+            adi_by_version[version] = {}
+
+        count = group['adi_count']
+        try:
+            before = adi_by_version[version][date][0]
+        except KeyError:
+            before = 0
+        adi_by_version[version][date] = [count + before, throttle]
+
+    # We might have queried for aggregates for version ['19.0a1', '18.0b']
+    # but SuperSearch will give us facets for versions:
+    # ['19.0a1', '18.0b1', '18.0b2', '18.0b3']
+    # The facets look something like this:
+    #        {
+    #            'histogram_date': [
+    #                {
+    #                    'count': 1234,
+    #                    'facets': [
+    #                        {'count': 201, 'term': '19.0a1'},
+    #                        {'count': 196, 'term': '18.0b1'},
+    #                        {'count': 309, 'term': '18.0b2'},
+    #                        {'count': 991, 'term': '18.0b3'},
+    #                    ],
+    #                    'term': '2015-01-10T00:00:00'
+    #                },
+    #                ...
+    #
+    #            'version': [
+    #                {'count': 45234, 'term': '19.0a1'},
+    #                {'count': 39001, 'term': '18.0b1'},
+    #                {'count': 56123, 'term': '18.0b2'},
+    #                {'count': 90133, 'term': '18.0b3'},
+    #
+    # Our job is to rewrite that so it looks like this:
+    #        {
+    #            'histogram_date': [
+    #                {
+    #                    'count': 1234,
+    #                    'facets': [
+    #                        {'count': 201, 'term': '19.0a1'},
+    #                        {'count': 196+309+991, 'term': '18.0b'},
+    #                    ],
+    #                    'term': '2015-01-10T00:00:00'
+    #                },
+    #                ...
+    #
+    #            'version': [
+    #                {'count': 45234, 'term': '19.0a1'},
+    #                {'count': 39001+56123+90133, 'term': '18.0b'},
+    #
+
+    histogram = results['facets']['histogram_date']
+    for date_cluster in histogram:
+        parent_totals = defaultdict(int)
+
+        for facet_cluster in list(date_cluster['facets']['version']):
+            version = facet_cluster['term']
+            parent_version = get_parent_version(version)
+            if parent_version is not None:
+                parent_totals[parent_version] += facet_cluster['count']
+                date_cluster['facets']['version'].remove(facet_cluster)
+        for version in parent_totals:
+            date_cluster['facets']['version'].append({
+                'count': parent_totals[version],
+                'term': version
+            })
+
+    parent_totals = defaultdict(int)
+    for facet_cluster in list(results['facets']['version']):
+        version = facet_cluster['term']
+        parent_version = get_parent_version(version)
+        if parent_version is not None:
+            parent_totals[parent_version] += facet_cluster['count']
+            results['facets']['version'].remove(facet_cluster)
+    for version in parent_totals:
+        results['facets']['version'].append({
+            'count': parent_totals[version],
+            'term': version,
+        })
+
+    graph_data = {}
+    graph_data = build_data_object_for_crashes_per_day_graph(
+        start_date.strftime('%Y-%m-%d'),
+        end_date.strftime('%Y-%m-%d'),
+        results['facets'],
+        adi_by_version,
+        _date_range_type
+    )
+    graph_data['product_versions'] = get_product_versions_for_crashes_per_day(
+        results['facets'],
+        params['product'],
+    )
+
+    return graph_data, results, adi_by_version
+
+
 def build_data_object_for_crash_reports(response_items):
 
     crash_reports = []
@@ -373,6 +537,45 @@ def home(request, product, versions=None,
     return render(request, 'crashstats/home.html', context)
 
 
+def _get_frontpage_data_from_supersearch(
+    product,
+    version,
+    start_date,
+    end_date
+):
+    params = {
+        'product': product,
+        'version': version,
+        'date': [
+            '>={}'.format(start_date.date()),
+            '<{}'.format(end_date.date()),
+        ]
+    }
+    params['_histogram.date'] = ['version']
+    params['_facets'] = ['version']
+    params['date'] = [
+        '>=' + start_date.strftime('%Y-%m-%d'),
+        '<' + end_date.strftime('%Y-%m-%d'),
+    ]
+
+    params['_results_number'] = 0  # because we don't care about hits
+
+    platforms_api = models.Platforms()
+    platforms = platforms_api.get()
+
+    graph_data, _, __ = _get_crashes_per_day_with_adu(
+        params, start_date, end_date, platforms, 'report'
+    )
+
+    for key, item in enumerate(graph_data['ratios']):
+        graph_data['ratio' + str(key + 1)] = item
+    del graph_data['ratios']
+
+    graph_data['date_range_type'] = 'report'
+
+    return graph_data
+
+
 @utils.json_view
 @pass_default_context
 def frontpage_json(request, default_context=None):
@@ -403,26 +606,30 @@ def frontpage_json(request, default_context=None):
                 if end_date.date() <= current_end_date.date():
                     versions.append(release['version'])
 
-    # FIXME: This form element is not exposed visually anyhwere
+    # FIXME: This form element is not exposed visually anywhere
     # on the home page.
     date_range_type = form.cleaned_data['date_range_type'] or 'report'
     assert date_range_type in date_range_types
 
-    api = models.CrashesPerAdu()
-    crashes = api.get(
-        product=product,
-        versions=versions,
-        from_date=start_date.date(),
-        to_date=end_date.date(),
-        date_range_type=date_range_type
-    )
+    if waffle.switch_is_active('home_page_graph_psql'):
+        api = models.CrashesPerAdu()
+        crashes = api.get(
+            product=product,
+            versions=versions,
+            from_date=start_date.date(),
+            to_date=end_date.date(),
+            date_range_type=date_range_type
+        )
 
-    data = {}
-    data = build_data_object_for_adu_graphs(
-        start_date.strftime('%Y-%m-%d'),
-        end_date.strftime('%Y-%m-%d'),
-        crashes['hits']
-    )
+        data = build_data_object_for_adu_graphs(
+            start_date.strftime('%Y-%m-%d'),
+            end_date.strftime('%Y-%m-%d'),
+            crashes['hits']
+        )
+    else:
+        data = _get_frontpage_data_from_supersearch(
+            product, versions, start_date, end_date
+        )
 
     # Because we need to always display the links at the bottom of
     # the frontpage, even when there is no data to plot, get the
@@ -1005,9 +1212,6 @@ def crashes_per_day(request, default_context=None):
 
     context['date_range_type'] = params.get('date_range_type') or 'report'
 
-    beta_versions = [x for x in params['versions'] if x.endswith('b')]
-
-    api = SuperSearchUnredacted()
     _date_range_type = params.pop('date_range_type')
     if _date_range_type == 'build':
         params['_histogram.build_id'] = ['version']
@@ -1047,155 +1251,13 @@ def crashes_per_day(request, default_context=None):
     if 'Mac OS X' in supersearch_params['platforms']:
         supersearch_params['platforms'].append('Mac')
         supersearch_params['platforms'].remove('Mac OS X')
-    results = api.get(**supersearch_params)
 
-    # now get the ADI for these product versions
-    api = models.ADI()
-    adi_counts = api.get(
-        product=params['product'],
-        versions=params['versions'],
-        start_date=start_date,
-        end_date=end_date,
-        platforms=params['platforms'],
-    )
-
-    api = models.ProductBuildTypes()
-    product_build_types = api.get(product=params['product'])['hits']
-
-    # This `adi_counts` is a list of dicts that looks like this:
-    #    {
-    #       'adi_count': 123,
-    #       'date': '2015-08-15',
-    #       'version': '40.0.2'
-    #       'build_type': 'beta',
-    #    }
-    # We need to turn this around so that it's like this:
-    #   {
-    #       '40.0.2': {
-    #           '2015-08-15': [123, 1.0],
-    #            ...
-    #       },
-    #       ...
-    #   }
-    # So it can easily be looked up how many counts there are per
-    # version per date.
-    #
-    # Note!! that the 1.0 in the example above is the throttle value
-    # for this build_type. We got that from the ProductBuildTypes API.
-    adi_by_version = {}
-
-    # If any of the versions end with a 'b' we want to collect
-    # and group them together under one.
-    # I.e. if we have adi count of '42.0b1':123 and '42.0b2':345
-    # then we want to combine that to just '42.0b':123+345
-
-    def get_parent_version(ver):
-        try:
-            return [x for x in beta_versions if ver.startswith(x)][0]
-        except IndexError:
-            return None
-
-    for group in adi_counts['hits']:
-        version = group['version']
-        date = group['date']
-        parent_version = get_parent_version(version)
-        if parent_version is not None:
-            version = parent_version
-
-        build_type = group['build_type']
-        throttle = product_build_types[build_type]
-        if version not in adi_by_version:
-            adi_by_version[version] = {}
-
-        count = group['adi_count']
-        try:
-            before = adi_by_version[version][date][0]
-        except KeyError:
-            before = 0
-        adi_by_version[version][date] = [count + before, throttle]
-
-    # We might have queried for aggregates for version ['19.0a1', '18.0b']
-    # but SuperSearch will give us facets for versions:
-    # ['19.0a1', '18.0b1', '18.0b2', '18.0b3']
-    # The facets look something like this:
-    #        {
-    #            'histogram_date': [
-    #                {
-    #                    'count': 1234,
-    #                    'facets': [
-    #                        {'count': 201, 'term': '19.0a1'},
-    #                        {'count': 196, 'term': '18.0b1'},
-    #                        {'count': 309, 'term': '18.0b2'},
-    #                        {'count': 991, 'term': '18.0b3'},
-    #                    ],
-    #                    'term': '2015-01-10T00:00:00'
-    #                },
-    #                ...
-    #
-    #            'version': [
-    #                {'count': 45234, 'term': '19.0a1'},
-    #                {'count': 39001, 'term': '18.0b1'},
-    #                {'count': 56123, 'term': '18.0b2'},
-    #                {'count': 90133, 'term': '18.0b3'},
-    #
-    # Our job is to rewrite that so it looks like this:
-    #        {
-    #            'histogram_date': [
-    #                {
-    #                    'count': 1234,
-    #                    'facets': [
-    #                        {'count': 201, 'term': '19.0a1'},
-    #                        {'count': 196+309+991, 'term': '18.0b'},
-    #                    ],
-    #                    'term': '2015-01-10T00:00:00'
-    #                },
-    #                ...
-    #
-    #            'version': [
-    #                {'count': 45234, 'term': '19.0a1'},
-    #                {'count': 39001+56123+90133, 'term': '18.0b'},
-    #
-
-    histogram = results['facets']['histogram_date']
-    for date_cluster in histogram:
-        parent_totals = defaultdict(int)
-
-        for facet_cluster in list(date_cluster['facets']['version']):
-            version = facet_cluster['term']
-            parent_version = get_parent_version(version)
-            if parent_version is not None:
-                parent_totals[parent_version] += facet_cluster['count']
-                date_cluster['facets']['version'].remove(facet_cluster)
-        for version in parent_totals:
-            date_cluster['facets']['version'].append({
-                'count': parent_totals[version],
-                'term': version
-            })
-
-    parent_totals = defaultdict(int)
-    for facet_cluster in list(results['facets']['version']):
-        version = facet_cluster['term']
-        parent_version = get_parent_version(version)
-        if parent_version is not None:
-            parent_totals[parent_version] += facet_cluster['count']
-            results['facets']['version'].remove(facet_cluster)
-    for version in parent_totals:
-        results['facets']['version'].append({
-            'count': parent_totals[version],
-            'term': version,
-        })
-
-    graph_data = {}
-    graph_data = build_data_object_for_crashes_per_day_graph(
-        context['start_date'],
-        context['end_date'],
-        results['facets'],
-        adi_by_version,
+    graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
+        supersearch_params,
+        start_date,
+        end_date,
+        platforms,
         _date_range_type
-    )
-    graph_data['product_versions'] = get_product_versions_for_crashes_per_day(
-        results['facets'],
-        params['product'],
     )
 
     render_csv = request.GET.get('format') == 'csv'

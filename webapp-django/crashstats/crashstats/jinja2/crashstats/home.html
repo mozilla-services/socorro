@@ -39,7 +39,7 @@ Crash Data for {{ product }} {% if version %}{{ version }}{% endif %}
         </div>
 
         <div class="body">
-            <div id="homepage-graph-graph"></div>
+            <div id="homepage-graph-graph" data-frontpage-json-url="{{ url('crashstats:frontpage_json') }}"></div>
             <div id="homepage-graph-legend" class="homepage-graph-legend"></div>
         </div>
     </div>
