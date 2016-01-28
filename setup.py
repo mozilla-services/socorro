@@ -39,7 +39,7 @@ setup(
     keywords=['socorro', 'breakpad', 'crash', 'reporting', 'minidump',
               'stacktrace'],
     packages=find_packages(),
-    install_requires=[], # use peep -r requirements.txt instead
+    install_requires=[], # use pip -r requirements.txt instead
     entry_points={
         'console_scripts': [
                 'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'

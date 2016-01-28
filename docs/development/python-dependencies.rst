@@ -8,29 +8,19 @@ Dependencies
 requirements.txt
 ---------------------------
 
-All Python dependencies are tracked in one file: `requirements.txt`. It is split
-into two sections, one for dev requirements and one for production.
+All Python dependencies are tracked in one main file; `requirements.txt`.
+There are also dependencies we are only applicable if do your development
+on Linux or you deploy on Linux; `linux-requirements.txt`.
 
-The dev requirements are not mandatory for running Socorro at all,
-but are there for people to work on the code. For example, to run the test
-suites. The production requirements are there for libraries required to run the
-product in a production environment.
+To add another new package to depend on, use `hashin` to generate
+the necessary hashes into `requirements.txt` based on the exact
+version you need installed. To install `hashin` simply run
+`pip install hashin`. Then, run::
 
-When you land code that now needs to depend on an external piece of
-code you have two options how to include it:
+    hashin mypackage==1.2.3
 
-* Add it by package name **and exact version number** if the package
-  is available on PyPi. For example::
-
-      pyparsing==2.0.4
-
-* Add it by git commit. If it's a "Mozilla owned" repo, first follow
-  the instructions on
-  "gitmirror.mozilla.org":http://gitmirror.mozilla.org/ (see Intranet
-  link) then take note of the specific commit hash you want to pin it
-  to. For example::
-
-      git+git://github.com/mozilla/configman@3d74ae9#egg=configman
+See below for a discussion about dependencies within the new packages
+you are adding.
 
 
 Mind those nested dependencies
@@ -40,36 +30,57 @@ Pinning exact versions is important because it makes deployment
 predictable meaning that what you test and develop against locally is
 exactly reflected in production.
 
-Also, Socorro uses a `pip` wrapper called `peep`
-(https://pypi.python.org/pypi/peep) which ensures that the packages
-downloaded from the Python Package Index (PyPI) have not been tampered with.
+Also, Socorro uses ``pip>=8.0`` which has the ability to checksum
+check all dependencies so they are the exact same version we've
+verified and tested in local development.
 
-Since we can't trust peep to verify itself, we ship a version in the
-`./tools` directory of the Socorro repo.
+And to bootstrap ``pip``, we need a verified and vetted version of pip to boot,
+so we've included `./tools/pipstrap.py` (see
+https://github.com/erikrose/pipstrap) which makes sure we get that first
+``pip`` installed securely.
+
+The best tool to help you add all hashes needed for each package, is
+``hashin`` (https://github.com/peterbe/hashin). You can install this
+with ``pip install hashin``. This is something you only ever install
+in your local virtual environment.
 
 Whilst it's a given that you pin the exact version of the package you
 now depend on, that package might have its own dependencies and
 sometimes they're not pinned to specific version. For example,
-`web.py` depends on `somepackage` but doesn't state what exact
+``mypackage`` depends on ``somepackage`` but doesn't state what exact
 version. Therefore, it's your job to predict this before it's
-installed as a nested dependency. So, do this::
+installed as a nested dependency.
 
-    $ pip install web.py==0.36
-    # or use `pip install web.py` to get the latest
+The best approach is to simply let ``pip install`` find out which
+dependencies you ought to install and get hashes for.
 
-    $ pip freeze
+For example, if you want to add ``mypackage==1.2.3`` then first hash
+it in::
 
-    # read the output and see what version of `somepackage`
-    # gets installed.
+    $ hashin mypackage==1.2.3
+    $ tail requirements.txt  # will verify it got added
 
-    $ emacs requirements.txt
+Now, check what dependencies it "failed" on::
 
-    peep install -r requirements.txt
+    $ pip install --require-hashes -r requirements.txt
 
-    # read the output of peep, which will give you the SHA comments to paste
-    # into requirements.txt
+If for example, it said it failed because of ``dependentpackage==0.1.9``
+then just add that too::
 
-    $ emacs requirements.txt
+    $ hashin depdendentpackage==0.1.9
 
-    # finally, install your dependencies!
-    peep install -r requirements.txt
+Rinse and repeat.
+
+Keep them up to date
+------------------------------
+
+There are various tools for checking your requirements file that checks
+that you're using the latest and greatest releases.
+
+The simplest tool is ``piprot`` which is a command line tool that simply
+tells you which packages (based on those actively installed) are out of date.
+
+To run ``piprot`` simply install and run it like this::
+
+    $ pip install piprot
+    $ piprot

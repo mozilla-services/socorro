@@ -12,12 +12,12 @@ fi
 source "$VIRTUAL_ENV/bin/activate"
 
 # install dev + prod dependencies
-${VIRTUAL_ENV}/bin/pip install tools/peep-2.*tar.gz
-${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r requirements.txt
+${VIRTUAL_ENV}/bin/python tools/pipstrap.py
+${VIRTUAL_ENV}/bin/pip install --require-hashes -r requirements.txt
 
 # only install `linux-requirements.txt` if you're on linux
 if [[ `uname` == 'Linux' ]]; then
-  ${VIRTUAL_ENV}/bin/peep install --download-cache=./pip-cache -r linux-requirements.txt
+  ${VIRTUAL_ENV}/bin/pip install --require-hashes -r linux-requirements.txt
 fi
 
 if [ -n "${SOCORRO_DEVELOPMENT_ENV+1}" ]; then
