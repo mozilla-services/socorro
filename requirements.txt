@@ -235,3 +235,6 @@ cffi==1.5.0 \
     --hash=sha256:44f76f6c3fc654860821785192eca29bd66531af57d09b681e6d52584604a7e7
 pycparser==2.14 \
     --hash=sha256:7959b4a74abdc27b312fed1c21e6caf9309ce0b29ea86b591fd2e99ecdf27f73
+# the 'linux2' is for TravisCI
+pyinotify==0.9.6 ; sys_platform == 'linux' or sys_platform == 'linux2' \
+    --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
