@@ -101,8 +101,9 @@ django-ratelimit==0.5.0 \
     --hash=sha256:2dd0e0dc389486a2d4a62ed914a10c6297b5ada117d1ed3f94ff7abac8e89db0
 django-waffle==0.10.1 \
     --hash=sha256:74425620ad3c2a1f05151f0cc851ab7e26186da39fb0399afc0aa8eeebbd201b
-Jinja2==2.5.5 \
-    --hash=sha256:22f9675e42dc640c4469d4f7d210baecb5e695823af954c813d51c930235675d
+Jinja2==2.8 \
+    --hash=sha256:1cc03ef32b64be19e0a5b54578dd790906a34943fe9102cfdae0d4495bd536b4 \
+    --hash=sha256:bc1ff2ff88dbfacefde4ddde471d1417d3b304e8df103a7a9437d47269201bf4
 cssselect==0.9.1 \
     --hash=sha256:0535a7e27014874b27ae3a4d33e8749e345bdfa62766195208b7996bf1100682
 path.py==5.1 \
