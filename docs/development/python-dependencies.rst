@@ -8,14 +8,12 @@ Dependencies
 requirements.txt
 ---------------------------
 
-All Python dependencies are tracked in one main file; `requirements.txt`.
-There are also dependencies we are only applicable if do your development
-on Linux or you deploy on Linux; `linux-requirements.txt`.
+All Python dependencies are tracked in one main file; ``requirements.txt``.
 
-To add another new package to depend on, use `hashin` to generate
-the necessary hashes into `requirements.txt` based on the exact
-version you need installed. To install `hashin` simply run
-`pip install hashin`. Then, run::
+To add another new package to depend on, use ``hashin`` to generate
+the necessary hashes into ``requirements.txt`` based on the exact
+version you need installed. To install ``hashin`` simply run
+``pip install hashin``. Then, run::
 
     hashin mypackage==1.2.3
 
