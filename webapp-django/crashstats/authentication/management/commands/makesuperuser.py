@@ -10,7 +10,8 @@ def get_input(text):
 
 class Command(BaseCommand):
 
-    help = 'emailaddress [, otheremailaddress, ...]'
+    def add_arguments(self, parser):
+        parser.add_argument('emailaddress', nargs='+', type=str)
 
     def handle(self, *args, **options):
         if not args:

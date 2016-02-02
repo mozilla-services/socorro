@@ -75,6 +75,8 @@ class TestViews(BaseTestViews):
     def _login(self, is_superuser=True):
         self.user = User.objects.create_user('kairo', 'kai@ro.com', 'secret')
         self.user.is_superuser = is_superuser
+        # django doesn't set this unless the user has actually signed in
+        self.user.last_login = datetime.datetime.utcnow()
         self.user.save()
         assert self.client.login(username='kairo', password='secret')
 
@@ -630,6 +632,7 @@ class TestViews(BaseTestViews):
             return User.objects.create(
                 username=username,
                 email=username + '@example.com',
+                last_login=datetime.datetime.utcnow(),
                 **kwargs
             )
 

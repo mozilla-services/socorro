@@ -33,6 +33,7 @@ PIPELINE_CSS = {
     'crashstats_base': {
         'source_filenames': (
             'crashstats/css/screen.less',
+            'browserid/persona-buttons.css',
         ),
         'output_filename': 'css/crashstats-base.min.css',
     },
@@ -226,6 +227,8 @@ PIPELINE_JS = {
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
             'crashstats/js/socorro/nav.js',
             'crashstats/js/socorro/analytics.js',
+            'browserid/api.js',
+            'browserid/browserid.js',
         ),
         'output_filename': 'js/crashstats-base.min.js',
     },

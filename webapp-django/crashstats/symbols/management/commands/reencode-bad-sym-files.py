@@ -2,8 +2,6 @@ import gzip
 import ssl
 from cStringIO import StringIO
 
-from optparse import make_option
-
 import requests
 import boto
 
@@ -56,33 +54,33 @@ class Command(BaseCommand):
         'without first being properly encoded with the gzip header signature.'
     )
 
-    option_list = BaseCommand.option_list + (
-        make_option(
+    def add_arguments(self, parser):
+        parser.add_argument(
             '--dry-run',
             action='store_true',
             dest='dry_run',
             default=False,
             help='Only find the files to re-encode'
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--first-date',
             dest='first_date',
-            default='2015-07-20',  # the day we started compressing (132)
+            default='2015-08-05',  # the day the fix was release on prod (134)
             help='Upload date range start (Default 2015-07-20)'
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--end-date',
             dest='end_date',
-            default='2015-08-05',  # the day the fix was release on prod (134)
+            default='2015-07-20',  # the day we started compressing (132)
             help='Upload date range end (Default 2015-08-05)'
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--max-uploads',
+            store=int,
             dest='max_uploads',
-            default='0',
+            default=0,  # the day we started compressing (132)
             help='Max. number of SymbolsUploads to work on (default all)'
-        ),
-    )
+        )
 
     def _parse_date(self, date):
         year, month, day = [int(x) for x in date.split('-')]

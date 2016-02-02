@@ -23,6 +23,17 @@ ROOT = os.path.abspath(
 def path(*dirs):
     return os.path.join(ROOT, *dirs)
 
+# Debugging displays nice error messages, but leaks memory. Set this to False
+# on all server instances and True only for development.
+DEBUG = config('DEBUG', False, cast=bool)
+
+# Set this to True to make debugging AJAX requests easier; development-only!
+DEBUG_PROPAGATE_EXCEPTIONS = config(
+    'DEBUG_PROPAGATE_EXCEPTIONS',
+    False,
+    cast=bool
+)
+
 
 SITE_ID = 1
 
@@ -41,16 +52,6 @@ STATIC_ROOT = path('static')
 # URL prefix for static files
 STATIC_URL = '/static/'
 
-
-TEMPLATE_LOADERS = (
-    'jingo.Loader',
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
-
-TEMPLATE_DIRS = (
-    path('templates'),
-)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '', cast=Csv())
 
@@ -93,30 +94,12 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'waffle',
     'eventlog',
+    'django_jinja',
 )
 
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
-
-def JINJA_CONFIG():
-    config = {
-        'extensions': [
-            'jinja2.ext.do',
-            'jinja2.ext.with_',
-            'jinja2.ext.loopcontrols',
-            'pipeline.templatetags.ext.PipelineExtension',
-        ],
-        'finalize': lambda x: x if x is not None else '',
-    }
-    return config
-
-
-# Because Jinja2 is the default template loader, add any non-Jinja templated
-# apps here:
-JINGO_EXCLUDE_APPS = (
-    'browserid',
-)
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -139,7 +122,7 @@ AUTHENTICATION_BACKENDS = (
     'django_browserid.auth.BrowserIDBackend',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS = (
+_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.media',
@@ -150,6 +133,49 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
     '%s.base.context_processors.browserid' % PROJECT_MODULE,
 )
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django_jinja.backend.Jinja2',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            # Use jinja2/ for jinja templates
+            'app_dirname': 'jinja2',
+            # Don't figure out which template loader to use based on
+            # file extension
+            'match_extension': '',
+            # 'newstyle_gettext': True,
+            'context_processors': _CONTEXT_PROCESSORS,
+            'undefined': 'jinja2.Undefined',
+            'extensions': [
+                'jinja2.ext.do',
+                'jinja2.ext.loopcontrols',
+                'jinja2.ext.with_',
+                'jinja2.ext.i18n',  # needed to avoid errors in django_jinja
+                'jinja2.ext.autoescape',
+                'django_jinja.builtins.extensions.CsrfExtension',
+                'django_jinja.builtins.extensions.StaticFilesExtension',
+                'django_jinja.builtins.extensions.DjangoFiltersExtension',
+                'pipeline.templatetags.ext.PipelineExtension',
+                'waffle.jinja.WaffleExtension',
+            ],
+            'globals': {
+                'browserid_info': 'django_browserid.helpers.browserid_info',
+                'browserid_login': 'django_browserid.helpers.browserid_login',
+                'browserid_logout': 'django_browserid.helpers.browserid_logout'
+            }
+        }
+    },
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],  # what does this do?!
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'debug': DEBUG,
+            'context_processors': _CONTEXT_PROCESSORS,
+        }
+    },
+]
 
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
@@ -575,19 +601,6 @@ else:
 
 # Uncomment this and set to all slave DBs in use on the site.
 SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
-
-# Debugging displays nice error messages, but leaks memory. Set this to False
-# on all server instances and True only for development.
-DEBUG = TEMPLATE_DEBUG = config('DEBUG', False, cast=bool)
-
-# Set this to True to make debugging AJAX requests easier; development-only!
-DEBUG_PROPAGATE_EXCEPTIONS = config(
-    'DEBUG_PROPAGATE_EXCEPTIONS',
-    False,
-    cast=bool
-)
-
-COMPRESS_ENABLED = config('COMPRESS_ENABLED', True, cast=bool)
 
 
 STATICFILES_FINDERS = (

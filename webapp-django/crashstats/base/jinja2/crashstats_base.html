@@ -1,0 +1,190 @@
+{% from "macros/pagination.html" import pagination %}
+<!DOCTYPE html>
+<html lang="en-US" class="production">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
+
+        {% block site_css %}
+            {% stylesheet 'crashstats_base' %}
+        {% endblock %}
+    {% if GOOGLE_ANALYTICS_ID %}
+        <script type="text/javascript">
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+          ga('create', '{{ GOOGLE_ANALYTICS_ID }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}');
+          ga('send', 'pageview');
+        </script>
+    {% endif %}
+    </head>
+
+    <body>
+    {{ browserid_info() }}
+    <div class="page-header">
+        <h1>
+            <a href="/">
+                <span class="icon"></span>
+                <span class="title">Mozilla Crash Reports</span>
+            </a>
+        </h1>
+
+        <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}">
+            <label for="q" class="visually-hidden">Search</label>
+            <input type="text" id="q" name="query" placeholder="Find Crash ID or Signature">
+            <input type="submit" class="hidden">
+        </form>
+    </div>
+
+    <h1>Product Navigation</h1>
+
+    <div class="version-nav">
+        <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
+        <input type="hidden" id="url_site" name="url_site" value="/" />
+
+    {% block product_nav_filter %}
+        <ul class="filter">
+            <li>
+                <label for="products_select">Product:</label>
+                <select id="products_select">
+                {% for p in releases %}
+                    <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+                </select>
+            </li>
+            <li class="version_select">
+                <label for="product_version_select" class="visually-hidden">Select Version:</label>
+                <select id="product_version_select" >
+                    <optgroup label=" ">
+                        <option value="Current Versions">Current Versions</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                    {% for release in releases[product] %}
+                        {% if release.featured %}
+                        <option
+                            value="{{ release.version }}"
+                            {% if release.version == version %}selected{% endif %}
+                        >{{ release.version }}</option>
+                        {% endif %}
+                    {% endfor  %}
+                    </optgroup>
+                    <optgroup label=" ">
+                    {% for release in releases[product] %}
+                        {% if not release.featured %}
+                        <option
+                            value="{{ release.version }}"
+                            {% if release.version == version %}selected{% endif %}
+                        >{{ release.version }}</option>
+                        {% endif %}
+                    {% endfor  %}
+                    </optgroup>
+                </select>
+            </li>
+            <li>
+                <label for="report_select">Report:</label>
+                <select id="report_select">
+                    <optgroup label=" ">
+                        <option
+                            value="products"
+                            data-url-product="{{ url('crashstats:home', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:home', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'products' %}selected{% endif %}
+                        >Overview</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option
+                            value="daily"
+                            data-url-product="{{ url('crashstats:crashes_per_day') }}?p=__PRODUCT__"
+                            data-url-version="{{ url('crashstats:crashes_per_day') }}?p=__PRODUCT__&amp;v=__VERSION__"
+                            {% if report == 'daily' %}selected{% endif %}
+                        >Crashes per Day</option>
+                        <option
+                            value="topcrasher"
+                            data-url-product="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__"
+                            data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"
+                            {% if report == 'topcrasher' %}selected{% endif %}
+                        >Top Crashers</option>
+                        <option
+                            value="gccrashes"
+                            data-url-product="{{ url('crashstats:gccrashes', '__PRODUCT__') }}"
+                            data-url-version="{{ url('crashstats:gccrashes', '__PRODUCT__', '__VERSION__') }}"
+                            {% if report == 'gccrashes' %}selected{% endif %}
+                        >GC Crashes</option>
+                        {% if request.user.has_perm('crashstats.view_exploitability') %}
+                        <option
+                            value="exploitable"
+                            data-url-product="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__"
+                            data-url-version="{{ url('crashstats:exploitability_report') }}?product=__PRODUCT__&amp;version=__VERSION__"
+                            {% if report == 'exploitable' %}selected{% endif %}
+                        >Exploitable Crashes</option>
+                        {% endif %}
+                    </optgroup>
+                </select>
+            </li>
+        </ul>
+    {% endblock %}
+
+        <div class="search">
+            <a href="{{ url('supersearch.search') }}?product={{ product }}{% if version and version != 'ALL' %}&amp;version={{ version }}{% endif %}&amp;_dont_run=1">
+                Super Search
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+          <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+    <div id="footer" class="page-footer">
+        <div class="nav">
+            <div class="about">
+                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> - All dates are UTC
+            </div>
+            <ul>
+                <li><a href="{{ url('documentation:home') }}">User Documentation</a></li>
+                <li><a href="{{ url('api:documentation') }}">API</a></li>
+                <li><a href="https://github.com/mozilla/socorro">Source</a></li>
+                <li><a href="https://www.mozilla.org/privacy/websites/">Privacy Policy</a></li>
+            </ul>
+        </div>
+        <div class="login">
+            <ul>
+                <li>
+                {% if request.user.is_authenticated() %}
+                    <a href="{{ url('profile:profile') }}"
+                      title="You are signed in as {{ request.user.email }}"
+                    >
+                        Your Profile
+                    </a>
+                    |
+                    <a href="{{ url('tokens:home') }}">API Tokens</a>
+                    |
+                    <a href="{{ url('symbols:home') }}">Symbols</a>
+                    {% if request.user.is_superuser %}
+                    |
+                    <a href="{{ url('manage:home') }}">Admin</a>
+                    {% endif %}
+                    |
+                    {{ browserid_logout(text='Sign out') }}
+                {% else %}
+                    {# the redirect_next function comes from the browserid context processor #}
+                    {{ browserid_login(text='Sign in', color='dark', next=redirect_next()) }}
+                {% endif %}
+                </li>
+            </ul>
+        </div>
+        <br class="clear" />
+    </div>
+    {% block site_js %}
+    <script type="text/javascript" src="https://login.persona.org/include.js"></script>
+    {% javascript 'crashstats_base' %}
+    {% endblock %}
+  </body>
+</html>
