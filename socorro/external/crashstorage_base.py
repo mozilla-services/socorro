@@ -143,15 +143,16 @@ class Redactor(RequiredConfig):
     def redact(self, a_mapping):
         """this is the function that does the redaction."""
         for a_key in self.forbidden_keys:
-            sub_mapping =  a_mapping
-            sub_keys =  a_key.split('.')
+            sub_mapping = a_mapping
+            sub_keys = a_key.split('.')
             try:
                 for a_sub_key in sub_keys[:-1]:  # step through the subkeys
                     sub_mapping = sub_mapping[a_sub_key.strip()]
                 del sub_mapping[sub_keys[-1]]
             except KeyError:
-                pass  # this is okay, our key was already deleted by
-                      # another pattern that matched at a higher level
+                # this is okay, our key was already deleted by
+                # another pattern that matched at a higher level
+                pass
 
     #--------------------------------------------------------------------------
     def __call__(self, a_mapping):
@@ -589,13 +590,30 @@ class PolyCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dump, processed_crash,
                                crash_id):
+        storage_exception = PolyStorageError()
         for a_store in self.stores.itervalues():
-            a_store.save_raw_and_processed(
-              raw_crash,
-              dump,
-              processed_crash,
-              crash_id
-            )
+            self.quit_check()
+            try:
+                a_store.save_raw_and_processed(
+                    raw_crash,
+                    dump,
+                    processed_crash,
+                    crash_id
+                )
+            except Exception:
+                store_class = getattr(
+                    a_store, 'wrapped_object', a_store.__class__
+                )
+
+                self.logger.error(
+                    '%r failed (crash id: %s)',
+                    store_class,
+                    crash_id,
+                    exc_info=True
+                )
+                storage_exception.gather_current_exception()
+        if storage_exception.has_exceptions():
+            raise storage_exception
 
 
 #==============================================================================
@@ -931,7 +949,7 @@ class PrimaryDeferredStorage(CrashStorageBase):
         self.deferred_store = config.deferred.storage_class(
             config.deferred,
             quit_check_callback
-       )
+        )
         self.logger = self.config.logger
 
     #--------------------------------------------------------------------------

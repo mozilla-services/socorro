@@ -110,8 +110,10 @@ class TestBase(TestCase):
                     )
 
             values = ['eins', 'zwei', 'drei']
+
             def open_function(*args, **kwargs):
                 return values.pop(0)
+
             crashstorage = MyCrashStorageTest(
                 config,
                 quit_check_callback=fake_quit_check
@@ -233,24 +235,38 @@ class TestBase(TestCase):
             poly_store.stores['storage2'].save_processed.side_effect = \
                 Exception('this is messed up')
 
-            assert_raises(PolyStorageError,
-                              poly_store.save_raw_crash,
-                              raw_crash,
-                              dump,
-                              '')
+            assert_raises(
+                PolyStorageError,
+                poly_store.save_raw_crash,
+                raw_crash,
+                dump,
+                ''
+            )
             for v in poly_store.stores.itervalues():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, '')
 
-            assert_raises(PolyStorageError,
-                              poly_store.save_processed,
-                              processed_crash)
+            assert_raises(
+                PolyStorageError,
+                poly_store.save_processed,
+                processed_crash
+            )
             for v in poly_store.stores.itervalues():
                 v.save_processed.assert_called_with(processed_crash)
 
-            poly_store.stores['storage2'].close.side_effect = \
-                Exception
-            assert_raises(PolyStorageError,
-                              poly_store.close)
+            assert_raises(
+                PolyStorageError,
+                poly_store.save_raw_and_processed,
+                raw_crash,
+                dump,
+                processed_crash,
+                'n'
+            )
+            for v in poly_store.stores.itervalues():
+                v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
+                v.save_processed.assert_called_with(processed_crash)
+
+            poly_store.stores['storage2'].close.side_effect = Exception
+            assert_raises(PolyStorageError, poly_store.close)
             for v in poly_store.stores.itervalues():
                 v.close.assert_called_with()
 
@@ -488,7 +504,6 @@ class TestBase(TestCase):
                               migration_store.close)
             migration_store.primary_store.close.assert_called_with()
             migration_store.fallback_store.close.assert_called_with()
-
 
     def test_deferred_crash_storage(self):
         n = Namespace()
@@ -729,6 +744,7 @@ class TestRedactor(TestCase):
             expected_surviving_keys
         )
 
+
 class TestBench(TestCase):
 
     def test_benchmarking_crashstore(self):
@@ -785,7 +801,7 @@ class TestBench(TestCase):
             )
             mock_logging.debug.reset_mock()
 
-            crashstorage.save_raw_and_processed({}, 'payload', {}, 'ooid' )
+            crashstorage.save_raw_and_processed({}, 'payload', {}, 'ooid')
             crashstorage.wrapped_crashstore.save_raw_and_processed \
                 .assert_called_with(
                     {},
@@ -873,6 +889,3 @@ class TestDumpsMappings(TestCase):
         )
         ok_(fdm.as_file_dumps_mapping() is fdm)
         eq_(fdm.as_memory_dumps_mapping(), mdm)
-
-
-
