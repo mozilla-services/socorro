@@ -2729,10 +2729,11 @@ class TestViews(BaseTestViews):
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
         comment_transformed = (
             comment0
-            .replace('\\n', '<br>')
+            .replace('\\n', '<br />')
             .replace('peterbe@mozilla.com', '(email removed)')
             .replace('www.p0rn.com', '(URL removed)')
         )
+
         ok_(comment_transformed in response.content)
         # but the email should have been scrubbed
         ok_('peterbe@mozilla.com' not in response.content)

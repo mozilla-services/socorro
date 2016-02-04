@@ -335,7 +335,7 @@ def user(request, id):
     else:
         form = forms.EditUserForm(instance=user_)
     context['form'] = form
-    context['user'] = user_
+    context['edit_user'] = user_
     return render(request, 'manage/user.html', context)
 
 

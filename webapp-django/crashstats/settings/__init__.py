@@ -14,4 +14,6 @@ from .base import *  # NOQA
 
 
 if len(sys.argv) > 1 and sys.argv[1] == 'test':
+    import logging
+    logging.disable(logging.CRITICAL)  # Shuts up logging when running tests
     from .test import *  # NOQA

@@ -5,7 +5,7 @@ import datetime
 from django import http
 from django.shortcuts import render
 from django.contrib.auth.models import Permission
-from django.contrib.sites.models import RequestSite
+from django.contrib.sites.requests import RequestSite
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django import forms
