@@ -34,7 +34,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         cmd = makesuperuser.Command()
         buffer = StringIO()
         with redirect_stdout(buffer):
-            cmd.handle('BOB@mozilla.com')
+            cmd.handle(emailaddress=['BOB@mozilla.com'])
         ok_('bob@mozilla.com is now a superuser' in buffer.getvalue())
         # reload
         ok_(User.objects.get(pk=bob.pk, is_superuser=True))
@@ -46,7 +46,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         cmd = makesuperuser.Command()
         buffer = StringIO()
         with redirect_stdout(buffer):
-            cmd.handle('BOB@mozilla.com')
+            cmd.handle(emailaddress=['BOB@mozilla.com'])
         ok_('bob@mozilla.com was already a superuser' in buffer.getvalue())
         # reload
         ok_(User.objects.get(pk=bob.pk, is_superuser=True))
@@ -59,7 +59,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         cmd = makesuperuser.Command()
         buffer = StringIO()
         with redirect_stdout(buffer):
-            cmd.handle('BOB@mozilla.com oTTo@mozilla.com')
+            cmd.handle(emailaddress=['BOB@mozilla.com', 'oTTo@mozilla.com'])
         ok_(User.objects.get(pk=bob.pk, is_superuser=True))
         ok_(User.objects.get(pk=otto.pk, is_superuser=True))
 
@@ -67,7 +67,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         cmd = makesuperuser.Command()
         buffer = StringIO()
         with redirect_stderr(buffer):
-            cmd.handle('neverheardof@mozilla.com')
+            cmd.handle(emailaddress=['neverheardof@mozilla.com'])
         ok_(
             'No user with that email neverheardof@mozilla.com'
             in buffer.getvalue()
@@ -83,7 +83,7 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         cmd = makesuperuser.Command()
         buffer = StringIO()
         with redirect_stdout(buffer):
-            cmd.handle()
+            cmd.handle(emailaddress=[])
         # reload
         ok_(User.objects.get(email='bob@mozilla.com', is_superuser=True))
 
@@ -96,5 +96,6 @@ class TestMakeSuperuserCommand(DjangoTestCase):
         cmd = makesuperuser.Command()
         assert_raises(
             CommandError,
-            cmd.handle
+            cmd.handle,
+            emailaddress=[]
         )
