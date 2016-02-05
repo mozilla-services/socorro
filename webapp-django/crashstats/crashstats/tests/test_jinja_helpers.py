@@ -9,6 +9,7 @@ from crashstats.crashstats.templatetags.jinja_helpers import (
     recursive_state_filter,
     show_bug_link,
     bugzilla_submit_url,
+    digitgroupseparator,
 )
 
 
@@ -106,3 +107,11 @@ class TestBugzillaSubmitURL(TestCase):
         url = bugzilla_submit_url(short_desc='x' * 1000)
         ok_('x' * 1000 not in url)
         ok_('x' * (255 - 3) + '...' in url)
+
+
+class TesDigitGroupSeparator(TestCase):
+
+    def test_basics(self):
+        eq_(digitgroupseparator(None), None)
+        eq_(digitgroupseparator(1000), '1,000')
+        eq_(digitgroupseparator(-1000), '-1,000')
