@@ -343,10 +343,6 @@ ENGAGE_ROBOTS = False
 # Base URL for when we use the Bugzilla API
 BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
 
-# Specify the middleware implementation to use in the middleware
-# Leave empty to use the default
-SEARCH_MIDDLEWARE_IMPL = None
-
 # The index schema used in our elasticsearch databases, used in the
 # Super Search Custom Query page.
 ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
@@ -672,9 +668,6 @@ if raven_dsn:
         'dsn': raven_dsn,
         'release': SOCORRO_REVISION,
     }
-
-# Specify the middleware implementation to use in the middleware
-SEARCH_MIDDLEWARE_IMPL = config('SEARCH_MIDDLEWARE_IMPL', 'elasticsearch')
 
 # If you intend to run with DEBUG=False, this must match the URL
 # you're using
