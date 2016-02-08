@@ -1,9 +1,9 @@
 import datetime
-import isodate
 import json
-import jinja2
-import locale
 import urllib
+
+import isodate
+import jinja2
 
 from django_jinja import library
 
@@ -37,16 +37,9 @@ def urlencode(txt):
 @library.filter
 def digitgroupseparator(number):
     """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
-
     if type(number) is not int:
         return number
-
-    try:
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-    except locale.Error:
-        locale.setlocale(locale.LC_ALL, '')
-
-    return locale.format('%d', number, True)
+    return format(number, ',')
 
 
 @library.global_function
