@@ -13,11 +13,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('emailaddress', nargs='+', type=str)
 
-    def handle(self, *args, **options):
-        if not args:
+    def handle(self, **options):
+        emails = options['emailaddress']
+        if not emails:
             emails = [get_input('Email address: ').strip()]
-        else:
-            emails = args[0].split()
         if not [x for x in emails if x.strip()]:
             raise CommandError('Must supply at least one email address')
         for email in emails:
