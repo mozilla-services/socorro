@@ -84,7 +84,7 @@ class Report(PostgreSQLBase):
                     '%s is not a recognized sort order key' % sort_order['key']
                 )
             sort_order['direction'] = 'ASC'
-            if 'reverse' in kwargs:
+            if str(kwargs.get('reverse', '')).lower() == 'true':
                 if kwargs.pop('reverse'):
                     sort_order['direction'] = 'DESC'
 
@@ -293,7 +293,7 @@ class Report(PostgreSQLBase):
         else:
             # old middleware
             context = self.context
-        ## Adding count for each OS
+        # Adding count for each OS
         for i in context.platforms:
             sql_select.append("".join(("count(CASE WHEN (r.os_name = %(os_",
                                        i["id"], ")s) THEN 1 END) AS is_",
@@ -304,7 +304,7 @@ class Report(PostgreSQLBase):
         sql_select.append(("SUM (CASE WHEN r.process_type IS NULL THEN 0  "
                            "ELSE 1 END) AS numplugin"))
 
-        ## Searching through plugins
+        # Searching through plugins
         if params["report_process"] == "plugin":
             sql_select.append(("plugins.name AS pluginName, "
                                "plugins_reports.version AS pluginVersion, "
@@ -318,7 +318,7 @@ class Report(PostgreSQLBase):
         """
         sql_from = ["FROM reports r"]
 
-        ## Searching through plugins
+        # Searching through plugins
         if params["report_process"] == "plugin":
             sql_from.append(("plugins_reports ON "
                              "plugins_reports.report_id = r.id"))

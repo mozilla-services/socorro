@@ -263,7 +263,6 @@ class SuperSearchField(models.SocorroMiddleware):
         raise NotImplemented()
 
     def create_field(self, **kwargs):
-        # print "IMPL", self.get_implementation()
         return self.get_implementation().create_field(**kwargs)
 
     def update_field(self, **kwargs):

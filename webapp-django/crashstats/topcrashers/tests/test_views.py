@@ -6,7 +6,7 @@ from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
-from crashstats.supersearch.models import SuperSearch
+from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews, Response, mocked_post_123
 )
@@ -150,7 +150,9 @@ class TestViews(BaseTestViews):
                 params['_columns']
             )
             return results
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = self.base_url + '?product=WaterWolf&version=19.0'
 
@@ -242,7 +244,9 @@ class TestViews(BaseTestViews):
                 },
                 'total': 0
             }
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
@@ -262,7 +266,9 @@ class TestViews(BaseTestViews):
                 },
                 'total': 0
             }
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         now = datetime.datetime.utcnow()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)

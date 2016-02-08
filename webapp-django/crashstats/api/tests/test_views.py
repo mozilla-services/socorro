@@ -19,7 +19,8 @@ from crashstats.crashstats.tests.test_views import (
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
-from crashstats.supersearch.models import SuperSearch
+from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
+from crashstats.crashstats.models import ProductVersions
 from crashstats.tokens.models import Token
 
 
@@ -326,6 +327,32 @@ class TestViews(BaseTestViews):
         ok_('end_date' in version)
         ok_('featured' in version)
         ok_('release' in version)
+
+    def test_ProductVersions(self):
+
+        def mocked_get(*args, **k):
+            return {
+                'hits': [
+                    {
+                        'product': 'Firefox',
+                        'version': '1.0',
+                    }
+                ],
+                'total': 1
+            }
+            raise NotImplementedError
+
+        ProductVersions.implementation().get.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('ProductVersions',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        eq_(dump['total'], 1)
+        eq_(dump['hits'][0], {
+            'product': 'Firefox',
+            'version': '1.0',
+        })
 
     def test_Platforms(self):
         # note: this gets mocked out in the setUp
@@ -1770,7 +1797,9 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
         response = self.client.get(url, {'exploitability': 'high'})

@@ -45,10 +45,10 @@ class Releases(PostgreSQLBase):
 
         channels = {}
         for res in sql_results.zipped():
-            if res.product not in channels:
-                channels[res.product] = [res.channel]
+            if res['product'] not in channels:
+                channels[res['product']] = [res['channel']]
             else:
-                channels[res.product].append(res.channel)
+                channels[res['product']].append(res['channel'])
 
         return channels
 
@@ -81,10 +81,10 @@ class Releases(PostgreSQLBase):
 
         for version in sql_results.zipped():
             total += 1
-            if version.product not in hits:
-                hits[version.product] = [version.version]
+            if version['product'] not in hits:
+                hits[version['product']] = [version['version']]
             else:
-                hits[version.product].append(version.version)
+                hits[version['product']].append(version['version'])
 
         return {
             "total": total,

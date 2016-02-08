@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 from waffle.models import Switch
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.supersearch.models import SuperSearch
+from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.views import (
     get_report_list_parameters,
 )
@@ -268,7 +268,9 @@ class TestViews(BaseTestViews):
             else:
                 return {"hits": [], "facets": [], "total": 0}
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_results')
         response = self.client.get(
@@ -355,7 +357,9 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             return {"hits": [], "facets": [], "total": 0}
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_results')
         limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
@@ -458,7 +462,9 @@ class TestViews(BaseTestViews):
             )
             return results
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_results')
 
@@ -554,7 +560,9 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_results')
 
@@ -604,12 +612,15 @@ class TestViews(BaseTestViews):
                 "total": len(hits)
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_results')
 
         response = self.client.get(
             url,
+
             {
                 '_columns': ['version'],
                 '_facets': ['platform']
@@ -686,7 +697,9 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             return None
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_custom')
 
@@ -704,7 +717,9 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             return None
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         self.create_custom_query_perm()
 
@@ -726,7 +741,9 @@ class TestViews(BaseTestViews):
                 "indices": ["socorro200000", "socorro200001"]
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('supersearch.search_custom')
         response = self.client.get(url, {'signature': 'nsA'})

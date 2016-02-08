@@ -19,7 +19,8 @@ from configman import configuration
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.app import socorro_app
-from socorro.external.postgresql import bugs
+import socorro.external.postgresql.bugs
+import socorro.external.postgresql.products
 
 from django.conf import settings
 from django.core.cache import cache
@@ -672,7 +673,7 @@ class SocorroMiddleware(SocorroCommon):
             value = kwargs.get(name)
 
             # 0 is a perfectly fine value, it should not be considered "falsy".
-            if not value and value is not 0:
+            if not value and value is not 0 and value is not False:
                 if param['required']:
                     raise RequiredParameterError(name)
                 continue
@@ -735,6 +736,30 @@ class SocorroMiddleware(SocorroCommon):
                     'required': required,
                     'type': type_,
                 }
+
+
+class ProductVersions(SocorroMiddleware):
+
+    implementation = socorro.external.postgresql.products.ProductVersions
+
+    possible_params = (
+        ('product', list),
+        ('version', list),
+        ('is_featured', bool),
+        'start_date',
+        'end_date',
+        ('active', bool),
+        ('is_rapid_beta', bool),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+    def post(self, **data):
+        # why does this feel so clunky?!
+        return super(CurrentProducts, self).post(self.URL_PREFIX, data)
 
 
 class CurrentVersions(SocorroMiddleware):
@@ -1348,7 +1373,7 @@ class CrashesByExploitability(SocorroMiddleware):
 
 class Bugs(SocorroMiddleware):
 
-    implementation = bugs.Bugs
+    implementation = socorro.external.postgresql.bugs.Bugs
 
     required_params = (
         'signatures',
@@ -1364,7 +1389,7 @@ class Bugs(SocorroMiddleware):
 
 class SignaturesByBugs(SocorroMiddleware):
 
-    implementation = bugs.Bugs
+    implementation = socorro.external.postgresql.bugs.Bugs
 
     required_params = (
         'bug_ids',

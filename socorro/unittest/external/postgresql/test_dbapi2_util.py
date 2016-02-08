@@ -200,11 +200,6 @@ class TestDBAPI2Helper(TestCase):
         eq_(zipped[0], {'first_name': 'Peter', 'last_name': 'Bengtsson'})
         eq_(zipped[1], {'first_name': 'Lars', 'last_name': 'Lohn'})
 
-        # Also, because the zipped list actually is made up for DotDict
-        # instances you can access this like a proper ORM thing.
-        eq_(zipped[0].first_name, 'Peter')
-        eq_(zipped[0]['first_name'], 'Peter')
-
         # __len__
         eq_(len(zipped), 2)
 

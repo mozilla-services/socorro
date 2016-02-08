@@ -2,10 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import logging
+import warnings
+import itertools
+
 import psycopg2
 
-from socorro.external import BadArgumentError
+from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
 from socorro.lib import datetimeutil, external_common
 from .dbapi2_util import single_row_sql
@@ -14,11 +18,129 @@ from .dbapi2_util import single_row_sql
 logger = logging.getLogger("webapi")
 
 
-class Products(PostgreSQLBase):
+class SmartDate(object):
+
+    def clean(self, value):
+        if any(itertools.imap(value.startswith, ('>=', '<='))):
+            op = value[:2]
+            value = value[2:]
+        elif any(itertools.imap(value.startswith, ('=', '>', '<'))):
+            op = value[:1]
+            value = value[1:]
+        else:
+            op = '='
+        return (op, string_to_datetime(value).date())
+
+
+class ProductVersions(PostgreSQLBase):
+
+    def get(self, **kwargs):
+        filters = [
+            ("version", None, [str]),
+            ("product", None, [str]),
+            ("is_featured", None, bool),
+            ("start_date", None, SmartDate()),
+            ("end_date", None, SmartDate()),
+            ("active", None, bool),
+            ("is_rapid_beta", None, bool),
+        ]
+        params = external_common.parse_arguments(filters, kwargs, modern=True)
+        where = []
+        sql_params = {}
+        for param, value in params.items():
+            if value is None:
+                continue
+            param = {
+                'product': 'product_name',
+                'version': 'version_string',
+                'featured': 'is_featured',
+            }.get(param, param)
+
+            if param == 'active':
+                # This is a convenient exception. It makes it possible
+                # to query for only productversions that are NOT sunset
+                # without having to do any particular date arithmetic.
+                param = 'end_date'
+                operator_ = value and '>=' or '<'
+                value = datetime.datetime.utcnow().date().isoformat()
+            elif isinstance(value, list):
+                operator_ = 'IN'
+                value = tuple(value)
+            elif isinstance(value, tuple):
+                assert len(value) == 2
+                operator_, value = value
+            else:
+                operator_ = '='
+            where.append('{} {} %({})s'.format(
+                param,
+                operator_,
+                param
+            ))
+            sql_params[param] = value
+
+        # rewrite it to a string
+        if where:
+            sql_where = 'WHERE ' + ' AND '.join(where)
+        else:
+            sql_where = ''
+
+        # XXX TODO
+        # RE-write this to use the same SQL select that's used by the
+        # the `product_info` view.
+        sql = """
+            /* socorro.external.postgresql.products.ProductVersions.get */
+            SELECT
+                product_name AS product,
+                version_string AS version,
+                start_date,
+                end_date,
+                throttle::REAL,
+                is_featured,
+                build_type,
+                has_builds,
+                is_rapid_beta
+            FROM product_info
+            {}
+            ORDER BY product_sort, version_sort DESC, channel_sort
+        """.format(sql_where)
+        results = self.query(sql, sql_params).zipped()
+
+        return {
+            'hits': results,
+            'total': len(results),
+        }
+
+    def post(self, **kwargs):
+        """adding a new product"""
+        filters = [
+            ("product", None, "str"),
+            ("version", None, "str"),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+        with self.get_connection() as connection:
+            try:
+                result, = single_row_sql(
+                    connection,
+                    "SELECT add_new_product(%s, %s)",
+                    (params['product'], params['version']),
+                )
+            except psycopg2.Error:
+                connection.rollback()
+                return False
+            else:
+                connection.commit()
+            return result
+
+
+class Products(ProductVersions):
 
     def get(self, **kwargs):
         """ Return product information, or version information for one
-         or more product:version combinations """
+        or more product:version combinations """
+        warnings.warn(
+            'This class is deprecated. Use ProductVersions instead.',
+            DeprecationWarning
+        )
         filters = [
             ("versions", None, ["list", "str"]),  # for legacy, to be removed
         ]
@@ -49,21 +171,21 @@ class Products(PostgreSQLBase):
 
         for version in results.zipped():
             try:
-                version.end_date = datetimeutil.date_to_string(
-                    version.end_date
+                version['end_date'] = datetimeutil.date_to_string(
+                    version['end_date']
                 )
             except TypeError:
                 pass
             try:
-                version.start_date = datetimeutil.date_to_string(
-                    version.start_date
+                version['start_date'] = datetimeutil.date_to_string(
+                    version['start_date']
                 )
             except TypeError:
                 pass
 
-            version.throttle = float(version.throttle)
+            version['throttle'] = float(version['throttle'])
 
-            product = version.product
+            product = version['product']
             if product not in products:
                 products.append(product)
 
@@ -104,9 +226,11 @@ class Products(PostgreSQLBase):
             products_list.append(params["products_versions"][x])
             versions_list.append(params["products_versions"][x + 1])
 
-        sql_where = ["(product_name = %(product" + str(x) +
-                     ")s AND version_string = %(version" + str(x) + ")s)"
-                                  for x in range(len(products_list))]
+        sql_where = [
+            "(product_name = %(product" + str(x) +
+            ")s AND version_string = %(version" + str(x) + ")s)"
+            for x in range(len(products_list))
+        ]
 
         sql_params = {}
         sql_params = add_param_to_dict(sql_params, "product", products_list)
@@ -128,11 +252,11 @@ class Products(PostgreSQLBase):
 
         products = []
         for product in results.zipped():
-            product.start_date = datetimeutil.date_to_string(
-                product.start_date
+            product['start_date'] = datetimeutil.date_to_string(
+                product['start_date']
             )
-            product.end_date = datetimeutil.date_to_string(
-                product.end_date
+            product['end_date'] = datetimeutil.date_to_string(
+                product['end_date']
             )
             products.append(product)
 
@@ -165,7 +289,7 @@ class Products(PostgreSQLBase):
 
         products = {}
         for product in results.zipped():
-            products[product.product] = product.version
+            products[product['product']] = product['version']
 
         return {
             "hits": products
@@ -173,21 +297,8 @@ class Products(PostgreSQLBase):
 
     def post(self, **kwargs):
         """adding a new product"""
-        filters = [
-            ("product", None, "str"),
-            ("version", None, "str"),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-        with self.get_connection() as connection:
-            try:
-                result, = single_row_sql(
-                    connection,
-                    "SELECT add_new_product(%s, %s)",
-                    (params['product'], params['version']),
-                )
-            except psycopg2.Error:
-                connection.rollback()
-                return False
-            else:
-                connection.commit()
-            return result
+        warnings.warn(
+            'This class is deprecated. Use ProductVersions.post instead.',
+            DeprecationWarning
+        )
+        return super(Products, self).post(**kwargs)
