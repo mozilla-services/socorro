@@ -76,7 +76,6 @@ INSTALLED_APPS = (
     '%s.base' % PROJECT_MODULE,
 
     # Other Socorro apps.
-    '%s.dataservice' % PROJECT_MODULE,
     '%s.crashstats' % PROJECT_MODULE,
     '%s.api' % PROJECT_MODULE,
     '%s.manage' % PROJECT_MODULE,
@@ -762,23 +761,48 @@ SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
 # Config for when the models pull directly from socorro.external classes.
 # NOTE: This is overwritten, for tests in crashstats.settings.test
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
-    'elasticsearch': {
-        # All of these settings are repeated with sensible defaults
-        # in the implementation itself.
-        # We repeat them here so it becomes super easy to override
-        # from the way we set settings for the webapp.
-        'elasticsearch_urls': config(
-            'ELASTICSEARCH_URLS',
-            'http://localhost:9200',
-            cast=Csv()
-        ),
-        # e.g. (deliberately commented out)
-        # 'elasticsearch_doctype': config(
-        #     'ELASTICSEARCH_DOCTYPE',
-        #     'crash_reports'
-        # )
+    'resource': {
+        'elasticsearch': {
+            # All of these settings are repeated with sensible defaults
+            # in the implementation itself.
+            # We repeat them here so it becomes super easy to override
+            # from the way we set settings for the webapp.
+            'elasticsearch_urls': config(
+                'ELASTICSEARCH_URLS',
+                'http://localhost:9200',
+                cast=Csv()
+            ),
+            # e.g. (deliberately commented out)
+            # 'elasticsearch_doctype': config(
+            #     'ELASTICSEARCH_DOCTYPE',
+            #     'crash_reports'
+            # )
+        },
+        'postgresql': {
+            'database_password': config(
+                'DATASERVICE_DATABASE_PASSWORD',
+                'aPassword'
+            ),
+            'database_username': config(
+                'DATASERVICE_DATABASE_USERNAME',
+                'breakpad_rw'
+            ),
+            'database_hostname': config(
+                'DATASERVICE_DATABASE_HOSTNAME',
+                'localhost'
+            ),
+            'database_name': config(
+                'DATASERVICE_DATABASE_NAME',
+                'breakpad'
+            ),
+            'database_port': config(
+                'DATASERVICE_DATABASE_PORT',
+                '5432'
+            ),
+        },
     }
 }
+
 
 # On the report list page, we show correlations.
 # We show one set of accordions per product & OS & version combo.
