@@ -501,9 +501,9 @@
                             <tr>
                                 <th scope="row">{{ key }}</th>
                                 {% if key == 'Comments' %}
-                                <td>{{ raw[key] | scrub_pii }}</td>
+                                <td><pre>{{ raw[key] | scrub_pii }}</pre></td>
                                 {% else %}
-                                <td>{{ raw[key] }}</td>
+                                <td><pre>{{ raw[key] }}</pre></td>
                                 {% endif %}
                             </tr>
                             {% endfor %}
