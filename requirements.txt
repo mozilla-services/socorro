@@ -82,8 +82,8 @@ web.py==0.36 \
     --hash=sha256:c45ec5b5feaaba53bbae69dd971c281832f1332d5949cd6e5ca27747fe92256a
 wsgiref==0.1.2 \
     --hash=sha256:c7e610c800957046c04c8014aab8cce8f0b9f0495c8cd349e57c1f7cabf40e79
-ujson==1.33 \
-    --hash=sha256:68cf825f227c82e1ac61e423cfcad923ff734c27b5bdd7174495d162c42c602b
+ujson==1.35 \
+    --hash=sha256:f66073e5506e91d204ab0c614a148d5aa938bdbf104751be66f8ad7a222f5f86
 python-dateutil==2.4.2 \
     --hash=sha256:3e95445c1db500a344079a47b171c45ef18f57d188dffdb0e4165c71bea8eb3d \
     --hash=sha256:2ae63cf475f0bd049b722fac20813d62aedc14957dd5a3bf00d120d2b5404460
