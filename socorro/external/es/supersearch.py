@@ -256,8 +256,8 @@ class SuperSearch(SearchBase):
                 # transformation with said wildcards.
                 operator_wildcards = {
                     '~': '*%s*',  # contains
-                    '$': '%s*',  # starts with
-                    '^': '*%s'  # ends with
+                    '^': '%s*',  # starts with
+                    '$': '*%s'  # ends with
                 }
                 # Operators needing ranges, and the associated Elasticsearch
                 # comparison operator.

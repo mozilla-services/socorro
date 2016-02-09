@@ -228,7 +228,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "starts with" operator.
         res = self.api.get(
-            signature='$js'  # starts with
+            signature='^js'  # starts with
         )
 
         eq_(res['total'], 2)
@@ -243,7 +243,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             eq_(facet['count'], 1)
 
         res = self.api.get(
-            signature='!$js'  # does not start with
+            signature='!^js'  # does not start with
         )
 
         eq_(res['total'], 3)
@@ -259,7 +259,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
         # Test the "ends with" operator.
         res = self.api.get(
-            signature='^browser'  # ends with
+            signature='$browser'  # ends with
         )
 
         # Those operators are case-sensitive, so here we expect only 1 result.
@@ -275,7 +275,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
         res = self.api.get(
-            signature='^rowser'  # ends with
+            signature='$rowser'  # ends with
         )
 
         eq_(res['total'], 2)
@@ -290,7 +290,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             eq_(facet['count'], 1)
 
         res = self.api.get(
-            signature='!^rowser'  # does not end with
+            signature='!$rowser'  # does not end with
         )
 
         eq_(res['total'], 3)

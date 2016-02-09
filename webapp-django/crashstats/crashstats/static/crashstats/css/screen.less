@@ -112,6 +112,14 @@ table.zebra {
         }
     }
 }
+code {
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin: 0 2px;
+    padding: 1px 5px;
+    white-space: nowrap;
+}
 /* Nav */
 html.production {
     margin: 0;
@@ -1247,42 +1255,6 @@ th.bugzilla_numbers {
     width: 600px;
     height: 200px;
 }
-/* Graph styles */
-#graph-legend {
-    table {
-        margin: 10px;
-         td {
-            padding: .4em;
-            border: 0;
-        }
-    }
-}
-#graph-tooltip {
-    position: absolute;
-    display: none;
-    background-color: rgba(113, 159, 183, .8);
-    color: #333;
-    padding: 5px;
-    border: 1px solid #406A80;
-    font-weight: bold;
-}
-/* Server Status Page */
-.server-status-graph {
-    margin: 16px 4px 4px 4px;
-}
-.server-status-graph > div {
-    width: 100%;
-    height: 100px;
-}
-.server-status-graph > h2 {
-    font-size: 16px;
-    font-weight: bold;
-}
-table.server_status {
-    td {
-        padding: 5px;
-    }
-}
 /* Pagination */
 .pagination {
     padding: .3em .2em .2em .5em;
@@ -1304,233 +1276,7 @@ table.server_status {
     word-wrap: break-word;
     }
 }
-/* Query Search Form */
-/* Removes margin from the main content area */
-div.query_removemargin {
-    background-color: #dae2e5;
-    margin: -1em -2em;
-    padding: 0;
-}
-#searchform {
-    background: #dae2e5 url(../../img/2.0/version-bg.png) left top repeat-x;
-    padding: 0 0 1em 112px;
-    select {
-        width: 13em;
-        font-size: 100%;
-    }
-    optgroup {
-        option {
-            padding-left: 4px;
-        }
-    }
-    fieldset {
-        padding: 1em 1em 0 1em;
-        .rounded-corners(5px);
-        ul,
-        ul li {
-            display: block;
-            float: left;
-        }
-    }
-    ul {
-        list-style: none;
-        li {
-            float: left;
-            margin-right: 10px;
-        }
-    }
-    #query_type {
-        width: 4em;
-    }
-    #range_unit {
-        width: 3em;
-    }
-    label.basic,
-    .basic.label {
-        display: block;
-        padding: 0;
-        font-size: 135%;
-        font-weight: bold;
-        line-height: 1.25em;
-    }
-    label,
-    .label {
-        color: #333;
-        font-weight: bold;
-        font-size: 100%;
-    }
-    button {
-        margin: 1em 0 0 1em;
-    }
-    .radio-item {
-        margin-right: 1em;
-        padding-bottom: 1em;
-    }
-}
-#no_version_info {
-    clear: both;
-    color: #333;
-}
-#advfiltertoggle {
-    color: #333;
-    display: block;
-    font-weight: bold;
-    padding-left: 15px;
-    margin-bottom: 0;
-    text-decoration: none;
-}
-.not-toggled {
-    background: url(../../img/slate/disclosure.png) no-repeat 0 2px;
-}
-.toggled {
-    background: url(../../img/slate/disclosure-down.png) no-repeat 0 2px;
-}
-#advfilter {
-    select {
-        font-size: 80%;
-        width: 85px !important;
-    }
-}
-#build-id-el {
-    clear: left;
-    margin-top: 1em;
-}
-#occurs-date,
-#date {
-    width: 11em;
-}
-#within,
-#range_value,
-.wrong-name {
-    width: 2em;
-    text-align: center;
-}
-p.advanced {
-    border-top: 1px dashed #999;
-    color: #333;
-    padding: .25em 0;
-    margin: 0;
-}
-#formspacer {
-    margin-bottom: 2em;
-}
-/* Nightly Builds */
-table.builds {
-    th,
-    td {
-        padding: 1em;
-    }
-}
-a.builds {
-    margin-right: 1em;
-}
-/* BEGIN  Post Crash Email */
-.postcrash.panel {
-    min-width: 1150px;
-    background-color: #fff;
-    padding: 20px;
-}
-.postcrash {
-    strong {
-        font-weight: bold;
-    }
-    div {
-        padding: 8px;
-    }
-    .sidebar {
-        float: right;
-        width: auto;
-    }
-    .mainbar {
-        width: 750px;
-    }
-    pre {
-        background-color: #DDD;
-        color: #000;
-        margin-left: 150px;
-    }
-    label {
-        clear: left;
-        display: block;
-        float: left;
-        margin-right: 10px;
-        width: 200px;
-        font-weight: 900;
-        text-align: right;
-        .help {
-            font-size: 9pt;
-        }
-    }
-    input,
-    textarea,
-    .input{
-        position: relative;
-        float: left;
-        margin-bottom: 10px;
-        width: 500px;
-    }
-    input[name=submit] {
-        clear: left;
-        /* label width + margin */
-        margin-left: 210px;
-    }
-    input[name=submit],
-    input[name=end_date],
-    select.input {
-        width: auto;
-    }
-    input[name=end_date] {
-        float: none;
-    }
-    textarea[name=body] {
-        height: 300px;
-    }
-    input.hasDatepicker {
-        width: 200px;
-    }
-}
-.postcrash.admin {
-    h3,
-    p,
-    ul {
-        margin-left: 120px;
-    }
-}
-.email-var {
-    margin: auto 2em;
-    background-color: #FFC;
-    color: #000;
-}
-.ui-datepicker-trigger {
-    position: absolute;
-    margin: -5px 10px;
-    cursor: pointer;
-}
-table.recent-campaigns {
-    padding-top: 0px;
-    border: solid 1px gray;
-    .signature {
-        td {
-            padding-top: 3px;
-            /* Controls width of table and amount of signature displayed */
-            width: 247px;
-            overflow: hidden;
-        }
-    }
-}
-.signature:first-child {
-    td {
-        padding-top: 0;
-    }
-}
-.form_error {
-    color: red;
-    font-weight: 900;
-}
-.email {
-    white-space: pre-wrap;
-}
-/* END Post Crash Email */
+
 table.tablesorter {
     tbody {
         tr.odd {

@@ -24,6 +24,8 @@
     </div>
 
     <section id="search-form">
+        <p class="message warning">As of Feb 10, 2016, we have switched the meanings of the operators <code>$</code> (now <code>ends with</code>) and <code>^</code> (now <code>starts with</code>) so that they match the POSIX norm. Any search you saved using those operators will not work anymore, please update them. See <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1114591">bug 1114591</a> for more details. </p>
+
         <form method="get" action="{{ url('supersearch.search') }}"
             data-fields-url="{{ url('supersearch.search_fields') }}"
             data-results-url="{{ url('supersearch.search_results') }}"
