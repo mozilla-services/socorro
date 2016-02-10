@@ -343,11 +343,11 @@ class TestSearchBase(TestCase):
         ok_('version' in params)
         eq_(len(params['version']), 1)
         eq_(params['version'][0].value, '38.0b')
-        eq_(params['version'][0].operator, '$')
+        eq_(params['version'][0].operator, '^')
         ok_(not params['version'][0].operator_not)
 
         args = {
-            'version': ['1.9b2', '1.9b', '!2.9b', '^.0b']
+            'version': ['1.9b2', '1.9b', '!2.9b', '$.0b']
         }
         params = search.get_parameters(**args)
         ok_('version' in params)
@@ -355,13 +355,13 @@ class TestSearchBase(TestCase):
         for param in params['version']:
             assert param.operator in ('$', '^', '')
 
-            if param.operator == '$' and not param.operator_not:
+            if param.operator == '^' and not param.operator_not:
                 # starts with, this one was made up.
                 eq_(param.value, '1.9b')
-            elif param.operator == '$' and param.operator_not:
+            elif param.operator == '^' and param.operator_not:
                 # starts with, this one was made up.
                 eq_(param.value, '2.9b')
-            elif param.operator == '^':
+            elif param.operator == '$':
                 eq_(param.value, '.0b')
             elif param.operator == '':
                 eq_(param.value, ['1.9b2'])
