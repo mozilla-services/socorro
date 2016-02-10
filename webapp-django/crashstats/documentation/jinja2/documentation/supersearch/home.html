@@ -28,7 +28,7 @@
     <h1 id="basic-usage">Basic Usage</h1>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_results_number=10</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;_results_number=10"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_results_number=10</span></code></pre>
     </div>
 
     <h1 id="response">Response</h1>
@@ -46,7 +46,7 @@
     <p>The first thing that Super Search allows you to do is to filter on our dataset to reduce it. For example, if you only want to see crashes that happened on a given product and version, or with a specific build id.</p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ releases[product][0].version }}</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;version={{ releases[product][0].version }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ releases[product][0].version }}</span></code></pre>
     </div>
 
     <p>There are lots of available filters, listed in the <a href="{{ url('documentation:supersearch_api') }}">API Reference</a>. That list is constantly changing as we add more data to our crash reports.</p>
@@ -122,13 +122,13 @@
     <p>Each filter supports a number of operators, that will allow you to refine your searches. Concretely, those operators translate to a string that will be put at the beginning of the value of the parameter. For example, <code>~</code> is the "contains" operator. If you want to search for all crashes that have a signature <i>containing</i> <code>moz</code>, you would do this: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?signature=~moz</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?signature=~moz"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?signature=~moz</span></code></pre>
     </div>
 
     <p>Some operators (like <code>__null__</code> or <code>__true__</code>) do not care about a value, you can use them alone. All operators can be negated using the meta operator <code>!</code> as a prefix. Here's how to search for all crashes with an address that is not empty: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?address=!__null__</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?address=!__null__"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?address=!__null__</span></code></pre>
     </div>
 
     <p>Most operators are only usable with some data types. For example, comparison operators (like <code>&lt;</code> or <code>&gt;</code>) are not usable with string data, but only with numbers and dates. Operators for each filter are listed on the <a href="{{ url('documentation:supersearch_api') }}">API Reference</a> page. </p>
@@ -227,19 +227,19 @@
     <p><code>_results_number</code> and <code>_results_offset</code> allow you to paginate over the results of a request. It is generally safer, when you need a lot of results, to run the same request in a loop while incrementing <code>_results_offset</code> of the value of <code>_results_number</code>, instead of just requesting an arbitraty large number of results at once. </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_results_number=10&amp;_results_offset=100</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_results_number=10&amp;_results_offset=100"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_results_number=10&amp;_results_offset=100</span></code></pre>
     </div>
 
     <p>Using <code>_sort</code>, you can, well, sort the results of a request. This parameter accepts an ordered list of fields. By default, the sorting will be ascendant. If you want to sort a field by descending order, you can prefix the field name with a minus sign (<code>-</code>). </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_sort=platform&amp;_sort=-build_id</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_sort=platform&amp;_sort=-build_id"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_sort=platform&amp;_sort=-build_id</span></code></pre>
     </div>
 
     <p>Each returned document only contains a subset of the available fields. By default, those fields are <code>uuid</code>, <code>date</code>, <code>signature</code>, <code>product</code> and <code>version</code>. You can control that list with the <code>_columns</code> parameter, that accepts a list of fields. </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_columns=platform&amp;_columns=build_id&amp;_columns=uptime</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_columns=platform&amp;_columns=build_id&amp;_columns=uptime"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_columns=platform&amp;_columns=build_id&amp;_columns=uptime</span></code></pre>
     </div>
 
     <h1 id="aggregations">Aggregations</h1>
@@ -279,7 +279,7 @@
     <p>Using the <code>_facets</code> parameter allows you to run simple aggregations. You can pass it a field name (see the <a href="{{ url('documentation:supersearch_api') }}#section-list-of-fields">List of fields</a>), and it will count the terms of that field in all the documents of the dataset. It will then return them sorted by descending count. </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_facets=signature</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_facets=signature"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_facets=signature</span></code></pre>
     </div>
 
     <p>This will return the list of signatures that appear the most in all crash reports for the last week, sorted by descending count. </p>
@@ -291,7 +291,7 @@
     <p>Let's say you want to get the count of platforms per product. To do that, you would use a nested aggregation: aggregate on products, and then for each product aggregate on platforms. Here's what that translates to in Super Search: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_aggs.product=platform</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_aggs.product=platform"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_aggs.product=platform</span></code></pre>
     </div>
 
     <p>The list of all available nested aggregations is in the <a href="{{ url('documentation:supersearch_api') }}#section-nested-aggregations-list">API Reference</a>. </p>
@@ -301,7 +301,7 @@
     <p>The previous aggregations work great for string fields, but what if you want to aggregate on a date for example? Or if you want to manipulate ranges of numbers? That is what histograms are made for. Histograms work with dates and numbers, and allow you to treat that data as ranges instead of "terms". For example, if you want to get a count of crashes per product per day, you would run a histogram on the <code>date</code> field, using an interval of <i>1d</i> (one day). Here's what it looks like: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_histogram.date=product&amp;_histogram_interval.date=1d</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_histogram.date=product&amp;_histogram_interval.date=1d"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_histogram.date=product&amp;_histogram_interval.date=1d</span></code></pre>
     </div>
 
     <p>This works as follows: for each value of the field, it will find in which range it belongs, and put it in a bucket for that range. In our case, each date value will be put in the corresponding day bucket. Then it counts the number of document per bucket, and will run any other aggregation in each bucket. If a bucket is empty, it will not be returned, so missing values in the results simply mean that they had zero documents. </p>
@@ -311,7 +311,7 @@
     <p>For numbers, you do not need a unit, just a number. Let's take the <code>uptime</code> field for example. If you want to count the number of crashes happening at startup (let's say startup is up to 60 seconds after launching the app), here is what you can do: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_histogram.uptime=product&amp;_histogram_interval.uptime=60</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_histogram.uptime=product&amp;_histogram_interval.uptime=60"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_histogram.uptime=product&amp;_histogram_interval.uptime=60</span></code></pre>
     </div>
 
     <h2 id="cardinality">Cardinality</h2>
@@ -319,7 +319,7 @@
     <p>Sometimes you just need to count the distinct values of a field. That can be done using the cardinality feature. For example, let's count the number of distinct builds of {{ product }}: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_facets=_cardinality.build_id</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;_facets=_cardinality.build_id"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_facets=_cardinality.build_id</span></code></pre>
     </div>
 
     <p>Note that the results of a cardinality aggregation are different from others. There is a single key in the results, called <code>value</code>, and it cannot contain sub-aggregations. Also, there is no parameter for cardinality like there is for histograms, you can only use it as part of another aggregation parameter.</p>
@@ -329,13 +329,13 @@
     <p>Did you notice, in that last example? We did not use <code>_cardinality</code> as a parameter but as the value of the <code>_facets</code> parameter. It is indeed possible to combine aggregations in various ways. Notably, <code>_histogram.field</code> and <code>_cardinality.field</code> can be used as values of <code>_facets</code> or <code>_aggs.field</code>. Let us, for example, count the number of distinct values of <code>install_time</code> per product per version: </p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_aggs.product.version=_cardinality.install_time</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?_aggs.product.version=_cardinality.install_time"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?_aggs.product.version=_cardinality.install_time</span></code></pre>
     </div>
 
     <p>Or, let's count the number of distinct <code>build_id</code> per day for {{ product }}:</p>
 
     <div class="example">
-        <pre><code><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_histogram.date=_cardinality.build_id&amp;_histogram_interval.date=1d</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;_histogram.date=_cardinality.build_id&amp;_histogram_interval.date=1d"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_histogram.date=_cardinality.build_id&amp;_histogram_interval.date=1d</span></code></pre>
     </div>
 
     <h1 id="what-s-next">What's next?</h1>

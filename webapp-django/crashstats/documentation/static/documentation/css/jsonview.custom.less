@@ -1,0 +1,68 @@
+.jsonview {
+    background-color: black;
+    color: #f9f9f9;
+    font-family: monospace;
+    font-size: 1.1em;
+    white-space: pre-wrap;
+
+    .prop {
+        color: #C5AF75;
+    }
+    .num {
+        color: #89BDFF;
+    }
+    .null,
+    .bool {
+        color: #E28964;
+    }
+    .string {
+        color: #65B042;
+        white-space: pre-wrap;
+    }
+    .string.multiline {
+        display: inline-block;
+        vertical-align: text-top;
+    }
+    .collapser {
+        position: absolute;
+        left: -1em;
+        cursor: pointer;
+    }
+    .collapsible {
+        transition: height 1.2s;
+        transition: width 1.2s;
+    }
+    .collapsible.collapsed {
+        height: .8em;
+        width: 1em;
+        display: inline-block;
+        overflow: hidden;
+        margin: 0;
+    }
+    .collapsible.collapsed:before {
+        content: "…";
+        width: 1em;
+        margin-left: .2em;
+    }
+    .collapser.collapsed {
+        transform: rotate(0deg);
+    }
+    .q {
+        display: inline-block;
+        width: 0px;
+        color: transparent;
+    }
+    ul {
+        list-style: none;
+        margin: 0 0 0 2em;
+        padding: 0;
+
+        li {
+            list-style: none;
+            position: relative;
+        }
+    }
+    h1 {
+        font-size: 1.2em;
+    }
+}

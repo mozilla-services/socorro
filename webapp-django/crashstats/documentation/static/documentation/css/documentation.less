@@ -153,6 +153,58 @@
             border: none;
             margin: 0;
         }
+
+        button.try {
+            background-color: green;
+            background-image: none;
+            border: none;
+            box-shadow: none;
+            float: right;
+            font-size: 0.9em;
+            font-weight: bold;
+            padding: 0 2px;
+            margin: 0;
+            min-width: 0;
+        }
+
+        .results {
+            background-color: black;
+            border-top: 1px solid #999;
+
+            .loader {
+                background-image: url('../../img/ajax-loader16x16.gif');
+                height: 16px;
+                margin: auto;
+                width: 16px;
+            }
+
+            .jsonview {
+                padding: 5px 10px;
+                overflow: auto;
+                max-height: 400px;
+            }
+
+            h2 {
+                background-color: #333;
+                color: white;
+                font-size: 1.0em;
+                font-weight: bold;
+                padding: 4px 10px;
+                margin: 0;
+
+                .hide {
+                    background-image: url('../../img/3rdparty/silk/cross.png');
+                    cursor: pointer;
+                    display: inline-block;
+                    float: right;
+                    height: 16px;
+                    margin-top: 2px;
+                    padding: 4px;
+                    text-indent: -9999px;
+                    width: 16px;
+                }
+            }
+        }
     }
 
     .examples {
