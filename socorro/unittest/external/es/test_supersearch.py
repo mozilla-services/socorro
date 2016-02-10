@@ -1652,6 +1652,39 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             _columns=['fake_field']
         )
 
+    @minimum_es_version('1.0')
+    def test_get_with_beta_version(self):
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'version': '4.0b2',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'version': '4.0b3',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'version': '5.0a1',
+            'date_processed': self.now,
+        })
+        self.refresh_index()
+
+        # Test several facets
+        kwargs = {
+            'version': ['4.0b']
+        }
+        res = self.api.get(**kwargs)
+
+        eq_(res['total'], 2)
+
+        for hit in res['hits']:
+            ok_('4.0b' in hit['version'])
+
     def test_get_against_nonexistent_index(self):
         config = self.get_base_config(es_index='socorro_test_reports_%W')
         api = SuperSearchWithFields(config=config)

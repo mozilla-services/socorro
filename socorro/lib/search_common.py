@@ -399,7 +399,7 @@ class SearchBase(object):
                         name='version',
                         value=val,
                         data_type='str',
-                        operator='$',
+                        operator='^',
                         operator_not=version.operator_not,
                     ))
                 else:
