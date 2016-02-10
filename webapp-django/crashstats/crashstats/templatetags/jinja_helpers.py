@@ -92,6 +92,11 @@ def json_dumps(data):
     return jinja2.Markup(json.dumps(data))
 
 
+@library.filter
+def to_json(data):
+    return json.dumps(data).replace('</', '<\\/')
+
+
 @library.global_function
 def show_bug_link(bug_id):
     data = {'bug_id': bug_id, 'class': ['bug-link']}

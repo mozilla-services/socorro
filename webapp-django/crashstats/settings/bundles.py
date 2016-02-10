@@ -297,6 +297,12 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/home.min.js',
     },
+    'new_home': {
+        'source_filenames': (
+            'home/js/home.js',
+        ),
+        'output_filename': 'js/new-home.min.js',
+    },
     'report_index': {
         'source_filenames': (
             'crashstats/js/socorro/report.js',
