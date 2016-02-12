@@ -12,7 +12,7 @@ echo "this is build.sh"
 
 ./scripts/bootstrap.sh
 
-./scripts/test.sh
+#./scripts/test.sh
 
 ./scripts/integration-test.sh --destroy
 
