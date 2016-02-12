@@ -55,4 +55,4 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 #./bin/bootstrap.sh
 #export PYTHONPATH=$OLD_PYTHONPATH
 
-popd
+# popd
