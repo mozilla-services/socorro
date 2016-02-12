@@ -4,7 +4,7 @@ echo "this is bootstrap.sh"
 
 source scripts/defaults
 
-git submodule update --init --recursive
+#git submodule update --init --recursive
 
 if [ ! -d "$VIRTUAL_ENV" ]; then
     virtualenv -p $PYTHON ${VIRTUAL_ENV}
@@ -51,8 +51,8 @@ popd
 # bootstrap webapp
 OLD_PYTHONPATH=$PYTHONPATH
 export PYTHONPATH=$(pwd):$PYTHONPATH
-pushd webapp-django
-./bin/bootstrap.sh
-export PYTHONPATH=$OLD_PYTHONPATH
+#pushd webapp-django
+#./bin/bootstrap.sh
+#export PYTHONPATH=$OLD_PYTHONPATH
 
 popd
