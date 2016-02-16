@@ -557,7 +557,7 @@ fi
 
 check_for_logged_fatal_errors $? correlations
 
-diff ./correlations/20151130 ./testcrash/correlations-integration-correct-output >correlation.diff
+diff -w ./correlations/20151130 ./testcrash/correlations-integration-correct-output >correlation.diff
 if [ $? = 1 ]
 then
     echo "CONTENT OF ./correlations/20151130"
