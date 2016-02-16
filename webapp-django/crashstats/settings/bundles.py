@@ -64,6 +64,7 @@ PIPELINE_CSS = {
     'documentation': {
         'source_filenames': (
             'documentation/css/documentation.less',
+            'documentation/css/jsonview.custom.less',
         ),
         'output_filename': 'css/documentation.min.css',
     },
@@ -261,6 +262,7 @@ PIPELINE_JS = {
     },
     'documentation': {
         'source_filenames': (
+            'documentation/js/lib/jquery.jsonview.js',
             'documentation/js/documentation.js',
         ),
         'output_filename': 'js/documentation.min.js',
