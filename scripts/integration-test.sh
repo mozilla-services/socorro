@@ -557,9 +557,14 @@ fi
 
 check_for_logged_fatal_errors $? correlations
 
-diff ./correlations/20151130 ./testcrash/correlations-integration-correct-output >correlation.diff
+diff -w ./correlations/20151130 ./testcrash/correlations-integration-correct-output >correlation.diff
 if [ $? = 1 ]
 then
+    echo "CONTENT OF ./correlations/20151130"
+    cat ./correlations/20151130
+    echo "CONTENT OF ./testcrash/correlations-integration-correct-output"
+    cat ./testcrash/correlations-integration-correct-output
+    echo ""
     # something went wrong
     echo "ERROR: correlations produced unexpected output"
     echo "***** BEGIN correlation log *****"
