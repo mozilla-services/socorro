@@ -424,23 +424,6 @@ DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
 # is propagated onto the client who caused the request in the webapp.
 PROPAGATE_MIDDLEWARE_400_ERRORS = True
 
-DATASERVICE_CONFIG_BASE = {
-    'resource': {
-        'postgresql': {
-            'transaction_executor_class':
-                'socorro.database.transaction_executor'
-                '.TransactionExecutorWithLimitedBackoff',
-            'backoff_delays': "0, 3",
-        },
-    },
-    'secrets': {
-        'postgresql': {
-            'database_password': 'aPassword',
-            'database_username': 'test',
-        },
-    }
-}
-
 # We don't want to test the migrations when we run tests.
 # We trust that syncdb matches what you'd get if you install
 # all the migrations.
@@ -477,23 +460,6 @@ MANAGERS = ADMINS
 #     'label': 'File a bug in bugzilla'
 # }
 
-# To change the configuration for any dataservice object, you may set
-# parameters in the DATASERVICE_CONFIG_BASE which is used by dataservice
-# app. Detailed config is documented in each dataservice object imported
-# by the app.
-#
-# Below is an example of changing the api_whitelist for the Bugs service
-# We convert the dict to a string, as configman prefers a string here.
-# import json
-# DATASERVICE_CONFIG_BASE.update({
-#     'services': {
-#         'Bugs': {
-#             'api_whitelist': json.dumps({
-#                 'hits': ('id','signature',)
-#             })
-#         }
-#     }
-# })
 
 # to override the content-type of specific file extensinos:
 SYMBOLS_MIME_OVERRIDES = {
@@ -684,40 +650,6 @@ GOOGLE_ANALYTICS_DOMAIN = config('GOOGLE_ANALYTICS_DOMAIN', 'auto')
 ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
 
 
-# Dataservice API configuration
-# Extend dataservices settings from settings/base.py here
-# At a minimum, you'll probably want to change db username/password. All
-# dataservice objects inherit resource configuration and so can all
-# have their database resource configuration set once in 'secrets.postgresql'
-# and 'resource.postgresql' keys.
-DATASERVICE_CONFIG_BASE.update({
-    'secrets': {
-        'postgresql': {
-            'database_password': config(
-                'DATASERVICE_DATABASE_PASSWORD',
-                'aPassword'
-            ),
-            'database_username': config(
-                'DATASERVICE_DATABASE_USERNAME',
-                'breakpad_rw'
-            ),
-            'database_hostname': config(
-                'DATASERVICE_DATABASE_HOSTNAME',
-                'localhost'
-            ),
-            'database_name': config(
-                'DATASERVICE_DATABASE_NAME',
-                'breakpad'
-            ),
-            'database_port': config(
-                'DATASERVICE_DATABASE_PORT',
-                '5432'
-            ),
-        }
-    }
-})
-
-
 # Credentials for being able to make an S3 connection
 AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', '')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', '')
@@ -763,11 +695,11 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
     'secrets': {
         'postgresql': {
             'database_password': config(
-                'DATASERVICE_DATABASE_PASSWORD',
+                'DATABASE_PASSWORD',
                 'aPassword'
             ),
             'database_username': config(
-                'DATASERVICE_DATABASE_USERNAME',
+                'DATABASE_USERNAME',
                 'breakpad_rw'
             ),
         }
@@ -791,15 +723,15 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         },
         'postgresql': {
             'database_hostname': config(
-                'DATASERVICE_DATABASE_HOSTNAME',
+                'DATABASE_HOSTNAME',
                 'localhost'
             ),
             'database_name': config(
-                'DATASERVICE_DATABASE_NAME',
+                'DATABASE_NAME',
                 'breakpad'
             ),
             'database_port': config(
-                'DATASERVICE_DATABASE_PORT',
+                'DATABASE_PORT',
                 '5432'
             ),
         },

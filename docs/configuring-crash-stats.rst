@@ -202,13 +202,6 @@ NOTE - variables surrounded by @@@ are placeholders and need to be filled in app
   SECRET_KEY='@@@SECRET_KEY@@@'
   # If you use Google Analytics, put your ID here.
   GOOGLE_ANALYTICS_ID='@@@GOOGLE_ANALYTICS_ID@@@'
-  # Dataservice is a Mozilla-specific Django middleware.
-  # You almost certainly want to reuse the settings above.
-  DATASERVICE_DATABASE_NAME='@@@DATASERVICE_DATABASE_NAME@@@'
-  DATASERVICE_DATABASE_USERNAME='@@@DATASERVICE_DATABASE_USERNAME@@@'
-  DATASERVICE_DATABASE_PASSWORD='@@@DATASERVICE_DATABASE_PASSWORD@@@'
-  DATASERVICE_DATABASE_HOST='@@@DATASERVICE_DATABASE_HOST@@@'
-  DATASERVICE_DATABASE_PORT=@@@DATASERVICE_DATABASE_PORT@@@
   # Crash-Stats can let users upload symbols to an S3 bucket.
   AWS_ACCESS_KEY='@@@AWS_ACCESS_KEY@@@'
   AWS_SECRET_ACCESS_KEY='@@@AWS_SECRET_ACCESS_KEY@@@'
