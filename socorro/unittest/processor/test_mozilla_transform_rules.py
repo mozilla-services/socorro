@@ -4,6 +4,8 @@
 
 import copy
 import re
+import json
+from StringIO import StringIO
 
 from mock import Mock, patch, call
 from nose.tools import eq_, ok_
@@ -984,6 +986,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
     #--------------------------------------------------------------------------
     def test_extract_memory_info(self):
         config = CDotDict()
+        config.max_size_uncompressed = 1024
         config.logger = Mock()
 
         processor_meta = self.get_basic_processor_meta()
@@ -991,24 +994,63 @@ class TestOutOfMemoryBinaryRule(TestCase):
         with patch(
             'socorro.processor.mozilla_transform_rules.gzip_open'
         ) as mocked_gzip_open:
-            with patch(
-                'socorro.processor.mozilla_transform_rules.json_load'
-            ) as mocked_json_load:
-                mocked_json_load.return_value = 'mysterious-awesome-memory'
+            mocked_gzip_open.return_value = StringIO(
+                json.dumps({'myserious': ['awesome', 'memory']})
+            )
+            rule = OutOfMemoryBinaryRule(config)
+            memory = rule._extract_memory_info(
+                'a_pathname',
+                processor_meta.processor_notes
+            )
+            mocked_gzip_open.assert_called_with('a_pathname', 'rb')
+            eq_(memory, {'myserious': ['awesome', 'memory']})
 
-                memory = OutOfMemoryBinaryRule._extract_memory_info(
-                    'a_pathname',
-                    processor_meta.processor_notes
+    #--------------------------------------------------------------------------
+    def test_extract_memory_info_too_big(self):
+        config = CDotDict()
+        config.max_size_uncompressed = 5
+        config.logger = Mock()
+
+        processor_meta = self.get_basic_processor_meta()
+
+        with patch(
+            'socorro.processor.mozilla_transform_rules.gzip_open'
+        ) as mocked_gzip_open:
+
+            opened = Mock()
+            opened.read.return_value = json.dumps({
+                'some': 'notveryshortpieceofjson'
+            })
+            def gzip_open(filename, mode):
+                assert mode == 'rb'
+                return opened
+
+            mocked_gzip_open.side_effect = gzip_open
+            rule = OutOfMemoryBinaryRule(config)
+            memory = rule._extract_memory_info(
+                'a_pathname',
+                processor_meta.processor_notes
+            )
+            expected_error_message = (
+                "Uncompressed memory info too large %d (max: %s)" % (
+                    35,
+                    config.max_size_uncompressed,
                 )
-                mocked_gzip_open.assert_called_with('a_pathname', 'rb')
-                mocked_json_load.assert_called_with(
-                    mocked_gzip_open.return_value
-                )
-                eq_(memory, 'mysterious-awesome-memory')
+            )
+            eq_(
+                memory,
+                {"ERROR": expected_error_message}
+            )
+            eq_(
+                processor_meta.processor_notes,
+                [expected_error_message]
+            )
+            opened.close.assert_called_with()
 
     #--------------------------------------------------------------------------
     def test_extract_memory_info_with_trouble(self):
         config = CDotDict()
+        config.max_size_uncompressed = 1024
         config.logger = Mock()
 
         processor_meta = self.get_basic_processor_meta()
@@ -1017,12 +1059,12 @@ class TestOutOfMemoryBinaryRule(TestCase):
             'socorro.processor.mozilla_transform_rules.gzip_open'
         ) as mocked_gzip_open:
             mocked_gzip_open.side_effect = IOError
-            memory = OutOfMemoryBinaryRule._extract_memory_info(
+            rule = OutOfMemoryBinaryRule(config)
+            memory = rule._extract_memory_info(
                 'a_pathname',
                 processor_meta.processor_notes
             )
 
-            mocked_gzip_open.assert_called_with('a_pathname', 'rb')
             eq_(
                 memory,
                 {"ERROR": "error in gzip for a_pathname: IOError()"}
@@ -1035,6 +1077,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
     #--------------------------------------------------------------------------
     def test_extract_memory_info_with_json_trouble(self):
         config = CDotDict()
+        config.max_size_uncompressed = 1024
         config.logger = Mock()
         config.chatty = False
 
@@ -1044,18 +1087,16 @@ class TestOutOfMemoryBinaryRule(TestCase):
             'socorro.processor.mozilla_transform_rules.gzip_open'
         ) as mocked_gzip_open:
             with patch(
-                'socorro.processor.mozilla_transform_rules.json_load'
-            ) as mocked_json_load:
-                mocked_json_load.side_effect = ValueError
+                'socorro.processor.mozilla_transform_rules.json_loads'
+            ) as mocked_json_loads:
+                mocked_json_loads.side_effect = ValueError
 
-                memory = OutOfMemoryBinaryRule._extract_memory_info(
+                rule = OutOfMemoryBinaryRule(config)
+                memory = rule._extract_memory_info(
                     'a_pathname',
                     processor_meta.processor_notes
                 )
                 mocked_gzip_open.assert_called_with('a_pathname', 'rb')
-                mocked_json_load.assert_called_with(
-                    mocked_gzip_open.return_value
-                )
                 eq_(
                     memory,
                     {"ERROR": "error in json for a_pathname: ValueError()"}
