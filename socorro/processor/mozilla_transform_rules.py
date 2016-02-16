@@ -10,7 +10,7 @@ import re
 from sys import maxint
 
 from gzip import open as gzip_open
-from ujson import load as json_load
+from ujson import loads as json_loads
 from urllib import unquote_plus
 
 from configman import Namespace
@@ -355,6 +355,17 @@ class JavaProcessRule(Rule):
 #==============================================================================
 class OutOfMemoryBinaryRule(Rule):
 
+    required_config = Namespace()
+    required_config.add_option(
+        'max_size_uncompressed',
+        default=20 * 1024 * 1024,  # ~20 Mb
+        doc=(
+            "Number of bytes, max, that we accept memory info payloads "
+            "as JSON."
+        )
+
+    )
+
     #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
@@ -364,8 +375,7 @@ class OutOfMemoryBinaryRule(Rule):
         return 'memory_report' in raw_dumps
 
     #--------------------------------------------------------------------------
-    @staticmethod
-    def _extract_memory_info(dump_pathname, processor_notes):
+    def _extract_memory_info(self, dump_pathname, processor_notes):
         """Extract and return the JSON data from the .json.gz memory report.
         file"""
         try:
@@ -375,7 +385,18 @@ class OutOfMemoryBinaryRule(Rule):
             processor_notes.append(error_message)
             return {"ERROR": error_message}
         try:
-            memory_info = json_load(fd)
+            memory_info_as_string = fd.read()
+            if len(memory_info_as_string) > self.config.max_size_uncompressed:
+                error_message = (
+                    "Uncompressed memory info too large %d (max: %d)" % (
+                        len(memory_info_as_string),
+                        self.config.max_size_uncompressed,
+                    )
+                )
+                processor_notes.append(error_message)
+                return {"ERROR": error_message}
+
+            memory_info = json_loads(memory_info_as_string)
         except ValueError, x:
             error_message = "error in json for %s: %r" % (dump_pathname, x)
             processor_notes.append(error_message)
