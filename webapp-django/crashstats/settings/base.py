@@ -761,6 +761,18 @@ SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
 # Config for when the models pull directly from socorro.external classes.
 # NOTE: This is overwritten, for tests in crashstats.settings.test
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
+    'secrets': {
+        'postgresql': {
+            'database_password': config(
+                'DATASERVICE_DATABASE_PASSWORD',
+                'aPassword'
+            ),
+            'database_username': config(
+                'DATASERVICE_DATABASE_USERNAME',
+                'breakpad_rw'
+            ),
+        }
+    },
     'resource': {
         'elasticsearch': {
             # All of these settings are repeated with sensible defaults
@@ -779,14 +791,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             # )
         },
         'postgresql': {
-            'database_password': config(
-                'DATASERVICE_DATABASE_PASSWORD',
-                'aPassword'
-            ),
-            'database_username': config(
-                'DATASERVICE_DATABASE_USERNAME',
-                'breakpad_rw'
-            ),
             'database_hostname': config(
                 'DATASERVICE_DATABASE_HOSTNAME',
                 'localhost'
