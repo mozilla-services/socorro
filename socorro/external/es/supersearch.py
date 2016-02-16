@@ -29,14 +29,6 @@ class SuperSearch(SearchBase):
 
         super(SuperSearch, self).__init__(*args, **kwargs)
 
-    def _build_fields(self):
-        # Create a map to associate a field's name in the database to its
-        # exposed name (in the results and facets).
-        self.database_name_to_field_name_map = dict(
-            (x['in_database_name'], x['name'])
-            for x in self.all_fields.values()
-        )
-
     def get_connection(self):
         with self.es_context() as conn:
             return conn
@@ -84,18 +76,13 @@ class SuperSearch(SearchBase):
         """Return a hit with each field's database name replaced by its
         exposed name. """
         new_hit = {}
-        for field in hit:
-            new_field = field
-
-            if '.' in new_field:
-                # Remove the prefix ("processed_crash." or "raw_crash.").
-                new_field = new_field.split('.')[-1]
-
-            new_field = self.database_name_to_field_name_map.get(
-                new_field, new_field
+        for field_name in self.request_columns:
+            field = self.all_fields[field_name]
+            database_field_name = '{}.{}'.format(
+                field['namespace'],
+                field['in_database_name'],
             )
-
-            new_hit[new_field] = hit[field]
+            new_hit[field_name] = hit.get(database_field_name)
 
         return new_hit
 
@@ -195,7 +182,6 @@ class SuperSearch(SearchBase):
         if not kwargs.get('_fields'):
             raise MissingArgumentError('_fields')
         self.all_fields = kwargs['_fields']
-        self._build_fields()
 
         # Filter parameters and raise potential errors.
         params = self.get_parameters(**kwargs)
@@ -347,11 +333,16 @@ class SuperSearch(SearchBase):
 
         # Restricting returned fields.
         fields = []
+
+        # We keep track of the requested columns in order to make sure we
+        # return those column names and not aliases for example.
+        self.request_columns = []
         for param in params['_columns']:
             for value in param.value:
                 if not value:
                     continue
 
+                self.request_columns.append(value)
                 field_name = self.get_field_name(value, full=False)
                 fields.append(field_name)
 
@@ -503,8 +494,8 @@ class SuperSearch(SearchBase):
 
     def _get_histogram_agg(self, field, intervals):
         histogram_type = (
-            self.all_fields[field]['query_type'] == 'date'
-            and 'date_histogram' or 'histogram'
+            self.all_fields[field]['query_type'] == 'date' and
+            'date_histogram' or 'histogram'
         )
         return A(
             histogram_type,

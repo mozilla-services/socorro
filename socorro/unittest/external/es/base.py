@@ -719,6 +719,22 @@ SUPERSEARCH_FIELDS = {
             'type': 'long'
         }
     },
+    # Add a synonym field.
+    'product_2': {
+        'data_validation_type': 'enum',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'product',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'product_2',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'query_type': 'enum',
+    },
+    # Add a fake field.
     'fake_field': {
         'data_validation_type': 'enum',
         'default_value': None,

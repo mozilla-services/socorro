@@ -1640,6 +1640,24 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('platform' in res['hits'][0])
         ok_('date' not in res['hits'][0])
 
+        # Test a synonyme field returns the correct name.
+        kwargs = {
+            '_columns': ['product_2']
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('product_2' in res['hits'][0])
+        ok_('product' not in res['hits'][0])
+
+        # Test with 2 synonyme fields.
+        kwargs = {
+            '_columns': ['product', 'product_2']
+        }
+        res = self.api.get(**kwargs)
+
+        ok_('product_2' in res['hits'][0])
+        ok_('product' in res['hits'][0])
+
         # Test errors
         assert_raises(
             BadArgumentError,
