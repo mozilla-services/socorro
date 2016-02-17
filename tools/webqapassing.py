@@ -10,6 +10,7 @@ PROD = _BASE + '/view/Socorro/job/socorro.prod.saucelabs/rssAll'
 
 
 def run():
+    errors = 0
     for url, name in ((STAGE, 'STAGE'), (PROD, 'PROD')):
         print name, u'⏱'
         xml = requests.get(url).text
@@ -21,6 +22,7 @@ def run():
             for title in entry.findall('atom:title', ns):
                 if 'broken' in title.text:
                     print u'💔 \tBROKEN!'
+                    errors += 1
                 else:
                     print u'👍 \tAhhhh, everything seems to be fine.'
                 print "({})".format(title.text)
@@ -30,6 +32,7 @@ def run():
             break
 
         print
+    return errors
 
 
 if __name__ == '__main__':
