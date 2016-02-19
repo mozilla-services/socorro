@@ -10,7 +10,26 @@ from django.core.urlresolvers import reverse
 
 @library.global_function
 def url(viewname, *args, **kwargs):
-    """Performs our localized reverse"""
+    """Makes it possible to construct URLs from templates.
+
+    Because this function is used by taking user input, (e.g. query
+    string values), we have to sanitize the values.
+    """
+    def clean_argument(s):
+        if isinstance(s, basestring):
+            # First remove all proper control characters like '\n',
+            # '\r' or '\t'.
+            s = ''.join(c for c in s if ord(c) >= 32)
+            # Then, if any '\' left (it might have started as '\\nn')
+            # remove those too.
+            while '\\' in s:
+                s = s.replace('\\', '')
+            return s
+        return s
+
+    args = [clean_argument(x) for x in args]
+    kwargs = dict((x, clean_argument(y)) for x, y in kwargs.items())
+
     return reverse(viewname, args=args, kwargs=kwargs)
 
 
