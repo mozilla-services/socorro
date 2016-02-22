@@ -89,7 +89,7 @@ SELECT
     r.app_notes, --25
     NULL as install_age, --26
     NULL as duplicate_of, --27
-    NULL as release_channel, --28
+    r.release_channel as release_channel, --28
     NULL as productid --29
 FROM
     reports r

@@ -38,7 +38,7 @@ datetime.datetime.strptime('2013-07-15 10:00:00', '%Y-%m-%d %H:%M:%S')
 GRAPHICS_REPORT_HEADER = (
     'signature',
     'url',
-    'uuid_url',
+    'crash_id',
     'client_crash_date',
     'date_processed',
     'last_crash',

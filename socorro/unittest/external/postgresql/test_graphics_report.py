@@ -54,7 +54,7 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         cursor.execute("""
             INSERT INTO reports
             (id, signature, date_processed, uuid, product,
-             url, email, success, addons_checked)
+             url, email, success, addons_checked, release_channel)
             VALUES
             (
                 1,
@@ -65,7 +65,8 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
                 'http://mywebsite.com',
                 'test@something.com',
                 TRUE,
-                TRUE
+                TRUE,
+                'alpha'
             ),
             (
                 2,
@@ -76,7 +77,8 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
                 'http://myotherwebsite.com',
                 'admin@example.com',
                 NULL,
-                FALSE
+                FALSE,
+                'beta'
             );
         """, (
             yesterday,
@@ -108,6 +110,8 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         ok_(isinstance(res['hits'], list))
         crash_ids = [x.crash_id for x in res['hits']]
         eq_(crash_ids, ['1', '2'])
+        release_channels = [x.release_channel for x in res['hits']]
+        eq_(release_channels, ['alpha', 'beta'])
         signatures = [x.signature for x in res['hits']]
         eq_(signatures, ['signature', 'my signature'])
         date_processed = [x.date_processed for x in res['hits']]
