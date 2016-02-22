@@ -106,6 +106,8 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         assert res['hits']
         assert len(res['hits']) == res['total']
         ok_(isinstance(res['hits'], list))
+        crash_ids = [x.crash_id for x in res['hits']]
+        eq_(crash_ids, ['1', '2'])
         signatures = [x.signature for x in res['hits']]
         eq_(signatures, ['signature', 'my signature'])
         date_processed = [x.date_processed for x in res['hits']]

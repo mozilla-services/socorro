@@ -63,7 +63,7 @@ SQL = """
 SELECT
     r.signature,
     NULL as url,        -- 1
-    NULL as uuid_url, -- 2
+    r.uuid as crash_id, -- 2
     NULL as client_crash_date,   -- 3
     to_char(r.date_processed,'YYYYMMDDHH24MI') as date_processed,         -- 4
     NULL as last_crash, -- 5
