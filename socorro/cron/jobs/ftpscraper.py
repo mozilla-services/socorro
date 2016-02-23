@@ -136,6 +136,7 @@ class ScrapersMixin(object):
                 )
 
     def parse_info_file(self, url, nightly=False):
+        self.config.logger.debug('Opening %s', url)
         content = patient_urlopen(url)
         results = {}
         bad_lines = []
@@ -198,7 +199,12 @@ class ScrapersMixin(object):
         latest_build = builds.pop()
         version_build = os.path.basename(os.path.normpath(latest_build))
 
-        for platform in ['linux', 'mac', 'win', 'debug']:
+        possible_platforms = (
+            'linux', 'mac', 'win', 'debug',  # for Firefox
+            'android-api-11', 'android-api-9', 'android-x86',  # for mobile
+        )
+
+        for platform in possible_platforms:
             platform_urls = self.get_links(latest_build, starts_with=platform)
             for platform_url in platform_urls:
                 platform_local_url = urlparse.urljoin(platform_url, 'en-US/')
@@ -270,31 +276,6 @@ class ScrapersMixin(object):
             kvpairs['version_build'] = version_build
 
             yield (platform, version, kvpairs, bad_lines)
-
-    def get_nightly(self, nightly_url, dirname):
-
-        info_files = self.get_links(nightly_url, ends_with='.txt')
-        for url in info_files:
-            basename = os.path.basename(url)
-            if '.en-US.' in url:
-                pv, platform = re.sub('\.txt$', '', basename).split('.en-US.')
-            elif '.multi.' in url:
-                pv, platform = re.sub('\.txt$', '', basename).split('.multi.')
-            else:
-                continue
-
-            version = pv.split('-')[-1]
-            repository = []
-
-            for field in dirname.split('-'):
-                # Skip until something is not a digit and once we've
-                # appended at least one, keep adding.
-                if not field.isdigit() or repository:
-                    repository.append(field)
-            repository = '-'.join(repository).strip('/')
-            kvpairs, bad_lines = self.parse_info_file(url, nightly=True)
-
-            yield (platform, repository, version, kvpairs, bad_lines)
 
     def get_b2g(self, url, backfill_date=None):
         """
@@ -370,22 +351,12 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                     product_name,
                     date
                 )
-            elif product_name == 'firefox':
+            else:
                 self.database_transaction_executor(
                     self._scrape_json_releases_and_nightlies,
                     product_name,
                     date
                 )
-            else:
-                self.database_transaction_executor(
-                    self._scrape_releases_and_nightlies,
-                    product_name,
-                    date
-                )
-
-    def _scrape_releases_and_nightlies(self, connection, product_name, date):
-        self.scrape_releases(connection, product_name)
-        self.scrape_nightlies(connection, product_name, date)
 
     def _scrape_json_releases_and_nightlies(
         self,
@@ -454,10 +425,10 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         )
 
                     if (
-                        self._is_final_beta(version)
-                        and build_type == 'release'
-                        and version > '26.0'
-                        and kvpairs.get('buildID')
+                        self._is_final_beta(version) and
+                        build_type == 'release' and
+                        version > '26.0' and
+                        kvpairs.get('buildID')
                     ):
                         logger.debug('is final beta version %s', version)
                         repository = 'mozilla-beta'
@@ -506,118 +477,6 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 if version.endswith('a2'):
                     build_type = 'aurora'
 
-                if kvpairs.get('buildID'):
-                    build_id = kvpairs['buildID']
-                    self._insert_build(
-                        cursor,
-                        product_name,
-                        version,
-                        platform,
-                        build_id,
-                        build_type,
-                        kvpairs.get('beta_number', None),
-                        repository,
-                        ignore_duplicates=True
-                    )
-
-    def scrape_releases(self, connection, product_name):
-        prod_url = urlparse.urljoin(self.config.base_url, product_name + '/')
-        # releases are sometimes in nightly, sometimes in candidates dir.
-        # look in both.
-        logger = self.config.logger
-        cursor = connection.cursor()
-        for directory in ('nightly', 'candidates'):
-            # expect only one directory link for each
-            try:
-                url, = self.get_links(prod_url, starts_with=directory)
-            except IndexError:
-                logger.debug('Dir %s not found for %s',
-                             directory, product_name)
-                continue
-
-            releases = self.get_links(url, ends_with='-candidates/')
-            if not releases:
-                self.config.logger.debug('No releases for %s', url)
-            for release in releases:
-                for info in self.get_release(release):
-                    platform, version, kvpairs, bad_lines = info
-                    if kvpairs.get('buildID') is None:
-                        self.config.logger.warning(
-                            "BuildID not found for %s on %s",
-                            release, url
-                        )
-                        continue
-                    build_type = 'Release'
-                    beta_number = None
-                    repository = 'mozilla-release'
-                    if 'b' in version:
-                        build_type = 'Beta'
-                        version, beta_number = version.split('b')
-                        repository = 'mozilla-beta'
-                    for bad_line in bad_lines:
-                        self.config.logger.warning(
-                            "Bad line for %s on %s (%r)",
-                            release, url, bad_line
-                        )
-
-                    # Put a build into the database
-                    build_id = kvpairs['buildID']
-                    self._insert_build(
-                        cursor,
-                        product_name,
-                        version,
-                        platform,
-                        build_id,
-                        build_type,
-                        beta_number,
-                        repository,
-                        ignore_duplicates=True
-                    )
-
-                    # If we've got a final beta, add a second record
-                    if self._is_final_beta(version):
-                        repository = 'mozilla-beta'
-                        self._insert_build(
-                            cursor,
-                            product_name,
-                            version,
-                            platform,
-                            build_id,
-                            build_type,
-                            beta_number,
-                            repository,
-                            ignore_duplicates=True
-                        )
-
-    def scrape_nightlies(self, connection, product_name, date):
-        directories = (
-            product_name,
-            'nightly',
-            date.strftime('%Y'),
-            date.strftime('%m'),
-        )
-        nightly_url = self.config.base_url
-        for part in directories:
-            nightly_url = urlparse.urljoin(
-                nightly_url, part + '/'
-            )
-        cursor = connection.cursor()
-        dir_prefix = date.strftime('%Y-%m-%d')
-        nightlies = self.get_links(nightly_url, starts_with=dir_prefix)
-        for nightly in nightlies:
-            dirname = nightly.replace(nightly_url, '')
-            if dirname.endswith('/'):
-                dirname = dirname[:-1]
-            for info in self.get_nightly(nightly, dirname):
-                platform, repository, version, kvpairs, bad_lines = info
-                for bad_line in bad_lines:
-                    self.config.logger.warning(
-                        "Bad line for %s (%r)",
-                        nightly, bad_line
-                    )
-                build_type = 'Nightly'
-                if version.endswith('a2'):
-                    build_type = 'Aurora'
                 if kvpairs.get('buildID'):
                     build_id = kvpairs['buildID']
                     self._insert_build(
