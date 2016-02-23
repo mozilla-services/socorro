@@ -136,8 +136,8 @@ class Crashes(PostgreSQLBase):
 
             # Transforming the results into what we want
             for comment in results.zipped():
-                comment.date_processed = datetimeutil.date_to_string(
-                    comment.date_processed
+                comment['date_processed'] = datetimeutil.date_to_string(
+                    comment['date_processed']
                 )
                 comments.append(comment)
 
@@ -527,7 +527,7 @@ class Crashes(PostgreSQLBase):
         # Transforming the results into what we want
         history = []
         for dot in results.zipped():
-            dot.date = datetimeutil.date_to_string(dot.date)
+            dot['date'] = datetimeutil.date_to_string(dot['date'])
             history.append(dot)
 
         return {

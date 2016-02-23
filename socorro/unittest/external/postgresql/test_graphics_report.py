@@ -108,15 +108,15 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         assert res['hits']
         assert len(res['hits']) == res['total']
         ok_(isinstance(res['hits'], list))
-        crash_ids = [x.crash_id for x in res['hits']]
+        crash_ids = [x['crash_id'] for x in res['hits']]
         eq_(crash_ids, ['1', '2'])
-        release_channels = [x.release_channel for x in res['hits']]
+        release_channels = [x['release_channel'] for x in res['hits']]
         eq_(release_channels, ['alpha', 'beta'])
-        signatures = [x.signature for x in res['hits']]
+        signatures = [x['signature'] for x in res['hits']]
         eq_(signatures, ['signature', 'my signature'])
-        date_processed = [x.date_processed for x in res['hits']]
+        date_processed = [x['date_processed'] for x in res['hits']]
         # should be ordered ascending
         first, second = date_processed
         ok_(first < second)
-        bug_associations = [x.bug_list for x in res['hits']]
+        bug_associations = [x['bug_list'] for x in res['hits']]
         eq_(bug_associations, [[], []])

@@ -89,8 +89,8 @@ class ADI(PostgreSQLBase):
 
         rows = []
         for row in results.zipped():
-            row.date = row.date.strftime('%Y-%m-%d')
+            row['date'] = row['date'].strftime('%Y-%m-%d')
             # BIGINTs become Decimal which becomes floating point in JSON
-            row.adi_count = long(row.adi_count)
+            row['adi_count'] = long(row['adi_count'])
             rows.append(row)
         return {'hits': rows, 'total': len(rows)}

@@ -1,15 +1,23 @@
+import inspect
+
 import mock
 
 import django.test
 import django.utils.unittest
 
-from crashstats.crashstats import models
-from crashstats.supersearch.models import (
-    SuperSearch,
-    SuperSearchFields,
-    SuperSearchField,
-    SuperSearchMissingFields,
-)
+import crashstats.crashstats.models
+import crashstats.supersearch.models
+
+
+classes_with_implementation = []
+for module in (crashstats.crashstats.models, crashstats.supersearch.models):
+    for _, klass in inspect.getmembers(module, inspect.isclass):
+        if issubclass(klass, crashstats.crashstats.models.SocorroMiddleware):
+            # Remember, the default thing for SocorroMiddleware is
+            # that it always has a class attribute called `implementation`
+            # it's by default set to None.
+            if klass.implementation:
+                classes_with_implementation.append(klass)
 
 
 class TestCase(django.utils.unittest.TestCase):
@@ -26,18 +34,6 @@ class DjangoTestCase(django.test.TestCase):
         # These are all the classes who have an implementation
         # (e.g. a class that belongs to socorro.external.something.something)
         # They all need to be mocked.
-        # NOTE! At the time of writing, these are all related to SuperSearch
-        # but it's just a temporary coincidence because that's what we're
-        # attacking first in
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=1188083
-        classes_with_implementation = (
-            models.Bugs,
-            models.SignaturesByBugs,
-            SuperSearch,
-            SuperSearchFields,
-            SuperSearchField,
-            SuperSearchMissingFields,
-        )
 
         for klass in classes_with_implementation:
             klass.implementation = mock.MagicMock()

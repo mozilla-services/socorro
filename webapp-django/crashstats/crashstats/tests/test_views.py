@@ -35,7 +35,10 @@ from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
 )
-from crashstats.supersearch.models import SuperSearchFields, SuperSearch
+from crashstats.supersearch.models import (
+    SuperSearchFields,
+    SuperSearchUnredacted,
+)
 from crashstats.crashstats.views import GRAPHICS_REPORT_HEADER
 from .test_models import Response
 
@@ -898,7 +901,9 @@ class TestViews(BaseTestViews):
             ]
             return response
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(url, {'product': 'WaterWolf'})
         eq_(response.status_code, 200)
@@ -941,7 +946,9 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(url, {'product': 'Neverheardof'})
         eq_(response.status_code, 400)
@@ -1030,7 +1037,9 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(url, {
             'product': 'WaterWolf',
@@ -1767,7 +1776,9 @@ class TestViews(BaseTestViews):
                 'total': 1234
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(url, {'product': 'WaterWolf'})
         ok_(response.status_code, 302)
@@ -2189,7 +2200,9 @@ class TestViews(BaseTestViews):
             ]
             return response
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(url, {
             'p': 'WaterWolf',
@@ -2421,7 +2434,9 @@ class TestViews(BaseTestViews):
             ]
             return response
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         response = self.client.get(url, {
             'p': 'WaterWolf',
@@ -4494,7 +4509,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         assert len(mock_calls) == 3
         eq_(mock_calls[-1]['sort'], 'build')
-        ok_('reverse' not in mock_calls[-1])
+        eq_(mock_calls[-1]['reverse'], False)
 
     @mock.patch('requests.get')
     def test_report_list_partial_reports_columns_override(self, rget):

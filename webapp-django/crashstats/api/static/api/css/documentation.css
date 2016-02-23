@@ -50,3 +50,9 @@ p.tokens-callout {
 p.tokens-callout a {
     font-weight: bold;
 }
+
+/* These are the little widgets for boolean choices */
+form.testdrive td ul li {
+    display: inline;
+    margin-right: 10px;
+}

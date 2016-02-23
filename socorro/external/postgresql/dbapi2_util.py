@@ -6,8 +6,6 @@
 
 from collections import Sequence
 
-from socorro.lib.util import DotDict
-
 
 #==============================================================================
 class SQLDidNotReturnSingleValue (Exception):
@@ -59,7 +57,7 @@ class FetchAllSequence(Sequence):
 
     def zipped(self):
         names = [x.name for x in self.description]
-        return [DotDict(zip(names, x)) for x in self.rows]
+        return [dict(zip(names, x)) for x in self.rows]
 
 
 #------------------------------------------------------------------------------

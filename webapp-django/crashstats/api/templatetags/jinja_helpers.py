@@ -5,6 +5,8 @@ import datetime
 from django_jinja import library
 import jinja2
 
+from django.forms.widgets import RadioSelect
+
 
 @library.global_function
 def describe_friendly_type(type_):
@@ -18,12 +20,28 @@ def describe_friendly_type(type_):
         return "Date"
     if type_ is datetime.datetime:
         return "Date and time"
+    if type_ is bool:
+        return "Boolean"
     warnings.warn("Don't know how to describe type %r" % type_)
     return type_
 
 
 @library.global_function
 def make_test_input(parameter, defaults):
+    if parameter['type'] is bool:
+        # If it's optional, make it possible to select "Not set",
+        if parameter['required']:
+            raise NotImplementedError(
+                'required booleans are not supported'
+            )
+        else:
+            widget = RadioSelect(choices=(
+                ('', 'Not set'),
+                ('false', 'False'),
+                ('true', 'True'),
+            ))
+            return widget.render(parameter['name'], '')
+
     template = u'<input type="%(type)s" name="%(name)s"'
     data = {
         'name': parameter['name'],

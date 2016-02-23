@@ -33,7 +33,7 @@ class SignatureFirstDate(PostgreSQLBase):
 
         signatures = []
         for sig in results.zipped():
-            sig.first_date = datetimeutil.date_to_string(sig.first_date)
+            sig['first_date'] = datetimeutil.date_to_string(sig['first_date'])
             signatures.append(sig)
 
         return {

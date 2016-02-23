@@ -5,7 +5,7 @@ from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
-from crashstats.supersearch.models import SuperSearch
+from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 
 
@@ -78,7 +78,9 @@ class TestViews(BaseTestViews):
 
             return {"hits": [], "total": 0}
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('signature:signature_reports')
 
@@ -154,7 +156,9 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('signature:signature_reports')
 
@@ -197,7 +201,9 @@ class TestViews(BaseTestViews):
                 "total": len(hits)
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('signature:signature_reports')
 
@@ -266,7 +272,9 @@ class TestViews(BaseTestViews):
                 "total": 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         # Test with no results.
         url = reverse(
@@ -353,7 +361,9 @@ class TestViews(BaseTestViews):
                 }
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         # Test with no results
         url = reverse(
@@ -446,7 +456,9 @@ class TestViews(BaseTestViews):
 
             return {"hits": [], "total": 0}
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('signature:signature_comments')
 
@@ -494,7 +506,9 @@ class TestViews(BaseTestViews):
                 "total": 140
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('signature:signature_comments')
 
@@ -791,7 +805,7 @@ class TestViews(BaseTestViews):
 
             return res
 
-        SuperSearch.implementation().get.side_effect = (
+        SuperSearchUnredacted.implementation().get.side_effect = (
             mocked_supersearch_get
         )
 
@@ -897,7 +911,7 @@ class TestViews(BaseTestViews):
 
             return res
 
-        SuperSearch.implementation().get.side_effect = (
+        SuperSearchUnredacted.implementation().get.side_effect = (
             mocked_supersearch_get
         )
 

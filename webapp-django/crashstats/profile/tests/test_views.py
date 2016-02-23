@@ -4,7 +4,7 @@ from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 
 from crashstats.crashstats.management import PERMISSIONS
-from crashstats.supersearch.models import SuperSearch
+from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.tests.test_views import BaseTestViews
 
 
@@ -42,7 +42,9 @@ class TestViews(BaseTestViews):
                 'total': 0
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
         url = reverse('profile:profile')
 
@@ -64,7 +66,7 @@ class TestViews(BaseTestViews):
         ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
         ok_('test@mozilla.com' in response.content)
 
-        SuperSearch.implementation().get.side_effect = (
+        SuperSearchUnredacted.implementation().get.side_effect = (
             mocked_supersearch_get_no_data
         )
 
