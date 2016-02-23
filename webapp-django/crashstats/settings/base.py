@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     '%s.profile' % PROJECT_MODULE,
     '%s.monitoring' % PROJECT_MODULE,
     '%s.documentation' % PROJECT_MODULE,
+    '%s.legacy' % PROJECT_MODULE,
 
     'django.contrib.messages',
     'raven.contrib.django.raven_compat',
@@ -586,6 +587,7 @@ if (
         # },
     }
 else:
+
     DATABASES = {
         'default': config(
             'DATABASE_URL',
@@ -593,6 +595,33 @@ else:
             cast=dj_database_url.parse
         )
     }
+    # Define a database connection for talking to the non-Django native
+    # postgres tables. E.g. reports_clean, productversions, etc.
+    # Ideally, some day, we'll just have ElasticSearch for all crashes
+    # and Django for meta things like permissions, groups, api tokens,
+    # symbol uploads etc.
+    # But we're in a situation where we store a lot of stuff still in
+    # PostgreSQL that we're been doing with manual psycopg2/SQL
+    # sit-ups.
+    # This second database connection is for talking to those tables.
+    legacy = config(
+        'LEGACY_DATABASE_URL',
+        '',
+    )
+    # Having this be optional means that you can, for example, in
+    # development talk to a local database for all default things
+    # and a remove (e.g. stage RDS) for the legacy tables.
+    # In prod, these two will be the same then.
+    if legacy:
+        legacy = dj_database_url.parse(legacy)
+    else:
+        legacy = DATABASES['default']
+    DATABASES['legacy'] = legacy
+
+
+DATABASE_ROUTERS = [
+    'crashstats.legacy.models.Router',
+]
 
 # Uncomment this and set to all slave DBs in use on the site.
 SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())

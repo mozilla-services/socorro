@@ -12,6 +12,7 @@ import logging
 import requests
 import stat
 import time
+import inspect
 
 import ujson
 from configman import configuration
@@ -21,13 +22,17 @@ from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.app import socorro_app
 from socorro.external.postgresql import bugs
 
+import django.db.models
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
 from django.template.defaultfilters import slugify
+from django.forms.models import model_to_dict
 
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
+import crashstats.legacy.models
+
 
 logger = logging.getLogger('crashstats_models')
 
@@ -295,6 +300,9 @@ class SocorroCommon(object):
     # instantiating implementation classes so this is None by default.
     implementation = None
 
+    # All are assumed to not use a model
+    model = None
+
     @measure_fetches
     def fetch(
         self,
@@ -309,7 +317,7 @@ class SocorroCommon(object):
         retries=None,
         retry_sleeptime=None
     ):
-        url = implementation = None
+        url = implementation = model = None
         if isinstance(url_or_implementation, basestring):
             url = url_or_implementation
 
@@ -331,7 +339,11 @@ class SocorroCommon(object):
                 auth = self.username, self.password
             else:
                 auth = ()
-
+        elif (
+            inspect.isclass(url_or_implementation) and
+            issubclass(url_or_implementation, django.db.models.Model)
+        ):
+            model = url_or_implementation
         else:
             implementation = url_or_implementation
 
@@ -352,7 +364,10 @@ class SocorroCommon(object):
                 ).prepare()
                 cache_key = hashlib.md5(iri_to_uri(req.url)).hexdigest()
             else:
-                name = implementation.__class__.__name__
+                if model:
+                    name = model._meta.object_name
+                else:
+                    name = implementation.__class__.__name__
                 cache_key = hashlib.md5(
                     name + unicode(params)
                 ).hexdigest()
@@ -490,7 +505,26 @@ class SocorroCommon(object):
             result = resp.content
             if expect_json:
                 result = ujson.loads(result)
+        elif model:
+            assert method == 'get', method
+
+            # XXX We're allowing people to query on a LIST of something.
+            # Should we?
+            # E.g. ?product=Firefox&version=12.0&version=13.0
+            # Turn those IN queries.
+            for key, value in params.items():
+                if isinstance(value, (list, tuple)):
+                    params.pop(key)
+                    params['{}__in'.format(key)] = value
+            _results = model.objects.filter(**params)
+            result = {
+                'hits': [
+                    model_to_dict(x) for x in _results
+                ],
+                'total': _results.count(),
+            }
         else:
+            assert implementation
             # e.g. the .get() method on that class instance
             implementation_method = getattr(implementation, method)
             result = implementation_method(**params)
@@ -611,8 +645,11 @@ class SocorroMiddleware(SocorroCommon):
         `possible_params`)
         """
         implementation = self.get_implementation()
+
         if implementation is not None:
             url_or_implementation = implementation
+        elif self.model:
+            url_or_implementation = self.model
         else:
             # the old-fashioned way of doing a regular middleware HTTP query
             url = self.URL_PREFIX
@@ -735,6 +772,32 @@ class SocorroMiddleware(SocorroCommon):
                     'required': required,
                     'type': type_,
                 }
+
+
+class ProductVersions(SocorroMiddleware):
+
+    model = crashstats.legacy.models.ProductVersion
+
+    # XXX replace this with inspecting the model
+    possible_params = (
+        ('product', list),
+        ('version', list),
+        ('featured', bool),
+        'start_date',
+        'end_date',
+        ('active', bool),
+        ('is_rapid_beta', bool),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
+    )
+
+    def post(self, **data):
+        raise NotImplementedError
+        # why does this feel so clunky?!
+        return super(CurrentProducts, self).post(self.URL_PREFIX, data)
 
 
 class CurrentVersions(SocorroMiddleware):
