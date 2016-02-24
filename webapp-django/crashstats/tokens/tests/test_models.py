@@ -3,7 +3,7 @@ import datetime
 from nose.tools import eq_, ok_
 
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission, Group
 from django.conf import settings
 
 from crashstats.base.tests.testbase import DjangoTestCase
@@ -60,3 +60,28 @@ class TestModels(DjangoTestCase):
         token.expires = yesterday
         token.save()
         ok_(token.is_expired)
+
+    def test_api_token_losing_permissions(self):
+        bob = User.objects.create(username='bob')
+        permission = Permission.objects.get(codename='view_pii')
+        permission2 = Permission.objects.get(codename='view_exploitability')
+        group = Group.objects.create(name='VIP')
+        group.permissions.add(permission)
+        group.permissions.add(permission2)
+        bob.groups.add(group)
+
+        token = models.Token.objects.create(
+            user=bob,
+            notes='Some notes'
+        )
+        token.permissions.add(permission)
+        token.permissions.add(permission2)
+
+        # change the group's permissions
+        group.permissions.remove(permission)
+
+        # reload the token
+        token = models.Token.objects.get(id=token.id)
+        ok_(permission not in token.permissions.all())
+        # it should still have this one though
+        ok_(permission2 in token.permissions.all())
