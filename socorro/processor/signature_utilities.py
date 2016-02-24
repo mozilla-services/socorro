@@ -463,6 +463,8 @@ class CSignatureTool(CSignatureToolBase):
           '_PR_.*',
           'PR_.*',
           '.*ProcessNextEvent.*',
+          '__psynch_cvwait',
+          '_pthread_cond_wait',
           'pthread_mutex_lock',
           '_purecall',
           'raise',
