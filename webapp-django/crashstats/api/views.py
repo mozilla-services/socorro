@@ -235,10 +235,11 @@ def model_wrapper(request, model_name):
             except Permission.DoesNotExist:
                 permission_names.append(codename)
         # you're not allowed to use this model
-        return http.HttpResponseForbidden(
-            "Use of this endpoint requires the '%s' permission\n" %
-            (', '.join(permission_names))
-        )
+        return http.JsonResponse({
+            'error': "Use of this endpoint requires the '%s' permission" % (
+                ', '.join(permission_names),
+            )
+        }, status=403)
 
     # it being set to None means it's been deliberately disabled
     if getattr(model, 'API_WHITELIST', False) is False:
