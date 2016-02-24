@@ -51,6 +51,7 @@ def daterange(start_date, end_date, format='%Y-%m-%d'):
 def json_view(f):
     @functools.wraps(f)
     def wrapper(request, *args, **kw):
+        request._json_view = True
         response = f(request, *args, **kw)
         if isinstance(response, http.HttpResponse):
             return response
