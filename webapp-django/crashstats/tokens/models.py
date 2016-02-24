@@ -3,8 +3,9 @@ import uuid
 
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, Group
 from django.utils import timezone
+from django.dispatch import receiver
 
 
 def get_future():
@@ -38,3 +39,21 @@ class Token(models.Model):
     @property
     def is_expired(self):
         return self.expires < timezone.now()
+
+
+@receiver(models.signals.m2m_changed, sender=Group.permissions.through)
+def drop_permissions_on_group_change(sender, instance, action, **kwargs):
+    if action == 'post_remove':
+        # A permission was removed from a group.
+        # Every Token that had this permission needs to be re-evaluated
+        # because, had the user created this token now, they might
+        # no longer have access to that permission due to their
+        # group memberships.
+        permissions = Permission.objects.filter(id__in=kwargs['pk_set'])
+        for permission in permissions:
+            for token in Token.objects.filter(permissions=permission):
+                user_permissions = Permission.objects.filter(
+                    group__user=token.user
+                )
+                if permission not in user_permissions:
+                    token.permissions.remove(permission)
