@@ -1804,6 +1804,12 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('SuperSearchUnredacted',))
         response = self.client.get(url, {'exploitability': 'high'})
         eq_(response.status_code, 403)
+        eq_(response['Content-Type'], 'application/json')
+        error = json.loads(response.content)['error']
+        permission = Permission.objects.get(
+            codename='view_exploitability'
+        )
+        ok_(permission.name in error)
 
         # Log in to get permissions.
         user = self._login()

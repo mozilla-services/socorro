@@ -574,8 +574,7 @@ class TestViews(BaseTestViews):
         ok_(json.loads(''.join(response.streaming_content)))
         eq_(response['Content-Type'], 'application/json')
 
-    @mock.patch('requests.get')
-    def test_handler500(self, rget):
+    def test_handler500(self):
         root_urlconf = __import__(
             settings.ROOT_URLCONF,
             globals(),
@@ -607,12 +606,52 @@ class TestViews(BaseTestViews):
             ok_('Internal Server Error' in response.content)
             ok_('id="products_select"' not in response.content)
 
+    def test_handler500_json(self):
+        root_urlconf = __import__(
+            settings.ROOT_URLCONF,
+            globals(),
+            locals(),
+            ['urls'],
+            -1
+        )
+        par, end = root_urlconf.handler500.rsplit('.', 1)
+        views = __import__(par, globals(), locals(), [end], -1)
+        handler500 = getattr(views, end)
+
+        fake_request = RequestFactory().request(**{'wsgi.input': None})
+        # This is what the utils.json_view decorator sets on views
+        # that should eventually return JSON.
+        fake_request._json_view = True
+
+        try:
+            raise NameError('sloppy code')
+        except NameError:
+            # do this inside a frame that has a sys.exc_info()
+            response = handler500(fake_request)
+            eq_(response.status_code, 500)
+            eq_(response['Content-Type'], 'application/json')
+            result = json.loads(response.content)
+            eq_(result['error'], 'Internal Server Error')
+            eq_(result['path'], '/')
+            eq_(result['query_string'], None)
+
     def test_handler404(self):
         url = reverse('crashstats:home', args=('Unknown',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
         ok_('Page not Found' in response.content)
         ok_('id="products_select"' not in response.content)
+
+    def test_handler404_json(self):
+        # Just need any view that has the json_view decorator on it.
+        url = reverse('api:model_wrapper', args=('Unknown',))
+        response = self.client.get(url, {'foo': 'bar'})
+        eq_(response.status_code, 404)
+        eq_(response['Content-Type'], 'application/json')
+        result = json.loads(response.content)
+        eq_(result['error'], 'Page not found')
+        eq_(result['path'], url)
+        eq_(result['query_string'], 'foo=bar')
 
     def test_homepage_redirect(self):
         response = self.client.get('/')
