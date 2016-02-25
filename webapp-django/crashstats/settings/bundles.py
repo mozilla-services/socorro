@@ -416,6 +416,7 @@ PIPELINE_JS = {
             'signature/js/signature_tab_reports.js',
             'signature/js/signature_tab_aggregations.js',
             'signature/js/signature_tab_comments.js',
+            'signature/js/signature_tab_bugzilla.js',
             'signature/js/signature_tab_graph.js',
             'signature/js/signature_panel.js',
         ),

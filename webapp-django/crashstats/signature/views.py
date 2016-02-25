@@ -593,3 +593,21 @@ def _transform_exploitability_summary(facets):
             key=lambda x: x['term'],
             reverse=True
         )
+
+
+@pass_validated_params
+def signature_bugzilla(request, params):
+    '''Return a list of associated bugs. '''
+    data = {}
+
+    signature = params['signature'][0]
+    data['signature'] = signature
+
+    bugs_api = models.Bugs()
+    data['bugs'] = bugs_api.get(
+        signatures=[signature]
+    )['hits']
+
+    data['bugs'].sort(key=lambda x: x['id'], reverse=True)
+
+    return render(request, 'signature/signature_bugzilla.html', data)
