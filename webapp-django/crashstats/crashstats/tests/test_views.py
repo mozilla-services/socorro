@@ -2305,7 +2305,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/adi/' in url:
-                eq_(params['versions'], ['19.0', '18.0b'])
+                eq_(params['versions'], ['19.0', '18.0b1', '18.0b'])
                 end_date = timezone.now().date()
                 # the default is two weeks
                 start_date = end_date - datetime.timedelta(weeks=2)
@@ -2390,7 +2390,7 @@ class TestViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             eq_(params['product'], ['WaterWolf'])
-            eq_(params['version'], ['19.0', '18.0b'])
+            eq_(params['version'], ['19.0', '18.0b1', '18.0b'])
             end_date = timezone.now().date()
             start_date = end_date - datetime.timedelta(weeks=2)  # the default
             assert params['_fields']
@@ -2440,7 +2440,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {
             'p': 'WaterWolf',
-            'v': ['18.0b', '19.0']
+            'v': ['18.0b', '19.0', '18.0b1']
         })
         eq_(response.status_code, 200)
 
@@ -2454,7 +2454,7 @@ class TestViews(BaseTestViews):
         th_texts = [x.text for x in doc('th')]
         ok_('19.0' in th_texts)
         ok_('18.0b' in th_texts)
-        ok_('18.0b1' not in th_texts)
+        ok_('18.0b1' in th_texts)
         ok_('18.0b2' not in th_texts)
 
         # There should be 14 days worth of content in the main table.

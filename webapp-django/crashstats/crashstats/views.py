@@ -279,24 +279,32 @@ def _get_crashes_per_day_with_adu(
         except IndexError:
             return None
 
-    for group in adi_counts['hits']:
-        version = group['version']
-        date = group['date']
-        parent_version = get_parent_version(version)
-        if parent_version is not None:
-            version = parent_version
-
-        build_type = group['build_type']
-        throttle = product_build_types[build_type]
+    def add_version_to_adi(version, count, date, throttle):
         if version not in adi_by_version:
             adi_by_version[version] = {}
 
-        count = group['adi_count']
         try:
             before = adi_by_version[version][date][0]
         except KeyError:
             before = 0
         adi_by_version[version][date] = [count + before, throttle]
+
+    for group in adi_counts['hits']:
+        version = group['version']
+        date = group['date']
+        build_type = group['build_type']
+        count = group['adi_count']
+        throttle = product_build_types[build_type]
+
+        # If this version was requested, add it to the data structure.
+        if version in params['version']:
+            add_version_to_adi(version, count, date, throttle)
+
+        # If this version is part of a beta, add it to the data structure.
+        parent_version = get_parent_version(version)
+        if parent_version is not None:
+            version = parent_version
+            add_version_to_adi(version, count, date, throttle)
 
     # We might have queried for aggregates for version ['19.0a1', '18.0b']
     # but SuperSearch will give us facets for versions:
@@ -349,6 +357,7 @@ def _get_crashes_per_day_with_adu(
             parent_version = get_parent_version(version)
             if parent_version is not None:
                 parent_totals[parent_version] += facet_cluster['count']
+            if version not in params['version']:
                 date_cluster['facets']['version'].remove(facet_cluster)
         for version in parent_totals:
             date_cluster['facets']['version'].append({
@@ -362,6 +371,7 @@ def _get_crashes_per_day_with_adu(
         parent_version = get_parent_version(version)
         if parent_version is not None:
             parent_totals[parent_version] += facet_cluster['count']
+        if version not in params['version']:
             results['facets']['version'].remove(facet_cluster)
     for version in parent_totals:
         results['facets']['version'].append({
