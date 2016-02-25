@@ -343,7 +343,7 @@ class BaseTestViews(DjangoTestCase):
                     "total": 6
                 })
             if 'products/' in url:
-                return Response("""
+                return Response(
                     {"products": [
                        "WaterWolf",
                        "NightTrain",
@@ -434,7 +434,7 @@ class BaseTestViews(DjangoTestCase):
                    },
                    "total": 4
                  }
-                      """ % {'end_date': now.strftime('%Y-%m-%d'),
+                       % {'end_date': now.strftime('%Y-%m-%d'),
                              'yesterday': yesterday.strftime('%Y-%m-%d')})
             raise NotImplementedError(url)
 
@@ -538,7 +538,7 @@ class TestAnalytics(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'products' in url:
-                return Response("""
+                return Response(
                     {
                         "hits": [{
                             "is_featured": true,
@@ -552,7 +552,7 @@ class TestAnalytics(BaseTestViews):
                         }],
                         "total": 1
                     }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -676,7 +676,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
-                return Response('{"bugs": [{"product": "allizom.org"}]}')
+                return Response({"bugs": [{"product": "allizom.org"}]})
 
             raise NotImplementedError(url)
 
@@ -705,14 +705,14 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
-                return Response("""{"bugs": [
+                return Response({"bugs": [
                     {"id": "987",
                      "product": "allizom.org",
                      "summary": "Summary 1"},
                     {"id": "654",
                      "product": "mozilla.org",
                      "summary": "Summary 2"}
-                ]}""")
+                ])
 
             raise NotImplementedError(url)
 
@@ -742,7 +742,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/products' in url and 'versions' not in params:
-                return Response("""
+                return Response(
                     {
                         "products": [
                             "WaterWolf"
@@ -761,9 +761,9 @@ class TestViews(BaseTestViews):
                         },
                         "total": 1
                     }
-                """)
+                )
             elif '/products' in url:
-                return Response("""
+                return Response(
                     {
                         "hits": [{
                             "is_featured": true,
@@ -777,7 +777,7 @@ class TestViews(BaseTestViews):
                         }],
                         "total": 1
                     }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -813,7 +813,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/daily' in url:
-                return Response("""
+                return Response(
                     {
                       "hits": {
                         "WaterWolf:19.0": {
@@ -836,7 +836,7 @@ class TestViews(BaseTestViews):
                         }
                       }
                     }
-                    """)
+                    )
 
             raise NotImplementedError(url)
 
@@ -1108,7 +1108,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(**options):
             if '/products' in options['url']:
-                return Response("""
+                return Response(
                     {
                         "products": ["WaterWolf"],
                         "hits": [
@@ -1120,7 +1120,7 @@ class TestViews(BaseTestViews):
                         ],
                         "total": "1"
                     }
-                    """)
+                    )
 
             raise NotImplementedError(url)
 
@@ -1145,7 +1145,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/gccrashes' in url:
-                return Response("""
+                return Response(
                     {
                       "hits": [
                           [
@@ -1155,7 +1155,7 @@ class TestViews(BaseTestViews):
                       ],
                       "total": 1
                     }
-                    """)
+                    )
 
             raise NotImplementedError(url)
 
@@ -1177,7 +1177,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             if 'gccrashes/' in url:
-                return Response("""
+                return Response(
                     {
                       "hits": [
                           [
@@ -1187,7 +1187,7 @@ class TestViews(BaseTestViews):
                       ],
                       "total": 1
                     }
-                    """)
+                    )
 
             raise NotImplementedError(url)
 
@@ -1233,7 +1233,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(**options):
             if '/products' in options['url']:
-                return Response("""
+                return Response(
                     {
                       "hits": [
                         {
@@ -1245,7 +1245,7 @@ class TestViews(BaseTestViews):
                         }],
                         "total": "1"
                     }
-                    """)
+                    )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1296,7 +1296,7 @@ class TestViews(BaseTestViews):
                 return Response(signature_summary_data)
 
             if '/crashes/signatures' in url:
-                return Response(u"""
+                return Response(u
                    {"crashes": [
                      {
                       "count": 188,
@@ -1349,7 +1349,7 @@ class TestViews(BaseTestViews):
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
                     "totalNumberOfCrashes": 2}
-                """)
+                )
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {'bug_number': '123456789'})
@@ -1421,7 +1421,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
-                return Response(u"""
+                return Response(u
                    {"crashes": [
                      {
                       "count": 188,
@@ -1451,10 +1451,10 @@ class TestViews(BaseTestViews):
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
                     "totalNumberOfCrashes": 0}
-                """)
+                )
 
             if '/products' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -1469,7 +1469,7 @@ class TestViews(BaseTestViews):
                     }],
                     "total": "1"
                 }
-                """)
+                )
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -1553,16 +1553,16 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
-                return Response(u"""
+                return Response(u
                    {"crashes": [],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
                     "totalNumberOfCrashes": 0}
-                """)
+                )
 
             if '/products' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -1577,7 +1577,7 @@ class TestViews(BaseTestViews):
                     }],
                     "total": "1"
                 }
-                """)
+                )
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -1643,7 +1643,7 @@ class TestViews(BaseTestViews):
             ok_('product' in params)
             eq_('WaterWolf', params['product'])
 
-            return Response("""
+            return Response(
                   {
                     "hits": [
                       {
@@ -1659,7 +1659,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 1
                   }
-            """ % (settings.DEFAULT_PRODUCT,))
+             % (settings.DEFAULT_PRODUCT,))
         rget.side_effect = mocked_get
 
         response = self.client.get(url)
@@ -1706,7 +1706,7 @@ class TestViews(BaseTestViews):
             ok_('version' in params)
             eq_('19.0', params['version'])
 
-            return Response("""
+            return Response(
                   {
                     "hits": [
                       {
@@ -1722,7 +1722,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 1
                   }
-            """ % (settings.DEFAULT_PRODUCT,))
+             % (settings.DEFAULT_PRODUCT,))
 
         rget.side_effect = mocked_get
 
@@ -1900,7 +1900,7 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             eq_(params['versions'], ['20.0', '19.0'])
             if '/products' in url:
-                return Response("""
+                return Response(
                     {
                         "products": [
                             "WaterWolf",
@@ -1930,11 +1930,11 @@ class TestViews(BaseTestViews):
                         },
                         "total": 2
                     }
-                """)
+                )
             if '/crashes' in url:
                 # This list needs to match the versions as done in the common
                 # fixtures set up in setUp() above.
-                return Response("""
+                return Response(
                        {
                          "hits": {
                            "WaterWolf:20.0": {
@@ -1973,7 +1973,7 @@ class TestViews(BaseTestViews):
                          }
                        }
 
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -2069,7 +2069,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/products' in url:
-                return Response("""
+                return Response(
                     {
                         "products": [
                             "WaterWolf",
@@ -2099,16 +2099,16 @@ class TestViews(BaseTestViews):
                         },
                         "total": 2
                     }
-                """)
+                )
             if '/crashes' in url:
                 # This list needs to match the versions as done in the common
                 # fixtures set up in setUp() above.
-                return Response("""
+                return Response(
                        {
                          "hits": {}
                        }
 
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -2561,12 +2561,12 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             if '/crashes/signature_history' in url:
 
-                return Response("""
+                return Response(
                 {
                     "hits": [],
                     "total": 0
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -2877,7 +2877,7 @@ class TestViews(BaseTestViews):
                     ))
 
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -2885,7 +2885,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -2997,7 +2997,7 @@ class TestViews(BaseTestViews):
                     })
 
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3005,7 +3005,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -3080,7 +3080,7 @@ class TestViews(BaseTestViews):
                     return Response(raw_crash_json)
 
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3088,7 +3088,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3147,7 +3147,7 @@ class TestViews(BaseTestViews):
                     return Response(processed_json)
 
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3155,7 +3155,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3301,7 +3301,7 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
+                return Response(
                 {
                   "InstallTime": "Not a number",
                   "FramePoisonSize": "4096",
@@ -3312,9 +3312,9 @@ class TestViews(BaseTestViews):
                   "URL": "%s",
                   "HangID": "123456789"
                 }
-                """ % (email0, url0))
+                 % (email0, url0))
             if 'crashes/comments' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                    {
@@ -3326,9 +3326,9 @@ class TestViews(BaseTestViews):
                   ],
                   "total": 1
                 }
-              """ % (comment0, email1))
+               % (comment0, email1))
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3336,14 +3336,14 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
+                return Response(
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
@@ -3374,7 +3374,7 @@ class TestViews(BaseTestViews):
                   "success": true,
                   "exploitability": "Unknown Exploitability"
                 }
-                """ % dump)
+                 % dump)
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3428,7 +3428,7 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
+                return Response(
                 {
                   "InstallTime": "Not a number",
                   "FramePoisonSize": "4096",
@@ -3439,9 +3439,9 @@ class TestViews(BaseTestViews):
                   "URL": "%s",
                   "HangID": "123456789"
                 }
-                """ % (email0, url0))
+                 % (email0, url0))
             if 'crashes/comments' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                    {
@@ -3453,9 +3453,9 @@ class TestViews(BaseTestViews):
                   ],
                   "total": 1
                 }
-              """ % (comment0, email1))
+               % (comment0, email1))
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3463,14 +3463,14 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
+                return Response(
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "json_dump": %s,
@@ -3501,7 +3501,7 @@ class TestViews(BaseTestViews):
                   "success": true,
                   "exploitability": "Unknown Exploitability"
                 }
-                """ % json.dumps(json_dump))
+                 % json.dumps(json_dump))
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3529,7 +3529,7 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
+                return Response(
                 {
                   "InstallTime": "Not a number",
                   "FramePoisonSize": "4096",
@@ -3540,9 +3540,9 @@ class TestViews(BaseTestViews):
                   "URL": "%s",
                   "HangID": "123456789"
                 }
-                """ % (email0, url0))
+                 % (email0, url0))
             if 'crashes/comments' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                    {
@@ -3554,9 +3554,9 @@ class TestViews(BaseTestViews):
                   ],
                   "total": 1
                 }
-              """ % (comment0, email1))
+               % (comment0, email1))
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3564,14 +3564,14 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
+                return Response(
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "json_dump": %s,
@@ -3602,7 +3602,7 @@ class TestViews(BaseTestViews):
                   "success": true,
                   "exploitability": "Unknown Exploitability"
                 }
-                """ % json.dumps(json_dump))
+                 % json.dumps(json_dump))
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3631,7 +3631,7 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
+                return Response(
                 {
                   "InstallTime": "Not a number",
                   "FramePoisonSize": "4096",
@@ -3642,9 +3642,9 @@ class TestViews(BaseTestViews):
                   "URL": "%s",
                   "HangID": "123456789"
                 }
-                """ % (email0, url0))
+                 % (email0, url0))
             if '/crashes/comments' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                    {
@@ -3656,9 +3656,9 @@ class TestViews(BaseTestViews):
                   ],
                   "total": 1
                 }
-              """ % (comment0, email1))
+               % (comment0, email1))
             if '/correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -3666,14 +3666,14 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
+                return Response(
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
@@ -3704,7 +3704,7 @@ class TestViews(BaseTestViews):
                   "success": true,
                   "exploitability": "Unknown Exploitability"
                 }
-                """ % dump)
+                 % dump)
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3757,7 +3757,7 @@ class TestViews(BaseTestViews):
             assert '/crash_data/' in url
             assert 'datatype' in params
             if params['datatype'] == 'unredacted':
-                return Response("""
+                return Response(
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
@@ -3788,7 +3788,7 @@ class TestViews(BaseTestViews):
                   "success": true,
                   "exploitability": "Unknown Exploitability"
                 }
-                """ % dump)
+                 % dump)
             elif params['datatype'] == 'meta':  # raw crash json!
                 raise models.BadStatusCodeError(404)
 
@@ -3989,7 +3989,7 @@ class TestViews(BaseTestViews):
                 # Note that the key `install_time` was removed from the
                 # second dict here. The reason for that is the install_time
                 # is not a depdendable field from the breakpad client.
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4042,9 +4042,9 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                )
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4098,7 +4098,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4258,14 +4258,14 @@ class TestViews(BaseTestViews):
             ok_('NightTrain' in params['products'])
 
             if '/signatureurls' in url:
-                return Response("""{
+                return Response({
                     "hits": [
                         {"url": "http://farm.ville", "crash_count":123},
                         {"url": "%s", "crash_count": 1}
                     ],
                     "total": 2
                 }
-                """ % (really_long_url))
+                 % (really_long_url))
 
             raise NotImplementedError(url)
 
@@ -4289,7 +4289,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/comments' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                    {
@@ -4301,7 +4301,7 @@ class TestViews(BaseTestViews):
                   ],
                   "total": 1
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -4389,7 +4389,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4441,7 +4441,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+               )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4463,7 +4463,7 @@ class TestViews(BaseTestViews):
             mock_calls.append(params)
 
             if 'report/list' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4515,7 +4515,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4555,7 +4555,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4607,7 +4607,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4633,7 +4633,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4690,7 +4690,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4815,7 +4815,7 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
 
             if 'report/list' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -4867,7 +4867,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                     }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -4963,7 +4963,7 @@ class TestViews(BaseTestViews):
             if '/crashes/frequency' in url:
                 # these fixtures make sure we stress the possibility that
                 # the build_date might be invalid or simply just null.
-                return Response("""
+                return Response(
                 {
                   "hits": [
                     {
@@ -5005,7 +5005,7 @@ class TestViews(BaseTestViews):
 
                   ]
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -5039,7 +5039,7 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
+                return Response(
                 {
                   "InstallTime": "1339289895",
                   "FramePoisonSize": "4096",
@@ -5049,9 +5049,9 @@ class TestViews(BaseTestViews):
                   "Vendor": "Mozilla",
                   "URL": "%s"
                 }
-                """ % (email0, url0))
+                % (email0, url0))
             if 'crashes/comments' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [
                    {
@@ -5063,14 +5063,14 @@ class TestViews(BaseTestViews):
                   ],
                   "total": 1
                 }
-              """ % (comment0, email1))
+              % (comment0, email1))
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
+                return Response(
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
                   "dump": "%s",
@@ -5101,10 +5101,10 @@ class TestViews(BaseTestViews):
                   "success": true,
                   "exploitability": "Unknown Exploitability"
                 }
-                """ % dump)
+                 % dump)
 
             if 'correlations/signatures' in url:
-                return Response("""
+                return Response(
                 {
                     "hits": [
                         "FakeSignature1",
@@ -5112,7 +5112,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -5131,12 +5131,12 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
+                return Response(
                 {
                   "hits": [],
                   "total": 0
                 }
-                """)
+                )
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -5159,10 +5159,10 @@ class TestViews(BaseTestViews):
                 """.strip())
             else:
                 # default is datatype/meta
-                return Response("""
+                return Response(
                   {"foo": "bar",
                    "stuff": 123}
-                """)
+                )
 
         rget.side_effect = mocked_get
 
