@@ -10,6 +10,7 @@ from configman import Namespace, RequiredConfig
 
 from socorro.lib.ver_tools import normalize
 
+
 Compiled_Regular_Expression_Type = type(re.compile(''))
 
 
@@ -32,20 +33,11 @@ class LegacyThrottler(RequiredConfig):
               and d.get("ProcessType", "browser") == "browser"''', None),
         # 100% of crashes with comments
         ("Comments", '''lambda x: x''', 100),
-        # 100% of all aurora, beta, esr channels
-        ("ReleaseChannel", '''lambda x: x in ("aurora", "beta", "esr")''', 100),
-        # 100% of all crashes that report as being nightly
-        ("ReleaseChannel", '''lambda x: x.startswith('nightly')''', 100),
-        # 10% of Firefox
-        ("ProductName", 'Firefox', 10),
-        # 100% of Fennec
-        ("ProductName", 'Fennec', 100),
-        # 100% of all alpha, beta or special
-        ("Version", r'''re.compile(r'\..*?[a-zA-Z]+')''', 100),
-        # 100% of Thunderbird & SeaMonkey
-        ("ProductName", '''lambda x: x[0] in "TSC"''', 100),
-        # reject everything else
-        (None, True, 0)
+        # 10% of Firefox release
+        ("*", '''lambda d: d.get("ProductName") == "Firefox" and
+            d.get("ReleaseChannel") == "release"''', 10),
+        # accept everything else
+        (None, True, 100)
       ],
       from_string_converter=eval
     )
@@ -153,7 +145,7 @@ class LegacyThrottler(RequiredConfig):
                 else:
                     throttle_match = condition(raw_crash[key])
             except KeyError:
-                if key == None:
+                if key is None:
                     throttle_match = condition(None)
                 else:
                     #this key is not present in the jsonData - skip
@@ -180,8 +172,10 @@ class LegacyThrottler(RequiredConfig):
             return IGNORE, percentage
         if throttle_result:  # we're rejecting
             #logger.debug('yes, throttle this one')
-            if (self.understands_refusal(raw_crash)
-                and not self.config.never_discard):
+            if (
+                self.understands_refusal(raw_crash) and
+                not self.config.never_discard
+            ):
                 self.config.logger.debug(
                   "discarding %s %s",
                   raw_crash.ProductName,
