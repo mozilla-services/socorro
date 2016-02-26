@@ -213,8 +213,8 @@ class TestModels(DjangoTestCase):
                      "featured": True,
                      "version": "2.1.3pre",
                      "release": "Beta",
-                     "id": 922}]
-                    }], "products": ["SeaMonkey"]})
+                     "id": 922}]}
+                ], "products": ["SeaMonkey"]})
 
         rget.side_effect = mocked_get
         info = api.get()
