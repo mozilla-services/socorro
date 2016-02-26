@@ -205,7 +205,7 @@ class TestModels(DjangoTestCase):
             assert '/products' in options['url']
             return Response({
                 "hits": [
-                {"SeaMonkey": [{
+                    {"SeaMonkey": [{
                      "product": "SeaMonkey",
                      "throttle": "100.00",
                      "end_date": "2012-05-10 00:00:00",
@@ -214,7 +214,7 @@ class TestModels(DjangoTestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                }], "products": ["SeaMonkey"]})
+                    }], "products": ["SeaMonkey"]})
 
         rget.side_effect = mocked_get
         info = api.get()
@@ -590,7 +590,7 @@ class TestModels(DjangoTestCase):
                     "os_name": "Linux",
                     "uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
                     "many_others": "snipped out"
-                }],"total": 333
+                }], "total": 333
             })
 
         rget.side_effect = mocked_get
@@ -673,7 +673,7 @@ class TestModels(DjangoTestCase):
                     "date_processed": "2000-01-01T00:00:01",
                     "user_comment": "hello guys!",
                     "email": "hello@example.com"
-                }],"total": 1
+                }], "total": 1
             })
 
         rget.side_effect = mocked_get
@@ -1130,7 +1130,8 @@ class TestModels(DjangoTestCase):
             ok_('report_type' in params)
             eq_(params['report_type'], 'core-counts')
 
-            return Response({"hits": ["FakeSignature1","FakeSignature2"], "total": 2})
+            return Response({"hits": ["FakeSignature1",
+                                      "FakeSignature2"], "total": 2})
 
         rget.side_effect = mocked_get
         r = api.get(report_type='core-counts',
