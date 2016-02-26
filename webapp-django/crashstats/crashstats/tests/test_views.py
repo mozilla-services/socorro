@@ -428,9 +428,9 @@ class BaseTestViews(DjangoTestCase):
                              "version": "1.5",
                              "release": "Release",
                              "id": 927}
-                         ]}, "total": 4}
-                    % {'end_date': now.strftime('%Y-%m-%d'),
-                       'yesterday': yesterday.strftime('%Y-%m-%d')})
+                         ]}, "total": 4,
+                        'end_date': now.strftime('%Y-%m-%d'),
+                        'yesterday': yesterday.strftime('%Y-%m-%d')})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1619,10 +1619,9 @@ class TestViews(BaseTestViews):
                 "medium_count": 3,
                 "low_count": 2,
                 "none_count": 1,
-                "product_name": "%s",
+                "product_name": settings.DEFAULT_PRODUCT,
                 "version_string": "2.0"
-            }], "total": 1}
-                            % (settings.DEFAULT_PRODUCT,))
+            }], "total": 1})
         rget.side_effect = mocked_get
 
         response = self.client.get(url)
@@ -1677,10 +1676,9 @@ class TestViews(BaseTestViews):
                     "medium_count": 3,
                     "low_count": 2,
                     "none_count": 1,
-                    "product_name": "%s",
+                    "product_name": settings.DEFAULT_PRODUCT,
                     "version_string": "123.0"
-                }], "total": 1}
-                            % (settings.DEFAULT_PRODUCT,))
+                }], "total": 1})
 
         rget.side_effect = mocked_get
 
@@ -3250,19 +3248,19 @@ class TestViews(BaseTestViews):
                                     "FramePoisonSize": "4096",
                                     "Theme": "classic/1.0",
                                     "Version": "5.0a1",
-                                    "Email": "%s",
+                                    "Email": email0,
                                     "Vendor": "Mozilla",
-                                    "URL": "%s",
+                                    "URL": url0,
                                     "HangID": "123456789"
-                                } % (email0, url0))
+                                })
             if 'crashes/comments' in url:
                 return Response({
                     "hits": [{
-                        "user_comments": "%s",
+                        "user_comments": comment0,
                         "date_processed": "2012-08-21T11:17:28-07:00",
-                        "email": "%s",
+                        "email": email1,
                         "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }], "total": 1} % (comment0, email1))
+                    }], "total": 1})
             if 'correlations/signatures' in url:
                 return Response(
                     {"hits": [
@@ -3279,7 +3277,7 @@ class TestViews(BaseTestViews):
             ):
                 return Response({
                                     "client_crash_date": "2012-06-11T06:08:45",
-                                    "dump": "%s",
+                                    "dump": dump,
                                     "signature": "FakeSignature1",
                                     "user_comments": "null",
                                     "uptime": 14693,
@@ -3308,7 +3306,7 @@ class TestViews(BaseTestViews):
                                     "completeddatetime": "2012-06-11T06:08:57",
                                     "success": True,
                                     "exploitability": "Unknown Exploitability"
-                                } % dump)
+                                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3367,23 +3365,23 @@ class TestViews(BaseTestViews):
                                     "FramePoisonSize": "4096",
                                     "Theme": "classic/1.0",
                                     "Version": "5.0a1",
-                                    "Email": "%s",
+                                    "Email": email0,
                                     "Vendor": "Mozilla",
-                                    "URL": "%s",
+                                    "URL": url0,
                                     "HangID": "123456789"
-                                } % (email0, url0))
+                                })
             if 'crashes/comments' in url:
                 return Response({
                   "hits": [
                    {
-                     "user_comments": "%s",
+                     "user_comments": comment0,
                      "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
+                     "email": email1,
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
                   ],
                   "total": 1
-                } % (comment0, email1))
+                })
             if 'correlations/signatures' in url:
                 return Response({
                     "hits": [
@@ -3399,7 +3397,7 @@ class TestViews(BaseTestViews):
             ):
                 return Response({
                     "client_crash_date": "2012-06-11T06:08:45",
-                    "json_dump": "%s",
+                    "json_dump": json.dumps(json_dump),
                     "signature": "FakeSignature1",
                     "user_comments": "null",
                     "uptime": 14693,
@@ -3426,7 +3424,7 @@ class TestViews(BaseTestViews):
                     "completeddatetime": "2012-06-11T06:08:57",
                     "success": True,
                     "exploitability": "Unknown Exploitability"
-                } % json.dumps(json_dump))
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3459,20 +3457,20 @@ class TestViews(BaseTestViews):
                     "FramePoisonSize": "4096",
                     "Theme": "classic/1.0",
                     "Version": "5.0a1",
-                    "Email": "%s",
+                    "Email": email0,
                     "Vendor": "Mozilla",
-                    "URL": "%s",
+                    "URL": url0,
                     "HangID": "123456789"
-                } % (email0, url0))
+                })
             if 'crashes/comments' in url:
                 return Response({
                     "hits": [{
-                        "user_comments": "%s",
+                        "user_comments": comment0,
                         "date_processed": "2012-08-21T11:17:28-07:00",
-                        "email": "%s",
+                        "email": email1,
                         "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }], "total": 1
-                } % (comment0, email1))
+                })
 
             if 'correlations/signatures' in url:
                 return Response({
@@ -3490,7 +3488,7 @@ class TestViews(BaseTestViews):
             ):
                 return Response({
                     "client_crash_date": "2012-06-11T06:08:45",
-                    "json_dump": "%s",
+                    "json_dump": json.dumps(json_dump),
                     "signature": "FakeSignature1",
                     "user_comments": "null",
                     "uptime": 14693,
@@ -3517,7 +3515,7 @@ class TestViews(BaseTestViews):
                     "completeddatetime": "2012-06-11T06:08:57",
                     "success": True,
                     "exploitability": "Unknown Exploitability"
-                } % json.dumps(json_dump))
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3551,22 +3549,22 @@ class TestViews(BaseTestViews):
                     "FramePoisonSize": "4096",
                     "Theme": "classic/1.0",
                     "Version": "5.0a1",
-                    "Email": "%s",
+                    "Email": email0,
                     "Vendor": "Mozilla",
-                    "URL": "%s",
+                    "URL": url0,
                     "HangID": "123456789"
-                } % (email0, url0))
+                })
             if '/crashes/comments' in url:
                 return Response({
                   "hits": [
                    {
-                     "user_comments": "%s",
+                     "user_comments": comment0,
                      "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
+                     "email": email1,
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
                   ], "total": 1
-                } % (comment0, email1))
+                })
             if '/correlations/signatures' in url:
                 return Response({
                     "hits": [
@@ -3582,7 +3580,7 @@ class TestViews(BaseTestViews):
             ):
                 return Response({
                     "client_crash_date": "2012-06-11T06:08:45",
-                    "dump": "%s",
+                    "dump": dump,
                     "signature": "FakeSignature1",
                     "user_comments": "null",
                     "uptime": 14693,
@@ -3609,7 +3607,7 @@ class TestViews(BaseTestViews):
                     "completeddatetime": "2012-06-11T06:08:57",
                     "success": True,
                     "exploitability": "Unknown Exploitability"
-                } % dump)
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3664,7 +3662,7 @@ class TestViews(BaseTestViews):
             if params['datatype'] == 'unredacted':
                 return Response({
                     "client_crash_date": "2012-06-11T06:08:45",
-                    "dump": "%s",
+                    "dump": dump,
                     "signature": "FakeSignature1",
                     "user_comments": "null",
                     "uptime": 14693,
@@ -3691,7 +3689,7 @@ class TestViews(BaseTestViews):
                     "completeddatetime": "2012-06-11T06:08:57",
                     "success": True,
                     "exploitability": "Unknown Exploitability"
-                } % dump)
+                })
             elif params['datatype'] == 'meta':  # raw crash json!
                 raise models.BadStatusCodeError(404)
 
@@ -4155,11 +4153,10 @@ class TestViews(BaseTestViews):
                 return Response({
                     "hits": [
                         {"url": "http://farm.ville", "crash_count": 123},
-                        {"url": "%s", "crash_count": 1}
+                        {"url": really_long_url, "crash_count": 1}
                     ],
                     "total": 2
-                }
-                 % really_long_url)
+                })
 
             raise NotImplementedError(url)
 
@@ -4904,19 +4901,19 @@ class TestViews(BaseTestViews):
                     "FramePoisonSize": "4096",
                     "Theme": "classic/1.0",
                     "Version": "5.0a1",
-                    "Email": "%s",
+                    "Email": email0,
                     "Vendor": "Mozilla",
-                    "URL": "%s"
-                    } % (email0, url0))
+                    "URL": url0
+                    })
             if 'crashes/comments' in url:
                 return Response({
                     "hits": [{
-                        "user_comments": "%s",
+                        "user_comments": comment0,
                         "date_processed": "2012-08-21T11:17:28-07:00",
-                        "email": "%s",
+                        "email": email1,
                         "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }], "total": 1
-                } % (comment0, email1))
+                })
 
             if (
                 '/crash_data' in url and
@@ -4926,7 +4923,7 @@ class TestViews(BaseTestViews):
                 return Response(
                     {
                         "client_crash_date": "2012-06-11T06:08:45",
-                        "dump": "%s",
+                        "dump": dump,
                         "signature": "FakeSignature1",
                         "user_comments": "null",
                         "uptime": 14693,
@@ -4953,7 +4950,7 @@ class TestViews(BaseTestViews):
                         "completeddatetime": "2012-06-11T06:08:57",
                         "success": True,
                         "exploitability": "Unknown Exploitability"
-                    } % dump)
+                    })
 
             if 'correlations/signatures' in url:
                 return Response({
