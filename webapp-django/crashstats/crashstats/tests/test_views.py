@@ -4154,7 +4154,7 @@ class TestViews(BaseTestViews):
             if '/signatureurls' in url:
                 return Response({
                     "hits": [
-                        {"url": "http://farm.ville", "crash_count":123},
+                        {"url": "http://farm.ville", "crash_count": 123},
                         {"url": "%s", "crash_count": 1}
                     ],
                     "total": 2
@@ -4909,14 +4909,13 @@ class TestViews(BaseTestViews):
                     "URL": "%s"
                     } % (email0, url0))
             if 'crashes/comments' in url:
-                return Response(
-                {
-                  "hits": [{
-                      "user_comments": "%s",
-                      "date_processed": "2012-08-21T11:17:28-07:00",
-                      "email": "%s",
-                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                  }], "total": 1
+                return Response({
+                    "hits": [{
+                        "user_comments": "%s",
+                        "date_processed": "2012-08-21T11:17:28-07:00",
+                        "email": "%s",
+                        "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }], "total": 1
                 } % (comment0, email1))
 
             if (
@@ -4954,7 +4953,7 @@ class TestViews(BaseTestViews):
                         "completeddatetime": "2012-06-11T06:08:57",
                         "success": True,
                         "exploitability": "Unknown Exploitability"
-                } % dump)
+                    } % dump)
 
             if 'correlations/signatures' in url:
                 return Response({
