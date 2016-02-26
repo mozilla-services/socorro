@@ -205,7 +205,7 @@ class TestModels(DjangoTestCase):
             assert '/products' in options['url']
             return Response({
                 "hits": [
-                  {"SeaMonkey": [{
+                {"SeaMonkey": [{
                      "product": "SeaMonkey",
                      "throttle": "100.00",
                      "end_date": "2012-05-10 00:00:00",
@@ -214,7 +214,7 @@ class TestModels(DjangoTestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                 }],"products": ["SeaMonkey"]})
+                }], "products": ["SeaMonkey"]})
 
         rget.side_effect = mocked_get
         info = api.get()
@@ -260,7 +260,7 @@ class TestModels(DjangoTestCase):
 
             if 'versions' in params and params['versions'] == 'WaterWolf:2.1':
                 return Response({
-                	"hits": [{
+                    "hits": [{
                         "is_featured": True,
                         "throttle": 1.0,
                         "end_date": "string",
@@ -269,18 +269,17 @@ class TestModels(DjangoTestCase):
                         "product": "WaterWolf",
                         "version": "15.0.1",
                         "has_builds": True
-                    }],"total": "1"})
+                    }], "total": "1"})
 
             else:
                 return Response({
-                	"hits": [{
+                    "hits": [{
                         "sort": "1",
                         "default_version": "15.0.1",
                         "release_name": "firefox",
                         "rapid_release_version": "5.0",
                         "product_name": "NightTrain"
-                    }],
-                "total": "1"
+                    }], "total": "1"
                 })
 
             raise NotImplementedError(url)
@@ -586,12 +585,12 @@ class TestModels(DjangoTestCase):
             ok_(today.strftime('%Y-%m-%dT%H:%M:%S') in params['from'])
 
             return Response({
-            	"hits": [{
-	            	"product": "Fennec",
-	            	"os_name": "Linux",
-	            	"uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
-	            	"many_others": "snipped out"
-	            }],"total": 333
+                "hits": [{
+                    "product": "Fennec",
+                    "os_name": "Linux",
+                    "uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
+                    "many_others": "snipped out"
+                }],"total": 333
             })
 
         rget.side_effect = mocked_get
@@ -670,12 +669,12 @@ class TestModels(DjangoTestCase):
             ok_('SEG/FAULT' in params['reasons'])
 
             return Response({
-            	"hits": [{
-            		"date_processed": "2000-01-01T00:00:01", 
-            		"user_comment": "hello guys!",
-            		"email": "hello@example.com"
-        		}],"total": 1
-    		})
+                "hits": [{
+                    "date_processed": "2000-01-01T00:00:01",
+                    "user_comment": "hello guys!",
+                    "email": "hello@example.com"
+                }],"total": 1
+            })
 
         rget.side_effect = mocked_get
         r = api.get(
@@ -735,7 +734,7 @@ class TestModels(DjangoTestCase):
             eq_(params['datatype'], 'unredacted')
 
             return Response({
-            	"product": "WaterWolf",
+                "product": "WaterWolf",
                 "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
                 "version": "13.0",
                 "build": "20120501201020",
@@ -746,15 +745,15 @@ class TestModels(DjangoTestCase):
                 "signature": "CLocalEndpointEnumerator::OnMediaNotific",
                 "exploitability": "Sensitive stuff",
                 "addons": [
-	                [
-	                  "testpilot@labs.mozilla.com",
-	                  "1.2.1"
-	                ],
-	                [
-	                  "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
-	                  "13.0"
-	                ]
-              	]	
+                    [
+                        "testpilot@labs.mozilla.com",
+                        "1.2.1"
+                    ],
+                    [
+                        "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
+                        "13.0"
+                    ]
+                ]
             })
 
         rget.side_effect = mocked_get
@@ -1131,7 +1130,7 @@ class TestModels(DjangoTestCase):
             ok_('report_type' in params)
             eq_(params['report_type'], 'core-counts')
 
-            return Response({"hits": ["FakeSignature1","FakeSignature2"],"total": 2})
+            return Response({"hits": ["FakeSignature1","FakeSignature2"], "total": 2})
 
         rget.side_effect = mocked_get
         r = api.get(report_type='core-counts',
@@ -1176,8 +1175,7 @@ class TestModels(DjangoTestCase):
 
         def mocked_get(url, params, **options):
             assert '/skiplist/' in url
-            return Response(
-            {
+            return Response({
                 "hits": [
                     {"category": "prefix", "rule": "Bar"},
                     {"category": "prefix", "rule": "Foo"},
@@ -1254,8 +1252,7 @@ class TestModels(DjangoTestCase):
             ok_('channel' in params)
             eq_(params['channel'], 'nightly')
 
-            return Response(
-            	{
+            return Response({
                 "hits": [
                     {"build_date": "2014-04-01",
                      "os_name": "Windows",
@@ -1273,7 +1270,7 @@ class TestModels(DjangoTestCase):
                      "adu_date": "2014-04-01",
                      "signature": "FakeSignature2",
                      "channel": "nightly"}],
-                 "total": 2})
+                "total": 2})
 
         rget.side_effect = mocked_get
         r = api.get(product_name='WaterWolf',
@@ -1550,8 +1547,8 @@ class TestModelsWithFileCaching(TestCase):
     def test_get_current_version_cache_invalidation(self, rget, mocked_time):
         def mocked_get(**options):
             assert '/products/' in options['url']
-            return Response(
-                {"hits": {
+            return Response({
+                "hits": {
                    "SeaMonkey": [{
                      "product": "SeaMonkey",
                      "throttle": "100.00",
@@ -1561,8 +1558,7 @@ class TestModelsWithFileCaching(TestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                  },
-                  "products": ["SeaMonkey"]
+                  }, "products": ["SeaMonkey"]
                 }
               )
         rget.side_effect = mocked_get
@@ -1617,8 +1613,8 @@ class TestModelsWithFileCaching(TestCase):
         def mocked_get(**options):
             calls.append(options)
             assert '/products/' in options['url']
-            return Response(
-                {"hits": {
+            return Response({
+                "hits": {
                    "SeaMonkey": [{
                      "product": "SeaMonkey",
                      "throttle": "100.00",
@@ -1628,7 +1624,8 @@ class TestModelsWithFileCaching(TestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                  },"products": ["SeaMonkey"]})
+                }, "products": ["SeaMonkey"]
+            })
         rget.side_effect = mocked_get
 
         assert not self._get_cached_file(self.tempdir)

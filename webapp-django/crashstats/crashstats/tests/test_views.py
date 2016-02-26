@@ -103,7 +103,7 @@ SAMPLE_UNREDACTED = """ {
     "flash_version": "[blank]",
     "hangid": null,
     "distributor_version": null,
-    "truncated": true,
+    "truncated": True,
     "process_type": null,
     "id": 383569625,
     "os_version": "10.6.8 10K549",
@@ -119,7 +119,7 @@ SAMPLE_UNREDACTED = """ {
     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     "address": "0x8",
     "completeddatetime": "2012-06-11T06:08:57",
-    "success": true,
+    "success": True,
     "json_dump": {
       "status": "OK",
       "sensitive": {
@@ -356,7 +356,7 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "19.0",
                         "release": "Beta",
                         "id": 922},
@@ -364,7 +364,7 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "18.0",
                         "release": "Stable",
                         "id": 920},
@@ -372,7 +372,7 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "2012-03-09",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "19.1",
                         "release": "Nightly",
                         "id": 928},
@@ -380,62 +380,59 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "20.0",
                         "release": "Nightly",
                         "id": 923}
                       ],
-                      "NightTrain":[
-                        {"product": "NightTrain",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "18.0",
-                        "release": "Aurora",
-                        "id": 924},
-                       {"product": "NightTrain",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "19.0",
-                        "release": "Nightly",
-                        "id": 925}
+                      "NightTrain": [{
+                          "product": "NightTrain",
+                          "throttle": "100.00",
+                          "end_date": "%(end_date)s",
+                          "start_date": "2012-03-08",
+                          "featured": True,
+                          "version": "18.0",
+                          "release": "Aurora",
+                          "id": 924},
+                          {"product": "NightTrain",
+                           "throttle": "100.00",
+                           "end_date": "%(end_date)s",
+                           "start_date": "2012-03-08",
+                           "featured": True,
+                           "version": "19.0",
+                           "release": "Nightly",
+                           "id": 925}
+                      ],
+                         "SeaMonkey": [{
+                             "product": "SeaMonkey",
+                             "throttle": "99.00",
+                             "end_date": "%(yesterday)s",
+                             "start_date": "2012-03-08",
+                             "featured": True,
+                             "version": "9.5",
+                             "release": "Alpha",
+                             "id": 921},
+                             {"product": "SeaMonkey",
+                              "throttle": "99.00",
+                              "end_date": "%(end_date)s",
+                              "start_date": "2012-03-08",
+                              "featured": True,
+                              "version": "10.5",
+                              "release": "nightly",
+                              "id": 926}
                      ],
-                     "SeaMonkey": [
-                       {"product": "SeaMonkey",
-                        "throttle": "99.00",
-                        "end_date": "%(yesterday)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "9.5",
-                        "release": "Alpha",
-                        "id": 921},
-                        {"product": "SeaMonkey",
-                        "throttle": "99.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "10.5",
-                        "release": "nightly",
-                        "id": 926}
-                     ],
-                     "LandCrab": [
-                        {"product": "LandCrab",
-                        "throttle": "99.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": false,
-                        "version": "1.5",
-                        "release": "Release",
-                        "id": 927}
-                     ]
-                   },
-                   "total": 4
-                 }
-                       % {'end_date': now.strftime('%Y-%m-%d'),
-                             'yesterday': yesterday.strftime('%Y-%m-%d')})
+                         "LandCrab": [
+                             {"product": "LandCrab",
+                              "throttle": "99.00",
+                              "end_date": "%(end_date)s",
+                              "start_date": "2012-03-08",
+                              "featured": False,
+                              "version": "1.5",
+                              "release": "Release",
+                              "id": 927}
+                         ]}, "total": 4}
+                    % {'end_date': now.strftime('%Y-%m-%d'),
+                       'yesterday': yesterday.strftime('%Y-%m-%d')})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -541,13 +538,13 @@ class TestAnalytics(BaseTestViews):
                 return Response(
                     {
                         "hits": [{
-                            "is_featured": true,
+                            "is_featured": True,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
                             "product": "WaterWolf",
                             "build_type": "Nightly",
                             "version": "19.0",
-                            "has_builds": true,
+                            "has_builds": True,
                             "start_date": "2012-09-25"
                         }],
                         "total": 1
@@ -712,7 +709,7 @@ class TestViews(BaseTestViews):
                     {"id": "654",
                      "product": "mozilla.org",
                      "summary": "Summary 2"}
-                ])
+                ]})
 
             raise NotImplementedError(url)
 
@@ -742,42 +739,33 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/products' in url and 'versions' not in params:
-                return Response(
-                    {
-                        "products": [
-                            "WaterWolf"
-                        ],
-                        "hits": {
-                            "WaterWolf": [{
-                            "featured": true,
+                return Response({
+                    "products": [
+                        "WaterWolf"],
+                    "hits": {
+                        "WaterWolf": [{
+                            "featured": True,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
                             "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "19.0",
-                            "has_builds": true,
+                            "has_builds": True,
                             "start_date": "2012-09-25"
-                            }]
-                        },
-                        "total": 1
-                    }
-                )
+                        }]
+                    }, "total": 1})
             elif '/products' in url:
-                return Response(
-                    {
-                        "hits": [{
-                            "is_featured": true,
-                            "throttle": 100.0,
-                            "end_date": "2012-11-27",
-                            "product": "WaterWolf",
-                            "build_type": "Nightly",
-                            "version": "19.0",
-                            "has_builds": true,
-                            "start_date": "2012-09-25"
-                        }],
-                        "total": 1
-                    }
-                )
+                return Response({
+                    "hits": [{
+                        "is_featured": True,
+                        "throttle": 100.0,
+                        "end_date": "2012-11-27",
+                        "product": "WaterWolf",
+                        "build_type": "Nightly",
+                        "version": "19.0",
+                        "has_builds": True,
+                        "start_date": "2012-09-25"
+                    }], "total": 1})
 
             raise NotImplementedError(url)
 
@@ -813,30 +801,28 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/daily' in url:
-                return Response(
-                    {
-                      "hits": {
+                return Response({
+                    "hits": {
                         "WaterWolf:19.0": {
-                          "2012-10-08": {
+                            "2012-10-08": {
                             "product": "WaterWolf",
                             "adu": 30000,
                             "crash_hadu": 71.099999999999994,
                             "version": "19.0",
                             "report_count": 2133,
                             "date": "2012-10-08"
-                          },
-                          "2012-10-02": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 77.299999999999997,
-                            "version": "19.0",
-                            "report_count": 2319,
-                            "date": "2012-10-02"
-                         }
+                            },
+                            "2012-10-02": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 77.299999999999997,
+                                "version": "19.0",
+                                "report_count": 2319,
+                                "date": "2012-10-02"
+                            }
                         }
-                      }
                     }
-                    )
+                })
 
             raise NotImplementedError(url)
 
@@ -1177,18 +1163,13 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             if 'gccrashes/' in url:
-                return Response(
-                    {
-                      "hits": [
-                          [
-                              "20140203000001",
-                              366
-                          ]
-                      ],
-                      "total": 1
-                    }
-                    )
-
+                return Response({
+                    "hits": [
+                        [
+                            "20140203000001", 366
+                        ]
+                    ], "total": 1
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1454,22 +1435,19 @@ class TestViews(BaseTestViews):
                 )
 
             if '/products' in url:
-                return Response(
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                )
+                return Response({
+                    "hits": [
+                        {
+                            "is_featured": True,
+                            "throttle": 1.0,
+                            "end_date": "string",
+                            "start_date": "integer",
+                            "build_type": "string",
+                            "product": "WaterWolf",
+                            "version": "19.0",
+                            "has_builds": True
+                        }], "total": "1"
+                })
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -1562,22 +1540,18 @@ class TestViews(BaseTestViews):
                 )
 
             if '/products' in url:
-                return Response(
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
+                return Response({
+                    "hits": [{
+                        "is_featured": True,
                         "throttle": 1.0,
                         "end_date": "string",
                         "start_date": "integer",
                         "build_type": "string",
                         "product": "WaterWolf",
                         "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                )
+                        "has_builds": True
+                    }], "total": "1"
+                })
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -1706,23 +1680,18 @@ class TestViews(BaseTestViews):
             ok_('version' in params)
             eq_('19.0', params['version'])
 
-            return Response(
-                  {
-                    "hits": [
-                      {
-                        "signature": "FakeSignature",
-                        "report_date": "2013-06-06",
-                        "high_count": 4,
-                        "medium_count": 3,
-                        "low_count": 2,
-                        "none_count": 1,
-                        "product_name": "%s",
-                        "version_string": "123.0"
-                      }
-                    ],
-                    "total": 1
-                  }
-             % (settings.DEFAULT_PRODUCT,))
+            return Response({
+                "hits": [{
+                    "signature": "FakeSignature",
+                    "report_date": "2013-06-06",
+                    "high_count": 4,
+                    "medium_count": 3,
+                    "low_count": 2,
+                    "none_count": 1,
+                    "product_name": "%s",
+                    "version_string": "123.0"
+                }], "total": 1}
+                            % (settings.DEFAULT_PRODUCT,))
 
         rget.side_effect = mocked_get
 
@@ -1908,23 +1877,23 @@ class TestViews(BaseTestViews):
                         ],
                         "hits": {
                             "WaterWolf": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }],
                             "NightTrain": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }]
                         },
@@ -2077,23 +2046,23 @@ class TestViews(BaseTestViews):
                         ],
                         "hits": {
                             "WaterWolf": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }],
                             "NightTrain": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }]
                         },
@@ -3355,7 +3324,7 @@ class TestViews(BaseTestViews):
                   "flash_version": "[blank]",
                   "hangid": null,
                   "distributor_version": null,
-                  "truncated": true,
+                  "truncated": True,
                   "process_type": null,
                   "id": 383569625,
                   "os_version": "10.6.8 10K549",
@@ -3371,7 +3340,7 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
+                  "success": True,
                   "exploitability": "Unknown Exploitability"
                 }
                  % dump)
@@ -3482,7 +3451,7 @@ class TestViews(BaseTestViews):
                   "flash_version": "[blank]",
                   "hangid": null,
                   "distributor_version": null,
-                  "truncated": true,
+                  "truncated": True,
                   "process_type": null,
                   "id": 383569625,
                   "os_version": "10.6.8 10K549",
@@ -3498,7 +3467,7 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
+                  "success": True,
                   "exploitability": "Unknown Exploitability"
                 }
                  % json.dumps(json_dump))
@@ -3583,7 +3552,7 @@ class TestViews(BaseTestViews):
                   "flash_version": "[blank]",
                   "hangid": null,
                   "distributor_version": null,
-                  "truncated": true,
+                  "truncated": True,
                   "process_type": null,
                   "id": 383569625,
                   "os_version": "10.6.8 10K549",
@@ -3599,7 +3568,7 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
+                  "success": True,
                   "exploitability": "Unknown Exploitability"
                 }
                  % json.dumps(json_dump))
@@ -3685,7 +3654,7 @@ class TestViews(BaseTestViews):
                   "flash_version": "[blank]",
                   "hangid": null,
                   "distributor_version": null,
-                  "truncated": true,
+                  "truncated": True,
                   "process_type": null,
                   "id": 383569625,
                   "os_version": "10.6.8 10K549",
@@ -3701,7 +3670,7 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
+                  "success": True,
                   "exploitability": "Unknown Exploitability"
                 }
                  % dump)
@@ -3769,7 +3738,7 @@ class TestViews(BaseTestViews):
                   "flash_version": "[blank]",
                   "hangid": null,
                   "distributor_version": null,
-                  "truncated": true,
+                  "truncated": True,
                   "process_type": null,
                   "id": 383569625,
                   "os_version": "10.6.8 10K549",
@@ -3785,7 +3754,7 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
+                  "success": True,
                   "exploitability": "Unknown Exploitability"
                 }
                  % dump)
@@ -5082,7 +5051,7 @@ class TestViews(BaseTestViews):
                   "flash_version": "[blank]",
                   "hangid": null,
                   "distributor_version": null,
-                  "truncated": true,
+                  "truncated": True,
                   "process_type": null,
                   "id": 383569625,
                   "os_version": "10.6.8 10K549",
@@ -5098,7 +5067,7 @@ class TestViews(BaseTestViews):
                   "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                   "address": "0x8",
                   "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
+                  "success": True,
                   "exploitability": "Unknown Exploitability"
                 }
                  % dump)
