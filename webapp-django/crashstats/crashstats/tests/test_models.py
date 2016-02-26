@@ -214,9 +214,7 @@ class TestModels(DjangoTestCase):
                      "version": "2.1.3pre",
                      "release": "Beta",
                      "id": 922}]
-                     }],
-                 "products": ["SeaMonkey"]
-                })
+                 }],"products": ["SeaMonkey"]})
 
         rget.side_effect = mocked_get
         info = api.get()
@@ -262,7 +260,7 @@ class TestModels(DjangoTestCase):
 
             if 'versions' in params and params['versions'] == 'WaterWolf:2.1':
                 return Response({
-                  "hits": [{
+                	"hits": [{
                         "is_featured": True,
                         "throttle": 1.0,
                         "end_date": "string",
@@ -271,13 +269,11 @@ class TestModels(DjangoTestCase):
                         "product": "WaterWolf",
                         "version": "15.0.1",
                         "has_builds": True
-                    }],
-                "total": "1"
-                })
+                    }],"total": "1"})
 
             else:
                 return Response({
-                  "hits": [{
+                	"hits": [{
                         "sort": "1",
                         "default_version": "15.0.1",
                         "release_name": "firefox",
@@ -590,13 +586,13 @@ class TestModels(DjangoTestCase):
             ok_(today.strftime('%Y-%m-%dT%H:%M:%S') in params['from'])
 
             return Response({
-          "hits": [{
-              "product": "Fennec",
-              "os_name": "Linux",
-              "uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
-              "many_others": "snipped out"
-            }],"total": 333
-          })
+            	"hits": [{
+	            	"product": "Fennec",
+	            	"os_name": "Linux",
+	            	"uuid": "5e30f10f-cd5d-4b13-9dbc-1d1e62120524",
+	            	"many_others": "snipped out"
+	            }],"total": 333
+            })
 
         rget.side_effect = mocked_get
 
@@ -673,14 +669,13 @@ class TestModels(DjangoTestCase):
             ok_('reasons' in params)
             ok_('SEG/FAULT' in params['reasons'])
 
-            return Response(
-            {"hits": [
-                  {"date_processed": "2000-01-01T00:00:01",
-                  "uuid": "1234abcd",
-                  "user_comment": "hello guys!",
-                  "email": "hello@example.com"
-                }],"total": 1
-              })
+            return Response({
+            	"hits": [{
+            		"date_processed": "2000-01-01T00:00:01", 
+            		"user_comment": "hello guys!",
+            		"email": "hello@example.com"
+        		}],"total": 1
+    		})
 
         rget.side_effect = mocked_get
         r = api.get(
@@ -739,30 +734,28 @@ class TestModels(DjangoTestCase):
             ok_('datatype' in params)
             eq_(params['datatype'], 'unredacted')
 
-            return Response(
-            {
-              "product": "WaterWolf",
-              "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
-              "version": "13.0",
-              "build": "20120501201020",
-              "ReleaseChannel": "beta",
-              "os_name": "Windows NT",
-              "date_processed": "2012-05-25 11:35:57",
-              "success": True,
-              "signature": "CLocalEndpointEnumerator::OnMediaNotific",
-              "exploitability": "Sensitive stuff",
-              "addons": [
-                [
-                  "testpilot@labs.mozilla.com",
-                  "1.2.1"
-                ],
-                [
-                  "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
-                  "13.0"
-                ]
-              ]
-            }
-            )
+            return Response({
+            	"product": "WaterWolf",
+                "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
+                "version": "13.0",
+                "build": "20120501201020",
+                "ReleaseChannel": "beta",
+                "os_name": "Windows NT",
+                "date_processed": "2012-05-25 11:35:57",
+                "success": True,
+                "signature": "CLocalEndpointEnumerator::OnMediaNotific",
+                "exploitability": "Sensitive stuff",
+                "addons": [
+	                [
+	                  "testpilot@labs.mozilla.com",
+	                  "1.2.1"
+	                ],
+	                [
+	                  "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
+	                  "13.0"
+	                ]
+              	]	
+            })
 
         rget.side_effect = mocked_get
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
@@ -851,8 +844,7 @@ class TestModels(DjangoTestCase):
 
         def mocked_get(**options):
             assert 'signaturesummary' in options['url'], options['url']
-            return Response(
-            [{
+            return Response([{
                 "version_string": "12.0",
                 "percentage": "48.440",
                 "report_count": 52311,
@@ -1114,13 +1106,11 @@ class TestModels(DjangoTestCase):
             ok_('report_type' in params)
             eq_(params['report_type'], 'core-counts')
 
-            return Response(
-            {
+            return Response({
                 "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                 "count": 13,
                 "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
-            }
-        )
+            })
 
         rget.side_effect = mocked_get
         r = api.get(report_type='core-counts',
@@ -1165,15 +1155,13 @@ class TestModels(DjangoTestCase):
             ok_('name' in params)
             eq_(params['name'], 'my-field')
 
-            return Response(
-            {
+            return Response({
                 "name": "my-field",
                 "product": "WaterWolf",
                 "transforms": {
                     "rule1": "some notes about that rule"
                 }
-            }
-        )
+            })
 
         rget.side_effect = mocked_get
         r = api.get(name='my-field')
