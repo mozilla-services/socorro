@@ -3284,7 +3284,8 @@ class TestViews(BaseTestViews):
                                     "user_comments": "null",
                                     "uptime": 14693,
                                     "release_channel": "nightly",
-                                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                                    "uuid": "11cb72f5"
+                                            "-eb28-41e1-a8e4-849982120611",
                                     "flash_version": "[blank]",
                                     "hangid": "null",
                                     "distributor_version": "null",
@@ -3384,15 +3385,12 @@ class TestViews(BaseTestViews):
                   "total": 1
                 } % (comment0, email1))
             if 'correlations/signatures' in url:
-                return Response(
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                )
+                    ], "total": 2
+                })
 
             if (
                 '/crash_data' in url and
@@ -3467,16 +3465,15 @@ class TestViews(BaseTestViews):
                     "HangID": "123456789"
                 } % (email0, url0))
             if 'crashes/comments' in url:
-                return Response(
-                {
-                  "hits": [{
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ], "total": 1
+                return Response({
+                    "hits": [{
+                        "user_comments": "%s",
+                        "date_processed": "2012-08-21T11:17:28-07:00",
+                        "email": "%s",
+                        "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }], "total": 1
                 } % (comment0, email1))
+
             if 'correlations/signatures' in url:
                 return Response({
                     "hits": [
@@ -4162,7 +4159,7 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 2
                 }
-                 % (really_long_url))
+                 % really_long_url)
 
             raise NotImplementedError(url)
 
@@ -4902,28 +4899,24 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response(
-                {
-                  "InstallTime": "1339289895",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s"
-                } % (email0, url0))
+                return Response({
+                    "InstallTime": "1339289895",
+                    "FramePoisonSize": "4096",
+                    "Theme": "classic/1.0",
+                    "Version": "5.0a1",
+                    "Email": "%s",
+                    "Vendor": "Mozilla",
+                    "URL": "%s"
+                    } % (email0, url0))
             if 'crashes/comments' in url:
                 return Response(
                 {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
+                  "hits": [{
+                      "user_comments": "%s",
+                      "date_processed": "2012-08-21T11:17:28-07:00",
+                      "email": "%s",
+                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                  }], "total": 1
                 } % (comment0, email1))
 
             if (
@@ -4964,13 +4957,12 @@ class TestViews(BaseTestViews):
                 } % dump)
 
             if 'correlations/signatures' in url:
-                return Response(
-                    {
-                        "hits": [
-                            "FakeSignature1",
-                            "FakeSignature2"
-                        ], "total": 2
-                    })
+                return Response({
+                    "hits": [
+                        "FakeSignature1",
+                        "FakeSignature2"
+                    ], "total": 2
+                })
 
             raise NotImplementedError(url)
 
