@@ -29,49 +29,32 @@ from crashstats.crashstats.tests.test_views import (
 
 class TestViews(BaseTestViews):
 
-    @mock.patch('requests.get')
-    def setUp(self, rget):
+    def setUp(self):
         super(TestViews, self).setUp()
 
-        # we do this here so that the current/versions thing
-        # is cached since that's going to be called later
-        # in every view more or less
-        def mocked_get(url, **options):
-            if '/products' in url:
-                return Response("""
+        def mocked_product_versions(**params):
+            hits = [
                 {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
+                    'is_featured': True,
+                    'throttle': 1.0,
+                    'end_date': 'string',
+                    'start_date': 'integer',
+                    'build_type': 'string',
+                    'product': 'WaterWolf',
+                    'version': '19.0',
+                    'has_builds': True
                 }
-                """)
-            raise NotImplementedError(url)
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
 
-        rget.side_effect = mocked_get
-        from crashstats.crashstats.models import (
-            CurrentProducts, CurrentVersions
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
         )
-        from crashstats.crashstats.utils import build_releases
-        releases = build_releases(CurrentVersions().get())
-        versions = '+'.join([
-            '%s:%s' % (settings.DEFAULT_PRODUCT, x['version'])
-            for x in releases[settings.DEFAULT_PRODUCT]
-        ])
-        api = CurrentProducts()
-        # because WaterWolf is the default product and because
-        # BaseTestViews.setUp calls CurrentVersions already, we need to
-        # prepare this call so that each call to the home page can use the
-        # cache
-        api.get(versions=versions)
+        # prime the cache
+        models.ProductVersions().get(active=True)
 
     def _login(self, is_superuser=True):
         self.user = User.objects.create_user('kairo', 'kai@ro.com', 'secret')
@@ -145,84 +128,47 @@ class TestViews(BaseTestViews):
 
         rput.side_effect = mocked_put
 
-        def mocked_get(url, **options):
-            if 'products' in url:
-                today = datetime.date.today()
-                tomorrow = today + datetime.timedelta(days=1)
-                yesterday = today - datetime.timedelta(days=1)
-                dates = {
-                    'start_date_19': today,
-                    'end_date_19': tomorrow,
-                    'start_date_18': today,
-                    'end_date_18': today,
-                    'start_date_17': tomorrow,
-                    'end_date_17': tomorrow + datetime.timedelta(days=1),
-                    'start_date_16': yesterday - datetime.timedelta(days=1),
-                    'end_date_16': yesterday,
-                }
-                return Response("""
-                    {
-                        "products": [
-                            "WaterWolf"
-                        ],
-                        "hits": {
-                            "WaterWolf": [{
-                            "featured": true,
-                            "throttle": 90.0,
-                            "end_date": "%(end_date_19)s",
-                            "product": "WaterWolf",
-                            "release": "Nightly",
-                            "version": "19.0.1",
-                            "has_builds": true,
-                            "start_date": "%(start_date_19)s"
-                            },
-                            {
-                            "featured": false,
-                            "throttle": 33.333,
-                            "end_date": "%(end_date_18)s",
-                            "product": "WaterWolf",
-                            "release": "Nightly",
-                            "version": "18.0.1",
-                            "has_builds": true,
-                            "start_date": "%(start_date_18)s"
-                            },
-                            {
-                            "featured": true,
-                            "throttle": 20.0,
-                            "end_date": "%(end_date_17)s",
-                            "product": "WaterWolf",
-                            "release": "Nightly",
-                            "version": "17.0.1",
-                            "has_builds": true,
-                            "start_date": "%(start_date_17)s"
-                            },
-                            {
-                            "featured": false,
-                            "throttle": 20.0,
-                            "end_date": "%(end_date_16)s",
-                            "product": "WaterWolf",
-                            "release": "Nightly",
-                            "version": "16.0.1",
-                            "has_builds": true,
-                            "start_date": "%(start_date_16)s"
-                            }
-                            ]
-                        },
-                        "total": 2
-                    }
-                """ % dates)
-            raise NotImplementedError(url)
+        def mocked_product_versions(**params):
+            today = datetime.date.today()
+            tomorrow = today + datetime.timedelta(days=1)
 
-        rget.side_effect = mocked_get
+            hits = [
+                {
+                    'product': 'WaterWolf',
+                    'is_featured': True,
+                    'throttle': 90.0,
+                    'end_date': tomorrow,
+                    'product': 'WaterWolf',
+                    'release': 'Nightly',
+                    'version': '19.0.1',
+                    'has_builds': True,
+                    'start_date': today,
+                },
+                {
+                    'product': 'WaterWolf',
+                    'is_featured': False,
+                    'throttle': 33.333,
+                    'end_date': today,
+                    'product': 'WaterWolf',
+                    'release': 'Nightly',
+                    'version': '18.0.1',
+                    'has_builds': True,
+                    'start_date': today,
+                },
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
+
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('19.0.1' in response.content)
         ok_('18.0.1' in response.content)
-        # because its start_date is in the future
-        ok_('17.0.1' not in response.content)
-        # because its end_date is in the past
-        ok_('17.0.1' not in response.content)
 
         # also, note how the percentages are written out
         # (know thy fixtures)
@@ -1303,17 +1249,16 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
-    @mock.patch('requests.post')
-    def test_create_product(self, rpost):
+    def test_create_product(self):
 
-        def mocked_post(url, **options):
-            data = options['data']
-            eq_(data['product'], 'WaterCat')
-            eq_(data['version'], '1.0')
-            assert '/products/' in url, url
-            return Response(True)
+        def mocked_post(**options):
+            eq_(options['product'], 'WaterCat')
+            eq_(options['version'], '1.0')
+            return True
 
-        rpost.side_effect = mocked_post
+        models.ProductVersions.implementation().post.side_effect = (
+            mocked_post
+        )
 
         self._login()
         url = reverse('manage:products')

@@ -38,7 +38,7 @@
                                 <td>
                                     <label class="visually-hidden" for="daily_search_version_form_products">Select Product</label>
                                     <select id="daily_search_version_form_products" name="p">
-                                        {% for product_name in releases %}
+                                        {% for product_name in products %}
                                         <option value="{{ product_name }}" {% if product == product_name %}selected{% endif %}>{{ product_name }}</option>
                                         {% endfor %}
                                     </select>

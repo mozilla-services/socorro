@@ -101,35 +101,6 @@ def robots_txt(request):
     )
 
 
-def has_builds(product, versions):
-    contains_builds = False
-    prod_versions = []
-
-    values_separator = '+'
-    combinator = ':'
-
-    # Ensure we have versions before proceeding. If there are
-    # no verions, simply return the default of False.
-    if versions:
-        if isinstance(versions, list):
-            for version in versions:
-                prod_versions.append(product + combinator + version)
-
-            versions = values_separator.join(prod_versions)
-        else:
-            versions = product + combinator + versions
-
-        api = models.CurrentProducts()
-        products = api.get(versions=versions)
-
-        for product in products['hits']:
-            if product['has_builds']:
-                contains_builds = True
-                break
-
-    return contains_builds
-
-
 def build_data_object_for_adu_graphs(start_date, end_date, response_items,
                                      report_type='by_version',
                                      code_to_name=None):
@@ -421,53 +392,56 @@ def get_product_versions_for_crashes_per_day(facets, product):
 def get_all_nightlies(context):
     nightlies_only = settings.NIGHTLY_RELEASE_TYPES
 
-    return [
-        x for x in context['currentversions']
-        if x['release'].lower() in [rel.lower() for rel in nightlies_only]
-    ]
+    versions = {}
+    for product, product_versions in context['active_versions'].items():
+        versions[product] = []
+        for version in product_versions:
+            rel_release = version['build_type'].lower()
+            if rel_release in [x.lower() for x in nightlies_only]:
+                versions[product].append(version['version'])
+
+    return versions
 
 
 def get_all_nightlies_for_product(context, product):
     nightlies_only = settings.NIGHTLY_RELEASE_TYPES
-
     versions = []
-    for release in context['currentversions']:
-        rel_product = release['product']
-        rel_release = release['release'].lower()
-        if rel_product == product:
-            if rel_release in [x.lower() for x in nightlies_only]:
-                versions.append(release['version'])
+    for version in context['active_versions'].get(product, []):
+        rel_release = version['build_type'].lower()
+        if rel_release in [x.lower() for x in nightlies_only]:
+            versions.append(version['version'])
 
     return versions
 
 
 def get_latest_nightly(context, product):
     version = None
-    for release in context['currentversions']:
-        if release['product'] == product:
-            rel = release['release']
-            if rel.lower() == 'nightly' and release['featured']:
-                version = release['version']
-                break
+    for version in context['active_versions'][product]:
+        build_type = version['build_type']
+        if build_type.lower() == 'nightly' and version['is_featured']:
+            version = version['version']
+            break
 
     if version is None:
         # We did not find a featured Nightly, let's simply use the latest
-        for release in context['currentversions']:
-            if release['product'] == product:
-                if release['release'].lower() == 'nightly':
-                    version = release['version']
-                    break
+        for version in context['active_versions'].get(product, []):
+            if version['build_type'].lower() == 'nightly':
+                version = version['version']
+                break
 
     return version
 
 
-def get_channel_for_release(version):
-    api = models.CurrentProducts()
-    version_info = api.get(
-        versions=version
-    )
-
-    return version_info['hits'][0]['build_type']
+def get_build_type_for_product_versions(product_versions):
+    """product_versions is a list that looks something like this:
+      ['Firefox:47.0a1']
+    Return the build type on matches
+    """
+    api = models.ProductVersions()
+    for product_version in product_versions:
+        product, version = product_version.split(':')
+        for hit in api.get(product=product, version=version)['hits']:
+            return hit['build_type']
 
 
 def get_timedelta_from_value_and_unit(value, unit):
@@ -525,20 +499,28 @@ def home(request, product, versions=None,
     contains_builds = False
     product = context['product']
 
-    if versions is None:
-        versions = []
-        for release in context['releases'][product]:
-            if release['featured']:
-                versions.append(release['version'])
-        contains_builds = has_builds(product, versions)
-    else:
-        versions = versions.split(';')
-        contains_builds = has_builds(product, versions)
-
-    context['versions'] = versions
     context['product'] = product
-    if len(versions) == 1:
-        context['version'] = versions[0]
+
+    if versions:
+        # from the URL
+        context['versions'] = [versions]
+        # only check if it has builds if a particular version was selected
+        contains_builds = bool(
+            x for x in context['active_versions'][product]
+            if x['is_featured'] and x['has_builds']
+        )
+    else:
+        # only pick the featured ones out of context['active_versions']
+        context['versions'] = [
+            x['version'] for x in context['active_versions'][product]
+            if x['is_featured']
+        ]
+
+        # Kinda strange, but legacy inherited code.
+        # If you look at the homepage without specifying a specific
+        # version, it will always assume that the product does not
+        # contain builds.
+        contains_builds = False
 
     context['has_builds'] = contains_builds
     context['days'] = days
@@ -588,10 +570,11 @@ def _get_frontpage_data_from_supersearch(
 
 @utils.json_view
 @pass_default_context
-def frontpage_json(request, default_context=None):
+def frontpage_json(request, default_context):
+    context = default_context
     date_range_types = ['report', 'build']
     form = forms.FrontpageJSONForm(
-        default_context['currentversions'],
+        context['active_versions'],
         data=request.GET,
         date_range_types=date_range_types,
     )
@@ -607,14 +590,10 @@ def frontpage_json(request, default_context=None):
     start_date = end_date - datetime.timedelta(days=days + 1)
 
     if not versions:
-        versions = []
-        for release in default_context['currentversions']:
-            if release['product'] == product and release['featured']:
-                current_end_date = (
-                    datetime.datetime.strptime(release['end_date'], '%Y-%m-%d')
-                )
-                if end_date.date() <= current_end_date.date():
-                    versions.append(release['version'])
+        versions = [
+            x['version'] for x in context['active_versions'][product]
+            if x['is_featured']
+        ]
 
     # FIXME: This form element is not exposed visually anywhere
     # on the home page.
@@ -692,20 +671,14 @@ def topcrasher_ranks_bybug(request, days=None, possible_days=None,
                 end_date=end_date,
             )
             releases = result['reports']['products']
-
             active = []
             for release in releases:
-                for current in context['currentversions']:
-                    if (
-                        release['product_name'] == current['product'] and
-                        release['version_string'] == current['version']
-                    ):
-                        current_end_date = (
-                            datetime.datetime.strptime(current['end_date'],
-                                                       '%Y-%m-%d')
-                        )
-                        if end_date.date() <= current_end_date.date():
-                            active.append(current)
+                for pv in context['active_versions'][release['product_name']]:
+                    if release['version_string'] == pv['version']:
+                        active.append({
+                            'version': pv['version'],
+                            'product': release['product_name'],
+                        })
 
             signame = signature['signature']
             top_crashes[signame] = defaultdict(dict)
@@ -740,7 +713,7 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
                possible_days=None, default_context=None):
     context = default_context or {}
 
-    if product not in context['releases']:
+    if product not in context['active_versions']:
         raise http.Http404('Unrecognized product')
 
     date_range_type = date_range_type or 'report'
@@ -749,23 +722,28 @@ def topcrasher(request, product=None, versions=None, date_range_type=None,
         # :(
         # simulate what the nav.js does which is to take the latest version
         # for this product.
-        for release in context['currentversions']:
-            if release['product'] == product and release['featured']:
+        for pv in context['active_versions'][product]:
+            if pv['is_featured']:
                 url = reverse('crashstats:topcrasher',
                               kwargs=dict(product=product,
-                                          versions=release['version']))
+                                          versions=pv['version']))
                 return redirect(url)
+        raise NotImplementedError("Not sure what's supposed to happen here")
     else:
         versions = versions.split(';')
 
     if len(versions) == 1:
         context['version'] = versions[0]
 
-    release_versions = [x['version'] for x in context['releases'][product]]
-    if context['version'] not in release_versions:
+    product_versions = context['active_versions'][product]
+    if context['version'] not in [x['version'] for x in product_versions]:
         raise http.Http404('Unrecognized version')
 
-    context['has_builds'] = has_builds(product, context['version'])
+    context['has_builds'] = False
+    for productversion in product_versions:
+        if productversion['version'] == context['version']:
+            if productversion['has_builds']:
+                context['has_builds'] = True
 
     end_date = datetime.datetime.utcnow()
 
@@ -904,7 +882,7 @@ def daily(request, default_context=None):
                    .replace('os[]', 'os'))
         return redirect(new_url, permanent=True)
 
-    context['products'] = context['currentproducts']['products']
+    context['products'] = context['active_versions'].keys()
 
     platforms_api = models.Platforms()
     platforms = platforms_api.get()
@@ -915,7 +893,7 @@ def daily(request, default_context=None):
     hang_types = ['any', 'crash', 'hang-p']
 
     form = form_class(
-        context['currentversions'],
+        context['active_versions'],
         platforms,
         data=request.GET,
         date_range_types=date_range_types,
@@ -939,23 +917,14 @@ def daily(request, default_context=None):
 
     if not params['versions']:
         # need to pick the default featured ones
-        params['versions'] = [
-            version['version']
-            for version in context['currentversions']
-            if version['product'] == params['product'] and version['featured']
-        ]
+        params['versions'] = []
+        for pv in context['active_versions'][context['product']]:
+            if pv['is_featured']:
+                params['versions'].append(pv['version'])
 
     context['available_versions'] = []
-    now = datetime.datetime.utcnow().date()
-    for version in context['currentversions']:
-        start_date = isodate.parse_date(version['start_date'])
-        end_date = isodate.parse_date(version['end_date'])
-        if (
-            params['product'] == version['product'] and
-            start_date <= now and
-            end_date >= now
-        ):
-            context['available_versions'].append(version['version'])
+    for version in context['active_versions'][params['product']]:
+        context['available_versions'].append(version['version'])
 
     if not params.get('os_names'):
         params['os_names'] = [x['name'] for x in platforms if x.get('display')]
@@ -1128,7 +1097,7 @@ def _render_daily_csv(request, data, product, versions, platforms, os_names):
 @pass_default_context
 def crashes_per_day(request, default_context=None):
     context = default_context or {}
-    context['products'] = context['currentproducts']['products']
+    context['products'] = context['active_versions'].keys()
 
     # This report does not currently support doing a graph by **build date**.
     # So we hardcode the choice to always be regular report.
@@ -1154,9 +1123,8 @@ def crashes_per_day(request, default_context=None):
 
     date_range_types = ['report', 'build']
     hang_types = ['any', 'crash', 'hang-p']
-
     form = forms.DailyFormByVersion(
-        context['currentversions'],
+        context['active_versions'],
         platforms,
         data=request.GET,
         date_range_types=date_range_types,
@@ -1180,23 +1148,14 @@ def crashes_per_day(request, default_context=None):
 
     if not params['versions']:
         # need to pick the default featured ones
-        params['versions'] = [
-            version['version']
-            for version in context['currentversions']
-            if version['product'] == params['product'] and version['featured']
-        ]
+        params['versions'] = []
+        for pv in context['active_versions'][context['product']]:
+            if pv['is_featured']:
+                params['versions'].append(pv['version'])
 
     context['available_versions'] = []
-    now = datetime.datetime.utcnow().date()
-    for version in context['currentversions']:
-        start_date = isodate.parse_date(version['start_date'])
-        end_date = isodate.parse_date(version['end_date'])
-        if (
-            params['product'] == version['product'] and
-            start_date <= now and
-            end_date >= now
-        ):
-            context['available_versions'].append(version['version'])
+    for version in context['active_versions'][params['product']]:
+        context['available_versions'].append(version['version'])
 
     if not params.get('platforms'):
         params['platforms'] = [
@@ -1447,16 +1406,9 @@ def exploitability_report(request, default_context=None):
         })
         return redirect(url)
 
-    available_products = {}
-    for product, versions in context['releases'].items():
-        if product not in available_products:
-            available_products[product] = []
-        for version_info in versions:
-            available_products[product].append(version_info['version'])
-
     form = forms.ExploitabilityReportForm(
         request.GET,
-        available_products=available_products,
+        active_versions=context['active_versions'],
     )
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
@@ -1785,8 +1737,7 @@ def report_pending(request, crash_id):
 def report_list(request, partial=None, default_context=None):
     context = default_context or {}
     form = forms.ReportListForm(
-        context['currentproducts']['hits'],
-        context['currentversions'],
+        context['active_versions'],
         request.GET
     )
     if not form.is_valid():
@@ -2033,7 +1984,7 @@ def report_list(request, partial=None, default_context=None):
         # and versions are only those that are "active", which means
         # they have an sunset date that is >= now.
         release_versions = {}
-        for product, versions in context['releases'].items():
+        for product, versions in context['active_versions'].items():
             release_versions[product] = [x['version'] for x in versions]
 
         # Sort all found product/os/version combinations by number
@@ -2182,7 +2133,7 @@ def report_list(request, partial=None, default_context=None):
         # if we have a version, expose the channel for the current
         # release for use in the adu graph
         if context['product_versions']:
-            context['channel'] = get_channel_for_release(
+            context['channel'] = get_build_type_for_product_versions(
                 context['product_versions']
             )
         else:
@@ -2200,10 +2151,9 @@ def report_list(request, partial=None, default_context=None):
             'start_date': context['start_date'],
             'end_date': context['end_date']
         }
-
         context['form'] = forms.ADUBySignatureJSONForm(
             settings.CHANNELS,
-            models.ProductsVersions().get(),
+            context['active_versions'],
             data,
             auto_id=True
         )
@@ -2251,10 +2201,11 @@ def report_list(request, partial=None, default_context=None):
 @utils.json_view
 @pass_default_context
 def adu_by_signature_json(request, default_context=None):
+    context = default_context
 
     form = forms.ADUBySignatureJSONForm(
         settings.CHANNELS,
-        models.ProductsVersions().get(),
+        context['active_versions'],
         data=request.GET,
     )
     if not form.is_valid():
@@ -2387,8 +2338,7 @@ def plot_signature(request, product, versions, start_date, end_date,
 def signature_summary(request, default_context=None):
     context = default_context or {}
     form = forms.SignatureSummaryForm(
-        context['currentproducts']['hits'],
-        context['currentversions'],
+        context['active_versions'],
         request.GET
     )
 
@@ -2545,7 +2495,7 @@ def gccrashes(request, product, version=None, default_context=None):
         # No version was passed get the latest nightly
         version = get_latest_nightly(context, product)
 
-    current_products = context['currentproducts']['products']
+    current_products = context['active_versions'].keys()
 
     context['report'] = 'gccrashes'
     context['version'] = version
@@ -2648,8 +2598,7 @@ def correlations_json(request, default_context=None):
     context = default_context or {}
 
     form = forms.CorrelationsJSONForm(
-        context['currentproducts']['hits'],
-        context['currentversions'],
+        context['active_versions'],
         models.Platforms().get(),
         request.GET
     )
@@ -2689,8 +2638,7 @@ def correlations_signatures_json(request, default_context=None):
     context = default_context or {}
 
     form = forms.CorrelationsSignaturesJSONForm(
-        context['currentproducts']['hits'],
-        context['currentversions'],
+        context['active_versions'],
         models.Platforms().get(),
         request.GET
     )

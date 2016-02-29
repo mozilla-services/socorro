@@ -49,7 +49,7 @@
             <li>
                 <label for="products_select">Product:</label>
                 <select id="products_select">
-                {% for p in releases %}
+                {% for p in active_versions %}
                     <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
                 {% endfor %}
                 </select>
@@ -61,22 +61,22 @@
                         <option value="Current Versions">Current Versions</option>
                     </optgroup>
                     <optgroup label=" ">
-                    {% for release in releases[product] %}
-                        {% if release.featured %}
+                    {% for pv in active_versions[product] %}
+                        {% if pv.is_featured %}
                         <option
-                            value="{{ release.version }}"
-                            {% if release.version == version %}selected{% endif %}
-                        >{{ release.version }}</option>
+                            value="{{ pv.version }}"
+                            {% if pv.version == version %}selected{% endif %}
+                        >{{ pv.version }}</option>
                         {% endif %}
                     {% endfor  %}
                     </optgroup>
                     <optgroup label=" ">
-                    {% for release in releases[product] %}
-                        {% if not release.featured %}
+                    {% for pv in active_versions[product] %}
+                        {% if not pv.is_featured %}
                         <option
-                            value="{{ release.version }}"
-                            {% if release.version == version %}selected{% endif %}
-                        >{{ release.version }}</option>
+                            value="{{ pv.version }}"
+                            {% if pv.version == version %}selected{% endif %}
+                        >{{ pv.version }}</option>
                         {% endif %}
                     {% endfor  %}
                     </optgroup>

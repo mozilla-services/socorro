@@ -1,4 +1,3 @@
-import datetime
 import functools
 import copy
 import urllib
@@ -20,7 +19,7 @@ from django.utils import timezone
 from eventlog.models import log, Log
 
 from crashstats.crashstats.models import (
-    CurrentProducts,
+    ProductVersions,
     Releases,
     ReleasesFeatured,
     Field,
@@ -109,38 +108,26 @@ def home(request, default_context=None):
 def featured_versions(request, default_context=None):
     context = default_context or {}
 
-    products_api = CurrentProducts()
-    products_api.cache_seconds = 0
-    products = products_api.get()
+    api = ProductVersions()
+    api.cache_seconds = 0
+    product_versions = api.get(active=True)['hits']
 
-    context['products'] = products['products']  # yuck!
-    context['releases'] = {}
-    now = datetime.date.today()
-    for product_name in context['products']:
-        context['releases'][product_name] = []
-        for release in products['hits'][product_name]:
-            start_date = datetime.datetime.strptime(
-                release['start_date'],
-                '%Y-%m-%d'
-            ).date()
-            if start_date > now:
-                continue
-            end_date = datetime.datetime.strptime(
-                release['end_date'],
-                '%Y-%m-%d'
-            ).date()
-            if end_date < now:
-                continue
-            context['releases'][product_name].append(release)
-
+    releases = collections.OrderedDict()
+    for pv in product_versions:
+        if pv['product'] not in releases:
+            releases[pv['product']] = []
+        releases[pv['product']].append(pv)
+    context['releases'] = releases
     return render(request, 'manage/featured_versions.html', context)
 
 
 @superuser_required
 @require_POST
 def update_featured_versions(request):
-    products_api = CurrentProducts()
-    products = products_api.get()['products']
+    api = ProductVersions()
+    products = set(
+        x['product'] for x in api.get()['hits']
+    )
 
     data = {}
     for product in request.POST:
@@ -703,14 +690,16 @@ def supersearch_fields_missing(request):
 @superuser_required
 def products(request):
     context = {}
-    api = CurrentProducts()
+    api = ProductVersions()
     if request.method == 'POST':
+        existing_products = set(
+            x['product'] for x in api.get()['hits']
+        )
         form = forms.ProductForm(
             request.POST,
-            existing_products=api.get()['products']
+            existing_products=existing_products
         )
         if form.is_valid():
-            api = CurrentProducts()
             api.post(
                 product=form.cleaned_data['product'],
                 version=form.cleaned_data['initial_version']

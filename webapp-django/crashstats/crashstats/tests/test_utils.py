@@ -1,7 +1,6 @@
 import datetime
 from cStringIO import StringIO
 from unittest import TestCase
-from ordereddict import OrderedDict
 import json
 
 from nose.tools import eq_, ok_
@@ -431,108 +430,6 @@ class TestUtils(TestCase):
 
         # the default line length for assert would be too short to be useful
         self.maxDiff = None
-        eq_(actual, expected)
-
-    def test_build_releases(self):
-        now = datetime.datetime.utcnow()
-        now = now.replace(microsecond=0).isoformat()
-
-        currentversions = json.loads("""
-            {"currentversions": [
-             {"product": "WaterWolf",
-              "throttle": "100.00",
-              "end_date": "%(end_date)s",
-              "start_date": "2012-03-08T00:00:00",
-              "featured": true,
-              "version": "19.0",
-              "release": "Beta",
-              "id": 922},
-             {"product": "WaterWolf",
-              "throttle": "100.00",
-              "end_date": "%(end_date)s",
-              "start_date": "2012-03-08T00:00:00",
-              "featured": true,
-              "version": "18.0",
-              "release": "Stable",
-              "id": 920},
-             {"product": "WaterWolf",
-              "throttle": "100.00",
-              "end_date": "%(end_date)s",
-              "start_date": "2012-03-08T00:00:00",
-              "featured": true,
-              "version": "20.0",
-              "release": "Nightly",
-              "id": 923},
-              {"product": "NightTrain",
-              "throttle": "100.00",
-              "end_date": "%(end_date)s",
-              "start_date": "2012-03-08T00:00:00",
-              "featured": true,
-              "version": "18.0",
-              "release": "Aurora",
-              "id": 924},
-             {"product": "NightTrain",
-              "throttle": "100.00",
-              "end_date": "%(end_date)s",
-              "start_date": "2012-03-08T00:00:00",
-              "featured": true,
-              "version": "19.0",
-              "release": "Nightly",
-              "id": 925},
-             {"product": "SeaMonkey",
-              "throttle": "99.00",
-              "end_date": "2012-05-10T00:00:00",
-              "start_date": "2012-03-08T00:00:00",
-              "featured": true,
-              "version": "9.5",
-              "release": "Alpha",
-              "id": 921}]
-              }
-              """ % {'end_date': now})['currentversions']
-
-        actual = utils.build_releases(currentversions)
-
-        expected = OrderedDict([
-            (u'WaterWolf', [
-             {u'throttle': u'100.00',
-              u'end_date': now,
-              u'start_date': u'2012-03-08T00:00:00',
-              u'featured': True,
-              u'version': u'19.0',
-              u'release': u'Beta',
-              u'id': 922},
-             {u'throttle': u'100.00',
-              u'end_date': now,
-              u'start_date': u'2012-03-08T00:00:00',
-              u'featured': True,
-              u'version': u'18.0',
-              u'release': u'Stable',
-              u'id': 920},
-             {u'throttle': u'100.00',
-              u'end_date': now,
-              u'start_date': u'2012-03-08T00:00:00',
-              u'featured': True,
-              u'version': u'20.0',
-              u'release': u'Nightly',
-              u'id': 923}
-             ]),
-            (u'NightTrain', [
-             {u'throttle': u'100.00',
-              u'end_date': now,
-              u'start_date': u'2012-03-08T00:00:00',
-              u'featured': True,
-              u'version': u'18.0',
-              u'release': u'Aurora',
-              u'id': 924},
-             {u'throttle': u'100.00',
-              u'end_date': now,
-              u'start_date': u'2012-03-08T00:00:00',
-              u'featured': True,
-              u'version': u'19.0',
-              u'release': u'Nightly',
-              u'id': 925}
-             ])
-        ])
         eq_(actual, expected)
 
     def test_find_crash_id(self):

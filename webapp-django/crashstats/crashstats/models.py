@@ -543,7 +543,7 @@ class SocorroCommon(object):
         _implementations = {}
 
 
-# Global cache dict to helps us only instantiate an implemenation
+# Global cache dict to helps us only instantiate an implementation
 # class only once per process.
 _implementations = {}
 
@@ -763,8 +763,7 @@ class ProductVersions(SocorroMiddleware):
     )
 
     def post(self, **data):
-        # why does this feel so clunky?!
-        return super(CurrentProducts, self).post(self.URL_PREFIX, data)
+        return self.get_implementation().post(**data)
 
 
 class CurrentVersions(SocorroMiddleware):

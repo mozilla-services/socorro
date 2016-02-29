@@ -46,7 +46,7 @@
     <p>The first thing that Super Search allows you to do is to filter on our dataset to reduce it. For example, if you only want to see crashes that happened on a given product and version, or with a specific build id.</p>
 
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;version={{ releases[product][0].version }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ releases[product][0].version }}</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;version={{ active_versions[product][0].version }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ active_versions[product][0].version }}</span></code></pre>
     </div>
 
     <p>There are lots of available filters, listed in the <a href="{{ url('documentation:supersearch_api') }}">API Reference</a>. That list is constantly changing as we add more data to our crash reports.</p>

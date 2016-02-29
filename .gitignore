@@ -44,3 +44,4 @@ webapp-django/.env
 # exclude filesystem storage directories
 primaryCrashStore/
 processedCrashStore/
+/tags

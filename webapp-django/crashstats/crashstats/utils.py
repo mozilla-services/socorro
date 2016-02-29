@@ -7,8 +7,7 @@ import functools
 import json
 import time
 import re
-import copy
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from django import http
 from django.conf import settings
@@ -227,68 +226,45 @@ def enhance_json_dump(dump, vcs_mappings):
     return dump
 
 
-def build_releases(currentversions):
-    """
-    currentversions service returns a very unwieldy data structure.
-    make something more suitable for templates.
-    """
-    now = datetime.datetime.utcnow().date()
-
-    releases = OrderedDict()
-    for release in copy.deepcopy(currentversions):
-        start_date = isodate.parse_date(release['start_date'])
-        end_date = isodate.parse_date(release['end_date'])
-        if now >= start_date and now <= end_date:
-            product = release['product']
-            del release['product']
-            if product not in releases:
-                releases[product] = [release]
-            else:
-                releases[product].append(release)
-    return releases
-
-
 def build_default_context(product=None, versions=None):
     """
     from ``product`` and ``versions`` transfer to
     a dict. If there's any left-over, raise a 404 error
     """
     context = {}
-    api = models.CurrentProducts()
-    context['currentproducts'] = api.get()
-
-    currentversions = [
-        v for p in context['currentproducts']['products']
-        for v in context['currentproducts']['hits'][p]
-    ]
-    context['currentversions'] = currentversions
+    api = models.ProductVersions()
+    active_versions = OrderedDict()  # so that products are in order
+    # Turn the list of all product versions into a dict, one per product.
+    for pv in api.get(active=True)['hits']:
+        if pv['product'] not in active_versions:
+            active_versions[pv['product']] = []
+        active_versions[pv['product']].append(pv)
+    context['active_versions'] = active_versions
 
     if versions is None:
         versions = []
-    else:
+    elif isinstance(versions, basestring):
         versions = versions.split(';')
 
-    for release in context['currentversions']:
-        if product == release['product']:
-            context['product'] = product
-            if release['version'] in versions:
-                versions.remove(release['version'])
-                if 'versions' not in context:
-                    context['versions'] = []
-                context['versions'].append(release['version'])
+    if product:
+        if product not in context['active_versions']:
+            raise http.Http404('Not a recognized product')
+        context['product'] = product
+    else:
+        context['product'] = settings.DEFAULT_PRODUCT
 
-    if product is None:
-        # thus a view that doesn't have a product in the URL
-        # e.g. like /query
-        if not context.get('product'):
-            context['product'] = settings.DEFAULT_PRODUCT
-    elif product != context.get('product'):
-        raise http.Http404("Not a recognized product")
+    if versions:
+        assert isinstance(versions, list)
+        context['version'] = versions[0]
 
-    if product and versions:
-        raise http.Http404("Not a recognized version for that product")
+        # Also, check that that's a valid version for this product
+        pv_versions = [
+            x['version'] for x in active_versions[context['product']]
+        ]
+        for version in versions:
+            if version not in pv_versions:
+                raise http.Http404("Not a recognized version for that product")
 
-    context['releases'] = build_releases(context['currentversions'])
     return context
 
 

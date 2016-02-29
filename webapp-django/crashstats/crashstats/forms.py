@@ -1,5 +1,4 @@
 import re
-import collections
 import datetime
 
 from django import forms
@@ -115,15 +114,17 @@ class ReportListForm(BaseForm):
     )
     plugin_query = forms.CharField(required=False)
 
-    def __init__(self, current_products, current_versions, *args, **kwargs):
+    def __init__(self, active_versions, *args, **kwargs):
         super(ReportListForm, self).__init__(*args, **kwargs)
 
         # Default values
-        products = [(x, x) for x in current_products]
+        products = []
         versions = [(self.all_param, self.all_param)]
-        for version in current_versions:
-            v = '%s:%s' % (version['product'], version['version'])
-            versions.append((v, v))
+        for product, product_versions in active_versions.items():
+            products.append((product, product))
+            for version in product_versions:
+                v = '{}:{}'.format(product, version['version'])
+                versions.append((v, v))
 
         self.fields['product'].choices = products
         self.fields['version'].choices = versions
@@ -168,13 +169,14 @@ class SignatureSummaryForm(BaseForm):
     date = forms.DateTimeField(required=False)
     version = forms.MultipleChoiceField(required=False)
 
-    def __init__(self, current_products, current_versions, *args, **kwargs):
+    def __init__(self, active_versions, *args, **kwargs):
         super(SignatureSummaryForm, self).__init__(*args, **kwargs)
 
         versions = [(self.all_param, self.all_param)]
-        for version in current_versions:
-            v = '%s:%s' % (version['product'], version['version'])
-            versions.append((v, v))
+        for product in active_versions:
+            for version in active_versions[product]:
+                v = '%s:%s' % (product, version['version'])
+                versions.append((v, v))
 
         self.fields['version'].choices = versions
 
@@ -188,15 +190,15 @@ class DailyFormBase(BaseForm):
     date_end = forms.DateField(required=False)
 
     def __init__(self,
-                 current_versions,
+                 active_versions,
                  platforms,
                  date_range_types=None,
                  hang_types=None,
                  *args, **kwargs):
         super(DailyFormBase, self).__init__(*args, **kwargs)
-        self.versions = collections.defaultdict(list)
-        for each in current_versions:
-            self.versions[each['product']].append(each['version'])
+        self.versions = {}
+        for product, versions in active_versions.items():
+            self.versions[product] = [x['version'] for x in versions]
         self.platforms = platforms
 
         self.fields['p'].choices = [
@@ -316,7 +318,7 @@ class FrontpageJSONForm(forms.Form):
     duration = forms.IntegerField(required=False, min_value=1)
     date_range_type = forms.ChoiceField(required=False)
 
-    def __init__(self, current_versions,
+    def __init__(self, active_versions,
                  date_range_types=None,
                  default_duration=7,
                  default_product=settings.DEFAULT_PRODUCT,
@@ -324,9 +326,9 @@ class FrontpageJSONForm(forms.Form):
         super(FrontpageJSONForm, self).__init__(*args, **kwargs)
         self.default_product = default_product
         self.default_duration = default_duration
-        self.versions = collections.defaultdict(list)
-        for each in current_versions:
-            self.versions[each['product']].append(each['version'])
+        self.versions = {}
+        for product, versions in active_versions.items():
+            self.versions[product] = [x['version'] for x in versions]
 
         self.fields['product'].choices = [
             (x, x) for x in self.versions
@@ -378,13 +380,17 @@ class CorrelationsJSONFormBase(BaseForm):
     product = forms.ChoiceField(required=True)
     version = forms.ChoiceField(required=True)
 
-    def __init__(self, current_products, current_versions, current_platforms,
+    def __init__(self, active_versions, current_platforms,
                  *args, **kwargs):
         super(CorrelationsJSONFormBase, self).__init__(*args, **kwargs)
 
         # Default values
-        products = [(x, x) for x in current_products]
-        versions = [(x['version'], x['version']) for x in current_versions]
+        products = []
+        versions = []
+        for product, product_versions in active_versions.items():
+            products.append((product, product))
+            for version in product_versions:
+                versions.append((version['version'], version['version']))
         self.platforms = [(x['name'], x['name']) for x in current_platforms]
         # add a necessary exception
         self.platforms.append(('Windows NT', 'Windows NT'))
@@ -448,12 +454,8 @@ class GCCrashesForm(BaseForm):
     version = forms.ChoiceField(required=True)
 
     def __init__(self, *args, **kwargs):
-        self.nightly_versions = kwargs.pop('nightly_versions')
+        self.versions = kwargs.pop('nightly_versions')
         super(GCCrashesForm, self).__init__(*args, **kwargs)
-
-        self.versions = collections.defaultdict(list)
-        for each in self.nightly_versions:
-            self.versions[each['product']].append(each['version'])
 
         self.fields['product'].choices = [
             (x, x) for x in self.versions
@@ -524,7 +526,11 @@ class ExploitabilityReportForm(BaseForm):
     version = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):
-        self.available_products = kwargs.pop('available_products')
+        active_versions = kwargs.pop('active_versions')
+        self.available_products = dict(
+            (p, [x['version'] for x in v])
+            for p, v in active_versions.items()
+        )
         super(ExploitabilityReportForm, self).__init__(*args, **kwargs)
 
         self.fields['product'].choices = [

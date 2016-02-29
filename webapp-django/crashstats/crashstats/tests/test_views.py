@@ -341,109 +341,108 @@ class BaseTestViews(DjangoTestCase):
             mocked_platforms_get
         )
 
-        # we do this here so that the current/versions thing
-        # is cached since that's going to be called later
-        # in every view more or less
-        def mocked_get(url, params, **options):
+        def mocked_product_versions(**params):
             now = datetime.datetime.utcnow()
             yesterday = now - datetime.timedelta(days=1)
-            if 'products/' in url:
-                return Response("""
-                    {"products": [
-                       "WaterWolf",
-                       "NightTrain",
-                       "SeaMonkey",
-                       "LandCrab"
-                     ],
-                     "hits": {
-                      "WaterWolf": [
-                       {"product": "WaterWolf",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "19.0",
-                        "release": "Beta",
-                        "id": 922},
-                       {"product": "WaterWolf",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "18.0",
-                        "release": "Stable",
-                        "id": 920},
-                       {"product": "WaterWolf",
-                        "throttle": "100.00",
-                        "end_date": "2012-03-09",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "19.1",
-                        "release": "Nightly",
-                        "id": 928},
-                       {"product": "WaterWolf",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "20.0",
-                        "release": "Nightly",
-                        "id": 923}
-                      ],
-                      "NightTrain":[
-                        {"product": "NightTrain",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "18.0",
-                        "release": "Aurora",
-                        "id": 924},
-                       {"product": "NightTrain",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "19.0",
-                        "release": "Nightly",
-                        "id": 925}
-                     ],
-                     "SeaMonkey": [
-                       {"product": "SeaMonkey",
-                        "throttle": "99.00",
-                        "end_date": "%(yesterday)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "9.5",
-                        "release": "Alpha",
-                        "id": 921},
-                        {"product": "SeaMonkey",
-                        "throttle": "99.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "10.5",
-                        "release": "nightly",
-                        "id": 926}
-                     ],
-                     "LandCrab": [
-                        {"product": "LandCrab",
-                        "throttle": "99.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": false,
-                        "version": "1.5",
-                        "release": "Release",
-                        "id": 927}
-                     ]
-                   },
-                   "total": 4
-                 }
-                      """ % {'end_date': now.strftime('%Y-%m-%d'),
-                             'yesterday': yesterday.strftime('%Y-%m-%d')})
-            raise NotImplementedError(url)
 
-        rget.side_effect = mocked_get
+            end_date = now.strftime('%Y-%m-%d')
+            yesterday = yesterday.strftime('%Y-%m-%d')
+
+            hits = [
+                # WaterWolfs
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '19.0',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0',
+                    'build_type': 'Stable',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': '2012-03-09',
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '19.1',
+                    'build_type': 'Nightly',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '20.0',
+                    'build_type': 'Nightly',
+                },
+                # NightTrains
+                {
+                    'product': 'NightTrain',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0',
+                    'build_type': 'Aurora',
+                },
+                {
+                    'product': 'NightTrain',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '19.0',
+                    'build_type': 'Nightly',
+                },
+                # SeaMonkies
+                {
+                    'product': 'SeaMonkey',
+                    'throttle': '99.00',
+                    'end_date': yesterday,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '9.5',
+                    'build_type': 'Alpha',
+                },
+                {
+                    'product': 'SeaMonkey',
+                    'throttle': '99.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '10.5',
+                    'build_type': 'nightly',
+                },
+                # LandCrab
+                {
+                    'product': 'LandCrab',
+                    'throttle': '99.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': False,
+                    'version': '1.5',
+                    'build_type': 'Release',
+                },
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
+
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
 
         def mocked_supersearchfields(**params):
             results = copy.copy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
@@ -473,9 +472,9 @@ class BaseTestViews(DjangoTestCase):
 
         # call these here so it gets patched for each test because
         # it gets used so often
-        from crashstats.crashstats.models import CurrentVersions, Platforms
-        CurrentVersions().get()
-        Platforms().get()
+
+        models.ProductVersions().get(active=True)
+        models.Platforms().get()
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()
@@ -1185,28 +1184,59 @@ class TestViews(BaseTestViews):
         })
         ok_(response.status_code, 400)
 
-    @mock.patch('requests.get')
-    def test_get_nightlies_for_product_json(self, rget):
+    def test_get_nightlies_for_product_json(self):
         url = reverse('crashstats:get_nightlies_for_product_json')
 
-        def mocked_get(**options):
-            if '/products' in options['url']:
-                return Response("""
-                    {
-                      "hits": [
-                        {
-                            "sort": "1",
-                            "default_version": "5.0a1",
-                            "release_name": "waterwolf",
-                            "rapid_release_version": "5.0",
-                            "product_name": "WaterWolf"
-                        }],
-                        "total": "1"
-                    }
-                    """)
-            raise NotImplementedError(url)
+        def mocked_product_versions(**options):
+            end_date = timezone.now().strftime('%Y-%m-%d')
+            hits = [
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '19.0',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0b1',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0b',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0b2',
+                    'build_type': 'Beta',
+                }
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
 
-        rget.side_effect = mocked_get
+        models.ProductVersions.cache_seconds = 0
+
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
 
         response = self.client.get(url, {'product': 'WaterWolf'})
         ok_('application/json' in response['content-type'])
@@ -1411,25 +1441,33 @@ class TestViews(BaseTestViews):
                     "totalNumberOfCrashes": 0}
                 """)
 
-            if '/products' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                """)
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_product_versions(**params):
+            hits = [
+                {
+                    "is_featured": True,
+                    "throttle": 1.0,
+                    "end_date": "string",
+                    "start_date": "integer",
+                    "build_type": "string",
+                    "product": "WaterWolf",
+                    "version": "19.0",
+                    "has_builds": True
+                }
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
+
+        models.ProductVersions.cache_seconds = 0
+
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1482,6 +1520,16 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
 
     def test_topcrasher_with_product_sans_release(self):
+
+        def mocked_product_versions(**params):
+            assert params['active']
+            return {'hits': [], 'total': 0}
+
+        models.ProductVersions.cache_seconds = 0
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
+
         # SnowLion is not a product at all
         url = reverse('crashstats:topcrasher',
                       args=('SnowLion', '0.1'))
@@ -1518,26 +1566,29 @@ class TestViews(BaseTestViews):
                     "end_date": "2012-05-24",
                     "totalNumberOfCrashes": 0}
                 """)
-
-            if '/products' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                """)
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_product_versions(**params):
+            hits = [
+                {
+                    "is_featured": True,
+                    "throttle": 1.0,
+                    "end_date": "string",
+                    "start_date": "integer",
+                    "build_type": "string",
+                    "product": "WaterWolf",
+                    "version": "19.0",
+                    "has_builds": True
+                }
+            ]
+            return {'hits': hits, 'total': len(hits)}
+
+        models.ProductVersions.cache_seconds = 0
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1693,8 +1744,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('FakeSignature' in response.content)
 
-    @mock.patch('requests.get')
-    def test_exploitable_crashes_by_unknown_version(self, rget):
+    def test_exploitable_crashes_by_unknown_version(self):
         url = reverse(
             'crashstats:exploitable_crashes',
             args=(settings.DEFAULT_PRODUCT, '999.0')
@@ -1706,6 +1756,8 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 302)
+        home_url = reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))
+        ok_(response['location'].endswith(home_url))
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_exploitability_report(self, rpost):
@@ -2296,7 +2348,10 @@ class TestViews(BaseTestViews):
         actual releases which are, in this test '18.0b1' and '18.0b2'.
         """
 
-        models.CurrentProducts.cache_seconds = 0
+        # Important trick. If we don't do this, since the ProductVersions
+        # model is mocked out in setUp, we can't change the result
+        # for this one particular test.
+        models.ProductVersions.cache_seconds = 0
 
         url = reverse('crashstats:crashes_per_day')
 
@@ -2328,60 +2383,56 @@ class TestViews(BaseTestViews):
                         'beta': 1.0,
                     }
                 })
-            #
-            if '/products/' in url:
-                end_date = timezone.now().strftime('%Y-%m-%d')
-                return Response({
-                    "products": [
-                        "WaterWolf",
-                    ],
-                    "hits": {
-                        "WaterWolf": [
-                            {
-                                "product": "WaterWolf",
-                                "throttle": "100.00",
-                                "end_date": end_date,
-                                "start_date": "2012-03-08",
-                                "featured": True,
-                                "version": "19.0",
-                                "release": "Beta",
-                                "id": 922
-                            },
-                            {
-                                "product": "WaterWolf",
-                                "throttle": "100.00",
-                                "end_date": end_date,
-                                "start_date": "2012-03-08",
-                                "featured": True,
-                                "version": "18.0b1",
-                                "release": "Beta",
-                                "id": 923
-                            },
-                            {
-                                "product": "WaterWolf",
-                                "throttle": "100.00",
-                                "end_date": end_date,
-                                "start_date": "2012-03-08",
-                                "featured": True,
-                                "version": "18.0b",
-                                "release": "Beta",
-                                "id": 924
-                            },
-                            {
-                                "product": "WaterWolf",
-                                "throttle": "100.00",
-                                "end_date": end_date,
-                                "start_date": "2012-03-08",
-                                "featured": True,
-                                "version": "18.0b2",
-                                "release": "Beta",
-                                "id": 925
-                            }
-                        ],
-                    },
-                    "total": 3
-                })
             raise NotImplementedError(url)
+
+        def mocked_product_versions(**params):
+            end_date = timezone.now().strftime('%Y-%m-%d')
+            hits = [
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '19.0',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0b1',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0b',
+                    'build_type': 'Beta',
+                },
+                {
+                    'product': 'WaterWolf',
+                    'throttle': '100.00',
+                    'end_date': end_date,
+                    'start_date': '2012-03-08',
+                    'is_featured': True,
+                    'version': '18.0b2',
+                    'build_type': 'Beta',
+                }
+            ]
+            return {
+                'hits': hits,
+                'total': len(hits),
+            }
+
+        models.ProductVersions.implementation().get.side_effect = (
+            mocked_product_versions
+        )
 
         rget.side_effect = mocked_get
 
