@@ -105,8 +105,8 @@ def signature_reports(request, params):
 
     signature = params['signature'][0]
 
-    data = {}
-    data['query'] = {
+    context = {}
+    context['query'] = {
         'total': 0,
         'total_count': 0,
         'total_pages': 0
@@ -118,20 +118,20 @@ def signature_reports(request, params):
     if 'page' in current_query:
         del current_query['page']
 
-    data['params'] = current_query.copy()
+    context['params'] = current_query.copy()
 
-    if '_columns' in data['params']:
-        del data['params']['_columns']
+    if '_columns' in context['params']:
+        del context['params']['_columns']
 
-    data['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+    context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     # Make sure only allowed fields are used
-    data['columns'] = [
-        x for x in data['columns'] if x in allowed_fields
+    context['columns'] = [
+        x for x in context['columns'] if x in allowed_fields
     ]
 
     # Copy the list of columns so that they can differ.
-    params['_columns'] = list(data['columns'])
+    params['_columns'] = list(context['columns'])
 
     # The uuid is always displayed in the UI so we need to make sure it is
     # always returned by the model.
@@ -142,8 +142,8 @@ def signature_reports(request, params):
     # column of the table. Hence we do not want to show it again in the
     # auto-generated list of columns, so we its name from the list of
     # columns to display.
-    if 'uuid' in data['columns']:
-        data['columns'].remove('uuid')
+    if 'uuid' in context['columns']:
+        context['columns'].remove('uuid')
 
     try:
         current_page = int(request.GET.get('page', 1))
@@ -154,15 +154,15 @@ def signature_reports(request, params):
         current_page = 1
 
     results_per_page = 50
-    data['current_page'] = current_page
-    data['results_offset'] = results_per_page * (current_page - 1)
+    context['current_page'] = current_page
+    context['results_offset'] = results_per_page * (current_page - 1)
 
     params['signature'] = '=' + signature
     params['_results_number'] = results_per_page
-    params['_results_offset'] = data['results_offset']
+    params['_results_offset'] = context['results_offset']
     params['_facets'] = []  # We don't need no facets.
 
-    data['current_url'] = '%s?%s' % (
+    context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
         current_query.urlencode()
     )
@@ -182,9 +182,9 @@ def signature_reports(request, params):
     )
     search_results['total_count'] = search_results['total']
 
-    data['query'] = search_results
+    context['query'] = search_results
 
-    return render(request, 'signature/signature_reports.html', data)
+    return render(request, 'signature/signature_reports.html', context)
 
 
 @pass_validated_params
@@ -193,8 +193,8 @@ def signature_aggregation(request, params, aggregation):
 
     signature = params['signature'][0]
 
-    data = {}
-    data['aggregation'] = aggregation
+    context = {}
+    context['aggregation'] = aggregation
 
     allowed_fields = get_allowed_fields(request.user)
 
@@ -207,7 +207,7 @@ def signature_aggregation(request, params, aggregation):
         )
 
     current_query = request.GET.copy()
-    data['params'] = current_query.copy()
+    context['params'] = current_query.copy()
 
     params['signature'] = '=' + signature
     params['_results_number'] = 0
@@ -222,13 +222,13 @@ def signature_aggregation(request, params, aggregation):
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
-    data['aggregates'] = []
+    context['aggregates'] = []
     if aggregation in search_results['facets']:
-        data['aggregates'] = search_results['facets'][aggregation]
+        context['aggregates'] = search_results['facets'][aggregation]
 
-    data['total_count'] = search_results['total']
+    context['total_count'] = search_results['total']
 
-    return render(request, 'signature/signature_aggregation.html', data)
+    return render(request, 'signature/signature_aggregation.html', context)
 
 
 @utils.json_view
@@ -238,8 +238,8 @@ def signature_graphs(request, params, field):
 
     signature = params['signature'][0]
 
-    data = {}
-    data['aggregation'] = field
+    context = {}
+    context['aggregation'] = field
 
     allowed_fields = get_allowed_fields(request.user)
 
@@ -252,7 +252,7 @@ def signature_graphs(request, params, field):
         )
 
     current_query = request.GET.copy()
-    data['params'] = current_query.copy()
+    context['params'] = current_query.copy()
 
     params['signature'] = '=' + signature
     params['_results_number'] = 0
@@ -268,10 +268,10 @@ def signature_graphs(request, params, field):
         # pick it up.
         return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
-    data['aggregates'] = search_results['facets'].get('histogram_date', [])
-    data['term_counts'] = search_results['facets'].get(field, [])
+    context['aggregates'] = search_results['facets'].get('histogram_date', [])
+    context['term_counts'] = search_results['facets'].get(field, [])
 
-    return data
+    return context
 
 
 @pass_validated_params
@@ -280,8 +280,8 @@ def signature_comments(request, params):
 
     signature = params['signature'][0]
 
-    data = {}
-    data['query'] = {
+    context = {}
+    context['query'] = {
         'total': 0,
         'total_count': 0,
         'total_pages': 0
@@ -291,7 +291,7 @@ def signature_comments(request, params):
     if 'page' in current_query:
         del current_query['page']
 
-    data['params'] = current_query.copy()
+    context['params'] = current_query.copy()
 
     try:
         current_page = int(request.GET.get('page', 1))
@@ -302,17 +302,17 @@ def signature_comments(request, params):
         current_page = 1
 
     results_per_page = 50
-    data['current_page'] = current_page
-    data['results_offset'] = results_per_page * (current_page - 1)
+    context['current_page'] = current_page
+    context['results_offset'] = results_per_page * (current_page - 1)
 
     params['signature'] = '=' + signature
     params['user_comments'] = '!__null__'
     params['_columns'] = ['uuid', 'user_comments', 'date', 'useragent_locale']
     params['_results_number'] = results_per_page
-    params['_results_offset'] = data['results_offset']
+    params['_results_offset'] = context['results_offset']
     params['_facets'] = []  # We don't need no facets.
 
-    data['current_url'] = '%s?%s' % (
+    context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
         current_query.urlencode()
     )
@@ -332,9 +332,9 @@ def signature_comments(request, params):
     )
     search_results['total_count'] = search_results['total']
 
-    data['query'] = search_results
+    context['query'] = search_results
 
-    return render(request, 'signature/signature_comments.html', data)
+    return render(request, 'signature/signature_comments.html', context)
 
 
 @utils.json_view
@@ -409,7 +409,7 @@ def signature_graph_data(request, params, channel):
 def signature_summary(request, params):
     '''Return a list of specific aggregations. '''
 
-    data = {}
+    context = {}
 
     params['signature'] = '=' + params['signature'][0]
     params['_results_number'] = 0
@@ -464,16 +464,16 @@ def signature_summary(request, params):
     else:
         facets['product'] = []
 
-    data['product_version_total'] = product_results['total']
+    context['product_version_total'] = product_results['total']
 
     _transform_uptime_summary(facets)
     _transform_graphics_summary(facets)
     _transform_mobile_summary(facets)
     _transform_exploitability_summary(facets)
 
-    data['query'] = search_results
+    context['query'] = search_results
 
-    return render(request, 'signature/signature_summary.html', data)
+    return render(request, 'signature/signature_summary.html', context)
 
 
 def _transform_graphics_summary(facets):
@@ -598,16 +598,16 @@ def _transform_exploitability_summary(facets):
 @pass_validated_params
 def signature_bugzilla(request, params):
     '''Return a list of associated bugs. '''
-    data = {}
+    context = {}
 
     signature = params['signature'][0]
-    data['signature'] = signature
+    context['signature'] = signature
 
     bugs_api = models.Bugs()
-    data['bugs'] = bugs_api.get(
+    context['bugs'] = bugs_api.get(
         signatures=[signature]
     )['hits']
 
-    data['bugs'].sort(key=lambda x: x['id'], reverse=True)
+    context['bugs'].sort(key=lambda x: x['id'], reverse=True)
 
-    return render(request, 'signature/signature_bugzilla.html', data)
+    return render(request, 'signature/signature_bugzilla.html', context)

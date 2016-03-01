@@ -148,8 +148,8 @@ def search_results(request):
         # There was an error in the form, let's return it.
         return http.HttpResponseBadRequest(str(e))
 
-    data = {}
-    data['query'] = {
+    context = {}
+    context['query'] = {
         'total': 0,
         'total_count': 0,
         'total_pages': 0
@@ -161,23 +161,23 @@ def search_results(request):
     if 'page' in current_query:
         del current_query['page']
 
-    data['params'] = current_query.copy()
+    context['params'] = current_query.copy()
 
-    if '_columns' in data['params']:
-        del data['params']['_columns']
+    if '_columns' in context['params']:
+        del context['params']['_columns']
 
-    if '_facets' in data['params']:
-        del data['params']['_facets']
+    if '_facets' in context['params']:
+        del context['params']['_facets']
 
-    data['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
+    context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     # Make sure only allowed fields are used
-    data['columns'] = [
-        x for x in data['columns'] if x in allowed_fields
+    context['columns'] = [
+        x for x in context['columns'] if x in allowed_fields
     ]
 
     # Copy the list of columns so that they can differ.
-    params['_columns'] = list(data['columns'])
+    params['_columns'] = list(context['columns'])
 
     # The uuid is always displayed in the UI so we need to make sure it is
     # always returned by the model.
@@ -188,8 +188,8 @@ def search_results(request):
     # column of the table. Hence we do not want to show it again in the
     # auto-generated list of columns, so we its name from the list of
     # columns to display.
-    if 'uuid' in data['columns']:
-        data['columns'].remove('uuid')
+    if 'uuid' in context['columns']:
+        context['columns'].remove('uuid')
 
     try:
         current_page = int(request.GET.get('page', 1))
@@ -200,13 +200,13 @@ def search_results(request):
         current_page = 1
 
     results_per_page = 50
-    data['current_page'] = current_page
-    data['results_offset'] = results_per_page * (current_page - 1)
+    context['current_page'] = current_page
+    context['results_offset'] = results_per_page * (current_page - 1)
 
     params['_results_number'] = results_per_page
-    params['_results_offset'] = data['results_offset']
+    params['_results_offset'] = context['results_offset']
 
-    data['current_url'] = '%s?%s' % (
+    context['current_url'] = '%s?%s' % (
         reverse('supersearch.search'),
         current_query.urlencode()
     )
@@ -241,9 +241,9 @@ def search_results(request):
         search_results['total'] / float(results_per_page)))
     search_results['total_count'] = search_results['total']
 
-    data['query'] = search_results
+    context['query'] = search_results
 
-    return render(request, 'supersearch/search_results.html', data)
+    return render(request, 'supersearch/search_results.html', context)
 
 
 @utils.json_view
