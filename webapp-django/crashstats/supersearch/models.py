@@ -162,7 +162,7 @@ class SuperSearch(models.SocorroMiddleware):
         # Now make sure all fields listing fields only have unrestricted
         # values.
         for param in self.parameters_listing_fields:
-            values = kwargs.get(param)
+            values = kwargs.get(param, [])
             filtered_values = [
                 x for x in values
                 if x in allowed_fields

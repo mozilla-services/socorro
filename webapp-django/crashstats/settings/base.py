@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     '%s.supersearch' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
+    '%s.tools' % PROJECT_MODULE,
     '%s.topcrashers' % PROJECT_MODULE,
 
     'django.contrib.messages',

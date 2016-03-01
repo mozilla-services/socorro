@@ -1227,6 +1227,57 @@ class TestViews(BaseTestViews):
         ok_(dump['reports'])
         eq_(len(dump['reports']['uptime']), 2)
 
+    def test_NewSignatures(self):
+
+        def mocked_supersearch_get(**params):
+            if 'signature' not in params:
+                # Return a list of signatures.
+                signatures = [
+                    {'term': 'ba', 'count': 21},
+                    {'term': 'zin', 'count': 19},
+                    {'term': 'ga', 'count': 1},
+                ]
+            else:
+                # Return only some of the above signatures. The missing ones
+                # are "new" signatures.
+                signatures = [
+                    {'term': 'ga', 'count': 21},
+                ]
+
+            return {
+                'hits': [],
+                'facets': {
+                    'signature': signatures
+                },
+                'total': 43829,
+            }
+
+        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+
+        url = reverse('api:model_wrapper', args=('NewSignatures',))
+
+        # Test we get expected results.
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        res_expected = [
+            'ba',
+            'zin',
+        ]
+        res = json.loads(response.content)
+        eq_(res['hits'], res_expected)
+
+        # Test with incorrect arguments.
+        response = self.client.get(url, {
+            'start_date': 'not a date',
+            'end_date': 'not a date',
+            'not_after': 'not a date',
+        })
+        eq_(response.status_code, 400)
+        res = json.loads(response.content)
+        ok_('errors' in res)
+        eq_(len(res['errors']), 3)
+
     @mock.patch('requests.get')
     def test_Status(self, rget):
 
