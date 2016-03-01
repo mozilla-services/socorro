@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 from mock import Mock
 
 from configman.dotdict import DotDict
@@ -56,6 +56,24 @@ class TestRuleTestDangerous(transform_rules.Rule):
             self.close_counter += 1
         except AttributeError:
             self.close_counter = 1
+
+
+#==============================================================================
+class TestRuleTestNoCloseMethod(transform_rules.Rule):
+
+    def _action(self, *args, **kwargs):
+        return True
+
+
+#==============================================================================
+class TestRuleTestBrokenCloseMethod(transform_rules.Rule):
+
+    def _action(self, *args, **kwargs):
+        return true
+
+    def close(self):
+        # this is deliberately breaking
+        raise AttributeError("We're human")
 
 
 #==============================================================================
@@ -620,3 +638,69 @@ class TestTransformRules(TestCase):
 
         eq_(trs.rules[0].close_counter, 1)
         eq_(trs.rules[1].close_counter, 1)
+
+    def test_rules_close_if_close_method_available(self):
+        config = DotDict()
+        config.logger = Mock()
+        config.chatty_rules = False
+        config.chatty = False
+        config.tag = 'test.rule'
+        config.action = 'apply_all_rules'
+        config.rules_list = DotDict()
+        config.rules_list.class_list = [
+            (
+                'TestRuleTestNoCloseMethod',
+                TestRuleTestNoCloseMethod,
+                'TestRuleTestNoCloseMethod'
+            ),
+            (
+                'TestRuleTestDangerous',
+                TestRuleTestDangerous,
+                'TestRuleTestDangerous'
+            )
+        ]
+        trs = transform_rules.TransformRuleSystem(config)
+        trs.close()
+
+        assert len(config.logger.debug.mock_calls) == 3
+        config.logger.debug.assert_any_call(
+            'trying to close %s',
+            'socorro.unittest.lib.test_transform_rules.'
+            'TestRuleTestNoCloseMethod'
+        )
+        config.logger.debug.assert_any_call(
+            'trying to close %s',
+            'socorro.unittest.lib.test_transform_rules.'
+            'TestRuleTestDangerous'
+        )
+        config.logger.debug.assert_any_call(
+            '%s has no close',
+            'socorro.unittest.lib.test_transform_rules.'
+            'TestRuleTestNoCloseMethod'
+        )
+
+    def test_rules_close_bubble_close_errors(self):
+        config = DotDict()
+        config.logger = Mock()
+        config.tag = 'test.rule'
+        config.action = 'apply_all_rules'
+        config.rules_list = DotDict()
+        config.rules_list.class_list = [
+            (
+                'TestRuleTestBrokenCloseMethod',
+                TestRuleTestBrokenCloseMethod,
+                'TestRuleTestBrokenCloseMethod'
+            ),
+        ]
+        trs = transform_rules.TransformRuleSystem(config)
+        assert_raises(
+            AttributeError,
+            trs.close
+        )
+
+        assert len(config.logger.debug.mock_calls) == 1
+        config.logger.debug.assert_any_call(
+            'trying to close %s',
+            'socorro.unittest.lib.test_transform_rules.'
+            'TestRuleTestBrokenCloseMethod'
+        )
