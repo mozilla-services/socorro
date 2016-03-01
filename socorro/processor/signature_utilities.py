@@ -445,6 +445,7 @@ class CSignatureTool(CSignatureToolBase):
           'nsCOMPtr.*',
           'NS_ABORT_OOM.*',
           'NS_DebugBreak.*',
+          'nsDebugImpl::Abort',
           '[-+]\[NSException raise(:format:(arguments:)?)?\]',
           'nsObjCExceptionLogAbort',
           'nsRefPtr.*',
