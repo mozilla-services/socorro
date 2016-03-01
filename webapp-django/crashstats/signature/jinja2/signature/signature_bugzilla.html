@@ -1,0 +1,42 @@
+<div>
+    <div class="panel">
+        <header class="title">
+            <h2>Bugs for <code>{{ signature }}</code></h2>
+        </header>
+
+        {% if bugs | count == 0 %}
+        <div class="body">
+            <p>There are no bugs associated with this signature.</p>
+        </div>
+        {% else %}
+        <div class="body bug_ids_expanded_list">
+            <ul class="bug_ids_expanded full_bug_ids full">
+            {% for bug in bugs %}
+            {% if bug.signature == signature %}
+                <li>{{ show_bug_link(bug.id) }}</li>
+            {% endif %}
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if bugs | count > 1 %}
+    <div class="panel">
+        <header class="title">
+            <h2>Related Crash Signatures:</h2>
+        </header>
+
+        {% for bug in bugs %}
+        {% if bug.signature != signature %}
+        <div class="body bug_ids_expanded_list">
+            <p>Bugs for <code>{{ bug.signature }}</code></p>
+            <ul class="bug_ids_expanded full_bug_ids full">
+                <li>{{ show_bug_link(bug.id) }}</li>
+            </ul>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

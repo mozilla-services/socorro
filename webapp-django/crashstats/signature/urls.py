@@ -35,6 +35,11 @@ urlpatterns = patterns(
         name='signature_summary',
     ),
     url(
+        r'^bugzilla/$',
+        views.signature_bugzilla,
+        name='signature_bugzilla',
+    ),
+    url(
         r'^$',
         views.signature_report,
         name='signature_report',

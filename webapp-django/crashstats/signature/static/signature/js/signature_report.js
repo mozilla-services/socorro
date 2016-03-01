@@ -26,7 +26,7 @@ SignatureReport.init = function () {
     SignatureReport.pageNum = 1;  // the page number as passed in the URL
 
     // Define the tab names.
-    var tabNames = ['summary', 'graphs', 'reports', 'aggregations', 'comments', 'graph'];
+    var tabNames = ['summary', 'graphs', 'reports', 'aggregations', 'comments', 'bugzilla', 'graph'];
     var tabs = {};
     var tabClasses = {
         'summary': SignatureReport.SummaryTab,
@@ -34,6 +34,7 @@ SignatureReport.init = function () {
         'reports': SignatureReport.ReportsTab,
         'aggregations': SignatureReport.AggregationsTab,
         'comments': SignatureReport.CommentsTab,
+        'bugzilla': SignatureReport.BugzillaTab,
         'graph': SignatureReport.GraphTab
     };
 

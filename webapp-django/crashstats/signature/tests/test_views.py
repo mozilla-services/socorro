@@ -927,3 +927,48 @@ class TestViews(BaseTestViews):
 
         # There are 150 different hexes, there should be 3 calls to the API.
         eq_(rget.call_count, 3)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    def test_signature_bugzilla(self, rget):
+
+        def mocked_get(**options):
+            return {
+                "hits": [
+                    {"id": 111111,
+                     "signature": "Something"},
+                    {"id": 123456789,
+                     "signature": "Something"}
+                ]
+            }
+
+        rget.side_effect = mocked_get
+
+        # Test with no results
+        url = reverse('signature:signature_bugzilla')
+
+        response = self.client.get(url, {
+            'signature': DUMB_SIGNATURE,
+        })
+        eq_(response.status_code, 200)
+
+        # not the right signature so it's part of "Related Crash Signatures"
+        ok_(
+            response.content.find('Related Crash Signatures') <
+            response.content.find('123456789')
+        )
+
+        response = self.client.get(url, {
+            'signature': 'Something',
+        })
+        eq_(response.status_code, 200)
+        # now the right signature
+        ok_('123456789' in response.content)
+        ok_('111111' in response.content)
+
+        # because bug id 123456789 is > than 111111 we expect that order
+        # in the rendered output
+        ok_(
+            response.content.find('123456789') <
+            response.content.find('111111') <
+            response.content.find('Related Crash Signatures')
+        )

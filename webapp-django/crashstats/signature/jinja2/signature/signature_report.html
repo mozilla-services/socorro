@@ -43,6 +43,7 @@
             <li><a href="#graphs" class="graphs" data-tab-name="graphs">Graphs</a></li>
             <li><a href="#reports" class="reports" data-tab-name="reports">Reports</a></li>
             <li><a href="#aggregations" class="aggregations" data-tab-name="aggregations">Aggregations</a></li>
+            <li><a href="#bugzilla" class="bugzilla" data-tab-name="bugzilla">Bugzilla</a></li>
             <li><a href="#comments" class="comments" data-tab-name="comments">Comments</a></li>
             <li><a href="#graph" class="graph" data-tab-name="graph">Build Graph</a></li>
         </ul>
@@ -74,6 +75,7 @@ var SOURCE_URLS = {
         'graphs': "{{ url('signature:signature_report') }}graphs/",
         'reports': "{{ url('signature:signature_reports') }}",
         'aggregations': "{{ url('signature:signature_report') }}aggregation/",
+        'bugzilla': "{{ url('signature:signature_bugzilla') }}",
         'comments': "{{ url('signature:signature_comments') }}",
         'graph': "{{ url('signature:signature_report') }}graphdata/"
     };
@@ -90,6 +92,7 @@ var DEFAULT_CHANNEL = '{{ channel }}';
 {% javascript 'select2' %}
 {% javascript 'dynamic_form' %}
 {% javascript 'socorro_utils' %}
+{% javascript 'bugzilla' %}
 {% javascript 'metricsgraphics' %}
 {% javascript 'signature_report' %}
 {% endblock %}
