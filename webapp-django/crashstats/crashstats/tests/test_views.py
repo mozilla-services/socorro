@@ -5299,10 +5299,10 @@ class TestViews(BaseTestViews):
         ok_('Login Required' not in response.content)
         ok_('Insufficient Privileges' in response.content)
 
-    @mock.patch('requests.get')
-    def test_graphics_report(self, rget):
+    def test_graphics_report(self):
 
-        def mocked_get(url, **options):
+        def mocked_get(**options):
+            assert options['product'] == settings.DEFAULT_PRODUCT
             hits = [
                 {
                     'signature': 'my signature',
@@ -5319,12 +5319,14 @@ class TestViews(BaseTestViews):
                 for head in GRAPHICS_REPORT_HEADER:
                     if head not in hit:
                         hit[head] = None
-            return Response({
+            return {
                 'hits': hits,
                 'total': len(hits)
-            })
+            }
 
-        rget.side_effect = mocked_get
+        models.GraphicsReport.implementation().get.side_effect = (
+            mocked_get
+        )
 
         url = reverse('crashstats:graphics_report')
 

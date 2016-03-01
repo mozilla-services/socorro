@@ -21,6 +21,7 @@ from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.app import socorro_app
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
+import socorro.external.postgresql.graphics_report
 
 from django.conf import settings
 from django.core.cache import cache
@@ -1823,7 +1824,9 @@ class GraphicsReport(SocorroMiddleware):
     # when it does get re-used much by repeated queries.
     cache_seconds = 0
 
-    URL_PREFIX = '/graphics_report/'
+    implementation = (
+        socorro.external.postgresql.graphics_report.GraphicsReport
+    )
 
     required_params = (
         'product',
