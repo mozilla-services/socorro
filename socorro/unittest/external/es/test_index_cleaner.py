@@ -7,7 +7,7 @@ import elasticsearch
 
 from nose.tools import ok_
 
-from socorro.lib.datetimeutil import utc_now
+from socorrolib.lib.datetimeutil import utc_now
 from socorro.external.es.index_cleaner import IndexCleaner
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,

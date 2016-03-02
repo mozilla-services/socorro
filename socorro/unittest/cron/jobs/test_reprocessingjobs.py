@@ -5,7 +5,7 @@
 from mock import Mock
 from nose.tools import eq_
 
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 
 from crontabber.app import CronTabber
 

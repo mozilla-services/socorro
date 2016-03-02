@@ -8,7 +8,7 @@ import re
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorro.lib.datetimeutil import utc_now
+from socorrolib.lib.datetimeutil import utc_now
 
 
 class IndexCleaner(RequiredConfig):

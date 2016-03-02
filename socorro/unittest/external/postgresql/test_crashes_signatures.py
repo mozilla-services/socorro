@@ -7,7 +7,7 @@ from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.crashes import Crashes
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
 

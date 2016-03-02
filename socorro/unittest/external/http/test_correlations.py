@@ -13,7 +13,7 @@ import mock
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.http import correlations
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 SAMPLE_CORE_COUNTS = open(

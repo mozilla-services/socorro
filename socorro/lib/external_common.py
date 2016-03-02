@@ -10,8 +10,8 @@ import json
 import datetime
 
 from socorro.external import BadArgumentError
-from socorro.lib.util import DotDict
-import socorro.lib.datetimeutil as dtutil
+from socorrolib.lib.util import DotDict
+import socorrolib.lib.datetimeutil as dtutil
 
 
 def parse_arguments(filters, arguments, modern=False):

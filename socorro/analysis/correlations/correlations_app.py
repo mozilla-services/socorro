@@ -25,9 +25,9 @@ from socorro.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp
 )
 
-from socorro.lib.transform_rules import Rule
-from socorro.lib.util import DotDict as SocorroDotDict
-from socorro.lib.converters import change_default
+from socorrolib.lib.transform_rules import Rule
+from socorrolib.lib.util import DotDict as SocorroDotDict
+from socorrolib.lib.converters import change_default
 from socorro.processor.processor_2015 import rule_sets_from_string
 from socorro.processor.processor_app import ProcessorApp
 from socorro.external.crashstorage_base import (
@@ -39,7 +39,7 @@ correlation_rule_sets = [
     [
         "correlation_rules",
         "correlation",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.analysis.correlations.core_count_rule"
             ".CorrelationCoreCountRule, "

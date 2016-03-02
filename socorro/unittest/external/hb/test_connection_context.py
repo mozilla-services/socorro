@@ -6,7 +6,7 @@ import mock
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external.hb import connection_context
-from socorro.lib.util import SilentFakeLogger, DotDict
+from socorrolib.lib.util import SilentFakeLogger, DotDict
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.unittest.testbase import TestCase
 

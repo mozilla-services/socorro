@@ -4,9 +4,9 @@
 
 import web
 import socorro.webapi.class_partial as cpart
-import socorro.lib.ConfigurationManager as cm
+import socorrolib.lib.ConfigurationManager as cm
 import socorro.collector.wsgicollector as wscol
-import socorro.lib.util as sutil
+import socorrolib.lib.util as sutil
 #import socorro.webapi.hello as hello
 
 import config.collectorconfig as collectorConfig

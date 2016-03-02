@@ -13,8 +13,8 @@ from nose.tools import eq_, ok_
 from configman.dotdict import DotDict as CDotDict
 
 from socorro.unittest.testbase import TestCase
-from socorro.lib.util import DotDict
-from socorro.lib.datetimeutil import datetimeFromISOdateString
+from socorrolib.lib.util import DotDict
+from socorrolib.lib.datetimeutil import datetimeFromISOdateString
 from socorro.processor.mozilla_transform_rules import (
     ProductRule,
     UserDataRule,

@@ -15,7 +15,7 @@ from socorro.app.fetch_transform_save_app import (
     main
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 

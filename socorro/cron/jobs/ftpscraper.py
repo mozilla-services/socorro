@@ -17,8 +17,8 @@ from crontabber.mixins import (
     with_postgres_transactions
 )
 from socorro.app.socorro_app import App, main
-from socorro.lib.datetimeutil import string_to_datetime
-from socorro.lib import buildutil
+from socorrolib.lib.datetimeutil import string_to_datetime
+from socorrolib.lib import buildutil
 
 
 """

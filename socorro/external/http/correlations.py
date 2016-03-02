@@ -13,7 +13,7 @@ from cStringIO import StringIO
 
 import requests
 
-from socorro.lib import external_common
+from socorrolib.lib import external_common
 
 
 class DownloadError(Exception):

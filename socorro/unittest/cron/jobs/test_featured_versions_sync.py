@@ -10,7 +10,7 @@ from socorro.unittest.cron.setup_configman import (
 )
 
 
-from socorro.lib.datetimeutil import utc_now
+from socorrolib.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,

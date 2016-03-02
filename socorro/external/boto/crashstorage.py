@@ -9,8 +9,8 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.lib.util import DotDict
-from socorro.lib.converters import change_default
+from socorrolib.lib.util import DotDict
+from socorrolib.lib.converters import change_default
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str

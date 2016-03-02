@@ -10,7 +10,7 @@ from os.path import join
 
 import boto.exception
 
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.external.crashstorage_base import (
     Redactor,
     MemoryDumpsMapping

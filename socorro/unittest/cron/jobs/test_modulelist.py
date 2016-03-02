@@ -12,7 +12,7 @@ from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 import datetime
 
-from socorro.lib.datetimeutil import utc_now
+from socorrolib.lib.datetimeutil import utc_now
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )

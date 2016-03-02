@@ -9,7 +9,7 @@ from itertools import islice
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorro.lib.transform_rules import Rule
+from socorrolib.lib.transform_rules import Rule
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 
 

@@ -51,7 +51,7 @@ def upgrade():
         # Indexes
     op.bulk_insert(transform_rule, [{
         "category": 'processor.json_rewrite'
-        , "predicate": 'socorro.lib.transform_rules.is_not_null_predicate'
+        , "predicate": 'socorrolib.lib.transform_rules.is_not_null_predicate'
         , "predicate_args": ''
         , "predicate_kwargs": 'key="PluginContentURL"'
         , "action": 'socorro.processor.processor.json_reformat_action'
@@ -60,7 +60,7 @@ def upgrade():
         , "rule_order": '5'
     }, {
         "category": 'processor.json_rewrite'
-        , "predicate": 'socorro.lib.transform_rules.is_not_null_predicate'
+        , "predicate": 'socorrolib.lib.transform_rules.is_not_null_predicate'
         , "predicate_args": ''
         , "predicate_kwargs": 'key="PluginUserComment"'
         , "action": 'socorro.processor.processor.json_reformat_action'

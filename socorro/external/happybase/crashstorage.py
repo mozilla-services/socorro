@@ -14,7 +14,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
     FileDumpsMapping
 )
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 
 from configman import Namespace, class_converter
 

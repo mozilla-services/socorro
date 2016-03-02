@@ -7,10 +7,10 @@ from nose.tools import eq_, ok_
 
 from configman.dotdict import DotDict as CDotDict
 
-import socorro.lib.util as sutil
+import socorrolib.lib.util as sutil
 
 from socorro.database.transaction_executor import TransactionExecutor
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.processor.signature_utilities import (
     CSignatureTool,
     CSignatureToolDB,

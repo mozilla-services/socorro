@@ -11,7 +11,7 @@ from configman import RequiredConfig, Namespace
 from configman.dotdict import DotDict
 from configman.converters import to_str
 
-from socorro.lib.converters import (
+from socorrolib.lib.converters import (
     str_to_classes_in_namespaces_converter,
 )
 

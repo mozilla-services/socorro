@@ -12,7 +12,7 @@
 
 from socorro.app.generic_app import App, main
 from socorro.webapi.class_partial import class_with_partial_init
-from socorro.lib.converters import web_services_from_str
+from socorrolib.lib.converters import web_services_from_str
 
 from configman import Namespace
 from configman.converters import class_converter

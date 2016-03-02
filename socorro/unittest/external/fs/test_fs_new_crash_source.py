@@ -7,7 +7,7 @@ from nose.tools import eq_, ok_
 from socorro.external.fs.fs_new_crash_source import (
     FSNewCrashSource
 )
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 

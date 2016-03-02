@@ -10,7 +10,7 @@ import Queue
 from configman import RequiredConfig, Namespace
 from configman.converters import class_converter
 
-from socorro.lib.task_manager import (
+from socorrolib.lib.task_manager import (
     default_task_func,
     default_iterator,
     TaskManager

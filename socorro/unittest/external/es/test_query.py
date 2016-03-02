@@ -15,7 +15,7 @@ from socorro.external import (
     ResourceNotFound,
 )
 from socorro.external.es.query import Query
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

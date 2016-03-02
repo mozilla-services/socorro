@@ -7,7 +7,7 @@ from nose.tools import ok_
 
 from crontabber.app import CronTabber
 from crontabber import base
-from socorro.lib.datetimeutil import utc_now
+from socorrolib.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 
 from socorro.cron.jobs import matviews

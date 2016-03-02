@@ -6,7 +6,7 @@ import json
 
 import mock
 
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.external.boto.connection_context import (
     S3ConnectionContext,
     RegionalS3ConnectionContext,

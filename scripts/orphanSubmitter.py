@@ -10,9 +10,9 @@ import logging.handlers
 
 import config.orphansubmitterconf as cmconf
 
-import socorro.lib.ConfigurationManager as configurationManager
+import socorrolib.lib.ConfigurationManager as configurationManager
 import socorro.storage.orphans as smover
-import socorro.lib.util as sutil
+import socorrolib.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=cmconf,

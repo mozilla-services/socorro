@@ -7,7 +7,7 @@ from nose.tools import eq_, assert_raises
 
 from socorro.external import BadArgumentError
 from socorro.external.postgresql.report import Report
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 
 from unittestbase import PostgreSQLTestCase
 

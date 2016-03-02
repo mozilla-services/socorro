@@ -7,7 +7,7 @@ from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.releases import Releases
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
 

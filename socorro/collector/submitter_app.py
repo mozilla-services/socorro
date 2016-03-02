@@ -24,7 +24,7 @@ from socorro.external.crashstorage_base import (
     FileDumpsMapping,
 )
 from socorro.external.fs.filesystem import findFileGenerator
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 
 
 #==============================================================================

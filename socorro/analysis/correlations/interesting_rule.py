@@ -14,10 +14,10 @@ from collections import defaultdict
 
 from configman import Namespace
 
-from socorro.lib.converters import (
+from socorrolib.lib.converters import (
     change_default,
 )
-from socorro.lib.util import DotDict as SocorroDotDict
+from socorrolib.lib.util import DotDict as SocorroDotDict
 from socorro.analysis.correlations.correlations_rule_base import (
     CorrelationRule,
     CorrelationsStorageBase,

@@ -7,7 +7,7 @@ import socket
 
 from nose.tools import eq_, assert_raises
 
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 
 from socorro.external.http.crashstorage import HTTPPOSTCrashStorage
 from socorro.database.transaction_executor import (

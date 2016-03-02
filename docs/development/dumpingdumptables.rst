@@ -19,7 +19,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=484032
 Library support
 ---------------
 
-'done' as of 2009-05-07 in socorro.lib.dmpStorage (Coding, testing is done; integration testing is done, 'go live' is today)
+'done' as of 2009-05-07 in socorrolib.lib.dmpStorage (Coding, testing is done; integration testing is done, 'go live' is today)
 Socorro UI
 
 /report/index/{uuid}

@@ -8,7 +8,7 @@ import socorro
 from nose.tools import eq_
 
 from socorro.external.postgresql import server_status
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 
 from unittestbase import PostgreSQLTestCase
 

@@ -13,7 +13,7 @@ import boto.exception
 
 from configman import Namespace, RequiredConfig, class_converter
 
-from socorro.lib.converters import change_default
+from socorrolib.lib.converters import change_default
 
 
 class KeyNotFound(Exception):

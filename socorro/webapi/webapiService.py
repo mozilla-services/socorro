@@ -7,7 +7,7 @@ import web
 import cgi
 import re
 
-import socorro.lib.util as util
+import socorrolib.lib.util as util
 from socorro.external import (
     DatabaseError,
     InsertionError,

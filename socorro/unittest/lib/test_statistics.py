@@ -4,8 +4,8 @@
 
 from mock import patch, call
 
-from socorro.lib.util import DotDict, SilentFakeLogger
-from socorro.lib.statistics import StatisticsForStatsd
+from socorrolib.lib.util import DotDict, SilentFakeLogger
+from socorrolib.lib.statistics import StatisticsForStatsd
 from socorro.unittest.testbase import TestCase
 
 
@@ -22,7 +22,7 @@ class TestStatsd(TestCase):
         d.prefix = 'a.b'
         d.active_counters_list = ['x', 'y', 'z']
 
-        with patch('socorro.lib.statistics.StatsClient') as StatsClientMocked:
+        with patch('socorrolib.lib.statistics.StatsClient') as StatsClientMocked:
             s = StatisticsForStatsd(d, 'processor')
             StatsClientMocked.assert_called_with(
                 'localhost', 666, 'a.b.processor')
@@ -75,7 +75,7 @@ class TestStatsd(TestCase):
         d.prefix = None
         d.active_counters_list = ['x', 'y', 'z']
 
-        with patch('socorro.lib.statistics.StatsClient') as StatsClientMocked:
+        with patch('socorrolib.lib.statistics.StatsClient') as StatsClientMocked:
             s = StatisticsForStatsd(d, 'processor')
             StatsClientMocked.assert_called_with(
                 'localhost', 666, 'processor')
@@ -127,7 +127,7 @@ class TestStatsd(TestCase):
         d.prefix = None
         d.active_counters_list = ['x', 'y', 'z']
 
-        with patch('socorro.lib.statistics.StatsClient') as StatsClientMocked:
+        with patch('socorrolib.lib.statistics.StatsClient') as StatsClientMocked:
             s = StatisticsForStatsd(d, None)
             StatsClientMocked.assert_called_with(
                 'localhost', 666, '')

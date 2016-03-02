@@ -20,7 +20,7 @@ from socorro.external.rabbitmq.connection_context import (
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
 )
-from socorro.lib.converters import change_default
+from socorrolib.lib.converters import change_default
 
 
 #==============================================================================

@@ -20,8 +20,8 @@ from configman.converters import (
     class_converter
 )
 
-from socorro.lib.transform_rules import Rule
-from socorro.lib.util import DotDict as SocorroDotDict
+from socorrolib.lib.transform_rules import Rule
+from socorrolib.lib.util import DotDict as SocorroDotDict
 
 
 #------------------------------------------------------------------------------

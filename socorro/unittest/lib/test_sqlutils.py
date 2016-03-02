@@ -4,7 +4,7 @@
 
 from nose.tools import eq_
 
-from socorro.lib import sqlutils
+from socorrolib.lib import sqlutils
 
 
 def test_quote_value():

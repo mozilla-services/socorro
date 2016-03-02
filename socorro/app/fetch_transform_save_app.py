@@ -32,7 +32,7 @@ from functools import partial
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.lib.task_manager import respond_to_SIGTERM
+from socorrolib.lib.task_manager import respond_to_SIGTERM
 from socorro.app.generic_app import App, main  # main not used here, but
                                                # is imported from generic_app
                                                # into this scope to offer to
@@ -76,7 +76,7 @@ class FetchTransformSaveApp(App):
     required_config.producer_consumer.add_option(
         'producer_consumer_class',
         doc='the class implements a threaded producer consumer queue',
-        default='socorro.lib.threaded_task_manager.ThreadedTaskManager',
+        default='socorrolib.lib.threaded_task_manager.ThreadedTaskManager',
         from_string_converter=class_converter
     )
     required_config.add_option(

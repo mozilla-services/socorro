@@ -12,7 +12,7 @@ from socorro.external import (
 from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import datetimeutil, external_common, search_common
+from socorrolib.lib import datetimeutil, external_common, search_common
 
 logger = logging.getLogger("webapi")
 
@@ -24,7 +24,7 @@ class Crashes(PostgreSQLBase):
     def prepare_search_params(self, **kwargs):
         """Return a dictionary of parameters for a search-like SQL query.
 
-        Uses socorro.lib.search_common.get_parameters() for arguments
+        Uses socorrolib.lib.search_common.get_parameters() for arguments
         filtering.
         """
         params = search_common.get_parameters(kwargs)
@@ -75,7 +75,7 @@ class Crashes(PostgreSQLBase):
         """Return a list of comments on crash reports, filtered by
         signatures and other fields.
 
-        See socorro.lib.search_common.get_parameters() for all filters.
+        See socorrolib.lib.search_common.get_parameters() for all filters.
         """
         params = self.prepare_search_params(**kwargs)
 
@@ -352,7 +352,7 @@ class Crashes(PostgreSQLBase):
     def get_frequency(self, **kwargs):
         """Return the number and frequency of crashes on each OS.
 
-        See socorro.lib.search_common.get_parameters() for all filters.
+        See socorrolib.lib.search_common.get_parameters() for all filters.
         """
         # aliases
         if "from" in kwargs and "from_date" not in kwargs:
@@ -538,7 +538,7 @@ class Crashes(PostgreSQLBase):
     def get_exploitability(self, **kwargs):
         """Return a list of exploitable crash reports.
 
-        See socorro.lib.external_common.parse_arguments() for all filters.
+        See socorrolib.lib.external_common.parse_arguments() for all filters.
         """
         now = datetimeutil.utc_now().date()
         lastweek = now - datetime.timedelta(weeks=1)

@@ -5,8 +5,8 @@
 from mock import Mock
 from nose.tools import eq_, ok_
 
-from socorro.lib.task_manager import TaskManager, default_task_func
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorrolib.lib.task_manager import TaskManager, default_task_func
+from socorrolib.lib.util import DotDict, SilentFakeLogger
 from socorro.unittest.testbase import TestCase
 
 

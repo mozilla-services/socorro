@@ -7,7 +7,7 @@ from nose.tools import eq_, ok_
 from configman import ConfigurationManager, RequiredConfig, Namespace
 from configman.converters import to_str
 
-from socorro.lib.converters import (
+from socorrolib.lib.converters import (
     str_to_classes_in_namespaces_converter,
     change_default,
     web_services_from_str,
