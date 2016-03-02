@@ -42,7 +42,7 @@ setup(
     install_requires=[], # use pip -r requirements.txt instead
     entry_points={
         'console_scripts': [
-                'socorro = socorro.app.socorro_app:SocorroWelcomeApp.run'
+                'socorro = socorrolib.app.socorro_app:SocorroWelcomeApp.run'
             ],
         },
     test_suite='nose.collector',

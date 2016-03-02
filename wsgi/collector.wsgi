@@ -1,5 +1,5 @@
 import os
-from socorro.app.generic_app import main
+from socorrolib.app.generic_app import main
 from socorro.collector.collector_app import CollectorApp
 from socorro.webapi.servers import ApacheModWSGI
 import socorro.collector.collector_app

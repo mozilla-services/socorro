@@ -15,7 +15,7 @@ from os import (
 
 from configman import Namespace
 
-from socorro.app.fetch_transform_save_app import (
+from socorrolib.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp,
     main
 )

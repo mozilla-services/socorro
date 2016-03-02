@@ -8,11 +8,11 @@ from nose.tools import eq_, ok_
 
 from socorro.unittest.testbase import TestCase
 
-from socorro.app.generic_app import main
-from socorro.app.generic_app import App
+from socorrolib.app.generic_app import main
+from socorrolib.app.generic_app import App
 
-from socorro.app.socorro_app import SocorroApp
-from socorro.app.socorro_app import App as SApp
+from socorrolib.app.socorro_app import SocorroApp
+from socorrolib.app.socorro_app import App as SApp
 
 
 #==============================================================================

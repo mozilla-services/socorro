@@ -52,7 +52,7 @@ DEFAULT_JOBS = '''
 
 # this class is for eventual support of CronTabber with the universal
 # socorro app.
-from socorro.app.socorro_app import App as App
+from socorrolib.app.socorro_app import App as App
 
 
 #==============================================================================

@@ -33,8 +33,8 @@ import sys
 import re
 import threading
 
-import socorro.app.for_application_defaults
-from socorro.app.for_application_defaults import (
+import socorrolib.app.for_application_defaults
+from socorrolib.app.for_application_defaults import (
     ApplicationDefaultsProxy,
 )
 
@@ -76,7 +76,7 @@ from configman.converters import py_obj_to_str
 from configman.value_sources import type_handler_dispatch
 # register our new type handler with configman
 type_handler_dispatch[ApplicationDefaultsProxy].append(
-    socorro.app.for_application_defaults
+    socorrolib.app.for_application_defaults
 )
 
 #------------------------------------------------------------------------------

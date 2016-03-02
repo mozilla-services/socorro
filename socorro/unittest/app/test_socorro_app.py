@@ -10,13 +10,13 @@ from configman import (
 )
 from configman.dotdict import DotDict
 
-from socorro.app.socorro_app import (
+from socorrolib.app.socorro_app import (
     SocorroApp,
     SocorroWelcomeApp,
     main,
     klass_to_pypath,
 )
-from socorro.app.for_application_defaults import ApplicationDefaultsProxy
+from socorrolib.app.for_application_defaults import ApplicationDefaultsProxy
 
 tag = ''
 
@@ -90,9 +90,9 @@ class TestSocorroApp(TestCase):
     #--------------------------------------------------------------------------
     def test_do_run(self):
         config = DotDict()
-        with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
+        with mock.patch('socorrolib.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal') as s:
+            with mock.patch('socorrolib.app.socorro_app.signal') as s:
                 class SomeOtherApp(SocorroApp):
                     app_name='SomeOtherApp'
                     app_verision='1.2.3'
@@ -126,9 +126,9 @@ class TestSocorroApp(TestCase):
     #--------------------------------------------------------------------------
     def test_do_run_with_alternate_class_path(self):
         config = DotDict()
-        with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
+        with mock.patch('socorrolib.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal') as s:
+            with mock.patch('socorrolib.app.socorro_app.signal') as s:
                 class SomeOtherApp(SocorroApp):
                     app_name='SomeOtherApp'
                     app_verision='1.2.3'
@@ -164,9 +164,9 @@ class TestSocorroApp(TestCase):
     #--------------------------------------------------------------------------
     def test_do_run_with_alternate_values_source_list(self):
         config = DotDict()
-        with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
+        with mock.patch('socorrolib.app.socorro_app.ConfigurationManager') as cm:
             cm.return_value.context.return_value = mock.MagicMock()
-            with mock.patch('socorro.app.socorro_app.signal') as s:
+            with mock.patch('socorrolib.app.socorro_app.signal') as s:
                 class SomeOtherApp(SocorroApp):
                     app_name='SomeOtherApp'
                     app_verision='1.2.3'
@@ -223,7 +223,7 @@ class TestSocorroWelcomeApp(TestCase):
         config.number_of_submissions = 1
 
         with mock.patch(
-            'socorro.app.socorro_app.command_line',
+            'socorrolib.app.socorro_app.command_line',
             new={}
         ) as mocked_command:
             sa = SocorroWelcomeApp(config)
@@ -259,11 +259,11 @@ def test_klass_to_pypath_a_faked_out_main():
     MockedMainClass.__name__ = 'ProcessorApp'
 
     with mock.patch(
-        'socorro.app.socorro_app.sys.modules',
+        'socorrolib.app.socorro_app.sys.modules',
         new=fake_sys_modules
     ):
         with mock.patch(
-            'socorro.app.socorro_app.sys.path',
+            'socorrolib.app.socorro_app.sys.path',
             new=fake_sys_path
         ):
             eq_(

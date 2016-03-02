@@ -10,7 +10,7 @@ import os
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorro.app.fetch_transform_save_app import (
+from socorrolib.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp,
     main
 )

@@ -7,6 +7,6 @@ Socorro App class definitions.  That system has been moved to socorro_app.py.
 The following two imports into this module are for backwards compatibility.
 """
 
-from socorro.app.socorro_app import main
-from socorro.app.socorro_app import App
+from socorrolib.app.socorro_app import main
+from socorrolib.app.socorro_app import App
 

@@ -5,7 +5,7 @@
 from nose.tools import eq_, ok_, assert_raises
 from mock import Mock
 
-from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
+from socorrolib.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorrolib.lib.threaded_task_manager import ThreadedTaskManager
 from socorrolib.lib.task_manager import TaskManager
 from socorrolib.lib.util import DotDict, SilentFakeLogger

@@ -12,7 +12,7 @@ To illustrate the example, let's look at an example of an app that
 uses ``generic_app`` to leverage ``configman`` to run. Let's look at `weeklyReportsPartitions.py
 <https://github.com/mozilla/socorro/blob/master/socorro/cron/weeklyReportsPartitions.py>`_
 
-As you can see, it's a subclass of the `socorro.app.generic_app.App
+As you can see, it's a subclass of the `socorrolib.app.generic_app.App
 <https://github.com/mozilla/socorro/blob/master/socorro/app/generic_app.py>`_
 class which is a the-least-you-need wrapper for a minimal app. As you
 can see, it takes care of logging and executing your ``main`` function.

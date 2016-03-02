@@ -18,13 +18,14 @@ from configman import configuration
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
-from socorro.app import socorro_app
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.gccrashes
+
+from socorrolib.app import socorro_app
 
 from django.conf import settings
 from django.core.cache import cache

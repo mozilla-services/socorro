@@ -8,11 +8,11 @@ from configman import class_converter
 from configman.dotdict import DotDict
 
 from socorro.unittest.testbase import TestCase
-from socorro.app.for_application_defaults import (
+from socorrolib.app.for_application_defaults import (
     ApplicationDefaultsProxy,
     ValueSource,
 )
-from socorro.app.socorro_app import App
+from socorrolib.app.socorro_app import App
 
 
 #==============================================================================

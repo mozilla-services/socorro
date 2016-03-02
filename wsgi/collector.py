@@ -1,5 +1,5 @@
 import os
-from socorro.app.socorro_app import (
+from socorrolib.app.socorro_app import (
     SocorroWelcomeApp,
     main
 )

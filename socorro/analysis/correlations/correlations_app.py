@@ -21,7 +21,7 @@ from configman.converters import list_converter, to_str
 from socorro.analysis.correlations import macdebugids
 from socorro.analysis.correlations import addonids
 
-from socorro.app.fetch_transform_save_app import (
+from socorrolib.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp
 )
 
