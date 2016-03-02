@@ -103,7 +103,7 @@ SAMPLE_UNREDACTED = """ {
     "flash_version": "[blank]",
     "hangid": null,
     "distributor_version": null,
-    "truncated": true,
+    "truncated": True,
     "process_type": null,
     "id": 383569625,
     "os_version": "10.6.8 10K549",
@@ -119,7 +119,7 @@ SAMPLE_UNREDACTED = """ {
     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     "address": "0x8",
     "completeddatetime": "2012-06-11T06:08:57",
-    "success": true,
+    "success": True,
     "json_dump": {
       "status": "OK",
       "sensitive": {
@@ -343,7 +343,7 @@ class BaseTestViews(DjangoTestCase):
                     "total": 6
                 })
             if 'products/' in url:
-                return Response("""
+                return Response(
                     {"products": [
                        "WaterWolf",
                        "NightTrain",
@@ -356,7 +356,7 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "19.0",
                         "release": "Beta",
                         "id": 922},
@@ -364,7 +364,7 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "18.0",
                         "release": "Stable",
                         "id": 920},
@@ -372,7 +372,7 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "2012-03-09",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "19.1",
                         "release": "Nightly",
                         "id": 928},
@@ -380,62 +380,57 @@ class BaseTestViews(DjangoTestCase):
                         "throttle": "100.00",
                         "end_date": "%(end_date)s",
                         "start_date": "2012-03-08",
-                        "featured": true,
+                        "featured": True,
                         "version": "20.0",
                         "release": "Nightly",
                         "id": 923}
                       ],
-                      "NightTrain":[
-                        {"product": "NightTrain",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "18.0",
-                        "release": "Aurora",
-                        "id": 924},
-                       {"product": "NightTrain",
-                        "throttle": "100.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "19.0",
-                        "release": "Nightly",
-                        "id": 925}
-                     ],
-                     "SeaMonkey": [
-                       {"product": "SeaMonkey",
-                        "throttle": "99.00",
-                        "end_date": "%(yesterday)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "9.5",
-                        "release": "Alpha",
-                        "id": 921},
-                        {"product": "SeaMonkey",
-                        "throttle": "99.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": true,
-                        "version": "10.5",
-                        "release": "nightly",
-                        "id": 926}
-                     ],
-                     "LandCrab": [
-                        {"product": "LandCrab",
-                        "throttle": "99.00",
-                        "end_date": "%(end_date)s",
-                        "start_date": "2012-03-08",
-                        "featured": false,
-                        "version": "1.5",
-                        "release": "Release",
-                        "id": 927}
-                     ]
-                   },
-                   "total": 4
-                 }
-                      """ % {'end_date': now.strftime('%Y-%m-%d'),
-                             'yesterday': yesterday.strftime('%Y-%m-%d')})
+                      "NightTrain": [{
+                          "product": "NightTrain",
+                          "throttle": "100.00",
+                          "end_date": "%(end_date)s",
+                          "start_date": "2012-03-08",
+                          "featured": True,
+                          "version": "18.0",
+                          "release": "Aurora",
+                          "id": 924},
+                          {"product": "NightTrain",
+                           "throttle": "100.00",
+                           "end_date": "%(end_date)s",
+                           "start_date": "2012-03-08",
+                           "featured": True,
+                           "version": "19.0",
+                           "release": "Nightly",
+                           "id": 925}
+                      ], "SeaMonkey": [{
+                             "product": "SeaMonkey",
+                             "throttle": "99.00",
+                             "end_date": "%(yesterday)s",
+                             "start_date": "2012-03-08",
+                             "featured": True,
+                             "version": "9.5",
+                             "release": "Alpha",
+                             "id": 921},
+                             {"product": "SeaMonkey",
+                              "throttle": "99.00",
+                              "end_date": "%(end_date)s",
+                              "start_date": "2012-03-08",
+                              "featured": True,
+                              "version": "10.5",
+                              "release": "nightly",
+                              "id": 926}
+                         ], "LandCrab": [{
+                             "product": "LandCrab",
+                             "throttle": "99.00",
+                             "end_date": "%(end_date)s",
+                             "start_date": "2012-03-08",
+                             "featured": False,
+                             "version": "1.5",
+                             "release": "Release",
+                             "id": 927}
+                         ]}, "total": 4,
+                        'end_date': now.strftime('%Y-%m-%d'),
+                        'yesterday': yesterday.strftime('%Y-%m-%d')})
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -538,21 +533,21 @@ class TestAnalytics(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'products' in url:
-                return Response("""
+                return Response(
                     {
                         "hits": [{
-                            "is_featured": true,
+                            "is_featured": True,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
                             "product": "WaterWolf",
                             "build_type": "Nightly",
                             "version": "19.0",
-                            "has_builds": true,
+                            "has_builds": True,
                             "start_date": "2012-09-25"
                         }],
                         "total": 1
                     }
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -676,7 +671,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
-                return Response('{"bugs": [{"product": "allizom.org"}]}')
+                return Response({"bugs": [{"product": "allizom.org"}]})
 
             raise NotImplementedError(url)
 
@@ -705,14 +700,14 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
-                return Response("""{"bugs": [
+                return Response({"bugs": [
                     {"id": "987",
                      "product": "allizom.org",
                      "summary": "Summary 1"},
                     {"id": "654",
                      "product": "mozilla.org",
                      "summary": "Summary 2"}
-                ]}""")
+                ]})
 
             raise NotImplementedError(url)
 
@@ -742,42 +737,33 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/products' in url and 'versions' not in params:
-                return Response("""
-                    {
-                        "products": [
-                            "WaterWolf"
-                        ],
-                        "hits": {
-                            "WaterWolf": [{
-                            "featured": true,
+                return Response({
+                    "products": [
+                        "WaterWolf"],
+                    "hits": {
+                        "WaterWolf": [{
+                            "featured": True,
                             "throttle": 100.0,
                             "end_date": "2012-11-27",
                             "product": "WaterWolf",
                             "release": "Nightly",
                             "version": "19.0",
-                            "has_builds": true,
+                            "has_builds": True,
                             "start_date": "2012-09-25"
-                            }]
-                        },
-                        "total": 1
-                    }
-                """)
+                        }]
+                    }, "total": 1})
             elif '/products' in url:
-                return Response("""
-                    {
-                        "hits": [{
-                            "is_featured": true,
-                            "throttle": 100.0,
-                            "end_date": "2012-11-27",
-                            "product": "WaterWolf",
-                            "build_type": "Nightly",
-                            "version": "19.0",
-                            "has_builds": true,
-                            "start_date": "2012-09-25"
-                        }],
-                        "total": 1
-                    }
-                """)
+                return Response({
+                    "hits": [{
+                        "is_featured": True,
+                        "throttle": 100.0,
+                        "end_date": "2012-11-27",
+                        "product": "WaterWolf",
+                        "build_type": "Nightly",
+                        "version": "19.0",
+                        "has_builds": True,
+                        "start_date": "2012-09-25"
+                    }], "total": 1})
 
             raise NotImplementedError(url)
 
@@ -813,30 +799,27 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/daily' in url:
-                return Response("""
-                    {
-                      "hits": {
+                return Response({
+                    "hits": {
                         "WaterWolf:19.0": {
-                          "2012-10-08": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 71.099999999999994,
-                            "version": "19.0",
-                            "report_count": 2133,
-                            "date": "2012-10-08"
-                          },
-                          "2012-10-02": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 77.299999999999997,
-                            "version": "19.0",
-                            "report_count": 2319,
-                            "date": "2012-10-02"
-                         }
+                            "2012-10-08": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 71.099999999999994,
+                                "version": "19.0",
+                                "report_count": 2133,
+                                "date": "2012-10-08"
+                            }, "2012-10-02": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 77.299999999999997,
+                                "version": "19.0",
+                                "report_count": 2319,
+                                "date": "2012-10-02"
+                            }
                         }
-                      }
                     }
-                    """)
+                })
 
             raise NotImplementedError(url)
 
@@ -1108,7 +1091,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(**options):
             if '/products' in options['url']:
-                return Response("""
+                return Response(
                     {
                         "products": ["WaterWolf"],
                         "hits": [
@@ -1120,7 +1103,7 @@ class TestViews(BaseTestViews):
                         ],
                         "total": "1"
                     }
-                    """)
+                    )
 
             raise NotImplementedError(url)
 
@@ -1145,7 +1128,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/gccrashes' in url:
-                return Response("""
+                return Response(
                     {
                       "hits": [
                           [
@@ -1155,7 +1138,7 @@ class TestViews(BaseTestViews):
                       ],
                       "total": 1
                     }
-                    """)
+                    )
 
             raise NotImplementedError(url)
 
@@ -1177,18 +1160,13 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             if 'gccrashes/' in url:
-                return Response("""
-                    {
-                      "hits": [
-                          [
-                              "20140203000001",
-                              366
-                          ]
-                      ],
-                      "total": 1
-                    }
-                    """)
-
+                return Response({
+                    "hits": [
+                        [
+                            "20140203000001", 366
+                        ]
+                    ], "total": 1
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1233,19 +1211,15 @@ class TestViews(BaseTestViews):
 
         def mocked_get(**options):
             if '/products' in options['url']:
-                return Response("""
-                    {
-                      "hits": [
-                        {
-                            "sort": "1",
-                            "default_version": "5.0a1",
-                            "release_name": "waterwolf",
-                            "rapid_release_version": "5.0",
-                            "product_name": "WaterWolf"
-                        }],
-                        "total": "1"
-                    }
-                    """)
+                return Response({
+                    "hits": [{
+                        "sort": "1",
+                        "default_version": "5.0a1",
+                        "release_name": "waterwolf",
+                        "rapid_release_version": "5.0",
+                        "product_name": "WaterWolf"
+                    }], "total": "1"
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1296,60 +1270,63 @@ class TestViews(BaseTestViews):
                 return Response(signature_summary_data)
 
             if '/crashes/signatures' in url:
-                return Response(u"""
-                   {"crashes": [
-                     {
-                      "count": 188,
-                      "mac_count": 66,
-                      "content_count": 0,
-                      "first_report": "2012-06-21",
-                      "startup_percent": 0.0,
-                      "currentRank": 0,
-                      "previousRank": 1,
-                      "first_report_exact": "2012-06-21T21:28:08",
-                      "versions":
-                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
-                      "percentOfTotal": 0.24258064516128999,
-                      "win_count": 56,
-                      "changeInPercentOfTotal": 0.011139597126354983,
-                      "linux_count": 66,
-                      "hang_count": 0,
-                      "signature": "FakeSignature 1",
-                      "versions_count": 8,
-                      "changeInRank": 1,
-                      "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501,
-                      "is_gc_count": 10
-                     },
-                     {
-                      "count": 188,
-                      "mac_count": 66,
-                      "content_count": 0,
-                      "first_report": "2012-06-21",
-                      "startup_percent": 0.0,
-                      "currentRank": 0,
-                      "previousRank": 1,
-                      "first_report_exact": "2012-06-21T21:28:08",
-                      "versions":
-                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
-                      "percentOfTotal": 0.24258064516128999,
-                      "win_count": 56,
-                      "changeInPercentOfTotal": 0.011139597126354983,
-                      "linux_count": 66,
-                      "hang_count": 0,
-                      "signature": "FakeSignature 2",
-                      "versions_count": 8,
-                      "changeInRank": 1,
-                      "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501,
-                      "is_gc_count": 10
+                return Response({
+                    "crashes": [{
+                        "count": 188,
+                        "mac_count": 66,
+                        "content_count": 0,
+                        "first_report": "2012-06-21",
+                        "startup_percent": 0.0,
+                        "currentRank": 0,
+                        "previousRank": 1,
+                        "first_report_exact": "2012-06-21T21:28:08",
+                        "versions": "2.0, 2.1, "
+                                    "3.0a2, 3.0b2, "
+                                    "3.1b1, 4.0a1, "
+                                    "4.0a2, 5.0a1",
+                        "percentOfTotal": 0.24258064516128999,
+                        "win_count": 56,
+                        "changeInPercentOfTotal": 0.011139597126354983,
+                        "linux_count": 66,
+                        "hang_count": 0,
+                        "signature": "FakeSignature 1",
+                        "versions_count": 8,
+                        "changeInRank": 1,
+                        "plugin_count": 0,
+                        "previousPercentOfTotal": 0.23144104803493501,
+                        "is_gc_count": 10
+                    }, {
+                        "count": 188,
+                        "mac_count": 66,
+                        "content_count": 0,
+                        "first_report": "2012-06-21",
+                        "startup_percent": 0.0,
+                        "currentRank": 0,
+                        "previousRank": 1,
+                        "first_report_exact": "2012-06-21T21:28:08",
+                        "versions":
+                            "2.0, 2.1, "
+                            "3.0a2, 3.0b2, "
+                            "3.1b1, 4.0a1, "
+                            "4.0a2, 5.0a1",
+                        "percentOfTotal": 0.24258064516128999,
+                        "win_count": 56,
+                        "changeInPercentOfTotal": 0.011139597126354983,
+                        "linux_count": 66,
+                        "hang_count": 0,
+                        "signature": "FakeSignature 2",
+                        "versions_count": 8,
+                        "changeInRank": 1,
+                        "plugin_count": 0,
+                        "previousPercentOfTotal": 0.23144104803493501,
+                        "is_gc_count": 10
                     }
-                   ],
+                    ],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
-                    "totalNumberOfCrashes": 2}
-                """)
+                    "totalNumberOfCrashes": 2
+                })
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {'bug_number': '123456789'})
@@ -1421,55 +1398,51 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
-                return Response(u"""
-                   {"crashes": [
-                     {
-                      "count": 188,
-                      "mac_count": 66,
-                      "content_count": 0,
-                      "first_report": "2012-06-21",
-                      "startup_percent": 0.0,
-                      "currentRank": 0,
-                      "previousRank": 1,
-                      "first_report_exact": "2012-06-21T21:28:08",
-                      "versions":
-                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
-                      "percentOfTotal": 0.24258064516128999,
-                      "win_count": 56,
-                      "changeInPercentOfTotal": 0.011139597126354983,
-                      "linux_count": 66,
-                      "hang_count": 0,
-                      "signature": "FakeSignature1 \u7684 Japanese",
-                      "versions_count": 8,
-                      "changeInRank": 1,
-                      "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501,
-                      "is_gc_count": 10
-                    }
-                   ],
+                return Response({
+                    "crashes": [{
+                        "count": 188,
+                        "mac_count": 66,
+                        "content_count": 0,
+                        "first_report": "2012-06-21",
+                        "startup_percent": 0.0,
+                        "currentRank": 0,
+                        "previousRank": 1,
+                        "first_report_exact": "2012-06-21T21:28:08",
+                        "versions":
+                            "2.0, 2.1, 3.0a2, 3.0b2, "
+                            "3.1b1, 4.0a1, 4.0a2, 5.0a1",
+                        "percentOfTotal": 0.24258064516128999,
+                        "win_count": 56,
+                        "changeInPercentOfTotal": 0.011139597126354983,
+                        "linux_count": 66,
+                        "hang_count": 0,
+                        "signature": "FakeSignature1 \u7684 Japanese",
+                        "versions_count": 8,
+                        "changeInRank": 1,
+                        "plugin_count": 0,
+                        "previousPercentOfTotal": 0.23144104803493501,
+                        "is_gc_count": 10
+                    }],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
-                    "totalNumberOfCrashes": 0}
-                """)
+                    "totalNumberOfCrashes": 0
+                })
 
             if '/products' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "is_featured": True,
+                            "throttle": 1.0,
+                            "end_date": "string",
+                            "start_date": "integer",
+                            "build_type": "string",
+                            "product": "WaterWolf",
+                            "version": "19.0",
+                            "has_builds": True
+                        }], "total": "1"
+                })
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -1553,31 +1526,27 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/signatures' in url:
-                return Response(u"""
-                   {"crashes": [],
+                return Response({
+                    "crashes": [],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
-                    "totalNumberOfCrashes": 0}
-                """)
+                    "totalNumberOfCrashes": 0
+                })
 
             if '/products' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
+                return Response({
+                    "hits": [{
+                        "is_featured": True,
                         "throttle": 1.0,
                         "end_date": "string",
                         "start_date": "integer",
                         "build_type": "string",
                         "product": "WaterWolf",
                         "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                """)
+                        "has_builds": True
+                    }], "total": "1"
+                })
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
 
@@ -1643,23 +1612,16 @@ class TestViews(BaseTestViews):
             ok_('product' in params)
             eq_('WaterWolf', params['product'])
 
-            return Response("""
-                  {
-                    "hits": [
-                      {
-                        "signature": "FakeSignature",
-                        "report_date": "2013-06-06",
-                        "high_count": 4,
-                        "medium_count": 3,
-                        "low_count": 2,
-                        "none_count": 1,
-                        "product_name": "%s",
-                        "version_string": "2.0"
-                      }
-                    ],
-                    "total": 1
-                  }
-            """ % (settings.DEFAULT_PRODUCT,))
+            return Response({"hits": [{
+                "signature": "FakeSignature",
+                "report_date": "2013-06-06",
+                "high_count": 4,
+                "medium_count": 3,
+                "low_count": 2,
+                "none_count": 1,
+                "product_name": settings.DEFAULT_PRODUCT,
+                "version_string": "2.0"
+            }], "total": 1})
         rget.side_effect = mocked_get
 
         response = self.client.get(url)
@@ -1706,23 +1668,17 @@ class TestViews(BaseTestViews):
             ok_('version' in params)
             eq_('19.0', params['version'])
 
-            return Response("""
-                  {
-                    "hits": [
-                      {
-                        "signature": "FakeSignature",
-                        "report_date": "2013-06-06",
-                        "high_count": 4,
-                        "medium_count": 3,
-                        "low_count": 2,
-                        "none_count": 1,
-                        "product_name": "%s",
-                        "version_string": "123.0"
-                      }
-                    ],
-                    "total": 1
-                  }
-            """ % (settings.DEFAULT_PRODUCT,))
+            return Response({
+                "hits": [{
+                    "signature": "FakeSignature",
+                    "report_date": "2013-06-06",
+                    "high_count": 4,
+                    "medium_count": 3,
+                    "low_count": 2,
+                    "none_count": 1,
+                    "product_name": settings.DEFAULT_PRODUCT,
+                    "version_string": "123.0"
+                }], "total": 1})
 
         rget.side_effect = mocked_get
 
@@ -1900,7 +1856,7 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             eq_(params['versions'], ['20.0', '19.0'])
             if '/products' in url:
-                return Response("""
+                return Response(
                     {
                         "products": [
                             "WaterWolf",
@@ -1908,33 +1864,33 @@ class TestViews(BaseTestViews):
                         ],
                         "hits": {
                             "WaterWolf": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }],
                             "NightTrain": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }]
                         },
                         "total": 2
                     }
-                """)
+                )
             if '/crashes' in url:
                 # This list needs to match the versions as done in the common
                 # fixtures set up in setUp() above.
-                return Response("""
+                return Response(
                        {
                          "hits": {
                            "WaterWolf:20.0": {
@@ -1973,7 +1929,7 @@ class TestViews(BaseTestViews):
                          }
                        }
 
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -2069,7 +2025,7 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/products' in url:
-                return Response("""
+                return Response(
                     {
                         "products": [
                             "WaterWolf",
@@ -2077,38 +2033,38 @@ class TestViews(BaseTestViews):
                         ],
                         "hits": {
                             "WaterWolf": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "WaterWolf",
                                 "release": "Nightly",
                                 "version": "19.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }],
                             "NightTrain": [{
-                                "featured": true,
+                                "featured": True,
                                 "throttle": 100.0,
                                 "end_date": "2012-11-27",
                                 "product": "NightTrain",
                                 "release": "Nightly",
                                 "version": "18.0",
-                                "has_builds": true,
+                                "has_builds": True,
                                 "start_date": "2012-09-25"
                             }]
                         },
                         "total": 2
                     }
-                """)
+                )
             if '/crashes' in url:
                 # This list needs to match the versions as done in the common
                 # fixtures set up in setUp() above.
-                return Response("""
+                return Response(
                        {
                          "hits": {}
                        }
 
-                """)
+                )
 
             raise NotImplementedError(url)
 
@@ -2560,13 +2516,10 @@ class TestViews(BaseTestViews):
     def test_plot_signature(self, rget):
         def mocked_get(url, params, **options):
             if '/crashes/signature_history' in url:
-
-                return Response("""
-                {
+                return Response({
                     "hits": [],
                     "total": 0
-                }
-                """)
+                })
 
             raise NotImplementedError(url)
 
@@ -2877,15 +2830,12 @@ class TestViews(BaseTestViews):
                     ))
 
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -2997,15 +2947,12 @@ class TestViews(BaseTestViews):
                     })
 
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             raise NotImplementedError(url)
 
@@ -3080,15 +3027,12 @@ class TestViews(BaseTestViews):
                     return Response(raw_crash_json)
 
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3147,15 +3091,12 @@ class TestViews(BaseTestViews):
                     return Response(processed_json)
 
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3301,80 +3242,71 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
-                {
-                  "InstallTime": "Not a number",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s",
-                  "HangID": "123456789"
-                }
-                """ % (email0, url0))
+                return Response({
+                                    "InstallTime":
+                                    "Not a number",
+                                    "FramePoisonSize": "4096",
+                                    "Theme": "classic/1.0",
+                                    "Version": "5.0a1",
+                                    "Email": email0,
+                                    "Vendor": "Mozilla",
+                                    "URL": url0,
+                                    "HangID": "123456789"
+                                })
             if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
+                return Response({
+                    "hits": [{
+                        "user_comments": comment0,
+                        "date_processed": "2012-08-21T11:17:28-07:00",
+                        "email": email1,
+                        "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }], "total": 1})
             if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
+                return Response(
+                    {"hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                    }
+                )
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
+                return Response({
+                                    "client_crash_date": "2012-06-11T06:08:45",
+                                    "dump": dump,
+                                    "signature": "FakeSignature1",
+                                    "user_comments": "null",
+                                    "uptime": 14693,
+                                    "release_channel": "nightly",
+                                    "uuid": "11cb72f5"
+                                            "-eb28-41e1-a8e4-849982120611",
+                                    "flash_version": "[blank]",
+                                    "hangid": "null",
+                                    "distributor_version": "null",
+                                    "truncated": True,
+                                    "process_type": "null",
+                                    "id": 383569625,
+                                    "os_version": "10.6.8 10K549",
+                                    "version": "5.0a1",
+                                    "build": "20120609030536",
+                                    "ReleaseChannel": "nightly",
+                                    "addons_checked": "null",
+                                    "product": "WaterWolf",
+                                    "os_name": "Mac OS X",
+                                    "last_crash": 371342,
+                                    "date_processed": "2012-06-11T06:08:44",
+                                    "cpu_name": "amd64",
+                                    "reason": "EXC_BAD_ACCESS / "
+                                              "KERN_INVALID_ADDRESS",
+                                    "address": "0x8",
+                                    "completeddatetime": "2012-06-11T06:08:57",
+                                    "success": True,
+                                    "exploitability": "Unknown Exploitability"
+                                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3428,80 +3360,71 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
-                {
-                  "InstallTime": "Not a number",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s",
-                  "HangID": "123456789"
-                }
-                """ % (email0, url0))
+                return Response({
+                                    "InstallTime": "Not a number",
+                                    "FramePoisonSize": "4096",
+                                    "Theme": "classic/1.0",
+                                    "Version": "5.0a1",
+                                    "Email": email0,
+                                    "Vendor": "Mozilla",
+                                    "URL": url0,
+                                    "HangID": "123456789"
+                                })
             if 'crashes/comments' in url:
-                return Response("""
-                {
+                return Response({
                   "hits": [
                    {
-                     "user_comments": "%s",
+                     "user_comments": comment0,
                      "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
+                     "email": email1,
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
                   ],
                   "total": 1
-                }
-              """ % (comment0, email1))
+                })
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "json_dump": %s,
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % json.dumps(json_dump))
+                return Response({
+                    "client_crash_date": "2012-06-11T06:08:45",
+                    "json_dump": json.dumps(json_dump),
+                    "signature": "FakeSignature1",
+                    "user_comments": "null",
+                    "uptime": 14693,
+                    "release_channel": "nightly",
+                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                    "flash_version": "[blank]",
+                    "hangid": "null",
+                    "distributor_version": "null",
+                    "truncated": True,
+                    "process_type": "null",
+                    "id": 383569625,
+                    "os_version": "10.6.8 10K549",
+                    "version": "5.0a1",
+                    "build": "20120609030536",
+                    "ReleaseChannel": "nightly",
+                    "addons_checked": "null",
+                    "product": "WaterWolf",
+                    "os_name": "Mac OS X",
+                    "last_crash": 371342,
+                    "date_processed": "2012-06-11T06:08:44",
+                    "cpu_name": "amd64",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "address": "0x8",
+                    "completeddatetime": "2012-06-11T06:08:57",
+                    "success": True,
+                    "exploitability": "Unknown Exploitability"
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3529,80 +3452,70 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
-                {
-                  "InstallTime": "Not a number",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s",
-                  "HangID": "123456789"
-                }
-                """ % (email0, url0))
+                return Response({
+                    "InstallTime": "Not a number",
+                    "FramePoisonSize": "4096",
+                    "Theme": "classic/1.0",
+                    "Version": "5.0a1",
+                    "Email": email0,
+                    "Vendor": "Mozilla",
+                    "URL": url0,
+                    "HangID": "123456789"
+                })
             if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
+                return Response({
+                    "hits": [{
+                        "user_comments": comment0,
+                        "date_processed": "2012-08-21T11:17:28-07:00",
+                        "email": email1,
+                        "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }], "total": 1
+                })
+
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
                     ],
                     "total": 2
-                }
-                """)
+                })
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "json_dump": %s,
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % json.dumps(json_dump))
+                return Response({
+                    "client_crash_date": "2012-06-11T06:08:45",
+                    "json_dump": json.dumps(json_dump),
+                    "signature": "FakeSignature1",
+                    "user_comments": "null",
+                    "uptime": 14693,
+                    "release_channel": "nightly",
+                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                    "flash_version": "[blank]",
+                    "hangid": "null",
+                    "distributor_version": "null",
+                    "truncated": True,
+                    "process_type": "null",
+                    "id": 383569625,
+                    "os_version": "10.6.8 10K549",
+                    "version": "5.0a1",
+                    "build": "20120609030536",
+                    "ReleaseChannel": "nightly",
+                    "addons_checked": "null",
+                    "product": "WaterWolf",
+                    "os_name": "Mac OS X",
+                    "last_crash": 371342,
+                    "date_processed": "2012-06-11T06:08:44",
+                    "cpu_name": "amd64",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "address": "0x8",
+                    "completeddatetime": "2012-06-11T06:08:57",
+                    "success": True,
+                    "exploitability": "Unknown Exploitability"
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3631,80 +3544,70 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
-                {
-                  "InstallTime": "Not a number",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s",
-                  "HangID": "123456789"
-                }
-                """ % (email0, url0))
+                return Response({
+                    "InstallTime": "Not a number",
+                    "FramePoisonSize": "4096",
+                    "Theme": "classic/1.0",
+                    "Version": "5.0a1",
+                    "Email": email0,
+                    "Vendor": "Mozilla",
+                    "URL": url0,
+                    "HangID": "123456789"
+                })
             if '/crashes/comments' in url:
-                return Response("""
-                {
+                return Response({
                   "hits": [
                    {
-                     "user_comments": "%s",
+                     "user_comments": comment0,
                      "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
+                     "email": email1,
                      "uuid": "469bde48-0e8f-3586-d486-b98810120830"
                     }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
+                  ], "total": 1
+                })
             if '/correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
+                return Response({
+                    "client_crash_date": "2012-06-11T06:08:45",
+                    "dump": dump,
+                    "signature": "FakeSignature1",
+                    "user_comments": "null",
+                    "uptime": 14693,
+                    "release_channel": "nightly",
+                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                    "flash_version": "[blank]",
+                    "hangid": "null",
+                    "distributor_version": "null",
+                    "truncated": True,
+                    "process_type": "null",
+                    "id": 383569625,
+                    "os_version": "10.6.8 10K549",
+                    "version": "5.0a1",
+                    "build": "20120609030536",
+                    "ReleaseChannel": "nightly",
+                    "addons_checked": "null",
+                    "product": "WaterWolf",
+                    "os_name": "Mac OS X",
+                    "last_crash": 371342,
+                    "date_processed": "2012-06-11T06:08:44",
+                    "cpu_name": "amd64",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "address": "0x8",
+                    "completeddatetime": "2012-06-11T06:08:57",
+                    "success": True,
+                    "exploitability": "Unknown Exploitability"
+                })
 
             raise NotImplementedError(url)
         rget.side_effect = mocked_get
@@ -3757,38 +3660,36 @@ class TestViews(BaseTestViews):
             assert '/crash_data/' in url
             assert 'datatype' in params
             if params['datatype'] == 'unredacted':
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
+                return Response({
+                    "client_crash_date": "2012-06-11T06:08:45",
+                    "dump": dump,
+                    "signature": "FakeSignature1",
+                    "user_comments": "null",
+                    "uptime": 14693,
+                    "release_channel": "nightly",
+                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                    "flash_version": "[blank]",
+                    "hangid": "null",
+                    "distributor_version": "null",
+                    "truncated": True,
+                    "process_type": "null",
+                    "id": 383569625,
+                    "os_version": "10.6.8 10K549",
+                    "version": "5.0a1",
+                    "build": "20120609030536",
+                    "ReleaseChannel": "nightly",
+                    "addons_checked": "null",
+                    "product": "WaterWolf",
+                    "os_name": "Mac OS X",
+                    "last_crash": 371342,
+                    "date_processed": "2012-06-11T06:08:44",
+                    "cpu_name": "amd64",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "address": "0x8",
+                    "completeddatetime": "2012-06-11T06:08:57",
+                    "success": True,
+                    "exploitability": "Unknown Exploitability"
+                })
             elif params['datatype'] == 'meta':  # raw crash json!
                 raise models.BadStatusCodeError(404)
 
@@ -3989,116 +3890,107 @@ class TestViews(BaseTestViews):
                 # Note that the key `install_time` was removed from the
                 # second dict here. The reason for that is the install_time
                 # is not a depdendable field from the breakpad client.
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "release_channel": "Release",
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "19.0",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:0",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "release_channel": "Release",
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "19.0",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "release_channel": "Release",
+                            "process_type": "browser",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "19.0",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:0",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }, {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "release_channel": "Release",
+                            "process_type": "content",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "19.0",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }], "total": 2
+                    })
             if 'correlations/signatures' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "release_channel": "Release",
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "19.0",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "release_channel": "Release",
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "19.0",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:0",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "release_channel": "Release",
+                            "process_type": "browser",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "19.0",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        },
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "release_channel": "Release",
+                            "process_type": "content",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "19.0",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:0",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }], "total": 2
+                    })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4129,7 +4021,7 @@ class TestViews(BaseTestViews):
                 return Response({
                     "hits": [
                         {
-                            "user_comments": None,
+                            "user_comments": "null",
                             "product": "WaterWolf",
                             "os_name": "Mac OS X",
                             "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
@@ -4141,7 +4033,7 @@ class TestViews(BaseTestViews):
                             "uptime": 1234,
                             "release_channel": "Release",
                             "process_type": "content",
-                            "hangid": None,
+                            "hangid": "null",
                             "reason": "reason7",
                             "version": "0.1",
                             "os_version": "1.2.3.4",
@@ -4150,7 +4042,7 @@ class TestViews(BaseTestViews):
                             "signature": "FakeSignature2",
                             "install_time": "2012-09-05T20:58:24+00:0",
                             "address": "0xdeadbeef",
-                            "duplicate_of": None,
+                            "duplicate_of": "null",
                         }
                     ],
                     "total": 1
@@ -4159,7 +4051,7 @@ class TestViews(BaseTestViews):
                 return Response({
                     "hits": [
                         {
-                            "user_comments": None,
+                            "user_comments": "null",
                             "product": "WaterWolf",
                             "os_name": "Linux",
                             "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
@@ -4171,7 +4063,7 @@ class TestViews(BaseTestViews):
                             "uptime": 1234,
                             "release_channel": "Release",
                             "process_type": "browser",
-                            "hangid": None,
+                            "hangid": "null",
                             "reason": "reason7",
                             "version": "0.1",
                             "os_version": "1.2.3.4",
@@ -4180,7 +4072,7 @@ class TestViews(BaseTestViews):
                             "signature": "FakeSignature2",
                             "install_time": "2012-09-05T20:58:24+00:00",
                             "address": "0xdeadbeef",
-                            "duplicate_of": None
+                            "duplicate_of": "null"
                         },
                     ],
                     "total": 1
@@ -4258,14 +4150,13 @@ class TestViews(BaseTestViews):
             ok_('NightTrain' in params['products'])
 
             if '/signatureurls' in url:
-                return Response("""{
+                return Response({
                     "hits": [
-                        {"url": "http://farm.ville", "crash_count":123},
-                        {"url": "%s", "crash_count": 1}
+                        {"url": "http://farm.ville", "crash_count": 123},
+                        {"url": really_long_url, "crash_count": 1}
                     ],
                     "total": 2
-                }
-                """ % (really_long_url))
+                })
 
             raise NotImplementedError(url)
 
@@ -4289,19 +4180,14 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if '/crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "I LOVE CHEESE cheese@email.com",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "bob@uncle.com",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-                """)
+                return Response({
+                    "hits": [{
+                        "user_comments": "I LOVE CHEESE cheese@email.com",
+                        "date_processed": "2012-08-21T11:17:28-07:00",
+                        "email": "bob@uncle.com",
+                        "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }], "total": 1
+                })
 
             raise NotImplementedError(url)
 
@@ -4389,59 +4275,56 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "browser",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        },
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "content",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }
+                    ], "total": 2
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4463,59 +4346,53 @@ class TestViews(BaseTestViews):
             mock_calls.append(params)
 
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T22:19:59+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                return Response({
+                    "hits": [{
+                        "user_comments": "null",
+                        "product": "WaterWolf",
+                        "os_name": "Linux",
+                        "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                        "cpu_info": "...",
+                        "url": "http://example.com/116",
+                        "last_crash": 1234,
+                        "date_processed": "2012-09-05T21:18:58+00:00",
+                        "cpu_name": "x86",
+                        "uptime": 1234,
+                        "process_type": "browser",
+                        "hangid": "null",
+                        "reason": "reason7",
+                        "version": "5.0a1",
+                        "os_version": "1.2.3.4",
+                        "build": "20120901000007",
+                        "install_age": 1234,
+                        "signature": "FakeSignature2",
+                        "install_time": "2012-09-05T20:58:24+00:00",
+                        "address": "0xdeadbeef",
+                        "duplicate_of": "null"
+                    }, {
+                        "user_comments": "null",
+                        "product": "WaterWolf",
+                        "os_name": "Mac OS X",
+                        "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                        "cpu_info": "...",
+                        "url": "http://example.com/60053",
+                        "last_crash": 1234,
+                        "date_processed": "2012-09-05T22:19:59+00:00",
+                        "cpu_name": "x86",
+                        "uptime": 1234,
+                        "process_type": "content",
+                        "hangid": "null",
+                        "reason": "reason7",
+                        "version": "5.0a1",
+                        "os_version": "1.2.3.4",
+                        "build": "20120822000007",
+                        "install_age": 1234,
+                        "signature": "FakeSignature2",
+                        "install_time": "2012-09-05T20:58:24+00:00",
+                        "address": "0xdeadbeef",
+                        "duplicate_of": "null"
+                    }], "total": 2
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4555,59 +4432,55 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "browser",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }, {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "content",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }
+                    ], "total": 2
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4633,64 +4506,59 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null,
-                      "raw_crash": {
-                          "Winsock_LSP": "Peter",
-                          "SecondsSinceLastCrash": "Bengtsson"
-                      }
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null,
-                      "raw_crash": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "browser",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null",
+                            "raw_crash": {
+                              "Winsock_LSP": "Peter",
+                              "SecondsSinceLastCrash": "Bengtsson"
+                            }
+                        }, {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "content",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null",
+                            "raw_crash": "null"
+                        }], "total": 2
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -4730,7 +4598,7 @@ class TestViews(BaseTestViews):
                     result_offset = 0
 
                 first = {
-                    "user_comments": None,
+                    "user_comments": "null",
                     "product": "WaterWolf",
                     "os_name": "Linux",
                     "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
@@ -4741,7 +4609,7 @@ class TestViews(BaseTestViews):
                     "cpu_name": "x86",
                     "uptime": 1234,
                     "process_type": "browser",
-                    "hangid": None,
+                    "hangid": "null",
                     "reason": "reason7",
                     "version": "5.0a1",
                     "os_version": "1.2.3.4",
@@ -4750,7 +4618,7 @@ class TestViews(BaseTestViews):
                     "signature": "FakeSignature",
                     "install_time": "2012-09-05T20:58:24+00:00",
                     "address": "0xdeadbeef",
-                    "duplicate_of": None
+                    "duplicate_of": "null"
                 }
                 hits = []
 
@@ -4815,59 +4683,54 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
 
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [
+                return Response(
                     {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Linux",
-                      "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/116",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "browser",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120901000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    },
-                    {
-                      "user_comments": null,
-                      "product": "WaterWolf",
-                      "os_name": "Mac OS X",
-                      "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
-                      "cpu_info": "...",
-                      "url": "http://example.com/60053",
-                      "last_crash": 1234,
-                      "date_processed": "2012-09-05T21:18:58+00:00",
-                      "cpu_name": "x86",
-                      "uptime": 1234,
-                      "process_type": "content",
-                      "hangid": null,
-                      "reason": "reason7",
-                      "version": "5.0a1",
-                      "os_version": "1.2.3.4",
-                      "build": "20120822000007",
-                      "install_age": 1234,
-                      "signature": "FakeSignature2",
-                      "install_time": "2012-09-05T20:58:24+00:00",
-                      "address": "0xdeadbeef",
-                      "duplicate_of": null
-                    }
-                    ],
-                    "total": 2
-                    }
-                """)
+                        "hits": [{
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Linux",
+                            "uuid": "441017f4-e006-4eea-8451-dc20e0120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/116",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "browser",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120901000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }, {
+                            "user_comments": "null",
+                            "product": "WaterWolf",
+                            "os_name": "Mac OS X",
+                            "uuid": "e491c551-be0d-b0fb-c69e-107380120905",
+                            "cpu_info": "...",
+                            "url": "http://example.com/60053",
+                            "last_crash": 1234,
+                            "date_processed": "2012-09-05T21:18:58+00:00",
+                            "cpu_name": "x86",
+                            "uptime": 1234,
+                            "process_type": "content",
+                            "hangid": "null",
+                            "reason": "reason7",
+                            "version": "5.0a1",
+                            "os_version": "1.2.3.4",
+                            "build": "20120822000007",
+                            "install_age": 1234,
+                            "signature": "FakeSignature2",
+                            "install_time": "2012-09-05T20:58:24+00:00",
+                            "address": "0xdeadbeef",
+                            "duplicate_of": "null"
+                        }], "total": 2
+                    })
 
             raise NotImplementedError(url)
 
@@ -4963,49 +4826,43 @@ class TestViews(BaseTestViews):
             if '/crashes/frequency' in url:
                 # these fixtures make sure we stress the possibility that
                 # the build_date might be invalid or simply just null.
-                return Response("""
-                {
-                  "hits": [
+                return Response(
                     {
-                     "count": 1050,
-                     "build_date": "20130806030203",
-                     "count_mac": 0,
-                     "frequency_windows": 1.0,
-                     "count_windows": 1050,
-                     "frequency": 1.0,
-                     "count_linux": 0,
-                     "total": 1050,
-                     "frequency_linux": 0.0,
-                     "frequency_mac": 0.0
-                   },
-                   {
-                     "count": 1150,
-                     "build_date": "notadate",
-                     "count_mac": 0,
-                     "frequency_windows": 1.0,
-                     "count_windows": 1150,
-                     "frequency": 1.0,
-                     "count_linux": 0,
-                     "total": 1150,
-                     "frequency_linux": 0.0,
-                     "frequency_mac": 0.0
-                   },
-                   {
-                     "count": 1250,
-                     "build_date": null,
-                     "count_mac": 0,
-                     "frequency_windows": 1.0,
-                     "count_windows": 1250,
-                     "frequency": 1.0,
-                     "count_linux": 0,
-                     "total": 1250,
-                     "frequency_linux": 0.0,
-                     "frequency_mac": 0.0
-                   }
-
-                  ]
-                }
-                """)
+                        "hits": [{
+                            "count": 1050,
+                            "build_date": "20130806030203",
+                            "count_mac": 0,
+                            "frequency_windows": 1.0,
+                            "count_windows": 1050,
+                            "frequency": 1.0,
+                            "count_linux": 0,
+                            "total": 1050,
+                            "frequency_linux": 0.0,
+                            "frequency_mac": 0.0
+                        }, {
+                            "count": 1150,
+                            "build_date": "notadate",
+                            "count_mac": 0,
+                            "frequency_windows": 1.0,
+                            "count_windows": 1150,
+                            "frequency": 1.0,
+                            "count_linux": 0,
+                            "total": 1150,
+                            "frequency_linux": 0.0,
+                            "frequency_mac": 0.0
+                        }, {
+                            "count": 1250,
+                            "build_date": "null",
+                            "count_mac": 0,
+                            "frequency_windows": 1.0,
+                            "count_windows": 1250,
+                            "frequency": 1.0,
+                            "count_linux": 0,
+                            "total": 1250,
+                            "frequency_linux": 0.0,
+                            "frequency_mac": 0.0
+                        }]
+                    })
 
             raise NotImplementedError(url)
 
@@ -5039,80 +4896,69 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
-                {
-                  "InstallTime": "1339289895",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s"
-                }
-                """ % (email0, url0))
+                return Response({
+                    "InstallTime": "1339289895",
+                    "FramePoisonSize": "4096",
+                    "Theme": "classic/1.0",
+                    "Version": "5.0a1",
+                    "Email": email0,
+                    "Vendor": "Mozilla",
+                    "URL": url0
+                    })
             if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
+                return Response({
+                    "hits": [{
+                        "user_comments": comment0,
+                        "date_processed": "2012-08-21T11:17:28-07:00",
+                        "email": email1,
+                        "uuid": "469bde48-0e8f-3586-d486-b98810120830"
+                    }], "total": 1
+                })
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
+                return Response(
+                    {
+                        "client_crash_date": "2012-06-11T06:08:45",
+                        "dump": dump,
+                        "signature": "FakeSignature1",
+                        "user_comments": "null",
+                        "uptime": 14693,
+                        "release_channel": "nightly",
+                        "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                        "flash_version": "[blank]",
+                        "hangid": "null",
+                        "distributor_version": "null",
+                        "truncated": True,
+                        "process_type": "null",
+                        "id": 383569625,
+                        "os_version": "10.6.8 10K549",
+                        "version": "5.0a1",
+                        "build": "20120609030536",
+                        "ReleaseChannel": "nightly",
+                        "addons_checked": "null",
+                        "product": "WaterWolf",
+                        "os_name": "Mac OS X",
+                        "last_crash": 371342,
+                        "date_processed": "2012-06-11T06:08:44",
+                        "cpu_name": "amd64",
+                        "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                        "address": "0x8",
+                        "completeddatetime": "2012-06-11T06:08:57",
+                        "success": True,
+                        "exploitability": "Unknown Exploitability"
+                    })
 
             if 'correlations/signatures' in url:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         "FakeSignature1",
                         "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                    ], "total": 2
+                })
 
             raise NotImplementedError(url)
 
@@ -5131,12 +4977,11 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'report/list' in url:
-                return Response("""
-                {
-                  "hits": [],
-                  "total": 0
-                }
-                """)
+                return Response(
+                    {
+                        "hits": [],
+                        "total": 0
+                    })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -5159,10 +5004,10 @@ class TestViews(BaseTestViews):
                 """.strip())
             else:
                 # default is datatype/meta
-                return Response("""
+                return Response(
                   {"foo": "bar",
                    "stuff": 123}
-                """)
+                )
 
         rget.side_effect = mocked_get
 
