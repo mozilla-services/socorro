@@ -20,6 +20,7 @@ from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchMissingFields,
 )
+from crashstats.crashstats import models
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
     Response
@@ -839,33 +840,33 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.get')
-    def test_graphics_devices_lookup(self, rget):
+    def test_graphics_devices_lookup(self):
         self._login()
         url = reverse('manage:graphics_devices_lookup')
 
-        def mocked_get(url, params, **options):
-            assert '/graphics_devices' in url
+        def mocked_get(**params):
             if (
                 'adapter_hex' in params and
                 params['adapter_hex'] == 'xyz123' and
                 'vendor_hex' in params and
                 params['vendor_hex'] == 'abc123'
             ):
-                return Response("""
-                {
-                    "hits": [{
-                        "vendor_hex": "abc123",
-                        "adapter_hex": "xyz123",
-                        "vendor_name": "Logictech",
-                        "adapter_name": "Webcamera"
-                    }],
+                return {
+                    "hits": [
+                        {
+                            "vendor_hex": "abc123",
+                            "adapter_hex": "xyz123",
+                            "vendor_name": "Logictech",
+                            "adapter_name": "Webcamera"
+                        }
+                    ],
                     "total": 1
                 }
-                """)
             raise NotImplementedError(url)
 
-        rget.side_effect = mocked_get
+        models.GraphicsDevices.implementation().get.side_effect = (
+            mocked_get
+        )
 
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -887,15 +888,12 @@ class TestViews(BaseTestViews):
             }
         )
 
-    @mock.patch('requests.post')
-    def test_graphics_devices_edit(self, rpost):
+    def test_graphics_devices_edit(self):
         self._login()
         url = reverse('manage:graphics_devices')
 
-        def mocked_post(url, **options):
-            assert '/graphics_devices' in url
-            data = options['data']
-            data = json.loads(data)
+        def mocked_post(**payload):
+            data = payload['data']
             eq_(
                 data[0],
                 {
@@ -905,9 +903,11 @@ class TestViews(BaseTestViews):
                     'adapter_name': 'Webcamera'
                 }
             )
-            return Response('true')
+            return True
 
-        rpost.side_effect = mocked_post
+        models.GraphicsDevices.implementation().post.side_effect = (
+            mocked_post
+        )
 
         data = {
             'vendor_hex': 'abc123',
@@ -925,15 +925,12 @@ class TestViews(BaseTestViews):
         eq_(event.extra['payload'], [data])
         eq_(event.extra['success'], True)
 
-    @mock.patch('requests.post')
-    def test_graphics_devices_csv_upload_pcidatabase_com(self, rpost):
+    def test_graphics_devices_csv_upload_pcidatabase_com(self):
         self._login()
         url = reverse('manage:graphics_devices')
 
-        def mocked_post(url, **options):
-            assert '/graphics_devices' in url
-            data = options['data']
-            data = json.loads(data)
+        def mocked_post(**payload):
+            data = payload['data']
             eq_(
                 data[0],
                 {
@@ -944,9 +941,11 @@ class TestViews(BaseTestViews):
                 }
             )
             eq_(len(data), 7)
-            return Response('true')
+            return True
 
-        rpost.side_effect = mocked_post
+        models.GraphicsDevices.implementation().post.side_effect = (
+            mocked_post
+        )
 
         sample_file = os.path.join(
             os.path.dirname(__file__),
@@ -967,15 +966,12 @@ class TestViews(BaseTestViews):
         eq_(event.extra['database'], 'pcidatabase.com')
         eq_(event.extra['no_lines'], 7)
 
-    @mock.patch('requests.post')
-    def test_graphics_devices_csv_upload_pci_ids(self, rpost):
+    def test_graphics_devices_csv_upload_pci_ids(self):
         self._login()
         url = reverse('manage:graphics_devices')
 
-        def mocked_post(url, **options):
-            assert '/graphics_devices' in url
-            data = options['data']
-            data = json.loads(data)
+        def mocked_post(**payload):
+            data = payload['data']
             eq_(
                 data[0],
                 {
@@ -986,9 +982,11 @@ class TestViews(BaseTestViews):
                 }
             )
             eq_(len(data), 6)
-            return Response('true')
+            return True
 
-        rpost.side_effect = mocked_post
+        models.GraphicsDevices.implementation().post.side_effect = (
+            mocked_post
+        )
 
         sample_file = os.path.join(
             os.path.dirname(__file__),

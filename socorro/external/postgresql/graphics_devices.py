@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
-
 import psycopg2
 
 from socorro.external import MissingArgumentError, BadArgumentError
@@ -44,7 +42,7 @@ class GraphicsDevices(PostgreSQLBase):
 
     def post(self, **kwargs):
         try:
-            data = json.loads(kwargs['data'])
+            data = kwargs['data']
             if data is None:
                 raise BadArgumentError('POST data sent was null')
         except AttributeError:

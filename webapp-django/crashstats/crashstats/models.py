@@ -23,6 +23,7 @@ import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
+import socorro.external.postgresql.graphics_devices
 
 from django.conf import settings
 from django.core.cache import cache
@@ -1694,7 +1695,9 @@ class GraphicsDevices(SocorroMiddleware):
 
     cache_seconds = 0
 
-    URL_PREFIX = '/graphics_devices/'
+    implementation = (
+        socorro.external.postgresql.graphics_devices.GraphicsDevices
+    )
 
     API_WHITELIST = (
         'hits',
@@ -1706,8 +1709,8 @@ class GraphicsDevices(SocorroMiddleware):
         'adapter_hex',
     )
 
-    def post(self, payload):
-        return super(GraphicsDevices, self).post(self.URL_PREFIX, payload)
+    def post(self, **payload):
+        return self.get_implementation().post(**payload)
 
     def get_pairs(self, adapter_hexes, vendor_hexes):
         """return a dict where each tuple of (adapter_hex, vendor_hex)

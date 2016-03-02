@@ -1,4 +1,3 @@
-import json
 import datetime
 import functools
 import copy
@@ -451,7 +450,7 @@ def graphics_devices(request):
 
             payload = list(function(upload_form.cleaned_data['file']))
             api = GraphicsDevices()
-            result = api.post(json.dumps(payload))
+            result = api.post(data=payload)
             log(request.user, 'graphicsdevices.post', {
                 'success': result,
                 'database': upload_form.cleaned_data['database'],
@@ -473,7 +472,7 @@ def graphics_devices(request):
                 'adapter_name': form.cleaned_data['adapter_name'],
             }]
             api = GraphicsDevices()
-            result = api.post(json.dumps(payload))
+            result = api.post(data=payload)
             log(request.user, 'graphicsdevices.add', {
                 'payload': payload,
                 'success': result
