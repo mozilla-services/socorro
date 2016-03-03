@@ -55,7 +55,6 @@ SERVICES_LIST = (
     (r'/field/(.*)', 'field.Field'),
     (r'/gccrashes/(.*)', 'gccrashes.GCCrashes'),
     (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
-    (r'/platforms/(.*)', 'platforms.Platforms'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/build_types/(.*)', 'product_build_types.ProductBuildTypes'),
     (r'/products/(.*)', 'products.Products'),  # deprecated

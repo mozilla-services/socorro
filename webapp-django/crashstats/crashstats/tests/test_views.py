@@ -318,30 +318,35 @@ class BaseTestViews(DjangoTestCase):
                 'The tests requires that you use LocMemCache when running'
             )
 
+        def mocked_platforms_get(**options):
+            return {
+                "hits": [
+                    {
+                        'code': 'win',
+                        'name': 'Windows',
+                    },
+                    {
+                        'code': 'mac',
+                        'name': 'Mac OS X',
+                    },
+                    {
+                        'code': 'lin',
+                        'name': 'Linux',
+                    }
+                ],
+                "total": 6
+            }
+
+        models.Platforms.implementation().get.side_effect = (
+            mocked_platforms_get
+        )
+
         # we do this here so that the current/versions thing
         # is cached since that's going to be called later
         # in every view more or less
         def mocked_get(url, params, **options):
             now = datetime.datetime.utcnow()
             yesterday = now - datetime.timedelta(days=1)
-            if '/platforms/' in url:
-                return Response({
-                    "hits": [
-                        {
-                            'code': 'win',
-                            'name': 'Windows',
-                        },
-                        {
-                            'code': 'mac',
-                            'name': 'Mac OS X',
-                        },
-                        {
-                            'code': 'lin',
-                            'name': 'Linux',
-                        }
-                    ],
-                    "total": 6
-                })
             if 'products/' in url:
                 return Response("""
                     {"products": [

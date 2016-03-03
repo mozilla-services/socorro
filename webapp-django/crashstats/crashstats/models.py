@@ -19,6 +19,7 @@ from configman import configuration
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.app import socorro_app
+import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
@@ -889,7 +890,7 @@ class ProductsVersions(CurrentVersions):
 
 class Platforms(SocorroMiddleware):
 
-    URL_PREFIX = '/platforms/'
+    implementation = socorro.external.postgresql.platforms.Platforms
 
     API_WHITELIST = (
         'code',
@@ -897,6 +898,10 @@ class Platforms(SocorroMiddleware):
     )
 
     def get(self):
+        # XXX (peterbe, Mar 2016): Oh I wish we had stats on how many people
+        # are using /api/Platforms/. If we knew we could be brave about
+        # removing this legacy hack.
+
         # When we first exposed this model it would just return a plain
         # list. It was hardcoded. To avoid deprecating things for people
         # we continue this trandition by only returning the hits directly
