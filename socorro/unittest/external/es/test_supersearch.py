@@ -8,7 +8,8 @@ from nose.tools import assert_raises, eq_, ok_
 from socorro.external import BadArgumentError
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFields
-from socorrolib.lib import datetimeutil, search_common
+from socorro.middleware import search_common
+from socorrolib.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     minimum_es_version,

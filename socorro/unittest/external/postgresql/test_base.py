@@ -6,9 +6,11 @@ from nose.tools import eq_, ok_, assert_raises
 
 from socorro.external import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import search_common, util
 from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.middleware import search_common
 from socorro.unittest.testbase import TestCase
+
+from socorrolib.lib import util
 
 from .unittestbase import PostgreSQLTestCase
 

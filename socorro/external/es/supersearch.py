@@ -12,8 +12,8 @@ from socorro.external import (
     MissingArgumentError,
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.middleware.search_common import SearchBase
 from socorrolib.lib import datetimeutil
-from socorrolib.lib.search_common import SearchBase
 
 
 BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
