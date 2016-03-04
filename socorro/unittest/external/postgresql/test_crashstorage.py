@@ -17,7 +17,10 @@ from socorro.database.transaction_executor import (
     TransactionExecutorWithLimitedBackoff,
     TransactionExecutorWithInfiniteBackoff
 )
-from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.external.postgresql.crashstorage import (
+    PostgreSQLBasicCrashStorage,
+    PostgreSQLCrashStorage,
+)
 from socorro.unittest.testbase import TestCase
 
 empty_tuple = ()
@@ -169,15 +172,16 @@ def remove_whitespace(string):
     return string.replace('\n', '').replace(' ', '')
 
 
-# class TestIntegrationPostgresSQLCrashStorage(TestCase):
-class DontTestIntegrationPostgresSQLCrashStorage(object):
+class TestPostgresBasicCrashStorage(TestCase):
+    """
+    Tests where the actual PostgreSQL part is mocked.
+    """
 
-    def _setup_config_manager(self, extra_value_source=None):
-        if not extra_value_source:
-            extra_value_source = {}
+    def test_basic_key_error_on_save_processed(self):
 
         mock_logging = mock.Mock()
-        required_config = PostgreSQLCrashStorage.required_config
+        mock_postgres = mock.Mock()
+        required_config = PostgreSQLCrashStorage.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
@@ -187,122 +191,167 @@ class DontTestIntegrationPostgresSQLCrashStorage(object):
             app_description='app description',
             values_source_list=[{
                 'logger': mock_logging,
-            }, extra_value_source],
+                'database_class': mock_postgres
+            }],
             argv_source=[]
         )
 
-        return config_manager
-
-    def setUp(self):
-
-        config_manager = self._setup_config_manager()
         with config_manager.context() as config:
-            DSN = {
-                "database_hostname": config.database_hostnamename,
-                "database_name": config.database_name,
-                "database_username": config.database_username,
-                "database_password": config.database_password
+            crashstorage = PostgreSQLBasicCrashStorage(config)
+            database = crashstorage.database.return_value = mock.MagicMock()
+            ok_(isinstance(database, mock.Mock))
+
+            broken_processed_crash = {
+                "product": "Peter",
+                "version": "1.0B3",
+                "ooid": "abc123",
+                "submitted_timestamp": time.time(),
+                "unknown_field": 'whatever'
             }
+            assert_raises(KeyError,
+                          crashstorage.save_processed,
+                          broken_processed_crash)
 
-        dsn = ('host=%(database_hostname)s dbname=%(database_name)s '
-               'user=%(database_username)s password=%(database_password)s'
-               % DSN)
-        self.conn = psycopg2.connect(dsn)
-        cursor = self.conn.cursor()
-        date_suffix = PostgreSQLCrashStorage.\
-            _table_suffix_for_crash_id(a_processed_crash['uuid'])
-        self.reports_table_name = 'reports%s' % date_suffix
-        cursor.execute("""
-        DROP TABLE IF EXISTS %(table_name)s;
-        CREATE TABLE %(table_name)s (
-            id integer NOT NULL,
-            client_crash_date timestamp with time zone,
-            date_processed timestamp with time zone,
-            uuid character varying(50) NOT NULL,
-            product character varying(30),
-            version character varying(16),
-            build character varying(30),
-            signature character varying(255),
-            url character varying(255),
-            install_age integer,
-            last_crash integer,
-            uptime integer,
-            cpu_name character varying(100),
-            cpu_info character varying(100),
-            reason character varying(255),
-            address character varying(20),
-            os_name character varying(100),
-            os_version character varying(100),
-            email character varying(100),
-            user_id character varying(50),
-            started_datetime timestamp with time zone,
-            completed_datetime timestamp with time zone,
-            success boolean,
-            truncated boolean,
-            processor_notes text,
-            user_comments character varying(1024),
-            app_notes character varying(1024),
-            distributor character varying(20),
-            distributor_version character varying(20),
-            topmost_filenames text,
-            addons_checked boolean,
-            flash_version text,
-            hangid text,
-            process_type text,
-            release_channel text,
-            productid text
-        );
-        DROP SEQUENCE reports_id_seq;
-        CREATE SEQUENCE reports_id_seq
-            START WITH 1
-            INCREMENT BY 1
-            NO MINVALUE
-            NO MAXVALUE
-            CACHE 1;
+    def test_basic_postgres_save_processed_success(self):
+        config =  DotDict()
+        config.database_class = mock.MagicMock()
+        config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
+        config.redactor_class = mock.Mock()
+        config.backoff_delays = [1]
+        config.wait_log_interval = 10
+        config.logger = mock.Mock()
 
-        ALTER TABLE ONLY %(table_name)s ALTER COLUMN id
-          SET DEFAULT nextval('reports_id_seq'::regclass);
+        mocked_database_connection_source = config.database_class.return_value
+        mocked_connection = (
+            mocked_database_connection_source.return_value
+            .__enter__.return_value
+        )
+        mocked_cursor = mocked_connection.cursor.return_value.__enter__.return_value
 
-        DROP TABLE IF EXISTS plugins;
-        CREATE TABLE plugins (
-            id serial NOT NULL,
-            filename text NOT NULL,
-            name text NOT NULL
-        );
+        # the call to be tested
+        crashstorage = PostgreSQLCrashStorage(config)
+        crashstorage.save_processed(a_processed_crash)
 
-        DROP TABLE IF EXISTS plugins_reports;
-        CREATE TABLE plugins_reports (
-            report_id integer NOT NULL,
-            plugin_id integer NOT NULL,
-            date_processed timestamp with time zone,
-            version text NOT NULL
-        );
+        eq_(mocked_database_connection_source.call_count, 1)
+        eq_(mocked_cursor.execute.call_count, 5)
+        # check correct fragments
+        sql_fragments = [
+            "UPDATE reports_20120402",
+            'select id from plugins',
+            'delete from plugins_reports_20120402',
+            'insert into plugins_reports_20120402',
+        ]
+        for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
+            ok_(a_fragment in a_call[0][0])
 
-        DROP TABLE IF EXISTS plugin_%(table_name)s;
-        CREATE TABLE plugin_%(table_name)s (
-            report_id integer NOT NULL,
-            plugin_id integer NOT NULL,
-            date_processed timestamp with time zone,
-            version text NOT NULL
-        );
+    def test_basic_postgres_save_processed_success_2(self):
+        config =  DotDict()
+        config.database_class = mock.MagicMock()
+        config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
+        config.redactor_class = mock.Mock()
+        config.backoff_delays = [1]
+        config.wait_log_interval = 10
+        config.logger = mock.Mock()
 
-        """ % dict(table_name=self.reports_table_name,
-                   date_suffix=date_suffix))
-        self.conn.commit()
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+        mocked_database_connection_source = config.database_class.return_value
+        mocked_connection = (
+            mocked_database_connection_source.return_value
+            .__enter__.return_value
+        )
+        mocked_cursor = mocked_connection.cursor.return_value.__enter__.return_value
+        fetch_all_returns = [((666,),), None, ((23,),), ]
+        def fetch_all_func(*args):
+            result = fetch_all_returns.pop(0)
+            return result
+        mocked_cursor.fetchall =  fetch_all_func
 
-    def test_save_processed(self):
-        config_manager = self._setup_config_manager()
+        # the call to be tested
+        crashstorage = PostgreSQLCrashStorage(config)
+        crashstorage.save_processed(a_processed_crash)
+
+        eq_(mocked_database_connection_source.call_count, 1)
+        eq_(mocked_cursor.execute.call_count, 6)
+        # check correct fragments
+        sql_fragments = [
+            "UPDATE reports_20120402",
+            'select id from plugins',
+            'insert into plugins',
+            'delete from plugins_reports_20120402',
+            'insert into plugins_reports_20120402',
+        ]
+        for a_call, a_fragment in zip(mocked_cursor.execute.call_args_list, sql_fragments):
+            ok_(a_fragment in a_call[0][0])
+
+    def test_basic_postgres_save_processed_success_3_truncations(self):
+        config =  DotDict()
+        config.database_class = mock.MagicMock()
+        config.transaction_executor_class = TransactionExecutorWithInfiniteBackoff
+        config.redactor_class = mock.Mock()
+        config.backoff_delays = [1]
+        config.wait_log_interval = 10
+        config.logger = mock.Mock()
+
+        mocked_database_connection_source = config.database_class.return_value
+        mocked_connection = (
+            mocked_database_connection_source.return_value
+            .__enter__.return_value
+        )
+        mocked_cursor = mocked_connection.cursor.return_value.__enter__.return_value
+
+        # the call to be tested
+        crashstorage = PostgreSQLCrashStorage(config)
+        crashstorage.save_processed(a_processed_crash_with_everything_too_long)
+
+        eq_(mocked_database_connection_source.call_count, 1)
+        eq_(mocked_cursor.execute.call_count, 5)
+        # check correct fragments
+
+        first_call = mocked_cursor.execute.call_args_list[0]
+        eq_(
+            first_call[0][1],
+            a_processed_report_with_everything_truncated * 2
+        )
+
+    def test_basic_postgres_save_processed_operational_error(self):
+
+        mock_logging = mock.Mock()
+        mock_postgres = mock.Mock()
+
+        required_config = PostgreSQLCrashStorage.get_required_config()
+        required_config.add_option(
+            'logger',
+            default=mock_logging)
+
+        config_manager = ConfigurationManager(
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'database_class': mock_postgres,
+                'transaction_executor_class':
+                    TransactionExecutorWithLimitedBackoff,
+                'backoff_delays': [0, 0, 0],
+            }],
+            argv_source=[]
+        )
+
         with config_manager.context() as config:
             crashstorage = PostgreSQLCrashStorage(config)
-            # data doesn't contain an 'ooid' key
-            crashstorage.save_processed(a_processed_crash)
+            crashstorage.database.operational_exceptions = (OperationalError,)
 
-            cursor = self.conn.cursor()
-            cursor.execute('select uuid from %s' % self.reports_table_name)
-            report, = cursor.fetchall()
-            uuid, = report
-            eq_(uuid, a_processed_crash['uuid'])
+            database = crashstorage.database.return_value = mock.MagicMock()
+            ok_(isinstance(database, mock.Mock))
+
+            m = mock.MagicMock()
+            m.__enter__.return_value = m
+            database = crashstorage.database.return_value = m
+            m.cursor.side_effect = OperationalError('bad')
+            assert_raises(OperationalError,
+                          crashstorage.save_processed,
+                          a_processed_crash)
+            eq_(m.cursor.call_count, 3)
 
 
 class TestPostgresCrashStorage(TestCase):
