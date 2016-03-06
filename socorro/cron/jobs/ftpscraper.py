@@ -16,9 +16,11 @@ from crontabber.mixins import (
     as_backfill_cron_app,
     with_postgres_transactions
 )
+
+from socorro.cron import buildutil
+
 from socorrolib.app.socorro_app import App, main
 from socorrolib.lib.datetimeutil import string_to_datetime
-from socorrolib.lib import buildutil
 
 
 """
