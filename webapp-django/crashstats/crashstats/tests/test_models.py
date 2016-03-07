@@ -1333,13 +1333,11 @@ class TestModels(DjangoTestCase):
                     channel='nightly')
         eq_(r['total'], 2)
 
-    @mock.patch('requests.get')
-    def test_platforms(self, rget):
+    def test_platforms(self):
         api = models.Platforms()
 
-        def mocked_get(url, **options):
-            assert '/platforms/' in url
-            return Response({
+        def mocked_get(**options):
+            return {
                 "hits": [
                     {
                         "code": "win",
@@ -1351,9 +1349,10 @@ class TestModels(DjangoTestCase):
                     }
                 ],
                 "total": 2
-            })
+            }
 
-        rget.side_effect = mocked_get
+        models.Platforms.implementation().get.side_effect = mocked_get
+
         r = api.get()
         eq_(len(r), 2)
         assert 'Windows' in settings.DISPLAY_OS_NAMES
