@@ -5,6 +5,7 @@ from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 
+from crashstats.crashstats import models
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 
@@ -620,32 +621,30 @@ class TestViews(BaseTestViews):
             'date': '<=2015-01-01'
         })
 
-    @mock.patch('requests.get')
-    def test_signature_summary(self, rget):
+    def test_signature_summary(self):
 
-        def mocked_get(url, params, **options):
-            if '/graphics_devices' in url:
-                return Response({
-                    'hits': [
-                        {
-                            'vendor_hex': '0x0086',
-                            'adapter_hex': '0x1234',
-                            'vendor_name': 'Intel',
-                            'adapter_name': 'Device',
-                        },
-                        {
-                            'vendor_hex': '0x0086',
-                            'adapter_hex': '0x1239',
-                            'vendor_name': 'Intel',
-                            'adapter_name': 'Other',
-                        }
-                    ],
-                    'total': 2
-                })
+        def mocked_get_graphics_devices(**params):
+            return {
+                'hits': [
+                    {
+                        'vendor_hex': '0x0086',
+                        'adapter_hex': '0x1234',
+                        'vendor_name': 'Intel',
+                        'adapter_name': 'Device',
+                    },
+                    {
+                        'vendor_hex': '0x0086',
+                        'adapter_hex': '0x1239',
+                        'vendor_name': 'Intel',
+                        'adapter_name': 'Other',
+                    }
+                ],
+                'total': 2
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        models.GraphicsDevices.implementation().get.side_effect = (
+            mocked_get_graphics_devices
+        )
 
         def mocked_supersearch_get(**params):
             ok_('signature' in params)
@@ -862,22 +861,24 @@ class TestViews(BaseTestViews):
         # Logged in users with the permission can see exploitability
         ok_('Exploitability' in response.content)
 
-    @mock.patch('requests.get')
-    def test_signature_summary_with_many_hexes(self, rget):
+    def test_signature_summary_with_many_hexes(self):
 
-        def mocked_get(url, params, **options):
-            if '/graphics_devices' in url:
-                ok_(len(params['vendor_hex']) <= 50)
-                ok_(len(params['adapter_hex']) <= 50)
+        get_calls = []
 
-                return Response({
-                    'hits': [],
-                    'total': 0
-                })
+        def mocked_get(**params):
+            get_calls.append(1)
 
-            raise NotImplementedError(url)
+            ok_(len(params['vendor_hex']) <= 50)
+            ok_(len(params['adapter_hex']) <= 50)
 
-        rget.side_effect = mocked_get
+            return {
+                'hits': [],
+                'total': 0
+            }
+
+        models.GraphicsDevices.implementation().get.side_effect = (
+            mocked_get
+        )
 
         def mocked_supersearch_get(**params):
             ok_('signature' in params)
@@ -926,7 +927,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         # There are 150 different hexes, there should be 3 calls to the API.
-        eq_(rget.call_count, 3)
+        eq_(len(get_calls), 3)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_signature_bugzilla(self, rget):

@@ -52,6 +52,13 @@ class TestModels(DjangoTestCase):
     def tearDown(self):
         super(TestModels, self).tearDown()
 
+        # We use a memoization technique on the SocorroCommon so that we
+        # can get the same implementation class instance repeatedly under
+        # the same request. This is great for low-level performance but
+        # it makes it impossible to test classes that are imported only
+        # once like they are in unit test running.
+        models.SocorroCommon.clear_implementations_cache()
+
     def test_kwargs_to_params_basics(self):
         """every model instance has a kwargs_to_params method which
         converts raw keyword arguments (a dict basically) to a cleaned up
@@ -1410,13 +1417,11 @@ class TestModels(DjangoTestCase):
         )
         eq_(r['total'], 2)
 
-    @mock.patch('requests.get')
-    def test_graphics_devices(self, rget):
+    def test_graphics_devices(self):
         api = models.GraphicsDevices()
 
-        def mocked_get(url, params, **options):
-            assert 'graphics_devices' in url
-            return Response({
+        def mocked_get(**options):
+            return {
                 'hits': [
                     {
                         'vendor_hex': 'vhex2',
@@ -1432,9 +1437,12 @@ class TestModels(DjangoTestCase):
                     },
                 ],
                 'total': 2
-            })
+            }
 
-        rget.side_effect = mocked_get
+        models.GraphicsDevices.implementation().get.side_effect = (
+            mocked_get
+        )
+
         r = api.get(
             vendor_hex=['vhex1', 'vhex2'],
             adapter_hex=['ahex1', 'ahex2'],
@@ -1450,8 +1458,7 @@ class TestModels(DjangoTestCase):
             }
         )
 
-    @mock.patch('requests.get')
-    def test_graphics_devices_get_pairs(self, rget):
+    def test_graphics_devices_get_pairs(self):
         """The GraphicsDevices.get_pairs() is an abstraction of
         GraphicsDevices.get() on steroids. The input is similar as
         GraphicsDevices.get() but instead it returns a dict where
@@ -1463,12 +1470,11 @@ class TestModels(DjangoTestCase):
 
         params_called = []
 
-        def mocked_get(url, params, **options):
-            assert 'graphics_devices' in url
+        def mocked_get(**params):
             params_called.append(params)
 
             if 'vhex3' in params['vendor_hex']:
-                return Response({
+                return {
                     'hits': [
                         {
                             'vendor_hex': 'vhex3',
@@ -1478,9 +1484,9 @@ class TestModels(DjangoTestCase):
                         },
                     ],
                     'total': 1
-                })
+                }
             else:
-                return Response({
+                return {
                     'hits': [
                         {
                             'vendor_hex': 'vhex2',
@@ -1496,9 +1502,12 @@ class TestModels(DjangoTestCase):
                         },
                     ],
                     'total': 2
-                })
+                }
 
-        rget.side_effect = mocked_get
+        models.GraphicsDevices.implementation().get.side_effect = (
+            mocked_get
+        )
+
         r = api.get_pairs(
             ['ahex1', 'ahex2'],
             ['vhex1', 'vhex2'],
@@ -1515,6 +1524,7 @@ class TestModels(DjangoTestCase):
             ['ahex2', 'ahex3'],
             ['vhex2', 'vhex3'],
         )
+        assert len(r) == 2
         eq_(
             r,
             {
