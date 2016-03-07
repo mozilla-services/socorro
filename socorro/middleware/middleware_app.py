@@ -53,7 +53,6 @@ SERVICES_LIST = (
     ),
     (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
     (r'/field/(.*)', 'field.Field'),
-    (r'/graphics_devices/(.*)', 'graphics_devices.GraphicsDevices'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/build_types/(.*)', 'product_build_types.ProductBuildTypes'),
     (r'/products/(.*)', 'products.Products'),  # deprecated
