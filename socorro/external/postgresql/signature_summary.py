@@ -7,7 +7,7 @@ import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import external_common
+from socorrolib.lib import external_common
 from socorro.external import BadArgumentError
 
 

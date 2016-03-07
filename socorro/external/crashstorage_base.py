@@ -11,7 +11,7 @@ import os
 import collections
 import datetime
 
-from socorro.lib.util import DotDict as SocorroDotDict
+from socorrolib.lib.util import DotDict as SocorroDotDict
 
 from configman import Namespace, RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \

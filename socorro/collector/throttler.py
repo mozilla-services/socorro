@@ -8,7 +8,7 @@ import random
 
 from configman import Namespace, RequiredConfig
 
-from socorro.lib.ver_tools import normalize
+from socorrolib.lib.ver_tools import normalize
 
 Compiled_Regular_Expression_Type = type(re.compile(''))
 

@@ -10,7 +10,7 @@ from crontabber.mixins import (
     with_transactional_resource
 )
 from socorro.external.postgresql.dbapi2_util import execute_query_iter
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 
 _reprocessing_sql = """ DELETE FROM reprocessing_jobs RETURNING crash_id """
 

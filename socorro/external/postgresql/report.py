@@ -7,7 +7,9 @@ import logging
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import datetimeutil, search_common
+from socorro.middleware import search_common
+
+from socorrolib.lib import datetimeutil
 
 logger = logging.getLogger("webapi")
 

@@ -7,7 +7,7 @@ logger = logging.getLogger("webapi")
 
 import socorro.database.database as db
 from socorro.external import BadArgumentError
-from socorro.lib import datetimeutil, util, sqlutils
+from socorrolib.lib import datetimeutil, util, sqlutils
 
 import datetime
 

@@ -15,7 +15,7 @@ from socorro.external import (
 )
 from socorro.external.es.base import ElasticsearchBase
 from socorro.external.es.supersearch import BAD_INDEX_REGEX
-from socorro.lib import datetimeutil, external_common
+from socorrolib.lib import datetimeutil, external_common
 
 
 class Query(ElasticsearchBase):

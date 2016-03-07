@@ -6,7 +6,7 @@
 
 from configman import Namespace
 
-from socorro.app.fetch_transform_save_app import (
+from socorrolib.app.fetch_transform_save_app import (
     FetchTransformSaveApp,
     FetchTransformSaveWithSeparateNewCrashSourceApp,
     main
@@ -52,7 +52,7 @@ class ProcessedCrashCopierApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             'destination.crashstorage_class':
                 'socorro.external.fs.crashstorage.TarFileCrashStore',
             'producer_consumer.producer_consumer_class':
-                'socorro.lib.task_manager.TaskManager',
+                'socorrolib.lib.task_manager.TaskManager',
             'producer_consumer.quit_on_empty_queue': True,
             'new_crash_source.new_crash_source_class':
                 'socorro.processor.timemachine.PGQueryNewCrashSource'

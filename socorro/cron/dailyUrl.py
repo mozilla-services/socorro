@@ -18,7 +18,7 @@ import contextlib
 logger = logging.getLogger("dailyUrlDump")
 
 import socorro.database.database as sdb
-import socorro.lib.util as util
+import socorrolib.lib.util as util
 
 from socorro.database.cachedIdAccess import IdCache
 

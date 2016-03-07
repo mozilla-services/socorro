@@ -1,4 +1,4 @@
-from socorro.app import generic_app
+from socorrolib.app import generic_app
 
 from configman import Namespace, RequiredConfig, ConfigurationManager
 from configman.converters import class_converter

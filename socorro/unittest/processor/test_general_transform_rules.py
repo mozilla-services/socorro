@@ -10,7 +10,7 @@ from mock import Mock
 from configman.dotdict import DotDict as CDotDict
 
 from socorro.unittest.testbase import TestCase
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 from socorro.processor.general_transform_rules import (
     IdentifierRule,
     CPUInfoRule,

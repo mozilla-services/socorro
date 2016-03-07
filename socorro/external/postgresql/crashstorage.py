@@ -15,7 +15,7 @@ from configman import (
     class_converter
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.lib.datetimeutil import uuid_to_date, JsonDTEncoder
+from socorrolib.lib.datetimeutil import uuid_to_date, JsonDTEncoder
 from socorro.external.postgresql.dbapi2_util import (
     SQLDidNotReturnSingleValue,
     single_value_sql,

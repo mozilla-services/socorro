@@ -6,7 +6,7 @@ import pika
 from pika.exceptions import ChannelClosed
 
 from socorro.external import MissingArgumentError
-from socorro.lib import external_common
+from socorrolib.lib import external_common
 
 
 class Priorityjobs(object):

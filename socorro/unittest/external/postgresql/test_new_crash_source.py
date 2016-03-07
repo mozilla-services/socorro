@@ -16,7 +16,7 @@ from socorro.external.postgresql.new_crash_source import (
     DBCrashStorageWrapperNewCrashSource,
     PGPVNewCrashSource
 )
-from socorro.lib.util import DotDict as SocorroDotDict
+from socorrolib.lib.util import DotDict as SocorroDotDict
 from socorro.external.crashstorage_base import (
     FileDumpsMapping,
     MemoryDumpsMapping

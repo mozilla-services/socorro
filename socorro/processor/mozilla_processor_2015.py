@@ -2,7 +2,7 @@ import ujson
 from configman import Namespace
 
 from socorro.processor.processor_2015 import Processor2015
-from socorro.lib.converters import change_default
+from socorrolib.lib.converters import change_default
 
 #------------------------------------------------------------------------------
 # these are the steps that define processing a crash at Mozilla.
@@ -13,7 +13,7 @@ mozilla_processor_rule_sets = [
     [   # rules to change the internals of the raw crash
         "raw_transform",
         "processor.json_rewrite",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.mozilla_transform_rules.ProductRewrite,"
         "socorro.processor.mozilla_transform_rules.ESRVersionRewrite,"
@@ -26,7 +26,7 @@ mozilla_processor_rule_sets = [
     [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
         "processer.raw_to_processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.general_transform_rules.IdentifierRule, "
         "socorro.processor.breakpad_transform_rules"
@@ -44,7 +44,7 @@ mozilla_processor_rule_sets = [
     [   # post processing of the processed crash
         "processed_transform",
         "processer.processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.CrashingThreadRule, "
         "socorro.processor.general_transform_rules.CPUInfoRule, "
@@ -64,7 +64,7 @@ mozilla_processor_rule_sets = [
     [   # a set of classifiers for support
         "support_classifiers",
         "processor.support_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_until_action_succeeds",
         "socorro.processor.support_classifiers.BitguardClassifier, "
         "socorro.processor.support_classifiers.OutOfDateClassifier"
@@ -72,14 +72,14 @@ mozilla_processor_rule_sets = [
     [   # a set of classifiers to help with jit crashes
         "jit_classifiers",
         "processor.jit_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
     ],
     [   # a set of special request classifiers
         "skunk_classifiers",
         "processor.skunk_classifiers",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_until_action_succeeds",
         "socorro.processor.skunk_classifiers.DontConsiderTheseFilter, "
         # currently not in use, anticipated to be re-enabled in the future

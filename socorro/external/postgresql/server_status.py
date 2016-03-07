@@ -8,7 +8,7 @@ import os
 from pkg_resources import resource_string
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import datetimeutil, external_common
+from socorrolib.lib import datetimeutil, external_common
 
 logger = logging.getLogger("webapi")
 

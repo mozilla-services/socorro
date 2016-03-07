@@ -7,7 +7,7 @@ from mock import Mock
 from collections import Sequence
 
 from socorro.dataservice.dataservice_app import DataserviceApp
-from socorro.lib.util import SilentFakeLogger
+from socorrolib.lib.util import SilentFakeLogger
 from socorro.webapi.servers import WebServerBase
 
 from configman import (

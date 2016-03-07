@@ -9,7 +9,7 @@ from socorro.external import (
     ServiceUnavailable
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.lib import external_common
+from socorrolib.lib import external_common
 
 
 class CrashDataBase(object):

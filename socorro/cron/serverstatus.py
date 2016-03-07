@@ -27,8 +27,8 @@ import datetime
 import psycopg2
 import psycopg2.extras
 
-import socorro.lib.util
-from socorro.lib.datetimeutil import utc_now
+import socorrolib.lib.util
+from socorrolib.lib.datetimeutil import utc_now
 
 def update(configContext, logger):
   now = utc_now()
@@ -127,7 +127,7 @@ def update(configContext, logger):
     conn = psycopg2.connect(databaseDSN)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
   except:
-    socorro.lib.util.reportExceptionAndAbort(logger)
+    socorrolib.lib.util.reportExceptionAndAbort(logger)
 
   startTime = datetime.datetime.now()
   startTime -= configContext.processingInterval
@@ -142,7 +142,7 @@ def update(configContext, logger):
     row = cur.fetchone()
     conn.commit()
   except:
-    socorro.lib.util.reportExceptionAndAbort(logger)
+    socorrolib.lib.util.reportExceptionAndAbort(logger)
 
   if row:
     logger.info("Server Status id=%d was updated at %s -- recent=%s, oldest=%s, avg_proc=%s, avg_wait=%s, waiting=%s, procs=%s -- in %s seconds" % (row['id'], row['date_created'], row['date_recently_completed'], row['date_oldest_job_queued'], row['avg_process_sec'], row['avg_wait_sec'], row['waiting_job_count'], row['processors_count'], timeInserting))

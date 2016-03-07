@@ -15,7 +15,7 @@ from os import (
 
 from configman import Namespace
 
-from socorro.app.fetch_transform_save_app import (
+from socorrolib.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp,
     main
 )
@@ -24,7 +24,7 @@ from socorro.external.crashstorage_base import (
     FileDumpsMapping,
 )
 from socorro.external.fs.filesystem import findFileGenerator
-from socorro.lib.util import DotDict
+from socorrolib.lib.util import DotDict
 
 
 #==============================================================================

@@ -7,7 +7,7 @@ import json
 import mock
 from nose.tools import eq_, assert_raises
 
-from socorro.lib.util import SilentFakeLogger, DotDict
+from socorrolib.lib.util import SilentFakeLogger, DotDict
 from socorro.external.crashstorage_base import (
     Redactor,
     MemoryDumpsMapping

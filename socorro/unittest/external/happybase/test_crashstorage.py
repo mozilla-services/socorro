@@ -5,7 +5,7 @@
 import mock
 import json
 
-from socorro.lib.util import SilentFakeLogger, DotDict
+from socorrolib.lib.util import SilentFakeLogger, DotDict
 from socorro.external.crashstorage_base import (
     Redactor,
     MemoryDumpsMapping,

@@ -20,7 +20,7 @@ from socorro.external.es.crashstorage import (
 )
 from socorro.external.es.connection_context import ConnectionContext
 from socorro.unittest.external.es.base import ElasticsearchTestCase
-from socorro.lib.datetimeutil import string_to_datetime
+from socorrolib.lib.datetimeutil import string_to_datetime
 
 
 # A dummy crash report that is used for testing.

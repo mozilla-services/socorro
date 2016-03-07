@@ -15,8 +15,8 @@ from socorro.processor.hybrid_processor import (
   HybridCrashProcessor,
   create_symbol_path_str
 )
-from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
-from socorro.lib.util import CachingIterator
+from socorrolib.lib.datetimeutil import datetimeFromISOdateString, UTC
+from socorrolib.lib.util import CachingIterator
 from socorro.unittest.testbase import TestCase
 
 

@@ -11,7 +11,7 @@ from socorro.external.postgresql.dbapi2_util import (
     single_value_sql
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.lib.datetimeutil import utc_now
+from socorrolib.lib.datetimeutil import utc_now
 
 
 #==============================================================================

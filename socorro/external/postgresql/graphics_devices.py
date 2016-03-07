@@ -6,7 +6,7 @@ import psycopg2
 
 from socorro.external import MissingArgumentError, BadArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import external_common
+from socorrolib.lib import external_common
 
 
 class GraphicsDevices(PostgreSQLBase):

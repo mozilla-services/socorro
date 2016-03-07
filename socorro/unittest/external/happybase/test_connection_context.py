@@ -12,7 +12,7 @@ from socorro.external.happybase.connection_context import (
     HappyBasePooledConnectionContext,
 )
 
-from socorro.lib.util import SilentFakeLogger, DotDict
+from socorrolib.lib.util import SilentFakeLogger, DotDict
 from socorro.database.transaction_executor import TransactionExecutor
 from socorro.unittest.testbase import TestCase
 from configman import Namespace

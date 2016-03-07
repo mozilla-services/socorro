@@ -8,7 +8,7 @@ from nose.tools import eq_, ok_
 
 from sys import maxint
 
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorrolib.lib.util import DotDict, SilentFakeLogger
 from socorro.processor.support_classifiers import (
     SupportClassificationRule,
     BitguardClassifier,

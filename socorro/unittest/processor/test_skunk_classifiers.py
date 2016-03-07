@@ -6,7 +6,7 @@ import copy
 
 from nose.tools import eq_, ok_
 
-from socorro.lib.util import DotDict, SilentFakeLogger
+from socorrolib.lib.util import DotDict, SilentFakeLogger
 from socorro.processor.skunk_classifiers import (
     SkunkClassificationRule,
     DontConsiderTheseFilter,

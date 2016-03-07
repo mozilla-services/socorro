@@ -5,7 +5,7 @@
 from .unittestbase import PostgreSQLTestCase
 from socorro.external.postgresql.util import Util
 from nose.tools import eq_
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 
 
 class TestUtil(PostgreSQLTestCase):

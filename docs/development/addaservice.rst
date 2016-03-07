@@ -20,7 +20,7 @@ there is a PostgreSQL submodule, an elasticsearch submodule and an HBase
 submodule.
 
 You will also find some common code among external resources in
-``socorro.lib``.
+``socorrolib.lib``.
 
 The "Middleware" in Socorro is divided into two separate modules.
 ``socorro/middleware/middleware_app.py`` is the file that contains the actual
@@ -98,7 +98,7 @@ method that will contain all your business logic. For example::
 
     from socorro.external import MissingOrBadArgumentError
     from socorro.external.postgresql.base import PostgreSQLBase
-    from socorro.lib import external_common
+    from socorrolib.lib import external_common
 
 
     class Crash(PostgreSQLBase):

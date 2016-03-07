@@ -11,7 +11,7 @@ from socorro.external import (
     BadArgumentError
 )
 from socorro.external.postgresql.crashes import Crashes
-from socorro.lib import datetimeutil, util
+from socorrolib.lib import datetimeutil, util
 from socorro.unittest.testbase import TestCase
 from socorro.external.postgresql.connection_context import ConnectionContext
 

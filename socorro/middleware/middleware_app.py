@@ -19,7 +19,7 @@ import time
 import web
 import ujson
 
-from socorro.app.generic_app import App, main
+from socorrolib.app.generic_app import App, main
 from socorro.external import (
     MissingArgumentError,
     BadArgumentError,

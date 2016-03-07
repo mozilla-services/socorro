@@ -55,8 +55,8 @@ import datetime
 from configman import Namespace, class_converter
 from configman.converters import arbitrary_object_to_string
 
-from socorro.lib.util import DotDict
-from socorro.lib.transform_rules import Rule
+from socorrolib.lib.util import DotDict
+from socorrolib.lib.transform_rules import Rule
 
 
 #==============================================================================

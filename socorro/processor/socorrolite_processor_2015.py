@@ -1,7 +1,7 @@
 import ujson
 
 from socorro.processor.processor_2015 import Processor2015
-from socorro.lib.converters import change_default
+from socorrolib.lib.converters import change_default
 
 from configman import Namespace
 
@@ -14,14 +14,14 @@ socorrolite_processor_rule_sets = [
     [   # rules to change the internals of the raw crash
         "raw_transform",
         "processor.json_rewrite",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         ""
     ],
     [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
         "processer.raw_to_processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.general_transform_rules.IdentifierRule, "
         "socorro.processor.breakpad_transform_rules.BreakpadStackwalkerRule, "
@@ -30,7 +30,7 @@ socorrolite_processor_rule_sets = [
     [   # post processing of the processed crash
         "processed_transform",
         "processer.processed",
-        "socorro.lib.transform_rules.TransformRuleSystem",
+        "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.CrashingThreadRule, "
         "socorro.processor.signature_utilities.SignatureGenerationRule,"

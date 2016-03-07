@@ -11,8 +11,8 @@ from socorro.processor.processor_2015 import (
     Processor2015,
     rule_sets_from_string
 )
-from socorro.lib.util import DotDict as SDotDict
-from socorro.lib.transform_rules import TransformRuleSystem
+from socorrolib.lib.util import DotDict as SDotDict
+from socorrolib.lib.transform_rules import TransformRuleSystem
 from socorro.processor.support_classifiers import (
     BitguardClassifier,
     OutOfDateClassifier
@@ -26,7 +26,7 @@ rule_set_01 = [
     [
         'ruleset01',
         'tag0.tag1',
-        'socorro.lib.transform_rules.TransformRuleSystem',
+        'socorrolib.lib.transform_rules.TransformRuleSystem',
         'apply_all_rules',
         'socorro.processor.support_classifiers.BitguardClassifier, '
         'socorro.processor.support_classifiers.OutOfDateClassifier'
@@ -38,7 +38,7 @@ rule_set_02 = [
     [
         'ruleset01',
         'tag0.tag1',
-        'socorro.lib.transform_rules.TransformRuleSystem',
+        'socorrolib.lib.transform_rules.TransformRuleSystem',
         'apply_all_rules',
         'socorro.processor.support_classifiers.BitguardClassifier, '
         'socorro.processor.support_classifiers.OutOfDateClassifier'
@@ -46,7 +46,7 @@ rule_set_02 = [
     [
         'ruleset02',
         'tag2.tag3',
-        'socorro.lib.transform_rules.TransformRuleSystem',
+        'socorrolib.lib.transform_rules.TransformRuleSystem',
         'apply_until_action_succeeds',
         'socorro.processor.skunk_classifiers.SetWindowPos, '
         'socorro.processor.skunk_classifiers.UpdateWindowAttributes'
@@ -62,7 +62,7 @@ class TestProcessor2015(TestCase):
         ok_('ruleset01' in rc)
         eq_('tag0.tag1', rc.ruleset01.tag.default)
         eq_(
-            'socorro.lib.transform_rules.TransformRuleSystem',
+            'socorrolib.lib.transform_rules.TransformRuleSystem',
             rc.ruleset01.rule_system_class.default
         )
         eq_('apply_all_rules', rc.ruleset01.action.default)
@@ -79,7 +79,7 @@ class TestProcessor2015(TestCase):
         ok_('ruleset01' in rc)
         eq_('tag0.tag1', rc.ruleset01.tag.default)
         eq_(
-            'socorro.lib.transform_rules.TransformRuleSystem',
+            'socorrolib.lib.transform_rules.TransformRuleSystem',
             rc.ruleset01.rule_system_class.default
         )
         eq_('apply_all_rules', rc.ruleset01.action.default)
@@ -92,7 +92,7 @@ class TestProcessor2015(TestCase):
         ok_('ruleset02' in rc)
         eq_('tag2.tag3', rc.ruleset02.tag.default)
         eq_(
-            'socorro.lib.transform_rules.TransformRuleSystem',
+            'socorrolib.lib.transform_rules.TransformRuleSystem',
             rc.ruleset02.rule_system_class.default
         )
         eq_('apply_until_action_succeeds', rc.ruleset02.action.default)

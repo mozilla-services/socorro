@@ -7,7 +7,7 @@ Create Date: 2016-01-20 13:25:27.414375
 """
 
 from alembic import op
-from socorro.lib.migrations import load_stored_proc
+from socorrolib.lib.migrations import load_stored_proc
 
 # revision identifiers, used by Alembic.
 revision = '9371b45451b'

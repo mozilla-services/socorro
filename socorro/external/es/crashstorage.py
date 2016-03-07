@@ -10,7 +10,7 @@ from contextlib import contextmanager
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.index_creator import IndexCreator
-from socorro.lib import datetimeutil
+from socorrolib.lib import datetimeutil
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -158,8 +158,8 @@ class ESCrashStorage(CrashStorageBase):
             raise
 
 
-from socorro.lib.converters import change_default
-from socorro.lib.datetimeutil import string_to_datetime
+from socorrolib.lib.converters import change_default
+from socorrolib.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 

@@ -11,7 +11,7 @@ from socorro.external import (
     ResourceNotFound,
 )
 from socorro.external.es.base import ElasticsearchBase
-from socorro.lib import datetimeutil, external_common
+from socorrolib.lib import datetimeutil, external_common
 
 
 class SuperSearchFields(ElasticsearchBase):

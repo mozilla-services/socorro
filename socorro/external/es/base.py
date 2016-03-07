@@ -6,7 +6,7 @@ import datetime
 
 from configman import Namespace, class_converter
 
-from socorro.app.generic_app import App
+from socorrolib.app.generic_app import App
 
 
 class ElasticsearchConfig(App):

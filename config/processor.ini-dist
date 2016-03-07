@@ -480,7 +480,7 @@
         #prefix=
 
         # name of a class that will gather statistics
-        #stats_class=socorro.lib.statistics.StatisticsForStatsd
+        #stats_class=socorrolib.lib.statistics.StatisticsForStatsd
 
         # the hostname of statsd
         # see "resource.statsd.statsd_host" for the default or override it here
@@ -502,7 +502,7 @@
     #number_of_threads=4
 
     # the class implements a threaded producer consumer queue
-    #producer_consumer_class=socorro.lib.threaded_task_manager.ThreadedTaskManager
+    #producer_consumer_class=socorrolib.lib.threaded_task_manager.ThreadedTaskManager
 
 [registrar]
 
