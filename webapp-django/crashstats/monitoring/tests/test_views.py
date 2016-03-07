@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.crashstats.models import CrontabberState
 
 
 class TestViews(BaseTestViews):
@@ -123,13 +124,11 @@ class TestCrashAnalysisHealthViews(BaseTestViews):
 
 class TestCrontabberStatusViews(BaseTestViews):
 
-    @mock.patch('requests.get')
-    def test_crontabber_status_ok(self, rget):
+    def test_crontabber_status_ok(self):
 
-        def mocked_get(url, **options):
-            assert '/crontabber_state/' in url
-            recently = timezone.now().isoformat()
-            return Response({
+        def mocked_get(**options):
+            recently = timezone.now()
+            return {
                 'state': {
                     'job1': {
                         'error_count': 0,
@@ -137,22 +136,20 @@ class TestCrontabberStatusViews(BaseTestViews):
                         'last_run': recently,
                     }
                 }
-            })
+            }
 
-        rget.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         eq_(json.loads(response.content), {'status': 'ALLGOOD'})
 
-    @mock.patch('requests.get')
-    def test_crontabber_status_trouble(self, rget):
+    def test_crontabber_status_trouble(self):
 
-        def mocked_get(url, **options):
-            recently = timezone.now().isoformat()
-            assert '/crontabber_state/' in url
-            return Response({
+        def mocked_get(**options):
+            recently = timezone.now()
+            return {
                 'state': {
                     'job1': {
                         'error_count': 1,
@@ -175,9 +172,9 @@ class TestCrontabberStatusViews(BaseTestViews):
                         'last_run': recently,
                     },
                 }
-            })
+            }
 
-        rget.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
@@ -187,18 +184,16 @@ class TestCrontabberStatusViews(BaseTestViews):
         eq_(data['broken'], ['job1'])
         eq_(data['blocked'], ['job2', 'job3'])
 
-    @mock.patch('requests.get')
-    def test_crontabber_status_not_run_for_a_while(self, rget):
+    def test_crontabber_status_not_run_for_a_while(self):
 
         some_time_ago = (
             timezone.now() - datetime.timedelta(
                 minutes=settings.CRONTABBER_STALE_MINUTES
             )
-        ).isoformat()
+        )
 
-        def mocked_get(url, **options):
-            assert '/crontabber_state/' in url
-            return Response({
+        def mocked_get(**options):
+            return {
                 'state': {
                     'job1': {
                         'error_count': 0,
@@ -211,27 +206,25 @@ class TestCrontabberStatusViews(BaseTestViews):
                         'last_run': some_time_ago,
                     },
                 }
-            })
+            }
 
-        rget.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         data = json.loads(response.content)
         eq_(data['status'], 'Stale')
-        eq_(data['last_run'], some_time_ago)
+        eq_(data['last_run'], some_time_ago.isoformat())
 
-    @mock.patch('requests.get')
-    def test_crontabber_status_never_run(self, rget):
+    def test_crontabber_status_never_run(self):
 
-        def mocked_get(url, **options):
-            assert '/crontabber_state/' in url
-            return Response({
+        def mocked_get(**options):
+            return {
                 'state': {}
-            })
+            }
 
-        rget.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
         url = reverse('monitoring:crontabber_status')
         response = self.client.get(url)

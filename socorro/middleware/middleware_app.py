@@ -51,7 +51,6 @@ SERVICES_LIST = (
         r'signature_history|exploitability|adu_by_signature)/(.*)',
         'crashes.Crashes'
     ),
-    (r'/crontabber_state/(.*)', 'crontabber_state.CrontabberState'),
     (r'/field/(.*)', 'field.Field'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/build_types/(.*)', 'product_build_types.ProductBuildTypes'),

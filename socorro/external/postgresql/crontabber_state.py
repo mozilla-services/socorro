@@ -5,7 +5,6 @@
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import datetimeutil
 
 logger = logging.getLogger("webapi")
 
@@ -40,17 +39,5 @@ class CrontabberState(PostgreSQLBase):
         for row in results.zipped():
             app_name = row.pop('app_name')
             state[app_name] = row
-            possible_datetimes = (
-                'next_run',
-                'first_run',
-                'last_run',
-                'last_success',
-                'ongoing'
-            )
-            for key in possible_datetimes:
-                value = state[app_name][key]
-                if value is None:
-                    continue
-                state[app_name][key] = datetimeutil.date_to_string(value)
 
         return {"state": state}

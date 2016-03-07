@@ -5,6 +5,7 @@ import re
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.utils import timezone
 
 import mock
 import pyquery
@@ -20,7 +21,10 @@ from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
-from crashstats.crashstats.models import ProductVersions
+from crashstats.crashstats.models import (
+    ProductVersions,
+    CrontabberState,
+)
 from crashstats.tokens.models import Token
 
 
@@ -1259,39 +1263,36 @@ class TestViews(BaseTestViews):
         ok_(dump['hits'])
         ok_(dump['socorro_revision'])
 
-    @mock.patch('requests.get')
-    def test_CrontabberState(self, rget):
+    def test_CrontabberState(self):
+        # The actual dates dont matter, but it matters that it's a
+        # datetime.datetime object.
 
-        def mocked_get(url, params, **options):
-            if '/crontabber_state' in url:
-                return Response("""
-                {
-                  "state": {
+        def mocked_get(**options):
+            dt = timezone.now()
+            return {
+                "state": {
                     "automatic-emails": {
-                      "next_run": "2013-04-01T22:20:01+00:00",
-                      "first_run": "2013-03-15T16:25:01+00:00",
-                      "depends_on": [],
-                      "last_run": "2013-04-01T21:20:01+00:00",
-                      "last_success": "2013-04-01T20:25:01+00:00",
-                      "error_count": 0,
-                      "last_error": {}
+                        "next_run": dt,
+                        "first_run": dt,
+                        "depends_on": [],
+                        "last_run": dt,
+                        "last_success": dt,
+                        "error_count": 0,
+                        "last_error": {}
                     },
                     "ftpscraper": {
-                      "next_run": "2013-04-01T22:20:09+00:00",
-                      "first_run": "2013-03-07T07:05:51+00:00",
-                      "depends_on": [],
-                      "last_run": "2013-04-01T21:20:09+00:00",
-                      "last_success": "2013-04-01T21:05:51+00:00",
-                      "error_count": 0,
-                      "last_error": {}
+                        "next_run": dt,
+                        "first_run": dt,
+                        "depends_on": [],
+                        "last_run": dt,
+                        "last_success": dt,
+                        "error_count": 0,
+                        "last_error": {}
                     }
-                  }
                 }
-                """)
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('CrontabberState',))
         response = self.client.get(url)
@@ -1345,69 +1346,6 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['total'])
-
-    @mock.patch('requests.get')
-    def test_carry_mware_error_codes(self, rget):
-
-        # used so we can count, outside the mocked function,
-        # how many times the `requests.get` is called
-        attempts = []
-
-        def mocked_get(url, params, **options):
-            attempts.append(url)
-
-            # The middleware will return JSON encoded errors.
-            # These will be carried through to the end user here
-
-            def wrap_error(msg):
-                return json.dumps({'error': {'message': msg}})
-
-            if len(attempts) == 1:
-                return Response(
-                    wrap_error('Not found Stuff'),
-                    status_code=400
-                )
-            if len(attempts) == 2:
-                return Response(
-                    wrap_error('Forbidden Stuff'),
-                    status_code=403
-                )
-            if len(attempts) == 3:
-                return Response(
-                    wrap_error('Bad Stuff'),
-                    status_code=500
-                )
-            if len(attempts) == 4:
-                return Response(
-                    wrap_error('Someone elses Bad Stuff'),
-                    status_code=502
-                )
-
-        rget.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('CrontabberState',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        eq_(response['content-type'], 'application/json; charset=UTF-8')
-        error = json.loads(response.content)['error']
-        eq_(error['message'], 'Not found Stuff')
-
-        # second attempt
-        response = self.client.get(url)
-        eq_(response.status_code, 403)
-        eq_(response['content-type'], 'application/json; charset=UTF-8')
-        error = json.loads(response.content)['error']
-        eq_(error['message'], 'Forbidden Stuff')
-
-        # third attempt
-        response = self.client.get(url)
-        eq_(response.status_code, 424)
-        eq_(response['content-type'], 'text/plain')
-
-        # forth attempt
-        response = self.client.get(url)
-        eq_(response.status_code, 424)
-        eq_(response['content-type'], 'text/plain')
 
     @mock.patch('requests.get')
     def test_Correlations(self, rget):
@@ -1622,39 +1560,34 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.get')
-    def test_hit_or_not_hit_ratelimit(self, rget):
+    def test_hit_or_not_hit_ratelimit(self):
 
-        def mocked_get(url, params, **options):
-            if '/crontabber_state' in url:
-                return Response("""
-                {
-                  "state": {
+        def mocked_get(**options):
+            dt = timezone.now()
+            return {
+                "state": {
                     "automatic-emails": {
-                      "next_run": "2013-04-01T22:20:01+00:00",
-                      "first_run": "2013-03-15T16:25:01+00:00",
-                      "depends_on": [],
-                      "last_run": "2013-04-01T21:20:01+00:00",
-                      "last_success": "2013-04-01T20:25:01+00:00",
-                      "error_count": 0,
-                      "last_error": {}
+                        "next_run": dt,
+                        "first_run": dt,
+                        "depends_on": [],
+                        "last_run": dt,
+                        "last_success": dt,
+                        "error_count": 0,
+                        "last_error": {}
                     },
                     "ftpscraper": {
-                      "next_run": "2013-04-01T22:20:09+00:00",
-                      "first_run": "2013-03-07T07:05:51+00:00",
-                      "depends_on": [],
-                      "last_run": "2013-04-01T21:20:09+00:00",
-                      "last_success": "2013-04-01T21:05:51+00:00",
-                      "error_count": 0,
-                      "last_error": {}
-                    }
-                  }
+                        "next_run": dt,
+                        "first_run": dt,
+                        "depends_on": [],
+                        "last_run": dt,
+                        "last_success": dt,
+                        "error_count": 0,
+                        "last_error": {}
+                    },
                 }
-                """)
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        CrontabberState.implementation().get.side_effect = mocked_get
 
         # doesn't matter much which model we use
         url = reverse('api:model_wrapper', args=('CrontabberState',))
