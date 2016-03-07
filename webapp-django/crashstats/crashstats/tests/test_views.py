@@ -1103,33 +1103,12 @@ class TestViews(BaseTestViews):
         eq_(selected_product['product'], 'WaterWolf')
         eq_(selected_product['version'], '20.0')
 
-    @mock.patch('requests.get')
-    def test_gccrashes(self, rget):
+    def test_gccrashes(self):
         url = reverse('crashstats:gccrashes', args=('WaterWolf',))
         unknown_product_url = reverse('crashstats:gccrashes',
                                       args=('NotKnown',))
         invalid_version_url = reverse('crashstats:gccrashes',
                                       args=('WaterWolf', '99'))
-
-        def mocked_get(**options):
-            if '/products' in options['url']:
-                return Response("""
-                    {
-                        "products": ["WaterWolf"],
-                        "hits": [
-                            {
-                                "product": "WaterWolf",
-                                "version": "20.0",
-                                "release": "Nightly"
-                            }
-                        ],
-                        "total": "1"
-                    }
-                    """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1144,27 +1123,20 @@ class TestViews(BaseTestViews):
         response = self.client.get(unknown_product_url)
         eq_(response.status_code, 404)
 
-    @mock.patch('requests.get')
-    def test_gccrashes_json(self, rget):
+    def test_gccrashes_json(self):
         url = reverse('crashstats:gccrashes_json')
 
-        def mocked_get(url, params, **options):
-            if '/gccrashes' in url:
-                return Response("""
-                    {
-                      "hits": [
-                          [
-                              "20140203000001",
-                              366
-                          ]
-                      ],
-                      "total": 1
-                    }
-                    """)
+        def mocked_get(**options):
+            return {
+                "hits": [
+                    ["20140203000001", 366]
+                ],
+                "total": 1,
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        models.GCCrashes.implementation().get.side_effect = (
+            mocked_get
+        )
 
         response = self.client.get(url, {
             'product': 'WaterWolf',
@@ -1176,27 +1148,8 @@ class TestViews(BaseTestViews):
         ok_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
 
-    @mock.patch('requests.get')
-    def test_gccrashes_json_bad_request(self, rget):
+    def test_gccrashes_json_bad_request(self):
         url = reverse('crashstats:gccrashes_json')
-
-        def mocked_get(url, **options):
-            if 'gccrashes/' in url:
-                return Response("""
-                    {
-                      "hits": [
-                          [
-                              "20140203000001",
-                              366
-                          ]
-                      ],
-                      "total": 1
-                    }
-                    """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         response = self.client.get(url, {
             'product': 'WaterWolf',
