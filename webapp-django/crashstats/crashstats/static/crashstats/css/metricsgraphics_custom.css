@@ -12,20 +12,16 @@
 }
 
 /* Colours to override defaults for multi-line graphs */
-.mg-line1-color,
-.mg-hover-line1-color {
+.mg-line1-color {
     stroke: #6a3d9a;
 }
-.mg-line2-color,
-.mg-hover-line2-color {
+.mg-line2-color {
     stroke: #e31a1c;
 }
-.mg-line3-color,
-.mg-hover-line3-color {
+.mg-line3-color {
     stroke: #008800;
 }
-.mg-line4-color,
-.mg-hover-line4-color {
+.mg-line4-color {
     stroke: #1f78b4;
 }
 .mg-line1-legend-color {
@@ -44,15 +40,19 @@
     color: #1f78b4;
     fill: #1f78b4;
 }
-.mg-area1-color {
+.mg-area1-color,
+.mg-hover-line1-color  {
     fill: #6a3d9a;
 }
-.mg-area2-color {
+.mg-area2-color,
+.mg-hover-line2-color  {
     fill: #e31a1c;
 }
-.mg-area3-color {
+.mg-area3-color,
+.mg-hover-line3-color  {
     fill: #008800;
 }
-.mg-area4-color {
+.mg-area4-color,
+.mg-hover-line4-color  {
     fill: #1f78b4;
 }

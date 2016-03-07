@@ -174,7 +174,7 @@ SignatureReport.GraphTab.prototype.drawGraph = function(data, contentElement) {
         target: '.new-graph',
         x_accessor: 'date',
         y_accessor: 'ratio',
-        xax_start_at_min: true,
+        axes_not_compact: true,
         decimals: 10,
         area: false,
         show_secondary_x_label: false,
