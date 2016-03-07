@@ -24,6 +24,7 @@ import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
+import socorro.external.postgresql.gccrashes
 
 from django.conf import settings
 from django.core.cache import cache
@@ -1674,7 +1675,10 @@ class GCCrashes(SocorroMiddleware):
 
     cache_seconds = 60
 
-    URL_PREFIX = '/gccrashes/'
+    implementation = (
+        socorro.external.postgresql.gccrashes.GCCrashes
+    )
+
     required_params = (
         'product',
         'version',
