@@ -70,7 +70,6 @@ class socorro::vagrant {
 
   package {
     [
-      'daemonize',
       'epel-release',
       'gcc-c++',
       'git',
