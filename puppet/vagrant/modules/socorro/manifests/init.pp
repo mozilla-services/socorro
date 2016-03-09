@@ -37,19 +37,12 @@ class socorro::vagrant {
   }
 
   yumrepo {
-    'devtools':
-      baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
     'elasticsearch':
       baseurl => 'http://packages.elasticsearch.org/elasticsearch/1.4/centos',
       gpgkey  => 'https://packages.elasticsearch.org/GPG-KEY-elasticsearch';
     'PGDG':
       baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
       gpgkey  => 'http://yum.postgresql.org/RPM-GPG-KEY-PGDG';
-  }
-
-  Yumrepo['devtools'] {
-    enabled  => 1,
-    gpgcheck => 0
   }
 
   Yumrepo['elasticsearch', 'PGDG'] {
@@ -155,12 +148,6 @@ class socorro::vagrant {
         Yumrepo['elasticsearch'],
         Package['java-1.7.0-openjdk']
       ]
-  }
-
-  package {
-    'devtoolset-1.1-gcc-c++':
-      ensure  => latest,
-      require => Yumrepo['devtools']
   }
 
   file {
