@@ -6,6 +6,10 @@ class socorro::vagrant {
       ensure => stopped,
       enable => false;
 
+    'sshd':
+      ensure  => running,
+      enable  => true;
+
     'httpd':
       ensure  => running,
       enable  => true,
@@ -77,12 +81,16 @@ class socorro::vagrant {
       'java-1.7.0-openjdk',
       'java-1.7.0-openjdk-devel',
       'libcurl-devel',
+      'libffi-devel',
       'libxml2-devel',
       'libxslt-devel',
       'make',
       'memcached',
       'mod_wsgi',
+      'nodejs',
+      'npm',
       'openldap-devel',
+      'openssl-devel',
       'python-devel',
       'rpm-build',
       'rsync',
@@ -147,6 +155,22 @@ class socorro::vagrant {
         Yumrepo['elasticsearch'],
         Package['java-1.7.0-openjdk']
       ]
+  }
+
+  file {
+    'motd':
+      ensure => file,
+      path   => '/etc/motd',
+      source => 'puppet:///modules/socorro/motd'
+  }
+
+  augeas {
+    'sshd_config':
+      context => '/files/etc/ssh/sshd_config',
+      changes => [
+        'set PrintMotd yes',
+      ],
+      notify  => Service['sshd']
   }
 
   file {
