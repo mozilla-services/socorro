@@ -21,11 +21,11 @@ class socorro::vagrant {
       enable  => true,
       require => Package['rabbitmq-server'];
 
-    'postgresql-9.3':
+    'postgresql-9.4':
       ensure  => running,
       enable  => true,
       require => [
-        Package['postgresql93-server'],
+        Package['postgresql94-server'],
         Exec['postgres-initdb'],
         File['pg_hba.conf'],
       ];
@@ -41,7 +41,7 @@ class socorro::vagrant {
       baseurl => 'http://packages.elasticsearch.org/elasticsearch/1.4/centos',
       gpgkey  => 'https://packages.elasticsearch.org/GPG-KEY-elasticsearch';
     'PGDG':
-      baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
+      baseurl => 'http://yum.postgresql.org/9.4/redhat/rhel-$releasever-$basearch',
       gpgkey  => 'http://yum.postgresql.org/RPM-GPG-KEY-PGDG';
   }
 
@@ -97,10 +97,10 @@ class socorro::vagrant {
 
   package {
     [
-      'postgresql93-contrib',
-      'postgresql93-devel',
-      'postgresql93-plperl',
-      'postgresql93-server',
+      'postgresql94-contrib',
+      'postgresql94-devel',
+      'postgresql94-plperl',
+      'postgresql94-server',
     ]:
     ensure  => latest,
     require => [
@@ -111,7 +111,7 @@ class socorro::vagrant {
 
   exec {
     'postgres-initdb':
-      command => '/sbin/service postgresql-9.3 initdb'
+      command => '/usr/pgsql-9.4/bin/postgresql94-setup initdb'
   }
 
   exec {
@@ -121,10 +121,10 @@ class socorro::vagrant {
       command => 'sudo -u postgres psql template1 -c "create user test with encrypted password \'aPassword\' superuser"',
       unless  => 'sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'test\'" | grep -q 1',
       require => [
-        Package['postgresql93-server'],
+        Package['postgresql94-server'],
         Exec['postgres-initdb'],
         File['pg_hba.conf'],
-        Service['postgresql-9.3']
+        Service['postgresql-9.4']
       ]
   }
 
@@ -155,15 +155,15 @@ class socorro::vagrant {
 
     'pg_hba.conf':
       ensure  => file,
-      path    => '/var/lib/pgsql/9.3/data/pg_hba.conf',
-      source  => 'puppet:///modules/socorro/var_lib_pgsql_9.3_data/pg_hba.conf',
+      path    => '/var/lib/pgsql/9.4/data/pg_hba.conf',
+      source  => 'puppet:///modules/socorro/var_lib_pgsql_9.4_data/pg_hba.conf',
       owner   => 'postgres',
       group   => 'postgres',
       require => [
-        Package['postgresql93-server'],
+        Package['postgresql94-server'],
         Exec['postgres-initdb'],
       ],
-      notify  => Service['postgresql-9.3'];
+      notify  => Service['postgresql-9.4'];
 
     'pgsql.sh':
       ensure => file,
