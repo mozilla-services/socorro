@@ -11,3 +11,6 @@ if [ -f $VENV ] && [ -r $VENV ]; then
     . $VENV
     export PYTHONPATH=.
 fi
+
+# Add pg directory to path so pg-config works
+export PATH=$PATH:/usr/pgsql-9.4/bin/
