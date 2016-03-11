@@ -95,6 +95,7 @@ class socorro::vagrant {
       'rpm-build',
       'rsync',
       'ruby-devel',
+      'rubygem-puppet-lint',
       'subversion',
       'time',
       'unzip',
