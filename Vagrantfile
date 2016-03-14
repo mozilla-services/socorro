@@ -1,8 +1,7 @@
 is_jenkins = ENV['USER'] == 'jenkins'
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "CentOS 6.4 x86_64 Minimal"
-  config.vm.box_url = "http://developer.nrel.gov/downloads/vagrant-boxes/CentOS-6.4-x86_64-v20131103.box"
+  config.vm.box = "puppetlabs/centos-7.0-64-puppet"
 
   config.vm.provider "virtualbox" do |v|
     v.name = "socorro-vm"
@@ -21,8 +20,9 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell, inline: "if [ ! $(grep single-request-reopen /etc/sysconfig/network) ]; then echo RES_OPTIONS=single-request-reopen >> /etc/sysconfig/network && service network restart; fi"
 
   config.vm.provision :puppet do |puppet|
-    puppet.module_path = "puppet/modules"
-    puppet.manifests_path = "puppet/manifests"
+    puppet.environment_path = "puppet"
+    puppet.environment = "vagrant"
+    puppet.manifests_path = "puppet/vagrant/manifests"
     puppet.manifest_file = "vagrant.pp"
     # enable this to see verbose and debug puppet output
     #puppet.options = "--verbose --debug"

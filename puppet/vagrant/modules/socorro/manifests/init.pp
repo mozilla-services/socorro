@@ -6,6 +6,10 @@ class socorro::vagrant {
       ensure => stopped,
       enable => false;
 
+    'sshd':
+      ensure  => running,
+      enable  => true;
+
     'httpd':
       ensure  => running,
       enable  => true,
@@ -21,11 +25,11 @@ class socorro::vagrant {
       enable  => true,
       require => Package['rabbitmq-server'];
 
-    'postgresql-9.3':
+    'postgresql-9.4':
       ensure  => running,
       enable  => true,
       require => [
-        Package['postgresql93-server'],
+        Package['postgresql94-server'],
         Exec['postgres-initdb'],
         File['pg_hba.conf'],
       ];
@@ -37,19 +41,12 @@ class socorro::vagrant {
   }
 
   yumrepo {
-    'devtools':
-      baseurl => 'http://people.centos.org/tru/devtools-1.1/$releasever/$basearch/RPMS';
     'elasticsearch':
       baseurl => 'http://packages.elasticsearch.org/elasticsearch/1.4/centos',
       gpgkey  => 'https://packages.elasticsearch.org/GPG-KEY-elasticsearch';
     'PGDG':
-      baseurl => 'http://yum.postgresql.org/9.3/redhat/rhel-$releasever-$basearch',
+      baseurl => 'http://yum.postgresql.org/9.4/redhat/rhel-$releasever-$basearch',
       gpgkey  => 'http://yum.postgresql.org/RPM-GPG-KEY-PGDG';
-  }
-
-  Yumrepo['devtools'] {
-    enabled  => 1,
-    gpgcheck => 0
   }
 
   Yumrepo['elasticsearch', 'PGDG'] {
@@ -77,7 +74,6 @@ class socorro::vagrant {
 
   package {
     [
-      'daemonize',
       'epel-release',
       'gcc-c++',
       'git',
@@ -85,16 +81,22 @@ class socorro::vagrant {
       'java-1.7.0-openjdk',
       'java-1.7.0-openjdk-devel',
       'libcurl-devel',
+      'libffi-devel',
       'libxml2-devel',
       'libxslt-devel',
       'make',
       'memcached',
       'mod_wsgi',
+      'nodejs',
+      'npm',
       'openldap-devel',
+      'openssl-devel',
+      'pylint',
       'python-devel',
       'rpm-build',
       'rsync',
       'ruby-devel',
+      'rubygem-puppet-lint',
       'subversion',
       'time',
       'unzip',
@@ -105,10 +107,10 @@ class socorro::vagrant {
 
   package {
     [
-      'postgresql93-contrib',
-      'postgresql93-devel',
-      'postgresql93-plperl',
-      'postgresql93-server',
+      'postgresql94-contrib',
+      'postgresql94-devel',
+      'postgresql94-plperl',
+      'postgresql94-server',
     ]:
     ensure  => latest,
     require => [
@@ -119,7 +121,7 @@ class socorro::vagrant {
 
   exec {
     'postgres-initdb':
-      command => '/sbin/service postgresql-9.3 initdb'
+      command => '/usr/pgsql-9.4/bin/postgresql94-setup initdb'
   }
 
   exec {
@@ -129,10 +131,10 @@ class socorro::vagrant {
       command => 'sudo -u postgres psql template1 -c "create user test with encrypted password \'aPassword\' superuser"',
       unless  => 'sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'test\'" | grep -q 1',
       require => [
-        Package['postgresql93-server'],
+        Package['postgresql94-server'],
         Exec['postgres-initdb'],
         File['pg_hba.conf'],
-        Service['postgresql-9.3']
+        Service['postgresql-9.4']
       ]
   }
 
@@ -157,10 +159,20 @@ class socorro::vagrant {
       ]
   }
 
-  package {
-    'devtoolset-1.1-gcc-c++':
-      ensure  => latest,
-      require => Yumrepo['devtools']
+  file {
+    'motd':
+      ensure => file,
+      path   => '/etc/motd',
+      source => 'puppet:///modules/socorro/motd'
+  }
+
+  augeas {
+    'sshd_config':
+      context => '/files/etc/ssh/sshd_config',
+      changes => [
+        'set PrintMotd yes',
+      ],
+      notify  => Service['sshd']
   }
 
   file {
@@ -169,15 +181,15 @@ class socorro::vagrant {
 
     'pg_hba.conf':
       ensure  => file,
-      path    => '/var/lib/pgsql/9.3/data/pg_hba.conf',
-      source  => 'puppet:///modules/socorro/var_lib_pgsql_9.3_data/pg_hba.conf',
+      path    => '/var/lib/pgsql/9.4/data/pg_hba.conf',
+      source  => 'puppet:///modules/socorro/var_lib_pgsql_9.4_data/pg_hba.conf',
       owner   => 'postgres',
       group   => 'postgres',
       require => [
-        Package['postgresql93-server'],
+        Package['postgresql94-server'],
         Exec['postgres-initdb'],
       ],
-      notify  => Service['postgresql-9.3'];
+      notify  => Service['postgresql-9.4'];
 
     'pgsql.sh':
       ensure => file,

@@ -1,0 +1,11 @@
+Welcome to the Socorro vagrant environment!
+
+Documentation for using this environment can be found at:
+
+http://socorro.readthedocs.org/
+
+Dev docs are at:
+
+http://socorro.readthedocs.org/en/latest/development/
+
+If you need help, we're on #breakpad on irc.mozilla.org.
