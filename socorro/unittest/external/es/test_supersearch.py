@@ -6,12 +6,11 @@ import datetime
 from nose.tools import assert_raises, eq_, ok_
 
 from socorro.external import BadArgumentError
-from socorro.external.es.supersearch import SuperSearch
-from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.middleware import search_common
 from socorrolib.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
+    SuperSearchWithFields,
     minimum_es_version,
 )
 
@@ -20,12 +19,6 @@ from socorro.unittest.external.es.base import (
 # import logging
 # logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('requests').setLevel(logging.ERROR)
-
-
-class SuperSearchWithFields(SuperSearch):
-    def get(self, **kwargs):
-        kwargs['_fields'] = SuperSearchFields(config=self.config).get_fields()
-        return super(SuperSearchWithFields, self).get(**kwargs)
 
 
 class IntegrationTestSuperSearch(ElasticsearchTestCase):

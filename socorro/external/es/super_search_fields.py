@@ -14,6 +14,19 @@ from socorro.external.es.base import ElasticsearchBase
 from socorrolib.lib import datetimeutil, external_common
 
 
+ES_CUSTOM_ANALYZERS = {
+    'analyzer': {
+        'semicolon_keywords': {
+            'type': 'pattern',
+            'pattern': ';',
+        },
+    }
+}
+ES_QUERY_SETTINGS = {
+    'default_field': 'signature'
+}
+
+
 class SuperSearchFields(ElasticsearchBase):
 
     # Defining some filters that need to be considered as lists.
@@ -23,7 +36,7 @@ class SuperSearchFields(ElasticsearchBase):
     ]
 
     def get_fields(self):
-        """ Return all the fields from our database, as a dict where field
+        """Return all the fields from our database, as a dict where field
         names are the keys.
 
         No parameters are accepted.
@@ -174,11 +187,11 @@ class SuperSearchFields(ElasticsearchBase):
         # Then, if necessary, verify the new mapping.
         if (
             (
-                'storage_mapping' in params
-                and params['storage_mapping'] != old_value['storage_mapping']
+                'storage_mapping' in params and
+                params['storage_mapping'] != old_value['storage_mapping']
             ) or (
-                'in_database_name' in params
-                and params['in_database_name'] != old_value['in_database_name']
+                'in_database_name' in params and
+                params['in_database_name'] != old_value['in_database_name']
             )
         ):
             # This is a change that will have an impact on the Elasticsearch
@@ -191,8 +204,8 @@ class SuperSearchFields(ElasticsearchBase):
             self.test_mapping(new_mapping)
 
         if (
-            'storage_mapping' in params
-            and params['storage_mapping'] != old_value['storage_mapping']
+            'storage_mapping' in params and
+            params['storage_mapping'] != old_value['storage_mapping']
         ):
             # The storage mapping is an object, and thus is treated
             # differently than other fields by Elasticsearch. If a user
@@ -378,9 +391,8 @@ class SuperSearchFields(ElasticsearchBase):
         return {
             'settings': {
                 'index': {
-                    'query': {
-                        'default_field': 'signature'
-                    }
+                    'query': ES_QUERY_SETTINGS,
+                    'analysis': ES_CUSTOM_ANALYZERS
                 },
             },
             'mappings': {

@@ -14,6 +14,8 @@ from nose import SkipTest
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.es.index_creator import IndexCreator
+from socorro.external.es.supersearch import SuperSearch
+from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.unittest.testbase import TestCase
 
 
@@ -719,6 +721,24 @@ SUPERSEARCH_FIELDS = {
             'type': 'long'
         }
     },
+    'app_init_dlls': {
+        'data_validation_type': 'str',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'app_init_dlls',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'app_init_dlls',
+        'namespace': 'processed_crash',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': {
+            'type': 'string',
+            'analyzer': 'semicolon_keywords',
+        }
+    },
     # Add a synonym field.
     'product_2': {
         'data_validation_type': 'enum',
@@ -772,6 +792,15 @@ def minimum_es_version(minimum_version):
         return test_with_version
 
     return decorated
+
+
+class SuperSearchWithFields(SuperSearch):
+    """SuperSearch's get method requires to be passed the list of all fields.
+    This class does that automatically so we can just use `get()`. """
+
+    def get(self, **kwargs):
+        kwargs['_fields'] = SuperSearchFields(config=self.config).get_fields()
+        return super(SuperSearchWithFields, self).get(**kwargs)
 
 
 class ElasticsearchTestCase(TestCase):
