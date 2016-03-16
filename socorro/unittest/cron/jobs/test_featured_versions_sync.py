@@ -150,15 +150,13 @@ class IntegrationTestFeaturedVersionsSync(IntegrationTestBase):
 
         def mocked_get(url):
             return Response({
-                'hits': {
-                    'Firefox': [
-                        {'featured': True, 'version': '24.5.0'},
-                        {'featured': False, 'version': '15.0'},
-                    ],
-                    'Camino': [
-                        {'featured': False, 'version': '2.0.2'},
-                    ]
-                },
+                'hits': [
+                    {
+                        'product': 'Firefox',
+                        'is_featured': True,
+                        'version': '24.5.0'
+                    },
+                ],
                 'total': 1
             })
 

@@ -17,18 +17,23 @@ class FeaturedVersionsSyncCronApp(BaseCronApp):
     required_config = Namespace()
     required_config.add_option(
         'api_endpoint_url',
-        default='https://crash-stats.mozilla.com/api/CurrentProducts/',
-        doc='URL from which we can download all the current products'
+        default=(
+            'https://crash-stats.mozilla.com/api/ProductVersions/?'
+            'active=true&is_featured=true',
+        ),
+        doc='URL from which we can download all the active products'
     )
 
     def run(self):
         hits = requests.get(self.config.api_endpoint_url).json()['hits']
-        featured_products = dict(
-            (product, [x['version'] for x in versions if x['featured']])
-            for product, versions in hits.items()
-        )
-        for product in featured_products:
-            versions = featured_products[product]
+        featured_products = {}
+        for pv in hits:
+            if pv['product'] not in featured_products:
+                featured_products[pv['product']] = []
+            assert pv['is_featured']
+            featured_products[pv['product']].append(pv['version'])
+
+        for product, versions in featured_products.items():
             if versions:
                 self.database_transaction_executor(
                     self.edit_featured_versions,
