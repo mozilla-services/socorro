@@ -43,7 +43,7 @@
         </div>
         <p><b>Go straight to...</b></p>
         <ul>
-            {% for product in products %}
+            {% for product in releases %}
             <li><a href="#{{ product }}">{{ product }}</a></li>
             {% endfor %}
         </ul>
@@ -61,7 +61,7 @@
     <div class="body">
         <form action="{{ url('manage:update_featured_versions') }}" class="products" method="post">
             {% csrf_token %}
-            {% for product in products %}
+            {% for product in releases %}
             <div class="product">
                 <a name="{{ product }}"></a>
                 {% if not loop.first %}
@@ -75,7 +75,7 @@
                         <tr>
                             <th>Product</th>
                             <th>Version</th>
-                            <th>Release</th>
+                            <th>Build Type</th>
                             <th>Start Date</th>
                             <th>End Date</th>
                             <th>Featured</th>
@@ -100,11 +100,11 @@
                         <tr>
                             <td class="text">{{ release.product }}</td>
                             <td class="text">{{ release.version }}</td>
-                            <td class="text">{{ release.release }}</td>
+                            <td class="text">{{ release.build_type }}</td>
                             <td class="date">{{ release.start_date }}</td>
                             <td class="date">{{ release.end_date }}</td>
                             <td class="featured">
-                                <input type="checkbox" name="{{ product }}" value="{{ release.version }}" {% if release.featured %}checked{% endif %}>
+                                <input type="checkbox" name="{{ product }}" value="{{ release.version }}" {% if release.is_featured %}checked{% endif %}>
                             </td>
                             <td class="throttle">{{ release.throttle|show_percentage() }}</td>
                         </tr>

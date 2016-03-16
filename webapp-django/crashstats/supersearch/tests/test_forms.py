@@ -10,33 +10,27 @@ from crashstats.supersearch.tests.common import (
 class TestForms(TestCase):
 
     def setUp(self):
-        # Mocking models needed for form validation.
-        self.current_products = {
-            'WaterWolf': [],
-            'NightTrain': [],
-            'SeaMonkey': []
-        }
-        self.current_versions = [
+        self.product_versions = [
             {
                 'product': 'WaterWolf',
                 'version': '20.0',
-                "release": "Beta"
+                'build_type': 'Beta',
             },
             {
                 'product': 'WaterWolf',
                 'version': '21.0a1',
-                "release": "Nightly"
+                'build_type': 'Nightly',
             },
             {
                 'product': 'NightTrain',
                 'version': '20.0',
-                "release": "Beta",
+                'build_type': 'Beta',
             },
             {
                 'product': 'SeaMonkey',
                 'version': '9.5',
-                "release": "Beta"
-            }
+                'build_type': 'Beta',
+            },
         ]
         self.current_platforms = [
             {
@@ -67,8 +61,7 @@ class TestForms(TestCase):
 
             return forms.SearchForm(
                 self.all_fields,
-                self.current_products,
-                self.current_versions,
+                self.product_versions,
                 self.current_platforms,
                 User(),
                 data
@@ -118,8 +111,7 @@ class TestForms(TestCase):
 
             return forms.SearchForm(
                 self.all_fields,
-                self.current_products,
-                self.current_versions,
+                self.product_versions,
                 self.current_platforms,
                 User(),
                 data
@@ -168,8 +160,7 @@ class TestForms(TestCase):
 
             return forms.SearchForm(
                 self.all_fields,
-                self.current_products,
-                self.current_versions,
+                self.product_versions,
                 self.current_platforms,
                 User(),
                 data

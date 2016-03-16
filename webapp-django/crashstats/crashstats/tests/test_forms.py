@@ -12,34 +12,19 @@ class TestForms(DjangoTestCase):
 
     def setUp(self):
         super(TestForms, self).setUp()
-        # Mocking models needed for form validation
-        self.current_products = {
-            'WaterWolf': [],
-            'NightTrain': [],
-            'SeaMonkey': []
+        self.active_versions = {
+            'WaterWolf': [
+                {'version': '20.0', 'build_type': 'Beta'},
+                {'version': '21.0a1', 'build_type': 'Nightly'},
+            ],
+            'NightTrain': [
+                {'version': '20.0', 'build_type': 'Beta'},
+            ],
+            'SeaMonkey': [
+                {'version': '9.5', 'build_type': 'Beta'},
+            ],
         }
-        self.current_versions = [
-            {
-                'product': 'WaterWolf',
-                'version': '20.0',
-                "release": "Beta"
-            },
-            {
-                'product': 'WaterWolf',
-                'version': '21.0a1',
-                "release": "Nightly"
-            },
-            {
-                'product': 'NightTrain',
-                'version': '20.0',
-                "release": "Beta",
-            },
-            {
-                'product': 'SeaMonkey',
-                'version': '9.5',
-                "release": "Beta"
-            }
-        ]
+
         self.current_channels = (
             'release',
             'beta',
@@ -52,8 +37,7 @@ class TestForms(DjangoTestCase):
 
         def get_new_form(data):
             return forms.ReportListForm(
-                self.current_products,
-                self.current_versions,
+                self.active_versions,
                 data
             )
 
@@ -140,8 +124,7 @@ class TestForms(DjangoTestCase):
 
         def get_new_form(data):
             return forms.ReportListForm(
-                self.current_products,
-                self.current_versions,
+                self.active_versions,
                 data
             )
 
@@ -171,8 +154,7 @@ class TestForms(DjangoTestCase):
 
         def get_new_form(data):
             return forms.SignatureSummaryForm(
-                self.current_products,
-                self.current_versions,
+                self.active_versions,
                 data,
             )
 
@@ -215,18 +197,17 @@ class TestForms(DjangoTestCase):
 
         def get_new_form(cls, data):
             return cls(
-                current_versions,
+                active_versions,
                 platforms,
                 date_range_types=['foo', 'bar'],
                 hang_types=['xxx', 'yyy'],
                 data=data
             )
 
-        current_versions = [
-            {'product': 'WaterWolf', 'version': '19.0'},
-            {'product': 'WaterWolf', 'version': '18.0'},
-            {'product': 'NightTrain', 'version': '15.0'},
-        ]
+        active_versions = {
+            'WaterWolf': [{'version': '19.0'}, {'version': '18.0'}],
+            'NightTrain': [{'version': '15.0'}],
+        }
         platforms = [
             {'code': 'osx', 'name': 'Mac OS X'},
             {'code': 'windows', 'name': 'Windows'},
@@ -303,7 +284,7 @@ class TestForms(DjangoTestCase):
         def get_new_form(data):
             return forms.ADUBySignatureJSONForm(
                 self.current_channels,
-                self.current_products,
+                self.active_versions,
                 data
             )
 
@@ -412,9 +393,16 @@ class TestForms(DjangoTestCase):
     def test_gcrashes_form(self):
 
         def get_new_form(data):
+            nightly_versions = {}
+            for product in self.active_versions:
+                if product not in nightly_versions:
+                    nightly_versions[product] = []
+                for version in self.active_versions[product]:
+                    if version['build_type'].lower() == 'nightly':
+                        nightly_versions[product].append(version['version'])
             return forms.GCCrashesForm(
                 data,
-                nightly_versions=self.current_versions
+                nightly_versions=nightly_versions
             )
 
         form = get_new_form({

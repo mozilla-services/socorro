@@ -205,8 +205,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 404)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_topcrasher_without_any_signatures(self, rget, rpost):
+    def test_topcrasher_without_any_signatures(self, rpost):
         url = self.base_url + '?product=WaterWolf&version=19.0'
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
@@ -214,27 +213,6 @@ class TestViews(BaseTestViews):
         ok_(url in response['Location'])
 
         rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if '/products' in url:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "19.0",
-                        "has_builds": true
-                    }],
-                    "total": "1"
-                }
-                """)
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             return {

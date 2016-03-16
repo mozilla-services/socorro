@@ -20,8 +20,8 @@ def home(request, product, default_context=None):
     if not context['versions']:
         context['versions'] = [
             x['version']
-            for x in context['releases'][product]
-            if x['featured']
+            for x in context['active_versions'][product]
+            if x['is_featured']
         ]
 
     platforms_api = models.Platforms()

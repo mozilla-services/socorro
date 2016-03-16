@@ -10,11 +10,11 @@
     <h2 id="list-of-signatures">List of signatures</h2>
 
     <h3>Goal</h3>
-    <p>Get the top 20 signatures for {{ product }} {{ releases[product][0].version }}. </p>
+    <p>Get the top 20 signatures for {{ product }} {{ active_versions[product][0].version }}. </p>
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;version={{ releases[product][0].version }}&amp;_facets=signature&amp;_facets_size=20"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ releases[product][0].version }}&amp;_facets=signature&amp;_facets_size=20</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;version={{ active_versions[product][0].version }}&amp;_facets=signature&amp;_facets_size=20"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ active_versions[product][0].version }}&amp;_facets=signature&amp;_facets_size=20</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -38,13 +38,13 @@
     <h2 id="many-results">Many results</h2>
 
     <h3>Goal</h3>
-    <p>Get the first 600 crash reports for release channel {{ releases[product][0].release }}. </p>
+    <p>Get the first 600 crash reports for release channel {{ active_versions[product][0].release }}. </p>
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=0"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=0</span></code>
-<code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=200"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=200</span></code>
-<code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=400"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ releases[product][0].release }}&amp;_results_number=200&amp;_results_offset=400</span></code></pre>
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=0"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=0</span></code>
+<code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ active_versions[product][0].release }}&amp;_results_number=200&amp;_results_offset=200"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=200</span></code>
+<code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ active_versions[product][0].release }}&amp;_results_number=200&amp;_results_offset=400"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=400</span></code></pre>
     </div>
 
     <h3>Tips</h3>

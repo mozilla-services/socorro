@@ -202,7 +202,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     if not tcbs_mode or tcbs_mode not in ('realtime', 'byday'):
         tcbs_mode = 'realtime'
 
-    if product not in context['releases']:
+    if product not in context['active_versions']:
         raise http.Http404('Unrecognized product')
 
     context['product'] = product
@@ -211,10 +211,10 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         # :(
         # simulate what the nav.js does which is to take the latest version
         # for this product.
-        for release in context['currentversions']:
-            if release['product'] == product and release['featured']:
+        for pv in context['active_versions'][product]:
+            if pv['is_featured']:
                 url = '%s&version=%s' % (
-                    request.build_absolute_uri(), urlquote(release['version'])
+                    request.build_absolute_uri(), urlquote(pv['version'])
                 )
                 return redirect(url)
     else:
