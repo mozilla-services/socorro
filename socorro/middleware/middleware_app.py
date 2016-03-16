@@ -69,7 +69,6 @@ SERVICES_LIST = (
     ),
     (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
-    (r'/adi/(.*)', 'adi.ADI'),
 )
 
 # certain items in a URL path should NOT be split by `+`

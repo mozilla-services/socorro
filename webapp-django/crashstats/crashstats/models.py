@@ -25,6 +25,7 @@ import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.gccrashes
 import socorro.external.postgresql.crontabber_state
+import socorro.external.postgresql.adi
 
 from socorrolib.app import socorro_app
 
@@ -1704,7 +1705,7 @@ class AduBySignature(SocorroMiddleware):
 
 class ADI(SocorroMiddleware):
 
-    URL_PREFIX = '/adi/'
+    implementation = socorro.external.postgresql.adi.ADI
 
     required_params = (
         ('start_date', datetime.date),

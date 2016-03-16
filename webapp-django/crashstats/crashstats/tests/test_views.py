@@ -860,28 +860,30 @@ class TestViews(BaseTestViews):
     def test_frontpage_json(self, rget):
         url = reverse('crashstats:frontpage_json')
 
+        def mocked_adi_get(**options):
+            end_date = timezone.now().date()
+            # the default is two weeks
+            start_date = end_date - datetime.timedelta(weeks=2)
+
+            response = {
+                'total': 4,
+                'hits': []
+            }
+            while start_date < end_date:
+                for version in ['20.0', '19.0']:
+                    for build_type in ['beta', 'release']:
+                        response['hits'].append({
+                            'adi_count': long(random.randint(100, 1000)),
+                            'build_type': build_type,
+                            'date': start_date,
+                            'version': version
+                        })
+                start_date += datetime.timedelta(days=1)
+            return response
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
         def mocked_get(url, params, **options):
-            if '/adi/' in url:
-                end_date = timezone.now().date()
-                # the default is two weeks
-                start_date = end_date - datetime.timedelta(weeks=2)
-
-                response = {
-                    'total': 4,
-                    'hits': []
-                }
-                while start_date < end_date:
-                    for version in ['20.0', '19.0']:
-                        for build_type in ['beta', 'release']:
-                            response['hits'].append({
-                                'adi_count': random.randint(100, 1000),
-                                'build_type': build_type,
-                                'date': start_date.strftime('%Y-%m-%d'),
-                                'version': version
-                            })
-                    start_date += datetime.timedelta(days=1)
-                return Response(response)
-
             if '/products/build_types/' in url:
                 return Response({
                     'hits': {
@@ -960,13 +962,15 @@ class TestViews(BaseTestViews):
     def test_frontpage_json_bad_request(self, rget):
         url = reverse('crashstats:frontpage_json')
 
-        def mocked_get(url, params, **options):
-            if '/adi/' in url:
-                return Response({
-                    'total': 4,
-                    'hits': []
-                })
+        def mocked_adi_get(**options):
+            return {
+                'total': 4,
+                'hits': []
+            }
 
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
+        def mocked_get(url, params, **options):
             if '/products/build_types/' in url:
                 return Response({
                     'hits': {
@@ -1051,13 +1055,15 @@ class TestViews(BaseTestViews):
     def test_frontpage_json_no_data_for_version(self, rget):
         url = reverse('crashstats:frontpage_json')
 
-        def mocked_get(url, params, **options):
-            if '/adi/' in url:
-                return Response({
-                    'total': 4,
-                    'hits': []
-                })
+        def mocked_adi_get(**options):
+            return {
+                'total': 4,
+                'hits': []
+            }
 
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
+        def mocked_get(url, params, **options):
             if '/products/build_types/' in url:
                 return Response({
                     'hits': {
@@ -2158,31 +2164,32 @@ class TestViews(BaseTestViews):
     def test_crashes_per_day(self, rget):
         url = reverse('crashstats:crashes_per_day')
 
+        def mocked_adi_get(**options):
+            eq_(options['versions'], ['20.0', '19.0'])
+            end_date = timezone.now().date()
+            # the default is two weeks
+            start_date = end_date - datetime.timedelta(weeks=2)
+            eq_(options['start_date'], start_date.strftime('%Y-%m-%d'))
+            eq_(options['end_date'], end_date.strftime('%Y-%m-%d'))
+            eq_(options['product'], 'WaterWolf')
+            eq_(options['platforms'], ['Windows', 'Mac OS X', 'Linux'])
+            response = {
+                'total': 4,
+                'hits': []
+            }
+            while start_date < end_date:
+                for version in ['20.0', '19.0']:
+                    for build_type in ['beta', 'release']:
+                        response['hits'].append({
+                            'adi_count': long(random.randint(100, 1000)),
+                            'build_type': build_type,
+                            'date': start_date,
+                            'version': version
+                        })
+                start_date += datetime.timedelta(days=1)
+            return response
+
         def mocked_get(url, params, **options):
-            if '/adi/' in url:
-                eq_(params['versions'], ['20.0', '19.0'])
-                end_date = timezone.now().date()
-                # the default is two weeks
-                start_date = end_date - datetime.timedelta(weeks=2)
-                eq_(params['start_date'], start_date.strftime('%Y-%m-%d'))
-                eq_(params['end_date'], end_date.strftime('%Y-%m-%d'))
-                eq_(params['product'], 'WaterWolf')
-                eq_(params['platforms'], ['Windows', 'Mac OS X', 'Linux'])
-                response = {
-                    'total': 4,
-                    'hits': []
-                }
-                while start_date < end_date:
-                    for version in ['20.0', '19.0']:
-                        for build_type in ['beta', 'release']:
-                            response['hits'].append({
-                                'adi_count': random.randint(100, 1000),
-                                'build_type': build_type,
-                                'date': start_date.strftime('%Y-%m-%d'),
-                                'version': version
-                            })
-                    start_date += datetime.timedelta(days=1)
-                return Response(response)
             if '/products/build_types/' in url:
                 return Response({
                     'hits': {
@@ -2194,6 +2201,8 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
 
         def mocked_supersearch_get(**params):
             eq_(params['product'], ['WaterWolf'])
@@ -2355,27 +2364,30 @@ class TestViews(BaseTestViews):
 
         url = reverse('crashstats:crashes_per_day')
 
+        def mocked_adi_get(**options):
+            eq_(options['versions'], ['19.0', '18.0b1', '18.0b'])
+            end_date = timezone.now().date()
+            # the default is two weeks
+            start_date = end_date - datetime.timedelta(weeks=2)
+            response = {
+                'total': 4,
+                'hits': []
+            }
+            while start_date < end_date:
+                for version in ['18.0b1', '18.0b2', '19.0']:
+                    for build_type in ['beta', 'release']:
+                        response['hits'].append({
+                            'adi_count': long(random.randint(100, 1000)),
+                            'build_type': build_type,
+                            'date': start_date,
+                            'version': version
+                        })
+                start_date += datetime.timedelta(days=1)
+            return response
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
         def mocked_get(url, params, **options):
-            if '/adi/' in url:
-                eq_(params['versions'], ['19.0', '18.0b1', '18.0b'])
-                end_date = timezone.now().date()
-                # the default is two weeks
-                start_date = end_date - datetime.timedelta(weeks=2)
-                response = {
-                    'total': 4,
-                    'hits': []
-                }
-                while start_date < end_date:
-                    for version in ['18.0b1', '18.0b2', '19.0']:
-                        for build_type in ['beta', 'release']:
-                            response['hits'].append({
-                                'adi_count': random.randint(100, 1000),
-                                'build_type': build_type,
-                                'date': start_date.strftime('%Y-%m-%d'),
-                                'version': version
-                            })
-                    start_date += datetime.timedelta(days=1)
-                return Response(response)
             if '/products/build_types/' in url:
                 return Response({
                     'hits': {
