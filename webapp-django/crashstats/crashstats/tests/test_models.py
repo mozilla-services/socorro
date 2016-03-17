@@ -198,110 +198,103 @@ class TestModels(DjangoTestCase):
         info = api.get('747238', 'product')
         eq_(info['bugs'], [{u'product': u'DIFFERENT'}])
 
-    @mock.patch('requests.get')
-    def test_current_versions(self, rget):
+    def test_current_versions(self):
         model = models.CurrentVersions
         api = model()
 
         def mocked_get(**options):
-            assert '/products' in options['url']
-            return Response("""
-                {"hits": {
-                   "SeaMonkey": [{
-                     "product": "SeaMonkey",
-                     "throttle": "100.00",
-                     "end_date": "2012-05-10 00:00:00",
-                     "start_date": "2012-03-08 00:00:00",
-                     "featured": true,
-                     "version": "2.1.3pre",
-                     "release": "Beta",
-                     "id": 922}]
-                  },
-                  "products": ["SeaMonkey"]
-                }
-              """)
+            return {
+                'hits': [
+                    {
+                        'product': 'SeaMonkey',
+                        'throttle': 100.0,
+                        'end_date': datetime.date(2012, 5, 10),
+                        'start_date': datetime.date(2012, 3, 10),
+                        'is_featured': True,
+                        'has_builds': False,
+                        'version': '2.1.3pre',
+                        'build_type': 'Beta',
+                    }
+                ],
+                'total': 1
+            }
 
-        rget.side_effect = mocked_get
+        models.ProductVersions.implementation().get.side_effect = mocked_get
         info = api.get()
         ok_(isinstance(info, list))
         ok_(isinstance(info[0], dict))
         eq_(info[0]['product'], 'SeaMonkey')
 
-    @mock.patch('requests.get')
-    def test_products_versions(self, rget):
+    def test_products_versions(self):
         model = models.ProductsVersions
         api = model()
 
         def mocked_get(**options):
-            assert '/products' in options['url']
-            return Response("""
-                {"hits": {
-                   "WaterWolf": [{
-                     "product": "WaterWolf",
-                     "throttle": "100.00",
-                     "end_date": "2012-05-10 00:00:00",
-                     "start_date": "2012-03-08 00:00:00",
-                     "featured": true,
-                     "version": "2.1.3pre",
-                     "release": "Beta",
-                     "id": 922}]
-                  },
-                  "products": ["WaterWolf"]
-                }
-            """)
+            return {
+                'hits': [
+                    {
+                        'product': 'WaterWolf',
+                        'throttle': 100.0,
+                        'end_date': datetime.date(2012, 5, 10),
+                        'start_date': datetime.date(2012, 3, 8),
+                        'is_featured': True,
+                        'version': '2.1.3pre',
+                        'build_type': 'Beta',
+                        'has_builds': False,
+                    },
+                ],
+                'total': 1,
+            }
 
-        rget.side_effect = mocked_get
+        models.ProductVersions.implementation().get.side_effect = mocked_get
         info = api.get()
         self.assertTrue(isinstance(info, dict))
         self.assertTrue('WaterWolf' in info)
         self.assertTrue(isinstance(info['WaterWolf'], list))
         self.assertEqual(info['WaterWolf'][0]['product'], 'WaterWolf')
 
-    @mock.patch('requests.get')
-    def test_current_products(self, rget):
+    def test_current_products(self):
         api = models.CurrentProducts()
 
-        def mocked_get(url, params, **options):
-            assert '/products' in url
-
-            if 'versions' in params and params['versions'] == 'WaterWolf:2.1':
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "is_featured": true,
-                        "throttle": 1.0,
-                        "end_date": "string",
-                        "start_date": "integer",
-                        "build_type": "string",
-                        "product": "WaterWolf",
-                        "version": "15.0.1",
-                        "has_builds": true
-                    }],
-                    "total": "1"
+        def mocked_get(**options):
+            if options.get('versions') == 'WaterWolf:2.1':
+                return {
+                    'hits': [
+                        {
+                            'is_featured': True,
+                            'throttle': 100.0,
+                            'end_date': 'string',
+                            'start_date': 'integer',
+                            'build_type': 'string',
+                            'product': 'WaterWolf',
+                            'version': '15.0.1',
+                            'has_builds': True
+                        }
+                    ],
+                    'total': 1
                 }
-                """)
 
             else:
-                return Response("""
-                {
-                  "hits": [
-                    {
-                        "sort": "1",
-                        "default_version": "15.0.1",
-                        "release_name": "firefox",
-                        "rapid_release_version": "5.0",
-                        "product_name": "NightTrain"
-                    }],
-                    "total": "1"
+                return {
+                    'hits': [
+                        {
+                            'is_featured': True,
+                            'throttle': 100.0,
+                            'end_date': 'string',
+                            'start_date': 'integer',
+                            'build_type': 'string',
+                            'product': 'NightTrain',
+                            'version': '15.0.1',
+                            'has_builds': False
+                        }
+                    ],
+                    'total': 1
                 }
-                """)
 
-            raise NotImplementedError(url)
+        models.ProductVersions.implementation().get.side_effect = mocked_get
 
-        rget.side_effect = mocked_get
         info = api.get()
-        eq_(info['hits'][0]['product_name'], 'NightTrain')
+        eq_(info['hits']['NightTrain'][0]['product'], 'NightTrain')
 
         info = api.get(versions='WaterWolf:2.1')
         ok_('has_builds' in info['hits'][0])

@@ -56,3 +56,11 @@ form.testdrive td ul li {
     display: inline;
     margin-right: 10px;
 }
+
+.deprecation-warning {
+    font-weight: bold;
+    color: rgb(194, 110, 0);
+}
+p.deprecation-warning {
+    text-transform: uppercase;
+}

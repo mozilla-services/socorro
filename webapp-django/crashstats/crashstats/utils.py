@@ -52,9 +52,11 @@ def json_view(f):
     def wrapper(request, *args, **kw):
         request._json_view = True
         response = f(request, *args, **kw)
+
         if isinstance(response, http.HttpResponse):
             return response
         else:
+
             indent = 0
             if request.REQUEST.get('pretty') == 'print':
                 indent = 2
@@ -62,7 +64,11 @@ def json_view(f):
                 response, status = response
             else:
                 status = 200
-            return http.HttpResponse(
+            if isinstance(response, tuple) and isinstance(response[1], dict):
+                response, headers = response
+            else:
+                headers = {}
+            http_response = http.HttpResponse(
                 _json_clean(json.dumps(
                     response,
                     cls=DateTimeEncoder,
@@ -71,6 +77,9 @@ def json_view(f):
                 status=status,
                 content_type='application/json; charset=UTF-8'
             )
+            for key, value in headers.items():
+                http_response[key] = value
+            return http_response
     return wrapper
 
 

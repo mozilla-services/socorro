@@ -53,10 +53,16 @@
                     <code>{{ base_url }}{{ endpoint.url }}</code>
                 </p>
 
+                {% if endpoint.deprecation_warning %}
+                <p class="deprecation-warning">Deprecation Warning</p>
+                <pre class="deprecation-warning">{{ endpoint.deprecation_warning }}</pre>
+                {% endif %}
+
                 {% if endpoint.docstring %}
                 <p class="docstring">Documentation notes</p>
                 <pre class="docstring">{{ endpoint.docstring }}</pre>
                 {% endif %}
+
                 {% if endpoint.parameters %}
                 <table class="data-table vertical">
                     <thead>

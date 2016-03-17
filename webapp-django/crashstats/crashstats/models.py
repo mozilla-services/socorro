@@ -35,7 +35,12 @@ from django.template.defaultfilters import slugify
 from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
 
+
 logger = logging.getLogger('crashstats_models')
+
+
+class DeprecatedModelError(DeprecationWarning):
+    """Used when a deprecated model is being used in debug mode"""
 
 
 def config_from_configman():
@@ -594,7 +599,13 @@ class ProductVersions(SocorroMiddleware):
         return self.get_implementation().post(**data)
 
 
+# Delete this at the end of 2016.
 class CurrentVersions(SocorroMiddleware):
+
+    deprecation_warning = """
+    This API endpoint is deprecated and will cease to exist at the
+    end of 2016. The new, supported, endpoint is /api/ProductVersions/.
+    """.strip()
 
     API_WHITELIST = (
         'end_date',
@@ -621,9 +632,10 @@ class CurrentVersions(SocorroMiddleware):
         return currentversions
 
 
+# Delete this at the end of 2016.
 class CurrentProducts(SocorroMiddleware):
 
-    URL_PREFIX = '/products/'
+    deprecation_warning = CurrentVersions.deprecation_warning
 
     possible_params = (
         'versions',
@@ -644,9 +656,66 @@ class CurrentProducts(SocorroMiddleware):
         }
     }
 
+    def get(self, **params):
+        if settings.DEBUG:  # pragma: no cover
+            raise DeprecatedModelError("you're not supposed to use this")
+        api = ProductVersions()
+
+        # Because of the API documentation, you might get this passed
+        # but as an empty string. If so, ignore it.
+        if 'versions' in params and not params['versions']:
+            del params['versions']
+
+        if params.get('versions'):
+            # Serious legacy hacking! I'm glad this is deprecated.
+            # When a versions thing is provided, return a *list* of
+            # product version dicts instead.
+            product, version = params.pop('versions').split(':')
+            params['product'] = product
+            params['version'] = version
+            hits = []
+            for pv in api.get(**params)['hits']:
+                hits.append({
+                    'product': pv['product'],
+                    'throttle': pv['throttle'],
+                    'end_date': pv['end_date'],
+                    'featured': pv['is_featured'],
+                    'version': pv['version'],
+                    'release': pv['build_type'],
+                    'has_builds': pv['has_builds'],
+                    'start_date': pv['start_date'],
+                })
+            return {'hits': hits, 'total': len(hits)}
+
+        hits = {}
+        products = []
+        total = 0
+        for pv in api.get()['hits']:
+            if pv['product'] not in hits:
+                hits[pv['product']] = []
+            if pv['product'] not in products:
+                # Doing it this way preserves the sort order.
+                # In other words, Firefox comes first.
+                products.append(pv['product'])
+            hits[pv['product']].append({
+                'product': pv['product'],
+                'throttle': pv['throttle'],
+                'end_date': pv['end_date'],
+                'featured': pv['is_featured'],
+                'version': pv['version'],
+                'release': pv['build_type'],
+                'has_builds': pv['has_builds'],
+                'start_date': pv['start_date'],
+            })
+            total += 1
+        return {
+            'hits': hits,
+            'total': total,
+            'products': products,
+        }
+
     def post(self, **data):
-        # why does this feel so clunky?!
-        return super(CurrentProducts, self).post(self.URL_PREFIX, data)
+        raise DeprecatedModelError("you're not supposed to use this")
 
 
 class Releases(SocorroMiddleware):
@@ -693,6 +762,7 @@ class ReleasesFeatured(SocorroMiddleware):
         return super(ReleasesFeatured, self).put(self.URL_PREFIX, payload)
 
 
+# Delete this at the end of 2016.
 class ProductsVersions(CurrentVersions):
 
     API_WHITELIST = {
@@ -708,6 +778,9 @@ class ProductsVersions(CurrentVersions):
     }
 
     def get(self):
+        if settings.DEBUG:  # pragma: no cover
+            raise DeprecatedModelError("you're not supposed to use this")
+
         versions = super(ProductsVersions, self).get()
         products = {}
         for version in versions:
