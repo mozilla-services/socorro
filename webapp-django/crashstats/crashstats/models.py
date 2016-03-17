@@ -5,12 +5,8 @@ in the public API in the `api` app.
 import datetime
 import functools
 import hashlib
-import os
-import urlparse
-import json
 import logging
 import requests
-import stat
 import time
 
 import ujson
@@ -253,7 +249,6 @@ class SocorroCommon(object):
             implementation = url_or_implementation
 
         cache_key = None
-        cache_file = None
 
         if settings.CACHE_MIDDLEWARE and not dont_cache and self.cache_seconds:
             if url:
@@ -284,76 +279,6 @@ class SocorroCommon(object):
                             "CACHE HIT %s" % implementation.__class__.__name__
                         )
                     return result, True
-
-                # not in the memcache/locmem but is it in cache files?
-                if settings.CACHE_MIDDLEWARE_FILES:
-                    root = settings.CACHE_MIDDLEWARE_FILES
-                    if isinstance(root, bool):
-                        cache_file = os.path.join(
-                            settings.ROOT,
-                            'models-cache'
-                        )
-                    else:
-                        cache_file = root
-
-                    # We need to conjure up a string filename to represent
-                    # this call. If it's a URL we use the URL path to
-                    # as the file path.
-                    # If it's an implementation we use the class name
-                    if implementation:
-                        cache_file = os.path.join(
-                            cache_file,
-                            implementation.__class__.__name__
-                        )
-                    else:
-                        split = urlparse.urlparse(url)
-                        cache_file = os.path.join(
-                            cache_file,
-                            split.netloc,
-                            _clean_path(split.path)
-                        )
-                        if split.query:
-                            cache_file = os.path.join(
-                                cache_file,
-                                _clean_query(split.query)
-                            )
-                    if expect_json:
-                        cache_file = os.path.join(
-                            cache_file,
-                            '%s.json' % cache_key
-                        )
-                    else:
-                        cache_file = os.path.join(
-                            cache_file,
-                            '%s.dump' % cache_key
-                        )
-
-                    if os.path.isfile(cache_file):
-                        # but is it fresh enough?
-                        age = time.time() - os.stat(cache_file)[stat.ST_MTIME]
-                        if age > self.cache_seconds:
-                            logger.debug("CACHE FILE TOO OLD")
-                            os.remove(cache_file)
-                        else:
-                            logger.debug("CACHE FILE HIT %s" % url)
-                            delete_cache_file = False
-                            with open(cache_file) as f:
-                                if expect_json:
-                                    try:
-                                        return json.load(f), True
-                                    except ValueError:
-                                        logger.warn(
-                                            "%s is not a valid JSON file and "
-                                            "will be deleted" % (
-                                                cache_file,
-                                            ),
-                                            exc_info=True
-                                        )
-                                        delete_cache_file = True
-                                else:
-                                    return f.read(), True
-                            if delete_cache_file:
-                                os.remove(cache_file)
 
         if url:
             if method == 'post':
@@ -414,13 +339,6 @@ class SocorroCommon(object):
 
         if cache_key:
             cache.set(cache_key, result, self.cache_seconds)
-            if cache_file:
-                if not os.path.isdir(os.path.dirname(cache_file)):
-                    os.makedirs(os.path.dirname(cache_file))
-                if expect_json:
-                    json.dump(result, open(cache_file, 'w'), indent=2)
-                else:
-                    open(cache_file, 'w').write(result)
 
         return result, False
 

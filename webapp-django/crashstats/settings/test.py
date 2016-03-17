@@ -12,7 +12,6 @@ example, it shouldn't actually try to reach out to a real valid URL.
 """
 
 CACHE_MIDDLEWARE = True
-CACHE_MIDDLEWARE_FILES = False
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
