@@ -24,6 +24,7 @@ import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.gccrashes
+import socorro.external.postgresql.crontabber_state
 
 from socorrolib.app import socorro_app
 
@@ -1405,7 +1406,9 @@ class Status(SocorroMiddleware):
 
 class CrontabberState(SocorroMiddleware):
 
-    URL_PREFIX = '/crontabber_state/'
+    implementation = (
+        socorro.external.postgresql.crontabber_state.CrontabberState
+    )
 
     # make it small but but non-zero
     cache_seconds = 60  # 1 minute

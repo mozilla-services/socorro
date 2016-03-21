@@ -2,7 +2,6 @@ import datetime
 import urlparse
 
 import elasticsearch
-import isodate
 import requests
 
 from django.shortcuts import render
@@ -101,7 +100,7 @@ def crontabber_status(request):
 
     all_apps = api.get()['state']
     last_runs = [
-        isodate.parse_datetime(x['last_run']) for x in all_apps.values()
+        x['last_run'] for x in all_apps.values()
     ]
     if last_runs:
         ancient_times = timezone.now() - datetime.timedelta(

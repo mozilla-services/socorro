@@ -67,10 +67,22 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         res = state.get()
 
         slow_one = res['state']['slow-one']
-        eq_(slow_one['next_run'], '2013-02-09T01:16:00+00:00')
-        eq_(slow_one['first_run'], '2012-11-05T23:27:07+00:00')
-        eq_(slow_one['last_run'], '2013-02-09T00:16:00+00:00')
-        eq_(slow_one['last_success'], '2012-12-24T22:27:07+00:00')
+        eq_(
+            slow_one['next_run'].isoformat(),
+            '2013-02-09T01:16:00.893834+00:00'
+        )
+        eq_(
+            slow_one['first_run'].isoformat(),
+            '2012-11-05T23:27:07.316347+00:00'
+        )
+        eq_(
+            slow_one['last_run'].isoformat(),
+            '2013-02-09T00:16:00.893834+00:00'
+        )
+        eq_(
+            slow_one['last_success'].isoformat(),
+            '2012-12-24T22:27:07.316893+00:00'
+        )
         eq_(slow_one['error_count'], 6)
         eq_(slow_one['depends_on'], [])
         eq_(slow_one['last_error'], {
@@ -80,10 +92,22 @@ class IntegrationTestCrontabberStatus(PostgreSQLTestCase):
         })
 
         slow_two = res['state']['slow-two']
-        eq_(slow_two['next_run'], '2012-11-12T19:39:59+00:00')
-        eq_(slow_two['first_run'], '2012-11-05T23:27:17+00:00')
-        eq_(slow_two['last_run'], '2012-11-12T18:39:59+00:00')
-        eq_(slow_two['last_success'], '2012-11-12T18:27:17+00:00')
+        eq_(
+            slow_two['next_run'].isoformat(),
+            '2012-11-12T19:39:59.521605+00:00'
+        )
+        eq_(
+            slow_two['first_run'].isoformat(),
+            '2012-11-05T23:27:17.341879+00:00'
+        )
+        eq_(
+            slow_two['last_run'].isoformat(),
+            '2012-11-12T18:39:59.521605+00:00'
+        )
+        eq_(
+            slow_two['last_success'].isoformat(),
+            '2012-11-12T18:27:17.341895+00:00'
+        )
         eq_(slow_two['error_count'], 0)
         eq_(slow_two['depends_on'], ['slow-one'])
         eq_(slow_two['last_error'], {})
