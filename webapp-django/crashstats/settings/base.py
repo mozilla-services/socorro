@@ -210,7 +210,7 @@ VCS_MAPPINGS = {
                             'mark=%(line)s#%(line)s')
     },
     'hg': {
-        'hg.mozilla.org': ('http://hg.mozilla.org/%(repo)s'
+        'hg.mozilla.org': ('https://hg.mozilla.org/%(repo)s'
                            '/annotate/%(revision)s/%(file)s#l%(line)s')
     },
     'git': {
