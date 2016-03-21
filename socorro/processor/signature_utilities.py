@@ -854,7 +854,8 @@ class OOMSignature(Rule):
     signature_fragments = (
         'NS_ABORT_OOM',
         'mozalloc_handle_oom',
-        'CrashAtUnhandlableOOM'
+        'CrashAtUnhandlableOOM',
+        'AutoEnterOOMUnsafeRegion'
     )
 
     #--------------------------------------------------------------------------
