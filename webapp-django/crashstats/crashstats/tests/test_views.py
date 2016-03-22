@@ -358,6 +358,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '19.0',
                     'build_type': 'Beta',
+                    'has_builds': True,
                 },
                 {
                     'product': 'WaterWolf',
@@ -367,6 +368,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '18.0',
                     'build_type': 'Stable',
+                    'has_builds': False,
                 },
                 {
                     'product': 'WaterWolf',
@@ -376,6 +378,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '19.1',
                     'build_type': 'Nightly',
+                    'has_builds': True,
                 },
                 {
                     'product': 'WaterWolf',
@@ -385,6 +388,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '20.0',
                     'build_type': 'Nightly',
+                    'has_builds': True,
                 },
                 # NightTrains
                 {
@@ -395,6 +399,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '18.0',
                     'build_type': 'Aurora',
+                    'has_builds': True,
                 },
                 {
                     'product': 'NightTrain',
@@ -404,6 +409,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '19.0',
                     'build_type': 'Nightly',
+                    'has_builds': True,
                 },
                 # SeaMonkies
                 {
@@ -414,6 +420,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '9.5',
                     'build_type': 'Alpha',
+                    'has_builds': True,
                 },
                 {
                     'product': 'SeaMonkey',
@@ -423,6 +430,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': True,
                     'version': '10.5',
                     'build_type': 'nightly',
+                    'has_builds': True,
                 },
                 # LandCrab
                 {
@@ -433,6 +441,7 @@ class BaseTestViews(DjangoTestCase):
                     'is_featured': False,
                     'version': '1.5',
                     'build_type': 'Release',
+                    'has_builds': False,
                 },
             ]
             return {

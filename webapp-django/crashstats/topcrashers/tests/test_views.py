@@ -51,6 +51,10 @@ class TestViews(BaseTestViews):
             if '_columns' not in params:
                 params['_columns'] = []
 
+            # By default we range by date, so there should be no filter on
+            # the build id.
+            ok_('build_id' not in params)
+
             if 'hang_type' not in params['_aggs.signature']:
                 # Return results for the previous week.
                 results = {
@@ -162,7 +166,7 @@ class TestViews(BaseTestViews):
         # Test that several versions do not raise an error.
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
-            'version': '19.0;20.0',
+            'version': ['19.0', '20.0'],
         })
         eq_(response.status_code, 200)
 
@@ -274,3 +278,37 @@ class TestViews(BaseTestViews):
             eq_(response.status_code, 200)
             ok_(today in response.content)
             ok_(now not in response.content)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    def test_topcrasher_by_build(self, rpost):
+        rpost.side_effect = mocked_post_123
+
+        def mocked_supersearch_get(**params):
+            ok_('build_id' in params)
+            return {
+                'hits': [],
+                'facets': {
+                    'signature': []
+                },
+                'total': 0
+            }
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        response = self.client.get(self.base_url, {
+            'product': 'WaterWolf',
+            'version': '19.0',
+            '_range_type': 'build',
+        })
+        eq_(response.status_code, 200)
+
+        # Test with a version that does not support builds.
+        response = self.client.get(self.base_url, {
+            'product': 'WaterWolf',
+            'version': '18.0',
+            '_range_type': 'build',
+        })
+        eq_(response.status_code, 200)
+        ok_('versions do not support the by build date' in response.content)
+        ok_('Range Type:' not in response.content)

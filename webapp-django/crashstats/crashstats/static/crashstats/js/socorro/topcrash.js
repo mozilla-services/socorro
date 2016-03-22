@@ -16,6 +16,11 @@ var Correlations = (function() {
     var all_signatures = {};
 
     function loadCorrelations(types, callback) {
+        // If there is no osname, that means there is no results, and thus no
+        // need to bother loading correlations.
+        if (!Object.keys(osnames).length) {
+            return;
+        }
         var data = {
             correlation_report_types: types,
             product: SocReport.product,

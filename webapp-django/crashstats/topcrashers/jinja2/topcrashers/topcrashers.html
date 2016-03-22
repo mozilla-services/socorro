@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block page_title %}
-Top Crashers for {{ product }} {{ version }}
+Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 {% endblock %}
 
 {% block content %}
@@ -16,8 +16,8 @@ Top Crashers for {{ product }} {{ version }}
                 <a href="{{ url(
                     'crashstats:topcrasher',
                     product=query['product'],
-                    versions=query['versions'],
-                    date_range_type='report',
+                    versions=';'.join(query['versions']),
+                    date_range_type=query.range_type,
                     crash_type=query['crash_type'].replace('any', 'all'),
                     os_name=query['os_name'],
                     result_count=query['result_count'],
@@ -27,12 +27,12 @@ Top Crashers for {{ product }} {{ version }}
             </p>
             <h2>
                 Top Crashers for <span id="current-product">{{ product }}</span>
-                <span id="current-version">{{ version }}</span>
+                <span id="current-version">{{ ', '.join(query.versions) }}</span>
             </h2>
         </div>
 
         <div class="panel">
-            <div class="body">
+        <div class="body">
 
             {% if total_crashing_signatures %}
             <div>
@@ -59,6 +59,24 @@ Top Crashers for {{ product }} {{ version }}
                         >By Day</a>
                     </li>
                 </ul>
+
+                {% if versions_have_builds %}
+                <ul class="tc-filter">
+                    <li class="tc-selector-heading">Range Type:</li>
+                    <li>
+                        <a
+                            href="{{ change_query_string(_range_type=None) }}"
+                            {% if query.range_type == 'report' %} class="selected"{% endif %}
+                        >By Report Date</a>
+                    </li>
+                    <li>
+                        <a
+                            href="{{ change_query_string(_range_type='build') }}"
+                            {% if query.range_type == 'build' %} class="selected"{% endif %}
+                        >By Build Date</a>
+                    </li>
+                </ul>
+                {% endif %}
             </div>
 
             <ul class="tc-duration-type tc-filter">
@@ -90,6 +108,7 @@ Top Crashers for {{ product }} {{ version }}
                 <li><a href="{{ change_query_string(_facets_size=res_count) }}" {% if result_count == res_count %} class="selected" {% endif %}>{{ res_count }}</a></li>
                 {% endfor %}
             </ul>
+
             {% if total_crashing_signatures %}
             <table id="{% if not os_name %}signature-list{% else %}peros-tbl{% endif %}" class="data-table tablesorter">
                 <thead>
@@ -201,18 +220,22 @@ Top Crashers for {{ product }} {{ version }}
                             </div>
                         </td>
                     </tr>
-    {% endfor %}
+                {% endfor %}
                 </tbody>
             </table>
-        </div>
+            {% elif not versions_have_builds %}
+            <p class="no-results">
+                Some versions do not support the by build date range option.
+                <a href="{{ change_query_string(_range_type=None) }}">Range by Report Date instead?</a>
+            </p>
             {% else %}
-              <p class="no-results">
+            <p class="no-results">
                 No crashing signatures found for the period
                 <time class="start-date">{{ query.start_date }}</time> to
                 <time class="end-date">{{ query.end_date }}</time>.
-              </p>
+            </p>
             {% endif %}
-            </div>
+        </div>
         </div>
     </div>
 {% endblock %}
