@@ -66,11 +66,19 @@ def get_date_boundaries(parameters):
     return (greater_than, lower_than)
 
 
+def datetime_to_build_id(date):
+    """Return a build_id-like string from a datetime. """
+    return date.strftime('%Y%m%d%H%M%S')
+
+
 def get_topcrashers_results(**kwargs):
-    '''Return the results of a search. '''
+    """Return the results of a search. """
     results = []
 
     params = kwargs
+    build_mode = params.pop('_range_type') == 'build'
+    dates = get_date_boundaries(params)
+
     params['_aggs.signature'] = [
         'platform',
         'is_garbage_collecting',
@@ -85,6 +93,12 @@ def get_topcrashers_results(**kwargs):
 
     if params.get('process_type') in ('any', 'all'):
         params['process_type'] = None
+
+    if build_mode:
+        params['build_id'] = [
+            '>=' + datetime_to_build_id(dates[0]),
+            '<' + datetime_to_build_id(dates[1])
+        ]
 
     api = SuperSearchUnredacted()
     search_results = api.get(**params)
@@ -149,7 +163,6 @@ def get_topcrashers_results(**kwargs):
 
         # Run the same query but for the previous date range, so we can
         # compare the rankings and show rank changes.
-        dates = get_date_boundaries(params)
         delta = (dates[1] - dates[0]) * 2
         params['date'] = [
             '>=' + (dates[1] - delta).isoformat(),
@@ -158,6 +171,14 @@ def get_topcrashers_results(**kwargs):
         params['_aggs.signature'] = [
             'platform',
         ]
+        params['_facets_size'] *= 2
+
+        if build_mode:
+            params['date'][1] = '<' + dates[1].isoformat()
+            params['build_id'] = [
+                '>=' + datetime_to_build_id(dates[1] - delta),
+                '<' + datetime_to_build_id(dates[0])
+            ]
 
         previous_range_results = api.get(**params)
         total = previous_range_results['total']
@@ -198,6 +219,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     os_name = request.GET.get('platform')
     result_count = request.GET.get('_facets_size')
     tcbs_mode = request.GET.get('_tcbs_mode')
+    range_type = request.GET.get('_range_type')
 
     if not tcbs_mode or tcbs_mode not in ('realtime', 'byday'):
         tcbs_mode = 'realtime'
@@ -270,6 +292,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             '>=' + context['query']['start_date'].isoformat()
         ],
         _facets_size=result_count,
+        _range_type=range_type,
     )
 
     if api_results['total'] > 0:
@@ -337,6 +360,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context['tcbs'] = tcbs
     context['days'] = days
     context['report'] = 'topcrasher'
+    context['date_range_type'] = range_type == 'build' and 'build' or 'report'
     context['possible_days'] = possible_days
     context['total_crashing_signatures'] = len(signatures)
     context['total_number_of_crashes'] = api_results['total']
