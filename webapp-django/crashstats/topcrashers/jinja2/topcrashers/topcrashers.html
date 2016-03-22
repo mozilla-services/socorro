@@ -17,7 +17,7 @@ Top Crashers for {{ product }} {{ version }}
                     'crashstats:topcrasher',
                     product=query['product'],
                     versions=query['versions'],
-                    date_range_type='report',
+                    date_range_type=date_range_type,
                     crash_type=query['crash_type'].replace('any', 'all'),
                     os_name=query['os_name'],
                     result_count=query['result_count'],
