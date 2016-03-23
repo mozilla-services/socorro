@@ -63,7 +63,7 @@ class ADI(PostgreSQLBase):
 
         sql = """
             SELECT
-                SUM(adu_count) AS adi_count,
+                SUM(adu_count)::BIGINT AS adi_count,
                 adu_date AS date,
                 pv.build_type,
                 pv.version_string AS version
@@ -87,10 +87,5 @@ class ADI(PostgreSQLBase):
         assert isinstance(params, dict)
         results = self.query(sql, params)
 
-        rows = []
-        for row in results.zipped():
-            row['date'] = row['date'].strftime('%Y-%m-%d')
-            # BIGINTs become Decimal which becomes floating point in JSON
-            row['adi_count'] = long(row['adi_count'])
-            rows.append(row)
+        rows = results.zipped()
         return {'hits': rows, 'total': len(rows)}

@@ -262,7 +262,9 @@ def _get_crashes_per_day_with_adu(
 
     for group in adi_counts['hits']:
         version = group['version']
-        date = group['date']
+        # Make this a string so it can be paired with the facets 'term'
+        # key which is also a date in ISO format.
+        date = group['date'].isoformat()
         build_type = group['build_type']
         count = group['adi_count']
         throttle = product_build_types[build_type]

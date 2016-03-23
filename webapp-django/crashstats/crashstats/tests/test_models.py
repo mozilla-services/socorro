@@ -1367,47 +1367,44 @@ class TestModels(DjangoTestCase):
         assert 'Unknown' not in settings.DISPLAY_OS_NAMES
         eq_(r[1], {'code': 'unk', 'name': 'Unknown', 'display': False})
 
-    @mock.patch('requests.get')
-    def test_adi(self, rget):
+    def test_adi(self):
         model = models.ADI
         api = model()
 
-        def mocked_get(url, params, **options):
-            assert '/adi/' in url
+        def mocked_get(**options):
 
-            ok_('product' in params)
-            eq_(params['product'], 'WaterWolf')
+            ok_('product' in options)
+            eq_(options['product'], 'WaterWolf')
 
-            ok_('versions' in params)
-            eq_(params['versions'], ['2.0'])
+            ok_('versions' in options)
+            eq_(options['versions'], ['2.0'])
 
-            ok_('start_date' in params)
-            ok_('end_date' in params)
+            ok_('start_date' in options)
+            ok_('end_date' in options)
 
-            return Response(
-                {
-                    "hits": [
-                        {
+            return {
+                "hits": [
+                    {
 
-                            "build_type": "aurora",
-                            "adi_count": 12327,
-                            "version": "2.0",
-                            "date": "2015-08-12"
+                        "build_type": "aurora",
+                        "adi_count": 12327L,
+                        "version": "2.0",
+                        "date": datetime.date(2015, 8, 12),
 
-                        },
-                        {
-                            "build_type": "release",
-                            "adi_count": 4,
-                            "version": "2.0",
-                            "date": "2015-08-12"
+                    },
+                    {
+                        "build_type": "release",
+                        "adi_count": 4L,
+                        "version": "2.0",
+                        "date": datetime.date(2016, 8, 12),
 
-                        }
-                    ],
-                    "total": 2
-                }
-            )
+                    }
+                ],
+                "total": 2
+            }
 
-        rget.side_effect = mocked_get
+        models.ADI.implementation().get.side_effect = mocked_get
+
         r = api.get(
             product='WaterWolf',
             versions=['2.0'],

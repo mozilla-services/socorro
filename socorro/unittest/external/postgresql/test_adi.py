@@ -169,12 +169,11 @@ class IntegrationTestADI(PostgreSQLTestCase):
             versions=['40.0'],
             platforms=['Linux', 'Windows'],
         )
-        start_formatted = start.strftime('%Y-%m-%d')
         eq_(stats['total'], 1)
         hit, = stats['hits']
         eq_(hit, {
             'adi_count': 64L + 16L,
-            'date': start_formatted,
+            'date': start.date(),
             'version': '40.0',
             'build_type': 'release'
         })
@@ -190,7 +189,7 @@ class IntegrationTestADI(PostgreSQLTestCase):
         hit, = stats['hits']
         eq_(hit, {
             'adi_count': 4 + 1L,
-            'date': start_formatted,
+            'date': start.date(),
             'version': '39.0b1',
             'build_type': 'release'
         })
