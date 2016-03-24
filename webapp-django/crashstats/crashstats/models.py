@@ -26,6 +26,7 @@ import socorro.external.postgresql.graphics_devices
 import socorro.external.postgresql.gccrashes
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
+import socorro.external.postgresql.product_build_types
 
 from socorrolib.app import socorro_app
 
@@ -1723,7 +1724,9 @@ class ADI(SocorroMiddleware):
 
 class ProductBuildTypes(SocorroMiddleware):
 
-    URL_PREFIX = '/products/build_types/'
+    implementation = (
+        socorro.external.postgresql.product_build_types.ProductBuildTypes
+    )
 
     required_params = (
         'product',

@@ -53,7 +53,6 @@ SERVICES_LIST = (
     ),
     (r'/field/(.*)', 'field.Field'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
-    (r'/products/build_types/(.*)', 'product_build_types.ProductBuildTypes'),
     (r'/products/(.*)', 'products.Products'),  # deprecated
     (r'/query/', 'query.Query'),
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),

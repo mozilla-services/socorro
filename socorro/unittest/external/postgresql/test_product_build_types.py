@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from decimal import Decimal
-
 from nose.tools import eq_, assert_raises
 
 from socorro.external import MissingArgumentError
@@ -91,8 +89,8 @@ class IntegrationTestProductBuildTypes(PostgreSQLTestCase):
         res = product_build_types.get(product='Firefox')
         res_expected = {
             'hits': {
-                'release': Decimal('0.2'),
-                'beta': Decimal('1.0'),
+                'release': 0.2,
+                'beta': 1.0,
             }
         }
         eq_(res, res_expected)

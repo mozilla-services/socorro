@@ -29,7 +29,7 @@ class ProductBuildTypes(PostgreSQLBase):
         sql = """
             SELECT
                 build_type,
-                throttle
+                throttle::REAL
             FROM product_build_types
             WHERE product_name = %(product)s
         """

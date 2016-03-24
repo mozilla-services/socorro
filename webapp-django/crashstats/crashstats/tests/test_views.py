@@ -883,18 +883,17 @@ class TestViews(BaseTestViews):
 
         models.ADI.implementation().get.side_effect = mocked_adi_get
 
-        def mocked_get(url, params, **options):
-            if '/products/build_types/' in url:
-                return Response({
-                    'hits': {
-                        'release': 0.1,
-                        'beta': 1.0,
-                    }
-                })
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
 
         def mocked_supersearch_get(**params):
             end_date = timezone.now().date()
@@ -970,18 +969,17 @@ class TestViews(BaseTestViews):
 
         models.ADI.implementation().get.side_effect = mocked_adi_get
 
-        def mocked_get(url, params, **options):
-            if '/products/build_types/' in url:
-                return Response({
-                    'hits': {
-                        'release': 0.1,
-                        'beta': 1.0,
-                    }
-                })
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
 
         def mocked_supersearch_get(**params):
             return {
@@ -1063,18 +1061,17 @@ class TestViews(BaseTestViews):
 
         models.ADI.implementation().get.side_effect = mocked_adi_get
 
-        def mocked_get(url, params, **options):
-            if '/products/build_types/' in url:
-                return Response({
-                    'hits': {
-                        'release': 0.1,
-                        'beta': 1.0,
-                    }
-                })
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
 
         def mocked_supersearch_get(**params):
             return {
@@ -2189,18 +2186,17 @@ class TestViews(BaseTestViews):
                 start_date += datetime.timedelta(days=1)
             return response
 
-        def mocked_get(url, params, **options):
-            if '/products/build_types/' in url:
-                return Response({
-                    'hits': {
-                        'release': 0.1,
-                        'beta': 1.0,
-                    }
-                })
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
 
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
 
         models.ADI.implementation().get.side_effect = mocked_adi_get
 
@@ -2387,15 +2383,17 @@ class TestViews(BaseTestViews):
 
         models.ADI.implementation().get.side_effect = mocked_adi_get
 
-        def mocked_get(url, params, **options):
-            if '/products/build_types/' in url:
-                return Response({
-                    'hits': {
-                        'release': 0.1,
-                        'beta': 1.0,
-                    }
-                })
-            raise NotImplementedError(url)
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
+
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
 
         def mocked_product_versions(**params):
             end_date = timezone.now().strftime('%Y-%m-%d')
@@ -2445,8 +2443,6 @@ class TestViews(BaseTestViews):
         models.ProductVersions.implementation().get.side_effect = (
             mocked_product_versions
         )
-
-        rget.side_effect = mocked_get
 
         def mocked_supersearch_get(**params):
             eq_(params['product'], ['WaterWolf'])
