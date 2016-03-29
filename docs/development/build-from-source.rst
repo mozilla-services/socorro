@@ -81,6 +81,21 @@ Normally this is handled automatically by the cronjob scheduler
 ::
   python socorro/cron/crontabber_app.py --job=weekly-reports-partitions --force
 
+Populate Elasticsearch database
+-------------------------------
+
+.. note::
+  See the chapter about :ref:`elasticsearch-chapter` for more information.
+
+First you need to setup your Elasticsearch database:
+::
+  cd scripts && python ./setup_supersearch_app.py
+
+Then, and once you have populated your PostgreSQL database with "fake data",
+you can migrate that data into Elasticsearch:
+::
+  python socorro/external/postgresql/crash_migration_app.py
+
 Sync Django database
 --------------------
 
