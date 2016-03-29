@@ -1,14 +1,14 @@
 import datetime
 import sys
 import re
-import urllib2
 import os
 import json
-import time
 import urlparse
 
 import mock
 import lxml.html
+import requests
+from requests.adapters import HTTPAdapter
 
 from configman import Namespace, class_converter
 from crontabber.base import BaseCronApp
@@ -23,57 +23,15 @@ from socorrolib.app.socorro_app import App, main
 from socorrolib.lib.datetimeutil import string_to_datetime
 
 
-"""
- Socket timeout to prevent FTP from hanging indefinitely
- Picked a 2 minute timeout as a generous allowance,
- given the entire script takes about that much time to run.
-"""
-import socket
-socket.setdefaulttimeout(60)
-
-
-#==============================================================================
-class RetriedError(IOError):
-
-    def __init__(self, attempts, url):
-        self.attempts = attempts
-        self.url = url
-
-    def __str__(self):
-        return (
-            '<%s: %s attempts at downloading %s>' %
-            (self.__class__.__name__, self.attempts, self.url)
-        )
-
-
-def patient_urlopen(url, max_attempts=4, sleep_time=20):
-    attempts = 0
-    while True:
-        if attempts >= max_attempts:
-            raise RetriedError(attempts, url)
-        try:
-            attempts += 1
-            page = urllib2.urlopen(url)
-        except urllib2.HTTPError, err:
-            if err.code == 404:
-                return
-            if err.code < 500:
-                raise
-            time.sleep(sleep_time)
-        except urllib2.URLError, err:
-            time.sleep(sleep_time)
-        else:
-            content = page.read()
-            page.close()
-            return content
-
-
 class ScrapersMixin(object):
+    """
+    Mixin that requires to be able to call `self.download(some_url)`
+    """
 
     def get_links(self, url, starts_with=None, ends_with=None):
 
         results = []
-        content = patient_urlopen(url, sleep_time=30)
+        content = self.download(url)
         if not content:
             return []
 
@@ -108,7 +66,7 @@ class ScrapersMixin(object):
         return results
 
     def parse_build_json_file(self, url, nightly=False):
-        content = patient_urlopen(url)
+        content = self.download(url)
         if content:
             try:
                 kvpairs = json.loads(content)
@@ -139,7 +97,7 @@ class ScrapersMixin(object):
 
     def parse_info_file(self, url, nightly=False):
         self.config.logger.debug('Opening %s', url)
-        content = patient_urlopen(url)
+        content = self.download(url)
         results = {}
         bad_lines = []
         if not content:
@@ -169,7 +127,7 @@ class ScrapersMixin(object):
                     "nightly", "version": "18.0"}
           TODO handle exception if file does not exist
         """
-        content = patient_urlopen(url)
+        content = self.download(url)
         if not content:
             return
         results = json.loads(content)
@@ -338,6 +296,44 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         'dry_run',
         default=False,
         doc='Print instead of storing builds')
+
+    required_config.add_option(
+        'retries',
+        default=5,
+        doc='Number of times the requests sessions should retry')
+
+    required_config.add_option(
+        'read_timeout',
+        default=10,  # seconds
+        doc='Number of seconds wait for a full read')
+
+    required_config.add_option(
+        'connect_timeout',
+        default=3.5,  # seconds, ideally something slightly larger than 3
+        doc='Number of seconds wait for a connection')
+
+    def __init__(self, *args, **kwargs):
+        super(FTPScraperCronApp, self).__init__(*args, **kwargs)
+        self.session = requests.Session()
+        if urlparse.urlparse(self.config.base_url).scheme == 'https':
+            mount = 'https://'
+        else:
+            mount = 'http://'
+        self.session.mount(
+            mount,
+            HTTPAdapter(max_retries=self.config.retries)
+        )
+
+    def download(self, url):
+        response = self.session.get(
+            url,
+            timeout=(self.config.connect_timeout, self.config.read_timeout)
+        )
+        if response.status_code == 404:
+            # Legacy. Return None on any 404 error.
+            return
+        assert response.status_code == 200, response.status_code
+        return response.content
 
     def run(self, date):
         # record_associations
