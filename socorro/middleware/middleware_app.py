@@ -66,7 +66,6 @@ SERVICES_LIST = (
         r'/supersearch/(field|fields|missing_fields)/(.*)',
         'supersearch.SuperSearch'
     ),
-    (r'/supersearch/(.*)', 'supersearch.SuperSearch'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
 )
 
