@@ -5,10 +5,12 @@ import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
+from django.utils.timezone import UTC
 
 from crashstats.supersearch.models import SuperSearchUnredacted
+from crashstats.crashstats.models import SignatureFirstDate
 from crashstats.crashstats.tests.test_views import (
-    BaseTestViews, Response, mocked_post_123
+    BaseTestViews, mocked_post_123
 )
 
 
@@ -32,20 +34,24 @@ class TestViews(BaseTestViews):
             }
         bugs_get.side_effect = mocked_bugs
 
-        def mocked_sigs(url, **options):
-            if 'signature/first_date' in url:
-                return Response({
-                    "hits": [
-                        {
-                            "signature": u"FakeSignature1 \u7684 Japanese",
-                            "first_date": "2000-01-01T12:23:34",
-                            "first_build": "20000101122334",
-                        },
-                    ],
-                    "total": 1
-                })
-            raise NotImplementedError(url)
-        rpost.side_effect = mocked_sigs
+        def mocked_signature_first_date_get(**options):
+            return {
+                "hits": [
+                    {
+                        "signature": u"FakeSignature1 \u7684 Japanese",
+                        "first_date": datetime.datetime(
+                            2000, 1, 1, 12, 23, 34,
+                            tzinfo=UTC(),
+                        ),
+                        "first_build": "20000101122334",
+                    },
+                ],
+                "total": 1
+            }
+
+        SignatureFirstDate.implementation().get.side_effect = (
+            mocked_signature_first_date_get
+        )
 
         def mocked_supersearch_get(**params):
             if '_columns' not in params:

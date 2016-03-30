@@ -329,7 +329,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
 
         # Augment with first appearance dates.
         if sig in sig_date_data:
-            crash['first_report'] = isodate.parse_datetime(sig_date_data[sig])
+            crash['first_report'] = sig_date_data[sig]
 
         if 'bugs' in crash:
             crash['bugs'].sort(reverse=True)

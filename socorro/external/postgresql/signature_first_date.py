@@ -4,7 +4,7 @@
 
 from socorro.external import MissingArgumentError
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import datetimeutil, external_common
+from socorrolib.lib import external_common
 
 
 class SignatureFirstDate(PostgreSQLBase):
@@ -12,7 +12,7 @@ class SignatureFirstDate(PostgreSQLBase):
         ('signatures', None, ['list', 'str']),
     ]
 
-    def post(self, **kwargs):
+    def get(self, **kwargs):
         params = external_common.parse_arguments(self.filters, kwargs)
 
         if not params['signatures']:
@@ -31,11 +31,7 @@ class SignatureFirstDate(PostgreSQLBase):
         error_message = 'Failed to retrieve signatures from PostgreSQL'
         results = self.query(sql, sql_params, error_message=error_message)
 
-        signatures = []
-        for sig in results.zipped():
-            sig['first_date'] = datetimeutil.date_to_string(sig['first_date'])
-            signatures.append(sig)
-
+        signatures = results.zipped()
         return {
             'hits': signatures,
             'total': len(signatures)

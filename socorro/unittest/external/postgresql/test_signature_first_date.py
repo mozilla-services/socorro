@@ -2,8 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
+
 from nose.tools import eq_, assert_raises
 
+from socorrolib.lib.datetimeutil import UTC
 from socorro.external.postgresql.signature_first_date import (
     SignatureFirstDate,
     MissingArgumentError
@@ -73,12 +76,15 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
         params = {
             "signatures": "hey"
         }
-        res = api.post(**params)
+        res = api.get(**params)
         res_expected = {
             "hits": [
                 {
                     "signature": "hey",
-                    "first_date": "2000-01-01T00:00:00+00:00",
+                    "first_date": datetime.datetime(
+                        2000, 1, 1, 0, 0, 0, 0,
+                        tzinfo=UTC
+                    ),
                     "first_build": 12,
                 }
             ],
@@ -92,17 +98,23 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
         params = {
             "signatures": ["hey", "i_just_met_you()"]
         }
-        res = api.post(**params)
+        res = api.get(**params)
         res_expected = {
             "hits": [
                 {
                     "signature": "hey",
-                    "first_date": "2000-01-01T00:00:00+00:00",
+                    "first_date": datetime.datetime(
+                        2000, 1, 1, 0, 0, 0, 0,
+                        tzinfo=UTC
+                    ),
                     "first_build": 12,
                 },
                 {
                     "signature": "i_just_met_you()",
-                    "first_date": "2000-01-02T00:00:00+00:00",
+                    "first_date": datetime.datetime(
+                        2000, 1, 2, 0, 0, 0, 0,
+                        tzinfo=UTC
+                    ),
                     "first_build": 12,
                 }
             ],
@@ -117,7 +129,7 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
         params = {
             "signatures": "unknown"
         }
-        res = api.post(**params)
+        res = api.get(**params)
         res_expected = {
             "hits": [],
             "total": 0
@@ -128,4 +140,4 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
         # .....................................................................
         # Test 4: missing argument
         params = {}
-        assert_raises(MissingArgumentError, api.post, **params)
+        assert_raises(MissingArgumentError, api.get, **params)
