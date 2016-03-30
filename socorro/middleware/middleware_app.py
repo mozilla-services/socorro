@@ -62,10 +62,6 @@ SERVICES_LIST = (
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/skiplist/(.*)', 'skiplist.SkipList'),
-    (
-        r'/supersearch/(field|fields|missing_fields)/(.*)',
-        'supersearch.SuperSearch'
-    ),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
 )
 
