@@ -6,9 +6,9 @@ import mock
 import random
 import uuid
 from distutils.version import LooseVersion
-from elasticsearch.helpers import bulk
 from functools import wraps
 
+from elasticsearch.helpers import bulk
 from configman import ConfigurationManager, environment
 from nose import SkipTest
 
@@ -167,7 +167,9 @@ SUPERSEARCH_FIELDS = {
         'is_mandatory': False,
         'storage_mapping': {
             'type': 'date',
-            'format': 'yyyy-MM-dd\'T\'HH:mm:ssZZ||yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSZZ'
+            'format': (
+                'yyyy-MM-dd\'T\'HH:mm:ssZZ||yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSZZ'
+            )
         },
     },
     'address': {
@@ -843,6 +845,12 @@ class ElasticsearchTestCase(TestCase):
 
         super(ElasticsearchTestCase, self).tearDown()
 
+    def health_check(self):
+        self.connection.cluster.health(
+            wait_for_status='yellow',
+            request_timeout=1
+        )
+
     def get_tuned_config(self, sources, extra_values=None):
         if not isinstance(sources, (list, tuple)):
             sources = [sources]
@@ -963,7 +971,7 @@ class ElasticsearchTestCase(TestCase):
         )
         self.refresh_index()
 
-    def refresh_index(self):
+    def refresh_index(self, es_index=None):
         self.index_client.refresh(
-            index=self.config.elasticsearch.elasticsearch_index
+            index=es_index or self.config.elasticsearch.elasticsearch_index
         )

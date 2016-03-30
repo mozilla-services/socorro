@@ -2,18 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import elasticsearch
-
 from threading import Thread
 from Queue import Queue
 from contextlib import contextmanager
 
-from socorro.external.crashstorage_base import CrashStorageBase
-from socorro.external.es.index_creator import IndexCreator
-from socorrolib.lib import datetimeutil
-
+import elasticsearch
 from configman import Namespace
 from configman.converters import class_converter
+
+from socorro.external.crashstorage_base import CrashStorageBase
+from socorro.external.es.index_creator import IndexCreator
+from socorrolib.lib.converters import change_default
+from socorrolib.lib.datetimeutil import string_to_datetime
+from socorro.external.crashstorage_base import Redactor
 
 
 #==============================================================================
@@ -156,11 +157,6 @@ class ESCrashStorage(CrashStorageBase):
                 exc_info=True
             )
             raise
-
-
-from socorrolib.lib.converters import change_default
-from socorrolib.lib.datetimeutil import string_to_datetime
-from socorro.external.crashstorage_base import Redactor
 
 
 #==============================================================================
@@ -375,4 +371,3 @@ ESBulkCrashStorageRedactedSave = _create_bulk_load_crashstore(
 
 #==============================================================================
 ESCrashStorageNoStackwalkerOutput = ESCrashStorageRedactedSave
-
