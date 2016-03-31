@@ -196,8 +196,6 @@ NOTE - variables surrounded by @@@ are placeholders and need to be filled in app
   DATABASE_PORT=@@@DATABASE_PORT@@@
   # Set this to True if you use HTTPS, otherwise False.
   SESSION_COOKIE_SECURE=True
-  # Offline web asset (HTML/CSS/JS compression. Leave this on.
-  COMPRESS_OFFLINE=True
   # Set this to something random.
   SECRET_KEY='@@@SECRET_KEY@@@'
   # If you use Google Analytics, put your ID here.
