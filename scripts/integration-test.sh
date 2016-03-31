@@ -541,7 +541,7 @@ socorro correlations \
 --global.correlations.path=./correlations \
 --global.correlations.core.output_class=socorro.analysis.correlations.core_count_rule.JsonFileOutputForCoreCounts \
 --global.correlations.interesting.output_class=socorro.analysis.correlations.interesting_rule.JsonFileOutputForInterestingModules  \
---producer_consumer.number_of_threads=1 \
+--producer_consumer.number_of_threads=2 \
 --destination.crashstorage_class=socorro.external.crashstorage_base.NullCrashStorage \
 --global.correlation.min_count_for_inclusion=1 \
 > correlations.log 2>&1
