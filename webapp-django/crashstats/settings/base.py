@@ -723,7 +723,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         },
         'postgresql': {
             'database_hostname': config(
-                'DATABASE_HOSTNAME',
+                'DATABASE_HOST',
                 'localhost'
             ),
             'database_name': config(
