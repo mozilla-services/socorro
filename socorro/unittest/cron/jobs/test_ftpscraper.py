@@ -3,11 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
-import urllib2
 import json
 from functools import wraps
-from cStringIO import StringIO
 
+import requests
 import mock
 from nose.tools import eq_, ok_, assert_raises
 from crontabber.app import CronTabber
@@ -22,10 +21,16 @@ from socorro.unittest.cron.setup_configman import (
 )
 
 
-def stringioify(func):
+class Response(object):
+    def __init__(self, content, status_code=200):
+        self.content = content
+        self.status_code = status_code
+
+
+def responsify(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        return StringIO(func(*args, **kwargs))
+        return Response(func(*args, **kwargs))
     return wrapper
 
 
@@ -39,10 +44,14 @@ class TestFTPScraper(TestCaseBase):
         super(TestFTPScraper, self).setUp()
         self.psycopg2_patcher = mock.patch('psycopg2.connect')
         self.psycopg2 = self.psycopg2_patcher.start()
-        self.urllib2_patcher = mock.patch('urllib2.urlopen')
-        self.urllib2 = self.urllib2_patcher.start()
+        self.requests_session_patcher = mock.patch('requests.Session')
+        self.mocked_session = self.requests_session_patcher.start()
+
+        def download(url):
+            return self.mocked_session.get(url)
 
         self.scrapers = ftpscraper.ScrapersMixin()
+        self.scrapers.download = download
         self.scrapers.config = DotDict({
             'logger': mock.Mock()
         })
@@ -50,151 +59,11 @@ class TestFTPScraper(TestCaseBase):
     def tearDown(self):
         super(TestFTPScraper, self).tearDown()
         self.psycopg2_patcher.stop()
-        self.urllib2_patcher.stop()
-
-    @mock.patch('socorro.cron.jobs.ftpscraper.time')
-    def test_patient_urlopen(self, mocked_time):
-
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            if len(mock_calls) == 1:
-                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-            if len(mock_calls) == 2:
-                raise urllib2.HTTPError(url, 504, "Timeout", {}, None)
-            if len(mock_calls) == 3:
-                raise urllib2.URLError("BadStatusLine")
-
-            return "<html>content</html>"
-
-        self.urllib2.side_effect = mocked_urlopener
-        content = ftpscraper.patient_urlopen(
-            'http://doesntmatt.er',
-            sleep_time=25
-        )
-        eq_(content, "<html>content</html>")
-        eq_(sleeps, [25, 25, 25])
-
-    @mock.patch('socorro.cron.jobs.ftpscraper.time')
-    def test_patient_urlopen_impatient_retriederror(self, mocked_time):
-
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            if len(mock_calls) == 1:
-                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-            if len(mock_calls) == 2:
-                raise urllib2.HTTPError(url, 504, "Timeout", {}, None)
-            raise NotImplementedError(url)
-
-        self.urllib2.side_effect = mocked_urlopener
-        # very impatient version
-        assert_raises(
-            ftpscraper.RetriedError,
-            ftpscraper.patient_urlopen,
-            'http://doesntmatt.er',
-            max_attempts=1
-        )
-        eq_(len(mock_calls), 1)
-
-        # less impatient
-        mock_calls = []
-        assert_raises(
-            ftpscraper.RetriedError,
-            ftpscraper.patient_urlopen,
-            'http://doesntmatt.er',
-            max_attempts=2
-        )
-        eq_(len(mock_calls), 2)
-
-    @mock.patch('socorro.cron.jobs.ftpscraper.time')
-    def test_patient_urlopen_some_raise_errors(self, mocked_time):
-
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            if len(mock_calls) == 1:
-                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-            raise urllib2.HTTPError(url, 400, "Bad Request", {}, None)
-
-        self.urllib2.side_effect = mocked_urlopener
-        # very impatient version
-        assert_raises(
-            urllib2.HTTPError,
-            ftpscraper.patient_urlopen,
-            'http://doesntmatt.er',
-        )
-
-    def test_patient_urlopen_pass_404_errors(self):
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
-
-        self.urllib2.side_effect = mocked_urlopener
-        response = ftpscraper.patient_urlopen('http://doesntmatt.er')
-        eq_(response, None)
-        assert len(mock_calls) == 1, mock_calls
-
-    @mock.patch('socorro.cron.jobs.ftpscraper.time')
-    def test_patient_urlopen_eventual_retriederror(self, mocked_time):
-
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        mock_calls = []
-
-        @stringioify
-        def mocked_urlopener(url):
-            mock_calls.append(url)
-            if len(mock_calls) % 2:
-                raise urllib2.HTTPError(url, 500, "Server Error", {}, None)
-            else:
-                raise urllib2.URLError("BadStatusLine")
-
-        self.urllib2.side_effect = mocked_urlopener
-        # very impatient version
-        assert_raises(
-            ftpscraper.RetriedError,
-            ftpscraper.patient_urlopen,
-            'http://doesntmatt.er',
-        )
-        ok_(len(mock_calls) > 1)
+        self.requests_session_patcher.stop()
 
     def test_get_links(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if 'ONE' in url:
                 return html_wrap % """
@@ -202,7 +71,7 @@ class TestFTPScraper(TestCaseBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.get_links('ONE', starts_with='One'),
@@ -223,8 +92,8 @@ class TestFTPScraper(TestCaseBase):
         )
 
     def test_get_links_advanced_startswith(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if '/' in url:
                 return html_wrap % """
@@ -233,7 +102,7 @@ class TestFTPScraper(TestCaseBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.get_links('http://x/some/dir/', starts_with='myp'),
@@ -241,19 +110,21 @@ class TestFTPScraper(TestCaseBase):
         )
 
     def test_get_links_with_page_not_found(self):
-        @stringioify
-        def mocked_urlopener(url):
-            raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
 
-        self.urllib2.side_effect = mocked_urlopener
+        def mocked_get(url):
+            response = requests.Response()
+            response.status_code = 404
+            return response
+
+        self.mocked_session.get.side_effect = mocked_get
         eq_(
             self.scrapers.get_links('ONE'),
             []
         )
 
     def test_parse_info_file(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             if 'ONE' in url:
                 return 'BUILDID=123'
             if 'TWO' in url:
@@ -269,7 +140,8 @@ class TestFTPScraper(TestCaseBase):
                     '"update_channel": "nightly", "version": "18.0"}'
                 )
             raise NotImplementedError(url)
-        self.urllib2.side_effect = mocked_urlopener
+
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.parse_info_file('ONE'),
@@ -299,14 +171,15 @@ class TestFTPScraper(TestCaseBase):
               'build_type': 'nightly'}))
 
     def test_parse_info_file_with_bad_lines(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             if 'ONE' in url:
                 return 'BUILDID'
             if 'TWO' in url:
                 return 'BUILDID=123\nbuildID'
             raise NotImplementedError(url)
-        self.urllib2.side_effect = mocked_urlopener
+
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.parse_info_file('ONE'),
@@ -320,11 +193,12 @@ class TestFTPScraper(TestCaseBase):
 
     def test_parse_info_file_with_page_not_found(self):
 
-        @stringioify
-        def mocked_urlopener(url):
-            raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
+        def mocked_get(url):
+            response = requests.Response()
+            response.status_code = 404
+            return response
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.parse_info_file('ONE'),
@@ -332,8 +206,8 @@ class TestFTPScraper(TestCaseBase):
         )
 
     def test_get_release(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if 'linux_info.txt' in url:
                 return 'BUILDID=123'
@@ -352,7 +226,7 @@ class TestFTPScraper(TestCaseBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             list(self.scrapers.get_release('http://x/TWO')),
@@ -365,8 +239,8 @@ class TestFTPScraper(TestCaseBase):
         )
 
     def test_parse_b2g_file(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             if 'ZERO' in url:
                 return ''
             if 'ONE' in url:
@@ -389,7 +263,7 @@ class TestFTPScraper(TestCaseBase):
                 })
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.parse_b2g_file('ZERO'),
@@ -420,10 +294,13 @@ class TestFTPScraper(TestCaseBase):
         )
 
     def test_parse_b2g_file_with_page_not_found(self):
-        @stringioify
-        def mocked_urlopener(url):
-            raise urllib2.HTTPError(url, 404, "Not Found", {}, None)
-        self.urllib2.side_effect = mocked_urlopener
+
+        def mocked_get(url):
+            response = requests.Response()
+            response.status_code = 404
+            return response
+
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             self.scrapers.parse_b2g_file('FIVE'),
@@ -431,8 +308,8 @@ class TestFTPScraper(TestCaseBase):
         )
 
     def test_get_json_nightly(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if '.json' in url:
                 return json.dumps({
@@ -453,7 +330,7 @@ class TestFTPScraper(TestCaseBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             list(self.scrapers.get_json_nightly('http://x/TWO/', 'TWO')),
@@ -473,8 +350,8 @@ class TestFTPScraper(TestCaseBase):
         eq_(builds[0], ('linux-i686', 'ONE', '43.0a2', kvpairs))
 
     def test_get_b2g(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if '.json' in url:
                 if 'date2' in url:
@@ -498,8 +375,7 @@ class TestFTPScraper(TestCaseBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
-
+        self.mocked_session.get.side_effect = mocked_get
         eq_(
             list(self.scrapers.get_b2g('http://x/ONE/')),
             []
@@ -602,10 +478,14 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         """)
 
         self.conn.commit()
-        self.urllib2_patcher = mock.patch('urllib2.urlopen')
-        self.urllib2 = self.urllib2_patcher.start()
+        self.requests_session_patcher = mock.patch('requests.Session')
+        self.mocked_session = self.requests_session_patcher.start()
+
+        def download(url):
+            return self.mocked_session.get(url)
 
         self.scrapers = ftpscraper.ScrapersMixin()
+        self.scrapers.download = download
         self.scrapers.config = DotDict({
             'logger': mock.Mock()
         })
@@ -621,8 +501,8 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             TRUNCATE product_release_channels CASCADE;
         """)
         self.conn.commit()
-        self.urllib2_patcher.stop()
         super(TestIntegrationFTPScraper, self).tearDown()
+        self.requests_session_patcher.stop()
 
     def _setup_config_manager_firefox(self):
         # Set a completely bogus looking base_url so it can never
@@ -645,8 +525,8 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         )
 
     def test_get_json_release(self):
-        @stringioify
-        def mocked_urlopener(url):
+
+        def mocked_get(url):
             html_wrap = "<html><body>\n%s\n</body></html>"
             if url.endswith('/mobile/'):
                 return html_wrap % """
@@ -698,7 +578,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session.get.side_effect = mocked_get
 
         eq_(
             list(self.scrapers.get_json_release('http://x/TWO/', 'TWO')),
@@ -731,8 +611,9 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         )
 
     def test_scrape_json_releases(self):
-        @stringioify
-        def mocked_urlopener(url, today=None):
+
+        @responsify
+        def mocked_get(url, today=None, timeout=None):
             if today is None:
                 today = utc_now()
             html_wrap = "<html><body>\n%s\n</body></html>"
@@ -899,7 +780,8 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 """
             raise NotImplementedError(url)
 
-        self.urllib2.side_effect = mocked_urlopener
+        self.mocked_session().get.side_effect = mocked_get
+
         config_manager = self._setup_config_manager_firefox()
         with config_manager.context() as config:
             tab = CronTabber(config)
