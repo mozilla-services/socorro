@@ -50,8 +50,14 @@ class TestFTPScraper(TestCaseBase):
         def download(url):
             return self.mocked_session.get(url)
 
+        def skip_json_file(url):
+            if url.endswith('mozinfo.json'):
+                return True
+            return False
+
         self.scrapers = ftpscraper.ScrapersMixin()
         self.scrapers.download = download
+        self.scrapers.skip_json_file = skip_json_file
         self.scrapers.config = DotDict({
             'logger': mock.Mock()
         })
@@ -484,8 +490,12 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
         def download(url):
             return self.mocked_session.get(url)
 
+        def skip_json_file(url):
+            return False
+
         self.scrapers = ftpscraper.ScrapersMixin()
         self.scrapers.download = download
+        self.scrapers.skip_json_file = skip_json_file
         self.scrapers.config = DotDict({
             'logger': mock.Mock()
         })
@@ -647,6 +657,8 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                     <a href="firefox-10.0b4.json">firefox-10.0b4.json</a>
                     <a href="firefox-10.0b4.en-US.linux-i686.mozinfo.json">
                      firefox-10.0b4.en-US.linux-i686.mozinfo.json</a>
+                    <a href="JUNK.json">
+                     JUNK.json</a>
                 """
             if url.endswith('/firefox/candidates/None-candidates/'
                             'build1/linux-i686/en-US/'):
@@ -684,7 +696,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
                 }
                 """
             # Ignore unrecognized JSON files, see bug 1065071
-            if 'firefox-10.0b4.en-US.linux-i686.mozinfo.json' in url:
+            if 'JUNK.json' in url:
                 return """
                 {
                     "something": "unexpected",
@@ -802,8 +814,7 @@ class TestIntegrationFTPScraper(IntegrationTestBase):
             config.logger.warning.assert_any_call(
                 'warning, unsupported JSON file: %s',
                 base_url + 'firefox/candidates/'
-                '10.0b4-candidates/build1/linux-i686/en-US/firefox-10.0b4.e'
-                'n-US.linux-i686.mozinfo.json'
+                '10.0b4-candidates/build1/linux-i686/en-US/JUNK.json'
             )
 
         cursor = self.conn.cursor()
