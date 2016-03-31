@@ -55,7 +55,6 @@ SERVICES_LIST = (
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
     (r'/report/(list)/(.*)', 'report.Report'),
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
-    (r'/signature/first_date/', 'signature_first_date.SignatureFirstDate'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/skiplist/(.*)', 'skiplist.SkipList'),

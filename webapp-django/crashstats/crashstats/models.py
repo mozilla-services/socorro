@@ -23,6 +23,7 @@ import socorro.external.postgresql.gccrashes
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
+import socorro.external.postgresql.signature_first_date
 
 from socorrolib.app import socorro_app
 
@@ -1240,7 +1241,9 @@ class SignaturesByBugs(SocorroMiddleware):
 
 class SignatureFirstDate(SocorroMiddleware):
 
-    URL_PREFIX = '/signature/first_date/'
+    implementation = (
+        socorro.external.postgresql.signature_first_date.SignatureFirstDate
+    )
 
     required_params = (
         ('signatures', list),
@@ -1253,11 +1256,6 @@ class SignatureFirstDate(SocorroMiddleware):
             'first_build',
         )
     }
-
-    def get(self, **kwargs):
-        # Get is actually a POST underneath.
-        url = self.URL_PREFIX
-        return self.post(url, kwargs)
 
 
 class SignatureTrend(SocorroMiddleware):
