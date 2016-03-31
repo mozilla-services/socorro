@@ -24,6 +24,7 @@ from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from crashstats.crashstats.models import (
     ProductVersions,
     CrontabberState,
+    CurrentProducts,
 )
 from crashstats.tokens.models import Token
 
@@ -294,44 +295,54 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
-    # Commented out because these are soon going to be completely re-written
-    # @mock.patch('requests.get')
-    # def test_CurrentVersions(self, rget):
-    #     url = reverse('api:model_wrapper', args=('CurrentVersions',))
-    #     response = self.client.get(url)
-    #     eq_(response.status_code, 200)
-    #     dump = json.loads(response.content)
-    #     ok_(isinstance(dump, list))
-    #     first = dump[0]
-    #     ok_('product' in first)
-    #
-    # @mock.patch('requests.get')
-    # def test_CurrentProducts(self, rget):
-    #     url = reverse('api:model_wrapper', args=('CurrentProducts',))
-    #     response = self.client.get(url)
-    #     eq_(response.status_code, 200)
-    #     dump = json.loads(response.content)
-    #     ok_(dump['hits'])
-    #     ok_(dump['products'])
-    #     ok_(dump['total'])
-    #
-    # @mock.patch('requests.get')
-    # def test_ProductsVersions(self, rget):
-    #     url = reverse('api:model_wrapper', args=('ProductsVersions',))
-    #     response = self.client.get(url)
-    #     eq_(response.status_code, 200)
-    #     dump = json.loads(response.content)
-    #     ok_('WaterWolf' in dump)
-    #     ok_('NightTrain' in dump)
-    #     versions = dump['WaterWolf']
-    #     version = versions[0]
-    #     ok_('product' in version)
-    #     ok_('version' in version)
-    #     ok_('throttle' in version)
-    #     ok_('start_date' in version)
-    #     ok_('end_date' in version)
-    #     ok_('featured' in version)
-    #     ok_('release' in version)
+    def test_CurrentVersions(self):
+        url = reverse('api:model_wrapper', args=('CurrentVersions',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(isinstance(dump, list))
+        first = dump[0]
+        ok_('product' in first)
+        eq_(
+            response['Deprecation-warning'],
+            CurrentProducts.deprecation_warning.replace('\n', ' ')
+        )
+
+    def test_CurrentProducts(self):
+        url = reverse('api:model_wrapper', args=('CurrentProducts',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['products'])
+        ok_(dump['total'])
+        eq_(dump['DEPRECATION_WARNING'], CurrentProducts.deprecation_warning)
+        eq_(
+            response['Deprecation-warning'],
+            CurrentProducts.deprecation_warning.replace('\n', ' ')
+        )
+
+    def test_ProductsVersions(self):  # Note the 's' in ProductSVersions
+        url = reverse('api:model_wrapper', args=('ProductsVersions',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_('WaterWolf' in dump)
+        ok_('NightTrain' in dump)
+        versions = dump['WaterWolf']
+        version = versions[0]
+        ok_('product' in version)
+        ok_('version' in version)
+        ok_('throttle' in version)
+        ok_('start_date' in version)
+        ok_('end_date' in version)
+        ok_('featured' in version)
+        ok_('release' in version)
+        eq_(dump['DEPRECATION_WARNING'], CurrentProducts.deprecation_warning)
+        eq_(
+            response['Deprecation-warning'],
+            CurrentProducts.deprecation_warning.replace('\n', ' ')
+        )
 
     def test_ProductVersions(self):
 

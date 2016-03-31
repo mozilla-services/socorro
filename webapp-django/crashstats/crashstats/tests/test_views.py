@@ -545,32 +545,8 @@ class TestAnalytics(BaseTestViews):
 
     @override_settings(GOOGLE_ANALYTICS_ID='xyz123')
     @override_settings(GOOGLE_ANALYTICS_DOMAIN='test.biz')
-    @mock.patch('requests.get')
-    def test_google_analytics(self, rget):
+    def test_google_analytics(self):
         url = reverse('crashstats:home', args=('WaterWolf',))
-
-        def mocked_get(url, params, **options):
-            if 'products' in url:
-                return Response("""
-                    {
-                        "hits": [{
-                            "is_featured": true,
-                            "throttle": 100.0,
-                            "end_date": "2012-11-27",
-                            "product": "WaterWolf",
-                            "build_type": "Nightly",
-                            "version": "19.0",
-                            "has_builds": true,
-                            "start_date": "2012-09-25"
-                        }],
-                        "total": 1
-                    }
-                """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('xyz123' in response.content)

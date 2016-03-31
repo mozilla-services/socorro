@@ -378,6 +378,16 @@ def model_wrapper(request, model_name):
         )
         return response
 
+    if (
+        getattr(model, 'deprecation_warning', False)
+    ):
+        if isinstance(result, dict):
+            result['DEPRECATION_WARNING'] = model.deprecation_warning
+        # If you return a tuple of two dicts, the second one becomes
+        # the extra headers.
+        return result, {
+            'DEPRECATION-WARNING': model.deprecation_warning.replace('\n', ' ')
+        }
     return result
 
 
@@ -462,6 +472,7 @@ def _describe_model(model):
         'methods': methods,
         'docstring': docstring,
         'required_permissions': required_permissions,
+        'deprecation_warning': getattr(model, 'deprecation_warning', None),
     }
     return data
 
