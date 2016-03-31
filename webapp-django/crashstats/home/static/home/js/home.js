@@ -411,7 +411,7 @@ $(function () {
             target: '#homepage-graph-graph',
             x_accessor: 'date',
             y_accessor: 'count',
-            xax_start_at_min: true,
+            axes_not_compact: true,
             utc_time: true,
             interpolate: 'basic',
             area: false,
