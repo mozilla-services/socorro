@@ -23,6 +23,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/jquery-ui.min.css',
     },
+    'accordion': {
+        'source_filenames': (
+            'crashstats/css/accordion.less',
+        ),
+        'output_filename': 'css/accordion.min.css',
+    },
     'metricsgraphics': {
         'source_filenames': (
             'crashstats/css/lib/metricsgraphics.css',
@@ -83,7 +89,6 @@ PIPELINE_CSS = {
     'report_list': {
         'source_filenames': (
             'crashstats/css/report_list.less',
-            'crashstats/css/accordion.less',
         ),
         'output_filename': 'css/report-list.min.css',
     },
@@ -179,6 +184,12 @@ PIPELINE_JS = {
             'crashstats/js/jquery/plugins/jquery-ui.js',
         ),
         'output_filename': 'js/jquery-ui.min.js',
+    },
+    'accordion': {
+        'source_filenames': (
+            'crashstats/js/lib/accordions.js',
+        ),
+        'output_filename': 'js/accordion.min.js',
     },
     'correlation': {
         'source_filenames': (
@@ -313,7 +324,6 @@ PIPELINE_JS = {
         'source_filenames': (
             'crashstats/js/jquery/plugins/jquery.cookie.js',
             'crashstats/js/lib/awty.js',
-            'crashstats/js/lib/accordions.js',
             'crashstats/js/socorro/report_list.js',
             'crashstats/js/socorro/report_list_signature_summary.js',
             'crashstats/js/socorro/report_list_graph.js',
@@ -422,6 +432,7 @@ PIPELINE_JS = {
             'signature/js/signature_tab_reports.js',
             'signature/js/signature_tab_aggregations.js',
             'signature/js/signature_tab_comments.js',
+            'signature/js/signature_tab_correlations.js',
             'signature/js/signature_tab_bugzilla.js',
             'signature/js/signature_tab_graph.js',
             'signature/js/signature_panel.js',

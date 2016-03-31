@@ -1,14 +1,12 @@
-/* global socorro:true, $:true */
+/* global socorro:true, $:true, Analytics:true */
 
-window.SignatureReport = {
-
+var SignatureReport = {
     // Function to help with inheritance.
     'inherit': function (proto) {
         var f = function () {};
         f.prototype = proto;
         return new f ();
-    }
-
+    },
 };
 
 SignatureReport.init = function () {
@@ -20,22 +18,26 @@ SignatureReport.init = function () {
     SignatureReport.form = form;
     var fieldsURL = form.data('fields-url');
     var SIGNATURE = form.data('signature');
+    SignatureReport.signature = SIGNATURE;
     var panelsNavSection = $('#panels-nav');
     var mainBodyElt = $('#mainbody');
 
     SignatureReport.pageNum = 1;  // the page number as passed in the URL
 
     // Define the tab names.
-    var tabNames = ['summary', 'graphs', 'reports', 'aggregations', 'comments', 'bugzilla', 'graph'];
+    var tabNames = $('a', panelsNavSection).map(function () {
+        return $(this).data('tab-name');
+    });
     var tabs = {};
     var tabClasses = {
         'summary': SignatureReport.SummaryTab,
         'graphs': SignatureReport.GraphsTab,
         'reports': SignatureReport.ReportsTab,
         'aggregations': SignatureReport.AggregationsTab,
-        'comments': SignatureReport.CommentsTab,
         'bugzilla': SignatureReport.BugzillaTab,
-        'graph': SignatureReport.GraphTab
+        'comments': SignatureReport.CommentsTab,
+        'correlations': SignatureReport.CorrelationsTab,
+        'graph': SignatureReport.GraphTab,
     };
 
     // Set the current tab, either from location.hash or defaultTab.
@@ -64,11 +66,14 @@ SignatureReport.init = function () {
 
     SignatureReport.handleError = function (contentElt, jqXHR, textStatus, errorThrown) {
         var errorContent = $('<div>', {class: 'error'});
+        var errorDetails;
+        var errorTitle;
+        var errorMsg;
 
         try {
-            var errorDetails = $(jqXHR.responseText); // This might fail
-            var errorTitle = 'Oops, an error occured';
-            var errorMsg = 'Please fix the following issues: ';
+            errorDetails = $(jqXHR.responseText); // This might fail
+            errorTitle = 'Oops, an error occured';
+            errorMsg = 'Please fix the following issues: ';
 
             errorContent.append($('<h3>', {text: errorTitle}));
             errorContent.append($('<p>', {text: errorMsg}));
@@ -78,9 +83,9 @@ SignatureReport.init = function () {
             // If an exception occurs, that means jQuery wasn't able
             // to understand the status of the HTTP response. It is
             // probably a 500 error. We thus show a different error.
-            var errorTitle = 'An unexpected error occured :(';
-            var errorMsg = 'We have been automatically informed of that error, and are working on a solution. ';
-            var errorDetails = textStatus + ' - ' + errorThrown;
+            errorDetails = textStatus + ' - ' + errorThrown;
+            errorTitle = 'An unexpected error occured :(';
+            errorMsg = 'We have been automatically informed of that error, and are working on a solution. ';
 
             errorContent.append($('<h3>', {text: errorTitle}));
             errorContent.append($('<p>', {text: errorMsg}));
@@ -167,13 +172,13 @@ SignatureReport.init = function () {
         });
 
         // Change tab using navigation links.
-        panelsNavSection.on('click', 'a', function (e) {
+        panelsNavSection.on('click', 'a', function () {
             showTab($(this).data('tab-name'));
         });
     }
 
     // Make the tabs.
-    $.each(tabNames, function(i, tabName) {
+    $.each(tabNames, function (i, tabName) {
         var TabClass = tabClasses[tabName];
         tabs[tabName] = new TabClass(tabName);
         mainBodyElt.append(tabs[tabName].$panelElement);
