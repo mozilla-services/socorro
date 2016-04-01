@@ -10,14 +10,6 @@ source ${VIRTUAL_ENV:-"../socorro-virtualenv"}/bin/activate
 export PATH=$PATH:./node_modules/.bin/
 export SECRET_KEY="doesn't matter, tests"
 
-if [ -n "$WORKSPACE" ]
-then
-    # this means we're running jenkins, force compression
-    # FIXME we need a better way to determine if this is a release build!
-    export COMPRESS_ENABLED=True
-    export COMPRESS_OFFLINE=True
-fi
-
 echo "Install the node packages"
 npm install
 
