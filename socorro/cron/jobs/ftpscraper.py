@@ -4,13 +4,15 @@ import re
 import os
 import json
 import urlparse
+import fnmatch
 
 import mock
 import lxml.html
 import requests
 from requests.adapters import HTTPAdapter
 
-from configman import Namespace, class_converter
+from configman import Namespace
+from configman.converters import class_converter, str_to_list
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
     as_backfill_cron_app,
@@ -26,6 +28,7 @@ from socorrolib.lib.datetimeutil import string_to_datetime
 class ScrapersMixin(object):
     """
     Mixin that requires to be able to call `self.download(some_url)`
+    and `self.skip_json_file(json_url)`.
     """
 
     def get_links(self, url, starts_with=None, ends_with=None):
@@ -173,6 +176,8 @@ class ScrapersMixin(object):
                     ends_with='.json'
                 )
                 for json_url in json_files:
+                    if self.skip_json_file(json_url):
+                        continue
                     kvpairs = self.parse_build_json_file(json_url)
                     if not kvpairs:
                         continue
@@ -182,10 +187,7 @@ class ScrapersMixin(object):
     def get_json_nightly(self, nightly_url, dirname):
         json_files = self.get_links(nightly_url, ends_with='.json')
         for url in json_files:
-            if url.endswith('.mozinfo.json'):
-                # Not sure what this file is, but it's never the file
-                # we need to extract juicy things like `buildid` and
-                # `moz_source_repo`.
+            if self.skip_json_file(url):
                 continue
             basename = os.path.basename(url)
             if '.en-US.' in url:
@@ -312,6 +314,12 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
         default=3.5,  # seconds, ideally something slightly larger than 3
         doc='Number of seconds wait for a connection')
 
+    required_config.add_option(
+        'json_files_to_ignore',
+        default='*.mozinfo.json, *test_packages.json',
+        from_string_converter=str_to_list
+    )
+
     def __init__(self, *args, **kwargs):
         super(FTPScraperCronApp, self).__init__(*args, **kwargs)
         self.session = requests.Session()
@@ -334,6 +342,13 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
             return
         assert response.status_code == 200, response.status_code
         return response.content
+
+    def skip_json_file(self, json_url):
+        basename = os.path.basename(json_url)
+        for file_pattern in self.config.json_files_to_ignore:
+            if fnmatch.fnmatch(basename, file_pattern):
+                return True
+        return False
 
     def run(self, date):
         # record_associations
