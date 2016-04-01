@@ -516,48 +516,16 @@ CACHES = {
 
 TIME_ZONE = config('TIME_ZONE', 'UTC')
 
-# Only use the old way of settings DATABASES IF you haven't fully migrated yet
-if (
-    not config('DATABASE_URL', None) and (
-        config('DATABASE_ENGINE', None) or
-        config('DATABASE_NAME', None) or
-        config('DATABASE_USER', None) or
-        config('DATABASE_PASSWORD', None) or
-        config('DATABASE_PORT', None)
-    )
-):
-    # Database credentials set up the old way
-    import warnings
-    warnings.warn(
-        "Use DATABASE_URL instead of depending on DATABASE_* settings",
-        DeprecationWarning
-    )
-    DATABASES = {
-        'default': {
-            # use django.db.backends.postgresql_psycopg for production
-            'ENGINE': config('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
-            'NAME': config('DATABASE_NAME', 'sqlite.crashstats.db'),
-            'USER': config('DATABASE_USER', ''),
-            'PASSWORD': config('DATABASE_PASSWORD', ''),
-            'HOST': config('DATABASE_HOST', ''),
-            'PORT': config('DATABASE_PORT', ''),
-            'OPTIONS': {
-            },
-            # 'TEST_CHARSET': 'utf8',
-            # 'TEST_COLLATION': 'utf8_general_ci',
-        },
-        # 'slave': {
-        #     ...
-        # },
-    }
-else:
-    DATABASES = {
-        'default': config(
-            'DATABASE_URL',
-            'sqlite://sqlite.crashstats.db',
-            cast=dj_database_url.parse
-        )
-    }
+
+# We'll possible reuse this later in this file
+database_url = config(
+    'DATABASE_URL',
+    'sqlite://sqlite.crashstats.db',
+)
+
+DATABASES = {
+    'default': dj_database_url.parse(database_url)
+}
 
 # Uncomment this and set to all slave DBs in use on the site.
 SLAVE_DATABASES = config('SLAVE_DATABASES', '', cast=Csv())
@@ -689,19 +657,26 @@ SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
     None
 )
 
+# This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
+# implementation classes will use the config coming from `DATABASE_URL`.
+# For local development you might want to connect to different databases
+# for the Django ORM and for the socorro implementation classes.
+implementations_database_url = config(
+    'IMPLEMENTATIONS_DATABASE_URL',
+    '',
+)
+if not implementations_database_url:
+    implementations_database_url = database_url
+implementations_config = dj_database_url.parse(
+    implementations_database_url
+)
+
 # Config for when the models pull directly from socorro.external classes.
-# NOTE: This is overwritten, for tests in crashstats.settings.test
 SOCORRO_IMPLEMENTATIONS_CONFIG = {
     'secrets': {
         'postgresql': {
-            'database_password': config(
-                'DATABASE_PASSWORD',
-                'aPassword'
-            ),
-            'database_username': config(
-                'DATABASE_USERNAME',
-                'breakpad_rw'
-            ),
+            'database_password': implementations_config['PASSWORD'],
+            'database_username': implementations_config['USER'],
         }
     },
     'resource': {
@@ -722,18 +697,9 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             # )
         },
         'postgresql': {
-            'database_hostname': config(
-                'DATABASE_HOSTNAME',
-                'localhost'
-            ),
-            'database_name': config(
-                'DATABASE_NAME',
-                'breakpad'
-            ),
-            'database_port': config(
-                'DATABASE_PORT',
-                '5432'
-            ),
+            'database_hostname': implementations_config['HOST'],
+            'database_name': implementations_config['NAME'],
+            'database_port': implementations_config['PORT'],
         },
     }
 }
