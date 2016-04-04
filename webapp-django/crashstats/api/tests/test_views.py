@@ -11,6 +11,8 @@ import mock
 import pyquery
 from nose.tools import eq_, ok_
 
+from session_csrf import ANON_COOKIE
+
 from socorro.external import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import (
@@ -170,6 +172,28 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         eq_(response['Access-Control-Allow-Origin'], '*')
+
+    def test_no_cookie_set(self):
+
+        def mocked_get(**options):
+            return {}
+
+        # Doesn't matter which model we use, as long as we use one of them.
+        CrontabberState.implementation().get.side_effect = mocked_get
+        url = reverse('api:model_wrapper', args=('CrontabberState',))
+        # self.client.handler.enforce_csrf_checks = True
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # The test client sucks up all set cookies. This one should not
+        # be set.
+        ok_(ANON_COOKIE not in response.cookies)
+
+        # But load the regular web page.
+        # The documentation for the API
+        url = reverse('api:documentation')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(ANON_COOKIE in response.cookies)
 
     @mock.patch('requests.get')
     def test_CrashesPerAdu_too_much(self, rget):
