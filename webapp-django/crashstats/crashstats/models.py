@@ -14,9 +14,6 @@ from configman import configuration
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
-# from socorro.external.rabbitmq.connection_context import ConnectionContext
-# from socorro.external.rabbitmq.crashstorage import RabbitMQCrashStorage
-# from socorro.external.rabbitmq.reprocessing import RabbitMQReprocessing
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
 )
@@ -54,7 +51,6 @@ def config_from_configman():
         definition_source=[
             ElasticsearchConfig.required_config,
             PostgreSQLCrashStorage.required_config,
-            # RabbitMQReprocessing.required_config,
             ReprocessingOneRabbitMQCrashStore.required_config,
 
             # This required_config defines the logger aggregate
