@@ -187,6 +187,8 @@ BLACKLIST = (
     'Query',
     # because it's an internal thing only
     'GraphicsReport',
+    # Because we haven't figured out how auth it yet
+    'Reprocessing',
 )
 
 
