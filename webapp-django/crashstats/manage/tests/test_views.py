@@ -1894,6 +1894,18 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 302)
 
+        good_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        bad_crash_id = '00000000-0000-0000-0000-000000020611'
+
+        def mocked_post(crash_id):
+            if crash_id == good_crash_id:
+                return True
+            elif crash_id == bad_crash_id:
+                return
+            raise NotImplementedError(crash_id)
+
+        models.Reprocessing.implementation().post = mocked_post
+
         self._login()
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1907,10 +1919,20 @@ class TestViews(BaseTestViews):
 
         response = self.client.post(
             url,
-            {'crash_id': '11cb72f5-eb28-41e1-a8e4-849982120611'},
+            {'crash_id': good_crash_id},
         )
         eq_(response.status_code, 302)
         self.assertRedirects(
             response,
-            url + '?crash_id=11cb72f5-eb28-41e1-a8e4-849982120611'
+            url + '?crash_id=' + good_crash_id
+        )
+
+        response = self.client.post(
+            url,
+            {'crash_id': bad_crash_id},
+        )
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            url  # note lack of `?crash_id=...`
         )

@@ -1640,8 +1640,7 @@ class TestModels(DjangoTestCase):
         ok_(len(sleeps) > 2)  # had to sleep more than 2 times
 
     def test_Reprocessing(self):
-        model = models.Reprocessing
-        api = model()
+        api = models.Reprocessing()
 
         def mocked_post(crash_id):
             if crash_id == 'some-crash-id':
