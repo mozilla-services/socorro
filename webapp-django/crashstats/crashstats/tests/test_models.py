@@ -1638,3 +1638,20 @@ class TestModels(DjangoTestCase):
         )
         ok_(len(calls) > 3)  # had to attempt more than 3 times
         ok_(len(sleeps) > 2)  # had to sleep more than 2 times
+
+    def test_Reprocessing(self):
+        model = models.Reprocessing
+        api = model()
+
+        def mocked_post(crash_id):
+            if crash_id == 'some-crash-id':
+                return True
+            elif crash_id == 'bad-crash-id':
+                return
+            raise NotImplementedError(crash_id)
+
+        models.Reprocessing.implementation().post = mocked_post
+        ok_(api.post(crash_id='some-crash-id'))
+        # Note that it doesn't raise an error if
+        # the ReprocessingOneRabbitMQCrashStore choses NOT to queue it.
+        ok_(not api.post(crash_id='bad-crash-id'))

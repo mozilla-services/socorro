@@ -1888,3 +1888,29 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, {'page': 'NaN'})
         eq_(response.status_code, 400)
+
+    def test_reprocessing(self):
+        url = reverse('manage:reprocessing')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        response = self.client.post(
+            url,
+            {'crash_id': 'junk'},
+        )
+        eq_(response.status_code, 200)
+        ok_('Does not appear to be a valid crash ID' in response.content)
+
+        response = self.client.post(
+            url,
+            {'crash_id': '11cb72f5-eb28-41e1-a8e4-849982120611'},
+        )
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            url + '?crash_id=11cb72f5-eb28-41e1-a8e4-849982120611'
+        )
