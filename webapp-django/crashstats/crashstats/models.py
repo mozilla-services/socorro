@@ -14,6 +14,12 @@ from configman import configuration
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+# from socorro.external.rabbitmq.connection_context import ConnectionContext
+# from socorro.external.rabbitmq.crashstorage import RabbitMQCrashStorage
+# from socorro.external.rabbitmq.reprocessing import RabbitMQReprocessing
+from socorro.external.rabbitmq.crashstorage import (
+    ReprocessingOneRabbitMQCrashStore,
+)
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
@@ -48,6 +54,9 @@ def config_from_configman():
         definition_source=[
             ElasticsearchConfig.required_config,
             PostgreSQLCrashStorage.required_config,
+            # RabbitMQReprocessing.required_config,
+            ReprocessingOneRabbitMQCrashStore.required_config,
+
             # This required_config defines the logger aggregate
             socorro_app.App.required_config,
         ],
@@ -1764,3 +1773,18 @@ class GraphicsReport(SocorroMiddleware):
         'product',
         ('date', datetime.date),
     )
+
+
+class Reprocessing(SocorroMiddleware):
+    """Return true the supplied crash ID
+    was sucessfully submitted onto the reprocessing queue.
+    """
+
+    implementation = ReprocessingOneRabbitMQCrashStore
+
+    required_params = (
+        'crash_id',
+    )
+
+    def post(self, **data):
+        return self.get_implementation().post(**data)

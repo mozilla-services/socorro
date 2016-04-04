@@ -677,7 +677,11 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         'postgresql': {
             'database_password': implementations_config['PASSWORD'],
             'database_username': implementations_config['USER'],
-        }
+        },
+        'rabbitmq': {
+            'rabbitmq_user': config('RABBITMQ_USER', ''),
+            'rabbitmq_password': config('RABBITMQ_PASSWORD', ''),
+        },
     },
     'resource': {
         'elasticsearch': {
@@ -700,6 +704,11 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'database_hostname': implementations_config['HOST'],
             'database_name': implementations_config['NAME'],
             'database_port': implementations_config['PORT'],
+        },
+        'rabbitmq': {
+            'host': config('RABBITMQ_HOST', 'localhost'),
+            'virtual_host': config('RABBITMQ_VIRTUAL_HOST', '/'),
+            'port': config('RABBITMQ_PORT', 5762),
         },
     }
 }
