@@ -1,14 +1,21 @@
-is_jenkins = ENV['USER'] == 'jenkins'
+# Whether or not this is jenkins user
+IS_JENKINS = ENV['USER'] == 'jenkins'
+
+# Specify how much memory to use
+VAGRANT_MEMORY = (ENV['VAGRANT_MEMORY'] || '1024').to_i
+
+# Specify whether or not to enable Puppet debug output
+PUPPET_DEBUG = (ENV['VAGRANT_PUPPET_DEBUG'] || '0') == '1'
 
 Vagrant.configure("2") do |config|
   config.vm.box = "puppetlabs/centos-7.0-64-puppet"
 
   config.vm.provider "virtualbox" do |v|
     v.name = "socorro-vm"
-    v.memory = 512
+    v.memory = VAGRANT_MEMORY
   end
 
-  if not is_jenkins
+  if not IS_JENKINS
     # Don't share these resources when on Jenkins. We want to be able to
     # parallelize jobs.
 
@@ -24,7 +31,10 @@ Vagrant.configure("2") do |config|
     puppet.environment = "vagrant"
     puppet.manifests_path = "puppet/vagrant/manifests"
     puppet.manifest_file = "vagrant.pp"
-    # enable this to see verbose and debug puppet output
-    #puppet.options = "--verbose --debug"
+
+    if PUPPET_DEBUG
+      # Enables puppet debug output
+      puppet.options = "--verbose --debug"
+    end
   end
 end
