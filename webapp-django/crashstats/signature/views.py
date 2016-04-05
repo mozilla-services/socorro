@@ -85,9 +85,7 @@ def signature_report(request, params, default_context=None):
     ]
 
     columns = request.GET.getlist('_columns')
-    if columns:
-        columns = [x for x in columns if x in fields]
-
+    columns = [x for x in columns if x in fields]
     context['columns'] = columns or DEFAULT_COLUMNS
 
     context['channels'] = ','.join(settings.CHANNELS).split(',')

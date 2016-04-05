@@ -89,7 +89,9 @@ def scrub_pii(content):
 
 @library.filter
 def json_dumps(data):
-    return jinja2.Markup(json.dumps(data))
+    return jinja2.Markup(
+        json.dumps(data).replace('</', '<\\/')
+    )
 
 
 @library.filter
