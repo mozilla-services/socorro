@@ -10,7 +10,7 @@ import requests
 import time
 
 import ujson
-from configman import configuration
+from configman import configuration, Namespace
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
@@ -47,14 +47,39 @@ class DeprecatedModelError(DeprecationWarning):
 
 
 def config_from_configman():
+    # print "ElasticsearchConfig", ElasticsearchConfig.get_required_config().keys()
+    # print "PostgreSQLCrashStorage", PostgreSQLCrashStorage.get_required_config().keys()
+    # print "ReprocessingOneRabbitMQCrashStore", ReprocessingOneRabbitMQCrashStore.get_required_config().keys()
+    # print "socorro_app.App.get_required_config()", socorro_app.App.get_required_config().keys()
+    # definition_source = Namespace()
+    # definition_source.namespace('es')
+    # definition_source.es.add_option(
+    #      'es',
+    #      default=ElasticsearchConfig,
+    # )
+    # definition_source.namespace('database')
+    # definition_source.database.add_option(
+    #      'database_class',
+    #      default=PostgreSQLCrashStorage,
+    # )
+    # definition_source.namespace('rabbitmq')
+    # definition_source.rabbitmq.add_option(
+    #      'rabbitmq',
+    #      default=ReprocessingOneRabbitMQCrashStore,
+    # )
+    # # definition_source.add_option(
+    # #     'app',
+    # #     default=socorro_app.App,
+    # # )
     return configuration(
+        # definition_source=[definition_source,socorro_app.App.get_required_config()],
         definition_source=[
             ElasticsearchConfig.get_required_config(),
             PostgreSQLCrashStorage.get_required_config(),
             ReprocessingOneRabbitMQCrashStore.get_required_config(),
 
             # This required_config defines the logger aggregate
-            socorro_app.App.required_config,
+            socorro_app.App.get_required_config(),
         ],
         values_source_list=[
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
