@@ -85,7 +85,7 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
                         2000, 1, 1, 0, 0, 0, 0,
                         tzinfo=UTC
                     ),
-                    "first_build": 12,
+                    "first_build": "12",
                 }
             ],
             "total": 1
@@ -107,7 +107,7 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
                         2000, 1, 1, 0, 0, 0, 0,
                         tzinfo=UTC
                     ),
-                    "first_build": 12,
+                    "first_build": "12",
                 },
                 {
                     "signature": "i_just_met_you()",
@@ -115,7 +115,7 @@ class IntegrationTestSignatureFirstDate(PostgreSQLTestCase):
                         2000, 1, 2, 0, 0, 0, 0,
                         tzinfo=UTC
                     ),
-                    "first_build": 12,
+                    "first_build": "12",
                 }
             ],
             "total": 2

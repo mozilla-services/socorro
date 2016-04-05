@@ -23,7 +23,7 @@ class SignatureFirstDate(PostgreSQLBase):
             SELECT
                 signature,
                 first_report AS first_date,
-                first_build
+                first_build::VARCHAR
             FROM signatures
             WHERE signature IN %s
         """
