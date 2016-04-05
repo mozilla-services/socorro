@@ -49,9 +49,9 @@ class DeprecatedModelError(DeprecationWarning):
 def config_from_configman():
     return configuration(
         definition_source=[
-            ElasticsearchConfig.required_config,
-            PostgreSQLCrashStorage.required_config,
-            ReprocessingOneRabbitMQCrashStore.required_config,
+            ElasticsearchConfig.get_required_config(),
+            PostgreSQLCrashStorage.get_required_config(),
+            ReprocessingOneRabbitMQCrashStore.get_required_config(),
 
             # This required_config defines the logger aggregate
             socorro_app.App.required_config,

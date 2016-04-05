@@ -15,15 +15,12 @@ from configman import (
     class_converter
 )
 from configman.dotdict import DotDict
+from socorrolib.lib.converters import change_default
 from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
     ConnectionContextPooled,
 )
-from socorro.external.crashstorage_base import (
-    Redactor,
-    CrashStorageBase,
-)
-from socorrolib.lib.converters import change_default
+from socorro.external.crashstorage_base import CrashStorageBase
 
 
 #==============================================================================
@@ -78,7 +75,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         doc='percentage of the time that rabbit will try to queue',
         reference_value_from='resource.rabbitmq',
     )
-
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -319,10 +315,6 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
     )
 
     def __init__(self, config, quit_check_callback=None):
-        config.forbidden_keys = ''
-        config.redactor_class = Redactor
-        config.throttle = 100
-        config.filter_on_legacy_processing = False  # must be set
         super(ReprocessingRabbitMQCrashStore, self).__init__(
             config, quit_check_callback=quit_check_callback
         )
