@@ -81,8 +81,8 @@ var SOURCE_URLS = {
     };
 var BASE_URL = location.protocol + '//' + location.host;
 var FIELDS = {{ fields | json_dumps }};
-var CHANNELS = {{ channels | json_dumps }}
-var COLUMNS = {{ columns | join(', ') | json_dumps }};
+var CHANNELS = {{ channels | json_dumps }};
+var COLUMNS = {{ columns | json_dumps }};
 var DEFAULT_CHANNEL = '{{ channel }}';
 </script>
 
