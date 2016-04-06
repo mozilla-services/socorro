@@ -58,7 +58,7 @@ def pass_default_context(view):
             # should be sent to the admin panel to add that product, while
             # regular users will see a 404.
             if 'version' in str(e):
-                return redirect(reverse('crashstats:home', args=(product,)))
+                return redirect(reverse('home:home', args=(product,)))
             elif request.user.is_superuser:
                 url = '%s?product=%s' % (reverse('manage:products'), product)
                 return redirect(url)

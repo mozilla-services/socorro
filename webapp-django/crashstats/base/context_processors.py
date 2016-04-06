@@ -23,7 +23,7 @@ def browserid(request):
         if reverse('crashstats:login') in absolute_url:
             # can't have that!
             absolute_url = reverse(
-                'crashstats:home',
+                'home:home',
                 args=(settings.DEFAULT_PRODUCT,)
             )
         return absolute_url

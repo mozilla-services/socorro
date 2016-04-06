@@ -304,15 +304,9 @@ PIPELINE_JS = {
     },
     'home': {
         'source_filenames': (
-            'crashstats/js/socorro/dashboard_graph.js',
-        ),
-        'output_filename': 'js/home.min.js',
-    },
-    'new_home': {
-        'source_filenames': (
             'home/js/home.js',
         ),
-        'output_filename': 'js/new-home.min.js',
+        'output_filename': 'js/home.min.js',
     },
     'report_index': {
         'source_filenames': (

@@ -26,15 +26,6 @@ urlpatterns = patterns(
     url('^robots\.txt$',
         views.robots_txt,
         name='robots_txt'),
-    url('^home' + products + '$',
-        views.home,
-        name='home'),
-    url('^home' + products + versions + '$',
-        views.home,
-        name='home'),
-    url(r'^home/frontpage_json$',
-        views.frontpage_json,
-        name='frontpage_json'),
     url(r'^status/json/$',
         views.status_json,
         name='status_json'),
@@ -161,11 +152,12 @@ urlpatterns = patterns(
     url(r'^about/throttling/$',
         views.about_throttling,
         name='about_throttling'),
+
     # if we do a permanent redirect, the browser will "cache" the redirect and
     # it will make it very hard to ever change the DEFAULT_PRODUCT
     url(r'^$',
         RedirectView.as_view(
-            url='/home/products/%s' % settings.DEFAULT_PRODUCT,
+            url='/home/product/%s' % settings.DEFAULT_PRODUCT,
             permanent=False  # this is not a legacy URL
         )),
 
