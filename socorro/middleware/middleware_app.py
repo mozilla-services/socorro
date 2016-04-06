@@ -41,7 +41,6 @@ SERVICES_LIST = (
     (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
-    (r'/crash_data/(.*)', 'crash_data.CrashData'),
     (
         r'/crashes/'
         r'(comments|count_by_day|daily|frequency|signatures|'
@@ -136,8 +135,7 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Crashes: hbase`',
-        default='CrashData: fs, '
-                'Correlations: http, '
+        default='Correlations: http, '
                 'CorrelationsSignatures: http, '
                 'SuperSearch: es, '
                 'Priorityjobs: rabbitmq, '

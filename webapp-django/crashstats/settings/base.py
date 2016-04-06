@@ -687,6 +687,9 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'rabbitmq_user': config('RABBITMQ_USER', ''),
             'rabbitmq_password': config('RABBITMQ_PASSWORD', ''),
         },
+        'boto': {
+            'secret_access_key': config('resource.boto.secret_access_key', ''),
+        },
     },
     'resource': {
         'elasticsearch': {
@@ -715,6 +718,16 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'virtual_host': config('RABBITMQ_VIRTUAL_HOST', '/'),
             'port': config('RABBITMQ_PORT', 5672),
         },
+        'boto': {
+            'access_key': config('resource.boto.access_key', ''),
+            'bucket_name': config(
+                'resource.boto.bucket_name', 'crashstats'),
+            'prefix': config('resource.boto.prefix', ''),
+            'keybuilder_class': config(
+                'resource.boto.keybuilder_class',
+                'socorro.external.boto.connection_context.DatePrefixKeyBuilder'
+            ),
+        }
     }
 }
 

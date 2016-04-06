@@ -87,6 +87,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/report-index.min.css',
     },
+    'report_pending': {
+        'source_filenames': (
+            'crashstats/css/report_pending.less',
+        ),
+        'output_filename': 'css/report-pending.min.css',
+    },
     'report_list': {
         'source_filenames': (
             'crashstats/css/report_list.less',
@@ -332,6 +338,12 @@ PIPELINE_JS = {
             'crashstats/js/socorro/reprocessing.js',
         ),
         'output_filename': 'js/report-index.min.js',
+    },
+    'report_pending': {
+        'source_filenames': (
+            'crashstats/js/socorro/pending.js',
+        ),
+        'output_filename': 'js/report-pending.min.js',
     },
     'report_list': {
         'source_filenames': (
