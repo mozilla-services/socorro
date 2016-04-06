@@ -11,15 +11,16 @@ import socorrolib.lib.util as sutil
 
 from socorrolib.lib.util import DotDict
 from socorro.processor.signature_utilities import (
+    AbortSignature,
     CSignatureTool,
     JavaSignatureTool,
-    SignatureGenerationRule,
     OOMSignature,
-    SigTrunc,
     StackwalkerErrorSignatureRule,
     SignatureIPCChannelError,
+    SignatureGenerationRule,
     SignatureJitCategory,
     SignatureRunWatchDog,
+    SigTrunc,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -1384,8 +1385,8 @@ class TestOOMSignature(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
-        ok_(pc.original_signature, 'hello')
-        ok_(pc.signature, 'OOM | unknown | hello')
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'OOM | unknown | hello')
 
     #--------------------------------------------------------------------------
     def test_action_small(self):
@@ -1402,8 +1403,8 @@ class TestOOMSignature(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
-        ok_(pc.original_signature, 'hello')
-        ok_(pc.signature, 'OOM | small')
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'OOM | small')
 
     #--------------------------------------------------------------------------
     def test_action_large(self):
@@ -1420,8 +1421,88 @@ class TestOOMSignature(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
-        ok_(pc.original_signature, 'hello')
-        ok_(pc.signature, 'OOM | large | hello')
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'OOM | large | hello')
+
+
+#==============================================================================
+class TestAbortSignature(TestCase):
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+        rd = {}
+        rc = DotDict()
+        rc.AbortMessage = 'something'
+
+        fake_processor = create_basic_fake_processor()
+        rule = AbortSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+        rc = DotDict()
+        # No AbortMessage.
+        rd = {}
+
+        fake_processor = create_basic_fake_processor()
+        rule = AbortSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate_empty_message(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+        rc = DotDict()
+        rc.AbortMessage = ''
+        rd = {}
+
+        fake_processor = create_basic_fake_processor()
+        rule = AbortSignature(fake_processor.config)
+        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+
+        rc = DotDict()
+        rc.AbortMessage = 'unknown'
+        rd = {}
+
+        fake_processor = create_basic_fake_processor()
+
+        rule = AbortSignature(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+
+        ok_(action_result)
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'Abort | unknown | hello')
+
+    #--------------------------------------------------------------------------
+    def test_action_success_long_message(self):
+        pc = DotDict()
+        pc.signature = 'hello'
+
+        rc = DotDict()
+        rc.AbortMessage = 'a' * 81
+        rd = {}
+
+        fake_processor = create_basic_fake_processor()
+
+        rule = AbortSignature(fake_processor.config)
+        action_result = rule.action(rc, rd, pc, fake_processor)
+
+        ok_(action_result)
+        eq_(pc.original_signature, 'hello')
+        expected_sig = 'Abort | {}... | hello'.format('a' * 77)
+        eq_(pc.signature, expected_sig)
 
 
 #==============================================================================
