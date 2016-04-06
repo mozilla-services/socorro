@@ -8,7 +8,6 @@ import urlparse
 
 import pyquery
 import mock
-from waffle.models import Switch
 
 from cStringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
@@ -546,7 +545,7 @@ class TestAnalytics(BaseTestViews):
     @override_settings(GOOGLE_ANALYTICS_ID='xyz123')
     @override_settings(GOOGLE_ANALYTICS_DOMAIN='test.biz')
     def test_google_analytics(self):
-        url = reverse('crashstats:home', args=('WaterWolf',))
+        url = reverse('home:home', args=('WaterWolf',))
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('xyz123' in response.content)
@@ -625,7 +624,7 @@ class TestViews(BaseTestViews):
             eq_(result['query_string'], None)
 
     def test_handler404(self):
-        url = reverse('crashstats:home', args=('Unknown',))
+        url = reverse('home:home', args=('Unknown',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
         ok_('Page not Found' in response.content)
@@ -641,23 +640,6 @@ class TestViews(BaseTestViews):
         eq_(result['error'], 'Page not found')
         eq_(result['path'], url)
         eq_(result['query_string'], 'foo=bar')
-
-    def test_homepage_redirect(self):
-        response = self.client.get('/')
-        eq_(response.status_code, 302)
-        destination = reverse('crashstats:home',
-                              args=[settings.DEFAULT_PRODUCT])
-        ok_(destination in response['Location'])
-
-    def test_homepage_products_redirect_without_versions(self):
-        url = reverse('crashstats:home', args=['WaterWolf'])
-        # some legacy URLs have this
-        url += '/versions/'
-        response = self.client.get(url)
-        redirect_code = settings.PERMANENT_LEGACY_REDIRECTS and 301 or 302
-        eq_(response.status_code, redirect_code)
-        destination = reverse('crashstats:home', args=['WaterWolf'])
-        ok_(destination in response['Location'])
 
     @mock.patch('requests.get')
     def test_buginfo(self, rget):
@@ -724,371 +706,6 @@ class TestViews(BaseTestViews):
         # expect to be able to find this in the cache now
         cache_key = 'buginfo:987'
         eq_(cache.get(cache_key), struct['bugs'][0])
-
-    @mock.patch('requests.get')
-    def test_home(self, rget):
-        url = reverse('crashstats:home', args=('WaterWolf',))
-
-        def mocked_get(url, params, **options):
-            if '/products' in url and 'versions' not in params:
-                return Response("""
-                    {
-                        "products": [
-                            "WaterWolf"
-                        ],
-                        "hits": {
-                            "WaterWolf": [{
-                            "featured": true,
-                            "throttle": 100.0,
-                            "end_date": "2012-11-27",
-                            "product": "WaterWolf",
-                            "release": "Nightly",
-                            "version": "19.0",
-                            "has_builds": true,
-                            "start_date": "2012-09-25"
-                            }]
-                        },
-                        "total": 1
-                    }
-                """)
-            elif '/products' in url:
-                return Response("""
-                    {
-                        "hits": [{
-                            "is_featured": true,
-                            "throttle": 100.0,
-                            "end_date": "2012-11-27",
-                            "product": "WaterWolf",
-                            "build_type": "Nightly",
-                            "version": "19.0",
-                            "has_builds": true,
-                            "start_date": "2012-09-25"
-                        }],
-                        "total": 1
-                    }
-                """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
-        # Testing with unknown product
-        url = reverse('crashstats:home', args=('InternetExplorer',))
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        # Testing with unknown version for product
-        url = reverse('crashstats:home', args=('WaterWolf', '99'))
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-
-        # Testing with valid version for product
-        url = reverse('crashstats:home', args=('WaterWolf', '19.0'))
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
-    @mock.patch('requests.get')
-    def test_frontpage_json_psql(self, rget):
-        url = reverse('crashstats:frontpage_json')
-
-        # Create the waffle switch to use the old, Postgres version.
-        switch = Switch.objects.create(
-            name='home_page_graph_psql',
-            active=True
-        )
-
-        def mocked_get(url, params, **options):
-            if '/crashes/daily' in url:
-                return Response("""
-                    {
-                      "hits": {
-                        "WaterWolf:19.0": {
-                          "2012-10-08": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 71.099999999999994,
-                            "version": "19.0",
-                            "report_count": 2133,
-                            "date": "2012-10-08"
-                          },
-                          "2012-10-02": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 77.299999999999997,
-                            "version": "19.0",
-                            "report_count": 2319,
-                            "date": "2012-10-02"
-                         }
-                        }
-                      }
-                    }
-                    """)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url, {'product': 'WaterWolf'})
-        eq_(response.status_code, 200)
-
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        ok_(struct['product_versions'])
-        eq_(struct['count'], 1)
-
-        switch.delete()
-
-    @mock.patch('requests.get')
-    def test_frontpage_json(self, rget):
-        url = reverse('crashstats:frontpage_json')
-
-        def mocked_adi_get(**options):
-            end_date = timezone.now().date()
-            # the default is two weeks
-            start_date = end_date - datetime.timedelta(weeks=2)
-
-            response = {
-                'total': 4,
-                'hits': []
-            }
-            while start_date < end_date:
-                for version in ['20.0', '19.0']:
-                    for build_type in ['beta', 'release']:
-                        response['hits'].append({
-                            'adi_count': long(random.randint(100, 1000)),
-                            'build_type': build_type,
-                            'date': start_date,
-                            'version': version
-                        })
-                start_date += datetime.timedelta(days=1)
-            return response
-
-        models.ADI.implementation().get.side_effect = mocked_adi_get
-
-        def mocked_product_build_types_get(**options):
-            return {
-                'hits': {
-                    'release': 0.1,
-                    'beta': 1.0,
-                }
-            }
-
-        models.ProductBuildTypes.implementation().get.side_effect = (
-            mocked_product_build_types_get
-        )
-
-        def mocked_supersearch_get(**params):
-            end_date = timezone.now().date()
-            start_date = end_date - datetime.timedelta(days=8)  # the default
-            expected_dates = [
-                start_date.strftime('>=%Y-%m-%d'),
-                end_date.strftime('<%Y-%m-%d'),
-            ]
-            eq_(params['date'], expected_dates)
-            eq_(params['_histogram.date'], ['version'])
-            eq_(params['_facets'], ['version'])
-            eq_(params['_results_number'], 0)
-            assert params['_fields']
-
-            response = {
-                'facets': {
-                    'histogram_date': [],
-                    'version': []
-                },
-                'hits': [],
-                'total': 21187
-            }
-            totals = {
-                '19.0': 0,
-                '20.0': 0,
-            }
-            while start_date < end_date:
-                counts = dict(
-                    (version, random.randint(0, 100))
-                    for version in ['20.0', '19.0']
-                )
-                date = {
-                    'count': sum(counts.values()),
-                    'facets': {
-                        'version': [
-                            {'count': v, 'term': k}
-                            for k, v in counts.items()
-                        ]
-                    },
-                    'term': start_date.isoformat()
-                }
-                for version, count in counts.items():
-                    totals[version] += count
-                response['facets']['histogram_date'].append(date)
-                start_date += datetime.timedelta(days=1)
-            response['facets']['version'] = [
-                {'count': v, 'term': k}
-                for k, v in totals.items()
-            ]
-            return response
-
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
-
-        response = self.client.get(url, {'product': 'WaterWolf'})
-        eq_(response.status_code, 200)
-
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        ok_(struct['product_versions'])
-        eq_(struct['count'], 2)
-
-    @mock.patch('requests.get')
-    def test_frontpage_json_bad_request(self, rget):
-        url = reverse('crashstats:frontpage_json')
-
-        def mocked_adi_get(**options):
-            return {
-                'total': 4,
-                'hits': []
-            }
-
-        models.ADI.implementation().get.side_effect = mocked_adi_get
-
-        def mocked_product_build_types_get(**options):
-            return {
-                'hits': {
-                    'release': 0.1,
-                    'beta': 1.0,
-                }
-            }
-
-        models.ProductBuildTypes.implementation().get.side_effect = (
-            mocked_product_build_types_get
-        )
-
-        def mocked_supersearch_get(**params):
-            return {
-                'facets': {
-                    'histogram_date': [],
-                    'version': []
-                },
-                'hits': [],
-                'total': 0
-            }
-
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
-
-        response = self.client.get(url, {'product': 'Neverheardof'})
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {'versions': '999.1'})
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'versions': '99.9'  # mismatch
-        })
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'versions': '19.0'
-        })
-        eq_(response.status_code, 200)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'duration': 'xxx'
-        })
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'duration': '-100'
-        })
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'duration': '10'
-        })
-        eq_(response.status_code, 200)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'date_range_type': 'junk'
-        })
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'date_range_type': 'build'
-        })
-        eq_(response.status_code, 200)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'date_range_type': 'report'
-        })
-        eq_(response.status_code, 200)
-
-    @mock.patch('requests.get')
-    def test_frontpage_json_no_data_for_version(self, rget):
-        url = reverse('crashstats:frontpage_json')
-
-        def mocked_adi_get(**options):
-            return {
-                'total': 4,
-                'hits': []
-            }
-
-        models.ADI.implementation().get.side_effect = mocked_adi_get
-
-        def mocked_product_build_types_get(**options):
-            return {
-                'hits': {
-                    'release': 0.1,
-                    'beta': 1.0,
-                }
-            }
-
-        models.ProductBuildTypes.implementation().get.side_effect = (
-            mocked_product_build_types_get
-        )
-
-        def mocked_supersearch_get(**params):
-            return {
-                'facets': {
-                    'histogram_date': [],
-                    'version': []
-                },
-                'hits': [],
-                'total': 0
-            }
-
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'versions': '20.0'
-        })
-        eq_(response.status_code, 200)
-
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-
-        # Even though there was no data, the product_versions
-        # property should still exist and be populated.
-        eq_(struct['count'], 0)
-        ok_(struct['product_versions'])
-
-        selected_product = struct['product_versions'][0]
-        eq_(selected_product['product'], 'WaterWolf')
-        eq_(selected_product['version'], '20.0')
 
     def test_gccrashes(self):
         url = reverse('crashstats:gccrashes', args=('WaterWolf',))
@@ -1744,7 +1361,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        home_url = reverse('crashstats:home', args=(settings.DEFAULT_PRODUCT,))
+        home_url = reverse('home:home', args=(settings.DEFAULT_PRODUCT,))
         ok_(response['location'].endswith(home_url))
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
@@ -3174,7 +2791,7 @@ class TestViews(BaseTestViews):
 
         # there shouldn't be any links to reports for the product
         # mentioned in the processed JSON
-        bad_url = reverse('crashstats:home', args=('SummerWolf',))
+        bad_url = reverse('home:home', args=('SummerWolf',))
         ok_(bad_url not in response.content)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')

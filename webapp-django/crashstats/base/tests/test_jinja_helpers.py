@@ -68,24 +68,24 @@ class TestURL(TestCase):
         eq_(output, reverse('crashstats:login'))
 
         # now with a arg
-        output = url('crashstats:home', 'Firefox')
-        eq_(output, reverse('crashstats:home', args=('Firefox',)))
+        output = url('home:home', 'Firefox')
+        eq_(output, reverse('home:home', args=('Firefox',)))
 
         # now with a kwarg
-        output = url('crashstats:home', product='Waterfox')
-        eq_(output, reverse('crashstats:home', args=('Waterfox',)))
+        output = url('home:home', product='Waterfox')
+        eq_(output, reverse('home:home', args=('Waterfox',)))
 
     def test_arg_cleanup(self):
-        output = url('crashstats:home', 'Firefox\n')
-        eq_(output, reverse('crashstats:home', args=('Firefox',)))
+        output = url('home:home', 'Firefox\n')
+        eq_(output, reverse('home:home', args=('Firefox',)))
 
-        output = url('crashstats:home', product='\tWaterfox')
-        eq_(output, reverse('crashstats:home', args=('Waterfox',)))
+        output = url('home:home', product='\tWaterfox')
+        eq_(output, reverse('home:home', args=('Waterfox',)))
 
         # this is something we've seen in the "wild"
-        output = url('crashstats:home', u'Winterfox\\\\nn')
-        eq_(output, reverse('crashstats:home', args=('Winterfoxnn',)))
+        output = url('home:home', u'Winterfox\\\\nn')
+        eq_(output, reverse('home:home', args=('Winterfoxnn',)))
 
         # check that it works if left as a byte string too
-        output = url('crashstats:home', 'Winterfox\\\\nn')
-        eq_(output, reverse('crashstats:home', args=('Winterfoxnn',)))
+        output = url('home:home', 'Winterfox\\\\nn')
+        eq_(output, reverse('home:home', args=('Winterfoxnn',)))

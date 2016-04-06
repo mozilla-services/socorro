@@ -88,8 +88,8 @@
                     <optgroup label=" ">
                         <option
                             value="products"
-                            data-url-product="{{ url('crashstats:home', '__PRODUCT__') }}"
-                            data-url-version="{{ url('crashstats:home', '__PRODUCT__', '__VERSION__') }}"
+                            data-url-product="{{ url('home:home', '__PRODUCT__') }}"
+                            data-url-version="{{ url('home:home', '__PRODUCT__') }}?version=__VERSION__"
                             {% if report == 'products' %}selected{% endif %}
                         >Overview</option>
                     </optgroup>
