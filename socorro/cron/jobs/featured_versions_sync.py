@@ -19,12 +19,13 @@ class FeaturedVersionsSyncCronApp(BaseCronApp):
         'api_endpoint_url',
         default=(
             'https://crash-stats.mozilla.com/api/ProductVersions/?'
-            'active=true&is_featured=true',
+            'active=true&is_featured=true'
         ),
         doc='URL from which we can download all the active products'
     )
 
     def run(self):
+        assert isinstance(self.config.api_endpoint_url, basestring)
         hits = requests.get(self.config.api_endpoint_url).json()['hits']
         featured_products = {}
         for pv in hits:
