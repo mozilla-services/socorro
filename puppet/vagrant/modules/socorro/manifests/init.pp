@@ -138,6 +138,20 @@ class socorro::vagrant {
       ]
   }
 
+  exec {
+    'postgres-breakpad-rw-role':
+      path    => '/usr/bin:/bin',
+      cwd     => '/var/lib/pgsql',
+      command => 'sudo -u postgres psql template1 -c "create user breakpad_rw with encrypted password \'aPassword\' superuser"',
+      unless  => 'sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'breakpad_rw\'" | grep -q 1',
+      require => [
+        Package['postgresql94-server'],
+        Exec['postgres-initdb'],
+        File['pg_hba.conf'],
+        Service['postgresql-9.4']
+      ]
+  }
+
   package {
     [
       'python-virtualenv',
