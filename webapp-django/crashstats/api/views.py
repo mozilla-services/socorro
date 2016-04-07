@@ -35,6 +35,7 @@ MODELS_MODULES = (
 BAD_REQUEST_EXCEPTIONS = (
     BadArgumentError,
     MissingArgumentError,
+    models.RequiredParameterError,
 )
 
 
@@ -247,6 +248,11 @@ def model_wrapper(request, model_name):
         raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
 
     instance = model()
+
+    # Certain models need to know who the user is to be able to
+    # internally use that to determine its output.
+    instance.api_user = request.user
+
     if request.method == 'POST':
         function = instance.post
     else:
