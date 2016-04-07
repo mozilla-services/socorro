@@ -893,35 +893,6 @@ class OOMSignature(Rule):
 
 
 #==============================================================================
-class AbortSignature(Rule):
-    """To satisfy Bug 803779, this rule will modify the signature to
-    tag Abort crashes"""
-
-    #--------------------------------------------------------------------------
-    def version(self):
-        return '1.0'
-
-    #--------------------------------------------------------------------------
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return 'AbortMessage' in raw_crash and raw_crash.AbortMessage
-
-    #--------------------------------------------------------------------------
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processed_crash.original_signature = processed_crash.signature
-
-        abort_message = raw_crash.AbortMessage
-        if len(abort_message) > 80:
-            abort_message = abort_message[:77] + '...'
-
-        processed_crash.signature = 'Abort | {} | {}'.format(
-            abort_message,
-            processed_crash.signature
-        )
-
-        return True
-
-
-#==============================================================================
 class SigTrunc(Rule):
     """ensure that the signature is never longer than 255 characters"""
 
