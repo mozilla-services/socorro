@@ -92,12 +92,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/report-list.min.css',
     },
-    'tcr_bybug': {
-        'source_filenames': (
-            'crashstats/css/tcr_bybug.less',
-        ),
-        'output_filename': 'css/tcr-bybug.min.css',
-    },
     'api_tokens': {
         'source_filenames': (
             'manage/css/api_tokens.css',
@@ -350,12 +344,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/server_status.js',
         ),
         'output_filename': 'js/status.min.js',
-    },
-    'tcr_bybug': {
-        'source_filenames': (
-            'crashstats/js/socorro/tcr_bybug.js',
-        ),
-        'output_filename': 'js/tcr-bybug.min.js',
     },
     'api_tokens': {
         'source_filenames': (
