@@ -43,8 +43,9 @@ class PostgreSQLBase(object):
         """
         self.context = kwargs.get("config")
         try:
+            print "CONTEXT KEYS", self.context.keys()
             self.database = self.context.database_class(
-                self.context
+                self.context.database_class
             )
         except KeyError:
             # some tests seem to put the database config parameters

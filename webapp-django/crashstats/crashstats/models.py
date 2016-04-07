@@ -51,36 +51,42 @@ def config_from_configman():
     # print "PostgreSQLCrashStorage", PostgreSQLCrashStorage.get_required_config().keys()
     # print "ReprocessingOneRabbitMQCrashStore", ReprocessingOneRabbitMQCrashStore.get_required_config().keys()
     # print "socorro_app.App.get_required_config()", socorro_app.App.get_required_config().keys()
-    # definition_source = Namespace()
-    # definition_source.namespace('es')
-    # definition_source.es.add_option(
-    #      'es',
-    #      default=ElasticsearchConfig,
+    definition_source = socorro_app.App.get_required_config()
+
+    # definition_source.add_option(
+    #     'app',
+    #     default=socorro_app.App,
     # )
-    # definition_source.namespace('database')
-    # definition_source.database.add_option(
-    #      'database_class',
-    #      default=PostgreSQLCrashStorage,
+    definition_source.namespace('elasticsearch')
+    definition_source.elasticsearch.add_option(
+         'elasticsearch_class',
+         default=ElasticsearchConfig,
+    )
+    definition_source.namespace('database')
+    definition_source.database.add_option(
+         'database_storage_class',
+         default=PostgreSQLCrashStorage,
+    )
+    definition_source.namespace('queuing')
+    definition_source.queuing.add_option(
+         'rabbitmq',
+         default=ReprocessingOneRabbitMQCrashStore,
+    )
+    # definition_source.add_option(
+    #     'app',
+    #     default=socorro_app.App,
     # )
-    # definition_source.namespace('rabbitmq')
-    # definition_source.rabbitmq.add_option(
-    #      'rabbitmq',
-    #      default=ReprocessingOneRabbitMQCrashStore,
-    # )
-    # # definition_source.add_option(
-    # #     'app',
-    # #     default=socorro_app.App,
-    # # )
     return configuration(
         # definition_source=[definition_source,socorro_app.App.get_required_config()],
-        definition_source=[
-            ElasticsearchConfig.get_required_config(),
-            PostgreSQLCrashStorage.get_required_config(),
-            ReprocessingOneRabbitMQCrashStore.get_required_config(),
-
-            # This required_config defines the logger aggregate
-            socorro_app.App.get_required_config(),
-        ],
+        definition_source=definition_source,
+        # definition_source=[
+        #     ElasticsearchConfig.get_required_config(),
+        #     PostgreSQLCrashStorage.get_required_config(),
+        #     ReprocessingOneRabbitMQCrashStore.get_required_config(),
+        #
+        #     # This required config defines the logger aggregate
+        #     socorro_app.App.get_required_config(),
+        # ],
         values_source_list=[
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
         ]
@@ -398,8 +404,18 @@ class SocorroCommon(object):
             try:
                 return _implementations[key]
             except KeyError:
+                CONFIG = config_from_configman()
+
+                print CONFIG
+                print CONFIG.keys()
+                print "KEY", repr(key)
+                if key.startswith('SuperSearch'):
+                    CONFIG=CONFIG.elasticsearch
+                # print CONFIG.database
+                # raise Exception
                 _implementations[key] = self.implementation(
-                    config=config_from_configman()
+                    # config=config_from_configman()
+                    config=CONFIG
                 )
                 return _implementations[key]
         return None

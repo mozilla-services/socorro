@@ -1050,7 +1050,7 @@ def reprocessing(request):
                     '{} sent in for reprocessing.'.format(crash_id)
                 )
             else:
-                messages.success(
+                messages.error(
                     request,
                     'Currently unable to send in the crash ID '
                     'for reprocessing.'
