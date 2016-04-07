@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import xml.etree.ElementTree as ET
 
 import requests
@@ -8,6 +9,30 @@ import requests
 _BASE = 'https://webqa-ci.mozilla.com'
 STAGE = _BASE + '/view/Socorro/job/socorro.stage.saucelabs/rssAll'
 PROD = _BASE + '/view/Socorro/job/socorro.prod.saucelabs/rssAll'
+
+
+def colored(text, color):
+    RESET = '\033[0m'
+    if os.getenv('ANSI_COLORS_DISABLED') is None:
+        COLORS = dict(
+            zip(
+                [
+                    'grey',
+                    'red',
+                    'green',
+                    'yellow',
+                    'blue',
+                    'magenta',
+                    'cyan',
+                    'white',
+                ],
+                range(30, 38)
+            )
+        )
+        fmt_str = '\033[%dm%s'
+        text = fmt_str % (COLORS[color], text)
+        text += RESET
+    return text
 
 
 def run():
@@ -22,10 +47,15 @@ def run():
         for entry in root.findall('atom:entry', ns):
             for title in entry.findall('atom:title', ns):
                 if 'broken' in title.text:
-                    print u'💔 \tBROKEN!'
+                    print u'💔 ',
+                    print colored('BROKEN!', 'red')
                     errors += 1
                 else:
-                    print u'👍 \tAhhhh, everything seems to be fine.'
+                    print u'👍 ',
+                    print colored(
+                        'Ahhhh, everything seems to be fine.',
+                        'green'
+                    )
                 print "({})".format(title.text)
 
             for link in entry.findall('atom:link', ns):
