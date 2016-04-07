@@ -248,6 +248,11 @@ def model_wrapper(request, model_name):
         raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
 
     instance = model()
+
+    # Certain models need to know who the user is to be able to
+    # internally use that to determine its output.
+    instance.api_user = request.user
+
     if request.method == 'POST':
         function = instance.post
     else:
@@ -259,7 +264,7 @@ def model_wrapper(request, model_name):
     form = FormWrapper(model, request.REQUEST)
     if form.is_valid():
         try:
-            result = function(**dict(form.cleaned_data, _user=request.user))
+            result = function(**form.cleaned_data)
         except models.BadStatusCodeError as e:
             error_code = e.status
             message = e.message

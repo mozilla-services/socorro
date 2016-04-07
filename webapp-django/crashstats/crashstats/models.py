@@ -214,6 +214,12 @@ class SocorroCommon(object):
     # instantiating implementation classes so this is None by default.
     implementation = None
 
+    # By default, the model is not called with an API user.
+    # This is applicable when the models are used from views that
+    # originate from pure class instanciation instead of from
+    # web GET or POST requests
+    api_user = None
+
     @measure_fetches
     def fetch(
         self,
@@ -618,7 +624,7 @@ class CurrentVersions(SocorroMiddleware):
         'version',
     )
 
-    def get(self, currentproducts=None):
+    def get(self, currentproducts=None, **kwargs):
         if currentproducts is None:
             currentproducts = CurrentProducts().get()
         products = currentproducts['products']
@@ -1379,10 +1385,12 @@ class SignatureSummary(SocorroMiddleware):
     def get(self, *args, **kwargs):
         # You're not allowed to view the exploitability report if you
         # don't have permission to do so.
-        user = kwargs['_user']
-        if not user.has_perm('crashstats.view_exploitability'):
-            if 'exploitability' in kwargs['report_types']:
-                kwargs['report_types'].remove('exploitability')
+        # If the `self.api_user` is set, it means this model is called
+        # via the web API.
+        if self.api_user:
+            if not self.api_user.has_perm('crashstats.view_exploitability'):
+                if 'exploitability' in kwargs['report_types']:
+                    kwargs['report_types'].remove('exploitability')
         return super(SignatureSummary, self).get(*args, **kwargs)
 
 
