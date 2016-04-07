@@ -58,7 +58,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.signature_utilities.SignatureGenerationRule,"
         "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
         "socorro.processor.signature_utilities.OOMSignature, "
-        "socorro.processor.signature_utilities.AbortSignature, "
         "socorro.processor.signature_utilities.SignatureRunWatchDog, "
         "socorro.processor.signature_utilities.SigTrunc, "
     ],
