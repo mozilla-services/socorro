@@ -1855,3 +1855,97 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {'product': 'foobaz'})
         eq_(response.status_code, 400)
         ok_('foobaz' in response.content)
+
+    @mock.patch('requests.get')
+    def test_SignatureSummary_exploitability(self, rget):
+
+        def mocked_get(url, params, **options):
+            assert 'signaturesummary' in url, url
+            reports = {}
+            if 'exploitability' in params['report_types']:
+                reports['exploitability'] = [
+                    {
+                        'high_count': 0,
+                        'low_count': 1,
+                        'medium_count': 0,
+                        'none_count': 0,
+                        'null_count': 0,
+                        'report_date': '2016-04-02'
+                    },
+                    {
+                        'high_count': 0,
+                        'low_count': 0,
+                        'medium_count': 0,
+                        'none_count': 1,
+                        'null_count': 0,
+                        'report_date': '2016-03-31'
+                    }
+                ]
+            if 'uptime' in params['report_types']:
+                reports['uptime'] = [
+                    {
+                        'version_string': '12.0',
+                        'percentage': '48.440',
+                        'report_count': 52311,
+                        'product_name': 'WaterWolf',
+                        'category': 'XXX'
+                    },
+                    {
+                        'version_string': '13.0b4',
+                        'percentage': '9.244',
+                        'report_count': 9983,
+                        'product_name': 'WaterWolf',
+                        'category': 'YYY'
+                    }
+                ]
+            return Response({'reports': reports})
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('SignatureSummary',))
+
+        response = self.client.get(url, {
+            'report_types': ['exploitability'],
+            'signature': 'one & two',
+            'start_date': '2012-1-1',
+            'end_date': '2013-1-1',
+        })
+        # Because with 'exploitability' filtered out,
+        # the report_types list is empty.
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'report_types': ['exploitability', 'uptime'],
+            'signature': 'one & two',
+            'start_date': '2012-1-1',
+            'end_date': '2013-1-1',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['reports'])
+        ok_('exploitability' not in dump['reports'])
+        ok_('uptime' in dump['reports'])
+
+        # let's sign in
+        user = self._login()
+
+        response = self.client.get(url, {
+            'report_types': ['exploitability'],
+            'signature': 'one & two',
+            'start_date': '2012-1-1',
+            'end_date': '2013-1-1',
+        })
+        # Still, because of lack of permissions.
+        eq_(response.status_code, 400)
+
+        self._add_permission(user, 'view_exploitability')
+        response = self.client.get(url, {
+            'report_types': ['exploitability'],
+            'signature': 'one & two',
+            'start_date': '2012-1-1',
+            'end_date': '2013-1-1',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['reports'])
+        ok_('exploitability' in dump['reports'])

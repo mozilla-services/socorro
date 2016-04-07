@@ -35,6 +35,7 @@ MODELS_MODULES = (
 BAD_REQUEST_EXCEPTIONS = (
     BadArgumentError,
     MissingArgumentError,
+    models.RequiredParameterError,
 )
 
 
@@ -258,7 +259,7 @@ def model_wrapper(request, model_name):
     form = FormWrapper(model, request.REQUEST)
     if form.is_valid():
         try:
-            result = function(**form.cleaned_data)
+            result = function(**dict(form.cleaned_data, _user=request.user))
         except models.BadStatusCodeError as e:
             error_code = e.status
             message = e.message

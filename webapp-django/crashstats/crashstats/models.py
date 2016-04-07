@@ -1376,6 +1376,15 @@ class SignatureSummary(SocorroMiddleware):
         'reports',
     )
 
+    def get(self, *args, **kwargs):
+        # You're not allowed to view the exploitability report if you
+        # don't have permission to do so.
+        user = kwargs['_user']
+        if not user.has_perm('crashstats.view_exploitability'):
+            if 'exploitability' in kwargs['report_types']:
+                kwargs['report_types'].remove('exploitability')
+        return super(SignatureSummary, self).get(*args, **kwargs)
+
 
 class Status(SocorroMiddleware):
 
