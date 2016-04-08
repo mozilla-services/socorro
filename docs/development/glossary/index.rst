@@ -57,7 +57,9 @@ with a .jsonz extension.
 higher priority. The order of processing across all queues is: Priority,
 Standard, Reprocess, Priority. One crash from each at a time.
 Then it reverses the order and goes through those four again.
-And reverses again. Rinse and repeat.
+And reverses again. Rinse and repeat. Priority jobs are processing of
+raw crashes that have never been processed. Crashes are put automatically
+on the Priority job queue based on this fact.
 
 **Processor**: the Socorro application in charge of applying
 minidump_stackwalk to queued jobs. See :ref:`processor-chapter`
