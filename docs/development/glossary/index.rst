@@ -53,10 +53,11 @@ or Client OS be used instead.
 minidump_stackwalk program are stored. The actual files are stored
 with a .jsonz extension.
 
-**Priority job**: A reprocessing request (see ``Reprocessing``) that has
-higher priority. The order of processing is: Priority, Standard, Reprocess,
-Priority. One crash from each at a time. Then it reverses the order and goes
-through those four again. And reverses again. Rinse and repeat.
+**Priority job**: A processing request (similar ``Reprocessing``) that has
+higher priority. The order of processing across all queues is: Priority,
+Standard, Reprocess, Priority. One crash from each at a time.
+Then it reverses the order and goes through those four again.
+And reverses again. Rinse and repeat.
 
 **Processor**: the Socorro application in charge of applying
 minidump_stackwalk to queued jobs. See :ref:`processor-chapter`
