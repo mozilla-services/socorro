@@ -36,6 +36,7 @@ CURL_LIBS := $(shell pkg-config libcurl --libs)
 CXXFLAGS += \
   -I$(BREAKPAD_SRCDIR) \
   -I$(JSON_INCLUDEDIR) \
+  -D__STDC_FORMAT_MACROS=1 \
   -std=gnu++0x \
   -Wno-format \
   -Werror \

@@ -23,7 +23,7 @@ fi
 
 if [ "`uname -sm`" == "Linux x86_64" ]; then
   # pull pre-built, known version of breakpad
-  wget -N --quiet 'https://org-mozilla-breakpad.s3-us-west-2.amazonaws.com/breakpad.tar.gz'
+  wget -N --quiet 'https://queue.taskcluster.net/v1/task/OBPgU_HqTiuS2EwwIvosUQ/runs/0/artifacts/public/breakpad.tar.gz'
   tar -zxf breakpad.tar.gz
   rm -rf stackwalk
   mv breakpad stackwalk
