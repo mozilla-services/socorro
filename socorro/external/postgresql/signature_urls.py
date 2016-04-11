@@ -4,9 +4,13 @@
 
 import logging
 
-from socorro.external import MissingArgumentError, BadArgumentError
+from socorrolib.lib import (
+    MissingArgumentError,
+    BadArgumentError,
+    external_common,
+)
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
-from socorrolib.lib import external_common
+
 
 logger = logging.getLogger("webapi")
 

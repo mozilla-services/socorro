@@ -6,12 +6,13 @@ import random
 import datetime
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.external import (
+from socorrolib.lib import (
     MissingArgumentError,
-    BadArgumentError
+    BadArgumentError,
+    datetimeutil,
+    util,
 )
 from socorro.external.postgresql.crashes import Crashes
-from socorrolib.lib import datetimeutil, util
 from socorro.unittest.testbase import TestCase
 from socorro.external.postgresql.connection_context import ConnectionContext
 

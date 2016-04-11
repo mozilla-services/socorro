@@ -5,8 +5,7 @@
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import datetimeutil, external_common
-from socorro.external import BadArgumentError
+from socorrolib.lib import datetimeutil, external_common, BadArgumentError
 
 
 class Correlations(PostgreSQLBase):
@@ -47,7 +46,7 @@ class Correlations(PostgreSQLBase):
             'total': len(hits)
         }
 
-    def interesting_addons(self, params): 
+    def interesting_addons(self, params):
         sql = """
         /* socorro.external.postgresql.correlations.Correlations.get(addons)*/
         WITH total_for_sig AS (

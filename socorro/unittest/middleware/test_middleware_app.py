@@ -21,7 +21,7 @@ from configman import (
 )
 
 from socorrolib.lib.util import DotDict
-from socorro.external import (
+from socorrolib.lib import (
     MissingArgumentError,
     BadArgumentError,
     ResourceNotFound,

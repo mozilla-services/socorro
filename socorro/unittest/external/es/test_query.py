@@ -8,7 +8,7 @@ import json
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.external import (
+from socorrolib.lib import (
     BadArgumentError,
     DatabaseError,
     MissingArgumentError,

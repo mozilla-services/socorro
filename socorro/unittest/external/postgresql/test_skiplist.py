@@ -4,7 +4,7 @@
 
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.external import MissingArgumentError, DatabaseError
+from socorrolib.lib import MissingArgumentError, DatabaseError
 from socorro.external.postgresql.skiplist import SkipList
 
 from unittestbase import PostgreSQLTestCase

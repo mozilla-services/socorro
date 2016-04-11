@@ -12,7 +12,7 @@ from .dbapi2_util import (
     execute_no_results,
     single_value_sql,
 )
-from socorro.external import DatabaseError
+from socorrolib.lib import DatabaseError
 from socorro.webapi.webapiService import DataserviceWebServiceBase
 
 

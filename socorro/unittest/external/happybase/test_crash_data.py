@@ -8,8 +8,11 @@ from nose.tools import eq_
 from configman import ConfigurationManager, Namespace
 from mock import Mock, patch
 
-from socorro.external import MissingArgumentError, ResourceNotFound, \
-                             ResourceUnavailable
+from socorrolib.lib import (
+    MissingArgumentError,
+    ResourceNotFound,
+    ResourceUnavailable,
+)
 from socorro.external.happybase import crash_data, crashstorage
 from socorro.external.happybase.connection_context import (
     HappyBaseConnectionContext

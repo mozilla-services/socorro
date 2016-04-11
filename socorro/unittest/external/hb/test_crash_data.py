@@ -8,8 +8,11 @@ from nose.tools import eq_, assert_raises
 from configman import ConfigurationManager, Namespace
 from mock import Mock
 
-from socorro.external import MissingArgumentError, ResourceNotFound, \
-                             ResourceUnavailable
+from socorrolib.lib import (
+    MissingArgumentError,
+    ResourceNotFound,
+    ResourceUnavailable,
+)    
 from socorro.external.hb import crash_data, crashstorage, hbase_client
 from socorro.unittest.testbase import TestCase
 

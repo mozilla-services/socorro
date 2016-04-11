@@ -5,16 +5,17 @@
 import datetime
 import logging
 
-from socorro.external import (
+from socorrolib.lib import (
     MissingArgumentError,
-    BadArgumentError
+    BadArgumentError,
+    datetimeutil,
+    external_common,
 )
 from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 from socorro.middleware import search_common
 
-from socorrolib.lib import datetimeutil, external_common
 
 logger = logging.getLogger("webapi")
 

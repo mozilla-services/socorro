@@ -2,9 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.external import MissingArgumentError
+from socorrolib.lib import MissingArgumentError, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import external_common
 
 
 class SignatureFirstDate(PostgreSQLBase):

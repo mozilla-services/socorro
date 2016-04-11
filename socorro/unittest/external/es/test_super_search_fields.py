@@ -6,7 +6,7 @@ import datetime
 import elasticsearch
 from nose.tools import assert_raises, eq_, ok_
 
-from socorro.external import (
+from socorrolib.lib import (
     BadArgumentError,
     MissingArgumentError,
     ResourceNotFound,

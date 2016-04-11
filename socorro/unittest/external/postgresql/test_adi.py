@@ -6,8 +6,8 @@ import datetime
 
 from nose.tools import eq_, assert_raises
 
+from socorrolib.lib import MissingArgumentError
 from socorro.external.postgresql.adi import ADI
-from socorro.external import MissingArgumentError
 
 from unittestbase import PostgreSQLTestCase
 

@@ -5,9 +5,9 @@
 import datetime
 import logging
 
+from socorrolib.lib import MissingArgumentError, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external import MissingArgumentError
-from socorrolib.lib import external_common
+
 
 logger = logging.getLogger("webapi")
 

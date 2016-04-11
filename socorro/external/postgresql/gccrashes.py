@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+
+from socorrolib.lib import MissingArgumentError, datetimeutil, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external import MissingArgumentError
-from socorrolib.lib import datetimeutil, external_common
 
 
 class GCCrashes(PostgreSQLBase):

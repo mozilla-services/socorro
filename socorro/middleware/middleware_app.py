@@ -17,7 +17,7 @@ import web
 import ujson
 
 from socorrolib.app.generic_app import App, main
-from socorro.external import (
+from socorrolib.lib import (
     MissingArgumentError,
     BadArgumentError,
     ResourceNotFound,
