@@ -7,7 +7,7 @@ import elasticsearch
 import json
 import re
 
-from socorro.external import (
+from socorrolib.lib import (
     BadArgumentError,
     DatabaseError,
     MissingArgumentError,

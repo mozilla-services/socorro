@@ -5,7 +5,7 @@
 import datetime
 import elasticsearch
 
-from socorro.external import (
+from socorrolib.lib import (
     BadArgumentError,
     MissingArgumentError,
     ResourceNotFound,

@@ -9,10 +9,12 @@ Common functions for search-related external modules.
 import datetime
 import json
 
-from socorro.external import BadArgumentError, MissingArgumentError
-
+from socorrolib.lib import (
+    BadArgumentError,
+    MissingArgumentError,
+    datetimeutil,
+)
 import socorrolib.lib.external_common as extern
-from socorrolib.lib import datetimeutil
 
 
 """Operators description:

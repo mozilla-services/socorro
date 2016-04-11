@@ -9,7 +9,7 @@ import logging
 
 import psycopg2
 
-from socorro.external import DatabaseError
+from socorrolib.lib import DatabaseError
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,

@@ -8,7 +8,7 @@ import cgi
 import re
 
 import socorrolib.lib.util as util
-from socorro.external import (
+from socorrolib.lib import (
     DatabaseError,
     InsertionError,
     MissingArgumentError,

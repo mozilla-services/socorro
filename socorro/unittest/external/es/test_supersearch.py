@@ -5,9 +5,8 @@
 import datetime
 from nose.tools import assert_raises, eq_, ok_
 
-from socorro.external import BadArgumentError
+from socorrolib.lib import BadArgumentError, datetimeutil
 from socorro.middleware import search_common
-from socorrolib.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,

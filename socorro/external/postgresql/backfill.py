@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external import (
+from socorrolib.lib import (
     MissingArgumentError,
-    BadArgumentError
+    BadArgumentError,
+    external_common,
 )
-from socorrolib.lib import external_common
+from socorro.external.postgresql.base import PostgreSQLBase
 
 
 BACKFILL_PARAMETERS = {

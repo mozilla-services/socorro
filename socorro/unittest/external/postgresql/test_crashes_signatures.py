@@ -5,9 +5,12 @@
 import datetime
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.external import MissingArgumentError, BadArgumentError
+from socorrolib.lib import (
+    MissingArgumentError,
+    BadArgumentError,
+    datetimeutil,
+)
 from socorro.external.postgresql.crashes import Crashes
-from socorrolib.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
 

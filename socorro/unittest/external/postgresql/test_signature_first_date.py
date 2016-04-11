@@ -6,10 +6,10 @@ import datetime
 
 from nose.tools import eq_, assert_raises
 
+from socorrolib.lib import MissingArgumentError
 from socorrolib.lib.datetimeutil import UTC
 from socorro.external.postgresql.signature_first_date import (
     SignatureFirstDate,
-    MissingArgumentError
 )
 
 from .unittestbase import PostgreSQLTestCase

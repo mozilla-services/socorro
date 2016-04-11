@@ -4,7 +4,8 @@
 
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.external.postgresql.bugs import Bugs, MissingArgumentError
+from socorrolib.lib import MissingArgumentError
+from socorro.external.postgresql.bugs import Bugs
 
 from .unittestbase import PostgreSQLTestCase
 

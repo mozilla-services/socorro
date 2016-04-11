@@ -96,9 +96,8 @@ method that will contain all your business logic. For example::
 
     # file socorro/external/postgresql/crash.py
 
-    from socorro.external import MissingOrBadArgumentError
+    from socorrolib.lib import MissingOrBadArgumentError, external_common
     from socorro.external.postgresql.base import PostgreSQLBase
-    from socorrolib.lib import external_common
 
 
     class Crash(PostgreSQLBase):
@@ -194,7 +193,7 @@ Here is an example of an integration test file for a PostgreSQL service
 
     from nose.tools import eq_, assert_raises
 
-    from socorro.external import MissingOrBadArgumentError
+    from socorrolib.lib import MissingOrBadArgumentError
     from socorro.external.postgresql.crash import Crash
     from unittestbase import PostgreSQLTestCase
 

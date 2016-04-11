@@ -7,7 +7,7 @@ import re
 from elasticsearch_dsl import Search, A, F, Q
 from elasticsearch.exceptions import NotFoundError
 
-from socorro.external import (
+from socorrolib.lib import (
     BadArgumentError,
     MissingArgumentError,
 )

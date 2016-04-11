@@ -11,7 +11,7 @@ from copy import deepcopy
 
 from configman.dotdict import DotDict
 
-from socorro.external import BadArgumentError
+from socorrolib.lib import BadArgumentError
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     ESCrashStorage,
