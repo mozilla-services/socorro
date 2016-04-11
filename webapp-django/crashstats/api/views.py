@@ -17,6 +17,7 @@ from waffle.decorators import waffle_switch
 
 import crashstats
 from socorro.external import BadArgumentError, MissingArgumentError
+from crashstats.base.decorators import no_csrf_cookie
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.tokens.models import Token
@@ -196,6 +197,7 @@ def has_permissions(user, permissions):
     return True
 
 
+@no_csrf_cookie
 @waffle_switch('!app_api_all_disabled')
 @ratelimit(
     key='ip',
