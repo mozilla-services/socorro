@@ -43,6 +43,7 @@ class ProductVersions(PostgreSQLBase):
             ("end_date", None, SmartDate()),
             ("active", None, bool),
             ("is_rapid_beta", None, bool),
+            ("build_type", None, [str]),
         ]
         params = external_common.parse_arguments(filters, kwargs, modern=True)
         where = []

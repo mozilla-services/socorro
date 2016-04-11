@@ -482,6 +482,22 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         )
 
     #--------------------------------------------------------------------------
+    def test_filter_by_build_type(self):
+        productversions = ProductVersions(config=self.config)
+
+        res = productversions.get(
+            build_type=['Beta'],
+        )
+        eq_(res['total'], 1)
+        for hit in res['hits']:
+            eq_(hit['build_type'], 'Beta')
+
+        res = productversions.get(
+            build_type=['JUNK'],
+        )
+        eq_(res['total'], 0)
+
+    #--------------------------------------------------------------------------
     def test_post(self):
         products = ProductVersions(config=self.config)
 

@@ -594,6 +594,7 @@ class ProductVersions(SocorroMiddleware):
         'end_date',
         ('active', bool),
         ('is_rapid_beta', bool),
+        ('build_type', list),
     )
 
     API_WHITELIST = (
