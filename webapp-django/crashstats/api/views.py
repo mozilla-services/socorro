@@ -16,7 +16,7 @@ from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
 
 import crashstats
-from socorro.external import BadArgumentError, MissingArgumentError
+from socorrolib.lib import BadArgumentError, MissingArgumentError
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.tokens.models import Token
