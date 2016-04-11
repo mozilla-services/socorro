@@ -53,6 +53,15 @@ or Client OS be used instead.
 minidump_stackwalk program are stored. The actual files are stored
 with a .jsonz extension.
 
+**Priority job**: A processing request (similar ``Reprocessing``) that has
+higher priority. The order of processing across all queues is: Priority,
+Standard, Reprocess, Priority. One crash from each at a time.
+Then it reverses the order and goes through those four again.
+And reverses again. Rinse and repeat. Priority jobs are processing of
+raw crashes that have never been processed. Crashes are put on this queue
+only when a processed crash is requested from the UI and the
+associated Raw crash has not been processed in the past.
+
 **Processor**: the Socorro application in charge of applying
 minidump_stackwalk to queued jobs. See :ref:`processor-chapter`
 
@@ -73,6 +82,9 @@ Within the database, an enum called ReleaseEnum? represents these
 categories.
 
 **Reporter**: another name for the :ref:`ui-chapter`
+
+**Reprocessing**: Telling, via rabbitmq, to take a Crash ID, and fetch
+its Raw JSON file and process it and submit the Processed JSON file and save it.
 
 **Skip List**: lists of signature regular expressions used in generating a
 crash's overall signature in the :ref:`processor-chapter`. see
