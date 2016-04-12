@@ -51,11 +51,68 @@ def config_from_configman():
     # print "PostgreSQLCrashStorage", PostgreSQLCrashStorage.get_required_config().keys()
     # print "ReprocessingOneRabbitMQCrashStore", ReprocessingOneRabbitMQCrashStore.get_required_config().keys()
     # print "socorro_app.App.get_required_config()", socorro_app.App.get_required_config().keys()
-    definition_source = socorro_app.App.get_required_config()
+    # definition_source = socorro_app.App.get_required_config()
+    definition_source = Namespace()
+    # definition_source = socorro_app.App
 
     # definition_source.add_option(
     #     'app',
     #     default=socorro_app.App,
+    # )
+    definition_source.namespace('logging')
+
+    definition_source.logging.add_option(
+        'syslog_host',
+        doc='syslog hostname',
+        default='localhost',
+        reference_value_from='resource.logging',
+    )
+    definition_source.logging.add_option(
+        'syslog_port',
+        doc='syslog port',
+        default=514,
+        reference_value_from='resource.logging',
+    )
+    definition_source.logging.add_option(
+        'syslog_facility_string',
+        doc='syslog facility string ("user", "local0", etc)',
+        default='user',
+        reference_value_from='resource.logging',
+    )
+    definition_source.logging.add_option(
+        'syslog_line_format_string',
+        doc='python logging system format for syslog entries',
+        default='{app_name} (pid {process}): '
+                '{asctime} {levelname} - {threadName} - '
+                '{message}',
+        reference_value_from='resource.logging',
+    )
+    definition_source.logging.add_option(
+        'syslog_error_logging_level',
+        doc='logging level for the log file (10 - DEBUG, 20 '
+            '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
+        default=40,
+        reference_value_from='resource.logging',
+    )
+    definition_source.logging.add_option(
+        'stderr_line_format_string',
+        doc='python logging system format for logging to stderr',
+        default='{asctime} {levelname} - {app_name} - '
+                '{message}',
+        reference_value_from='resource.logging',
+    )
+    definition_source.logging.add_option(
+        'stderr_error_logging_level',
+        doc='logging level for the logging to stderr (10 - '
+            'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
+            '50 - CRITICAL)',
+        default=10,
+        reference_value_from='resource.logging',
+    )
+
+    # definition_source.add_option(
+    #      'logging',
+    #      default=socorro_app.App,
     # )
     definition_source.namespace('elasticsearch')
     definition_source.elasticsearch.add_option(
@@ -404,8 +461,9 @@ class SocorroCommon(object):
             try:
                 return _implementations[key]
             except KeyError:
+                print "BEFORE"
                 CONFIG = config_from_configman()
-
+                print "AFTER"
                 print CONFIG
                 print CONFIG.keys()
                 print "KEY", repr(key)
