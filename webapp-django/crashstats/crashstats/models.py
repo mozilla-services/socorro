@@ -394,6 +394,7 @@ class SocorroCommon(object):
                 config = config_from_configman()
                 if self.implementation_config_namespace:
                     config = config[self.implementation_config_namespace]
+
                 _implementations[key] = self.implementation(
                     config=config
                 )
@@ -420,9 +421,9 @@ class SocorroMiddleware(SocorroCommon):
     # by default, assume the class to not have an implementation reference
     implementation = None
 
-    # The default, when configman has set up the implementation config
-    # we can use a sub-select of that.
-    implementation_config_namespace = None
+    # The default, is 'database' which means it's to do with talking
+    # to a PostgreSQL based implementation.
+    implementation_config_namespace = 'database'
 
     base_url = settings.MWARE_BASE_URL
     http_host = settings.MWARE_HTTP_HOST
