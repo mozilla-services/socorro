@@ -47,107 +47,37 @@ class DeprecatedModelError(DeprecationWarning):
 
 
 def config_from_configman():
-    # print "ElasticsearchConfig", ElasticsearchConfig.get_required_config().keys()
-    # print "PostgreSQLCrashStorage", PostgreSQLCrashStorage.get_required_config().keys()
-    # print "ReprocessingOneRabbitMQCrashStore", ReprocessingOneRabbitMQCrashStore.get_required_config().keys()
-    # print "socorro_app.App.get_required_config()", socorro_app.App.get_required_config().keys()
-    # definition_source = socorro_app.App.get_required_config()
     definition_source = Namespace()
-    # definition_source = socorro_app.App
-
-    # definition_source.add_option(
-    #     'app',
-    #     default=socorro_app.App,
-    # )
     definition_source.namespace('logging')
+    definition_source.logging = socorro_app.App.required_config.logging
 
-    definition_source.logging.add_option(
-        'syslog_host',
-        doc='syslog hostname',
-        default='localhost',
-        reference_value_from='resource.logging',
-    )
-    definition_source.logging.add_option(
-        'syslog_port',
-        doc='syslog port',
-        default=514,
-        reference_value_from='resource.logging',
-    )
-    definition_source.logging.add_option(
-        'syslog_facility_string',
-        doc='syslog facility string ("user", "local0", etc)',
-        default='user',
-        reference_value_from='resource.logging',
-    )
-    definition_source.logging.add_option(
-        'syslog_line_format_string',
-        doc='python logging system format for syslog entries',
-        default='{app_name} (pid {process}): '
-                '{asctime} {levelname} - {threadName} - '
-                '{message}',
-        reference_value_from='resource.logging',
-    )
-    definition_source.logging.add_option(
-        'syslog_error_logging_level',
-        doc='logging level for the log file (10 - DEBUG, 20 '
-            '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
-        default=40,
-        reference_value_from='resource.logging',
-    )
-    definition_source.logging.add_option(
-        'stderr_line_format_string',
-        doc='python logging system format for logging to stderr',
-        default='{asctime} {levelname} - {app_name} - '
-                '{message}',
-        reference_value_from='resource.logging',
-    )
-    definition_source.logging.add_option(
-        'stderr_error_logging_level',
-        doc='logging level for the logging to stderr (10 - '
-            'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
-            '50 - CRITICAL)',
-        default=10,
-        reference_value_from='resource.logging',
-    )
-
-    # definition_source.add_option(
-    #      'logging',
-    #      default=socorro_app.App,
-    # )
     definition_source.namespace('elasticsearch')
     definition_source.elasticsearch.add_option(
-         'elasticsearch_class',
-         default=ElasticsearchConfig,
+        'elasticsearch_class',
+        default=ElasticsearchConfig,
     )
     definition_source.namespace('database')
     definition_source.database.add_option(
-         'database_storage_class',
-         default=PostgreSQLCrashStorage,
+        'database_storage_class',
+        default=PostgreSQLCrashStorage,
     )
     definition_source.namespace('queuing')
     definition_source.queuing.add_option(
-         'rabbitmq',
-         default=ReprocessingOneRabbitMQCrashStore,
+        'rabbitmq',
+        default=ReprocessingOneRabbitMQCrashStore,
     )
-    # definition_source.add_option(
-    #     'app',
-    #     default=socorro_app.App,
-    # )
-    return configuration(
-        # definition_source=[definition_source,socorro_app.App.get_required_config()],
+    config = configuration(
         definition_source=definition_source,
-        # definition_source=[
-        #     ElasticsearchConfig.get_required_config(),
-        #     PostgreSQLCrashStorage.get_required_config(),
-        #     ReprocessingOneRabbitMQCrashStore.get_required_config(),
-        #
-        #     # This required config defines the logger aggregate
-        #     socorro_app.App.get_required_config(),
-        # ],
         values_source_list=[
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
         ]
     )
+    # The ReprocessingOneRabbitMQCrashStore crash storage, needs to have
+    # a "logger" in the config object. To avoid having to use the
+    # logger set up by configman as an aggregate, we just use the
+    # same logger as we have here in the webapp.
+    config.queuing.logger = logger
+    return config
 
 
 class Lazy(object):
@@ -461,19 +391,11 @@ class SocorroCommon(object):
             try:
                 return _implementations[key]
             except KeyError:
-                print "BEFORE"
-                CONFIG = config_from_configman()
-                print "AFTER"
-                print CONFIG
-                print CONFIG.keys()
-                print "KEY", repr(key)
-                if key.startswith('SuperSearch'):
-                    CONFIG=CONFIG.elasticsearch
-                # print CONFIG.database
-                # raise Exception
+                config = config_from_configman()
+                if self.implementation_config_namespace:
+                    config = config[self.implementation_config_namespace]
                 _implementations[key] = self.implementation(
-                    # config=config_from_configman()
-                    config=CONFIG
+                    config=config
                 )
                 return _implementations[key]
         return None
@@ -497,6 +419,10 @@ class SocorroMiddleware(SocorroCommon):
 
     # by default, assume the class to not have an implementation reference
     implementation = None
+
+    # The default, when configman has set up the implementation config
+    # we can use a sub-select of that.
+    implementation_config_namespace = None
 
     base_url = settings.MWARE_BASE_URL
     http_host = settings.MWARE_HTTP_HOST
@@ -1876,6 +1802,8 @@ class Reprocessing(SocorroMiddleware):
     """
 
     implementation = ReprocessingOneRabbitMQCrashStore
+
+    implementation_config_namespace = 'queuing'
 
     required_params = (
         'crash_id',

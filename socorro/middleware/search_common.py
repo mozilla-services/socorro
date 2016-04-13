@@ -99,12 +99,7 @@ class SearchBase(object):
 
     def __init__(self, *args, **kwargs):
         self.context = kwargs.get('config')
-        if 'webapi' in self.context:
-            context = self.context.webapi
-        else:
-            # old middleware
-            context = self.context
-        self.config = context
+        self.config = self.context
 
     def build_filters(self, fields):
         self.filters = []

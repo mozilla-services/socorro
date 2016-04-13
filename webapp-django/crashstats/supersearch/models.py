@@ -61,7 +61,12 @@ def get_api_whitelist(include_all_fields=False):
     )
 
 
-class SuperSearch(models.SocorroMiddleware):
+class ESSocorroMiddleware(models.SocorroMiddleware):
+
+    implementation_config_namespace = 'elasticsearch'
+
+
+class SuperSearch(ESSocorroMiddleware):
 
     implementation = supersearch.SuperSearch
 
@@ -215,7 +220,7 @@ class SuperSearchUnredacted(SuperSearch):
         return super(SuperSearch, self).get(**kwargs)
 
 
-class SuperSearchFields(models.SocorroMiddleware):
+class SuperSearchFields(ESSocorroMiddleware):
 
     implementation = super_search_fields.SuperSearchFields
 
@@ -227,7 +232,7 @@ class SuperSearchFields(models.SocorroMiddleware):
     cache_seconds = 60 * 60 * 24  # 24 hours
 
 
-class SuperSearchMissingFields(models.SocorroMiddleware):
+class SuperSearchMissingFields(ESSocorroMiddleware):
 
     implementation = super_search_fields.SuperSearchMissingFields
 
@@ -236,7 +241,7 @@ class SuperSearchMissingFields(models.SocorroMiddleware):
     cache_seconds = 60 * 60 * 12  # 12 hours
 
 
-class SuperSearchField(models.SocorroMiddleware):
+class SuperSearchField(ESSocorroMiddleware):
 
     implementation = super_search_fields.SuperSearchFields
 
