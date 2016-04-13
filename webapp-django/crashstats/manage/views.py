@@ -1043,7 +1043,8 @@ def reprocessing(request):
         if form.is_valid():
             crash_id = form.cleaned_data['crash_id']
             url = reverse('manage:reprocessing')
-            if Reprocessing().post(crash_id=crash_id):
+            worked = Reprocessing().post(crash_id=crash_id)
+            if worked:
                 url += '?crash_id={}'.format(crash_id)
                 messages.success(
                     request,
@@ -1055,6 +1056,11 @@ def reprocessing(request):
                     'Currently unable to send in the crash ID '
                     'for reprocessing.'
                 )
+            log(request.user, 'reprocessing', {
+                'crash_id': crash_id,
+                'worked': worked,
+            })
+
             return redirect(url)
     else:
         form = forms.ReprocessingForm()
