@@ -293,7 +293,7 @@ def model_wrapper(request, model_name):
                 return http.HttpResponse(
                     reason,
                     status=424,
-                    content_type='text/plain'
+                    content_type='application/json; charset=UTF-8'
                 )
             raise
         except ValueError as e:
@@ -303,9 +303,8 @@ def model_wrapper(request, model_name):
                 # ujson module ValueError
                 'Expected object or value' in e
             ):
-                return http.HttpResponse(
-                    'Not a valid JSON response',
-                    status=400
+                return http.HttpResponseBadRequest(
+                    'Not a valid JSON response'
                 )
             raise
         except BAD_REQUEST_EXCEPTIONS as e:

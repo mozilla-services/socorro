@@ -4,7 +4,6 @@ import urllib
 import collections
 import hashlib
 
-from django import http
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User, Group, Permission
@@ -18,6 +17,7 @@ from django.utils import timezone
 
 from eventlog.models import log, Log
 
+from crashstats.base.views import HttpResponseBadRequest
 from crashstats.crashstats.models import (
     ProductVersions,
     Releases,
@@ -163,7 +163,7 @@ def fields(request, default_context=None):
 def field_lookup(request):
     name = request.REQUEST.get('name', '').strip()
     if not name:
-        return http.HttpResponseBadRequest("Missing 'name'")
+        return HttpResponseBadRequest("Missing 'name'")
 
     api = Field()
     return api.get(name=name)
@@ -182,7 +182,7 @@ def skiplist_data(request):
     form.fields['category'].required = False
     form.fields['rule'].required = False
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
     category = form.cleaned_data['category']
     rule = form.cleaned_data['rule']
 
@@ -199,7 +199,7 @@ def skiplist_add(request):
         category = form.cleaned_data['category']
         rule = form.cleaned_data['rule']
     else:
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     api = SkipList()
     success = api.post(category=category, rule=rule)
@@ -222,7 +222,7 @@ def skiplist_delete(request):
         category = form.cleaned_data['category']
         rule = form.cleaned_data['rule']
     else:
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     api = SkipList()
     success = api.delete(category=category, rule=rule)
@@ -252,7 +252,7 @@ def users_data(request):
         order_by = '-last_login'
     form = forms.FilterUsersForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
     users_ = User.objects.all().order_by(order_by)
     if form.cleaned_data['email']:
         users_ = users_.filter(email__icontains=form.cleaned_data['email'])
@@ -267,7 +267,7 @@ def users_data(request):
         page = int(request.GET.get('page', 1))
         assert page >= 1
     except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
+        return HttpResponseBadRequest('invalid page')
 
     count = users_.count()
     user_items = []
@@ -488,7 +488,7 @@ def graphics_devices_lookup(request):
         result = api.get(vendor_hex=vendor_hex, adapter_hex=adapter_hex)
         return result
     else:
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
 
 @superuser_required
@@ -505,11 +505,11 @@ def symbols_uploads_data(request):
         page = int(request.GET.get('page', 1))
         assert page >= 1
     except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
+        return HttpResponseBadRequest('invalid page')
 
     form = forms.FilterSymbolsUploadsForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     uploads = (
         SymbolsUpload.objects.all()
@@ -573,7 +573,7 @@ def supersearch_field(request):
         field_data = all_fields.get(field_name)
 
         if not field_data:
-            return http.HttpResponseBadRequest(
+            return HttpResponseBadRequest(
                 'The field "%s" does not exist' % field_name
             )
     else:
@@ -616,7 +616,7 @@ def supersearch_field_create(request):
     field_data = _get_supersearch_field_data(request.POST)
 
     if isinstance(field_data, basestring):
-        return http.HttpResponseBadRequest(field_data)
+        return HttpResponseBadRequest(field_data)
 
     api = SuperSearchField()
     api.create_field(**field_data)
@@ -640,7 +640,7 @@ def supersearch_field_update(request):
     field_data = _get_supersearch_field_data(request.POST)
 
     if isinstance(field_data, basestring):
-        return http.HttpResponseBadRequest(field_data)
+        return HttpResponseBadRequest(field_data)
 
     api = SuperSearchField()
     api.update_field(**field_data)
@@ -660,7 +660,7 @@ def supersearch_field_delete(request):
     field_name = request.GET.get('name')
 
     if not field_name:
-        return http.HttpResponseBadRequest('A "name" is needed')
+        return HttpResponseBadRequest('A "name" is needed')
 
     api = SuperSearchField()
     api.delete_field(name=field_name)
@@ -801,7 +801,7 @@ def events(request):
 def events_data(request):
     form = forms.FilterEventsForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
     events_ = Log.objects.all()
     if form.cleaned_data['user']:
         events_ = events_.filter(
@@ -816,7 +816,7 @@ def events_data(request):
         page = int(request.GET.get('page', 1))
         assert page >= 1
     except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
+        return HttpResponseBadRequest('invalid page')
     items = []
     batch_size = settings.EVENTS_ADMIN_BATCH_SIZE
     batch = Paginator(events_.select_related('user'), batch_size)
@@ -926,7 +926,7 @@ def api_tokens(request):
 @superuser_required
 def api_tokens_delete(request):
     if not request.POST.get('id'):
-        return http.HttpResponseBadRequest('No id')
+        return HttpResponseBadRequest('No id')
     token = get_object_or_404(Token, id=request.POST['id'])
 
     log(request.user, 'api_token.delete', {
@@ -946,7 +946,7 @@ def api_tokens_delete(request):
 def api_tokens_data(request):
     form = forms.FilterAPITokensForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     tokens = Token.objects.all().order_by('-created')
     if form.cleaned_data['user']:
@@ -970,7 +970,7 @@ def api_tokens_data(request):
         page = int(request.GET.get('page', 1))
         assert page >= 1
     except (ValueError, AssertionError):
-        return http.HttpResponseBadRequest('invalid page')
+        return HttpResponseBadRequest('invalid page')
 
     items = []
     batch_size = settings.API_TOKENS_ADMIN_BATCH_SIZE

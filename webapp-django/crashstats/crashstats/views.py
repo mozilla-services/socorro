@@ -24,6 +24,7 @@ from session_csrf import anonymous_csrf
 
 from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
+from crashstats.base.views import HttpResponseBadRequest
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 
@@ -694,7 +695,7 @@ def daily(request, default_context=None):
         except KeyError:
             params['os_names'] = None
     else:
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     if len(params['versions']) > 0:
         context['version'] = params['versions'][0]
@@ -917,7 +918,7 @@ def crashes_per_day(request, default_context=None):
         hang_types=hang_types,
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     params = form.cleaned_data
     params['product'] = params.pop('p')
@@ -1197,7 +1198,7 @@ def exploitability_report(request, default_context=None):
         active_versions=context['active_versions'],
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     product = form.cleaned_data['product']
     version = form.cleaned_data['version']
@@ -1313,7 +1314,7 @@ def report_index(request, crash_id, default_context=None):
         raise http.Http404('Crash id is missing')
     valid_crash_id = utils.find_crash_id(crash_id)
     if not valid_crash_id:
-        return http.HttpResponseBadRequest('Invalid crash ID')
+        return HttpResponseBadRequest('Invalid crash ID')
 
     # Sometimes, in Socorro we use a prefix on the crash ID. Usually it's
     # 'bp-' but this is configurable.
@@ -1527,14 +1528,14 @@ def report_list(request, partial=None, default_context=None):
         request.GET
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     try:
         page = int(request.GET.get('page', 1))
         if page < 1:
             page = 1
     except ValueError:
-        return http.HttpResponseBadRequest('Invalid page')
+        return HttpResponseBadRequest('Invalid page')
 
     context['current_page'] = page
 
@@ -1583,7 +1584,7 @@ def report_list(request, partial=None, default_context=None):
 
     # Check whether the user tries to run a big query, and limit it
     if duration.days > max_query_range:
-        return http.HttpResponseBadRequest('range duration too long')
+        return HttpResponseBadRequest('range duration too long')
 
     context['current_day'] = duration.days
 
@@ -1995,7 +1996,7 @@ def adu_by_signature_json(request, default_context=None):
         data=request.GET,
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     product = form.cleaned_data['product_name']
     signature = form.cleaned_data['signature']
@@ -2067,7 +2068,7 @@ def quick_search(request):
 def buginfo(request, signatures=None):
     form = forms.BugInfoForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     bugs = form.cleaned_data['bug_ids']
     fields = form.cleaned_data['include_fields']
@@ -2090,10 +2091,10 @@ def plot_signature(request, product, versions, start_date, end_date,
         start_date = datetime.datetime.strptime(start_date, date_format)
         end_date = datetime.datetime.strptime(end_date, date_format)
     except ValueError, msg:
-        return http.HttpResponseBadRequest(str(msg))
+        return HttpResponseBadRequest(str(msg))
 
     if not signature:
-        return http.HttpResponseBadRequest('signature is required')
+        return HttpResponseBadRequest('signature is required')
 
     api = models.SignatureTrend()
     sigtrend = api.get(
@@ -2129,7 +2130,7 @@ def signature_summary(request, default_context=None):
     )
 
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     range_value = form.cleaned_data['range_value'] or 1
     end_date = form.cleaned_data['date'] or datetime.datetime.utcnow()
@@ -2329,7 +2330,7 @@ def gccrashes_json(request, default_context=None):
 
     form = forms.GCCrashesForm(request.GET, nightly_versions=nightly_versions)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     product = form.cleaned_data['product']
     version = form.cleaned_data['version']
@@ -2389,7 +2390,7 @@ def correlations_json(request, default_context=None):
         request.GET
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     report_types = form.cleaned_data['correlation_report_types']
     product = form.cleaned_data['product']
@@ -2429,7 +2430,7 @@ def correlations_signatures_json(request, default_context=None):
         request.GET
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     report_types = form.cleaned_data['correlation_report_types']
     product = form.cleaned_data['product']
@@ -2468,7 +2469,7 @@ def graphics_report(request):
         request.GET,
     )
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return HttpResponseBadRequest(str(form.errors))
 
     api = models.GraphicsReport()
     data = api.get(

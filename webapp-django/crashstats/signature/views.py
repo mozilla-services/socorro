@@ -4,11 +4,11 @@ import isodate
 import math
 import urllib
 
-from django import http
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
 from django.conf import settings
 
+from crashstats.base.views import HttpResponseBadRequest
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
@@ -52,7 +52,7 @@ def pass_validated_params(view):
                     '"signature" parameter is mandatory'
                 )
         except ValidationError as e:
-            return http.HttpResponseBadRequest(str(e))
+            return HttpResponseBadRequest(str(e))
 
         args += (params,)
         return view(request, *args, **kwargs)
@@ -66,7 +66,7 @@ def signature_report(request, params, default_context=None):
 
     signature = request.GET.get('signature')
     if not signature:
-        return http.HttpResponseBadRequest(
+        return HttpResponseBadRequest(
             '"signature" parameter is mandatory'
         )
 
@@ -150,7 +150,7 @@ def signature_reports(request, params):
     try:
         current_page = int(request.GET.get('page', 1))
     except ValueError:
-        return http.HttpResponseBadRequest('Invalid page')
+        return HttpResponseBadRequest('Invalid page')
 
     if current_page <= 0:
         current_page = 1
@@ -175,7 +175,7 @@ def signature_reports(request, params):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     search_results['total_pages'] = int(
         math.ceil(
@@ -202,7 +202,7 @@ def signature_aggregation(request, params, aggregation):
 
     # Make sure the field we want to aggregate on is allowed.
     if aggregation not in allowed_fields:
-        return http.HttpResponseBadRequest(
+        return HttpResponseBadRequest(
             '<ul><li>'
             'You are not allowed to aggregate on the "%s" field'
             '</li></ul>' % aggregation
@@ -222,7 +222,7 @@ def signature_aggregation(request, params, aggregation):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     context['aggregates'] = []
     if aggregation in search_results['facets']:
@@ -247,7 +247,7 @@ def signature_graphs(request, params, field):
 
     # Make sure the field we want to aggregate on is allowed.
     if field not in allowed_fields:
-        return http.HttpResponseBadRequest(
+        return HttpResponseBadRequest(
             '<ul><li>'
             'You are not allowed to group by the "%s" field'
             '</li></ul>' % field
@@ -268,7 +268,7 @@ def signature_graphs(request, params, field):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     context['aggregates'] = search_results['facets'].get('histogram_date', [])
     context['term_counts'] = search_results['facets'].get(field, [])
@@ -298,7 +298,7 @@ def signature_comments(request, params):
     try:
         current_page = int(request.GET.get('page', 1))
     except ValueError:
-        return http.HttpResponseBadRequest('Invalid page')
+        return HttpResponseBadRequest('Invalid page')
 
     if current_page <= 0:
         current_page = 1
@@ -325,7 +325,7 @@ def signature_comments(request, params):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     search_results['total_pages'] = int(
         math.ceil(
@@ -357,7 +357,7 @@ def signature_correlations(request, params):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     all_combos = []
     for product in search_results['facets']['product']:
@@ -387,7 +387,7 @@ def signature_graph_data(request, params, channel):
 
     # Check that a product was specified
     if not params['product'] or not params['product'][0]:
-        return http.HttpResponseBadRequest(
+        return HttpResponseBadRequest(
             '"product" parameter is mandatory'
         )
     product = params['product'][0]
@@ -482,7 +482,7 @@ def signature_summary(request, params):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     facets = search_results['facets']
 
@@ -498,7 +498,7 @@ def signature_summary(request, params):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery
         # to pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     if 'product' in product_results['facets']:
         facets['product'] = product_results['facets']['product']

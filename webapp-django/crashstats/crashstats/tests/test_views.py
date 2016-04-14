@@ -655,6 +655,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
 
         response = self.client.get(url, {'bug_ids': '123,456'})
         eq_(response.status_code, 400)
@@ -762,6 +763,7 @@ class TestViews(BaseTestViews):
             'end_date': '2014-02-04'
         })
         ok_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
 
         response = self.client.get(url, {
             'product': 'WaterWolf',
@@ -1322,6 +1324,7 @@ class TestViews(BaseTestViews):
         # unrecognized product
         response = self.client.get(url, {'product': 'XXXX'})
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         # unrecognized version
         response = self.client.get(
@@ -1607,6 +1610,7 @@ class TestViews(BaseTestViews):
             'date_start': u' \x00'
         })
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         response = self.client.get(url, {
             'p': 'WaterWolf',
@@ -2071,6 +2075,7 @@ class TestViews(BaseTestViews):
                             '2011-12-01', '2011-12-02', ''))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
 
         # invalid start date
         url = reverse('crashstats:plot_signature',
@@ -2199,6 +2204,7 @@ class TestViews(BaseTestViews):
         # first try without the necessary parameters
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         response = self.client.get(url, {
             'range_value': '1',
@@ -2744,6 +2750,7 @@ class TestViews(BaseTestViews):
                       args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
     @mock.patch('requests.get')
     def test_report_pending_today(self, rget):
@@ -2776,6 +2783,7 @@ class TestViews(BaseTestViews):
                       args=['blablabla'])
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
@@ -3416,6 +3424,7 @@ class TestViews(BaseTestViews):
         url = reverse('crashstats:report_list')
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         response = self.client.get(url, {
             'signature': 'sig',
@@ -4301,6 +4310,7 @@ class TestViews(BaseTestViews):
             'page': 'xx'
         })
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
     @mock.patch('requests.get')
     def test_report_list_partial_reports_non_defaults(self, rget):
@@ -4394,6 +4404,7 @@ class TestViews(BaseTestViews):
         }
         response = self.client.get(url, data)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         response = self.client.get(url, dict(data, range_unit='weeks'))
         eq_(response.status_code, 400)
@@ -4843,6 +4854,7 @@ class TestViews(BaseTestViews):
         # provide the right minimal parameters.
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         # Let's finally get it right. Permission AND the date parameter.
         data = {'date': datetime.datetime.utcnow().date()}

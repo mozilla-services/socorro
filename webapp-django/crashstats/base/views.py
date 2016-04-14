@@ -3,6 +3,16 @@ from django.conf import settings
 from django.shortcuts import render
 
 
+class HttpResponseBadRequest(http.HttpResponseBadRequest):
+    """Override of the Django HttpResponseBadRequest that makes sure
+    to set the content_type to "text/plain" if it hasn't already been
+    set."""
+    def __init__(self, *args, **kwargs):
+        if 'content_type' not in kwargs:
+            kwargs['content_type'] = 'text/plain; charset=UTF-8'
+        super(HttpResponseBadRequest, self).__init__(*args, **kwargs)
+
+
 def handler500(request):
     if getattr(request, '_json_view', False):
         # Every view with the `utils.json_view` decorator sets,
