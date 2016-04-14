@@ -286,7 +286,11 @@ def model_wrapper(request, model_name):
                         error_code,
                         'UNKNOWN STATUS CODE'
                     )
-                    return http.HttpResponse(reason, status=error_code)
+                    return http.HttpResponse(
+                        reason,
+                        status=error_code,
+                        content_type='text/plain; charset=UTF-8'
+                    )
             if error_code >= 500:
                 # special case
                 reason = REASON_PHRASES[424]
@@ -303,13 +307,16 @@ def model_wrapper(request, model_name):
                 # ujson module ValueError
                 'Expected object or value' in e
             ):
-                return http.HttpResponse(
-                    'Not a valid JSON response',
-                    status=400
+                return http.HttpResponseBadRequest(
+                    json.dumps({'error': 'Not a valid JSON response'}),
+                    content_type='application/json; charset=UTF-8'
                 )
             raise
-        except BAD_REQUEST_EXCEPTIONS as e:
-            return http.HttpResponseBadRequest(e)
+        except BAD_REQUEST_EXCEPTIONS as exception:
+            return http.HttpResponseBadRequest(
+                json.dumps({'error': str(exception)}),
+                content_type='application/json; charset=UTF-8'
+            )
 
         # Some models allows to return a binary reponse. It does so based on
         # the models `BINARY_RESPONSE` dict in which all keys and values

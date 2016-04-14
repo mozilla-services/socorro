@@ -135,6 +135,7 @@ class TestViews(BaseTestViews):
             'versions': ['10.0', '11.1'],
         })
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_('versions' not in dump['errors'])
@@ -276,6 +277,7 @@ class TestViews(BaseTestViews):
             'from_date': '2012-01-xx',  # invalid format
         })
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['from_date'])
 
@@ -495,6 +497,7 @@ class TestViews(BaseTestViews):
         }
         response = self.client.get(url, data)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['limit'])
         ok_(dump['errors']['duration'])
@@ -513,6 +516,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('ReportList',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
@@ -690,6 +694,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('ReportList',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
@@ -758,6 +763,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
@@ -838,6 +844,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
@@ -944,6 +951,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
@@ -992,6 +1000,7 @@ class TestViews(BaseTestViews):
         })
         # invalid format
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
 
         user = self._login()
         self._add_permission(user, 'view_pii')
@@ -1017,6 +1026,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('CommentsBySignature',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['signature'])
 
@@ -1079,6 +1089,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['signatures'])
 
@@ -1099,6 +1110,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['bug_ids'])
 
@@ -1157,6 +1169,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('SignatureTrend',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
         ok_(dump['errors']['version'])
@@ -1221,6 +1234,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('SignatureSummary',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['start_date'])
         ok_(dump['errors']['end_date'])
@@ -1285,6 +1299,7 @@ class TestViews(BaseTestViews):
             'not_after': 'not a date',
         })
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         res = json.loads(response.content)
         ok_('errors' in res)
         eq_(len(res['errors']), 3)
@@ -1392,6 +1407,7 @@ class TestViews(BaseTestViews):
         url = reverse('api:model_wrapper', args=('SignatureURLs',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['products'])
         ok_(dump['errors']['signature'])
