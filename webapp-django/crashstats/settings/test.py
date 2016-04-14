@@ -72,3 +72,9 @@ CRASH_ANALYSIS_MONITOR_DAYS_BACK = 2
 
 MIDDLEWARE_RETRIES = 10
 MIDDLEWARE_MIDDLEWARE_RETRY_SLEEPTIME = 3
+
+# During testing, if mocking isn't done right, we never want to
+# accidentally send data to Google Analytics.
+GOOGLE_ANALYTICS_API_URL = 'https://fake.guugle-analytics.fake/collect'
+# By default, unset the GOOGLE_ANALYTICS_ID
+GOOGLE_ANALYTICS_ID = None

@@ -18,6 +18,7 @@ from waffle.decorators import waffle_switch
 from socorrolib.lib import BadArgumentError, MissingArgumentError
 
 import crashstats
+from crashstats.base.ga import track_api_pageview
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.tokens.models import Token
@@ -317,6 +318,9 @@ def model_wrapper(request, model_name):
                 json.dumps({'error': str(exception)}),
                 content_type='application/json; charset=UTF-8'
             )
+
+        # Execution was successful, inform Google Analytics
+        track_api_pageview(request)
 
         # Some models allows to return a binary reponse. It does so based on
         # the models `BINARY_RESPONSE` dict in which all keys and values
