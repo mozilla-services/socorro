@@ -22,6 +22,7 @@ import boto
 import boto.s3.connection
 import boto.exception
 
+from crashstats.base.views import CrashstatsHttpResponseBadRequest
 from crashstats.tokens.models import Token
 from . import models
 from . import forms
@@ -222,11 +223,11 @@ def web_upload(request):
                     form.cleaned_data['file'].name
                 )
             except BadZipfile as exception:
-                return http.HttpResponseBadRequest(exception)
+                return CrashstatsHttpResponseBadRequest(exception)
 
             error = check_symbols_archive_content(content)
             if error:
-                return http.HttpResponseBadRequest(error)
+                return CrashstatsHttpResponseBadRequest(error)
 
             symbols_upload = models.SymbolsUpload.objects.create(
                 user=request.user,
@@ -295,17 +296,17 @@ def upload(request):
         size = upload.size
         break
     else:
-        return http.HttpResponseBadRequest(
+        return CrashstatsHttpResponseBadRequest(
             "Must be multipart form data with key 'file'"
         )
 
     if not size:
-        return http.HttpResponseBadRequest('File size 0')
+        return CrashstatsHttpResponseBadRequest('File size 0')
 
     content = utils.preview_archive_content(upload, name)
     error = check_symbols_archive_content(content)
     if error:
-        return http.HttpResponseBadRequest(error)
+        return CrashstatsHttpResponseBadRequest(error)
 
     symbols_upload = models.SymbolsUpload.objects.create(
         user=request.user,

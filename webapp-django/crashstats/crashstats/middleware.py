@@ -1,6 +1,7 @@
-from django import http
 from django.conf import settings
 from django.core.exceptions import MiddlewareNotUsed
+
+from crashstats.base.views import CrashstatsHttpResponseBadRequest
 from crashstats.crashstats.models import BadStatusCodeError
 
 
@@ -40,4 +41,4 @@ class Propagate400Errors(object):
             # we only want to do this if the exception contains a
             # "400" error
             if exception.status == 400:
-                return http.HttpResponseBadRequest(exception.message)
+                return CrashstatsHttpResponseBadRequest(exception.message)

@@ -126,6 +126,7 @@ class TestViews(BaseTestViews):
         # Test missing parameter.
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'text/plain; charset=UTF-8')
 
         response = self.client.get(url, {
             'signature': '',

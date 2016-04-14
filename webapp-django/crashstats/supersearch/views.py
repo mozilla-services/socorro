@@ -4,7 +4,6 @@ import json
 import math
 from collections import defaultdict
 
-from django import http
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
@@ -15,6 +14,7 @@ from django.utils import timezone
 from waffle.decorators import waffle_switch
 from ratelimit.decorators import ratelimit
 
+from crashstats.base.views import CrashstatsHttpResponseBadRequest
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
@@ -144,7 +144,7 @@ def search_results(request):
         params = get_params(request)
     except ValidationError as e:
         # There was an error in the form, let's return it.
-        return http.HttpResponseBadRequest(str(e))
+        return CrashstatsHttpResponseBadRequest(str(e))
 
     context = {}
     context['query'] = {
@@ -192,7 +192,7 @@ def search_results(request):
     try:
         current_page = int(request.GET.get('page', 1))
     except ValueError:
-        return http.HttpResponseBadRequest('Invalid page')
+        return CrashstatsHttpResponseBadRequest('Invalid page')
 
     if current_page <= 0:
         current_page = 1
@@ -215,7 +215,7 @@ def search_results(request):
     except models.BadStatusCodeError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return CrashstatsHttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
 
     if 'signature' in search_results['facets']:
         # Bugs for each signature
@@ -385,7 +385,7 @@ def search_custom(request, default_context=None):
 def search_query(request):
     form = forms.QueryForm(request.POST)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(form.errors)
+        return CrashstatsHttpResponseBadRequest(form.errors)
 
     api = Query()
     try:
@@ -394,6 +394,6 @@ def search_query(request):
             indices=form.cleaned_data['indices']
         )
     except models.BadStatusCodeError as e:
-        return http.HttpResponseBadRequest(e.message)
+        return CrashstatsHttpResponseBadRequest(e.message)
 
     return results

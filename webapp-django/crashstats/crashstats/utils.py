@@ -54,6 +54,11 @@ def json_view(f):
         response = f(request, *args, **kw)
 
         if isinstance(response, http.HttpResponse):
+            if (
+                isinstance(response, http.HttpResponseBadRequest) and
+                not response['Content-Type'].startswith('application/json')
+            ):
+                response['Content-Type'] = 'application/json; charset=UTF-8'
             return response
         else:
 

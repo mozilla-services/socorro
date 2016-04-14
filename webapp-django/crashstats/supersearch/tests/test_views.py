@@ -777,4 +777,5 @@ class TestViews(BaseTestViews):
         # Test a failure.
         response = self.client.post(url)
         eq_(response.status_code, 400)
+        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         ok_('query' in response.content)

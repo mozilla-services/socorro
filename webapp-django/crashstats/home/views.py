@@ -1,8 +1,8 @@
-from django import http
 from django.conf import settings
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
 
+from crashstats.base.views import CrashstatsHttpResponseBadRequest
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.crashstats import models
 from . import forms
@@ -14,7 +14,7 @@ def home(request, product, default_context=None):
 
     form = forms.HomeForm(request.GET)
     if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
+        return CrashstatsHttpResponseBadRequest(str(form.errors))
 
     context['days'] = form.cleaned_data['days']
     context['versions'] = form.cleaned_data['version']
