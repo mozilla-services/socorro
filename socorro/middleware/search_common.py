@@ -273,6 +273,9 @@ class SearchBase(object):
                 if not param.operator:
                     # dates can't be a specific date
                     raise BadArgumentError('date must have a prefix operator')
+                today = datetimeutil.utc_now()
+                if param.value > today:
+                    raise BadArgumentError('future date')
                 if (
                     '<' in param.operator and (
                         not lower_than or

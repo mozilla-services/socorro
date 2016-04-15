@@ -222,6 +222,22 @@ class TestSearchBase(TestCase):
             date='2016-01-01'
         )
 
+    def test_get_parameters_date_future_date(self):
+        with _get_config_manager().context() as config:
+            search = SearchBaseWithFields(
+                config=config,
+            )
+
+        # the date parameter must always have a prefix operator
+        tomorrow = (
+            datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        ).strftime('%Y-%m-%d')
+        assert_raises(
+            BadArgumentError,
+            search.get_parameters,
+            date=tomorrow
+        )
+
     def test_get_parameters_date_defaults(self):
         with _get_config_manager().context() as config:
             search = SearchBaseWithFields(

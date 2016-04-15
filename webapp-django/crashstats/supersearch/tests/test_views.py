@@ -11,6 +11,8 @@ from django.core.urlresolvers import reverse
 
 from waffle.models import Switch
 
+from socorrolib.lib import BadArgumentError
+
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.views import (
@@ -375,6 +377,24 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 429)
         eq_(response.content, 'Too Many Requests')
         eq_(response['content-type'], 'text/plain')
+
+    def test_search_results_badargumenterror(self):
+
+        def mocked_supersearch_get(**params):
+            raise BadArgumentError('<script>xss')
+
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        url = reverse('supersearch.search_results')
+        params = {'product': 'WaterWolf'}
+        self.client.get(url, params)
+        response = self.client.get(url, params)
+        eq_(response.status_code, 400)
+        eq_(response['content-type'], 'text/html; charset=utf-8')
+        ok_('<script>' not in response.content)
+        ok_('&lt;script&gt;' in response.content)
 
     @mock.patch('requests.post')
     def test_search_results_admin_mode(self, rpost):

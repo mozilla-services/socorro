@@ -9,6 +9,9 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render
 from django.conf import settings
 
+from socorrolib.lib import BadArgumentError
+
+from crashstats.base.utils import render_exception
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
@@ -172,10 +175,10 @@ def signature_reports(request, params):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     search_results['total_pages'] = int(
         math.ceil(
@@ -219,10 +222,10 @@ def signature_aggregation(request, params, aggregation):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     context['aggregates'] = []
     if aggregation in search_results['facets']:
@@ -265,10 +268,10 @@ def signature_graphs(request, params, field):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     context['aggregates'] = search_results['facets'].get('histogram_date', [])
     context['term_counts'] = search_results['facets'].get(field, [])
@@ -322,10 +325,10 @@ def signature_comments(request, params):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     search_results['total_pages'] = int(
         math.ceil(
@@ -354,10 +357,10 @@ def signature_correlations(request, params):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     all_combos = []
     for product in search_results['facets']['product']:
@@ -479,10 +482,10 @@ def signature_summary(request, params):
     # Now make the actual request with all expected parameters.
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     facets = search_results['facets']
 
@@ -495,10 +498,10 @@ def signature_summary(request, params):
 
     try:
         product_results = api.get(**params_copy)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as e:
         # We need to return the error message in some HTML form for jQuery
         # to pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(render_exception(e))
 
     if 'product' in product_results['facets']:
         facets['product'] = product_results['facets']['product']
