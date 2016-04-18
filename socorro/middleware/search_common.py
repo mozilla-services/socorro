@@ -272,10 +272,16 @@ class SearchBase(object):
             for param in parameters['date']:
                 if not param.operator:
                     # dates can't be a specific date
-                    raise BadArgumentError('date must have a prefix operator')
+                    raise BadArgumentError(
+                        'date',
+                        msg='date must have a prefix operator'
+                    )
                 today = datetimeutil.utc_now()
                 if param.value > today:
-                    raise BadArgumentError('future date')
+                    raise BadArgumentError(
+                        'date',
+                        msg="date can't be in the future"
+                    )
                 if (
                     '<' in param.operator and (
                         not lower_than or
