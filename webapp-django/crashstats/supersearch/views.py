@@ -15,6 +15,9 @@ from django.utils import timezone
 from waffle.decorators import waffle_switch
 from ratelimit.decorators import ratelimit
 
+from socorrolib.lib import BadArgumentError
+
+from crashstats.base.utils import render_exception
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
@@ -212,10 +215,12 @@ def search_results(request):
     api = SuperSearchUnredacted()
     try:
         search_results = api.get(**params)
-    except models.BadStatusCodeError as e:
+    except BadArgumentError as exception:
         # We need to return the error message in some HTML form for jQuery to
         # pick it up.
-        return http.HttpResponseBadRequest('<ul><li>%s</li></ul>' % e)
+        return http.HttpResponseBadRequest(
+            render_exception(exception)
+        )
 
     if 'signature' in search_results['facets']:
         # Bugs for each signature
@@ -355,7 +360,7 @@ def search_custom(request, default_context=None):
         api = SuperSearchUnredacted()
         try:
             query = api.get(**params)
-        except models.BadStatusCodeError as e:
+        except BadArgumentError as e:
             error = e
 
     schema = settings.ELASTICSEARCH_INDEX_SCHEMA
