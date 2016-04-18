@@ -241,7 +241,7 @@ class DailyFormBase(BaseForm):
             # Check the invariant. Make sure the start < end.
             if cleaned_data['date_start'] > cleaned_data['date_end']:
                 raise forms.ValidationError(
-                    'date start > date end'
+                    'Start date greater than end date'
                 )
         return cleaned_data
 
