@@ -63,7 +63,7 @@ def config_from_configman():
     )
     definition_source.namespace('queuing')
     definition_source.queuing.add_option(
-        'rabbitmq',
+        'rabbitmq_reprocessing_class',
         default=ReprocessingOneRabbitMQCrashStore,
     )
     config = configuration(
