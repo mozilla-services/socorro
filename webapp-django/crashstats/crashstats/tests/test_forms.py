@@ -252,6 +252,25 @@ class TestForms(DjangoTestCase):
         ok_(form.is_valid())
         eq_(form.cleaned_data['os'], ['Windows'])
 
+        # test the start_date and end_date invariance
+        today = datetime.datetime.utcnow()
+        form = get_new_form(
+            forms.DailyFormByVersion,
+            {'p': 'WaterWolf',
+             'date_start': today + datetime.timedelta(days=1),
+             'date_end': today},
+        )
+        ok_(not form.is_valid())
+        ok_('Start date greater than end date' in str(form.errors))
+        # but should be OK to be equal
+        form = get_new_form(
+            forms.DailyFormByVersion,
+            {'p': 'WaterWolf',
+             'date_start': today,
+             'date_end': today},
+        )
+        ok_(form.is_valid())
+
     def test_buginfoform(self):
 
         def get_new_form(data):

@@ -235,6 +235,16 @@ class DailyFormBase(BaseForm):
             )
         return versions
 
+    def clean(self):
+        cleaned_data = super(DailyFormBase, self).clean()
+        if cleaned_data.get('date_end') and cleaned_data.get('date_start'):
+            # Check the invariant. Make sure the start < end.
+            if cleaned_data['date_start'] > cleaned_data['date_end']:
+                raise forms.ValidationError(
+                    'Start date greater than end date'
+                )
+        return cleaned_data
+
 
 class DailyFormByOS(DailyFormBase):
     pass
