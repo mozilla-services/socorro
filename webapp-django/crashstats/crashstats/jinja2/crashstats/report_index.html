@@ -126,7 +126,7 @@
                             {% if install_time %}
                             <tr>
                                 <th scope="row">Install Time</th>
-                                <td>{{ install_time }}</td>
+                                <td>{{ install_time | timestamp_to_date }}</td>
                             </tr>
                             {% endif %}
                             <tr>

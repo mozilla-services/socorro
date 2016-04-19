@@ -1,11 +1,11 @@
 import datetime
+import time
 from nose.tools import eq_, ok_
-from django.utils.timezone import utc
 from django.core.cache import cache
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.templatetags.jinja_helpers import (
-    js_date,
+    timestamp_to_date,
     recursive_state_filter,
     show_bug_link,
     bugzilla_submit_url,
@@ -13,19 +13,21 @@ from crashstats.crashstats.templatetags.jinja_helpers import (
 )
 
 
-class TestJSDate(TestCase):
+class TestTimestampToDate(TestCase):
 
-    def test_js_date(self):
-        # naive date
-        date = datetime.datetime.utcnow()
-        output = js_date(date)
-        ok_(date.strftime('%Y-%m-%dT%H:%M:%S.%f') in output)
-        ok_('timeago' in output)
+    def test_timestamp_to_date(self):
+        timestamp = time.time()
+        date = datetime.datetime.fromtimestamp(timestamp)
+        output = timestamp_to_date(int(timestamp))
+        ok_(date.strftime('%Y-%m-%d %H:%M:%S') in output)
+        ok_('%Y-%m-%d %H:%M:%S' in output)
 
-        # aware date
-        date = date.replace(tzinfo=utc)
-        output = js_date(date)
-        ok_(date.strftime('%Y-%m-%dT%H:%M:%S.%f+00:00') in output)
+        # Test missing and bogus values.
+        output = timestamp_to_date(None)
+        ok_(output is None)
+
+        output = timestamp_to_date('abc')
+        ok_(output is None)
 
 
 class TestRecursiveStateFilter(TestCase):

@@ -1,7 +1,6 @@
 import copy
 import json
 import datetime
-import logging
 import math
 import urllib
 import gzip
@@ -1425,22 +1424,6 @@ def report_index(request, crash_id, default_context=None):
             if x in models.RawCrash.API_WHITELIST
         ]
     context['raw_keys'].sort(key=unicode.lower)
-
-    if 'InstallTime' in context['raw']:
-        try:
-            install_time = datetime.datetime.fromtimestamp(
-                int(context['raw']['InstallTime'])
-            )
-            context['install_time'] = (
-                install_time.strftime('%Y-%m-%d %H:%M:%S')
-            )
-        except ValueError:
-            # that means the `InstallTime` value was not valid.
-            # that's just as good or bad as it not being in the raw crash
-            logging.debug(
-                'Raw crash contains invalid `InstallTime`: %r',
-                context['raw']['InstallTime']
-            )
 
     if request.user.has_perm('crashstats.view_rawdump'):
         context['raw_dump_urls'] = [

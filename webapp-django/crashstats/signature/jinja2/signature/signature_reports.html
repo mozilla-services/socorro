@@ -26,6 +26,8 @@
                     {% if crash[column] %}
                         {% if column == 'date' %}
                             {{ crash[column] | human_readable_iso_date }}
+                        {% elif column == 'install_time' %}
+                            {{ crash[column] | timestamp_to_date }}
                         {% else %}
                             {{ crash[column] }}
                         {% endif %}

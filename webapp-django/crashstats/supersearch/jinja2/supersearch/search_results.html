@@ -53,6 +53,10 @@
                                 {{ val }}
                             </a>
                             {% endfor %}
+                        {% elif column == 'install_time' %}
+                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                            {{ crash[column] | timestamp_to_date }}
+                        </a>
                         {% else %}
                         <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             {{ crash[column] }}
