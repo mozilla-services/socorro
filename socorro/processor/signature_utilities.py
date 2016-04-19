@@ -405,6 +405,7 @@ class CSignatureTool(CSignatureToolBase):
           'JNI_GetCreatedJavaVM.*',
           'js::AutoCompartment::AutoCompartment.*',
           'js::AutoEnterOOMUnsafeRegion::crash',
+          'js::LifoAlloc::getOrCreateChunk',
           'JSAutoCompartment::JSAutoCompartment.*',
           'JS_DHashTableEnumerate',
           'JS_DHashTableOperate',
