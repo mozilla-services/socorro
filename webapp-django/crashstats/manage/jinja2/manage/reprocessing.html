@@ -1,15 +1,15 @@
 {% extends "manage/base.html" %}
 
-{% block page_title %}{{ super() }} - Re-processing{% endblock %}
+{% block page_title %}{{ super() }} - Reprocessing{% endblock %}
 
-{% block admin_title %}{{ super() }} - Re-processing{% endblock %}
+{% block admin_title %}{{ super() }} - Reprocessing{% endblock %}
 
 {% block mainbody %}
 <div class="panel">
     <div class="body notitle">
 
         <h3>
-            Put a Crash ID back in for re-processing
+            Put a Crash ID back in for reprocessing
         </h3>
 
         {% if crash_id %}
@@ -28,7 +28,7 @@
                 <tr>
                     <th>&nbsp;</th>
                     <td>
-                        <input type="submit" value="Let's do this!">
+                        <input type="submit" value="Reprocess">
                     </td>
                 </tr>
             </table>
