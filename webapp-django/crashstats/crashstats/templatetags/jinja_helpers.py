@@ -59,17 +59,19 @@ def recursive_state_filter(state, root):
 @library.filter
 def timestamp_to_date(
     timestamp,
-    format='%Y-%m-%d %H:%M:%S',
-    enable_timeago=True
+    format='%Y-%m-%d %H:%M:%S'
 ):
     """ Python datetime to a time tag with JS Date.parse-parseable format. """
+    try:
+        timestamp = float(timestamp)
+    except (TypeError, ValueError):
+        return
+
     dt = datetime.datetime.fromtimestamp(float(timestamp))
-    timeago = ' timeago' if enable_timeago else ''
     return jinja2.Markup(
-        '<time datetime="{}" class="jstime{}" data-format="{}">{}</time>'
+        '<time datetime="{}" class="jstime" data-format="{}">{}</time>'
         .format(
             dt.isoformat(),
-            timeago,
             format,
             dt.strftime(format)
         )

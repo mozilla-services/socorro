@@ -21,7 +21,13 @@ class TestTimestampToDate(TestCase):
         output = timestamp_to_date(int(timestamp))
         ok_(date.strftime('%Y-%m-%d %H:%M:%S') in output)
         ok_('%Y-%m-%d %H:%M:%S' in output)
-        ok_('timeago' in output)
+
+        # Test missing and bogus values.
+        output = timestamp_to_date(None)
+        ok_(output is None)
+
+        output = timestamp_to_date('abc')
+        ok_(output is None)
 
 
 class TestRecursiveStateFilter(TestCase):
