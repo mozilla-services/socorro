@@ -4,54 +4,86 @@
 
 {% block admin_title %}Admin Home{% endblock %}
 
+{% block site_css %}
+{{ super() }}
+{% stylesheet 'manage:home' %}
+{% endblock %}
+
 {% block mainbody %}
 
 <div class="panel">
     <div class="body">
+        <h1>Data</h1>
+        <ul>
+            <li><a href="{{ url('manage:featured_versions') }}">
+                <img src="{{ static('img/3rdparty/metro/edit_property.png') }}">
+                Featured Versions
+            </a></li>
+            <li><a href="{{ url('manage:products') }}">
+                <img src="{{ static('img/3rdparty/metro/cards.png') }}">
+                Products
+            </a></li>
+            <li><a href="{{ url('manage:releases') }}">
+                <img src="{{ static('img/3rdparty/metro/rocket.png') }}">
+                Releases
+            </a></li>
+            <li><a href="{{ url('manage:graphics_devices') }}">
+                <img src="{{ static('img/3rdparty/metro/widescreen_tv.png') }}">
+                Graphics Devices
+            </a></li>
+            <li><a href="{{ url('manage:symbols_uploads') }}">
+                <img src="{{ static('img/3rdparty/metro/database.png') }}">
+                Symbols Uploads
+            </a></li>
+        </ul>
 
-        <p>
-            <a href="{{ url('manage:featured_versions') }}">Featured Versions</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:fields') }}">Fields</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:skiplist') }}">Skiplist</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:users') }}">Users</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:groups') }}">Groups</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:analyze_model_fetches') }}">Analyze Model Fetches</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:graphics_devices') }}">Graphics Devices</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:symbols_uploads') }}">Symbols Uploads</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:supersearch_fields') }}">Super Search Fields</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:products') }}">Products</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:releases') }}">Releases</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:events') }}">Events</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:api_tokens') }}">API Tokens</a>
-        </p>
-        <p>
-            <a href="{{ url('manage:crash_me_now') }}">Crash Me Now</a>
-        </p>
+        <h1>Users</h1>
+        <ul>
+            <li><a href="{{ url('manage:users') }}">
+                <img src="{{ static('img/3rdparty/metro/user.png') }}">
+                Users
+            </a></li>
+            <li><a href="{{ url('manage:groups') }}">
+                <img src="{{ static('img/3rdparty/metro/conference.png') }}">
+                Groups
+            </a></li>
+            <li><a href="{{ url('manage:api_tokens') }}">
+                <img src="{{ static('img/3rdparty/metro/ticket.png') }}">
+                API Tokens
+            </a></li>
+        </ul>
 
+        <h1>Configuration</h1>
+        <ul>
+            <li><a href="{{ url('manage:supersearch_fields') }}">
+                <img src="{{ static('img/3rdparty/metro/list_ingredients.png') }}">
+                Super Search Fields
+            </a></li>
+            <li><a href="{{ url('manage:skiplist') }}">
+                <img src="{{ static('img/3rdparty/metro/layers.png') }}">
+                Skiplist
+            </a></li>
+            <li><a href="{{ url('manage:fields') }}">
+                <img src="{{ static('img/3rdparty/metro/console.png') }}">
+                Fields
+            </a></li>
+        </ul>
+
+        <h1>Tools</h1>
+        <ul>
+            <li><a href="{{ url('manage:events') }}">
+                <img src="{{ static('img/3rdparty/metro/tear_of_calendar.png') }}">
+                Events
+            </a></li>
+            <li><a href="{{ url('manage:crash_me_now') }}">
+                <img src="{{ static('img/3rdparty/metro/explosion.png') }}">
+                Crash Me Now
+            </a></li>
+            <li><a href="{{ url('manage:analyze_model_fetches') }}">
+                <img src="{{ static('img/3rdparty/metro/dashboard.png') }}">
+                Analyze Model Fetches
+            </a></li>
+        </ul>
     </div>
 </div>
 

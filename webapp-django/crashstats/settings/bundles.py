@@ -98,6 +98,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-tokens.min.css',
     },
+    'manage:home': {
+        'source_filenames': (
+            'manage/css/home.less',
+        ),
+        'output_filename': 'css/manage-home.min.css',
+    },
     'manage:supersearch_fields': {
         'source_filenames': (
             'manage/css/supersearch_fields.less',
