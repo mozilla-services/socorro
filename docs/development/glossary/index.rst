@@ -27,7 +27,7 @@ pair are kept without being processed.
 
 **Materialized view**: the tables in the database containing the data for
 used in statistical analysis. Including: [[MeanTimeBeforeFailure]],
-:ref:`topcrashersbysignature-chapter`, :ref:`topcrashersbyurl-chapter`. The "Trend Reports" from the
+:ref:`topcrashersbysignature-chapter`. The "Trend Reports" from the
 :ref:`ui-chapter` display information from these tables.
 
 **Minidump**: see 'raw crash dump'
@@ -113,7 +113,6 @@ of OOID.
    jsondumpstorage
    processeddumpstorage
    standardjobstorage
-   topcrashersbyurl
    topcrashersbysignature
    signaturegeneration
    crashmover

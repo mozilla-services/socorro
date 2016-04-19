@@ -9,7 +9,7 @@ Report Database Design
 Introduction
 ------------
 
-With the launch of [[MeanTimeBeforeFailure]] and :ref:`topcrashersbyurl-chapter`
+With the launch of [[MeanTimeBeforeFailure]]
 reports, we have added 8 new database tables. The call into the
 following categories:
 
