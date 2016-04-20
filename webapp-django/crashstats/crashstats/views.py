@@ -1425,6 +1425,18 @@ def report_index(request, crash_id, default_context=None):
         ]
     context['raw_keys'].sort(key=unicode.lower)
 
+    context['install_time'] = None
+    # add install_time if the value is valid
+    if context['raw'].get('InstallTime'):
+        try:
+            datetime.datetime.fromtimestamp(
+                float(context['raw']['InstallTime'])
+            )
+            context['install_time'] = context['raw']['InstallTime']
+        except ValueError:
+            # not a validtimestamp
+            pass
+
     if request.user.has_perm('crashstats.view_rawdump'):
         context['raw_dump_urls'] = [
             reverse('crashstats:raw_data', args=(crash_id, 'dmp')),
