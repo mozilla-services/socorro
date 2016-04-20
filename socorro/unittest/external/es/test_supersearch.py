@@ -297,6 +297,29 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ok_(not facet['term'].endswith('rowser'))
             eq_(facet['count'], 1)
 
+        # Test the "regex" operator.
+        res = self.api.get(
+            signature='@mozilla::.*::function'  # regex
+        )
+        eq_(res['total'], 1)
+        eq_(len(res['hits']), 1)
+        eq_(res['hits'][0]['signature'], 'mozilla::js::function')
+
+        res = self.api.get(
+            signature='@f.."(bar)"'  # regex
+        )
+        eq_(res['total'], 1)
+        eq_(len(res['hits']), 1)
+        eq_(res['hits'][0]['signature'], 'foo(bar)')
+
+        res = self.api.get(
+            signature='!@mozilla::.*::function'  # regex
+        )
+        eq_(res['total'], 4)
+        eq_(len(res['hits']), 4)
+        for hit in res['hits']:
+            ok_(hit['signature'] != 'mozilla::js::function')
+
     @minimum_es_version('1.0')
     def test_get_with_range_operators(self):
         self.index_crash({

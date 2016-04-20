@@ -294,6 +294,11 @@ class SuperSearch(SearchBase):
                 elif param.operator == '__null__':
                     filter_type = 'missing'
                     args['field'] = name
+                elif param.operator == '@':
+                    filter_type = 'regexp'
+                    if field_data['has_full_version']:
+                        name = '%s.full' % name
+                    filter_value = param.value
                 elif param.operator in operator_wildcards:
                     filter_type = 'query'
 

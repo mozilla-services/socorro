@@ -23,6 +23,7 @@ import socorrolib.lib.external_common as extern
      * '~' -> 'contains'
      * '^' -> 'starts with'
      * '$' -> 'ends with'
+     * '@' -> 'regex'
      * '>=' -> 'greater or equal'
      * '<=' -> 'lower or equal'
      * '>' -> 'greater'
@@ -36,7 +37,7 @@ import socorrolib.lib.external_common as extern
 """
 OPERATOR_NOT = '!'
 OPERATORS_BASE = ['']
-OPERATORS_STRING = ['__null__', '=', '~', '$', '^']
+OPERATORS_STRING = ['__null__', '=', '~', '$', '^', '@']
 OPERATORS_NUMBER = ['>=', '<=', '<', '>']
 OPERATORS_MAP = {
     'str': OPERATORS_STRING + OPERATORS_BASE,
@@ -80,7 +81,7 @@ class SearchFilter(object):
 
 
 class SearchBase(object):
-    meta_filters = [
+    meta_filters = (
         SearchFilter('_aggs.product.version'),
         SearchFilter('_aggs.product.version.platform'),  # convenient for tests
         SearchFilter(
@@ -95,7 +96,7 @@ class SearchBase(object):
         SearchFilter('_results_offset', data_type='int', default=0),
         SearchFilter('_return_query', data_type='bool', default=False),
         SearchFilter('_sort', default=''),
-    ]
+    )
 
     def __init__(self, *args, **kwargs):
         self.context = kwargs.get('config')
@@ -110,6 +111,8 @@ class SearchBase(object):
         self.filters = []
         self.histogram_fields = []
 
+        all_meta_filters = list(self.meta_filters)
+
         for field in fields.values():
             self.filters.append(SearchFilter(
                 field['name'],
@@ -119,7 +122,7 @@ class SearchBase(object):
             ))
 
             # Add a field to get a list of other fields to aggregate.
-            self.meta_filters.append(SearchFilter(
+            all_meta_filters.append(SearchFilter(
                 '_aggs.%s' % field['name']
             ))
 
@@ -129,7 +132,7 @@ class SearchBase(object):
                 self.histogram_fields.append(field['name'])
 
                 # Add a field to get a list of other fields to aggregate.
-                self.meta_filters.append(SearchFilter(
+                all_meta_filters.append(SearchFilter(
                     '_histogram.%s' % field['name']
                 ))
 
@@ -137,13 +140,13 @@ class SearchBase(object):
                 default_interval = 1
                 if field['query_type'] == 'date':
                     default_interval = 'day'
-                self.meta_filters.append(SearchFilter(
+                all_meta_filters.append(SearchFilter(
                     '_histogram_interval.%s' % field['name'],
                     default=default_interval,
                 ))
 
         # Add meta parameters.
-        self.filters.extend(self.meta_filters)
+        self.filters.extend(all_meta_filters)
 
     def get_parameters(self, **kwargs):
         parameters = {}
