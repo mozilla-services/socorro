@@ -125,7 +125,11 @@
                             {% endif %}
                             <tr>
                                 <th scope="row">Install Time</th>
-                                <td>{{ raw.InstallTime | timestamp_to_date }}</td>
+                                <td>
+                                    {% if raw.InstallTime %}
+                                        {{ raw.InstallTime | timestamp_to_date }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row">Product</th>
