@@ -24,10 +24,10 @@ class TestTimestampToDate(TestCase):
 
         # Test missing and bogus values.
         output = timestamp_to_date(None)
-        ok_(output is None)
+        eq_(output, '')
 
         output = timestamp_to_date('abc')
-        ok_(output is None)
+        eq_(output, '')
 
 
 class TestRecursiveStateFilter(TestCase):

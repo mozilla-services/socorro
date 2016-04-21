@@ -2877,7 +2877,14 @@ class TestViews(BaseTestViews):
             args=['11cb72f5-eb28-41e1-a8e4-849982120611']
         )
         response = self.client.get(url)
-        ok_('<th scope="row">Install Time</th>' not in response.content)
+        # The heading is there but there should not be a value for it
+        ok_('<th scope="row">Install Time</th>' in response.content)
+        doc = pyquery.PyQuery(response.content)
+        # Look for a <tr> whose <th> is 'Install Time', then
+        # when we've found the row, we look at the text of its <td> child.
+        for row in doc('#details tr'):
+            if pyquery.PyQuery(row).find('th').text() == 'Install Time':
+                eq_(pyquery.PyQuery(row).find('td').text(), '')
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
