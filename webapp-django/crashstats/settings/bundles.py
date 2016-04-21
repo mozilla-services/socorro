@@ -100,6 +100,8 @@ PIPELINE_CSS = {
     },
     'manage:home': {
         'source_filenames': (
+            'crashstats/css/lib/font-awesome/css/font-awesome.css',
+            'crashstats/css/fonts.less',
             'manage/css/home.less',
         ),
         'output_filename': 'css/manage-home.min.css',
