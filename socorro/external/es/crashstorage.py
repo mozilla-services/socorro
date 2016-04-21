@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 import elasticsearch
 from configman import Namespace
-from configman.converters import class_converter
+from configman.converters import class_converter, list_converter
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.index_creator import IndexCreator
@@ -203,6 +203,77 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         self.redactor.redact(processed_crash)
 
         super(ESCrashStorageRedactedSave, self).save_raw_and_processed(
+            raw_crash,
+            dumps,
+            processed_crash,
+            crash_id
+        )
+
+
+#==============================================================================
+class ESCrashStorageRestrictedDump(ESCrashStorage):
+    """This class stores redacted crash reports into Elasticsearch, but instead
+    of removing the entire `json_dump`, it keeps only a subset of its keys.
+    """
+    required_config = Namespace()
+    required_config.add_option(
+        name="json_dump_keys",
+        doc="keys of the json_dump field to keep in the processed crash",
+        default=[
+            "largest_free_vm_block",
+            "tiny_block_size",
+            "write_combine_size",
+        ],
+        from_string_converter=list_converter,
+    )
+
+    required_config.namespace('es_redactor')
+    required_config.es_redactor.add_option(
+        name="redactor_class",
+        doc="the name of the class that implements a 'redact' method",
+        default='socorro.external.crashstorage_base.Redactor',
+        from_string_converter=class_converter,
+    )
+    required_config.es_redactor.forbidden_keys = change_default(
+        Redactor,
+        "forbidden_keys",
+        "upload_file_minidump_flash1.json_dump, "
+        "upload_file_minidump_flash2.json_dump, "
+        "upload_file_minidump_browser.json_dump"
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        """Init, you know.
+        """
+        super(ESCrashStorageRestrictedDump, self).__init__(
+            config,
+            quit_check_callback
+        )
+        self.redactor = config.es_redactor.redactor_class(config.es_redactor)
+        self.config.logger.warning(
+            "beware, this crashstorage class is destructive to the "
+            "processed crash - if you're using a polycrashstore you may "
+            "find the modified processed crash saved to the other crashstores"
+        )
+
+    #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
+                               crash_id):
+        """This is the only write mechanism that is actually employed in normal
+        usage.
+        """
+        self.reconstitute_datetimes(processed_crash)
+        self.redactor.redact(processed_crash)
+
+        # Now replace the `json_dump` with a subset.
+        restricted_json_dump = {
+            k: processed_crash['json_dump'].get(k)
+            for k in self.config.json_dump_keys
+        }
+        processed_crash['json_dump'] = restricted_json_dump
+
+        super(ESCrashStorageRestrictedDump, self).save_raw_and_processed(
             raw_crash,
             dumps,
             processed_crash,
