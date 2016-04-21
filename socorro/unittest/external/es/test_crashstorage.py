@@ -15,7 +15,7 @@ from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     ESCrashStorage,
     ESCrashStorageRedactedSave,
-    ESCrashStorageRestrictedDump,
+    ESCrashStorageRedactedJsonDump,
     ESBulkCrashStorage
 )
 from socorro.unittest.external.es.base import ElasticsearchTestCase
@@ -420,7 +420,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """Test a successful index of a crash report.
         """
         modified_config = deepcopy(self.config)
-        modified_config.json_dump_keys = [
+        modified_config.json_dump_whitelist_keys = [
             "largest_free_vm_block",
             "tiny_block_size",
             "write_combine_size",
@@ -437,7 +437,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         sub_mock = mock.MagicMock()
         espy_mock.Elasticsearch.return_value = sub_mock
 
-        es_storage = ESCrashStorageRestrictedDump(config=modified_config)
+        es_storage = ESCrashStorageRedactedJsonDump(config=modified_config)
 
         crash_id = a_processed_crash['uuid']
 
@@ -462,7 +462,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         )
         expected_processed_crash['json_dump'] = {
             k: a_processed_crash['json_dump'][k]
-            for k in modified_config.json_dump_keys
+            for k in modified_config.json_dump_whitelist_keys
         }
 
         # The actual call to index the document (crash).
