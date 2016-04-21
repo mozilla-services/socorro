@@ -235,6 +235,16 @@ class DailyFormBase(BaseForm):
             )
         return versions
 
+    def clean_date_end(self):
+        value = self.cleaned_data['date_end']
+        if value:
+            now = datetime.datetime.utcnow()
+            if not isinstance(value, datetime.datetime):
+                now = now.date()
+            if value > now:
+                raise forms.ValidationError('date_end is in the future')
+        return value
+
     def clean(self):
         cleaned_data = super(DailyFormBase, self).clean()
         if cleaned_data.get('date_end') and cleaned_data.get('date_start'):

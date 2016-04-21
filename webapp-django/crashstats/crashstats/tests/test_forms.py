@@ -271,6 +271,22 @@ class TestForms(DjangoTestCase):
         )
         ok_(form.is_valid())
 
+        # Test that the start or end date are not in the future
+        form = get_new_form(
+            forms.DailyFormByVersion,
+            {'p': 'WaterWolf',
+             'date_start': today,
+             'date_end': today + datetime.timedelta(days=1)},
+        )
+        ok_(not form.is_valid())
+        form = get_new_form(
+            forms.DailyFormByVersion,
+            {'p': 'WaterWolf',
+             'date_start': today,
+             'date_end': today + datetime.timedelta(days=1)},
+        )
+        ok_(not form.is_valid())
+
     def test_buginfoform(self):
 
         def get_new_form(data):
