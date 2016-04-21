@@ -123,12 +123,10 @@
                                 <td>{{ report.install_age }} since version was first installed.</td>
                             </tr>
                             {% endif %}
-                            {% if install_time %}
                             <tr>
                                 <th scope="row">Install Time</th>
-                                <td>{{ install_time | timestamp_to_date }}</td>
+                                <td>{{ raw.InstallTime | timestamp_to_date }}</td>
                             </tr>
-                            {% endif %}
                             <tr>
                                 <th scope="row">Product</th>
                                 <td>{{ report.product }}</td>

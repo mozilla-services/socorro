@@ -2779,12 +2779,58 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
+    def test_report_index_with_valid_install_time(self, rget, rpost):
+        rpost.side_effect = mocked_post_123
+
+        def mocked_get(url, params, **options):
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'meta'
+            ):
+                return Response({
+                    'InstallTime': '1461170304',
+                    'Version': '5.0a1',
+                })
+            if 'crashes/comments' in url:
+                return Response({
+                    'hits': [],
+                    'total': 0,
+                })
+            if 'correlations/signatures' in url:
+                return Response({
+                    'hits': [],
+                    'total': 0,
+                })
+
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'unredacted'
+            ):
+                return Response({
+                    'dump': 'some dump',
+                    'signature': 'FakeSignature1',
+                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
+                    'process_type': None,
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse(
+            'crashstats:report_index',
+            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
+        )
+        response = self.client.get(url)
+        ok_('<th scope="row">Install Time</th>' in response.content)
+        # This is what 1461170304 is in human friendly format.
+        ok_('2016-04-20 16:38:24' in response.content)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
     def test_report_index_with_invalid_install_time(self, rget, rpost):
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
-        comment0 = "This is a comment"
-        email0 = "some@emailaddress.com"
-        url0 = "someaddress.com"
-        email1 = "some@otheremailaddress.com"
 
         rpost.side_effect = mocked_post_123
 
@@ -2794,88 +2840,51 @@ class TestViews(BaseTestViews):
                 'datatype' in params and
                 params['datatype'] == 'meta'
             ):
-                return Response("""
-                {
-                  "InstallTime": "Not a number",
-                  "FramePoisonSize": "4096",
-                  "Theme": "classic/1.0",
-                  "Version": "5.0a1",
-                  "Email": "%s",
-                  "Vendor": "Mozilla",
-                  "URL": "%s",
-                  "HangID": "123456789"
-                }
-                """ % (email0, url0))
+                return Response({
+                    'InstallTime': 'Not a number',
+                    'Version': '5.0a1',
+                    'Email': '',
+                    'URL': None,
+                })
             if 'crashes/comments' in url:
-                return Response("""
-                {
-                  "hits": [
-                   {
-                     "user_comments": "%s",
-                     "date_processed": "2012-08-21T11:17:28-07:00",
-                     "email": "%s",
-                     "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                    }
-                  ],
-                  "total": 1
-                }
-              """ % (comment0, email1))
+                return Response({
+                    'hits': [],
+                    'total': 0,
+                })
             if 'correlations/signatures' in url:
-                return Response("""
-                {
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                }
-                """)
+                return Response({
+                    'hits': [],
+                    'total': 0
+                })
 
             if (
                 '/crash_data' in url and
                 'datatype' in params and
                 params['datatype'] == 'unredacted'
             ):
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
-
+                return Response({
+                    'dump': 'some dump',
+                    'signature': 'FakeSignature1',
+                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
+                    'process_type': None,
+                })
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
 
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        url = reverse(
+            'crashstats:report_index',
+            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
+        )
         response = self.client.get(url)
-        ok_('<th>Install Time</th>' not in response.content)
+        # The heading is there but there should not be a value for it
+        ok_('<th scope="row">Install Time</th>' in response.content)
+        doc = pyquery.PyQuery(response.content)
+        # Look for a <tr> whose <th> is 'Install Time', then
+        # when we've found the row, we look at the text of its <td> child.
+        for row in doc('#details tr'):
+            if pyquery.PyQuery(row).find('th').text() == 'Install Time':
+                eq_(pyquery.PyQuery(row).find('td').text(), '')
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')

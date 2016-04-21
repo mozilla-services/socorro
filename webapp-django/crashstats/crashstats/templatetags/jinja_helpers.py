@@ -65,7 +65,15 @@ def timestamp_to_date(
     try:
         timestamp = float(timestamp)
     except (TypeError, ValueError):
-        return
+        # By returning an empty string, when using this filter in templates
+        # on an invalid value, it becomes ''. For example:
+        #
+        #  <span>{{ some_timestamp | timestamp_to_date }}</span>
+        #
+        # then becomes:
+        #
+        #  <span></span>
+        return ''
 
     dt = datetime.datetime.fromtimestamp(float(timestamp))
     return jinja2.Markup(
