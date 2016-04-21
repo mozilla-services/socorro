@@ -11,14 +11,13 @@ from copy import deepcopy
 
 from configman.dotdict import DotDict
 
-from socorrolib.lib import BadArgumentError
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     ESCrashStorage,
     ESCrashStorageRedactedSave,
+    ESCrashStorageRedactedJsonDump,
     ESBulkCrashStorage
 )
-from socorro.external.es.connection_context import ConnectionContext
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 from socorrolib.lib.datetimeutil import string_to_datetime
 
@@ -45,6 +44,9 @@ a_processed_crash = {
     'id': 361399767,
     'json_dump': {
         'things': 'stackwalker output',
+        'largest_free_vm_block': '0x2F42',
+        'tiny_block_size': 42,
+        'write_combine_size': 43,
     },
     'install_age': 22385,
     'last_crash': None,
@@ -398,6 +400,75 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             'crash_id': crash_id,
             'processed_crash': a_processed_crash_with_no_stackwalker,
+            'raw_crash': a_raw_crash
+        }
+
+        additional = {
+            'doc_type': 'crash_reports',
+            'id': crash_id,
+            'index': 'socorro_integration_test_reports'
+        }
+
+        sub_mock.index.assert_called_with(
+            body=document,
+            **additional
+        )
+
+    #-------------------------------------------------------------------------
+    @mock.patch('socorro.external.es.connection_context.elasticsearch')
+    def test_success_with_limited_json_dump_class(self, espy_mock):
+        """Test a successful index of a crash report.
+        """
+        modified_config = deepcopy(self.config)
+        modified_config.json_dump_whitelist_keys = [
+            "largest_free_vm_block",
+            "tiny_block_size",
+            "write_combine_size",
+        ]
+        modified_config.es_redactor = DotDict()
+        modified_config.es_redactor.redactor_class = Redactor
+        modified_config.es_redactor.forbidden_keys = (
+            "upload_file_minidump_flash1.json_dump, "
+            "upload_file_minidump_flash2.json_dump, "
+            "upload_file_minidump_browser.json_dump"
+        )
+
+        # It's mocks all the way down.
+        sub_mock = mock.MagicMock()
+        espy_mock.Elasticsearch.return_value = sub_mock
+
+        es_storage = ESCrashStorageRedactedJsonDump(config=modified_config)
+
+        crash_id = a_processed_crash['uuid']
+
+        # Submit a crash like normal, except that the back-end ES object is
+        # mocked (see the decorator above).
+        es_storage.save_raw_and_processed(
+            raw_crash=a_raw_crash,
+            dumps=None,
+            processed_crash=a_processed_crash,
+            crash_id=crash_id,
+        )
+
+        # Ensure that the ES objects were instantiated by ConnectionContext.
+        ok_(espy_mock.Elasticsearch.called)
+
+        # Ensure that the IndicesClient was also instantiated (this happens in
+        # IndexCreator but is part of the crashstorage workflow).
+        ok_(espy_mock.client.IndicesClient.called)
+
+        expected_processed_crash = deepcopy(
+            a_processed_crash_with_no_stackwalker
+        )
+        expected_processed_crash['json_dump'] = {
+            k: a_processed_crash['json_dump'][k]
+            for k in modified_config.json_dump_whitelist_keys
+        }
+
+        # The actual call to index the document (crash).
+        document = {
+            'crash_id': crash_id,
+            'processed_crash': expected_processed_crash,
             'raw_crash': a_raw_crash
         }
 
