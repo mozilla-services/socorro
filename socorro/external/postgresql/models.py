@@ -1425,6 +1425,54 @@ class MissingSymbols(DeclarativeBase):
     __mapper_args__ = {'primary_key': (date_processed, debug_file, debug_id)}
 
 
+class Correlations(DeclarativeBase):
+    __tablename__ = 'correlations'
+
+    #column definitions
+    id = Column(u'id', INTEGER(), primary_key=True, autoincrement=True, nullable=False)
+    product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False, index=True)
+    platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
+    signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
+    key = Column(u'key', TEXT(), nullable=False)
+    count = Column(u'count', INTEGER(), nullable=False, server_default=text('0'))
+    notes = Column(u'notes', TEXT(), primary_key=False, nullable=False, server_default='')
+    date = Column(u'date', DATE(), primary_key=False, nullable=False, index=True)
+    payload = Column(u'payload', JSON())
+
+    # When looking for signatures by the correlations you need to query by:
+    #  product_version_id
+    #  platform
+    #  date
+    #  key
+    #
+    # When looking for correlations for a specific signature you need:
+    #  product_version_id
+    #  platform
+    #  key
+    #  date
+    #  signature
+    #
+    __table_args__ = (
+        Index(
+            'correlations_signatures_idx',
+            product_version_id,
+            platform,
+            key,
+            date,
+            unique=True
+        ),
+        Index(
+            'correlations_signature_idx',
+            product_version_id,
+            platform,
+            key,
+            date,
+            signature_id,
+            unique=True
+        ),
+    )
+
+
 ###########################################
 ##  Schema definition: Aggregates
 ###########################################
