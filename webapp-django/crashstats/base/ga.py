@@ -27,7 +27,6 @@ def track_api_pageview(
     page_title=None,
     data_source='api',
     client_id=None,
-    async=True,
     **headers
 ):
     """Convenient wrapper function geared for the API calls. This way
@@ -38,7 +37,6 @@ def track_api_pageview(
         page_title=page_title,
         data_source=data_source,
         client_id=client_id,
-        async=async,
         **headers
     )
 
@@ -48,7 +46,6 @@ def track_pageview(
     page_title,
     data_source='web',
     client_id=None,
-    async=True,
     **headers
 ):
     """Trigger a HTTP POST to Google Analytics about a particular page being
@@ -125,9 +122,7 @@ def track_pageview(
     def failure_cb(exception):
         logger.error('Failed to send GA page tracking (%s)', exception)
 
-    function = async and transporter.async_send or transporter.send_sync
-
-    function(
+    transporter.async_send(
         params,
         headers,
         success_cb,
