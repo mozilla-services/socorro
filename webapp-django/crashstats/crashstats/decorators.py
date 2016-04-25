@@ -1,10 +1,13 @@
 import functools
+import urlparse
 
 from django.http import HttpResponseBadRequest, Http404
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 
 from . import utils
+from crashstats.base.ga import track_api_pageview
+
 
 _marker = object()
 
@@ -64,4 +67,22 @@ def pass_default_context(view):
                 return redirect(url)
             raise
         return view(request, *args, **kwargs)
+    return inner
+
+
+def track_api_pageview_decorator(view):
+    @functools.wraps(view)
+    def inner(request, *args, **kwargs):
+        response = view(request, *args, **kwargs)
+        if response.status_code < 500:
+            referer = request.META.get('HTTP_REFERER')
+            if referer:
+                # If the referer host is the same as the request host
+                # that implies that the API was used as an AJAX request
+                # in our main webapp itself. If so, don't track.
+                referer_host = urlparse.urlparse(referer).netloc
+                if referer_host == request.META.get('HTTP_HOST'):
+                    return response
+            track_api_pageview(request)
+        return response
     return inner

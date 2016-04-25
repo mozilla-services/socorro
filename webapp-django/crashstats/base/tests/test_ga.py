@@ -1,10 +1,15 @@
 import mock
 from raven.conf import defaults
+from nose.tools import eq_
 
 from django.test.client import RequestFactory
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
+from django.core.urlresolvers import reverse
 
+from socorrolib.lib import BadArgumentError
+
+from crashstats.crashstats.models import ProductBuildTypes
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.base.ga import track_api_pageview, track_pageview
 
@@ -172,3 +177,70 @@ class TestTrackingPageviews(DjangoTestCase):
                 'Failed to send GA page tracking (%s)',
                 errors_raised[0]
             )
+
+    @mock.patch('raven.transport.threaded_requests.AsyncWorker')
+    @mock.patch('requests.post')
+    @mock.patch('crashstats.base.ga.logger')
+    def test_api_pageview_decorator(self, logger, rpost, aw):
+        """Test when the API is actually used. No fake request object"""
+
+        # Use this mutable to keep track of executions of the mocked queue
+        queues = []
+
+        def mocked_queue(function, data, headers, success_cb, failure_cb):
+            queues.append(data)
+            # Don't need to execute the function because we're only
+            # interested in if this queue function got called.
+
+        aw().queue.side_effect = mocked_queue
+
+        # Use this mutable to keep track of executions mocked get.
+        # This helps us be certain the get method really is called.
+        gets = []
+
+        def mocked_get(**options):
+            gets.append(options)
+            if options.get('product') == '400':
+                raise BadArgumentError('product')
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
+
+        ProductBuildTypes.implementation().get = mocked_get
+
+        url = reverse('api:model_wrapper', args=('ProductBuildTypes',))
+
+        with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
+            response = self.client.get(url, {'product': 'WaterWolf'})
+            eq_(response.status_code, 200)
+            eq_(len(queues), 1)  # the mutable
+            assert len(gets) == 1
+            eq_(queues[0]['dp'], '/api/ProductBuildTypes/?product=WaterWolf')
+
+            response = self.client.get(url, {'product': '400'})
+            assert len(gets) == 2, len(gets)
+            eq_(response.status_code, 400)
+            eq_(len(queues), 2)
+            eq_(queues[1]['dp'], '/api/ProductBuildTypes/?product=400')
+
+            response = self.client.get(
+                url,
+                {'product': 'WaterWolf2'},  # different product => no cache
+                HTTP_REFERER='example.com'
+            )
+            assert len(gets) == 3, len(gets)
+            eq_(response.status_code, 200)
+            eq_(len(queues), 3)
+
+            response = self.client.get(
+                url,
+                {'product': 'WaterWolf2'},  # different product => no cache
+                HTTP_REFERER='http://example.com/page.html',
+                HTTP_HOST='example.com',
+            )
+            assert len(gets) == 3, len(gets)
+            eq_(response.status_code, 200)
+            eq_(len(queues), 3)  # no increase!
