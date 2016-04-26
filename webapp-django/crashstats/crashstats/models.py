@@ -1811,4 +1811,4 @@ class Reprocessing(SocorroMiddleware):
     )
 
     def post(self, **data):
-        return self.get_implementation().post(**data)
+        return self.get_implementation().reprocess(**data)

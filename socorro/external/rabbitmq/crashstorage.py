@@ -315,11 +315,11 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
     )
 
     def __init__(self, config, quit_check_callback=None):
-        super(ReprocessingRabbitMQCrashStore, self).__init__(
+        super(ReprocessingOneRabbitMQCrashStore, self).__init__(
             config, quit_check_callback=quit_check_callback
         )
 
-    def post(self, crash_id):
+    def reprocess(self, crash_id):
         return self.save_raw_crash(
             DotDict({'legacy_processing': 0}),
             [],
