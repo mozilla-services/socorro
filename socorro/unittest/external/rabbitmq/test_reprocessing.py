@@ -45,4 +45,4 @@ class TestReprocessing(TestCase):
             return True
 
         self.transaction_executor().side_effect = mocked_call
-        ok_(reprocessing.post('some-crash-id'))
+        ok_(reprocessing.reprocess('some-crash-id'))
