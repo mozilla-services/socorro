@@ -98,6 +98,14 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/api-tokens.min.css',
     },
+    'manage:home': {
+        'source_filenames': (
+            'crashstats/css/lib/font-awesome/css/font-awesome.css',
+            'crashstats/css/fonts.less',
+            'manage/css/home.less',
+        ),
+        'output_filename': 'css/manage-home.min.css',
+    },
     'manage:supersearch_fields': {
         'source_filenames': (
             'manage/css/supersearch_fields.less',
