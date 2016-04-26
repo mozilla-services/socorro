@@ -2,520 +2,266 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
+import re
+import datetime
+
+import ujson as json
+
+from configman.converters import class_converter, str_to_list
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorrolib.lib import datetimeutil, external_common, BadArgumentError
 
+from socorro.analysis.correlations.correlations_rule_base import (
+    CorrelationsStorageBase,
+)
 
-class Correlations(PostgreSQLBase):
+class SignatureNotFoundError(Exception):
+    """when we encounter a signature that we don't have in the database"""
+
+
+from configman import Namespace, RequiredConfig, class_converter
+
+class Correlations(CorrelationsStorageBase, PostgreSQLBase):
+
+    required_config = Namespace()
+    required_config.add_option(
+        'transaction_executor_class',
+        default="socorro.database.transaction_executor."
+        "TransactionExecutor",
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql',
+    )
+    required_config.add_option(
+        'database_class',
+        default=(
+            'socorro.external.postgresql.connection_context'
+            '.ConnectionContext'
+        ),
+        doc='the class responsible for connecting to Postgres',
+        from_string_converter=class_converter,
+        reference_value_from='resource.postgresql',
+    )
+
+    required_config.add_option(
+        'recognized_platforms',
+        default='Windows NT, Linux, Mac OS X',
+        doc='The kinds of platform names we recognize',
+        from_string_converter=str_to_list,
+    )
+
+    def __init__(self, config):
+        super(Correlations, self).__init__(config)
+        PostgreSQLBase.__init__(self, config=self.config)
 
     def get(self, **kwargs):
-        filters = [
-            ("report_date", None, "datetime"),
-            ("report_type", None, "str"),
-            ("product", None, "str"),
-            ("version", None, "str"),
-            ("signature", None, "str"),
-            ("platform", None, "str"),
-            ("min_crashes", 10, "int"),
-            ("min_baseline_diff", 0.05, "float"),
-        ]
+        raise NotImplementedError
 
-        params = external_common.parse_arguments(filters, kwargs)
+    def _prefix_to_datetime_date(self, prefix):
+        yy = int(prefix[:4])
+        mm = int(prefix[4:6])
+        dd = int(prefix[6:8])
+        return datetime.date(yy, mm, dd)
 
-        hits = []
-        if params['report_type'] == 'interesting-addons':
-            hits = self.interesting_addons(params)
-        elif params['report_type'] == 'interesting-modules':
-            hits = self.interesting_modules(params)
-        elif params['report_type'] == 'interesting-addons-with-version':
-            hits = self.interesting_addons_with_version(params)
-        elif params['report_type'] == 'interesting-modules-with-version':
-            hits = self.interesting_modules_with_version(params)
-        elif params['report_type'] == 'core-counts':
-            hits = self.core_counts(params)
-        else:
-            raise BadArgumentError(
-                'report_type',
-                received=report_type
+    def _insert_correlation(
+        self,
+        connection, # XXX really?
+        product,
+        version,
+        signature,
+        platform,
+        key,
+        count,
+        notes,
+        date,
+        payload
+    ):
+        sql = """
+            INSERT INTO correlations (
+                product_version_id,
+                platform,
+                signature_id,
+                key,
+                count,
+                notes,
+                date,
+                payload
+            ) VALUES (
+                %(product_version_id)s,
+                %(platform)s,
+                %(signature_id)s,
+                %(key)s,
+                %(count)s,
+                %(notes)s,
+                %(date)s,
+                %(payload)s
             )
-
-        return {
-            'hits': hits,
-            'total': len(hits)
-        }
-
-    def interesting_addons(self, params):
-        sql = """
-        /* socorro.external.postgresql.correlations.Correlations.get(addons)*/
-        WITH total_for_sig AS (
-            SELECT
-                sum(total)
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-        ),
-        total_for_os AS (
-            SELECT
-                sum(total)
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-        ),
-        crashes_for_sig AS (
-            SELECT
-                sum(total) AS crashes_for_sig,
-                reason_id,
-                addon_id
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-            GROUP BY addon_id, reason_id
-        ),
-        crashes_for_os AS (
-            SELECT
-                sum(total) AS crashes_for_os,
-                addon_id,
-                reason_id
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND os_name = %(platform)s
-                AND product_name = %(product)s
-                AND version_string = %(version)s
-            GROUP BY addon_id, reason_id
-        )
-        SELECT
-            (SELECT sum
-             FROM total_for_sig) AS total_for_sig,
-            (SELECT sum
-             FROM total_for_os) AS total_for_os,
-            crashes_for_sig,
-            crashes_for_os,
-            (crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float) * 100
-             AS in_sig_ratio,
-            (crashes_for_os::float / (SELECT sum FROM total_for_os)::float) * 100
-             AS in_os_ratio,
-            addon_id,
-            reason
-        FROM crashes_for_sig
-        JOIN crashes_for_os USING (addon_id, reason_id)
-        JOIN reasons USING (reason_id)
-        WHERE crashes_for_sig >= %(min_crashes)s
-        AND ((crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float)
-             - (crashes_for_os::float / (SELECT sum FROM total_for_os)::float)
-             >= %(min_baseline_diff)s)
-        ;
         """
-
-        error_message = ('Failed to retrieve correlations addon data ',
-                         'from PostgreSQL')
-        sql_results = self.query(sql, params, error_message=error_message)
-
-        fields = (
-                "total_for_sig",
-                "total_for_os",
-                "crashes_for_sig",
-                "crashes_for_os",
-                "in_sig_ratio",
-                "in_os_ratio",
-                "addon_id",
-                "reason",
+        self.insert(
+            sql,
+            {
+                'product_version_id': self.get_product_version_id(
+                    connection,
+                    product,
+                    version
+                ),
+                'platform': platform,
+                'signature_id': self.get_signature_id(connection, signature),
+                'key': key,
+                'count': count,
+                'notes': notes,
+                'date': date,
+                'payload': json.dumps(payload)
+            },
+            connection=connection
         )
 
-        return [dict(zip(fields, row)) for row in sql_results]
+    product_version_ids = {}  # cache
 
-    def interesting_modules(self, params):
-        sql = """
-        /* socorro.external.postgresql.correlations.Correlations.get(modules)*/
-        WITH total_for_sig AS (
-            SELECT
-                sum(total)
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-        ),
-        total_for_os AS (
-            SELECT
-                sum(total)
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-        ),
-        crashes_for_sig AS (
-            SELECT
-                sum(total) AS crashes_for_sig,
-                reason_id,
-                module_id
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-            GROUP BY module_id, reason_id
-        ),
-        crashes_for_os AS (
-            SELECT
-                sum(total) AS crashes_for_os,
-                module_id,
-                reason_id
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND os_name = %(platform)s
-                AND product_name = %(product)s
-                AND version_string = %(version)s
-            GROUP BY module_id, reason_id
-        )
-        SELECT
-            (SELECT sum
-             FROM total_for_sig) AS total_for_sig,
-            (SELECT sum
-             FROM total_for_os) AS total_for_os,
-            crashes_for_sig,
-            crashes_for_os,
-            (crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float) * 100
-             AS in_sig_ratio,
-            (crashes_for_os::float / (SELECT sum FROM total_for_os)::float) * 100
-             AS in_os_ratio,
-            modules.name AS module_name,
-            reason
-        FROM crashes_for_sig
-        JOIN crashes_for_os USING (module_id, reason_id)
-        JOIN reasons USING (reason_id)
-        JOIN modules USING (module_id)
-        WHERE crashes_for_sig >= %(min_crashes)s
-        AND ((crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float)
-             - (crashes_for_os::float / (SELECT sum FROM total_for_os)::float)
-             >= %(min_baseline_diff)s)
-        ;
-        """
+    def get_product_version_id(self, connection, product, version):
+        key = (product, version)
+        if key not in self.product_version_ids:
+            sql = """
+                SELECT
+                    product_version_id
+                FROM product_versions
+                WHERE
+                    product_name = %(product_name)s AND
+                    version_string = %(version_string)s
+            """
+            result, = self.query(
+                sql,
+                {
+                    'product_name': product,
+                    'version_string': version
+                },
+                connection=connection
+            )
+            product_version_id, = result
+            self.product_version_ids[key] = product_version_id
+        return self.product_version_ids[key]
 
-        error_message = ('Failed to retrieve correlations addon data ',
-                         'from PostgreSQL')
-        sql_results = self.query(sql, params, error_message=error_message)
 
-        fields = (
-            "total_for_sig",
-            "total_for_os",
-            "crashes_for_sig",
-            "crashes_for_os",
-            "in_sig_ratio",
-            "in_os_ratio",
-            "module_name",
-            "reason",
-        )
+    signature_ids = {}  # cache
 
-        return [dict(zip(fields, row)) for row in sql_results]
+    def get_signature_id(self, connection, signature):
+        # XXX WHY OH WHY IS THIS NEEDED?!
+        signature = re.sub('\|EXCEPTION_BREAKPOINT$', '', signature)
+        if signature not in self.signature_ids:
+            sql = """
+                SELECT
+                    signature_id
+                FROM signatures
+                WHERE
+                    signature = %(signature)s
+            """
+            try:
+                result, = self.query(
+                    sql,
+                    {
+                        'signature': signature,
+                    },
+                    connection=connection
+                )
+                signature_id, = result
+            except ValueError:
+                raise SignatureNotFoundError(signature)
+            self.signature_ids[signature] = signature_id
 
-    def interesting_addons_with_version(self, params):
-        sql = """
-        /* socorro.external.postgresql.correlations.Correlations.get(addons-version)*/
-        WITH total_for_sig AS (
-            SELECT
-                sum(total)
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-        ),
-        total_for_os AS (
-            SELECT
-                sum(total)
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-        ),
-        crashes_for_sig AS (
-            SELECT
-                sum(total) AS crashes_for_sig,
-                reason,
-                addon_id,
-                addon_version
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-                JOIN reasons USING (reason_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-            GROUP BY reason, addon_id, addon_version
-        ),
-        crashes_for_os AS (
-            SELECT
-                sum(total) AS crashes_for_os,
-                reason,
-                addon_id,
-                addon_version
-            FROM correlations_addon
-                JOIN product_versions USING (product_version_id)
-                JOIN reasons USING (reason_id)
-            WHERE report_date = %(report_date)s
-                AND os_name = %(platform)s
-                AND product_name = %(product)s
-                AND version_string = %(version)s
-            GROUP BY reason, addon_id, addon_version
-        )
-        SELECT
-            (SELECT sum
-             FROM total_for_sig) AS total_for_sig,
-            (SELECT sum
-             FROM total_for_os) AS total_for_os,
-            crashes_for_sig,
-            crashes_for_os,
-            (crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float) * 100
-             AS in_sig_ratio,
-            (crashes_for_os::float / (SELECT sum FROM total_for_os)::float) * 100
-             AS in_os_ratio,
-            crashes_for_sig.addon_id,
-            crashes_for_sig.addon_version,
-            crashes_for_sig.reason
-        FROM crashes_for_sig
-        JOIN crashes_for_os USING (reason, addon_id, addon_version)
-        WHERE crashes_for_sig >= %(min_crashes)s
-        AND ((crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float)
-             - (crashes_for_os::float / (SELECT sum FROM total_for_os)::float)
-             >= %(min_baseline_diff)s)
-        ;
-        """
+        return self.signature_ids[signature]
 
-        error_message = ('Failed to retrieve correlations module data ',
-                         'from PostgreSQL')
-        sql_results = self.query(sql, params, error_message=error_message)
+    def close(self):
+        """for the benefit of this class's subclasses that need to have
+        this defined."""
+        pass
 
-        fields = (
-            "total_for_sig",
-            "total_for_os",
-            "crashes_for_sig",
-            "crashes_for_os",
-            "in_sig_ratio",
-            "in_os_ratio",
-            "addon_id",
-            "addon_version",
-            "reason",
-        )
 
-        return [dict(zip(fields, row)) for row in sql_results]
 
-    def interesting_modules_with_version(self, params):
-        sql = """
-        /* socorro.external.postgresql.correlations.Correlations.get(modules-version)*/
-        WITH total_for_sig AS (
-            SELECT
-                sum(total)
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-        ),
-        total_for_os AS (
-            SELECT
-                sum(total)
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-        ),
-        crashes_for_sig AS (
-            SELECT
-                sum(total) AS crashes_for_sig,
-                reason_id,
-                module_id
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-            GROUP BY reason_id, module_id
-        ),
-        crashes_for_os AS (
-            SELECT
-                sum(total) AS crashes_for_os,
-                reason_id,
-                module_id
-            FROM correlations_module
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND os_name = %(platform)s
-                AND product_name = %(product)s
-                AND version_string = %(version)s
-            GROUP BY reason_id, module_id
-        )
-        SELECT
-            (SELECT sum
-             FROM total_for_sig) AS total_for_sig,
-            (SELECT sum
-             FROM total_for_os) AS total_for_os,
-            crashes_for_sig,
-            crashes_for_os,
-            (crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float) * 100
-             AS in_sig_ratio,
-            (crashes_for_os::float / (SELECT sum FROM total_for_os)::float) * 100
-             AS in_os_ratio,
-            name AS module_name,
-            version AS module_version,
-            reason
-        FROM crashes_for_sig
-        JOIN crashes_for_os USING (reason_id, module_id)
-        JOIN modules USING (module_id)
-        JOIN reasons USING (reason_id)
-        WHERE crashes_for_sig >= %(min_crashes)s
-        AND ((crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float)
-             - (crashes_for_os::float / (SELECT sum FROM total_for_os)::float)
-             >= %(min_baseline_diff)s)
-        ;
-        """
+class CoreCounts(Correlations):
 
-        error_message = ('Failed to retrieve correlations module data ',
-                         'from PostgreSQL')
-        sql_results = self.query(sql, params, error_message=error_message)
+    def store(
+        self,
+        counts_summary_structure,
+        prefix,
+        name,
+        key,
+    ):
+        date = self._prefix_to_datetime_date(prefix)
 
-        fields = (
-            "total_for_sig",
-            "total_for_os",
-            "crashes_for_sig",
-            "crashes_for_os",
-            "in_sig_ratio",
-            "in_os_ratio",
-            "module_name",
-            "module_version",
-            "reason",
-        )
+        notes = counts_summary_structure['notes']
+        product = key.split('_', 1)[0]
+        version = key.split('_', 1)[1]
 
-        return [dict(zip(fields, row)) for row in sql_results]
+        with self.get_connection() as connection:
 
-    def core_counts(self, params):
-        sql = """
-        /* socorro.external.postgresql.correlations.Correlations.get(cores)*/
-        WITH total_for_sig AS (
-            SELECT
-                sum(total)
-            FROM correlations_core
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-        ),
-        total_for_os AS (
-            SELECT
-                sum(total)
-            FROM correlations_core
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-        ),
-        crashes_for_sig AS (
-            SELECT
-                sum(total) AS crashes_for_sig,
-                reason,
-                cpu_arch,
-                cpu_count
-            FROM correlations_core
-                JOIN product_versions USING (product_version_id)
-                JOIN signatures USING (signature_id)
-                JOIN reasons USING (reason_id)
-            WHERE report_date = %(report_date)s
-                AND product_name = %(product)s
-                AND os_name = %(platform)s
-                AND version_string = %(version)s
-                AND signature = %(signature)s
-            GROUP BY cpu_arch, cpu_count, reason
-        ),
-        crashes_for_os AS (
-            SELECT
-                sum(total) AS crashes_for_os,
-                cpu_arch,
-                cpu_count
-            FROM correlations_core
-                JOIN product_versions USING (product_version_id)
-            WHERE report_date = %(report_date)s
-                AND os_name = %(platform)s
-                AND product_name = %(product)s
-                AND version_string = %(version)s
-            GROUP BY cpu_arch, cpu_count
-        )
-        SELECT
-            (SELECT sum
-             FROM total_for_sig) AS total_for_sig,
-            (SELECT sum
-             FROM total_for_os) AS total_for_os,
-            crashes_for_sig,
-            crashes_for_os,
-            (crashes_for_sig::float / (SELECT sum FROM total_for_sig)::float) * 100
-             AS in_sig_ratio,
-            (crashes_for_os::float / (SELECT sum FROM total_for_os)::float) * 100
-             AS in_os_ratio,
-            cpu_arch,
-            cpu_count,
-            reason
-        FROM crashes_for_sig
-        JOIN crashes_for_os USING (cpu_arch, cpu_count)
-        WHERE crashes_for_sig >= %(min_crashes)s
-        ;
-        """
+            for platform in counts_summary_structure:
+                if platform not in self.config.recognized_platforms:
+                    continue
+                count = counts_summary_structure[platform]['count']
+                signatures = counts_summary_structure[platform]['signatures']
 
-        error_message = ('Failed to retrieve correlations core data ',
-                         'from PostgreSQL')
-        sql_results = self.query(sql, params, error_message=error_message)
+                for signature, payload in signatures.items():
+                    try:
+                        self._insert_correlation(
+                            connection,
+                            product,
+                            version,
+                            signature,
+                            platform,
+                            name,
+                            count,
+                            notes,
+                            date,
+                            payload,
+                        )
+                    except SignatureNotFoundError as exp:
+                        self.config.logger.warning(
+                            'Not a recognized signature %r',
+                            exp
+                        )
 
-        fields = (
-            "total_for_sig",
-            "total_for_os",
-            "crashes_for_sig",
-            "crashes_for_os",
-            "in_sig_ratio",
-            "in_os_ratio",
-            "cpu_arch",
-            "cpu_count",
-            "reason",
-        )
 
-        return [dict(zip(fields, row)) for row in sql_results]
+class InterestingModules(Correlations):
+
+    def store(
+        self,
+        counts_summary_structure,
+        prefix,
+        name,
+        key,
+    ):
+        date = self._prefix_to_datetime_date(prefix)
+
+        notes = counts_summary_structure['notes']
+        product = key.split('_', 1)[0]
+        version = key.split('_', 1)[1]
+        os_counters = counts_summary_structure['os_counters']
+        with self.get_connection() as connection:
+            for platform in os_counters:
+                if not platform:
+                    continue
+                if platform not in self.config.recognized_platforms:
+                    continue
+                count = os_counters[platform]['count']
+                signatures = os_counters[platform]['signatures']
+
+                for signature, payload in signatures.items():
+                    try:
+                        self._insert_correlation(
+                            connection,
+                            product,
+                            version,
+                            signature,
+                            platform,
+                            name,
+                            count,
+                            notes,
+                            date,
+                            payload,
+                        )
+                    except SignatureNotFoundError as exp:
+                        self.config.logger.warning(
+                            'Not a recognized signature %r',
+                            exp
+                        )

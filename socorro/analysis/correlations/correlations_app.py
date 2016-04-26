@@ -240,7 +240,7 @@ class LocallyCachedBotoS3CrashStorage(BotoS3CrashStorage):  # pragma: no cover
                 .get_unredacted_processed(crash_id)
             )
             with open(file_path, 'w') as f:
-                json.dump(crash, f)
+                json.dump(crash, f, indent=2)
             self.config.logger.debug(
                 'Cache MISS downloading {}'.format(crash_id)
             )
