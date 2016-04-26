@@ -67,6 +67,19 @@
 
     <p>It is possible to use special aggregations as parameters of an aggregation, like here we use a "cardinality" aggregation inside a nested aggregation. This query will perform an aggregation on products, and for each product it will aggregate on versions, and for each version it will count the distinct number of install times. </p>
 
+    <h2 id="regular-expression">Regular expression</h2>
+
+    <h3>Goal</h3>
+    <p>Find signatures that start with <code>OOM | </code> and have at least another pipe (<code>|</code>). </p>
+
+    <h3>Solution</h3>
+    <div class="example">
+        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?signature=@&quot;OOM | &quot;.*&quot; | &quot;.*&amp;_facets=signature&amp;_results_number=0"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?signature=@\"OOM | \".*\" | \".*&amp;_facets=signature&amp;_results_number=0</span></code></pre>
+    </div>
+
+    <h3>Tips</h3>
+    <p>The syntax you can use to write your regexes is described in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-regexp-query.html#regexp-syntax">Elasticsearch documentation</a>. </p>
+
 </div>
 
 {% endblock %}

@@ -270,7 +270,7 @@
          */
         function getOperatorFromValue(value) {
             // These operators need to be sorted by decreasing size.
-            var operators = ['__true__', '__null__', '<=', '>=', '~', '$', '^', '=', '<', '>', '!'];
+            var operators = ['__true__', '__null__', '<=', '>=', '~', '$', '^', '=', '@', '<', '>', '!'];
             var prefix = '!';
 
             for (var i = 0, l = operators.length; i < l; i++) {

@@ -91,7 +91,7 @@
             </tr>
             <tr>
                 <td>string</td>
-                <td><code></code>, <code>~</code>, <code>=</code>, <code>$</code>, <code>^</code>, <code>__null__</code></td>
+                <td><code></code>, <code>~</code>, <code>=</code>, <code>$</code>, <code>^</code>, <code>@</code>, <code>__null__</code></td>
                 <td>Advanced type for strings, gives a lot more options. </td>
             </tr>
             <tr>
@@ -180,6 +180,12 @@
                 <td><code>$</code></td>
                 <td>string</td>
                 <td>The field ends with the given substring.</td>
+            </tr>
+            <tr>
+                <td>matches regex</td>
+                <td><code>@</code></td>
+                <td>string</td>
+                <td>The field matches the given regular expression. The accepted syntax is described in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-regexp-query.html#regexp-syntax">Elasticsearch documentation</a>.</td>
             </tr>
             <tr>
                 <td>is null</td>
