@@ -1642,14 +1642,14 @@ class TestModels(DjangoTestCase):
     def test_Reprocessing(self):
         api = models.Reprocessing()
 
-        def mocked_post(crash_id):
+        def mocked_reprocess(crash_id):
             if crash_id == 'some-crash-id':
                 return True
             elif crash_id == 'bad-crash-id':
                 return
             raise NotImplementedError(crash_id)
 
-        models.Reprocessing.implementation().post = mocked_post
+        models.Reprocessing.implementation().reprocess = mocked_reprocess
         ok_(api.post(crash_id='some-crash-id'))
         # Note that it doesn't raise an error if
         # the ReprocessingOneRabbitMQCrashStore choses NOT to queue it.
