@@ -1,5 +1,8 @@
+import cgi
 import datetime
 import time
+import urlparse
+
 from nose.tools import eq_, ok_
 from django.core.cache import cache
 
@@ -86,29 +89,90 @@ class TestBugzillaLink(TestCase):
 
 class TestBugzillaSubmitURL(TestCase):
 
+    @staticmethod
+    def _create_report(**overrides):
+        default = {
+            # 'os_name': 'Windows',
+            # 'os_pretty_version': '',
+            'signature': '$&#;deadbeef',
+            'uuid': '00000000-0000-0000-0000-000000000000',
+            'cpu_name': 'x86'
+        }
+        return dict(default, **overrides)
+
+    @staticmethod
+    def _extract_query_string(url):
+        return cgi.parse_qs(urlparse.urlparse(url).query)
+
     def test_basic_url(self):
-        url = bugzilla_submit_url()
-        eq_(
-            url,
-            'https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__'
-        )
-
-    def test_kwargs(self):
-        url = bugzilla_submit_url(foo='?&"', numbers=['one', 'two'])
+        report = self._create_report(os_name='Windows')
+        url = bugzilla_submit_url(report, 'Plugin')
         ok_(url.startswith('https://bugzilla.mozilla.org/enter_bug.cgi?'))
-        ok_('format=__default__' in url)
-        ok_('foo=%3F%26%22' in url)
-        ok_('numbers=one' in url)
-        ok_('numbers=two' in url)
+        qs = self._extract_query_string(url)
+        ok_('00000000-0000-0000-0000-000000000000' in qs['comment'][0])
+        eq_(qs['cf_crash_signature'], ['[@ $&#;deadbeef]'])
+        eq_(qs['format'], ['__default__'])
+        eq_(qs['product'], ['Plugin'])
+        eq_(qs['rep_platform'], ['x86'])
+        eq_(qs['short_desc'], ['Crash in $&#;deadbeef'])
+        eq_(qs['keywords'], ['crash'])
+        eq_(qs['op_sys'], ['Windows'])
+        eq_(qs['bug_severity'], ['critical'])
 
-        url = bugzilla_submit_url(format='different')
-        ok_('format=__default__' not in url)
-        ok_('format=different' in url)
+    def test_truncate_short_desc(self):
+        report = self._create_report(
+            os_name='Windows',
+            signature='x' * 1000
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        eq_(len(qs['short_desc'][0]), 255)
+        ok_(qs['short_desc'][0].endswith('...'))
 
-    def test_truncate_certain_keys(self):
-        url = bugzilla_submit_url(short_desc='x' * 1000)
-        ok_('x' * 1000 not in url)
-        ok_('x' * (255 - 3) + '...' in url)
+    def test_corrected_os_version_name(self):
+        report = self._create_report(
+            os_name='Windoooosws',
+            os_pretty_version='Windows 10',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        eq_(qs['op_sys'], ['Windows 10'])
+
+        # os_name if the os_pretty_version is there, but empty
+        report = self._create_report(
+            os_name='Windoooosws',
+            os_pretty_version='',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        eq_(qs['op_sys'], ['Windoooosws'])
+
+        # 'OS X <Number>' becomes 'Mac OS X'
+        report = self._create_report(
+            os_name='OS X',
+            os_pretty_version='OS X 11.1',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        eq_(qs['op_sys'], ['Mac OS X'])
+
+        # 'Windows 8.1' becomes 'Windows 8'
+        report = self._create_report(
+            os_name='Windows NT',
+            os_pretty_version='Windows 8.1',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        eq_(qs['op_sys'], ['Windows 8'])
+
+        # 'Windows Unknown' becomes plain 'Windows'
+        report = self._create_report(
+            os_name='Windows NT',
+            os_pretty_version='Windows Unknown',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        eq_(qs['op_sys'], ['Windows'])
 
 
 class TesDigitGroupSeparator(TestCase):
