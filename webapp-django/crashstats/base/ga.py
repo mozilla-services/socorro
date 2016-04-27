@@ -91,15 +91,9 @@ def track_pageview(
         params['uid'] = str(request.user.id)
 
     params['dp'] = request.path  # Page
-    if request.META.get('QUERY_STRING'):
-        params['dp'] += '?{}'.format(request.META.get('QUERY_STRING'))
+    params['dl'] = request.build_absolute_uri()
 
     params['dt'] = page_title
-
-    if request.META.get('REMOTE_ADDR'):
-        ip = request.META['REMOTE_ADDR']
-        if ip != '127.0.0.1':
-            params['uip'] = ip
 
     if request.META.get('HTTP_USER_AGENT'):
         params['ua'] = request.META['HTTP_USER_AGENT']

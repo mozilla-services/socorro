@@ -55,9 +55,10 @@ class TestTrackingPageviews(DjangoTestCase):
                 'dt': 'Test page',
                 'ds': 'web',
                 'dp': '/some/page',
+                'dl': 'http://testserver/some/page',
             }
             logger.info.assert_called_with(
-                'Successfully attempted to sent pageview to Google '
+                'Successfully attempted to send pageview to Google '
                 'Analytics (%s)',
                 params
             )
@@ -90,13 +91,13 @@ class TestTrackingPageviews(DjangoTestCase):
                 'tid': 'XYZ-123',
                 'dt': 'Test page',
                 'ds': 'web',
-                'dp': '/other/page?foo=bar',
+                'dp': '/other/page',
                 'uid': str(user.id),
                 'ua': 'testingthings 1.0',
-                'uip': '123.123.123.123',
+                'dl': 'http://testserver/other/page?foo=bar',
             }
             logger.info.assert_called_with(
-                'Successfully attempted to sent pageview to Google '
+                'Successfully attempted to send pageview to Google '
                 'Analytics (%s)',
                 params
             )
@@ -134,9 +135,10 @@ class TestTrackingPageviews(DjangoTestCase):
                 'dt': 'API (/api/SomeAPI/)',
                 'ds': 'api',
                 'dp': '/api/SomeAPI/',
+                'dl': 'http://testserver/api/SomeAPI/',
             }
             logger.info.assert_called_with(
-                'Successfully attempted to sent pageview to Google '
+                'Successfully attempted to send pageview to Google '
                 'Analytics (%s)',
                 params
             )
@@ -218,13 +220,21 @@ class TestTrackingPageviews(DjangoTestCase):
             eq_(response.status_code, 200)
             eq_(len(queues), 1)  # the mutable
             assert len(gets) == 1
-            eq_(queues[0]['dp'], '/api/ProductBuildTypes/?product=WaterWolf')
+            eq_(queues[0]['dp'], '/api/ProductBuildTypes/')
+            eq_(
+                queues[0]['dl'],
+                'http://testserver/api/ProductBuildTypes/?product=WaterWolf'
+            )
 
             response = self.client.get(url, {'product': '400'})
             assert len(gets) == 2, len(gets)
             eq_(response.status_code, 400)
             eq_(len(queues), 2)
-            eq_(queues[1]['dp'], '/api/ProductBuildTypes/?product=400')
+            eq_(queues[1]['dp'], '/api/ProductBuildTypes/')
+            eq_(
+                queues[1]['dl'],
+                'http://testserver/api/ProductBuildTypes/?product=400'
+            )
 
             response = self.client.get(
                 url,
