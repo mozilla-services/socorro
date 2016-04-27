@@ -115,7 +115,7 @@ def track_pageview(
         # Meaning, if the requests.post(...).status_code != 200, this
         # callback is still called.
         logger.info(
-            'Successfully attempted to sent pageview to Google Analytics (%s)',
+            'Successfully attempted to send pageview to Google Analytics (%s)',
             params,
         )
 
