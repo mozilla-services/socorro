@@ -14,7 +14,7 @@
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;version={{ active_versions[product][0].version }}&amp;_facets=signature&amp;_facets_size=20"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;version={{ active_versions[product][0].version }}&amp;_facets=signature&amp;_facets_size=20</span></code></pre>
+        <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product, version=active_versions[product][0].version, _facets='signature', _facets_size=20) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product, version=active_versions[product][0].version, _facets='signature', _facets_size=20) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -27,7 +27,7 @@
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;date=&gt;={{ three_days_ago }}&amp;date=&lt;{{ yesterday }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;date=&gt;={{ three_days_ago }}&amp;date=&lt;{{ yesterday }}</span></code></pre>
+        <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(product=product, date=['>=' + three_days_ago.isoformat(), '<' + yesterday.isoformat()]) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(product=product, date=['>=' + three_days_ago.isoformat(), '<' + yesterday.isoformat()]) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -42,9 +42,9 @@
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=0"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=0</span></code>
-<code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ active_versions[product][0].release }}&amp;_results_number=200&amp;_results_offset=200"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=200</span></code>
-<code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?release_channel={{ active_versions[product][0].release }}&amp;_results_number=200&amp;_results_offset=400"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?release_channel={{ active_versions[product][0].build_type }}&amp;_results_number=200&amp;_results_offset=400</span></code></pre>
+        <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=0) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=0) }}</span></code>
+<code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product][0].release, _results_number=200, _results_offset=200) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=200) }}</span></code>
+<code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(release_channel=active_versions[product][0].release, _results_number=200, _results_offset=400) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(release_channel=active_versions[product][0].build_type, _results_number=200, _results_offset=400) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -59,7 +59,7 @@
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?product={{ product }}&amp;_aggs.product.version=_cardinality.install_time"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?product={{ product }}&amp;_aggs.product.version=_cardinality.install_time</span></code></pre>
+        <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(**{'product': product, '_aggs.product.version': '_cardinality.install_time'}) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(**{'product': product, '_aggs.product.version': '_cardinality.install_time'}) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
@@ -74,7 +74,7 @@
 
     <h3>Solution</h3>
     <div class="example">
-        <pre><code data-url="{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}?signature=@&quot;OOM | &quot;.*&quot; | &quot;.*&amp;_facets=signature&amp;_results_number=0"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?signature=@\"OOM | \".*\" | \".*&amp;_facets=signature&amp;_results_number=0</span></code></pre>
+        <pre><code data-url="{{ url('api:model_wrapper', model_name='SuperSearch') }}?{{ make_query_string(signature='@"OOM | ".*" | ".*', _facets='signature', _results_number=0) }}"><span class="url-domain">{{ full_url(request, 'api:model_wrapper', model_name='SuperSearch') }}</span><span class="query-string">?{{ make_query_string(signature='@"OOM | ".*" | ".*', _facets='signature', _results_number=0) }}</span></code></pre>
     </div>
 
     <h3>Tips</h3>
