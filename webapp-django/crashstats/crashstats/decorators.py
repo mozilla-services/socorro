@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 
 from . import utils
-from crashstats.base.ga import track_api_pageview
+from crashstats.base import ga
 
 
 _marker = object()
@@ -70,7 +70,7 @@ def pass_default_context(view):
     return inner
 
 
-def track_api_pageview_decorator(view):
+def track_api_pageview(view):
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
         response = view(request, *args, **kwargs)
@@ -83,6 +83,6 @@ def track_api_pageview_decorator(view):
                 referer_host = urlparse.urlparse(referer).netloc
                 if referer_host == request.META.get('HTTP_HOST'):
                     return response
-            track_api_pageview(request)
+            ga.track_api_pageview(request)
         return response
     return inner
