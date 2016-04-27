@@ -588,6 +588,9 @@ int ConvertModulesToJSON(const ProcessState& process_state,
       HTTPSymbolSupplier::SymbolStats stats;
       if (supplier && supplier->GetStats(module, &stats)) {
         module_data["symbol_disk_cache_hit"] = stats.was_cached_on_disk;
+        if (!stats.url.empty()) {
+          module_data["symbol_url"] = stats.url;
+        }
         if (!stats.was_cached_on_disk) {
           module_data["symbol_fetch_time"] = stats.fetch_time_ms;
         }

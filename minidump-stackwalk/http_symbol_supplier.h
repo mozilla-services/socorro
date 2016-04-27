@@ -91,6 +91,9 @@ class HTTPSymbolSupplier : public SimpleSymbolSupplier {
     // If was_cached_on_disk is false, the time in milliseconds
     // that the full HTTP request to fetch the symbol file took.
     float fetch_time_ms;
+    // The URL from which this symbol was fetched. In the case
+    // of a cache hit, this is a guess.
+    string url;
   };
 
   // Get stats on symbols for a module.
@@ -104,8 +107,17 @@ class HTTPSymbolSupplier : public SimpleSymbolSupplier {
                       float* fetch_time);
   bool SymbolWasError(const CodeModule* module, const SystemInfo* system_info);
   void StoreCacheHit(const CodeModule* Module);
-  void StoreCacheMiss(const CodeModule* module, float fetch_time);
+  void StoreCacheMiss(const CodeModule* module, float fetch_time,
+                      const string& url);
   void StoreSymbolStats(const CodeModule* module, const SymbolStats& stats);
+  // Given a module, get the relative paths to locate its symbol file on disk
+  // (path) and from a URL (url).
+  bool GetRelativeURLAndPathToSymbolFile(const CodeModule* module,
+                                         string& url,
+                                         string& path);
+  // Guess what URL symbols for this module would have been loaded from,
+  // if it were not already a cache hit.
+  string GuessURL(const CodeModule* module);
 
   vector<string> server_urls_;
   string cache_path_;

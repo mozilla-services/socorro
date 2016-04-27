@@ -123,18 +123,32 @@ HTTPSymbolSupplier::StoreSymbolStats(const CodeModule* module,
   }
 }
 
+string
+HTTPSymbolSupplier::GuessURL(const CodeModule* module)
+{
+  string path, url;
+  if (!server_urls_.empty()
+      && GetRelativeURLAndPathToSymbolFile(module, url, path)) {
+    return server_urls_.front() + url;
+  }
+  return "";
+}
+
 void
 HTTPSymbolSupplier::StoreCacheHit(const CodeModule* module)
 {
-  SymbolStats stats = {true, 0.0f};
+  // We don't know the original URL, so guess that it would have
+  // been from the first URL we would have tried.
+  SymbolStats stats = {true, 0.0f, GuessURL(module)};
   StoreSymbolStats(module, stats);
 }
 
 void
 HTTPSymbolSupplier::StoreCacheMiss(const CodeModule* module,
-                                   float fetch_time)
+                                   float fetch_time,
+                                   const string& url)
 {
-  SymbolStats stats = {false, fetch_time};
+  SymbolStats stats = {false, fetch_time, url};
   StoreSymbolStats(module, stats);
 }
 
@@ -224,8 +238,11 @@ namespace {
   }
 }
 
-bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
-                                         const SystemInfo* system_info) {
+bool
+HTTPSymbolSupplier::GetRelativeURLAndPathToSymbolFile(const CodeModule* module,
+                                                      string& out_url,
+                                                      string& out_path)
+{
   // Copied from simple_symbol_supplier.cc
   string debug_file_name = PathnameStripper::File(module->debug_file());
   if (debug_file_name.empty()) {
@@ -242,11 +259,6 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
   path = JoinPath(path, identifier);
   url = JoinURL(curl_, url, identifier);
 
-  // See if we already attempted to fetch this symbol file.
-  if (SymbolWasError(module, system_info)) {
-    return false;
-  }
-
   // Transform the debug file name into one ending in .sym.  If the existing
   // name ends in .pdb, strip the .pdb.  Otherwise, add .sym to the non-.pdb
   // name.
@@ -261,8 +273,22 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
   }
 
   debug_file_name += ".sym";
-  path = JoinPath(path, debug_file_name);
-  url = JoinURL(curl_, url, debug_file_name);
+  out_path = JoinPath(path, debug_file_name);
+  out_url = JoinURL(curl_, url, debug_file_name);
+  return true;
+}
+
+bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
+                                         const SystemInfo* system_info) {
+  // See if we already attempted to fetch this symbol file.
+  if (SymbolWasError(module, system_info)) {
+    return false;
+  }
+
+  string path, url;
+  if (!GetRelativeURLAndPathToSymbolFile(module, url, path)) {
+    return false;
+  }
 
   string full_path = JoinPath(cache_path_, path);
 
@@ -273,7 +299,7 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
     string full_url = *server_url + url;
     float fetch_time;
     if (FetchURLToFile(curl_, full_url, full_path, &fetch_time)) {
-      StoreCacheMiss(module, fetch_time);
+      StoreCacheMiss(module, fetch_time, full_url);
       result = true;
       break;
     }
