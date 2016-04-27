@@ -238,11 +238,28 @@ class DailyFormBase(BaseForm):
     def clean_date_end(self):
         value = self.cleaned_data['date_end']
         if value:
-            now = datetime.datetime.utcnow()
-            if not isinstance(value, datetime.datetime):
-                now = now.date()
+            # With Django's forms.DateField() you will get
+            # a datetime.datetime object when cleaned to python. Correct that.
+            if isinstance(value, datetime.datetime):
+                value = value.date()
+            now = datetime.datetime.utcnow().date()
             if value > now:
                 raise forms.ValidationError('date_end is in the future')
+        return value
+
+    def clean_date_start(self):
+        """This is necessary to have because with Django's forms.DateField()
+        even if the incoming parsed string is '2016-04-20' the final value,
+        in python, becomes a datetime.datetime object.
+        And in clean_date_end() above, we need to make a comparison between
+        the parsed value and "now" and that has to be done as a
+        datetime.date object.
+        If we don't also do the same with start_date we can't compare
+        these two cleaned values in the clean() method below.
+        """
+        value = self.cleaned_data['date_start']
+        if value and isinstance(value, datetime.datetime):
+            value = value.date()
         return value
 
     def clean(self):

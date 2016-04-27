@@ -279,13 +279,6 @@ class TestForms(DjangoTestCase):
              'date_end': today + datetime.timedelta(days=1)},
         )
         ok_(not form.is_valid())
-        form = get_new_form(
-            forms.DailyFormByVersion,
-            {'p': 'WaterWolf',
-             'date_start': today,
-             'date_end': today + datetime.timedelta(days=1)},
-        )
-        ok_(not form.is_valid())
 
     def test_buginfoform(self):
 
