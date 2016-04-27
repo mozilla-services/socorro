@@ -104,5 +104,8 @@ urlpatterns = patterns(
     url('^crash-me-now/$',
         views.crash_me_now,
         name='crash_me_now'),
+    url('^reprocessing/$',
+        views.reprocessing,
+        name='reprocessing'),
 
 )

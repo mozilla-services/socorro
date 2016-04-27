@@ -10,10 +10,13 @@ import requests
 import time
 
 import ujson
-from configman import configuration
+from configman import configuration, Namespace
 
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
+from socorro.external.rabbitmq.crashstorage import (
+    ReprocessingOneRabbitMQCrashStore,
+)
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
@@ -44,17 +47,37 @@ class DeprecatedModelError(DeprecationWarning):
 
 
 def config_from_configman():
-    return configuration(
-        definition_source=[
-            ElasticsearchConfig.required_config,
-            PostgreSQLCrashStorage.required_config,
-            # This required_config defines the logger aggregate
-            socorro_app.App.required_config,
-        ],
+    definition_source = Namespace()
+    definition_source.namespace('logging')
+    definition_source.logging = socorro_app.App.required_config.logging
+
+    definition_source.namespace('elasticsearch')
+    definition_source.elasticsearch.add_option(
+        'elasticsearch_class',
+        default=ElasticsearchConfig,
+    )
+    definition_source.namespace('database')
+    definition_source.database.add_option(
+        'database_storage_class',
+        default=PostgreSQLCrashStorage,
+    )
+    definition_source.namespace('queuing')
+    definition_source.queuing.add_option(
+        'rabbitmq_reprocessing_class',
+        default=ReprocessingOneRabbitMQCrashStore,
+    )
+    config = configuration(
+        definition_source=definition_source,
         values_source_list=[
             settings.SOCORRO_IMPLEMENTATIONS_CONFIG,
         ]
     )
+    # The ReprocessingOneRabbitMQCrashStore crash storage, needs to have
+    # a "logger" in the config object. To avoid having to use the
+    # logger set up by configman as an aggregate, we just use the
+    # same logger as we have here in the webapp.
+    config.queuing.logger = logger
+    return config
 
 
 class Lazy(object):
@@ -368,8 +391,12 @@ class SocorroCommon(object):
             try:
                 return _implementations[key]
             except KeyError:
+                config = config_from_configman()
+                if self.implementation_config_namespace:
+                    config = config[self.implementation_config_namespace]
+
                 _implementations[key] = self.implementation(
-                    config=config_from_configman()
+                    config=config
                 )
                 return _implementations[key]
         return None
@@ -393,6 +420,10 @@ class SocorroMiddleware(SocorroCommon):
 
     # by default, assume the class to not have an implementation reference
     implementation = None
+
+    # The default, is 'database' which means it's to do with talking
+    # to a PostgreSQL based implementation.
+    implementation_config_namespace = 'database'
 
     base_url = settings.MWARE_BASE_URL
     http_host = settings.MWARE_HTTP_HOST
@@ -1764,3 +1795,20 @@ class GraphicsReport(SocorroMiddleware):
         'product',
         ('date', datetime.date),
     )
+
+
+class Reprocessing(SocorroMiddleware):
+    """Return true the supplied crash ID
+    was sucessfully submitted onto the reprocessing queue.
+    """
+
+    implementation = ReprocessingOneRabbitMQCrashStore
+
+    implementation_config_namespace = 'queuing'
+
+    required_params = (
+        'crash_id',
+    )
+
+    def post(self, **data):
+        return self.get_implementation().reprocess(**data)

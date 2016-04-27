@@ -25,7 +25,8 @@ from crashstats.crashstats.models import (
     Field,
     SkipList,
     GraphicsDevices,
-    Platforms
+    Platforms,
+    Reprocessing,
 )
 from crashstats.supersearch.models import (
     SuperSearch,
@@ -1033,3 +1034,38 @@ def crash_me_now(request):
         form = forms.CrashMeNowForm(initial=initial)
     context = {'form': form}
     return render(request, 'manage/crash_me_now.html', context)
+
+
+@superuser_required
+def reprocessing(request):
+    if request.method == 'POST':
+        form = forms.ReprocessingForm(request.POST)
+        if form.is_valid():
+            crash_id = form.cleaned_data['crash_id']
+            url = reverse('manage:reprocessing')
+            worked = Reprocessing().post(crash_id=crash_id)
+            if worked:
+                url += '?crash_id={}'.format(crash_id)
+                messages.success(
+                    request,
+                    '{} sent in for reprocessing.'.format(crash_id)
+                )
+            else:
+                messages.error(
+                    request,
+                    'Currently unable to send in the crash ID '
+                    'for reprocessing.'
+                )
+            log(request.user, 'reprocessing', {
+                'crash_id': crash_id,
+                'worked': worked,
+            })
+
+            return redirect(url)
+    else:
+        form = forms.ReprocessingForm()
+    context = {
+        'form': form,
+        'crash_id': request.GET.get('crash_id'),
+    }
+    return render(request, 'manage/reprocessing.html', context)

@@ -14,13 +14,13 @@ from configman import (
     Namespace,
     class_converter
 )
-from socorro.external.rabbitmq.connection_context import (
-    ConnectionContextPooled
-)
-from socorro.external.crashstorage_base import (
-    CrashStorageBase,
-)
+from configman.dotdict import DotDict
 from socorrolib.lib.converters import change_default
+from socorro.external.rabbitmq.connection_context import (
+    ConnectionContext,
+    ConnectionContextPooled,
+)
+from socorro.external.crashstorage_base import CrashStorageBase
 
 
 #==============================================================================
@@ -75,7 +75,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         doc='percentage of the time that rabbit will try to queue',
         reference_value_from='resource.rabbitmq',
     )
-
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -135,6 +134,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                 'RabbitMQCrashStorage saving crash %s', crash_id
             )
             self.transaction(self._save_raw_crash_transaction, crash_id)
+            return True
         else:
             self.config.logger.debug(
                 'RabbitMQCrashStorage not saving crash %s, legacy processing '
@@ -234,10 +234,10 @@ class RabbitMQCrashStorage(CrashStorageBase):
             while True:
                 crash_id_to_be_acknowledged = \
                     self.acknowledgment_queue.get_nowait()
-                #self.config.logger.debug(
-                    #'RabbitMQCrashStorage set to acknowledge %s',
-                    #crash_id_to_be_acknowledged
-                #)
+                # self.config.logger.debug(
+                #     'RabbitMQCrashStorage set to acknowledge %s',
+                #     crash_id_to_be_acknowledged
+                # )
                 try:
                     acknowledgement_token = \
                         self.acknowledgement_token_cache[
@@ -258,7 +258,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
                         crash_id_to_be_acknowledged,
                         exc_info=True
                     )
-                except Exception as x:
+                except Exception:
                     self.config.logger.error(
                         'RabbitMQCrashStorage unexpected failure on %s',
                         crash_id_to_be_acknowledged,
@@ -299,3 +299,24 @@ class ReprocessingRabbitMQCrashStore(RabbitMQCrashStorage):
         False
     )
 
+
+#==============================================================================
+class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
+    required_config = Namespace()
+    required_config.rabbitmq_class = change_default(
+        RabbitMQCrashStorage,
+        'rabbitmq_class',
+        ConnectionContext,
+    )
+    required_config.routing_key = change_default(
+        RabbitMQCrashStorage,
+        'routing_key',
+        'socorro.reprocessing'
+    )
+
+    def reprocess(self, crash_id):
+        return self.save_raw_crash(
+            DotDict({'legacy_processing': 0}),
+            [],
+            crash_id
+        )
