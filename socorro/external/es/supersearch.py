@@ -213,7 +213,18 @@ class SuperSearch(SearchBase):
                     elif param.name == '_results_number':
                         results_number = param.value[0]
                         if results_number > 1000:
-                            raise BadArgumentError('_results_number too large')
+                            raise BadArgumentError(
+                                '_results_number',
+                                msg=(
+                                    '_results_number cannot be greater '
+                                    'than 1,000'
+                                )
+                            )
+                        if results_number < 0:
+                            raise BadArgumentError(
+                                '_results_number',
+                                msg='_results_number cannot be negative'
+                            )
                     elif param.name == '_facets_size':
                         facets_size = param.value[0]
 

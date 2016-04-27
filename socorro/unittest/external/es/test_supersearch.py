@@ -110,6 +110,12 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('write_combine_size' in res['hits'][0])
 
     @minimum_es_version('1.0')
+    def test_get_with_bad_results_number(self):
+        """Run a very basic test, just to see if things work. """
+        with assert_raises(BadArgumentError):
+            self.api.get(_columns=['date'], _results_number=-1)
+
+    @minimum_es_version('1.0')
     def test_get_with_enum_operators(self):
         self.index_crash({
             'product': 'WaterWolf',
