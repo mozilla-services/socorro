@@ -2813,6 +2813,10 @@ class TestViews(BaseTestViews):
                     'signature': 'FakeSignature1',
                     'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
                     'process_type': None,
+                    'os_name': 'Windows NT',
+                    'product': 'WaterWolf',
+                    'version': '1.0',
+                    'cpu_name': 'amd64',
                 })
 
             raise NotImplementedError(url)
@@ -2867,6 +2871,10 @@ class TestViews(BaseTestViews):
                     'signature': 'FakeSignature1',
                     'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
                     'process_type': None,
+                    'os_name': 'Windows NT',
+                    'product': 'WaterWolf',
+                    'version': '1.0',
+                    'cpu_name': 'amd64',
                 })
             raise NotImplementedError(url)
 

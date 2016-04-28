@@ -153,24 +153,50 @@ def read_crash_column(crash, column_key):
 
 
 @library.global_function
-def bugzilla_submit_url(**kwargs):
+def bugzilla_submit_url(report, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
 
-    # some special keys have to be truncated to make Bugzilla happy
-    limits = {
-        # the summary field in bugzilla is max 255 chars
-        'short_desc': 255,
+    op_sys = report.get('os_pretty_version') or report['os_name']
+    # At the time of writing, these pretty versions of the OS name
+    # don't perfectly fit with the drop-down choices that Bugzilla
+    # has in its OS drop-down. So we have to make some adjustments.
+    if op_sys.startswith('OS X '):
+        op_sys = 'Mac OS X'
+    elif op_sys == 'Windows 8.1':
+        op_sys = 'Windows 8'
+    elif op_sys in ('Windows Unknown', 'Windows 2000'):
+        op_sys = 'Windows'
+
+    kwargs = {
+        'bug_severity': 'critical',
+        'keywords': 'crash',
+        'product': bug_product,
+        'op_sys': op_sys,
+        'rep_platform': report['cpu_name'],
+        'cf_crash_signature': '[@ {}]'.format(report['signature']),
+        'short_desc': 'Crash in {}'.format(report['signature']),
+        'comment': (
+            'This bug was filed from the Socorro interface and is \n'
+            'report bp-{}.\n'
+            '{}'
+            '\n'
+        ).format(
+            report['uuid'],
+            '=' * 61
+        ),
     }
-    for key in limits:
-        if kwargs.get(key) and len(kwargs.get(key)) > limits[key]:
-            kwargs[key] = kwargs[key][:limits[key] - 3] + '...'
-    if 'format' not in kwargs:
-        # People who are new to bugzilla automatically get the more
-        # basic, "guided format". for entering bugs. This unfortunately
-        # means that all the parameters we pass along gets lost when
-        # the user makes it to the second page. Let's prevent that.
-        # See https://bugzilla.mozilla.org/show_bug.cgi?id=1238212
-        kwargs['format'] = '__default__'
+
+    # some special keys have to be truncated to make Bugzilla happy
+    if len(kwargs['short_desc']) > 255:
+        kwargs['short_desc'] = kwargs['short_desc'][:255 - 3] + '...'
+
+    # People who are new to bugzilla automatically get the more
+    # basic, "guided format". for entering bugs. This unfortunately
+    # means that all the parameters we pass along gets lost when
+    # the user makes it to the second page. Let's prevent that.
+    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1238212
+    kwargs['format'] = '__default__'
+
     url += '?' + urllib.urlencode(kwargs, True)
     return url
 

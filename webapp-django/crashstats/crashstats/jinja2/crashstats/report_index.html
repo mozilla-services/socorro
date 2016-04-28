@@ -382,21 +382,12 @@
                         <p>
                             <strong>Bugzilla</strong> - Report this bug in
                             {% for bug_product in [report.product, 'Core', 'Plugins', 'Toolkit'] %}
-                            {% if bug_product in bug_product_map %}
-                            {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
-                            {% endif %}
-                            <a href="{{ bugzilla_submit_url(
-                                        bug_severity='critical',
-                                        keywords='crash',
-                                        product=bug_product,
-                                        op_sys=report.os_name,
-                                        rep_platform=report.cpu_name,
-                                        cf_crash_signature='[@ ' + report.signature + ']',
-                                        short_desc='crash in ' + report.signature,
-                                        comment='This bug was filed from the Socorro interface and is \nreport bp-' + report.uuid + '.\n=============================================================\n',
-                                        ) }}" target="_blank">{{ bug_product }}</a>
-
-
+                                {% if bug_product in bug_product_map %}
+                                    {% set bug_product = BUG_PRODUCT_MAP[bug_product] %}
+                                {% endif %}
+                                <a
+                                    href="{{ bugzilla_submit_url(report, bug_product) }}"
+                                    target="_blank">{{ bug_product }}</a>
                             {% endfor %}
                         </p>
 
