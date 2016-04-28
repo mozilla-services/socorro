@@ -2,7 +2,7 @@ import datetime
 
 from django import http
 
-from crashstats.api import forms
+from crashstats.tools import forms
 from crashstats.crashstats import models
 from crashstats.supersearch.models import SuperSearch
 
@@ -15,6 +15,8 @@ class NewSignatures(models.SocorroMiddleware):
         ('start_date', datetime.date),
         ('end_date', datetime.date),
         ('not_after', datetime.date),
+        ('product', list),
+        ('version', list),
     )
 
     def get(self, **kwargs):
@@ -47,7 +49,8 @@ class NewSignatures(models.SocorroMiddleware):
         # First let's get a list of the top signatures that appeared during
         # the period we are interested in.
         params = {
-            'product': 'Firefox',
+            'product': form.cleaned_data['product'],
+            'version': form.cleaned_data['version'],
             'date': [
                 '>=' + start_date.isoformat(),
                 '<' + end_date.isoformat(),

@@ -1255,6 +1255,11 @@ class TestViews(BaseTestViews):
     def test_NewSignatures(self):
 
         def mocked_supersearch_get(**params):
+            eq_(params['product'], [settings.DEFAULT_PRODUCT])
+
+            if 'version' in params:
+                eq_(params['version'], ['1.0', '2.0'])
+
             if 'signature' not in params:
                 # Return a list of signatures.
                 signatures = [
@@ -1291,6 +1296,12 @@ class TestViews(BaseTestViews):
         ]
         res = json.loads(response.content)
         eq_(res['hits'], res_expected)
+
+        # Test with versions.
+        response = self.client.get(url, {
+            'version': ['1.0', '2.0']
+        })
+        eq_(response.status_code, 200)
 
         # Test with incorrect arguments.
         response = self.client.get(url, {
