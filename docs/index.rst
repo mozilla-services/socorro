@@ -27,7 +27,7 @@ We welcome contributions!
 
 See http://wiki.mozilla.org/Breakpad for up-to-date information about development team activity and our meetings.
 
-This documentation is `available on readthedocs <http://socorro.readthedocs.org>`_. The source and current development activity is `available on Github <https://github.com/mozilla/socorro/tree/master>`_.
+This documentation is `available on readthedocs <https://socorro.readthedocs.io>`_. The source and current development activity is `available on Github <https://github.com/mozilla/socorro/tree/master>`_.
 
 The Socorro development mailing list is https://lists.mozilla.org/listinfo/tools-socorro
 

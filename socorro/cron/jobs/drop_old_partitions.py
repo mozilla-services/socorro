@@ -17,7 +17,7 @@ class DropOldPartitionsCronApp(BaseCronApp):
     app_name = 'drop-old-partitions'
     app_version = '1.0'
     app_description = """See
-    http://socorro.readthedocs.org/en/latest/development
+    https://socorro.readthedocs.io/en/latest/development
     /databaseadminfunctions.html#drop-old-partitions
     See https://bugzilla.mozilla.org/show_bug.cgi?id=1014128
     """

@@ -5,7 +5,7 @@
 # bring up components, submit test crash, ensure that it shows up in
 # reports tables.
 #
-# This uses the same setup as http://socorro.readthedocs.org/en/latest/installation.html
+# This uses the same setup as https://socorro.readthedocs.io/en/latest/installation.html
 
 echo "this is integration-test.sh"
 
