@@ -13,7 +13,15 @@ Top Crashers for {{ product }} {{ version }}
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <div class="page-heading">
             <p class="old-new-report-link">
-                <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ version }}&amp;date_range_type={{ date_range_type }}&amp;process_type={{ crash_type.replace('all', 'any') }}&amp;platform={{ os_name }}&amp;_facets_size={{ result_count }}&amp;days={{ days }}">
+                <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                    product=product,
+                    version=version,
+                    date_range_type=date_range_type,
+                    process_type=crash_type.replace('all', 'any'),
+                    platform=os_name,
+                    _facets_size=result_count,
+                    days=days,
+                ) }}">
                     View the <b>new</b> <i>Top Crashers</i> report
                 </a>
             </p>
@@ -122,7 +130,14 @@ Top Crashers for {{ product }} {{ version }}
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td class="signature-column">
-                            <a class="signature" href="{{ url('crashstats:report_list') }}?product={{ product }}&amp;range_value={{ days }}&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature|urlencode }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
+                            <a class="signature" href="{{ url('crashstats:report_list') }}?{{ make_query_string(
+                                product=product,
+                                range_value=days,
+                                range_unit='days',
+                                date=tcbs.end_date,
+                                signature=crash.signature,
+                                version=product + ':' + version,
+                            ) }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
                                 <img src="{{ static('img/3rdparty/fatcow/stop16x16.png') }}" alt="Hanged Crash" title="Hanged Crash" class="hang" height="16" width="16">

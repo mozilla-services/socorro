@@ -169,7 +169,12 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                         {% endif %}
                         <td class="signature-column">
                             <a class="signature"
-                                href="{{ url('signature:signature_report') }}?product={{ product }}&amp;signature={{ crash.signature | urlencode }}&amp;version={{ version }}&amp;date={{ ('<' + query.end_date.isoformat()) | urlencode }}&amp;date={{ ('>=' + query.start_date.isoformat()) | urlencode }}" title="{{ crash.signature }}"
+                                href="{{ url('signature:signature_report') }}?{{ make_query_string(
+                                    product=product,
+                                    signature=crash.signature,
+                                    version=version,
+                                    date=['<' + query.end_date.isoformat(), '>=' + query.start_date.isoformat()],
+                                ) }}" title="{{ crash.signature }}"
                             >
                                 {{ crash.signature | truncate(length=80, killwords=True) }}
                             </a>

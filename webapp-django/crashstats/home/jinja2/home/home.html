@@ -71,12 +71,21 @@ Crash Data for {{ product }}
                     <h4>{{product}} {{version}}</h4>
                     <ul>
                         <li>
-                            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ version }}&amp;days={{days}}">
+                            <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                product=product,
+                                version=version,
+                                days=days,
+                            ) }}">
                                 Top Crashers
                             </a>
                         </li>
                         <li>
-                            <a href="{{ url('topcrashers:topcrashers') }}?product={{ product }}&amp;version={{ version }}&amp;process_type=plugin&amp;days={{days}}">
+                            <a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                                product=product,
+                                version=version,
+                                process_type='plugin',
+                                days=days,
+                            ) }}">
                                 Top Plugin Crashers
                             </a>
                         </li>

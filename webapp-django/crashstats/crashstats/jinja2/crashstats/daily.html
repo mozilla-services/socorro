@@ -165,11 +165,7 @@
             <h2>Crashes per ADI</h2>
             <div class="choices">
                 <ul>
-                    {% if request.META.get('QUERY_STRING') %}
-                    <li><a href="?{{ request.META.get('QUERY_STRING') }}&amp;format=csv">csv</a></li>
-                    {% else %}
-                    <li><a href="?format=csv">csv</a></li>
-                    {% endif %}
+                    <li><a href="{{ change_query_string(format='csv') }}">csv</a></li>
                 </ul>
             </div>
         </div>
