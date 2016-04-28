@@ -439,7 +439,7 @@ class Crashes(PostgreSQLBase):
     def get_signatures(self, **kwargs):
         """Return top crashers by signatures.
 
-        See http://socorro.readthedocs.org/en/latest/middleware.html#tcbs
+        See https://socorro.readthedocs.io/en/latest/middleware.html#tcbs
         """
         filters = [
             ("product", None, "str"),
@@ -466,7 +466,7 @@ class Crashes(PostgreSQLBase):
     def get_signature_history(self, **kwargs):
         """Return the history of a signature.
 
-        See http://socorro.readthedocs.org/en/latest/middleware.html
+        See https://socorro.readthedocs.io/en/latest/middleware.html
         """
         now = datetimeutil.utc_now()
         lastweek = now - datetime.timedelta(days=7)
