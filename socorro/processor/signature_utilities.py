@@ -517,6 +517,7 @@ class CSignatureTool(CSignatureToolBase):
           'SocketWritev',
           'ssl_.*',
           'SSL_.*',
+          'std::_Allocate.*',
           'strcat',
           'ssl3_.*',
           'strchr',
