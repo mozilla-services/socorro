@@ -1,4 +1,3 @@
-import cgi
 import datetime
 import time
 import urlparse
@@ -92,8 +91,6 @@ class TestBugzillaSubmitURL(TestCase):
     @staticmethod
     def _create_report(**overrides):
         default = {
-            # 'os_name': 'Windows',
-            # 'os_pretty_version': '',
             'signature': '$&#;deadbeef',
             'uuid': '00000000-0000-0000-0000-000000000000',
             'cpu_name': 'x86'
@@ -102,7 +99,7 @@ class TestBugzillaSubmitURL(TestCase):
 
     @staticmethod
     def _extract_query_string(url):
-        return cgi.parse_qs(urlparse.urlparse(url).query)
+        return urlparse.parse_qs(urlparse.urlparse(url).query)
 
     def test_basic_url(self):
         report = self._create_report(os_name='Windows')

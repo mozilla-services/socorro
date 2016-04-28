@@ -176,7 +176,7 @@ def bugzilla_submit_url(report, bug_product):
         'cf_crash_signature': '[@ {}]'.format(report['signature']),
         'short_desc': 'Crash in {}'.format(report['signature']),
         'comment': (
-            'This bug was filed from the Socorro interface is \n'
+            'This bug was filed from the Socorro interface and is \n'
             'report bp-{}.\n'
             '{}'
             '\n'
