@@ -1,4 +1,4 @@
-import cgi
+import urlparse
 import urllib
 
 import jinja2
@@ -76,7 +76,7 @@ def change_query_string(context, **kwargs):
         base = ''
     else:
         base = context['request'].META['PATH_INFO']
-    qs = cgi.parse_qs(context['request'].META['QUERY_STRING'])
+    qs = urlparse.parse_qs(context['request'].META['QUERY_STRING'])
     for key, value in kwargs.items():
         if value is None:
             # delete the parameter
@@ -89,3 +89,8 @@ def change_query_string(context, **kwargs):
     if new_qs:
         return '%s?%s' % (base, new_qs)
     return base
+
+
+@library.global_function
+def make_query_string(**kwargs):
+    return urllib.urlencode(kwargs, True)

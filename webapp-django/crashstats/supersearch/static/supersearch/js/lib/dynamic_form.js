@@ -98,6 +98,8 @@
             '!^': 'does not start with',
             '$': 'ends with',
             '!$': 'does not end with',
+            '@': 'matches regex',
+            '!@': 'does not match regex',
             '>': '>',
             '>=': '>=',
             '<': '<',
@@ -112,7 +114,7 @@
         // value when no operator is passed for a field.
         var OPERATORS_BASE = ['has', '!'];
         var OPERATORS_RANGE = ['>', '>=', '<', '<='];
-        var OPERATORS_REGEX = ['~', '=', '$', '^', '!=', '!~', '!$', '!^'];
+        var OPERATORS_REGEX = ['~', '=', '$', '^', '@', '!=', '!~', '!$', '!^', '!@'];
         var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
         var OPERATORS_BOOLEAN = ['__true__', '!__true__'];
 
@@ -268,7 +270,7 @@
          */
         function getOperatorFromValue(value) {
             // These operators need to be sorted by decreasing size.
-            var operators = ['__true__', '__null__', '<=', '>=', '~', '$', '^', '=', '<', '>', '!'];
+            var operators = ['__true__', '__null__', '<=', '>=', '~', '$', '^', '=', '@', '<', '>', '!'];
             var prefix = '!';
 
             for (var i = 0, l = operators.length; i < l; i++) {
