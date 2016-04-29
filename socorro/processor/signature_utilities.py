@@ -430,6 +430,7 @@ class CSignatureTool(CSignatureToolBase):
           'moz_free',
           'mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame',
           'mozilla::CondVar::.*',
+          'mozilla::ipc::LogicError',
           'mozilla::ipc::MessageChannel::Send',
           'mozilla::ipc::RPCChannel::Call',
           'mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame',
