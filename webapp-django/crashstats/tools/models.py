@@ -1,6 +1,7 @@
 import datetime
 
 from django import http
+from django.conf import settings
 
 from crashstats.tools import forms
 from crashstats.crashstats import models
@@ -30,7 +31,9 @@ class NewSignatures(models.SocorroMiddleware):
         start_date = form.cleaned_data['start_date']
         end_date = form.cleaned_data['end_date']
         not_after = form.cleaned_data['not_after']
+        product = form.cleaned_data['product'] or settings.DEFAULT_PRODUCT
 
+        # Make default values for all dates parameters.
         if not end_date:
             end_date = (
                 datetime.datetime.utcnow().date() + datetime.timedelta(days=1)
@@ -49,7 +52,7 @@ class NewSignatures(models.SocorroMiddleware):
         # First let's get a list of the top signatures that appeared during
         # the period we are interested in.
         params = {
-            'product': form.cleaned_data['product'],
+            'product': product,
             'version': form.cleaned_data['version'],
             'date': [
                 '>=' + start_date.isoformat(),
