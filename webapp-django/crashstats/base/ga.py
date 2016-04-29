@@ -104,7 +104,7 @@ def track_pageview(
     )
 
     def success_cb():
-        # Note! This will trigger as long as there's not python exception
+        # Note! This will trigger as long as there's no python exception
         # happening inside the send.
         # Meaning, if the requests.post(...).status_code != 200, this
         # callback is still called.
@@ -114,7 +114,13 @@ def track_pageview(
         )
 
     def failure_cb(exception):
-        logger.error('Failed to send GA page tracking (%s)', exception)
+        # This can happen if it fails to make the connection to the
+        # remote. E.g. ssl.google-analytics.com
+        # If the HTTP connection is made but, for some reason, GA
+        # refuses the call or they timeout or any other 5xx error,
+        # then this will NOT be a failure callback. In fact, the
+        # success callback will be executed.
+        logger.exception('Failed to send GA page tracking')
 
     transporter.async_send(
         params,
