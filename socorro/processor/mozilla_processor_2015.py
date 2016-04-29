@@ -75,6 +75,7 @@ mozilla_processor_rule_sets = [
         "socorrolib.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.processor.breakpad_transform_rules.JitCrashCategorizeRule, "
+        "socorro.processor.signature_utilities.SignatureJitCategory, "
     ],
     [   # a set of special request classifiers
         "skunk_classifiers",

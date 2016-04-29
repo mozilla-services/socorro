@@ -19,6 +19,7 @@ from socorro.processor.signature_utilities import (
     OOMSignature,
     SigTrunc,
     StackwalkerErrorSignatureRule,
+    SignatureJitCategory,
     SignatureRunWatchDog,
 )
 from socorro.unittest.testbase import TestCase
@@ -1608,6 +1609,7 @@ class TestSigTrunc(TestCase):
         eq_(len(pc.signature), 255)
         ok_(pc.signature.endswith('9...'))
 
+
 #==============================================================================
 class TestStackwalkerErrorSignatureRule(TestCase):
 
@@ -1741,3 +1743,70 @@ class TestSignatureWatchDogRule(TestCase):
             '_________________'
         )
         eq_(processor_meta.processor_notes, [])
+
+
+#==============================================================================
+class TestSignatureJitCategory(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = SignatureJitCategory(config)
+
+        processed_crash = DotDict()
+        processed_crash.classifications = DotDict()
+
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+        processed_crash.classifications.jit = DotDict()
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+        processed_crash.classifications.jit.category = ''
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = SignatureJitCategory(config)
+
+        processed_crash = DotDict()
+        processed_crash.classifications = {
+            'jit': {
+                'category': 'JIT Crash'
+            }
+        }
+
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = SignatureJitCategory(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'foo::bar'
+        processed_crash.classifications = {
+            'jit': {
+                'category': 'JIT Crash'
+            }
+        }
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        action_result = rule.action({}, {}, processed_crash, processor_meta)
+        ok_(action_result)
+        eq_(processed_crash.signature, 'jit | JIT Crash')
+        eq_(
+            processor_meta.processor_notes,
+            ['Signature replaced with a JIT Crash Category, was: foo::bar']
+        )

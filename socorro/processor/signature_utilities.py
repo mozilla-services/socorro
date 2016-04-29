@@ -970,3 +970,31 @@ class SignatureRunWatchDog(SignatureGenerationRule):
             "shutdownhang | %s" % processed_crash['signature']
         )
         return result
+
+
+#==============================================================================
+class SignatureJitCategory(Rule):
+    """replaces the signature if there is a JIT classification in the crash"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return (
+            processed_crash.get('classifications') and
+            processed_crash.classifications.get('jit') and
+            processed_crash['classifications']['jit'].get('category')
+        )
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processor_meta.processor_notes.append(
+            'Signature replaced with a JIT Crash Category, '
+            'was: {}'.format(processed_crash.signature)
+        )
+        processed_crash.signature = "jit | {}".format(
+            processed_crash.classifications['jit']['category']
+        )
+        return True
