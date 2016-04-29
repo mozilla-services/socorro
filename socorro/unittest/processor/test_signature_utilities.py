@@ -99,7 +99,6 @@ class TestCSignatureTool(BaseTestClass):
         )
         fixupSpace = re.compile(r' (?=[\*&,])')
         fixupComma = re.compile(r',(?! )')
-        fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
         s, c = self.setup_config_C_sig_tool(
             expectedRegEx.irrelevant_signature_re,
@@ -134,7 +133,6 @@ class TestCSignatureTool(BaseTestClass):
         )
         fixupSpace = re.compile(r' (?=[\*&,])')
         fixupComma = re.compile(r',(?! )')
-        fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
         s, c = self.setup_db_C_sig_tool()
 
@@ -1078,7 +1076,6 @@ frames_from_json_dump_with_templates_and_special_case = {
 }
 
 
-
 sample_json_dump = {
     u'json_dump': {
         u'system_info': {
@@ -1090,7 +1087,7 @@ sample_json_dump = {
             u'type': u'EXCEPTION_BREAKPOINT'
         },
         u'crashing_thread': frames_from_json_dump,
-        u'threads':  [ frames_from_json_dump ]
+        u'threads': [frames_from_json_dump]
 
     }
 }
@@ -1106,7 +1103,7 @@ sample_json_dump_with_templates = {
             u'type': u'EXCEPTION_BREAKPOINT'
         },
         u'crashing_thread': frames_from_json_dump_with_templates,
-        u'threads':  [ frames_from_json_dump_with_templates ]
+        u'threads': [frames_from_json_dump_with_templates]
 
     }
 }
@@ -1123,7 +1120,7 @@ sample_json_dump_with_templates_and_special_case = {
         },
         u'crashing_thread':
             frames_from_json_dump_with_templates_and_special_case,
-        u'threads':  [ frames_from_json_dump_with_templates_and_special_case ]
+        u'threads': [frames_from_json_dump_with_templates_and_special_case]
 
     }
 }
@@ -1172,7 +1169,7 @@ class TestSignatureGeneration(TestCase):
                     CSignatureTool.required_config
                     .signatures_with_line_numbers_re.default
                 ),
-                'collapse_arguments':  True,
+                'collapse_arguments': True,
             },
             'java_signature': {
                 'java_signature_tool_class': JavaSignatureTool,
@@ -1187,7 +1184,6 @@ class TestSignatureGeneration(TestCase):
 
         ok_(isinstance(sgr.c_signature_tool, CSignatureTool))
         ok_(isinstance(sgr.java_signature_tool, JavaSignatureTool))
-
 
     #--------------------------------------------------------------------------
     def test_create_frame_list_1(self):
@@ -1366,8 +1362,6 @@ class TestSignatureGeneration(TestCase):
             'F_1428703866________________________________'
         )
         eq_(processor_meta.processor_notes, [])
-
-
 
     #--------------------------------------------------------------------------
     def test_action_3(self):
@@ -1624,7 +1618,6 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(not predicate_result)
 
-
     #--------------------------------------------------------------------------
     def test_predicate(self):
         pc = DotDict()
@@ -1698,7 +1691,6 @@ class TestSignatureWatchDogRule(TestCase):
 
         eq_(srwd._get_crashing_thread({}), 0)
 
-
     #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
@@ -1718,7 +1710,6 @@ class TestSignatureWatchDogRule(TestCase):
             'signature': "mozilla::(anonymous namespace)::RunWatchdog",
         }
         ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
-
 
     #--------------------------------------------------------------------------
     def test_action(self):
