@@ -33,7 +33,9 @@
             <tr>
                 <td>{{ field }}</td>
                 <td>
-                    <a href="{{ url('manage:supersearch_field') }}?full_name={{ field | urlencode }}">
+                    <a href="{{ url('manage:supersearch_field') }}?{{ make_query_string(
+                        full_name=field,
+                        ) }}">
                         Create this field
                     </a>
                 </td>

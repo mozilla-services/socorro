@@ -54,7 +54,13 @@
         {% endif %}
     </ul>
 
-    <div id="sigsummary" data-url="{{ url('crashstats:signature_summary') }}?range_value={{ current_day }}&amp;range_unit=days&amp;signature={{ signature|urlencode }}{% for product_version in product_versions %}&amp;version={{ product_version }}{% endfor %}&amp;date={{ end_date | urlencode }}">
+    <div id="sigsummary" data-url="{{ url('crashstats:signature_summary') }}?{{ make_query_string(
+        range_value=current_day,
+        range_unit='days',
+        signature=signature,
+        version=product_versions,
+        date=end_date,
+    ) }}">
 
         <p class="loading-placeholder">
             <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading signature summary...
@@ -65,12 +71,17 @@
         </p>
 
         <div class="inner">
-            {# the signature_summary.html doesn't contain any generated data so no point in loading it as a partial #} {% include "crashstats/signature_summary.html" %}
+            {# the signature_summary.html doesn't contain any generated data so no point in loading it as a partial #}
+            {% include "crashstats/signature_summary.html" %}
         </div>
 
     </div>
 
-    <div id="graph" class="ui-tabs-hide" data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}" data-jsonurl="{{ url('crashstats:adu_by_signature_json') }}" data-signature="{{ signature }}" data-product="{{ product }}">
+    <div id="graph" class="ui-tabs-hide"
+        data-partial-url="{{ url('crashstats:report_list_partial', 'graph') }}"
+        data-jsonurl="{{ url('crashstats:adu_by_signature_json') }}"
+        data-signature="{{ signature }}"
+        data-product="{{ product }}">
 
         <p class="loading-placeholder">
             <img src="{{ static('img/loading.png') }}" alt="Loading"> Loading content...
