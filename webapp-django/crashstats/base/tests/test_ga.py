@@ -175,9 +175,8 @@ class TestTrackingPageviews(DjangoTestCase):
             # working.
             assert errors_raised
 
-            logger.error.assert_called_with(
-                'Failed to send GA page tracking (%s)',
-                errors_raised[0]
+            logger.exception.assert_called_with(
+                'Failed to send GA page tracking'
             )
 
     @mock.patch('raven.transport.threaded_requests.AsyncWorker')
