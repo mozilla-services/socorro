@@ -732,3 +732,18 @@ CRONTABBER_STALE_MINUTES = config(
     # to a higher default.
     default=60 * 2
 )
+
+# URL to send the Google Analytics pageviews and event tracking.
+# The value of this is extremely unlikely to change any time soon,
+GOOGLE_ANALYTICS_API_URL = config(
+    'GOOGLE_ANALYTICS_API_URL',
+    'https://ssl.google-analytics.com/collect'
+)
+
+# If calls to the Google Analytics API are done asynchronously, this
+# value can be quite high (5-10 seconds).
+GOOGLE_ANALYTICS_API_TIMEOUT = config(
+    'GOOGLE_ANALYTICS_API_TIMEOUT',
+    5,  # seconds
+    cast=int
+)

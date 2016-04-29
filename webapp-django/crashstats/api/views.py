@@ -18,6 +18,7 @@ from waffle.decorators import waffle_switch
 from socorrolib.lib import BadArgumentError, MissingArgumentError
 
 import crashstats
+from crashstats.crashstats.decorators import track_api_pageview
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 from crashstats.tokens.models import Token
@@ -206,6 +207,7 @@ def has_permissions(user, permissions):
     rate=utils.ratelimit_rate,
     block=True
 )
+@track_api_pageview
 @utils.add_CORS_header  # must be before `utils.json_view`
 @utils.json_view
 def model_wrapper(request, model_name):
