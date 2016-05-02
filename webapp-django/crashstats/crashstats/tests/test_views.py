@@ -112,6 +112,7 @@ SAMPLE_UNREDACTED = """ {
     "addons_checked": null,
     "product": "WaterWolf",
     "os_name": "Mac OS X",
+    "os_pretty_version": "OS X 10.11",
     "last_crash": 371342,
     "date_processed": "2012-06-11T06:08:44",
     "cpu_name": "amd64",
@@ -2419,6 +2420,9 @@ class TestViews(BaseTestViews):
 
         # should be a link there to crash analysis
         ok_(settings.CRASH_ANALYSIS_URL in response.content)
+
+        # The pretty platform version should appear.
+        ok_('OS X 10.11' in response.content)
 
         # the email address will appear if we log in
         user = self._login()
