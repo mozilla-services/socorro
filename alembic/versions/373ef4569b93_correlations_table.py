@@ -50,6 +50,7 @@ def upgrade():
             'date',
             'signature_id'
         ],
+        unique=True,
     )
     op.create_index(
         'correlations_signatures_idx',

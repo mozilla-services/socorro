@@ -1459,7 +1459,6 @@ class Correlations(DeclarativeBase):
             platform,
             key,
             date,
-            unique=True
         ),
         Index(
             'correlations_signature_idx',
