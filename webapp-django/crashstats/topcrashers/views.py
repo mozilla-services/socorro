@@ -335,9 +335,12 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     sig_date_data = {}
     if signatures:
         sig_api = models.SignatureFirstDate()
-        first_dates = sig_api.get(signatures=signatures)
-        for sig in first_dates['hits']:
-            sig_date_data[sig['signature']] = sig['first_date']
+        # SignatureFirstDate().get_dates() is an optimized version
+        # of SignatureFirstDate().get() that returns a dict of
+        # signature --> dates.
+        first_dates = sig_api.get_dates(signatures)
+        for sig, dates in first_dates.items():
+            sig_date_data[sig] = dates['first_date']
 
     for crash in tcbs:
         crash_counts = []

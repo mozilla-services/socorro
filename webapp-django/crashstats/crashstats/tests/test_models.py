@@ -8,6 +8,7 @@ from nose.tools import eq_, ok_, assert_raises
 
 from django.core.cache import cache
 from django.conf import settings
+from django.utils import timezone
 
 from crashstats.base.tests.testbase import DjangoTestCase, TestCase
 from crashstats.crashstats import models
@@ -838,6 +839,81 @@ class TestModels(DjangoTestCase):
             signatures=['Pickle::ReadBytes', 'FakeSignature'],
         )
         eq_(r['total'], 0)
+
+    def test_signature_first_date_get_dates(self):
+        api = models.SignatureFirstDate()
+
+        now = timezone.now()
+        tomorrow = now + datetime.timedelta(days=1)
+        tomorrow_tomorrow = tomorrow + datetime.timedelta(days=1)
+
+        def mocked_get(**kwargs):
+            signatures = kwargs['signatures']
+            # This mocking function really makes sure that only what is
+            # expected to be called for is called for.
+            # Basically, the first time it expects to be asked
+            # about 'Sig 1' and 'Sig 2'.
+            # The second time it expect to only be asked about 'Sig 3'.
+            # Anything else will raise a NotImplementedError.
+            if sorted(signatures) == ['Sig 1', 'Sig 2']:
+                return {
+                    "hits": [
+                        {
+                            'signature': 'Sig 1',
+                            'first_build': '201601010101',
+                            'first_date': now,
+                        },
+                        {
+                            'signature': 'Sig 2',
+                            'first_build': '201602020202',
+                            'first_date': tomorrow,
+                        }
+                    ],
+                    "total": 2
+                }
+            elif sorted(signatures) == ['Sig 3']:
+                return {
+                    "hits": [
+                        {
+                            'signature': 'Sig 3',
+                            'first_build': '201603030303',
+                            'first_date': tomorrow_tomorrow,
+                        }
+                    ],
+                    "total": 1
+                }
+            raise NotImplementedError(signatures)
+
+        models.SignatureFirstDate.implementation().get.side_effect = mocked_get
+        r = api.get_dates(['Sig 1', 'Sig 2'])
+        eq_(
+            r,
+            {
+                'Sig 1': {
+                    'first_build': '201601010101',
+                    'first_date': now,
+                },
+                'Sig 2': {
+                    'first_build': '201602020202',
+                    'first_date': tomorrow,
+                },
+            }
+        )
+        r = api.get_dates(['Sig 2', 'Sig 3'])
+        eq_(
+            r,
+            {
+                'Sig 2': {
+                    'first_build': '201602020202',
+                    'first_date': tomorrow,
+                },
+                'Sig 3': {
+                    'first_build': '201603030303',
+                    'first_date': tomorrow_tomorrow,
+                },
+
+            }
+        )
 
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):

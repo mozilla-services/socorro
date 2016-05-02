@@ -1352,6 +1352,15 @@ class SignaturesByBugs(SocorroMiddleware):
 
 class SignatureFirstDate(SocorroMiddleware):
 
+    # Set to a short cache time because, the only real user of this
+    # model is the Top Crasher page and that one uses the highly
+    # optimized method `.get_dates()` which internally uses caching
+    # for each individual signature and does so with a very long
+    # cache time.
+    # Making it non-0 is to prevent the stampeding herd on this endpoint
+    # alone when exposed in the API.
+    cache_seconds = 5 * 60  # 5 minutes only
+
     implementation = (
         socorro.external.postgresql.signature_first_date.SignatureFirstDate
     )
@@ -1367,6 +1376,51 @@ class SignatureFirstDate(SocorroMiddleware):
             'first_build',
         )
     }
+
+    def get_dates(self, signatures):
+        """A highly optimized version, that returns a dictionary where
+        the keys are the signature and the values are dicts that look
+        like this for example::
+
+            {
+                'first_build': u'20101214170338',
+                'first_date': datetime.datetime(
+                    2011, 1, 17, 21, 24, 18, 979850, tzinfo=...)
+                )
+            }
+
+        """
+        dates = {}
+        missing = {}
+        for signature in signatures:
+            # calculate a good cache key for each signature
+            cache_key = 'signature_first_date-{}'.format(
+                hashlib.md5(signature.encode('utf-8')).hexdigest()
+            )
+            cached = cache.get(cache_key)
+            if cached is not None:
+                dates[signature] = cached
+            else:
+                # remember the cache keys of those we need to look up
+                missing[signature] = cache_key
+
+        if missing:
+            hits = super(SignatureFirstDate, self).get(
+                signatures=missing.keys()
+            )['hits']
+
+            for hit in hits:
+                signature = hit.pop('signature')
+                cache.set(
+                    # get the cache key back
+                    missing[signature],
+                    # what's left when 'signature' is popped
+                    hit,
+                    # make it a really large number
+                    60 * 60 * 24
+                )
+                dates[signature] = hit
+        return dates
 
 
 class SignatureTrend(SocorroMiddleware):
