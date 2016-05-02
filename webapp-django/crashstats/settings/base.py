@@ -708,7 +708,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
         'rabbitmq': {
             'host': config('RABBITMQ_HOST', 'localhost'),
             'virtual_host': config('RABBITMQ_VIRTUAL_HOST', '/'),
-            'port': config('RABBITMQ_PORT', 5762),
+            'port': config('RABBITMQ_PORT', 5672),
         },
     }
 }
