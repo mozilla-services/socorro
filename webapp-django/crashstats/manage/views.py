@@ -162,7 +162,7 @@ def fields(request, default_context=None):
 @superuser_required
 @json_view
 def field_lookup(request):
-    name = request.REQUEST.get('name', '').strip()
+    name = request.GET.get('name', '').strip()
     if not name:
         return http.HttpResponseBadRequest("Missing 'name'")
 

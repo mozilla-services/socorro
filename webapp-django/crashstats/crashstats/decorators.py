@@ -20,9 +20,12 @@ def check_days_parameter(possible_days, default=_marker):
     def outer(view):
         @functools.wraps(view)
         def inner(request, *args, **kwargs):
-            if 'days' in request.REQUEST:
+            request_data = (
+                request.method == 'GET' and request.GET or request.POST
+            )
+            if 'days' in request_data:
                 try:
-                    days = int(request.REQUEST.get('days', default))
+                    days = int(request_data.get('days', default))
                 except ValueError:
                     return HttpResponseBadRequest("'days' not a number")
                 if days not in possible_days:

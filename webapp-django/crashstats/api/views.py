@@ -266,7 +266,8 @@ def model_wrapper(request, model_name):
     # assume first that it won't need a binary response
     binary_response = False
 
-    form = FormWrapper(model, request.REQUEST)
+    request_data = request.method == 'GET' and request.GET or request.POST
+    form = FormWrapper(model, request_data)
     if form.is_valid():
         try:
             result = function(**form.cleaned_data)

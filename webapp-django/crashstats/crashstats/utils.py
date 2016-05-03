@@ -58,7 +58,10 @@ def json_view(f):
         else:
 
             indent = 0
-            if request.REQUEST.get('pretty') == 'print':
+            request_data = (
+                request.method == 'GET' and request.GET or request.POST
+            )
+            if request_data.get('pretty') == 'print':
                 indent = 2
             if isinstance(response, tuple) and isinstance(response[1], int):
                 response, status = response
