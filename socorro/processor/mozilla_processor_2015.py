@@ -59,6 +59,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
         "socorro.processor.signature_utilities.OOMSignature, "
         "socorro.processor.signature_utilities.SignatureRunWatchDog, "
+        "socorro.processor.signature_utilities.SignatureIPCChannelError, "
         "socorro.processor.signature_utilities.SigTrunc, "
     ],
     [   # a set of classifiers for support
