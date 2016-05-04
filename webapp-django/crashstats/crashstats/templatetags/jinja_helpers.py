@@ -155,8 +155,10 @@ def read_crash_column(crash, column_key):
 @library.global_function
 def bugzilla_submit_url(report, bug_product):
     url = 'https://bugzilla.mozilla.org/enter_bug.cgi'
-
-    op_sys = report.get('os_pretty_version') or report['os_name']
+    # Some crashes has the `os_name` but it's null so we
+    # fall back on an empty string on it instead. That way the various
+    # `.startswith(...)` things we do don't raise an AttributeError.
+    op_sys = report.get('os_pretty_version') or report['os_name'] or ''
     # At the time of writing, these pretty versions of the OS name
     # don't perfectly fit with the drop-down choices that Bugzilla
     # has in its OS drop-down. So we have to make some adjustments.
