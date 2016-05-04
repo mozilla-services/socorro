@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import copy
 import csv
 import datetime
@@ -2900,6 +2902,78 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
+    def test_report_index_known_total_correlations(self, rget, rpost):
+
+        rpost.side_effect = mocked_post_123
+
+        def mocked_get(url, params, **options):
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'meta'
+            ):
+                return Response({
+                    'InstallTime': 'Not a number',
+                    'Version': '5.0a1',
+                    'Email': '',
+                    'URL': None,
+                })
+            if 'crashes/comments' in url:
+                return Response({
+                    'hits': [],
+                    'total': 0,
+                })
+            if 'correlations/signatures' in url:
+                return Response({
+                    'hits': [],
+                    'total': 0
+                })
+
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'unredacted'
+            ):
+                return Response({
+                    'dump': 'some dump',
+                    'signature': 'FakeSignature1',
+                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
+                    'process_type': None,
+                    'os_name': 'Windows NT',
+                    'product': 'WaterWolf',
+                    'version': '1.0',
+                    'cpu_name': 'amd64',
+                })
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse(
+            'crashstats:report_index',
+            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        for node in doc('#mainbody'):
+            eq_(node.attrib['data-total-correlations'], '-1')
+
+        # now, manually prime the cache so that this is set
+        cache_key = views.make_correlations_count_cache_key(
+            'WaterWolf',
+            '1.0',
+            'Windows NT',
+            'FakeSignature1',
+        )
+        cache.set(cache_key, 123)
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        for node in doc('#mainbody'):
+            eq_(node.attrib['data-total-correlations'], '123')
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
     def test_report_index_with_invalid_parsed_dump(self, rget, rpost):
         json_dump = {
             u'crash_info': {
@@ -4758,6 +4832,74 @@ class TestViews(BaseTestViews):
         )
 
     @mock.patch('requests.get')
+    def test_correlations_count_json(self, rget):
+        url = reverse('crashstats:correlations_count_json')
+
+        correlation_get_report_types = []
+
+        def mocked_get(url, params, **options):
+            correlation_get_report_types.append(params['report_type'])
+            if '/correlations/signatures/' in url:
+                return Response({
+                    "hits": ["FakeSignature1",
+                             "FakeSignature2"],
+                    "total": 2
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        response = self.client.get(
+            url,
+            {
+                'product': 'WaterWolf',
+                'version': '19.0',
+                'platform': 'Junk',  # note!
+                'signature': 'FakeSignature'
+            }
+        )
+        eq_(response.status_code, 400)
+
+        response = self.client.get(
+            url,
+            {
+                'product': 'WaterWolf',
+                'version': '19.0',
+                'platform': 'Windows NT',
+                'signature': 'FakeSignature'
+            }
+        )
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        eq_(struct['count'], 0)
+
+        response = self.client.get(
+            url,
+            {
+                'product': 'WaterWolf',
+                'version': '19.0',
+                'platform': 'Windows NT',
+                'signature': 'FakeSignature1'
+            }
+        )
+        eq_(response.status_code, 200)
+        ok_('application/json' in response['content-type'])
+        struct = json.loads(response.content)
+        eq_(struct['count'], 5)
+
+        # Having run this, we should now have that count cached
+        cache_key = views.make_correlations_count_cache_key(
+            'WaterWolf',
+            '19.0',
+            'Windows NT',
+            'FakeSignature1'
+        )
+        cached = cache.get(cache_key)
+        eq_(cached, 5)
+
+    @mock.patch('requests.get')
     def test_correlations_signatures_json(self, rget):
         url = reverse('crashstats:correlations_signatures_json')
 
@@ -4914,3 +5056,12 @@ class TestViews(BaseTestViews):
             reverse('crashstats:about_throttling'),
             status_code=301
         )
+
+    def test_make_correlations_count_cache_key(self):
+        cache_key = views.make_correlations_count_cache_key(
+            'Firefox',
+            '1.0',
+            'Windows',
+            u'Some 💔 Unicode'
+        )
+        eq_(cache_key, 'total_correlations-6b300d846cd52316f6107e4522864b6e')

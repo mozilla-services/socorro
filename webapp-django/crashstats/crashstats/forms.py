@@ -415,6 +415,16 @@ class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
             return new_value
 
 
+class AnyCorrelationsJSONForm(CorrelationsJSONForm):
+    """List CorrelationsJSONForm but not requiring a specific report type."""
+    def __init__(self, *args, **kwargs):
+        super(AnyCorrelationsJSONForm, self).__init__(
+            *args,
+            **kwargs
+        )
+        del self.fields['correlation_report_types']
+
+
 class GCCrashesForm(BaseForm):
 
     start_date = forms.DateField(

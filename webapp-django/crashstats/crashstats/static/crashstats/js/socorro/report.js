@@ -1,5 +1,30 @@
 /*jslint browser:true, regexp:false */
 /*global window, $, socSortCorrelation, SocReport */
+
+var SignatureCorrelations = (function() {
+    var container = $('#mainbody');
+    return {
+        showSignatureCorrelationsTab: function() {
+            // If that number is -1, we don't know if there are correlations.
+            // Find out, by ajax, and if the count is >0, then make the
+            // "Correlations" tab visible.
+            if (container.data('total-correlations') < 0) {
+                $.getJSON(container.data('correlations-signature-count-url'))
+                .then(function(response) {
+                    if (response.count) {
+                        $('li.correlations').show();
+                    }
+                })
+                .fail(function() {
+                    console.warn('Failed to see if there are correlations');
+                    console.error.apply(console, arguments);
+                });
+            }
+        }
+    };
+})();
+
+
 $(document).ready(function () {
     $('#report-index').tabs({
         selected: 0,
@@ -85,6 +110,10 @@ $(document).ready(function () {
     });
 
     $('#modules-list').tablesorter({sortList: [[1, 0]], headers: {1: {sorter : 'digit'}}});
+
+    // Decide whether to show the Correlations tab if this product,
+    // version, platform and signature has correlations.
+    SignatureCorrelations.showSignatureCorrelationsTab();
 
     // Enhance bug links.
     BugLinks.enhance();
