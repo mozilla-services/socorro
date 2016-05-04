@@ -14,6 +14,12 @@ var SignatureCorrelations = (function() {
                     if (response.count) {
                         $('li.correlations').show();
                     }
+                    if (response.errors) {
+                        console.warn(
+                            'There were some errors fetching correlations:'
+                        );
+                        console.warn.apply(console, response.errors);
+                    }
                 })
                 .fail(function() {
                     console.warn('Failed to see if there are correlations');
