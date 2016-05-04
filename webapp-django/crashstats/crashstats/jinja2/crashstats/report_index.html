@@ -13,14 +13,6 @@
 {% javascript 'bugzilla' %}
 {% javascript 'correlation' %}
 {% javascript 'report_index' %}
-<script type="text/javascript">
-    var SocReport = {
-        base: '{{ url('crashstats:correlations_json') }}',
-        path: '{{ make_query_string(product=product, version=report.version, platform=report.os_name, signature=report.signature) }}',
-        loading: 'Loading <img src="{{ static('img/loading.png ') }}" width="16" height="17" alt="Loading..." />'
-    };
-</script>
-
 {% endblock %}
 
 {% block page_title %}[@ {{ report.signature }}] - {{ report.product }} {{ report.version }} Crash Report - Report ID: {{ report.uuid }}{% endblock %}
@@ -28,6 +20,11 @@
 {% block content %}
 
 <div id="mainbody"
+    data-correlations-url="{{ url('crashstats:correlations_json') }}"
+    data-product="{{ report.product }}"
+    data-version="{{ report.version }}"
+    data-platform="{{ report.os_name }}"
+    data-signature="{{ report.signature }}"
     data-total-correlations="{{ total_correlations }}"
     data-correlations-signature-count-url="{{ url('crashstats:correlations_count_json') }}?{{ make_query_string(
         product=report.product,
@@ -613,7 +610,7 @@
                         <li id="modver">
                             <h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
                                 <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
-                            <div id="interesting-modules-with-versions-panel">
+                            <div id="interesting-modules-with-versions_correlation">
                                 <button name="interesting-modules-with-versions" class="load-version-data">Load</button>
                             </div>
                         </li>
@@ -629,7 +626,7 @@
                         <li id="addver">
                             <h3>Add-ons by versions <a href="#core-counts" title="Skip Down to CPU Cores">Next</a>
                                 <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
-                            <div id="interesting-addons-with-versions-panel">
+                            <div id="interesting-addons-with-versions_correlation">
                                 <button name="interesting-addons-with-versions" class="load-version-data">Load</button>
                             </div>
                         </li>
