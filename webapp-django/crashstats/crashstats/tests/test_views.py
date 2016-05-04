@@ -2956,7 +2956,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         doc = pyquery.PyQuery(response.content)
         for node in doc('#mainbody'):
-            node.attrib['data-total-correlations'] = '-1'
+            eq_(node.attrib['data-total-correlations'], '-1')
 
         # now, manually prime the cache so that this is set
         cache_key = views.make_correlations_count_cache_key(
@@ -2970,7 +2970,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         doc = pyquery.PyQuery(response.content)
         for node in doc('#mainbody'):
-            node.attrib['data-total-correlations'] = '123'
+            eq_(node.attrib['data-total-correlations'], '123')
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
