@@ -69,12 +69,13 @@ do
   techo "Phase 1: end"
 done
 
-MANUAL_VERSION_OVERRIDE="47.0b1 47.0b2 47.0b3 47.0b4 47.0b5 47.0b6 47.0b7 47.0b8 47.0b9 47.0b99 48.0a2 49.0a1"
+#MANUAL_VERSION_OVERRIDE="47.0b1 47.0b2 47.0b3 47.0b4 47.0b5 47.0b6 47.0b7 47.0b8 47.0b9 47.0b99 48.0a2 49.0a1"
+VERSIONS=`./active-firefox-versions.py`
 techo "Phase 2: start"
 for I in Firefox
 do
   techo "Phase 2: Product: $I"
-  for J in $MANUAL_VERSION_OVERRIDE
+  for J in $VERSIONS
   do
     techo "Phase 1: Version: $J start"
     techo "Pulling processed JSON from PostgreSQL"
