@@ -19,6 +19,7 @@ from socorro.processor.signature_utilities import (
     OOMSignature,
     SigTrunc,
     StackwalkerErrorSignatureRule,
+    SignatureIPCChannelError,
     SignatureJitCategory,
     SignatureRunWatchDog,
 )
@@ -1800,4 +1801,87 @@ class TestSignatureJitCategory(TestCase):
         eq_(
             processor_meta.processor_notes,
             ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
+        )
+
+
+#==============================================================================
+class TestSignatureIPCChannelError(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = SignatureIPCChannelError(config)
+
+        raw_crash = DotDict()
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(not predicate_result)
+
+        raw_crash.ipc_channel_error = ''
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = SignatureIPCChannelError(config)
+
+        raw_crash = DotDict()
+        raw_crash.ipc_channel_error = 'foo, bar'
+
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = SignatureIPCChannelError(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'foo::bar'
+
+        raw_crash = DotDict()
+        raw_crash.ipc_channel_error = 'ipc' * 50
+
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, processor_meta
+        )
+        ok_(action_result)
+
+        eq_(
+            processed_crash.signature,
+            'IPCError-content | {}'.format(('ipc' * 50)[:100])
+        )
+        eq_(
+            processor_meta.processor_notes,
+            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        )
+
+        # Now test with a browser crash.
+        processed_crash.signature = 'foo::bar'
+        raw_crash.additional_minidumps = 'browser'
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, processor_meta
+        )
+        ok_(action_result)
+
+        eq_(
+            processed_crash.signature,
+            'IPCError-browser | {}'.format(('ipc' * 50)[:100])
+        )
+        eq_(
+            processor_meta.processor_notes,
+            ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
         )

@@ -998,3 +998,35 @@ class SignatureJitCategory(Rule):
             processed_crash['classifications']['jit']['category']
         )
         return True
+
+
+#==============================================================================
+class SignatureIPCChannelError(Rule):
+    """replaces the signature if there is a JIT classification in the crash"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        try:
+            return bool(raw_crash['ipc_channel_error'])
+        except KeyError:
+            return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        if raw_crash.get('additional_minidumps') == 'browser':
+            new_sig = 'IPCError-browser | {}'
+        else:
+            new_sig = 'IPCError-content | {}'
+        new_sig = new_sig.format(raw_crash['ipc_channel_error'][:100])
+
+        processor_meta['processor_notes'].append(
+            'Signature replaced with an IPC Channel Error, '
+            'was: "{}"'.format(processed_crash['signature'])
+        )
+        processed_crash['signature'] = new_sig
+
+        return True
