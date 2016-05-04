@@ -45,8 +45,16 @@ class TestViews(BaseTestViews):
                         ),
                         "first_build": "20000101122334",
                     },
+                    {
+                        "signature": u"mozCool()",
+                        "first_date": datetime.datetime(
+                            2016, 5, 2, 0, 0, 0,
+                            tzinfo=UTC(),
+                        ),
+                        "first_build": "20160502000000",
+                    },
                 ],
-                "total": 1
+                "total": 2
             }
 
         SignatureFirstDate.implementation().get.side_effect = (
