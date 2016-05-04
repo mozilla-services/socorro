@@ -19,6 +19,7 @@ from socorro.processor.signature_utilities import (
     OOMSignature,
     SigTrunc,
     StackwalkerErrorSignatureRule,
+    SignatureJitCategory,
     SignatureRunWatchDog,
 )
 from socorro.unittest.testbase import TestCase
@@ -98,7 +99,6 @@ class TestCSignatureTool(BaseTestClass):
         )
         fixupSpace = re.compile(r' (?=[\*&,])')
         fixupComma = re.compile(r',(?! )')
-        fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
         s, c = self.setup_config_C_sig_tool(
             expectedRegEx.irrelevant_signature_re,
@@ -133,7 +133,6 @@ class TestCSignatureTool(BaseTestClass):
         )
         fixupSpace = re.compile(r' (?=[\*&,])')
         fixupComma = re.compile(r',(?! )')
-        fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
         s, c = self.setup_db_C_sig_tool()
 
@@ -1077,7 +1076,6 @@ frames_from_json_dump_with_templates_and_special_case = {
 }
 
 
-
 sample_json_dump = {
     u'json_dump': {
         u'system_info': {
@@ -1089,7 +1087,7 @@ sample_json_dump = {
             u'type': u'EXCEPTION_BREAKPOINT'
         },
         u'crashing_thread': frames_from_json_dump,
-        u'threads':  [ frames_from_json_dump ]
+        u'threads': [frames_from_json_dump]
 
     }
 }
@@ -1105,7 +1103,7 @@ sample_json_dump_with_templates = {
             u'type': u'EXCEPTION_BREAKPOINT'
         },
         u'crashing_thread': frames_from_json_dump_with_templates,
-        u'threads':  [ frames_from_json_dump_with_templates ]
+        u'threads': [frames_from_json_dump_with_templates]
 
     }
 }
@@ -1122,7 +1120,7 @@ sample_json_dump_with_templates_and_special_case = {
         },
         u'crashing_thread':
             frames_from_json_dump_with_templates_and_special_case,
-        u'threads':  [ frames_from_json_dump_with_templates_and_special_case ]
+        u'threads': [frames_from_json_dump_with_templates_and_special_case]
 
     }
 }
@@ -1171,7 +1169,7 @@ class TestSignatureGeneration(TestCase):
                     CSignatureTool.required_config
                     .signatures_with_line_numbers_re.default
                 ),
-                'collapse_arguments':  True,
+                'collapse_arguments': True,
             },
             'java_signature': {
                 'java_signature_tool_class': JavaSignatureTool,
@@ -1186,7 +1184,6 @@ class TestSignatureGeneration(TestCase):
 
         ok_(isinstance(sgr.c_signature_tool, CSignatureTool))
         ok_(isinstance(sgr.java_signature_tool, JavaSignatureTool))
-
 
     #--------------------------------------------------------------------------
     def test_create_frame_list_1(self):
@@ -1365,8 +1362,6 @@ class TestSignatureGeneration(TestCase):
             'F_1428703866________________________________'
         )
         eq_(processor_meta.processor_notes, [])
-
-
 
     #--------------------------------------------------------------------------
     def test_action_3(self):
@@ -1608,6 +1603,7 @@ class TestSigTrunc(TestCase):
         eq_(len(pc.signature), 255)
         ok_(pc.signature.endswith('9...'))
 
+
 #==============================================================================
 class TestStackwalkerErrorSignatureRule(TestCase):
 
@@ -1621,7 +1617,6 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         rule = StackwalkerErrorSignatureRule(fake_processor.config)
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(not predicate_result)
-
 
     #--------------------------------------------------------------------------
     def test_predicate(self):
@@ -1696,7 +1691,6 @@ class TestSignatureWatchDogRule(TestCase):
 
         eq_(srwd._get_crashing_thread({}), 0)
 
-
     #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
@@ -1716,7 +1710,6 @@ class TestSignatureWatchDogRule(TestCase):
             'signature': "mozilla::(anonymous namespace)::RunWatchdog",
         }
         ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
-
 
     #--------------------------------------------------------------------------
     def test_action(self):
@@ -1741,3 +1734,70 @@ class TestSignatureWatchDogRule(TestCase):
             '_________________'
         )
         eq_(processor_meta.processor_notes, [])
+
+
+#==============================================================================
+class TestSignatureJitCategory(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = SignatureJitCategory(config)
+
+        processed_crash = DotDict()
+        processed_crash.classifications = DotDict()
+
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+        processed_crash.classifications.jit = DotDict()
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+        processed_crash.classifications.jit.category = ''
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = SignatureJitCategory(config)
+
+        processed_crash = DotDict()
+        processed_crash.classifications = {
+            'jit': {
+                'category': 'JIT Crash'
+            }
+        }
+
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = SignatureJitCategory(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'foo::bar'
+        processed_crash.classifications = {
+            'jit': {
+                'category': 'JIT Crash'
+            }
+        }
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+
+        action_result = rule.action({}, {}, processed_crash, processor_meta)
+        ok_(action_result)
+        eq_(processed_crash.signature, 'jit | JIT Crash')
+        eq_(
+            processor_meta.processor_notes,
+            ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
+        )
