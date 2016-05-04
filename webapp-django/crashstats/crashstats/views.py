@@ -2468,15 +2468,18 @@ def correlations_count_json(request, default_context=None):
     api = models.CorrelationsSignatures()
     count = 0
     for report_type in settings.CORRELATION_REPORT_TYPES:
-        result = api.get(
-            report_type=report_type,
-            product=product,
-            version=version,
-            platforms=platform,
-        )
-        hits = result and result['hits'] or []
-        if signature in hits:
-            count += 1
+        try:
+            result = api.get(
+                report_type=report_type,
+                product=product,
+                version=version,
+                platforms=platform,
+            )
+            hits = result and result['hits'] or []
+            if signature in hits:
+                count += 1
+        except models.BadStatusCodeError:
+            pass
 
     cache_key = make_correlations_count_cache_key(
         product,
