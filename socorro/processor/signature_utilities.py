@@ -982,19 +982,18 @@ class SignatureJitCategory(Rule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return (
-            processed_crash.get('classifications') and
-            processed_crash.classifications.get('jit') and
-            processed_crash['classifications']['jit'].get('category')
-        )
+        try:
+            return bool(processed_crash['classifications']['jit']['category'])
+        except KeyError:
+            return False
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        processor_meta.processor_notes.append(
+        processor_meta['processor_notes'].append(
             'Signature replaced with a JIT Crash Category, '
-            'was: {}'.format(processed_crash.signature)
+            'was: "{}"'.format(processed_crash['signature'])
         )
-        processed_crash.signature = "jit | {}".format(
-            processed_crash.classifications['jit']['category']
+        processed_crash['signature'] = "jit | {}".format(
+            processed_crash['classifications']['jit']['category']
         )
         return True

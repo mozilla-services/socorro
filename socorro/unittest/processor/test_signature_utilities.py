@@ -1799,5 +1799,5 @@ class TestSignatureJitCategory(TestCase):
         eq_(processed_crash.signature, 'jit | JIT Crash')
         eq_(
             processor_meta.processor_notes,
-            ['Signature replaced with a JIT Crash Category, was: foo::bar']
+            ['Signature replaced with a JIT Crash Category, was: "foo::bar"']
         )
