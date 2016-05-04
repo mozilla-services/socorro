@@ -750,7 +750,7 @@ class TestViews(BaseTestViews):
             'end_date': '2014-02-04'
         })
 
-        ok_(response.status_code, 200)
+        eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
 
     def test_gccrashes_json_bad_request(self):
@@ -762,7 +762,7 @@ class TestViews(BaseTestViews):
             'start_date': 'XXXXXX',  # not even close
             'end_date': '2014-02-04'
         })
-        ok_(response.status_code, 400)
+        eq_(response.status_code, 400)
 
         response = self.client.get(url, {
             'product': 'WaterWolf',
@@ -770,7 +770,7 @@ class TestViews(BaseTestViews):
             'start_date': '2014-02-33',  # crazy date
             'end_date': '2014-02-04'
         })
-        ok_(response.status_code, 400)
+        eq_(response.status_code, 400)
 
         # same but on the end_date
         response = self.client.get(url, {
@@ -779,7 +779,7 @@ class TestViews(BaseTestViews):
             'start_date': '2014-02-13',
             'end_date': '2014-02-44'  # crazy date
         })
-        ok_(response.status_code, 400)
+        eq_(response.status_code, 400)
 
         # start_date > end_date
         response = self.client.get(url, {
@@ -788,7 +788,7 @@ class TestViews(BaseTestViews):
             'start_date': '2014-02-02',
             'end_date': '2014-01-01'  # crazy date
         })
-        ok_(response.status_code, 400)
+        eq_(response.status_code, 400)
 
     def test_get_nightlies_for_product_json(self):
         url = reverse('crashstats:get_nightlies_for_product_json')
@@ -1153,7 +1153,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
-        ok_(response.status_code, 302)
+        eq_(response.status_code, 302)
 
         user = self._login()
         response = self.client.get(url)
@@ -1175,7 +1175,7 @@ class TestViews(BaseTestViews):
 
         # if you try to mess with the paginator it should just load page 1
         response = self.client.get(url, {'page': 'meow'})
-        ok_(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
@@ -1310,7 +1310,7 @@ class TestViews(BaseTestViews):
         )
 
         response = self.client.get(url, {'product': 'WaterWolf'})
-        ok_(response.status_code, 302)
+        eq_(response.status_code, 302)
 
         user = self._login()
         response = self.client.get(url, {'product': 'WaterWolf'})
@@ -4749,7 +4749,7 @@ class TestViews(BaseTestViews):
              'signature': 'FakeSignature'}
         )
 
-        ok_(response.status_code, 200)
+        eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
         eq_(
@@ -4780,7 +4780,7 @@ class TestViews(BaseTestViews):
              'version': '19.0',
              'platforms': 'Windows NT,Linux'}
         )
-        ok_(response.status_code, 200)
+        eq_(response.status_code, 200)
         ok_('application/json' in response['content-type'])
         struct = json.loads(response.content)
         eq_(struct['core-counts']['total'], 2)
