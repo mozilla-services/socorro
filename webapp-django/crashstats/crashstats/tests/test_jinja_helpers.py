@@ -171,6 +171,17 @@ class TestBugzillaSubmitURL(TestCase):
         qs = self._extract_query_string(url)
         eq_(qs['op_sys'], ['Windows'])
 
+    def test_with_os_name_is_null(self):
+        """Some processed crashes haev a os_name but it's null.
+        FennecAndroid crashes for example."""
+        report = self._create_report(
+            os_name=None,
+            signature='java.lang.IllegalStateException',
+        )
+        url = bugzilla_submit_url(report, 'Core')
+        qs = self._extract_query_string(url)
+        ok_('op_sys' not in qs)
+
 
 class TesDigitGroupSeparator(TestCase):
 
