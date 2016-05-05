@@ -124,7 +124,7 @@ class TestViews(BaseTestViews):
             assert '/releases/featured' in url
             data = options['data']
             put_calls.append(data)
-            return Response("true")
+            return Response(True)
 
         rput.side_effect = mocked_put
 
@@ -232,10 +232,9 @@ class TestViews(BaseTestViews):
             ok_('name' in params)
             eq_('Android_Display', params['name'])
 
-            return Response("""
-            {
+            return Response({
                 "name": "Android_Display",
-                "product": null,
+                "product": None,
                 "transforms": {
                     "1.X processed json": "",
                     "collector:raw json": "",
@@ -247,8 +246,7 @@ class TestViews(BaseTestViews):
                     "processor transform": "",
                     "ted's mdsw json": ""
                 }
-            }
-            """)
+            })
 
         rget.side_effect = mocked_get
 
@@ -286,46 +284,38 @@ class TestViews(BaseTestViews):
                 'category' in params and 'suffix' == params['category'] and
                 'rule' in params and 'Bar' == params['rule']
             ):
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         {"category": "suffix", "rule": "Bar"}
                     ],
-                    "total": 1
-                }
-                """)
+                    "total": 1,
+                })
             elif 'category' in params and 'suffix' == params['category']:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         {"category": "suffix", "rule": "Bar"},
                         {"category": "suffix", "rule": "Foo"}
                     ],
-                    "total": 2
-                }
-                """)
+                    "total": 2,
+                })
             elif 'rule' in params and 'Bar' == params['rule']:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         {"category": "prefix", "rule": "Bar"},
-                        {"category": "suffix", "rule": "Bar"}
+                        {"category": "suffix", "rule": "Bar"},
                     ],
-                    "total": 2
-                }
-                """)
+                    "total": 2,
+                })
             else:
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         {"category": "prefix", "rule": "Bar"},
                         {"category": "prefix", "rule": "Foo"},
                         {"category": "suffix", "rule": "Bar"},
-                        {"category": "suffix", "rule": "Foo"}
+                        {"category": "suffix", "rule": "Foo"},
                     ],
-                    "total": 4
-                }
-                """)
+                    "total": 4,
+                })
 
         rget.side_effect = mocked_get
 
@@ -392,7 +382,7 @@ class TestViews(BaseTestViews):
             assert '/skiplist' in url, url
             ok_(options['data'].get('category'))
             ok_(options['data'].get('rule'))
-            return Response("true")
+            return Response(True)
 
         rpost.side_effect = mocked_post
 
@@ -436,7 +426,7 @@ class TestViews(BaseTestViews):
             ok_('rule' in params)
             eq_('Foo', params['rule'])
 
-            return Response("true")
+            return Response(True)
 
         rdelete.side_effect = mocked_delete
 
