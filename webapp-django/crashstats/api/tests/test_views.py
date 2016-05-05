@@ -90,30 +90,28 @@ class TestViews(BaseTestViews):
     def test_CrashesPerAdu(self, rget):
         def mocked_get(url, params, **options):
             if 'crashes/daily' in url:
-                return Response("""
-                    {
-                      "hits": {
+                return Response({
+                    "hits": {
                         "WaterWolf:19.0": {
-                          "2012-10-08": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 71.099999999999994,
-                            "version": "19.0",
-                            "report_count": 2133,
-                            "date": "2012-10-08"
-                          },
-                          "2012-10-02": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 77.299999999999997,
-                            "version": "19.0",
-                            "report_count": 2319,
-                            "date": "2012-10-02"
-                         }
-                        }
-                      }
-                    }
-                    """)
+                            "2012-10-08": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 71.099999999999994,
+                                "version": "19.0",
+                                "report_count": 2133,
+                                "date": "2012-10-08"
+                            },
+                            "2012-10-02": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 77.299999999999997,
+                                "version": "19.0",
+                                "report_count": 2319,
+                                "date": "2012-10-02"
+                            },
+                        },
+                    },
+                })
 
             raise NotImplementedError(url)
 
@@ -145,25 +143,23 @@ class TestViews(BaseTestViews):
         """any use of model_wrapper should return a CORS header"""
 
         def mocked_get(url, params, **options):
-            return Response("""
-                {
-                  "breakpad_revision": "1139",
-                  "hits": [
+            return Response({
+                "breakpad_revision": "1139",
+                "hits": [
                     {
-                      "date_oldest_job_queued": null,
-                      "date_recently_completed": null,
-                      "processors_count": 1,
-                      "avg_wait_sec": 0.0,
-                      "waiting_job_count": 0,
-                      "date_created": "2013-04-01T21:40:01+00:00",
-                      "id": 463859,
-                      "avg_process_sec": 0.0
+                        "date_oldest_job_queued": None,
+                        "date_recently_completed": None,
+                        "processors_count": 1,
+                        "avg_wait_sec": 0.0,
+                        "waiting_job_count": 0,
+                        "date_created": "2013-04-01T21:40:01+00:00",
+                        "id": 463859,
+                        "avg_process_sec": 0.0
                     }
-                  ],
-                  "total": 12,
-                  "socorro_revision": "9cfa4de"
-                }
-            """)
+                ],
+                "total": 12,
+                "socorro_revision": "9cfa4de"
+            })
 
         rget.side_effect = mocked_get
 
@@ -176,30 +172,28 @@ class TestViews(BaseTestViews):
     def test_CrashesPerAdu_too_much(self, rget):
         def mocked_get(url, params, **options):
             if 'crashes/daily' in url:
-                return Response("""
-                    {
-                      "hits": {
+                return Response({
+                    "hits": {
                         "WaterWolf:19.0": {
-                          "2012-10-08": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 71.099999999999994,
-                            "version": "19.0",
-                            "report_count": 2133,
-                            "date": "2012-10-08"
-                          },
-                          "2012-10-02": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 77.299999999999997,
-                            "version": "19.0",
-                            "report_count": 2319,
-                            "date": "2012-10-02"
-                         }
+                            "2012-10-08": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 71.099999999999994,
+                                "version": "19.0",
+                                "report_count": 2133,
+                                "date": "2012-10-08"
+                            },
+                            "2012-10-02": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 77.299999999999997,
+                                "version": "19.0",
+                                "report_count": 2319,
+                                "date": "2012-10-02"
+                            }
                         }
-                      }
                     }
-                    """)
+                })
 
             raise NotImplementedError(url)
 
@@ -241,30 +235,28 @@ class TestViews(BaseTestViews):
                 # full format.
                 ok_('from_date' in params)
                 eq_('2012-01-01', params['from_date'])
-                return Response("""
-                    {
-                      "hits": {
+                return Response({
+                    "hits": {
                         "WaterWolf:19.0": {
-                          "2012-10-08": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 71.099999999999994,
-                            "version": "19.0",
-                            "report_count": 2133,
-                            "date": "2012-10-08"
-                          },
-                          "2012-10-02": {
-                            "product": "WaterWolf",
-                            "adu": 30000,
-                            "crash_hadu": 77.299999999999997,
-                            "version": "19.0",
-                            "report_count": 2319,
-                            "date": "2012-10-02"
-                         }
-                        }
-                      }
-                    }
-                    """)
+                            "2012-10-08": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 71.099999999999994,
+                                "version": "19.0",
+                                "report_count": 2133,
+                                "date": "2012-10-08"
+                            },
+                            "2012-10-02": {
+                                "product": "WaterWolf",
+                                "adu": 30000,
+                                "crash_hadu": 77.299999999999997,
+                                "version": "19.0",
+                                "report_count": 2319,
+                                "date": "2012-10-02"
+                            },
+                        },
+                    },
+                })
 
             raise NotImplementedError(url)
 
@@ -390,37 +382,39 @@ class TestViews(BaseTestViews):
                 # that somewhere in the URL
                 ok_('limit' in params)
                 ok_('os' not in params)
-                return Response(u"""
-                   {"crashes": [
-                     {
-                      "count": 188,
-                      "mac_count": 66,
-                      "content_count": 0,
-                      "first_report": "2012-06-21",
-                      "startup_percent": 0.0,
-                      "currentRank": 0,
-                      "previousRank": 1,
-                      "first_report_exact": "2012-06-21T21:28:08",
-                      "versions":
-                          "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, 4.0a2, 5.0a1",
-                      "percentOfTotal": 0.24258064516128999,
-                      "win_count": 56,
-                      "changeInPercentOfTotal": 0.011139597126354983,
-                      "linux_count": 66,
-                      "hang_count": 0,
-                      "signature": "FakeSignature1 \u7684 Japanese",
-                      "versions_count": 8,
-                      "changeInRank": 1,
-                      "plugin_count": 0,
-                      "previousPercentOfTotal": 0.23144104803493501,
-                      "is_gc_count": 10
-                    }
-                   ],
+                return Response({
+                    "crashes": [
+                        {
+                            "count": 188,
+                            "mac_count": 66,
+                            "content_count": 0,
+                            "first_report": "2012-06-21",
+                            "startup_percent": 0.0,
+                            "currentRank": 0,
+                            "previousRank": 1,
+                            "first_report_exact": "2012-06-21T21:28:08",
+                            "versions": (
+                                "2.0, 2.1, 3.0a2, 3.0b2, 3.1b1, 4.0a1, "
+                                "4.0a2, 5.0a1"
+                            ),
+                            "percentOfTotal": 0.24258064516128999,
+                            "win_count": 56,
+                            "changeInPercentOfTotal": 0.011139597126354983,
+                            "linux_count": 66,
+                            "hang_count": 0,
+                            "signature": u"FakeSignature1 \u7684 Japanese",
+                            "versions_count": 8,
+                            "changeInRank": 1,
+                            "plugin_count": 0,
+                            "previousPercentOfTotal": 0.23144104803493501,
+                            "is_gc_count": 10
+                        }
+                    ],
                     "totalPercentage": 0,
                     "start_date": "2012-05-10",
                     "end_date": "2012-05-24",
-                    "totalNumberOfCrashes": 0}
-                """)
+                    "totalNumberOfCrashes": 0,
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -525,24 +519,21 @@ class TestViews(BaseTestViews):
                 ok_('signature' in params)
                 eq_('one & two', params['signature'])
 
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "address": "0xdeadbeef",
-                      "url": "http://p0rn.com"
-                    },
-                    {
-                      "user_comments": null,
-                      "address": "0xdeadbeef",
-                      "url": ""
-                    }
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": None,
+                            "address": "0xdeadbeef",
+                            "url": "http://p0rn.com"
+                        },
+                        {
+                            "user_comments": None,
+                            "address": "0xdeadbeef",
+                            "url": ""
+                        }
                     ],
                     "total": 2
-                    }
-                """)
-
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -611,25 +602,21 @@ class TestViews(BaseTestViews):
             if 'report/list' in url:
                 ok_('signature' in params)
                 eq_('one & two', params['signature'])
-
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "address": "0xdeadbeef",
-                      "url": "http://p0rn.com"
-                    },
-                    {
-                      "user_comments": null,
-                      "address": "0xdeadbeef",
-                      "url": ""
-                    }
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": None,
+                            "address": "0xdeadbeef",
+                            "url": "http://p0rn.com"
+                        },
+                        {
+                            "user_comments": None,
+                            "address": "0xdeadbeef",
+                            "url": ""
+                        }
                     ],
                     "total": 2
-                    }
-                """)
-
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -721,21 +708,19 @@ class TestViews(BaseTestViews):
                 ok_('to' in params)
                 eq_('2013-01-01T00:00:00+00:00', params['to'])
 
-                return Response("""
-                {
-                  "hits": [
-                    {
-                      "user_comments": null,
-                      "address": "0xdeadbeef"
-                    },
-                    {
-                      "user_comments": null,
-                      "address": "0xdeadbeef"
-                    }
+                return Response({
+                    "hits": [
+                        {
+                            "user_comments": None,
+                            "address": "0xdeadbeef"
+                        },
+                        {
+                            "user_comments": None,
+                            "address": "0xdeadbeef"
+                        }
                     ],
                     "total": 2
-                    }
-                """)
+                })
 
             raise NotImplementedError(url)
 
@@ -771,43 +756,41 @@ class TestViews(BaseTestViews):
             assert '/crash_data' in url, url
 
             if 'datatype' in params and params['datatype'] == 'processed':
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "upload_file_minidump_browser": "a crash",
-                  "upload_file_minidump_flash1": "a crash",
-                  "upload_file_minidump_flash2": "a crash",
-                  "upload_file_minidump_plugin": "a crash"
-                }
-                """ % dump)
-
+                return Response({
+                    "client_crash_date": "2012-06-11T06:08:45",
+                    "dump": dump,
+                    "signature": "FakeSignature1",
+                    "user_comments": None,
+                    "uptime": 14693,
+                    "release_channel": "nightly",
+                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                    "flash_version": "[blank]",
+                    "hangid": None,
+                    "distributor_version": None,
+                    "truncated": True,
+                    "process_type": None,
+                    "id": 383569625,
+                    "os_version": "10.6.8 10K549",
+                    "version": "5.0a1",
+                    "build": "20120609030536",
+                    "ReleaseChannel": "nightly",
+                    "addons_checked": None,
+                    "product": "WaterWolf",
+                    "os_name": "Mac OS X",
+                    "last_crash": 371342,
+                    "date_processed": "2012-06-11T06:08:44",
+                    "cpu_name": "amd64",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "address": "0x8",
+                    "completeddatetime": "2012-06-11T06:08:57",
+                    "success": True,
+                    "upload_file_minidump_browser": "a crash",
+                    "upload_file_minidump_flash1": "a crash",
+                    "upload_file_minidump_flash2": "a crash",
+                    "upload_file_minidump_plugin": "a crash"
+                })
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
@@ -852,44 +835,42 @@ class TestViews(BaseTestViews):
             assert '/crash_data/' in url
 
             if 'datatype' in params and params['datatype'] == 'unredacted':
-                return Response("""
-                {
-                  "client_crash_date": "2012-06-11T06:08:45",
-                  "dump": "%s",
-                  "signature": "FakeSignature1",
-                  "user_comments": null,
-                  "uptime": 14693,
-                  "release_channel": "nightly",
-                  "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                  "flash_version": "[blank]",
-                  "hangid": null,
-                  "distributor_version": null,
-                  "truncated": true,
-                  "process_type": null,
-                  "id": 383569625,
-                  "os_version": "10.6.8 10K549",
-                  "version": "5.0a1",
-                  "build": "20120609030536",
-                  "ReleaseChannel": "nightly",
-                  "addons_checked": null,
-                  "product": "WaterWolf",
-                  "os_name": "Mac OS X",
-                  "last_crash": 371342,
-                  "date_processed": "2012-06-11T06:08:44",
-                  "cpu_name": "amd64",
-                  "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                  "address": "0x8",
-                  "completeddatetime": "2012-06-11T06:08:57",
-                  "success": true,
-                  "upload_file_minidump_browser": "a crash",
-                  "upload_file_minidump_flash1": "a crash",
-                  "upload_file_minidump_flash2": "a crash",
-                  "upload_file_minidump_plugin": "a crash",
-                  "exploitability": "Unknown Exploitability"
-                }
-                """ % dump)
-
+                return Response({
+                    "client_crash_date": "2012-06-11T06:08:45",
+                    "dump": dump,
+                    "signature": "FakeSignature1",
+                    "user_comments": None,
+                    "uptime": 14693,
+                    "release_channel": "nightly",
+                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+                    "flash_version": "[blank]",
+                    "hangid": None,
+                    "distributor_version": None,
+                    "truncated": True,
+                    "process_type": None,
+                    "id": 383569625,
+                    "os_version": "10.6.8 10K549",
+                    "version": "5.0a1",
+                    "build": "20120609030536",
+                    "ReleaseChannel": "nightly",
+                    "addons_checked": None,
+                    "product": "WaterWolf",
+                    "os_name": "Mac OS X",
+                    "last_crash": 371342,
+                    "date_processed": "2012-06-11T06:08:44",
+                    "cpu_name": "amd64",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "address": "0x8",
+                    "completeddatetime": "2012-06-11T06:08:57",
+                    "success": True,
+                    "upload_file_minidump_browser": "a crash",
+                    "upload_file_minidump_flash1": "a crash",
+                    "upload_file_minidump_flash2": "a crash",
+                    "upload_file_minidump_plugin": "a crash",
+                    "exploitability": "Unknown Exploitability",
+                })
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
 
         response = self.client.get(url, {
@@ -907,43 +888,41 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             assert '/crash_data' in url
             if 'uuid' in params and params['uuid'] == 'abc123':
-                return Response("""
-            {
-            "InstallTime": "1366691881",
-            "AdapterVendorID": "0x8086",
-            "Theme": "classic/1.0",
-            "Version": "23.0a1",
-            "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-            "Vendor": "Mozilla",
-            "EMCheckCompatibility": "true",
-            "Throttleable": "0",
-            "URL": "http://system.gaiamobile.org:8080/",
-            "version": "23.0a1",
-            "AdapterDeviceID": "0x  46",
-            "ReleaseChannel": "nightly",
-            "submitted_timestamp": "2013-04-29T16:42:28.961187+00:00",
-            "buildid": "20130422105838",
-            "timestamp": 1367253748.9612169,
-            "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
-            "CrashTime": "1366703112",
-            "FramePoisonBase": "7ffffffff0dea000",
-            "FramePoisonSize": "4096",
-            "StartupTime": "1366702830",
-            "Add-ons": "activities%40gaiamobile.org:0.1,alarms%40gaiam...",
-            "BuildID": "20130422105838",
-            "SecondsSinceLastCrash": "23484",
-            "ProductName": "WaterWolf",
-            "legacy_processing": 0,
-            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-            "AsyncShutdownTimeout": 12345,
-            "BIOS_Manufacturer": "abc123",
-            "Comments": "I visited http://p0rn.com and mail@email.com",
-            "upload_file_minidump_browser": "a crash",
-            "upload_file_minidump_flash1": "a crash",
-            "upload_file_minidump_flash2": "a crash",
-            "upload_file_minidump_plugin": "a crash"
-            }
-            """)
+                return Response({
+                    "InstallTime": "1366691881",
+                    "AdapterVendorID": "0x8086",
+                    "Theme": "classic/1.0",
+                    "Version": "23.0a1",
+                    "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+                    "Vendor": "Mozilla",
+                    "EMCheckCompatibility": "true",
+                    "Throttleable": "0",
+                    "URL": "http://system.gaiamobile.org:8080/",
+                    "version": "23.0a1",
+                    "AdapterDeviceID": "0x  46",
+                    "ReleaseChannel": "nightly",
+                    "submitted_timestamp": "2013-04-29T16:42:28.961187+00:00",
+                    "buildid": "20130422105838",
+                    "timestamp": 1367253748.9612169,
+                    "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
+                    "CrashTime": "1366703112",
+                    "FramePoisonBase": "7ffffffff0dea000",
+                    "FramePoisonSize": "4096",
+                    "StartupTime": "1366702830",
+                    "Add-ons": "activities%40gaiamobile.org:0.1,%40gaiam...",
+                    "BuildID": "20130422105838",
+                    "SecondsSinceLastCrash": "23484",
+                    "ProductName": "WaterWolf",
+                    "legacy_processing": 0,
+                    "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+                    "AsyncShutdownTimeout": 12345,
+                    "BIOS_Manufacturer": "abc123",
+                    "Comments": "I visited http://p0rn.com and mail@email.com",
+                    "upload_file_minidump_browser": "a crash",
+                    "upload_file_minidump_flash1": "a crash",
+                    "upload_file_minidump_flash2": "a crash",
+                    "upload_file_minidump_plugin": "a crash"
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1149,8 +1128,7 @@ class TestViews(BaseTestViews):
                 ok_('signature' in params)
                 eq_('one & two', params['signature'])
 
-                return Response("""
-                {
+                return Response({
                     "hits": [
                         {
                             "count": 1,
@@ -1159,8 +1137,7 @@ class TestViews(BaseTestViews):
                         }
                     ],
                     "total": 1
-                }
-                """)
+                })
 
             raise NotImplementedError(url)
 
@@ -1321,25 +1298,23 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
 
             if '/server_status' in url:
-                return Response("""
-                {
-                  "breakpad_revision": "1139",
-                  "hits": [
-                    {
-                      "date_oldest_job_queued": null,
-                      "date_recently_completed": null,
-                      "processors_count": 1,
-                      "avg_wait_sec": 0.0,
-                      "waiting_job_count": 0,
-                      "date_created": "2013-04-01T21:40:01+00:00",
-                      "id": 463859,
-                      "avg_process_sec": 0.0
-                    }
-                  ],
-                  "total": 12,
-                  "socorro_revision": "9cfa4de"
-                }
-                """)
+                return Response({
+                    "breakpad_revision": "1139",
+                    "hits": [
+                        {
+                            "date_oldest_job_queued": None,
+                            "date_recently_completed": None,
+                            "processors_count": 1,
+                            "avg_wait_sec": 0.0,
+                            "waiting_job_count": 0,
+                            "date_created": "2013-04-01T21:40:01+00:00",
+                            "id": 463859,
+                            "avg_process_sec": 0.0
+                        }
+                    ],
+                    "total": 12,
+                    "socorro_revision": "9cfa4de",
+                })
 
             raise NotImplementedError(url)
 
@@ -1402,15 +1377,13 @@ class TestViews(BaseTestViews):
                 ok_('end_date' in params)
                 eq_('2013-01-01T10:00:00+00:00', params['end_date'])
 
-                return Response("""{
+                return Response({
                     "hits": [
-                        {"url": "http://farm.ville", "crash_count":123},
-                        {"url": "http://other.crap", "crash_count": 1}
+                        {"url": "http://farm.ville", "crash_count": 123},
+                        {"url": "http://other.crap", "crash_count": 1},
                     ],
                     "total": 2
-                }
-                """)
-
+                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -1445,13 +1418,11 @@ class TestViews(BaseTestViews):
             ok_('report_type' in params)
             eq_('core-counts', params['report_type'])
 
-            return Response("""
-                {
-                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                    "count": 13,
-                    "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
-                }
-            """)
+            return Response({
+                "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                "count": 13,
+                "load": "36% (4/11) vs.  26% (47/180) amd64 with 2 cores"
+            })
 
         rget.side_effect = mocked_get
 
@@ -1482,13 +1453,13 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             assert '/correlations/signatures' in url
-            return Response("""
-                {
-                    "hits": ["FakeSignature1",
-                             "FakeSignature2"],
-                    "total": 2
-                }
-            """)
+            return Response({
+                "hits": [
+                    "FakeSignature1",
+                    "FakeSignature2"
+                ],
+                "total": 2,
+            })
 
         rget.side_effect = mocked_get
 
