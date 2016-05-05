@@ -20,6 +20,7 @@ PERMISSIONS = {
     'run_long_queries': 'Run Long Queries',
     'upload_symbols': 'Upload Symbols Files',
     'view_all_symbol_uploads': 'View all Symbol Uploads',
+    'reprocess_crashes': 'Reprocess Crashes',
 }
 
 
