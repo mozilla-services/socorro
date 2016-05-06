@@ -56,7 +56,6 @@ class IntegrationTestReprocessingJobs(IntegrationTestBase):
     def test_reprocessing(self):
         """ Simple test of reprocessing"""
         config_manager = self._setup_config_manager()
-        c = config_manager.get_config()
 
         cursor = self.conn.cursor()
 
@@ -124,3 +123,46 @@ class IntegrationTestReprocessingJobs(IntegrationTestBase):
                 alter table test_reprocessing_jobs RENAME TO reprocessing_jobs
             """)
             self.conn.commit()
+
+    def test_half_way_exception(self):
+        """If the save_raw_crash() fails on the second crash_id of 2,
+        the first one should be removed from the table."""
+        config_manager = self._setup_config_manager()
+
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO reprocessing_jobs
+              (crash_id)
+            VALUES
+             ('13c4a348-5d04-11e3-8118-d231feb1dc81'),
+             ('23d5b459-6e15-22f4-9229-e342ffc2ed92')
+        """)
+        self.conn.commit()
+
+        def mocked_save_raw_crash(raw_crash, dumps, crash_id):
+            if crash_id == '23d5b459-6e15-22f4-9229-e342ffc2ed92':
+                raise Exception('something unpredictable happened')
+
+        self.rabbit_queue_mocked().save_raw_crash.side_effect = (
+            mocked_save_raw_crash
+        )
+
+        with config_manager.context() as config:
+            tab = CronTabber(config)
+            tab.run_all()
+
+            information = tab.job_state_database['reprocessing-jobs']
+            # Note, we're expecting it to fail.
+            assert information['last_error']
+            eq_(
+                information['last_error']['value'],
+                'something unpredictable happened'
+            )
+            assert not information['last_success']
+
+        cursor = self.conn.cursor()
+        cursor.execute('select crash_id from reprocessing_jobs')
+        records = cursor.fetchall()
+        eq_(len(records), 1)
+        crash_id, = records[0]
+        eq_(crash_id, '23d5b459-6e15-22f4-9229-e342ffc2ed92')
