@@ -37,7 +37,7 @@ def urlencode(txt):
 @library.filter
 def digitgroupseparator(number):
     """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
-    if type(number) is not int:
+    if not isinstance(number, (long, int)):
         return number
     return format(number, ',')
 

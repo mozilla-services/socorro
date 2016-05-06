@@ -211,7 +211,7 @@ Crashes per Day for {{ product }}
                       <td>{{ crash_info.adi | digitgroupseparator }}</td>
                       <td class="throttle"
                       >{% if crash_info.throttle %}{{ crash_info.throttle * 100 }}%{% else %}-{% endif %}</td>
-                      <td>{{ crash_info.ratio }}</td>
+                      <td>{{ '%.3f' % crash_info.ratio }}</td>
                             {% do foundversion.append(1) %}
                           {% endif %}
                         {% endfor %}
