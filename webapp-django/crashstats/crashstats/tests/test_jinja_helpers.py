@@ -189,3 +189,4 @@ class TesDigitGroupSeparator(TestCase):
         eq_(digitgroupseparator(None), None)
         eq_(digitgroupseparator(1000), '1,000')
         eq_(digitgroupseparator(-1000), '-1,000')
+        eq_(digitgroupseparator(1000000L), '1,000,000')
