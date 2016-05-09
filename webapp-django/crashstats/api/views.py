@@ -200,6 +200,14 @@ def has_permissions(user, permissions):
     return True
 
 
+def is_valid_model_class(model):
+    return (
+        issubclass(model, models.SocorroMiddleware) and
+        model is not models.SocorroMiddleware and
+        model is not crashstats.supersearch.models.ESSocorroMiddleware
+    )
+
+
 @waffle_switch('!app_api_all_disabled')
 @ratelimit(
     key='ip',
@@ -221,7 +229,10 @@ def model_wrapper(request, model_name):
         except AttributeError:
             pass
     else:
-        raise http.Http404('no model called `%s`' % model_name)
+        raise http.Http404('no service called `%s`' % model_name)
+
+    if not is_valid_model_class(model):
+        raise http.Http404('no service called `%s`' % model_name)
 
     required_permissions = getattr(model(), 'API_REQUIRED_PERMISSIONS', None)
     if isinstance(required_permissions, basestring):
@@ -412,8 +423,7 @@ def model_wrapper(request, model_name):
 
 @waffle_switch('!app_api_all_disabled')
 def documentation(request):
-    endpoints = [
-    ]
+    endpoints = []
 
     all_models = []
     for source in MODELS_MODULES:
@@ -421,9 +431,7 @@ def documentation(request):
 
     for model in all_models:
         try:
-            if not issubclass(model, models.SocorroMiddleware):
-                continue
-            if model is models.SocorroMiddleware:
+            if not is_valid_model_class(model):
                 continue
             if model.__name__ in BLACKLIST:
                 continue

@@ -86,6 +86,15 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
+    def test_base_classes_raise_not_found(self):
+        url = reverse('api:model_wrapper', args=('SocorroMiddleware',))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('api:model_wrapper', args=('ESSocorroMiddleware',))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
     @mock.patch('requests.get')
     def test_CrashesPerAdu(self, rget):
         def mocked_get(url, params, **options):
