@@ -392,6 +392,7 @@ class CSignatureTool(CSignatureToolBase):
           'HandleInvalidParameter',
           'HeapFree',
           'huge_dalloc',
+          'huge_palloc',
           'ialloc',
           'imalloc',
           'init_library',
