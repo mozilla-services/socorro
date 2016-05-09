@@ -203,7 +203,6 @@
                     temp = queries[i].split('=');
                     var key = temp[0];
                     var value = decodeURIComponent(temp[1]);
-                    value = value.replace(/\+/g, ' ');
 
                     if (params[key] && Array.isArray(params[key])) {
                         params[key].push(value);
