@@ -250,7 +250,9 @@ def model_wrapper(request, model_name):
 
     # it being set to None means it's been deliberately disabled
     if getattr(model, 'API_WHITELIST', False) is False:
-        raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
+        if settings.DEBUG:  # pragma: no cover
+            raise APIWhitelistError('No API_WHITELIST defined for %r' % model)
+        raise http.Http404('Unrecognized model')
 
     instance = model()
 

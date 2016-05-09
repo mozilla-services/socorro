@@ -1947,3 +1947,8 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['reports'])
         ok_('exploitability' in dump['reports'])
+
+    def test_rewrap_apiwhitelisterrors_as_404(self):
+        url = reverse('api:model_wrapper', args=('SocorroMiddleware',))
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
