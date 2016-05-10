@@ -2,22 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import re
 import datetime
 
 import ujson as json
 
 from configman.converters import class_converter, str_to_list
-
+from configman import Namespace
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import datetimeutil, external_common, BadArgumentError
 
 from socorro.analysis.correlations.correlations_rule_base import (
     CorrelationsStorageBase,
 )
 from socorro.external.postgresql.dbapi2_util import (
-    # SQLDidNotReturnSingleValue,
-    # single_value_sql,
     execute_no_results
 )
 
@@ -29,8 +25,6 @@ class SignatureNotFoundError(Exception):
 class ReasonNotFoundError(Exception):
     """when we encounter a reason that we don't have in the database"""
 
-
-from configman import Namespace, RequiredConfig, class_converter
 
 class Correlations(CorrelationsStorageBase, PostgreSQLBase):
 
@@ -84,11 +78,11 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
 
     def _upsert_correlation(
         self,
-        connection, # XXX really?
+        connection,
         product,
         version,
-        reason,
         signature,
+        reason,
         platform,
         key,
         count,
@@ -203,7 +197,6 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
             self.product_version_ids[key] = product_version_id
         return self.product_version_ids[key]
 
-
     signature_ids = {}  # cache
 
     def get_signature_id(self, connection, signature):
@@ -237,7 +230,7 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
             sql = """
                 SELECT
                     reason_id
-                FROM reason
+                FROM reasons
                 WHERE
                     reason = %(reason)s
             """
@@ -252,7 +245,7 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
                 reason_id, = result
             except ValueError:
                 # XXX Perhaps we need to create the row here
-                raise ReasonNotFoundError(signature)
+                raise ReasonNotFoundError(reason)
             self.reason_ids[reason] = reason_id
 
         return self.reason_ids[reason]
@@ -261,7 +254,6 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
         """for the benefit of this class's subclasses that need to have
         this defined."""
         pass
-
 
 
 class CoreCounts(Correlations):
@@ -276,6 +268,8 @@ class CoreCounts(Correlations):
         date = self._prefix_to_datetime_date(prefix)
 
         notes = counts_summary_structure['notes']
+        notes = notes and notes[0] or ''
+
         product = key.split('_', 1)[0]
         version = key.split('_', 1)[1]
 
@@ -307,7 +301,12 @@ class CoreCounts(Correlations):
                         )
                     except SignatureNotFoundError as exp:
                         self.config.logger.warning(
-                            'Not a recognized signature %r',
+                            '(CoreCounts) Not a recognized signature %r',
+                            exp
+                        )
+                    except ReasonNotFoundError as exp:
+                        self.config.logger.warning(
+                            '(CoreCounts) Not a recognized reason %r',
                             exp
                         )
 
@@ -324,6 +323,8 @@ class InterestingModules(Correlations):
         date = self._prefix_to_datetime_date(prefix)
 
         notes = counts_summary_structure['notes']
+        notes = notes and notes[0] or ''
+
         product = key.split('_', 1)[0]
         version = key.split('_', 1)[1]
         os_counters = counts_summary_structure['os_counters']
@@ -356,6 +357,13 @@ class InterestingModules(Correlations):
                         )
                     except SignatureNotFoundError as exp:
                         self.config.logger.warning(
-                            'Not a recognized signature %r',
+                            '(InterestingModules) Not a recognized '
+                            'signature %r',
+                            exp
+                        )
+                    except ReasonNotFoundError as exp:
+                        self.config.logger.warning(
+                            '(InterestingModules) Not a recognized '
+                            'reason %r',
                             exp
                         )
