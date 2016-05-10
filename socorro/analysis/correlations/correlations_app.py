@@ -121,13 +121,20 @@ class CorrelationsApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
     #--------------------------------------------------------------------------
     def _create_iter(self):
+        print self.config
+        print self.config.items()
+        print
         hits = ProductVersions(config=self.config).get(
             active=True,
             product=self.config.product
         )['hits']
-        versions = [
-            x['version'] for x in hits if not x['version'].endswith('b')
-        ]
+        versions = []
+        for hit in hits:
+            if hit['version'].endswith('b'):
+                continue
+            if 'esr' in hit['version']:
+                continue
+            versions.append(hit['version'])
         assert versions, "No active versions"
 
         # convert a datetime.date object to datetime.datetime

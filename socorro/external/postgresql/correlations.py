@@ -77,6 +77,7 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
         date,
         payload
     ):
+        # Upsert
         sql = """
             INSERT INTO correlations (
                 product_version_id,
