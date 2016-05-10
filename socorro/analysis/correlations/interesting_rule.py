@@ -195,7 +195,7 @@ class CorrelationInterestingModulesRule(CorrelationRule):
                     a_signature
                 )
         if "reason" in crash and crash["reason"] is not None:
-            a_signature = a_signature + "|" + crash["reason"]
+            a_signature = a_signature + "__reason__" + crash["reason"]
         counters_for_a_signature = counters_for_an_os.signatures.setdefault(
             a_signature,
             SocorroDotDict({

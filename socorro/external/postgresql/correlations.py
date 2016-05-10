@@ -15,9 +15,19 @@ from socorrolib.lib import datetimeutil, external_common, BadArgumentError
 from socorro.analysis.correlations.correlations_rule_base import (
     CorrelationsStorageBase,
 )
+from socorro.external.postgresql.dbapi2_util import (
+    # SQLDidNotReturnSingleValue,
+    # single_value_sql,
+    execute_no_results
+)
+
 
 class SignatureNotFoundError(Exception):
     """when we encounter a signature that we don't have in the database"""
+
+
+class ReasonNotFoundError(Exception):
+    """when we encounter a reason that we don't have in the database"""
 
 
 from configman import Namespace, RequiredConfig, class_converter
@@ -64,11 +74,16 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
         dd = int(prefix[6:8])
         return datetime.date(yy, mm, dd)
 
-    def _insert_correlation(
+    @staticmethod
+    def _split_signature_and_reason(signature_and_reason):
+        return signature_and_reason.rsplit('__reason__', 1)
+
+    def _upsert_correlation(
         self,
         connection, # XXX really?
         product,
         version,
+        reason,
         signature,
         platform,
         key,
@@ -79,27 +94,66 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
     ):
         # Upsert
         sql = """
+        WITH
+        update_correlation AS (
+            UPDATE correlations SET
+                count = %(count)s,
+                notes = %(notes)s,
+                payload = %(payload)s
+            WHERE
+                product_version_id = %(product_version_id)s AND
+                platform = %(platform)s AND
+                key = %(key)s AND
+                date = %(date)s AND
+                signature_id = %(signature_id)s AND
+                reason_id = %(reason_id)s
+            RETURNING 1
+        ),
+        insert_correlation AS (
             INSERT INTO correlations (
                 product_version_id,
                 platform,
-                signature_id,
                 key,
+                date,
+                signature_id,
+                reason_id,
                 count,
                 notes,
-                date,
                 payload
-            ) VALUES (
-                %(product_version_id)s,
-                %(platform)s,
-                %(signature_id)s,
-                %(key)s,
-                %(count)s,
-                %(notes)s,
-                %(date)s,
-                %(payload)s
+            ) (
+                SELECT
+                    %(product_version_id)s AS product_version_id,
+                    %(platform)s AS platform,
+                    %(key)s AS key,
+                    %(date)s AS date,
+                    %(signature_id)s AS signature_id,
+                    %(reason_id)s AS reason_id,
+                    %(count)s AS count,
+                    %(notes)s AS notes,
+                    %(payload)s AS payload
+                WHERE NOT EXISTS (
+                    SELECT
+                        product_version_id
+                    FROM
+                        correlations
+                    WHERE
+                        product_version_id = %(product_version_id)s AND
+                        platform = %(platform)s AND
+                        key = %(key)s AND
+                        date = %(date)s AND
+                        signature_id = %(signature_id)s AND
+                        reason_id = %(reason_id)s
+                    LIMIT 1
+                )
             )
+            RETURNING 2
+        )
+        SELECT * FROM update_correlation
+        UNION ALL
+        SELECT * FROM insert_correlation
         """
-        self.insert(
+        execute_no_results(
+            connection,
             sql,
             {
                 'product_version_id': self.get_product_version_id(
@@ -109,13 +163,13 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
                 ),
                 'platform': platform,
                 'signature_id': self.get_signature_id(connection, signature),
+                'reason_id': self.get_reason_id(connection, reason),
                 'key': key,
                 'count': count,
                 'notes': notes,
                 'date': date,
                 'payload': json.dumps(payload)
             },
-            connection=connection
         )
 
     product_version_ids = {}  # cache
@@ -147,8 +201,6 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
     signature_ids = {}  # cache
 
     def get_signature_id(self, connection, signature):
-        # XXX WHY OH WHY IS THIS NEEDED?!
-        signature = re.sub('\|EXCEPTION_BREAKPOINT$', '', signature)
         if signature not in self.signature_ids:
             sql = """
                 SELECT
@@ -171,6 +223,33 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
             self.signature_ids[signature] = signature_id
 
         return self.signature_ids[signature]
+
+    reason_ids = {}  # cache
+
+    def get_reason_id(self, connection, reason):
+        if reason not in self.reason_ids:
+            sql = """
+                SELECT
+                    reason_id
+                FROM reason
+                WHERE
+                    reason = %(reason)s
+            """
+            try:
+                result, = self.query(
+                    sql,
+                    {
+                        'reason': reason,
+                    },
+                    connection=connection
+                )
+                reason_id, = result
+            except ValueError:
+                # XXX Perhaps we need to create the row here
+                raise ReasonNotFoundError(signature)
+            self.reason_ids[reason] = reason_id
+
+        return self.reason_ids[reason]
 
     def close(self):
         """for the benefit of this class's subclasses that need to have
@@ -202,13 +281,17 @@ class CoreCounts(Correlations):
                 count = counts_summary_structure[platform]['count']
                 signatures = counts_summary_structure[platform]['signatures']
 
-                for signature, payload in signatures.items():
+                for signature_and_reason, payload in signatures.items():
+                    signature, reason = self._split_signature_and_reason(
+                        signature_and_reason
+                    )
                     try:
-                        self._insert_correlation(
+                        self._upsert_correlation(
                             connection,
                             product,
                             version,
                             signature,
+                            reason,
                             platform,
                             name,
                             count,
@@ -247,13 +330,17 @@ class InterestingModules(Correlations):
                 count = os_counters[platform]['count']
                 signatures = os_counters[platform]['signatures']
 
-                for signature, payload in signatures.items():
+                for signature_and_reason, payload in signatures.items():
+                    signature, reason = self._split_signature_and_reason(
+                        signature_and_reason
+                    )
                     try:
-                        self._insert_correlation(
+                        self._upsert_correlation(
                             connection,
                             product,
                             version,
                             signature,
+                            reason,
                             platform,
                             name,
                             count,

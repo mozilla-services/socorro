@@ -131,7 +131,7 @@ class CorrelationCoreCountRule(CorrelationRule):
                 # Condense all signatures in a given DLL.
                 signame = re.sub(r"@0x[0-9a-fA-F]+$", "", signame)
         if "reason" in crash and crash["reason"] is not None:
-            signame = signame + "|" + crash["reason"]
+            signame = signame + "__reason__" + crash["reason"]
         signature = osys["signatures"].setdefault(signame,
                                                   { "count": 0,
                                                     "core_counts": {} })
