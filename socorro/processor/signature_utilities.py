@@ -10,7 +10,6 @@ from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
 from socorrolib.lib.transform_rules import Rule
-from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 
 
 #==============================================================================
@@ -572,82 +571,6 @@ class CSignatureTool(CSignatureToolBase):
             self.config.signatures_with_line_numbers_re
         )
         self.signature_sentinels = config.signature_sentinels
-
-
-#==============================================================================
-class CSignatureToolDB(CSignatureToolBase):
-    """This is another C/C++ signature generation class.  It gets its signature
-    generation rules from a database connection instead of through
-    configuration.  It expects a table to exist in the database called
-    'csignature_rules' with two columns, 'category' and 'rule', both of a
-    character datatype.  Content of the 'rule' column is a text string
-    that can be converted via the Python 'eval' method into a Python object.
-    For most categories, the rule is simply a string that is converted into
-    a regular expression.  For the 'sentinel' category, however, the form
-    can be either a string or a tuple comprised of a string and a reference
-    to a Python function, usually in the form of a lambda expression."""
-    required_config = Namespace()
-    required_config.add_option(
-        'database_class',
-        doc="the class of the database",
-        default='socorro.external.postgresql.connection_context.'
-                'ConnectionContext',
-        from_string_converter=class_converter,
-        reference_value_from='resource.signature'
-    )
-    required_config.add_option(
-        'transaction_executor_class',
-        default="socorro.database.transaction_executor."
-                "TransactionExecutorWithInfiniteBackoff",
-        doc='a class that will manage transactions',
-        from_string_converter=class_converter,
-        reference_value_from='resource.signature'
-    )
-
-    #--------------------------------------------------------------------------
-    def __init__(self, config, quit_check_callback=None):
-        super(CSignatureToolDB, self).__init__(config, quit_check_callback)
-        self.database = config.database_class(config)
-        self.transaction = \
-            self.config.transaction_executor_class(
-                config,
-                self.database,
-                quit_check_callback
-            )
-        self.transaction(self._read_signature_rules_from_database)
-
-    #--------------------------------------------------------------------------
-    def _read_signature_rules_from_database(self, connection):
-        for category, category_re in (
-            ('prefix', 'prefix_signature_re'),
-            ('irrelevant', 'irrelevant_signature_re'),
-            ('line_number', 'signatures_with_line_numbers_re')
-        ):
-            rule_element_list = [
-                a_rule
-                for (a_rule,) in execute_query_fetchall(
-                    connection,
-                    "select rule from skiplist "
-                    "where category = %s",
-                    (category, )
-                )
-            ]
-            setattr(
-                self,
-                category_re,
-                re.compile('|'.join(rule_element_list))
-            )
-
-        # get sentinel rules
-        self.signature_sentinels = [
-            eval(sentinel_rule)  # eval quoted strings and tuples
-            if sentinel_rule[0] in "'\"(" else
-            sentinel_rule  # already a string, don't need to eval
-            for (sentinel_rule,) in execute_query_fetchall(
-                connection,
-                "select rule from csignature_rules where category = 'sentinel'"
-            )
-        ]
 
 
 #==============================================================================
