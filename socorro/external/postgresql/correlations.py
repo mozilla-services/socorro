@@ -76,7 +76,11 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
 
     @staticmethod
     def _split_signature_and_reason(signature_and_reason):
-        return signature_and_reason.rsplit('__reason__', 1)
+        split = signature_and_reason.rsplit('__reason__', 1)
+        if len(split) == 2:
+            return split
+        else:
+            return signature_and_reason, None
 
     def _upsert_correlation(
         self,
@@ -163,7 +167,9 @@ class Correlations(CorrelationsStorageBase, PostgreSQLBase):
                 ),
                 'platform': platform,
                 'signature_id': self.get_signature_id(connection, signature),
-                'reason_id': self.get_reason_id(connection, reason),
+                'reason_id': (
+                    reason and self.get_reason_id(connection, reason) or None
+                ),
                 'key': key,
                 'count': count,
                 'notes': notes,
