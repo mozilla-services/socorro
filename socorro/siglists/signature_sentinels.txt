@@ -1,0 +1,5 @@
+# Signature Sentinels
+
+_purecall
+Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash
+google_breakpad::ExceptionHandler::HandleInvalidParameter

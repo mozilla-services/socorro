@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import mock
 from nose.tools import eq_, ok_
 
 from configman.dotdict import DotDict as CDotDict
@@ -43,19 +44,22 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     @staticmethod
     def setup_config_C_sig_tool(
-        ig='ignored1',
-        pr='pre1|pre2',
-        si='fnNeedNumber',
+        ig=['ignored1'],
+        pr=['pre1', 'pre2'],
+        si=['fnNeedNumber'],
         ss=('sentinel', ('sentinel2', lambda x: 'ff' in x)),
     ):
         config = sutil.DotDict()
         config.logger = sutil.FakeLogger()
-        config.irrelevant_signature_re = ig
-        config.prefix_signature_re = pr
-        config.signatures_with_line_numbers_re = si
-        config.signature_sentinels = ss
         config.collapse_arguments = True
-        s = CSignatureTool(config)
+
+        with mock.patch('socorro.processor.signature_utilities.siglists') as mocked_siglists:
+            mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
+            mocked_siglists.PREFIX_SIGNATURE_RE = pr
+            mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
+            mocked_siglists.SIGNATURE_SENTINELS = ss
+            s = CSignatureTool(config)
+
         return s, config
 
     #--------------------------------------------------------------------------
@@ -70,11 +74,7 @@ class TestCSignatureTool(BaseTestClass):
         fixupSpace = re.compile(r' (?=[\*&,])')
         fixupComma = re.compile(r',(?! )')
 
-        s, c = self.setup_config_C_sig_tool(
-            expectedRegEx.irrelevant_signature_re,
-            expectedRegEx.prefix_signature_re,
-            expectedRegEx.signatures_with_line_numbers_re
-        )
+        s, c = self.setup_config_C_sig_tool()
 
         self.assert_equal_with_nicer_output(c, s.config)
         self.assert_equal_with_nicer_output(
@@ -128,7 +128,7 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_1(self):
         """test_generate_1: simple"""
-        s, c = self.setup_config_C_sig_tool('a|b|c', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
         e = 'd | e | f | g'
         sig, notes = s.generate(a)
@@ -142,7 +142,7 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_2(self):
         """test_generate_2: hang"""
-        s, c = self.setup_config_C_sig_tool('a|b|c', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
         e = 'hang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=-1)
@@ -166,7 +166,7 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
-        s, c = self.setup_config_C_sig_tool('a|b|c', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
         a[3] = a[3] * 70
         a[4] = a[4] * 70
@@ -193,14 +193,17 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
-        s, c = self.setup_config_C_sig_tool('a|b|c', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
         a[7] = 'sentinel'
         e = 'sentinel'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        s, c = self.setup_config_C_sig_tool('a|b|c|sentinel', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(
+            ['a', 'b', 'c', 'sentinel'],
+            ['d', 'e', 'f']
+        )
         e = 'f | e | d | i'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
@@ -208,14 +211,14 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_4(self):
         """test_generate_4: tuple sentinel"""
-        s, c = self.setup_config_C_sig_tool('a|b|c', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
         a[7] = 'sentinel2'
         e = 'd | e | f | g'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        s, c = self.setup_config_C_sig_tool('a|b|c', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
         a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
         a[7] = 'sentinel2'
         a[22] = 'ff'
@@ -223,7 +226,10 @@ class TestCSignatureTool(BaseTestClass):
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        s, c = self.setup_config_C_sig_tool('a|b|c|sentinel2', 'd|e|f')
+        s, c = self.setup_config_C_sig_tool(
+            ['a', 'b', 'c', 'sentinel2'],
+            ['d', 'e', 'f']
+        )
         a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
         a[7] = 'sentinel2'
         a[22] = 'ff'
@@ -996,22 +1002,6 @@ class TestSignatureGeneration(TestCase):
             'c_signature': {
                 'c_signature_tool_class': CSignatureTool,
                 'maximum_frames_to_consider': 40,
-                'signature_sentinels': eval(
-                    CSignatureTool.required_config.signature_sentinels
-                    .default
-                ),
-                'irrelevant_signature_re': eval(
-                    CSignatureTool.required_config.irrelevant_signature_re
-                    .default
-                ),
-                'prefix_signature_re': eval(
-                    CSignatureTool.required_config.prefix_signature_re
-                    .default
-                ),
-                'signatures_with_line_numbers_re': (
-                    CSignatureTool.required_config
-                    .signatures_with_line_numbers_re.default
-                ),
                 'collapse_arguments': True,
             },
             'java_signature': {
@@ -1117,9 +1107,8 @@ class TestSignatureGeneration(TestCase):
 
         eq_(
             processed_crash.signature,
-            'WaitForMultipleObjectsEx | RealMsgWaitForMultipleObjectsEx '
-            '| MsgWaitForMultipleObjects | F_1152915508_________________'
-            '_________________'
+            'WaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________'
         )
         eq_(
             processed_crash.proto_signature,
@@ -1496,22 +1485,6 @@ class TestSignatureWatchDogRule(TestCase):
             'c_signature': {
                 'c_signature_tool_class': CSignatureTool,
                 'maximum_frames_to_consider': 40,
-                'signature_sentinels': eval(
-                    CSignatureTool.required_config.signature_sentinels
-                    .default
-                ),
-                'irrelevant_signature_re': eval(
-                    CSignatureTool.required_config.irrelevant_signature_re
-                    .default
-                ),
-                'prefix_signature_re': eval(
-                    CSignatureTool.required_config.prefix_signature_re
-                    .default
-                ),
-                'signatures_with_line_numbers_re': (
-                    CSignatureTool.required_config
-                    .signatures_with_line_numbers_re.default
-                ),
                 'collapse_arguments': True,
             },
             'java_signature': {
@@ -1570,9 +1543,8 @@ class TestSignatureWatchDogRule(TestCase):
         eq_(
             processed_crash.signature,
             'shutdownhang | '
-            'WaitForMultipleObjectsEx | RealMsgWaitForMultipleObjectsEx '
-            '| MsgWaitForMultipleObjects | F_1152915508_________________'
-            '_________________'
+            'WaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________'
         )
         eq_(processor_meta.processor_notes, [])
 
