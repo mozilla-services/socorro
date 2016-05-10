@@ -121,9 +121,6 @@ class CorrelationsApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
     #--------------------------------------------------------------------------
     def _create_iter(self):
-        print self.config
-        print self.config.items()
-        print
         hits = ProductVersions(config=self.config).get(
             active=True,
             product=self.config.product

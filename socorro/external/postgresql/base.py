@@ -14,7 +14,6 @@ from socorrolib.lib import DatabaseError
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
     single_value_sql,
-    execute_no_results,
 )
 logger = logging.getLogger("webapi")
 
@@ -102,15 +101,6 @@ class PostgreSQLBase(object):
             single_value_sql,
             sql,
             error_message or "Failed to execute count against PostgreSQL",
-            params=params,
-            connection=connection
-        )
-
-    def insert(self, sql, params, error_message=None, connection=None):
-        return self._execute(
-            execute_no_results,
-            sql,
-            error_message or "Failed to execute insert against PostgreSQL",
             params=params,
             connection=connection
         )
