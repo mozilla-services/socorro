@@ -1433,6 +1433,7 @@ class Correlations(DeclarativeBase):
     product_version_id = Column(u'product_version_id', INTEGER(), nullable=False, autoincrement=False, index=True)
     platform = Column(u'platform', TEXT(), primary_key=True, nullable=False)
     signature_id = Column(u'signature_id', INTEGER(), primary_key=False, nullable=False, index=True)
+    reason_id = Column(u'reason_id', INTEGER(), primary_key=False, nullable=True, index=True)
     key = Column(u'key', TEXT(), nullable=False)
     count = Column(u'count', INTEGER(), nullable=False, server_default=text('0'))
     notes = Column(u'notes', TEXT(), primary_key=False, nullable=False, server_default='')
@@ -1467,6 +1468,7 @@ class Correlations(DeclarativeBase):
             key,
             date,
             signature_id,
+            reason_id,
             unique=True
         ),
     )
