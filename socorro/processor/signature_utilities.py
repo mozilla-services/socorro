@@ -448,6 +448,8 @@ class CSignatureTool(CSignatureToolBase):
           '(NS_)?(Lossy)?(Copy|Append|Convert).*UTF.*',
           'nsACString_internal::Assign.*',
           'nsAString_internal::Assign.*',
+          'nsACString_internal::BeginWriting',
+          'nsAString_internal::BeginWriting',
           'nsBaseHashtable<.*>::.*',
           'nsClassHashtable<.*>::.*',
           'nsCOMPtr.*',
