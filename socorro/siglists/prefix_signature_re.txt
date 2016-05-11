@@ -1,4 +1,7 @@
 # Prefix Signatures
+#
+# Regular expressions matching frame signatures that should always be coupled
+# with the following frame signature when generating an overall signature.
 
 @0x0
 .*CrashAtUnhandlableOOM

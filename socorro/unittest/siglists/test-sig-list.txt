@@ -1,0 +1,4 @@
+# Test Signatures List.
+# Contains an invalid regular expression.
+
+lol[[wut]
