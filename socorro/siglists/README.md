@@ -6,10 +6,10 @@ This folder contains lists that are used to configure the C signature generation
 
 When generating a C signature, 4 steps are involved.
 
-1. We walk the crashing thread's stack, looking for things that would match the [signature sentinels](#signature-sentinels). The first matching element, if any, becomes the top of the sub-stack we'll consider going forward.
-2. We walk the stack, ignoring everything that matches the [irrelevant signatures](#irrelevant-signatures). We consider the first non-matching element the top of the new sub-stack.
-3. We accumulate signatures that match the [prefix signatures](#prefix-signatures), until something doesn't match.
-4. We normalize each signature we accumulated. Signatures that match the [signatures with line numbers](#signatures-with-line-numbers) have their associated code line number added to them, like this: ``signature:42``.
+1. We walk the crashing thread's stack, looking for things that would match the [Signature Sentinels](#signature-sentinels). The first matching element, if any, becomes the top of the sub-stack we'll consider going forward.
+2. We walk the stack, ignoring everything that matches the [Irrelevant Signatures](#irrelevant-signatures). We consider the first non-matching element the top of the new sub-stack.
+3. We accumulate signatures that match the [Prefix Signatures](#prefix-signatures), until something doesn't match.
+4. We normalize each signature we accumulated. Signatures that match the [Signatures With Line Numbers](#signatures-with-line-numbers) have their associated code line number added to them, like this: ``signature:42``.
 
 The generated signature is a concatenation of all the accumulated signatures, separated with a pipe sign (`` | ``).
 
@@ -60,3 +60,9 @@ That will create a branch in your fork of the socorro project, and take you to t
 ---
 
 That's it! You have proposed a change, we have been notified about it. Someone from the Socorro team will review your changes and merge them if they are appropriate. Thank you for contributing to Socorro!
+
+## Watching only the siglists folder
+
+If you are interested in watching what's changing in this ``siglists`` folder, but don't care much about what happens in the rest of the Socorro repo, you can easily set a filter in your email client to do that. Here's an example filter you can use today:
+
+<pre>to:(socorro@noreply.github.com) ("A socorro/siglists/" OR "M socorro/siglists/" OR "D socorro/siglists")</pre>
