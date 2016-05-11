@@ -26,7 +26,7 @@ if [ "$SUITE" == "webapp" ]; then
 fi
 
 if [ "$SUITE" == "puppet" ]; then
-    ./scripts/test-webapp.sh
+    ./scripts/test-puppet.sh
 fi
 
 if [ "$SUITE" == "end-to-end" ]; then
