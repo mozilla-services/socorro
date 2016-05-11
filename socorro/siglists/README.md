@@ -1,6 +1,6 @@
 # Signatures Utilities Lists
 
-This folder contains lists that are used to configure the C signature generation process. Each ``.txt`` file contains a list of signatures or regex matching signatures, that are used at various steps of our algorithm.
+This folder contains lists that are used to configure the C signature generation process. Each ``.txt`` file contains a list of signatures or regex matching signatures, that are used at various steps of our algorithm. Regular expressions use the [Python syntax](https://docs.python.org/2/library/re.html#regular-expression-syntax).
 
 ## Signature Generation Algorithm
 
@@ -43,19 +43,19 @@ The first thing we will ask you to do is to file a bug. We keep track of every c
 
 Then proceed to making those changes...
 
-### Using command lines
+### Using the command line
 
 If you are a git power user, you probably don't need us to explain how to do this! :)
 
-If you are not, you're probably better of using github's interface. Read on!
+If you are not, you're probably better off using GitHub's interface. Read on!
 
-### Using github's interface
+### Using GitHub's interface
 
-First, you need to be logged in to github. Open the file you want to edit, and then click the little pen in the top right corner of the page, the one that says ``Fork this project and edit the file``, or ``Edit the file in your fork of this project`` if you already have a fork of it.
+First, you need to be logged in to GitHub. Open the file you want to edit, and then click the little pen in the top right corner of the page, the one that says ``Fork this project and edit the file``, or ``Edit the file in your fork of this project`` if you already have a fork of it.
 
 That will take you to an editor, where you can write any changes you want. Once you are done editting the file, enter a commit description. We have some conventions, and a bot that will automatically close bugs, so please make your commit message following this pattern: ``Fixes bug XYZ - Desciption of the change``. Once you are ready, click ``Propose file change``.
 
-That will create a branch in your fork of the socorro project, and take you to the commit you just created. You can verify that the changes you made are correct, and then click ``Create pull request``, and then ``Create pull request`` again. Once the pull request is opened, travis will automatically start running our test suite, which includes sanity checks for those signature lists. You can see the status of those tests in the pull request, and click the ``Details`` link to see logs in case of a failure.
+That will create a branch in your fork of the socorro project, and take you to the commit you just created. You can verify that the changes you made are correct, and then click ``Create pull request``, and then ``Create pull request`` again. Once the pull request is opened, [travis](https://travis-ci.org/mozilla/socorro) will automatically start running our test suite, which includes sanity checks for those signature lists. You can see the status of those tests in the pull request, and click the ``Details`` link to see logs in case of a failure.
 
 ---
 

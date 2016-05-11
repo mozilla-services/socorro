@@ -41,7 +41,7 @@ def _get_file_content(source):
 
     lines = []
     with open(filepath, 'r') as f:
-        for (i, line) in enumerate(f):
+        for i, line in enumerate(f):
             line = line.strip()
 
             if not line or line.startswith('#'):
