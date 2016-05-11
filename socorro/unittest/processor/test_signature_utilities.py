@@ -43,7 +43,7 @@ class TestCSignatureTool(BaseTestClass):
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def setup_config_C_sig_tool(
+    def setup_config_c_sig_tool(
         ig=['ignored1'],
         pr=['pre1', 'pre2'],
         si=['fnNeedNumber'],
@@ -53,7 +53,9 @@ class TestCSignatureTool(BaseTestClass):
         config.logger = sutil.FakeLogger()
         config.collapse_arguments = True
 
-        with mock.patch('socorro.processor.signature_utilities.siglists') as mocked_siglists:
+        with mock.patch(
+            'socorro.processor.signature_utilities.siglists'
+        ) as mocked_siglists:
             mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
             mocked_siglists.PREFIX_SIGNATURE_RE = pr
             mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
@@ -63,39 +65,39 @@ class TestCSignatureTool(BaseTestClass):
         return s, config
 
     #--------------------------------------------------------------------------
-    def test_C_config_tool_init(self):
+    def test_c_config_tool_init(self):
         """test_C_config_tool_init: constructor test"""
-        expectedRegEx = sutil.DotDict()
-        expectedRegEx.irrelevant_signature_re = re.compile('ignored1')
-        expectedRegEx.prefix_signature_re = re.compile('pre1|pre2')
-        expectedRegEx.signatures_with_line_numbers_re = re.compile(
+        expected_regex = sutil.DotDict()
+        expected_regex.irrelevant_signature_re = re.compile('ignored1')
+        expected_regex.prefix_signature_re = re.compile('pre1|pre2')
+        expected_regex.signatures_with_line_numbers_re = re.compile(
             'fnNeedNumber'
         )
-        fixupSpace = re.compile(r' (?=[\*&,])')
-        fixupComma = re.compile(r',(?! )')
+        fixup_space = re.compile(r' (?=[\*&,])')
+        fixup_comma = re.compile(r',(?! )')
 
-        s, c = self.setup_config_C_sig_tool()
+        s, c = self.setup_config_c_sig_tool()
 
         self.assert_equal_with_nicer_output(c, s.config)
         self.assert_equal_with_nicer_output(
-            expectedRegEx.irrelevant_signature_re,
+            expected_regex.irrelevant_signature_re,
             s.irrelevant_signature_re
         )
         self.assert_equal_with_nicer_output(
-            expectedRegEx.prefix_signature_re,
+            expected_regex.prefix_signature_re,
             s.prefix_signature_re
         )
         self.assert_equal_with_nicer_output(
-            expectedRegEx.signatures_with_line_numbers_re,
+            expected_regex.signatures_with_line_numbers_re,
             s.signatures_with_line_numbers_re
         )
-        eq_(fixupSpace.pattern, s.fixup_space.pattern)
-        eq_(fixupComma.pattern, s.fixup_comma.pattern)
+        eq_(fixup_space.pattern, s.fixup_space.pattern)
+        eq_(fixup_comma.pattern, s.fixup_comma.pattern)
 
     #--------------------------------------------------------------------------
     def test_normalize_with_collapse_args(self):
         """test_normalize: bunch of variations"""
-        s, c = self.setup_config_C_sig_tool()
+        s, c = self.setup_config_c_sig_tool()
         a = [
             (('module', 'fn', 'source', '23', '0xFFF'), 'fn'),
             (('module', 'fnNeedNumber', 's', '23', '0xFFF'),
@@ -107,9 +109,36 @@ class TestCSignatureTool(BaseTestClass):
             # never comes up
             #(('module', 'f(  *s , &n)', 's', '23', '0xFFF'), 'f(*s, &n)'),
             (('module', 'f3(s,t,u)', 's', '23', '0xFFF'), 'f3'),
-            (('module', '::(anonymous namespace)::f3(s,t,u)', 's', '23', '0xFFF'), '::(anonymous namespace)::f3'),
-            (('module', 'operator()(s,t,u)', 's', '23', '0xFFF'), 'operator()'),
-            (('module', 'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>', 's', '23', '0xFFF'), 'Alpha<T>::Echo<T>'),
+            (
+                (
+                    'module',
+                    '::(anonymous namespace)::f3(s,t,u)',
+                    's',
+                    '23',
+                    '0xFFF'
+                ),
+                '::(anonymous namespace)::f3'
+            ),
+            (
+                (
+                    'module',
+                    'operator()(s,t,u)',
+                    's',
+                    '23',
+                    '0xFFF'
+                ),
+                'operator()'
+            ),
+            (
+                (
+                    'module',
+                    'Alpha<Bravo<Charlie>, Delta>::Echo<Foxtrot>',
+                    's',
+                    '23',
+                    '0xFFF'
+                ),
+                'Alpha<T>::Echo<T>'
+            ),
             (('module', 'f<3>(s,t,u)', 's', '23', '0xFFF'), 'f<T>'),
             (('module', '', 'source/', '23', '0xFFF'), 'source#23'),
             (('module', '', 'source\\', '23', '0xFFF'), 'source#23'),
@@ -128,13 +157,13 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_1(self):
         """test_generate_1: simple"""
-        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
-        a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
+        s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
+        a = list('abcdefghijklmnopqrstuvwxyz')
         e = 'd | e | f | g'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
+        a = list('abcdaeafagahijklmnopqrstuvwxyz')
         e = 'd | e | f | g'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
@@ -142,23 +171,23 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_2(self):
         """test_generate_2: hang"""
-        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
-        a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
+        s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
+        a = list('abcdefghijklmnopqrstuvwxyz')
         e = 'hang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=-1)
         self.assert_equal_with_nicer_output(e, sig)
 
-        a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
+        a = list('abcdaeafagahijklmnopqrstuvwxyz')
         e = 'hang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=-1)
         self.assert_equal_with_nicer_output(e, sig)
 
-        a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
+        a = list('abcdaeafagahijklmnopqrstuvwxyz')
         e = 'd | e | f | g'
         sig, notes = s.generate(a, hang_type=0)
         self.assert_equal_with_nicer_output(e, sig)
 
-        a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
+        a = list('abcdaeafagahijklmnopqrstuvwxyz')
         e = 'chromehang | d | e | f | g'
         sig, notes = s.generate(a, hang_type=1)
         self.assert_equal_with_nicer_output(e, sig)
@@ -166,8 +195,8 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
-        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
-        a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
+        s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
+        a = list('abcdefghijklmnopqrstuvwxyz')
         a[3] = a[3] * 70
         a[4] = a[4] * 70
         a[5] = a[5] * 70
@@ -193,14 +222,14 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
-        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
-        a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
+        s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
+        a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel'
         e = 'sentinel'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        s, c = self.setup_config_C_sig_tool(
+        s, c = self.setup_config_c_sig_tool(
             ['a', 'b', 'c', 'sentinel'],
             ['d', 'e', 'f']
         )
@@ -211,26 +240,26 @@ class TestCSignatureTool(BaseTestClass):
     #--------------------------------------------------------------------------
     def test_generate_4(self):
         """test_generate_4: tuple sentinel"""
-        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
-        a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
+        s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
+        a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         e = 'd | e | f | g'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        s, c = self.setup_config_C_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
-        a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
+        s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
+        a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         a[22] = 'ff'
         e = 'sentinel2'
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-        s, c = self.setup_config_C_sig_tool(
+        s, c = self.setup_config_c_sig_tool(
             ['a', 'b', 'c', 'sentinel2'],
             ['d', 'e', 'f']
         )
-        a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
+        a = list('abcdefghabcfaeabdijklmnopqrstuvwxyz')
         a[7] = 'sentinel2'
         a[22] = 'ff'
         e = 'f | e | d | i'
@@ -1286,7 +1315,7 @@ class TestSignatureGeneration(TestCase):
 class TestOOMSignature(TestCase):
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_predicate_no_match(self):
+    def test_predicate_no_match(self):
         pc = DotDict()
         pc.signature = 'hello'
         rc = DotDict()
@@ -1297,7 +1326,7 @@ class TestOOMSignature(TestCase):
         ok_(not predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_predicate(self):
+    def test_predicate(self):
         pc = DotDict()
         pc.signature = 'hello'
         rd = {}
@@ -1309,7 +1338,7 @@ class TestOOMSignature(TestCase):
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_predicate_signature_fragment_1(self):
+    def test_predicate_signature_fragment_1(self):
         pc = DotDict()
         pc.signature = 'this | is | a | NS_ABORT_OOM | signature'
         rc = DotDict()
@@ -1320,7 +1349,7 @@ class TestOOMSignature(TestCase):
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_predicate_signature_fragment_2(self):
+    def test_predicate_signature_fragment_2(self):
         pc = DotDict()
         pc.signature = 'mozalloc_handle_oom | this | is | bad'
         rc = DotDict()
@@ -1331,7 +1360,7 @@ class TestOOMSignature(TestCase):
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_predicate_signature_fragment_3(self):
+    def test_predicate_signature_fragment_3(self):
         pc = DotDict()
         pc.signature = 'CrashAtUnhandlableOOM'
         rc = DotDict()
@@ -1342,7 +1371,7 @@ class TestOOMSignature(TestCase):
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_action_success(self):
+    def test_action_success(self):
         pc = DotDict()
         pc.signature = 'hello'
 
@@ -1359,7 +1388,7 @@ class TestOOMSignature(TestCase):
         ok_(pc.signature, 'OOM | unknown | hello')
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_action_small(self):
+    def test_action_small(self):
         pc = DotDict()
         pc.signature = 'hello'
 
@@ -1377,7 +1406,7 @@ class TestOOMSignature(TestCase):
         ok_(pc.signature, 'OOM | small')
 
     #--------------------------------------------------------------------------
-    def test_OOMAllocationSize_action_large(self):
+    def test_action_large(self):
         pc = DotDict()
         pc.signature = 'hello'
 
@@ -1399,7 +1428,7 @@ class TestOOMSignature(TestCase):
 class TestSigTrunc(TestCase):
 
     #--------------------------------------------------------------------------
-    def test_SigTrunc_predicate_no_match(self):
+    def test_predicate_no_match(self):
         pc = DotDict()
         pc.signature = '0' * 100
         rc = DotDict()
@@ -1410,7 +1439,7 @@ class TestSigTrunc(TestCase):
         ok_(not predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_SigTrunc_predicate(self):
+    def test_predicate(self):
         pc = DotDict()
         pc.signature = '9' * 256
         rc = DotDict()
@@ -1421,7 +1450,7 @@ class TestSigTrunc(TestCase):
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_SigTrunc_action_success(self):
+    def test_action_success(self):
         pc = DotDict()
         pc.signature = '9' * 256
         rc = DotDict()
@@ -1460,7 +1489,7 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
-    def test_SigTrunc_action_success(self):
+    def test_action_success(self):
         pc = DotDict()
         pc.signature = "EMPTY: like my soul"
         pc.mdsw_status_string = 'catastrophic stackwalker failure'
