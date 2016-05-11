@@ -14,6 +14,10 @@ echo "this is build.sh"
 
 ./scripts/test.sh
 
+./script/test-puppet.sh
+
+./script/test-webapp.sh
+
 ./scripts/integration-test.sh --destroy
 
 ./scripts/install.sh

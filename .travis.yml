@@ -20,13 +20,25 @@ before_install:
 install: true
 
 before_script:
-    - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
-    - psql -c 'create database socorro_test;' -U postgres
-    - psql -c 'create database socorro_integration_test;' -U postgres
-    - psql -c 'create database socorro_migration_test;' -U postgres
+  - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
+  - psql -c 'create database socorro_test;' -U postgres
+  - psql -c 'create database socorro_integration_test;' -U postgres
+  - psql -c 'create database socorro_migration_test;' -U postgres
+  - ./scripts/clean.sh
+  - ./scripts/bootstrap.sh
+
+env:
+  - TEST_SUITE=webapp
+  - TEST_SUITE=socorro
+  - TEST_SUITE=end-to-end
+  - TEST_SUITE=puppet
 
 script:
-  - ./scripts/build.sh
+  - ./scripts/build-smarter.sh $TEST_SUITE
+
+ after_script:
+    - ./scripts/install.sh
+    - ./scripts/package.sh
 
 notifications:
   webhooks: http://leeroybot.lonnen.com/hubot/travis?room=%23breakpad
