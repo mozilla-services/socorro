@@ -36,9 +36,9 @@ env:
 script:
   - ./scripts/build-smarter.sh $TEST_SUITE
 
- after_script:
-    - ./scripts/install.sh
-    - ./scripts/package.sh
+after_script:
+  - ./scripts/install.sh
+  - ./scripts/package.sh
 
 notifications:
   webhooks: http://leeroybot.lonnen.com/hubot/travis?room=%23breakpad
