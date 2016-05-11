@@ -23,7 +23,7 @@ var BugLinks = (function() {
 
     function fetch_remotely(bug_ids) {
         var deferred = $.Deferred();
-        var data = {bug_ids: bug_ids.join(','), include_fields: 'summary,status,id,resolution'};
+        var data = {bug_ids: bug_ids.join(',')};
         var req = $.getJSON(URL, data);
         req.done(function(response) {
             var table = {};

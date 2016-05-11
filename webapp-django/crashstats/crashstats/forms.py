@@ -1,4 +1,3 @@
-import re
 import datetime
 
 from django import forms
@@ -49,7 +48,6 @@ class Html5DateInput(forms.DateInput):
 class BugInfoForm(BaseForm):
 
     bug_ids = forms.CharField(required=True)
-    include_fields = forms.CharField(required=True)
 
     def clean_bug_ids(self):
         value = self.cleaned_data['bug_ids']
@@ -62,19 +60,6 @@ class BugInfoForm(BaseForm):
                 (', '.join(repr(x) for x in nasty_bug_ids))
             )
         return bug_ids
-
-    def clean_include_fields(self):
-        value = self.cleaned_data['include_fields']
-        include_fields = [x.strip() for x in value.split(',') if x.strip()]
-        # include fields must be variable looking strings
-        regex = re.compile('[^\w_]+')
-        nasty_fields = [x for x in include_fields if regex.findall(x)]
-        if nasty_fields:
-            raise forms.ValidationError(
-                'Not valid include_fields %s' %
-                (', '.join(repr(x) for x in nasty_fields))
-            )
-        return include_fields
 
 
 def make_choices(seq):

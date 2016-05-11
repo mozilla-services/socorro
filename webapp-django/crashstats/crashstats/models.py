@@ -1518,19 +1518,41 @@ class BugzillaAPI(SocorroCommon):
 
 class BugzillaBugInfo(BugzillaAPI):
 
-    def get(self, bugs, fields):
+    cache_seconds = 0
+
+    @staticmethod
+    def make_cache_key(bug_id):
+        # This is the same cache key that we use in show_bug_link()
+        # the jinja helper function.
+        return 'buginfo:{}'.format(bug_id)
+
+    def get(self, bugs):
         if isinstance(bugs, basestring):
             bugs = [bugs]
-        if isinstance(fields, basestring):
-            fields = [fields]
-        params = {
-            'bugs': ','.join(bugs),
-            'fields': ','.join(fields),
-        }
-        headers = {'Accept': 'application/json',
-                   'Content-Type': 'application/json'}
-        url = ('/bug?id=%(bugs)s&include_fields=%(fields)s' % params)
-        return self.fetch(url, headers)
+        fields = ('summary', 'status', 'id', 'resolution')
+        results = []
+        missing = []
+        for bug in bugs:
+            cache_key = self.make_cache_key(bug)
+            cached = cache.get(cache_key)
+            if cached is None:
+                missing.append(bug)
+            else:
+                results.append(cached)
+        if missing:
+            params = {
+                'bugs': ','.join(missing),
+                'fields': ','.join(fields),
+            }
+            headers = {'Accept': 'application/json',
+                       'Content-Type': 'application/json'}
+            url = ('/bug?id=%(bugs)s&include_fields=%(fields)s' % params)
+            fetched = self.fetch(url, headers)
+            for each in fetched['bugs']:
+                cache_key = self.make_cache_key(each['id'])
+                cache.set(cache_key, each, 60 * 60)
+                results.append(each)
+        return {'bugs': results}
 
 
 class SignatureURLs(SocorroMiddleware):
