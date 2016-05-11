@@ -32,31 +32,65 @@ $(document).ready(function () {
             Analytics.trackTabSwitch('report_index', ui.newPanel.attr('id'));
         }
     });
-    // See also correlation.js which uses these tabs
-    var shouldLoadCPU = true,
-        t;
 
-    $('#report-index > ul li a').click(function () {
-        if (shouldLoadCPU) {
-            shouldLoadCPU = false;
-            $.map(['core-counts', 'interesting-addons', 'interesting-modules'],
-            function(type) {
-             $.getJSON(SocReport.base + '?correlation_report_type=' + type +
-                       '&' + SocReport.path, function(data) {
-                $('#' + type + '_correlation').html('<h3>' + data.reason +
-                    '</h3><pre>'+ data.load + '</pre>');
+    var container = $('#mainbody');
+    var correlationsURL = container.data('correlations-url');
+    var correlationsParams = {
+        product: container.data('product'),
+        version: container.data('version'),
+        platform: container.data('platform'),
+        signature: container.data('signature'),
+    };
+
+    var loadCorrelationTypes = function(types) {
+        $.map(types, function(type) {
+            correlationsParams.correlation_report_types = type;
+            $.getJSON(correlationsURL, correlationsParams, function(response) {
+                var data = response[type];
+                var group = $('#' + type + '_correlation');
+                if (group.length !== 1) {
+                    console.warn('There is not exactly 1 "#' + type + '_correlation"');
+                } else {
+                    group
+                    .empty()
+                    .append(
+                        $('<h3>').text(data.reason)
+                    );
+                    if (data.load) {
+                        group.append(
+                            $('<pre>').text(data.load)
+                        );
+                    } else {
+                        group.append(
+                            $('<i>').text('none')
+                        );
+                    }
                     socSortCorrelation('#' + type + '_correlation');
-             });
+                }
             });
-        }
-    });
-    $('button.load-version-data').click(function () {
-        t = $(this).attr('name');
-        $.getJSON(SocReport.base + '?correlation_report_type=' + t +
-                  '&' + SocReport.path, function(data) {
-            $('#' + t + '-panel').html('<h3>' + data.reason + '</h3><pre>' +
-                                       data.load + '</pre>');
         });
+    };
+
+    var loadDefaultCorrelationTypes = function() {
+        loadCorrelationTypes([
+            'core-counts',
+            'interesting-addons',
+            'interesting-modules',
+        ]);
+    };
+
+    var loadCorrelations = true;
+    $('a[href="#correlation"]').on('click', function () {
+        if (!loadCorrelations) {
+            return;
+        }
+        loadCorrelations = false;
+        loadDefaultCorrelationTypes();
+    });
+
+    $('button.load-version-data').on('click', function () {
+        var type = $(this).attr('name');
+        loadCorrelationTypes([type]);
     });
 
     $('a[href="#allthreads"]').on('click', function () {
@@ -71,14 +105,17 @@ $(document).ready(function () {
             return false;
         }
     });
+
     // if the page is loaded with #allthreads, then pretend we immediately
     // click the toggle switch.
     if (location.hash === '#allthreads') {
         $('a[href="#allthreads"]').click();
+    } else if (location.hash === '#correlation') {
+        $('a[href="#correlation"]').click();
     }
 
-    var tbls = $("#frames").find("table"),
-    addExpand = function(sigColumn) {
+    var tbls = $("#frames").find("table");
+    var addExpand = function(sigColumn) {
         $(sigColumn).append(' <a class="expand" href="#">[Expand]</a>');
         $('.expand').click(function(event) {
             event.preventDefault();
