@@ -36,7 +36,7 @@ env:
 script:
   - ./scripts/build-smarter.sh $TEST_SUITE
 
-after_script:
+after_success:
   - ./scripts/install.sh
   - ./scripts/package.sh
 
