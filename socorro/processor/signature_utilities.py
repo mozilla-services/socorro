@@ -181,7 +181,7 @@ class CSignatureToolBase(SignatureTool):
                 '<',
                 '>',
                 'T>',
-                ('name omitted', )
+                ('name omitted', 'IPC::ParamTraits')
             )
             if self.config.collapse_arguments:
                 function = self._collapse(

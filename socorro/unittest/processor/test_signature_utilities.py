@@ -991,7 +991,7 @@ frames_from_json_dump_with_templates_and_special_case = {
         },
         {
             u'frame': 2,
-            u'function': u'WaitForMultipleObjectsExImplementation',
+            u'function': u'IPC::ParamTraits<mozilla::net::NetAddr>::Write',
             u'function_offset': u'0x8d',
             u'module': u'kernel32.dll',
             u'module_offset': u'0x119f7',
@@ -1345,15 +1345,13 @@ class TestSignatureGeneration(TestCase):
         eq_(
             processed_crash.signature,
             '<name omitted> | '
-            'RealMsgWaitForMultipleObjectsEx | '
-            'MsgWaitForMultipleObjects | '
-            'F_1152915508__________________________________'
+            'IPC::ParamTraits<mozilla::net::NetAddr>::Write'
         )
         eq_(
             processed_crash.proto_signature,
             'NtWaitForMultipleObjects | '
             '<name omitted> | '
-            'WaitForMultipleObjectsExImplementation | '
+            'IPC::ParamTraits<mozilla::net::NetAddr>::Write | '
             'RealMsgWaitForMultipleObjectsEx | '
             'MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________ | '
