@@ -2951,6 +2951,66 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
+    def test_report_index_empty_os_name(self, rget, rpost):
+
+        rpost.side_effect = mocked_post_123
+
+        def mocked_get(url, params, **options):
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'meta'
+            ):
+                return Response({
+                    'InstallTime': 'Not a number',
+                    'Version': '5.0a1',
+                    'Email': '',
+                    'URL': None,
+                })
+            if 'crashes/comments' in url:
+                return Response({
+                    'hits': [],
+                    'total': 0,
+                })
+            if 'correlations/signatures' in url:
+                return Response({
+                    'hits': [],
+                    'total': 0
+                })
+
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'unredacted'
+            ):
+                return Response({
+                    'dump': 'some dump',
+                    'signature': 'FakeSignature1',
+                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
+                    'process_type': None,
+                    'os_name': None,
+                    'product': 'WaterWolf',
+                    'version': '1.0',
+                    'cpu_name': 'amd64',
+                })
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse(
+            'crashstats:report_index',
+            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
+        )
+        response = self.client.get(url)
+        # Despite the `os_name` being null, it should work to render
+        # this page.
+        eq_(response.status_code, 200)
+        doc = pyquery.PyQuery(response.content)
+        for node in doc('#mainbody'):
+            eq_(node.attrib['data-platform'], '')
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
     def test_report_index_with_invalid_parsed_dump(self, rget, rpost):
         json_dump = {
             'crash_info': {

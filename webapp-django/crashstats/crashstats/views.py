@@ -69,6 +69,10 @@ GRAPHICS_REPORT_HEADER = (
 
 
 def make_correlations_count_cache_key(product, version, platform, signature):
+    assert product
+    assert version
+    assert platform
+    assert signature
     return 'total_correlations-' + hashlib.md5(
         (product + version + platform + signature).encode('utf-8')
     ).hexdigest()
@@ -1460,19 +1464,30 @@ def report_index(request, crash_id, default_context=None):
     # correlations, the tab becomes visible.
     # If that AJAX query has been done before, let's find out early
     # and use that fact to immediately display the "Correlations" tab.
-    total_correlations_cache_key = make_correlations_count_cache_key(
-        context['report']['product'],
-        context['report']['version'],
-        context['report']['os_name'],
-        context['report']['signature'],
-    )
-    # Because it's hard to do something like `{% if foo is None %}` in Jinja
-    # we instead make the default -1. That means it's not confused with 0
-    # it basically means "We don't know".
-    context['total_correlations'] = cache.get(
-        total_correlations_cache_key,
-        -1
-    )
+    if (
+        context['report']['product'] and
+        context['report']['version'] and
+        context['report']['os_name'] and
+        context['report']['signature']
+    ):
+        total_correlations_cache_key = make_correlations_count_cache_key(
+            context['report']['product'],
+            context['report']['version'],
+            context['report']['os_name'],
+            context['report']['signature'],
+        )
+        # Because it's hard to do something like `{% if foo is None %}` in
+        # Jinja we instead make the default -1. That means it's not
+        # confused with 0 it basically means "We don't know".
+        context['total_correlations'] = cache.get(
+            total_correlations_cache_key,
+            -1
+        )
+    else:
+        # Some crashes might potentially miss this. For example,
+        # some crashes unfortunately don't have a platform (aka os_name)
+        # so finding correlations on those will never work.
+        context['total_correlations'] = 0
 
     context['BUG_PRODUCT_MAP'] = settings.BUG_PRODUCT_MAP
     context['CRASH_ANALYSIS_URL'] = settings.CRASH_ANALYSIS_URL

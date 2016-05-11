@@ -5,6 +5,11 @@ var SignatureCorrelations = (function() {
     var container = $('#mainbody');
     return {
         showSignatureCorrelationsTab: function() {
+            if (!container.data('product')) {
+                // Some strange crashes don't have a platform (aka OS).
+                // Then they definitely won't have correlations.
+                return;
+            }
             // If that number is -1, we don't know if there are correlations.
             // Find out, by ajax, and if the count is >0, then make the
             // "Correlations" tab visible.
