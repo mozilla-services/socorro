@@ -17,9 +17,7 @@ before_install:
   - gem install puppet puppet-lint
   - ./scripts/start-travis-elasticsearch.sh
 
-install: true
-
-before_script:
+install:
   - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
   - psql -c 'create database socorro_test;' -U postgres
   - psql -c 'create database socorro_integration_test;' -U postgres
