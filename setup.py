@@ -1,7 +1,8 @@
 import codecs
 import glob
 import os
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 
 # Prevent spurious errors during `python setup.py test`, a la
@@ -35,16 +36,16 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
-        ],
+    ],
     keywords=['socorro', 'breakpad', 'crash', 'reporting', 'minidump',
               'stacktrace'],
     packages=find_packages(),
-    install_requires=[], # use pip -r requirements.txt instead
+    install_requires=[],  # use pip -r requirements.txt instead
     entry_points={
         'console_scripts': [
-                'socorro = socorrolib.app.socorro_app:SocorroWelcomeApp.run'
-            ],
-        },
+            'socorro = socorrolib.app.socorro_app:SocorroWelcomeApp.run'
+        ],
+    },
     test_suite='nose.collector',
     zip_safe=False,
     data_files=[
@@ -54,7 +55,11 @@ setup(
             glob.glob('socorro/external/postgresql/raw_sql/views/*.sql')),
         ('socorro/external/postgresql/raw_sql/types',
             glob.glob('socorro/external/postgresql/raw_sql/types/*.sql')),
-        ('socorro', ['socorro_revision.txt', 'breakpad_revision.txt',
-               'JENKINS_BUILD_NUMBER'])
+        ('socorro', [
+            'socorro_revision.txt',
+            'breakpad_revision.txt',
+            'JENKINS_BUILD_NUMBER'
+        ]),
+        ('socorro/siglists', glob.glob('socorro/siglists/*.txt')),
     ],
 ),

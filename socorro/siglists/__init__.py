@@ -2,11 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 import re
 
-
-_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+from pkg_resources import resource_stream
 
 
 # This is a hack because sentinels can be a tuple, with the second item being
@@ -37,10 +35,10 @@ def _get_file_content(source):
 
     Remove empty lines and comments (lines starting with a '#').
     """
-    filepath = os.path.join(_DIRECTORY, source + '.txt')
+    filepath = source + '.txt'
 
     lines = []
-    with open(filepath, 'r') as f:
+    with resource_stream(__name__, filepath) as f:
         for i, line in enumerate(f):
             line = line.strip()
 

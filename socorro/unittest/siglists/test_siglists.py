@@ -3,14 +3,17 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mock
-import os
+
 from nose.tools import assert_raises, eq_, ok_
+
+from pkg_resources import resource_stream
 
 from socorro import siglists
 from socorro.unittest.testbase import TestCase
 
 
-TEST_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+def _fake_stream(pkg, filepath):
+    return resource_stream(__name__, filepath)
 
 
 class TestSigLists(TestCase):
@@ -31,8 +34,10 @@ class TestSigLists(TestCase):
                 if isinstance(line, basestring):
                     ok_(not line.startswith('#'))
 
-    @mock.patch('socorro.siglists._DIRECTORY', TEST_DIRECTORY)
-    def test_valid_entries(self):
+    @mock.patch('socorro.siglists.resource_stream')
+    def test_valid_entries(self, mocked_stream):
+        mocked_stream.side_effect = _fake_stream
+
         expected = (
             'fooBarStuff',
             'moz::.*',
@@ -41,8 +46,10 @@ class TestSigLists(TestCase):
         content = siglists._get_file_content('test-valid-sig-list')
         eq_(content, expected)
 
-    @mock.patch('socorro.siglists._DIRECTORY', TEST_DIRECTORY)
-    def test_invalid_entry(self):
+    @mock.patch('socorro.siglists.resource_stream')
+    def test_invalid_entry(self, mocked_stream):
+        mocked_stream.side_effect = _fake_stream
+
         with assert_raises(siglists.BadRegularExpressionLineError) as cm:
             siglists._get_file_content('test-invalid-sig-list')
 
