@@ -8,6 +8,9 @@ import mock
 
 from socorrolib.lib.util import DotDict
 from socorro.external.boto.connection_context import (
+    DatePrefixKeyBuilder,
+    KeyBuilderBase,
+    KeyNotFound,
     S3ConnectionContext,
     RegionalS3ConnectionContext,
 )
@@ -46,8 +49,7 @@ a_thing = {
 thing_as_str = json.dumps(a_thing)
 
 
-class TestCase(socorro.unittest.testbase.TestCase):
-
+class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
     def setup_mocked_s3_storage(
         self,
         executor=TransactionExecutor,
@@ -66,6 +68,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
             'bucket_name': 'silliness',
+            'keybuilder_class': KeyBuilderBase,
             'prefix': 'dev',
             'calling_format': mock.Mock()
         })
@@ -96,10 +99,15 @@ class TestCase(socorro.unittest.testbase.TestCase):
         prefix = 'dev'
         name_of_thing = 'dump'
         crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
-        good = connection_source.build_key(prefix, name_of_thing, crash_id)
+        all_keys = connection_source.build_keys(prefix, name_of_thing, crash_id)
+
+        # This uses the default key builder which should produce a single
+        # key--so we verify that there's only one key and that it's the one
+        # we're looking for.
+        self.assertEqual(len(all_keys), 1)
         self.assertEqual(
-            'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114',
-            good
+            all_keys[0],
+            'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114'
         )
 
     def test_submit(self):
@@ -217,4 +225,295 @@ class TestCase(socorro.unittest.testbase.TestCase):
         self.assert_regional_s3_connection_parameters(
             'us-south-3',
             connection_source
+        )
+
+
+
+class MultiplePathsBase(socorro.unittest.testbase.TestCase):
+    """Sets up mocked s3 storage using DatePrefixKeyBuilder"""
+    def setup_mocked_s3_storage(
+        self,
+        executor=TransactionExecutor,
+        executor_for_gets=TransactionExecutor,
+        storage_class='BotoS3CrashStorage',
+        host='',
+        port=0,
+        resource_class=S3ConnectionContext,
+        **extra
+    ):
+        config = DotDict({
+            'resource_class': resource_class,
+            'logger': mock.Mock(),
+            'host': host,
+            'port': port,
+            'access_key': 'this is the access key',
+            'secret_access_key': 'secrets',
+            'bucket_name': 'silliness',
+            'keybuilder_class': DatePrefixKeyBuilder,
+            'prefix': 'dev',
+            'calling_format': mock.Mock()
+        })
+        config.update(extra)
+        s3_conn = resource_class(config)
+        s3_conn._connect_to_endpoint = mock.Mock()
+        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
+        s3_conn._calling_format.return_value = mock.Mock()
+        s3_conn._CreateError = mock.Mock()
+        s3_conn.ResponseError = mock.Mock()
+        s3_conn._open = mock.MagicMock()
+
+        return s3_conn
+
+
+class DatePrefixKeyBuilderTestCase(MultiplePathsBase):
+    """Tests the DatePrefixKeyBuilder with different crash types"""
+    def test_dir_builder_with_dump(self):
+        connection_source = self.setup_mocked_s3_storage()
+        prefix = 'dev'
+        name_of_thing = 'dump'
+        crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
+        all_keys = connection_source.build_keys(prefix, name_of_thing, crash_id)
+
+        # Only the old-style key is returned
+        self.assertEqual(len(all_keys), 1)
+        self.assertEqual(
+            all_keys[0],
+            'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+
+    def test_dir_builder_with_raw_crash(self):
+        connection_source = self.setup_mocked_s3_storage()
+        prefix = 'dev'
+        name_of_thing = 'raw_crash'
+        crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
+        all_keys = connection_source.build_keys(prefix, name_of_thing, crash_id)
+
+        # The new- and old-style keys are returned
+        self.assertEqual(len(all_keys), 2)
+        self.assertEqual(
+            all_keys[0],
+            'dev/v2/raw_crash/fff/20141114/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+        self.assertEqual(
+            all_keys[1],
+            'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+
+    def test_dir_builder_with_raw_crash_no_date(self):
+        connection_source = self.setup_mocked_s3_storage()
+        prefix = 'dev'
+        name_of_thing = 'raw_crash'
+        crash_id = 'fff13cf0-5671-4496-ab89-47a922xxxxxx'
+        all_keys = connection_source.build_keys(prefix, name_of_thing, crash_id)
+
+        # The suffix is not a date, so only the old-style key is returned
+        self.assertEqual(len(all_keys), 1)
+        self.assertEqual(
+            all_keys[0],
+            'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922xxxxxx'
+        )
+
+
+class MultiplePathsTestCase(MultiplePathsBase):
+    """Tests crash storage when multiple keys are involved
+
+    ``.submit()`` should always use the first key from a keybuilder.
+
+    ``.fetch()`` should try the keys in order.
+
+    """
+    def test_submit_with_dump(self):
+        connection_source = self.setup_mocked_s3_storage()
+
+        # the call to be tested
+        connection_source.submit(
+            'fff13cf0-5671-4496-ab89-47a922141114',
+            'dump',
+            thing_as_str
+        )
+
+        bucket_mock = (
+            connection_source
+            ._mocked_connection
+            .get_bucket
+            .return_value
+        )
+        self.assertEqual(bucket_mock.new_key.call_count, 1)
+        bucket_mock.new_key.called_once_with(
+            'dev/v1/dump/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+
+    def test_submit_with_raw_crash(self):
+        """Verify that .submit() only uses the first key if there are multiple
+
+        """
+        connection_source = self.setup_mocked_s3_storage()
+
+        # the call to be tested
+        connection_source.submit(
+            'fff13cf0-5671-4496-ab89-47a922141114',
+            'raw_crash',
+            thing_as_str
+        )
+
+        bucket_mock = (
+            connection_source
+            ._mocked_connection
+            .get_bucket
+            .return_value
+        )
+        self.assertEqual(bucket_mock.new_key.call_count, 1)
+        bucket_mock.new_key.called_once_with(
+            'dev/v2/raw_crash/fff/20141114/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+
+    def test_fetch_with_raw_crash_at_new_style_path(self):
+        """Verifies that .fetch() works correctly if the first key works."""
+        connection_source = self.setup_mocked_s3_storage()
+        mocked_get_contents_as_string = (
+            connection_source
+            ._connect_to_endpoint
+            .return_value
+            .get_bucket
+            .return_value
+            .get_key
+            .return_value
+            .get_contents_as_string
+        )
+        mocked_get_contents_as_string.side_effect = [thing_as_str]
+
+        result = connection_source.fetch(
+            'fff13cf0-5671-4496-ab89-47a922141114',
+            'raw_crash'
+        )
+
+        self.assertEqual(
+            connection_source._mocked_connection.get_bucket.call_count,
+            1
+        )
+        self.assertEqual(
+            (
+                connection_source
+                ._mocked_connection
+                .get_bucket
+                .return_value
+                .get_key
+                .call_count
+            ),
+            1
+        )
+        (
+            connection_source
+            ._mocked_connection
+            .get_bucket
+            .return_value
+            .get_key
+            .assert_called_with(
+                'dev/v2/raw_crash/fff/20141114/fff13cf0-5671-4496-ab89-47a922141114'
+            )
+        )
+
+    def test_fetch_with_raw_crash_at_old_style_path(self):
+        """Verifies that .fetch() will try to retrieve the object with the
+        new-style key, fail, then try to retrieve the object with the old-style
+        key.
+
+        """
+        connection_source = self.setup_mocked_s3_storage()
+        mocked_get_key = (
+            connection_source
+            ._connect_to_endpoint
+            .return_value
+            .get_bucket
+            .return_value
+            .get_key
+        )
+        # First time get_key() is called, it returns None which causes fetch to
+        # call it again with the next key. We have to swap side-effect handling
+        # functions so that the second time get_key() is called, it returns an
+        # object which simulates the situation we're looking for.
+        capture_args = []
+        def get_key_first_call(*args, **kwargs):
+            capture_args.append((args, kwargs))
+            # First time
+            def get_key_second_call(*args, **kwargs):
+                capture_args.append((args, kwargs))
+                # Second time
+                get_key_return = mock.Mock()
+                get_key_return.return_value.get_contents_as_string = [thing_as_str]
+                return get_key_return
+
+            mocked_get_key.side_effect = get_key_second_call
+            return None
+
+        mocked_get_key.side_effect = get_key_first_call
+
+        connection_source.fetch(
+            'fff13cf0-5671-4496-ab89-47a922141114',
+            'raw_crash'
+        )
+
+        self.assertEqual(
+            connection_source._mocked_connection.get_bucket.call_count,
+            1
+        )
+        self.assertEqual(
+            (
+                connection_source
+                ._mocked_connection
+                .get_bucket
+                .return_value
+                .get_key
+                .call_count
+            ),
+            2
+        )
+
+        # The first time, it's called with a new-style path
+        self.assertEqual(
+            capture_args[0][0][0],
+            'dev/v2/raw_crash/fff/20141114/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+        # The second time, it's called with the old-style path
+        self.assertEqual(
+            capture_args[1][0][0],
+            'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+
+    def test_fetch_with_raw_crash_not_there(self):
+        """Verifies that .fetch() tries to get the object twice--once with each
+        key--and then raises a KeyNotFound exception because the object is not
+        there.
+
+        """
+        connection_source = self.setup_mocked_s3_storage()
+        mocked_get_key = (
+            connection_source
+            ._connect_to_endpoint
+            .return_value
+            .get_bucket
+            .return_value
+            .get_key
+        )
+        mocked_get_key.return_value = None
+
+        with self.assertRaises(KeyNotFound):
+            connection_source.fetch(
+                'fff13cf0-5671-4496-ab89-47a922141114',
+                'raw_crash'
+            )
+        self.assertEqual(
+            connection_source._mocked_connection.get_bucket.call_count,
+            1
+        )
+        self.assertEqual(
+            (
+                connection_source
+                ._mocked_connection
+                .get_bucket
+                .return_value
+                .get_key
+                .call_count
+            ),
+            2
         )

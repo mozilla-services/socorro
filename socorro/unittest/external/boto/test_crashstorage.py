@@ -16,6 +16,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping
 )
 from socorro.external.boto.connection_context import (
+    KeyBuilderBase,
     S3ConnectionContext
 )
 from socorro.external.boto.crashstorage import (
@@ -128,6 +129,7 @@ class TestCase(socorro.unittest.testbase.TestCase):
             'transaction_executor_class': executor,
             'transaction_executor_class_for_get': executor_for_gets,
             'resource_class': S3ConnectionContext,
+            'keybuilder_class': KeyBuilderBase,
             'backoff_delays': [0, 0, 0],
             'redactor_class': Redactor,
             'forbidden_keys': Redactor.required_config.forbidden_keys.default,
