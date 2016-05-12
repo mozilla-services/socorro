@@ -130,6 +130,7 @@ $(function () {
     function updatePublicApiUrl(params) {
         // Update the public API URL.
         var queryString = $.param(params, true);
+        queryString = queryString.replace(/!/g, '%21');
         publicApiUrlInput.val(BASE_URL + publicApiUrl + '?' + queryString);
     }
 
