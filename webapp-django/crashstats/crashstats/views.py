@@ -2060,16 +2060,10 @@ def buginfo(request, signatures=None):
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
 
-    bugs = form.cleaned_data['bug_ids']
-    fields = form.cleaned_data['include_fields']
+    bug_ids = form.cleaned_data['bug_ids']
 
     bzapi = models.BugzillaBugInfo()
-    result = bzapi.get(bugs, fields)
-    # store all of these in a cache
-    for bug in result['bugs']:
-        if 'id' in bug:
-            cache_key = 'buginfo:%s' % bug['id']
-            cache.set(cache_key, bug, 60 * 60)  # one hour
+    result = bzapi.get(bug_ids)
     return result
 
 

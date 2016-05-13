@@ -649,9 +649,17 @@ class TestViews(BaseTestViews):
         def mocked_get(url, params, **options):
             if 'bug?id=' in url:
                 return Response({
-                    'bugs': [
-                        {'product': 'allizom.org'},
-                    ]
+                    'bugs': [{
+                        'id': 123,
+                        'status': 'NEW',
+                        'resolution': '',
+                        'summary': 'Some Summary',
+                    }, {
+                        'id': 456,
+                        'status': 'NEW',
+                        'resolution': '',
+                        'summary': 'Other Summary',
+                    }],
                 })
 
             raise NotImplementedError(url)
@@ -661,19 +669,15 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 400)
 
-        response = self.client.get(url, {'bug_ids': '123,456'})
+        response = self.client.get(url, {'bug_ids': ''})
         eq_(response.status_code, 400)
 
-        response = self.client.get(url, {'include_fields': 'product'})
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {'bug_ids': ' 123, 456 ',
-                                         'include_fields': ' product'})
+        response = self.client.get(url, {'bug_ids': ' 123, 456 '})
         eq_(response.status_code, 200)
 
         struct = json.loads(response.content)
         ok_(struct['bugs'])
-        eq_(struct['bugs'][0]['product'], 'allizom.org')
+        eq_(struct['bugs'][0]['summary'], 'Some Summary')
 
     @mock.patch('requests.get')
     def test_buginfo_with_caching(self, rget):

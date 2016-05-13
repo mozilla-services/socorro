@@ -1,6 +1,7 @@
 import json
 import datetime
 import random
+import urlparse
 
 import mock
 import requests
@@ -183,28 +184,52 @@ class TestModels(DjangoTestCase):
 
         api = model()
 
-        def mocked_get(**options):
-            assert options['url'].startswith(models.BugzillaAPI.base_url)
+        def mocked_get(url, **options):
+            assert url.startswith(models.BugzillaAPI.base_url)
+            parsed = urlparse.urlparse(url)
+            query = urlparse.parse_qs(parsed.query)
+            assert query['include_fields'] == ['summary,status,id,resolution']
             return Response({
-                'bugs': [{'product': 'mozilla.org'}],
+                'bugs': [
+                    {
+                        'status': 'NEW',
+                        'resolution': '',
+                        'id': 123456789,
+                        'summary': 'Some summary'
+                    },
+                ]
             })
 
         rget.side_effect = mocked_get
-        info = api.get('747237', 'product')
-        eq_(info['bugs'], [{u'product': u'mozilla.org'}])
+        info = api.get('123456789')
+        eq_(info['bugs'], [{
+            'status': 'NEW',
+            'resolution': '',
+            'id': 123456789,
+            'summary': 'Some summary'
+        }])
 
-        # prove that it's cached by default
+        # prove that it's cached
         def new_mocked_get(**options):
             return Response({
-                'bugs': [{'product': 'DIFFERENT'}],
+                'bugs': [
+                    {
+                        'status': 'RESOLVED',
+                        'resolution': '',
+                        'id': 123456789,
+                        'summary': 'Some summary'
+                    },
+                ]
             })
 
         rget.side_effect = new_mocked_get
-        info = api.get('747237', 'product')
-        eq_(info['bugs'], [{u'product': u'mozilla.org'}])
-
-        info = api.get('747238', 'product')
-        eq_(info['bugs'], [{u'product': u'DIFFERENT'}])
+        info = api.get('123456789')
+        eq_(info['bugs'], [{
+            'status': 'NEW',
+            'resolution': '',
+            'id': 123456789,
+            'summary': 'Some summary'
+        }])
 
     def test_current_versions(self):
         model = models.CurrentVersions
@@ -1627,15 +1652,20 @@ class TestModels(DjangoTestCase):
         model = models.BugzillaBugInfo
         api = model()
 
-        def mocked_get(**options):
-            assert options['url'].startswith(models.BugzillaAPI.base_url)
+        def mocked_get(url, **options):
+            assert url.startswith(models.BugzillaAPI.base_url)
             return Response({
-                'bugs': [{'product': 'mozilla.org'}],
+                'bugs': [{
+                    'id': 123456789,
+                    'status': 'NEW',
+                    'resolution': '',
+                    'summary': 'Some Summary',
+                }],
             })
 
         rget.side_effect = mocked_get
         bugnumbers = [str(random.randint(10000, 100000)) for __ in range(100)]
-        info = api.get(bugnumbers, 'product')
+        info = api.get(bugnumbers)
         ok_(info)
 
     @mock.patch('crashstats.crashstats.models.time')
@@ -1659,11 +1689,16 @@ class TestModels(DjangoTestCase):
             if len(calls) < 3:
                 raise requests.ConnectionError('unable to connect')
             return Response({
-                'bugs': [{'product': 'mozilla.org'}],
+                'bugs': [{
+                    'id': 123456789,
+                    'status': 'NEW',
+                    'resolution': '',
+                    'summary': 'Some Summary',
+                }],
             })
 
         rget.side_effect = mocked_get
-        info = api.get(['987654'], 'product')
+        info = api.get(['987654'])
         ok_(info['bugs'])
 
         eq_(len(calls), 3)  # had to attempt 3 times
@@ -1694,7 +1729,6 @@ class TestModels(DjangoTestCase):
             requests.ConnectionError,
             api.get,
             ['987654'],
-            'product'
         )
         ok_(len(calls) > 3)  # had to attempt more than 3 times
         ok_(len(sleeps) > 2)  # had to sleep more than 2 times
