@@ -14,7 +14,7 @@ var SignatureCorrelations = (function() {
                     if (response.count) {
                         $('li.correlations').show();
                     }
-                    if (response.errors) {
+                    if (response.errors && response.errors.length) {
                         console.warn(
                             'There were some errors fetching correlations:'
                         );
