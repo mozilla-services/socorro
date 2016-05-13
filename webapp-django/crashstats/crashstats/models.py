@@ -1518,7 +1518,11 @@ class BugzillaAPI(SocorroCommon):
 
 class BugzillaBugInfo(BugzillaAPI):
 
+    # This is for the whole model.
     cache_seconds = 0
+
+    # This is for how long we cache the metadata of each individual bug.
+    BUG_CACHE_SECONDS = 60 * 60
 
     @staticmethod
     def make_cache_key(bug_id):
@@ -1550,7 +1554,7 @@ class BugzillaBugInfo(BugzillaAPI):
             fetched = self.fetch(url, headers)
             for each in fetched['bugs']:
                 cache_key = self.make_cache_key(each['id'])
-                cache.set(cache_key, each, 60 * 60)
+                cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
         return {'bugs': results}
 
