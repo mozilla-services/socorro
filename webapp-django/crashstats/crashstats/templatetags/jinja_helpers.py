@@ -4,11 +4,14 @@ import urllib
 
 import isodate
 import jinja2
+import humanfriendly
 
 from django_jinja import library
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
+from django.template import engines
+from django.utils.safestring import mark_safe
 
 from crashstats import scrubber
 
@@ -217,3 +220,74 @@ def full_url(request, *args, **kwargs):
 @library.global_function
 def is_list(value):
     return isinstance(value, (list, tuple))
+
+
+@library.global_function
+def show_duration(seconds, unit='seconds'):
+    """Instead of just showing the integer number of seconds
+    we display it nicely like::
+
+        125 seconds <span>(2 minutes, 5 seconds)</span>
+
+    If we can't do it, just return as is.
+    """
+    template = engines['backend'].from_string(
+        '{{ seconds }} {{ unit }} '
+        '{% if seconds > 60 %}'
+        '<span class="humanized" title="{{ seconds }} {{ unit }}">'
+        '({{ humanized }})</span>'
+        '{% endif %}'
+    )
+
+    try:
+        humanized = humanfriendly.format_timespan(int(seconds))
+    except (ValueError, TypeError):
+        # ValueErrors happen when `seconds` is not a number`.
+        # TypeErrors happen when you try to convert a None to an integer.
+
+        # Bail, but note how it's NOT marked as safe.
+        # That means that if `seconds` is literally '<script>'
+        # it will be sent to the template rendering engine to be
+        # dealt with and since it's not marked safe, it'll be automatically
+        # escaped.
+        return seconds
+
+    return mark_safe(template.render({
+        'seconds': seconds,
+        'unit': unit,
+        'humanized': humanized,
+    }).strip())
+
+
+@library.global_function
+def show_filesize(bytes, unit='bytes'):
+    """Instead of just showing the integer number of bytes
+    we display it nicely like::
+
+        12345678 <span title="12345678 bytes">(11.77 MB)</span>
+
+    If we can't do it, just return as is.
+    """
+    template = engines['backend'].from_string(
+        '{{ bytes }} {{ unit }} '
+        '{% if bytes > 1024 %}'
+        '<span class="humanized" title="{{ bytes }} {{ unit }}">'
+        '({{ humanized }})</span>'
+        '{% endif %}'
+    )
+
+    try:
+        humanized = humanfriendly.format_size(int(bytes))
+    except (ValueError, TypeError):
+        # Bail but note how it's NOT marked as safe.
+        # That means that if `bytes` is literally '<script>'
+        # it will be sent to the template rendering engine to be
+        # dealt with and since it's not marked safe, it'll be automatically
+        # escaped.
+        return bytes
+
+    return mark_safe(template.render({
+        'bytes': bytes,
+        'unit': unit,
+        'humanized': humanized,
+    }).strip())

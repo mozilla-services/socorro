@@ -250,3 +250,5 @@ django-jinja==2.1.2 \
     --hash=sha256:fc2b6a65201b27711e800eb2e1262ff42a32f027bd2267e34121f1bd2bd6b933
 socorrolib==0.2.2 \
     --hash=sha256:b7575dc7be0ffc7c1d5f15bcacba290aed5234ea0d5802b68806e4563480fb79
+humanfriendly==1.44.7 \
+    --hash=sha256:fcee758612edc6fead9b8fd1d5a473eab2c3a84cf8766f3ce70862ccd35e8a64

@@ -4,6 +4,7 @@ import urlparse
 
 from nose.tools import eq_, ok_
 from django.core.cache import cache
+from django.utils.safestring import SafeText
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.templatetags.jinja_helpers import (
@@ -12,6 +13,8 @@ from crashstats.crashstats.templatetags.jinja_helpers import (
     show_bug_link,
     bugzilla_submit_url,
     digitgroupseparator,
+    show_duration,
+    show_filesize,
 )
 
 
@@ -190,3 +193,93 @@ class TesDigitGroupSeparator(TestCase):
         eq_(digitgroupseparator(1000), '1,000')
         eq_(digitgroupseparator(-1000), '-1,000')
         eq_(digitgroupseparator(1000000L), '1,000,000')
+
+
+class TestHumanizers(TestCase):
+
+    def test_show_duration(self):
+        html = show_duration(59)
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '59 seconds'
+        )
+
+        html = show_duration(150)
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '150 seconds <span class="humanized" title="150 seconds">'
+            '(2 minutes and 30 seconds)</span>'
+        )
+
+        # if the number is digit but a string it should work too
+        html = show_duration('150')
+        eq_(
+            html,
+            '150 seconds <span class="humanized" title="150 seconds">'
+            '(2 minutes and 30 seconds)</span>'
+        )
+
+    def test_show_duration_different_unit(self):
+        html = show_duration(150, unit='cool seconds')
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '150 cool seconds '
+            '<span class="humanized" title="150 cool seconds">'
+            '(2 minutes and 30 seconds)</span>'
+        )
+
+    def test_show_duration_failing(self):
+        html = show_duration(None)
+        eq_(html, None)
+        html = show_duration('not a number')
+        eq_(html, 'not a number')
+
+    def test_show_duration_safety(self):
+        html = show_duration('<script>')
+        ok_(not isinstance(html, SafeText))
+        eq_(html, '<script>')
+
+        html = show_duration(150, unit='<script>')
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '150 &lt;script&gt; '
+            '<span class="humanized" title="150 &lt;script&gt;">'
+            '(2 minutes and 30 seconds)</span>'
+        )
+
+    def test_show_filesize(self):
+        html = show_filesize(100)
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '100 bytes'
+        )
+
+        html = show_filesize(10000)
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '10000 bytes '
+            '<span class="humanized" title="10000 bytes">'
+            '(9.77 KB)</span>'
+        )
+
+        html = show_filesize('10000')
+        ok_(isinstance(html, SafeText))
+        eq_(
+            html,
+            '10000 bytes '
+            '<span class="humanized" title="10000 bytes">'
+            '(9.77 KB)</span>'
+        )
+
+    def test_show_filesize_failing(self):
+        html = show_filesize(None)
+        eq_(html, None)
+
+        html = show_filesize('junk')
+        eq_(html, 'junk')
