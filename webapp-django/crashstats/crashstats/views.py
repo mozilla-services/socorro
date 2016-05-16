@@ -2461,6 +2461,7 @@ def correlations_count_json(request, default_context=None):
 
     api = models.CorrelationsSignatures()
     count = 0
+    errors = []
     for report_type in settings.CORRELATION_REPORT_TYPES:
         try:
             result = api.get(
@@ -2473,7 +2474,7 @@ def correlations_count_json(request, default_context=None):
             if signature in hits:
                 count += 1
         except models.BadStatusCodeError:
-            pass
+            errors.append(report_type)
 
     cache_key = make_correlations_count_cache_key(
         product,
@@ -2485,7 +2486,7 @@ def correlations_count_json(request, default_context=None):
     # the report_index page is loaded.
     cache.set(cache_key, count, 60 * 60)
 
-    return {'count': count}
+    return {'count': count, 'errors': errors}
 
 
 def graphics_report(request):
