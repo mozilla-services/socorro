@@ -1,0 +1,9 @@
+# Signature Sentinels
+#
+# Signatures that should always be considered top of the stack if present
+# in the stack.
+# Note: no regular expressions here.
+
+_purecall
+Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash
+google_breakpad::ExceptionHandler::HandleInvalidParameter

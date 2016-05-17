@@ -1,0 +1,6 @@
+# Test Signatures List.
+# Contains a few valid regular expressions.
+
+fooBarStuff
+moz::.*
+@0x[0-9a-fA-F]{2,}
