@@ -152,7 +152,7 @@ SignatureReport.init = function () {
         searchSection.on('click', 'button[type=submit]', function (e) {
             e.preventDefault();
             var params = SignatureReport.getParamsWithSignature();
-            var queryString = '?' + $.param(params, true);
+            var queryString = '?' + Qs.stringify(params, { indices: false });
             window.location.search = queryString;
         });
 

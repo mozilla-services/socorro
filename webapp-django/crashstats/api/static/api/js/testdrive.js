@@ -78,7 +78,7 @@
         // The second parameter (`true`) is so that things like
         // `{products: ["Firefox", "Thunderbird"]}`
         // becomes: `products=Firefox&products=Thunderbird`
-        var qs = $.param(form.serializeExclusive(), true);
+        var qs = Qs.stringify(form.serializeExclusive(), { indices: false });
         if (qs) {
             url += '?' + qs;
         }

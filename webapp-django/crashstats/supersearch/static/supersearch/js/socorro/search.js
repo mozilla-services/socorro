@@ -123,13 +123,13 @@ $(function () {
             }
         }
 
-        var queryString = $.param(params, true);
+        var queryString = Qs.stringify(params, { indices: false });
         return '?' + queryString;
     }
 
     function updatePublicApiUrl(params) {
         // Update the public API URL.
-        var queryString = $.param(params, true);
+        var queryString = Qs.stringify(params, { indices: false });
         queryString = queryString.replace(/!/g, '%21');
         publicApiUrlInput.val(BASE_URL + publicApiUrl + '?' + queryString);
     }
@@ -226,7 +226,7 @@ $(function () {
         if (params) {
             // If there are some parameters, fill the form with those params
             // and run the search and show results.
-            queryString = $.param(params, true);
+            queryString = Qs.stringify(params, { indices: false });
             showResults(resultsURL + '?' + queryString);
             SimpleSearch.setParams(params);
             updatePublicApiUrl(params);
@@ -372,7 +372,7 @@ $(function () {
         if (params) {
             // If there are some parameters, fill the form with those params
             // and run the search and show results
-            queryString = $.param(params, true);
+            queryString = Qs.stringify(params, { indices: false });
             showResults(resultsURL + '?' + queryString);
             params = socorro.search.getFilteredParams(params);
             updatePublicApiUrl(params);

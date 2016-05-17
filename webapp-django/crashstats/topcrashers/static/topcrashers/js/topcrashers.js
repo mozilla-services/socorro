@@ -30,7 +30,7 @@ var Correlations = (function() {
         for (var platform in osnames) {
             data.platforms.push(platform);
         }
-        $.getJSON(SocReport.sig_base + '?' + $.param(data, true))
+        $.getJSON(SocReport.sig_base + '?' + Qs.stringify(data, { indices: false }))
         .done(function (json) {
             for (var type in json) {
                 json[type].hits.forEach(function(sig) {
@@ -56,7 +56,7 @@ var Correlations = (function() {
             correlation_report_types: correlations,
         };
 
-        $.getJSON(SocReport.base + '?' + $.param(data, true))
+        $.getJSON(SocReport.base + '?' + Qs.stringify(data, { indices: false }))
         .done(function(json) {
             for (var i in correlations) {
                 var type = correlations[i];
