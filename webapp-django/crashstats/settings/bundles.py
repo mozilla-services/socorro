@@ -251,6 +251,7 @@ PIPELINE_JS = {
         'source_filenames': (
             'crashstats/js/jquery/jquery-2.0.3.min.js',
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
+            'crashstats/js/lib/qs.js',
             'crashstats/js/socorro/nav.js',
             'crashstats/js/socorro/analytics.js',
             'browserid/api.js',

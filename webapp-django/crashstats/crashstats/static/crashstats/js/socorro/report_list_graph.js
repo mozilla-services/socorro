@@ -346,7 +346,7 @@ var Plot = (function() {
             signature: dataSet.signature
         };
 
-        var url = dataSet.jsonurl + '?' + $.param(params) + '&' + formParams;
+        var url = dataSet.jsonurl + '?' + Qs.stringify(params, { indices: false }) + '&' + formParams;
 
         $.getJSON(url, function(data) {
 

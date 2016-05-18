@@ -108,7 +108,7 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
 SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
 
     // Build the query string.
-    var queryString = '?' + $.param(params, true);
+    var queryString = '?' + Qs.stringify(params, { indices: false });
 
     // Replace the history.
     window.history.replaceState(params, null, queryString);

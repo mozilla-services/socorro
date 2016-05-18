@@ -86,6 +86,9 @@ def change_query_string(context, **kwargs):
             # change it
             qs[key] = value
     new_qs = urllib.urlencode(qs, True)
+
+    # We don't like + as the encoding character for spaces. %20 is better.
+    new_qs = new_qs.replace('+', '%20')
     if new_qs:
         return '%s?%s' % (base, new_qs)
     return base
@@ -93,4 +96,4 @@ def change_query_string(context, **kwargs):
 
 @library.global_function
 def make_query_string(**kwargs):
-    return urllib.urlencode(kwargs, True)
+    return urllib.urlencode(kwargs, True).replace('+', '%20')

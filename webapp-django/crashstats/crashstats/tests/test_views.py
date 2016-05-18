@@ -3490,7 +3490,7 @@ class TestViews(BaseTestViews):
         doc = pyquery.PyQuery(response.content)
         for link in doc('a'):
             if link.text and 'View ALL' in link.text:
-                ok_(urllib.quote_plus(sig) in link.attrib['href'])
+                ok_(urllib.quote(sig) in link.attrib['href'])
 
     def test_report_list_all_link_columns_offered(self):
         url = reverse('crashstats:report_list')

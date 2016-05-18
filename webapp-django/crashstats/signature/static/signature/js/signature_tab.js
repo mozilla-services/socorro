@@ -117,7 +117,7 @@ SignatureReport.Tab.prototype.getParamsForUrl = function () {
 // Extend this if anything different needs to be added to the URL.
 SignatureReport.Tab.prototype.buildUrl = function (params, option) {
     option = option ? option + '/' : '';
-    return this.dataUrl + option + '?' + $.param(params, true);
+    return this.dataUrl + option + '?' + Qs.stringify(params, { indices: false });
 };
 
 // Extend this if anything different should be done with the returned data.

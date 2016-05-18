@@ -120,7 +120,7 @@ $(function () {
             _results_number: 0,
         };
 
-        var url = superSearchApiUrl + '?' + $.param(params, true);
+        var url = superSearchApiUrl + '?' + Qs.stringify(params, { indices: false });
         $.ajax({url: url})
         .then(onSuperSearchData)
         .done(function (data) {
@@ -148,7 +148,7 @@ $(function () {
             end_date: dateIsoFormat(endDate),
         };
 
-        var url = adiApiUrl + '?' + $.param(params, true);
+        var url = adiApiUrl + '?' + Qs.stringify(params, { indices: false });
         $.ajax({url: url})
         .then(onADIData)
         .done(function (data) {
@@ -180,7 +180,7 @@ $(function () {
             product: product,
         };
 
-        var url = productBuildTypesApiUrl + '?' + $.param(params, true);
+        var url = productBuildTypesApiUrl + '?' + Qs.stringify(params, { indices: false });
         $.ajax({url: url})
         .then(onBuildTypesData)
         .done(function (data) {
