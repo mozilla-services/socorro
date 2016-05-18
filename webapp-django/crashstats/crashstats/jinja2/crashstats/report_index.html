@@ -23,7 +23,7 @@
     data-correlations-url="{{ url('crashstats:correlations_json') }}"
     data-product="{{ report.product }}"
     data-version="{{ report.version }}"
-    data-platform="{{ report.os_name }}"
+    data-platform="{{ report.os_name or '' }}"
     data-signature="{{ report.signature }}"
     data-total-correlations="{{ total_correlations }}"
     data-correlations-signature-count-url="{{ url('crashstats:correlations_count_json') }}?{{ make_query_string(
