@@ -69,10 +69,6 @@ GRAPHICS_REPORT_HEADER = (
 
 
 def make_correlations_count_cache_key(product, version, platform, signature):
-    assert product
-    assert version
-    assert platform
-    assert signature
     return 'total_correlations-' + hashlib.md5(
         (product + version + platform + signature).encode('utf-8')
     ).hexdigest()

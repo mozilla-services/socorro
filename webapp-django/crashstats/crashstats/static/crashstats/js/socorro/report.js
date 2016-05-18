@@ -5,7 +5,7 @@ var SignatureCorrelations = (function() {
     var container = $('#mainbody');
     return {
         showSignatureCorrelationsTab: function() {
-            if (!container.data('product')) {
+            if (!container.data('platform')) {
                 // Some strange crashes don't have a platform (aka OS).
                 // Then they definitely won't have correlations.
                 return;
