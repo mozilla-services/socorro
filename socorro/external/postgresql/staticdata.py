@@ -186,15 +186,8 @@ class ReportPartitionInfo(BaseTable):
              'date_processed', 'DATE']]
 
 
-class Skiplist(BaseTable):
-    table = 'skiplist'
-    columns = ['category', 'rule']
-    rows = [['ignore', 'everything'],
-            ['prefix', 'SocketShutdown']]
-
-
 # the order that tables are loaded is important.
 tables = [OSNames, OSNameMatches, ProcessTypes, ReleaseChannels,
           ReleaseChannelMatches, UptimeLevels, WindowsVersions,
           OSVersions, ReleaseRepositories,
-          CrashTypes, ReportPartitionInfo, Skiplist]
+          CrashTypes, ReportPartitionInfo]

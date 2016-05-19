@@ -1,17 +1,12 @@
 import datetime
 
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.models import Group, Permission, User
 from django import forms
 from django.utils import timezone
 
 from crashstats.crashstats.forms import BaseForm, BaseModelForm
 from crashstats.crashstats.utils import find_crash_id
 from crashstats.tokens.models import Token
-
-
-class SkipListForm(BaseForm):
-    category = forms.CharField(required=True)
-    rule = forms.CharField(required=True)
 
 
 class EditUserForm(BaseModelForm):
