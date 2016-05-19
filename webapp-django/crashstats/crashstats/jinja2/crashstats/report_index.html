@@ -301,7 +301,7 @@
                             <tr>
                                 <th scope="row">Total Virtual Memory</th>
                                 <td>
-                                    {{ show_filesize(raw.TotalVirtualMemory) }}
+                                    {{ show_filesize(raw.get('TotalVirtualMemory')) }}
                                 </td>
                             </tr>
                             {% endif %}
