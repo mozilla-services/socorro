@@ -7,11 +7,11 @@ import hashlib
 from django import http
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.models import Group, Permission, User
 from django.core.cache import cache
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -23,7 +23,6 @@ from crashstats.crashstats.models import (
     Releases,
     ReleasesFeatured,
     Field,
-    SkipList,
     GraphicsDevices,
     Platforms,
     Reprocessing,
@@ -37,6 +36,7 @@ from crashstats.supersearch.models import (
 from crashstats.tokens.models import Token
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
+
 from . import forms
 from . import utils
 
@@ -168,73 +168,6 @@ def field_lookup(request):
 
     api = Field()
     return api.get(name=name)
-
-
-@superuser_required
-def skiplist(request, default_context=None):
-    context = default_context or {}
-    return render(request, 'manage/skiplist.html', context)
-
-
-@superuser_required
-@json_view
-def skiplist_data(request):
-    form = forms.SkipListForm(request.GET)
-    form.fields['category'].required = False
-    form.fields['rule'].required = False
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-    category = form.cleaned_data['category']
-    rule = form.cleaned_data['rule']
-
-    api = SkipList()
-    return api.get(category=category, rule=rule)
-
-
-@superuser_required
-@json_view
-@require_POST
-def skiplist_add(request):
-    form = forms.SkipListForm(request.POST)
-    if form.is_valid():
-        category = form.cleaned_data['category']
-        rule = form.cleaned_data['rule']
-    else:
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    api = SkipList()
-    success = api.post(category=category, rule=rule)
-    log(request.user, 'skiplist.add', {
-        'data': {
-            'category': category,
-            'rule': rule,
-        },
-        'success': success
-    })
-    return success
-
-
-@superuser_required
-@json_view
-@require_POST
-def skiplist_delete(request):
-    form = forms.SkipListForm(request.POST)
-    if form.is_valid():
-        category = form.cleaned_data['category']
-        rule = form.cleaned_data['rule']
-    else:
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    api = SkipList()
-    success = api.delete(category=category, rule=rule)
-    log(request.user, 'skiplist.delete', {
-        'data': {
-            'category': category,
-            'rule': rule,
-        },
-        'success': success
-    })
-    return success
 
 
 @superuser_required

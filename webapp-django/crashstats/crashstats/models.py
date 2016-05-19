@@ -1662,26 +1662,6 @@ class CrashesFrequency(SocorroMiddleware):
     )
 
 
-class SkipList(SocorroMiddleware):
-
-    URL_PREFIX = '/skiplist/'
-
-    possible_params = (
-        'category',
-        'rule',
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-    cache_seconds = 0
-
-    def post(self, **payload):
-        return super(SkipList, self).post(self.URL_PREFIX, payload)
-
-
 class CrashesCountByDay(SocorroMiddleware):
 
     cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.

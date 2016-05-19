@@ -1249,13 +1249,6 @@ class SignatureSummaryGraphics(DeclarativeBase):
     report_count = Column(u'report_count', INTEGER(), nullable=False)
 
 
-class Skiplist(DeclarativeBase):
-    __tablename__ = 'skiplist'
-
-    category = Column(u'category', TEXT(), primary_key=True, nullable=False)
-    rule = Column(u'rule', TEXT(), primary_key=True, nullable=False)
-
-
 class SocorroDbVersion(DeclarativeBase):
     __tablename__ = 'socorro_db_version'
 

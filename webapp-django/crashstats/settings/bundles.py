@@ -390,12 +390,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/manage-groups.min.js',
     },
-    'manage:skiplist': {
-        'source_filenames': (
-            'manage/js/skiplist.js',
-        ),
-        'output_filename': 'js/manage-skiplist.min.js',
-    },
     'manage:supersearch_field': {
         'source_filenames': (
             'manage/js/supersearch_field.js',

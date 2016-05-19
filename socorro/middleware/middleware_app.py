@@ -57,7 +57,6 @@ SERVICES_LIST = (
     (r'/server_status/(.*)', 'server_status.ServerStatus'),
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
-    (r'/skiplist/(.*)', 'skiplist.SkipList'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
 )
 
