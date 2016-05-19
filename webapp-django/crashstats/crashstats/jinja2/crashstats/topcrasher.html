@@ -10,6 +10,30 @@ Top Crashers for {{ product }} {{ version }}
 
 {% block content %}
     <div id="mainbody">
+        <div class="panel">
+            <header class="title">
+                <h2><img src="{{ static('img/3rdparty/silk/error.png') }}"> Deprecation notice</h2>
+            </header>
+
+            <div class="body">
+                <p>
+                    Dear user, this page is deprecated and will be removed soon.
+                    We encourage you to start using
+                    <strong><a href="{{ url('topcrashers:topcrashers') }}?{{ make_query_string(
+                        product=product,
+                        version=version,
+                        date_range_type=date_range_type,
+                        process_type=crash_type.replace('all', 'any'),
+                        platform=os_name,
+                        _facets_size=result_count,
+                        days=days,
+                    ) }}">the new Top Crashers report</a></strong> instead.
+                    For more information, please read
+                    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1274288">bug 1274288</a>.
+                </p>
+            </div>
+        </div>
+
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <div class="page-heading">
             <p class="old-new-report-link">

@@ -31,19 +31,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 {% block content %}
     <div id="mainbody">
         <div class="page-heading">
-            <p class="old-new-report-link">
-                <a href="{{ url(
-                    'crashstats:topcrasher',
-                    product=query['product'],
-                    versions=';'.join(query['versions']),
-                    date_range_type=query.range_type,
-                    crash_type=query['crash_type'].replace('any', 'all'),
-                    os_name=query['os_name'],
-                    result_count=query['result_count'],
-                ) }}?days={{ days }}">
-                    View the <b>old</b> <i>Top Crashers</i> report
-                </a>
-            </p>
             <h2>
                 Top Crashers for <span id="current-product">{{ product }}</span>
                 <span id="current-version">{{ ', '.join(query.versions) }}</span>

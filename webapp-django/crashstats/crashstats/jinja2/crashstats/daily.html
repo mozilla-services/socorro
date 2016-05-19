@@ -12,13 +12,28 @@
 {% block content %}
 <div id="mainbody">
 
+    <div class="panel">
+        <header class="title">
+            <h2><img src="{{ static('img/3rdparty/silk/error.png') }}"> Deprecation notice</h2>
+        </header>
+
+        <div class="body">
+            <p>
+                Dear user, this page is deprecated and will be removed soon.
+                We encourage you to start using
+                <strong><a href="{{ new_daily_report_url }}">Crashes per Day</a></strong> instead.
+                For more information, please read
+                <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1274288">bug 1274288</a>.
+            </p>
+        </div>
+    </div>
+
     <div class="page-heading">
         <p class="old-new-report-link">
             <a href="{{ new_daily_report_url }}">View the <b>new</b> <i>Crashes per Day</i> report</a>
         </p>
         <h2>Crashes per Active Daily Install</h2>
     </div>
-
 
     <div class="panel daily_search">
         <div class="title daily_search_title">

@@ -21,7 +21,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_(DUMB_SIGNATURE in response.content)
         ok_('Loading' in response.content)
-        ok_(reverse('crashstats:report_list') in response.content)
 
     def test_signature_reports(self):
 
