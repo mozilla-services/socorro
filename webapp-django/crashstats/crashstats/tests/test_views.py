@@ -2542,6 +2542,115 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
+    def test_report_index_with_symbol_url_in_modules(self, rget, rpost):
+        rpost.side_effect = mocked_post_threeothersigs
+        dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'
+        json_dump = {
+            'status': 'OK',
+            'sensitive': {
+                'exploitability': 'high'
+            },
+            'threads': [],
+            'modules': [
+                {
+                    'base_addr': '0x769c0000',
+                    'code_id': '411096B9b3000',
+                    'debug_file': 'userenv.pdb',
+                    'debug_id': 'C72199CE55A04CD2A965557CF1D97F4E2',
+                    'end_addr': '0x76a73000',
+                    'filename': 'userenv.dll',
+                    'version': '5.1.2600.2180',
+                },
+                {
+                    'base_addr': '0x76b40000',
+                    'code_id': '411096D62d000',
+                    'debug_file': 'winmm.pdb',
+                    'debug_id': '4FC9F179964745CAA3C78D6FADFC28322',
+                    'end_addr': '0x76b6d000',
+                    'filename': 'winmm.dll',
+                    'loaded_symbols': True,
+                    'symbol_disk_cache_hit': True,
+                    'symbol_url': 'https://s3.example.com/winmm.sym',
+                    'version': '5.1.2600.2180',
+                },
+            ]
+        }
+
+        def mocked_get(url, params, **options):
+            if '/crash_data' in url:
+                assert 'datatype' in params
+
+                if params['datatype'] == 'meta':
+                    return Response({
+                        'InstallTime': '1339289895',
+                        'FramePoisonSize': '4096',
+                        'Theme': 'classic/1.0',
+                        'Version': '5.0a1',
+                        'Email': 'secret@email.com',
+                        'Vendor': 'Mozilla',
+                        'URL': 'farmville.com',
+                        'additional_minidumps': 'foo, bar,',
+                    })
+                if params['datatype'] == 'unredacted':
+                    return Response({
+                        'client_crash_date': '2012-06-11T06:08:45',
+                        # 'dump': 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64',
+                        'dump': dump,
+                        'signature': 'FakeSignature1',
+                        'user_comments': None,
+                        'uptime': 14693,
+                        'release_channel': 'nightly',
+                        'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
+                        'flash_version': '[blank]',
+                        'hangid': None,
+                        'distributor_version': None,
+                        'truncated': True,
+                        'process_type': None,
+                        'id': 383569625,
+                        'os_version': '10.6.8 10K549',
+                        'version': '5.0a1',
+                        'build': '20120609030536',
+                        'ReleaseChannel': 'nightly',
+                        'addons_checked': None,
+                        'product': 'WaterWolf',
+                        'os_name': 'Mac OS X',
+                        'last_crash': 371342,
+                        'date_processed': '2012-06-11T06:08:44',
+                        'cpu_name': 'amd64',
+                        'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
+                        'address': '0x8',
+                        'completeddatetime': '2012-06-11T06:08:57',
+                        'success': True,
+                        'exploitability': 'Unknown Exploitability',
+                        'json_dump': json_dump,
+                    })
+
+            if 'correlations/signatures' in url:
+                return Response({
+                    'hits': [
+                        'FakeSignature1',
+                        'FakeSignature2'
+                    ],
+                    'total': 2
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        assert 'id="modules-list"' in response.content
+        ok_(
+            '<a href="https://s3.example.com/winmm.sym">winmm.dll</a>' in
+            response.content
+        )
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
     def test_report_index_fennecandroid_report(self, rget, rpost):
         dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment\nOn multiple lines'
