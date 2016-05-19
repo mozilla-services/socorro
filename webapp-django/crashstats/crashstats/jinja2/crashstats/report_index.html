@@ -531,12 +531,16 @@
                         </thead>
                         <tbody>
                             {% for module in parsed_dump.modules %}
-                            <tr class="{%if module.missing_symbols %}missingsymbols{% endif %}">
+                            <tr class="{% if module.missing_symbols %}missingsymbols{% endif %}">
                                 <td>
-                                    {%if module.missing_symbols %}
+                                    {% if module.missing_symbols %}
                                     <span class="row-notice" title="missing symbol">&Oslash;</span>
                                     {% endif %}
-                                    {{ module.filename }}
+                                    {% if module.symbol_url %}
+                                        <a href="{{ module.symbol_url }}">{{ module.filename }}</a>
+                                    {% else %}
+                                        {{ module.filename }}
+                                    {% endif %}
                                 </td>
                                 <td>{{ module.version }}</td>
                                 <td>{{ module.debug_id }}</td>
