@@ -13,15 +13,7 @@
 {% block content %}
 <div id="mainbody">
     <div class="page-heading">
-        <p class="old-new-report-link">
-            <a href="{{ url('crashstats:report_list') }}?{{ make_query_string(
-                signature=signature,
-            ) }}&amp;{{ report_list_query_string }}">
-                See the equivalent <i>Report list</i> page
-            </a>
-        </p>
         <h2>Signature report for <em>{{ signature }}</em></h2>
-
     </div>
 
     <section id="search-form">
