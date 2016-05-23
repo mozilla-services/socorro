@@ -116,6 +116,7 @@ _SAMPLE_UNREDACTED = {
     'last_crash': 371342,
     'date_processed': '2012-06-11T06:08:44',
     'cpu_name': 'amd64',
+    'cpu_info': 'AuthenticAMD family 20 model 2 stepping 0 | 2 ',
     'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
     'address': '0x8',
     'completeddatetime': '2012-06-11T06:08:57',
@@ -2393,6 +2394,10 @@ class TestViews(BaseTestViews):
 
         ok_('FakeSignature1' in response.content)
         ok_('11cb72f5-eb28-41e1-a8e4-849982120611' in response.content)
+
+        # Verify the "AMD CPU bug" marker is there.
+        ok_('Possible AMD CPU bug related crash report' in response.content)
+
         comment_transformed = (
             comment0
             .replace('\n', '<br />')

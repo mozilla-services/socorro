@@ -1,8 +1,9 @@
 import datetime
 import functools
-import isodate
 import math
 import urllib
+
+import isodate
 
 from django import http
 from django.core.urlresolvers import reverse
@@ -16,8 +17,8 @@ from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
 from crashstats.supersearch.models import (
-    SuperSearchUnredacted,
     SuperSearchFields,
+    SuperSearchUnredacted,
 )
 from crashstats.supersearch.views import (
     ValidationError,
@@ -142,6 +143,11 @@ def signature_reports(request, params):
     # always returned by the model.
     if 'uuid' not in params['_columns']:
         params['_columns'].append('uuid')
+
+    # We require the cpu_info field to show a special marker on some AMD CPU
+    # related crash reports.
+    if 'cpu_info' not in params['_columns']:
+        params['_columns'].append('cpu_info')
 
     # The `uuid` field is a special case, it is always displayed in the first
     # column of the table. Hence we do not want to show it again in the

@@ -17,9 +17,13 @@
             {% for crash in query.hits %}
             <tr>
                 <td>
-                    <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">
-                        {{ crash.uuid }}
-                    </a>
+                    <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">{{ crash.uuid }}</a>
+                    {% if crash.cpu_info %}
+                        {% if crash.cpu_info.startswith('AuthenticAMD family 20 model 1') or
+                              crash.cpu_info.startswith('AuthenticAMD family 20 model 2') %}
+                            <span class="label" title="Possible AMD CPU bug related crash report">AMD</span>
+                        {% endif %}
+                    {% endif %}
                 </td>
                 {% for column in columns %}
                 <td>

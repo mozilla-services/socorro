@@ -41,10 +41,9 @@
         <div class="body">
             <div id="sumo-link"><a href="https://support.mozilla.org/search?{{ make_query_string(q=report.signature) }}" title="Find more answers at support.mozilla.org!">Search Mozilla Support for Help</a></div>
 
-            <div id="report-header-details">ID:
-                <span>{{ report.uuid }}</span>
-                <br/> Signature:
-                <span>{{ report.signature }}</span>
+            <div id="report-header-details">
+                ID: <code>{{ report.uuid }}</code><br/>
+                Signature: <code>{{ report.signature }}</code>
             </div>
             <div id="report-index" class="no-border ui-tabs ui-widget ui-widget-content ui-corner-all">
 
@@ -181,7 +180,15 @@
                             </tr>
                             <tr>
                                 <th scope="row">Build Architecture Info</th>
-                                <td>{{ report.cpu_info }}</td>
+                                <td>
+                                    {% if report.cpu_info %}
+                                        {% if report.cpu_info.startswith('AuthenticAMD family 20 model 1') or
+                                              report.cpu_info.startswith('AuthenticAMD family 20 model 2') %}
+                                            <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="warning" title="Possible AMD CPU bug related crash report" />
+                                        {% endif %}
+                                        {{ report.cpu_info }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row">Crash Reason</th>
