@@ -568,6 +568,13 @@ class AbortSignature(Rule):
         processed_crash.original_signature = processed_crash.signature
 
         abort_message = raw_crash.AbortMessage
+
+        if '###!!! ABORT:' in abort_message:
+            # Recent crash reports added some irrelevant information at the
+            # beginning of the abort message. We want to remove that and keep
+            # just the actual abort message.
+            abort_message = abort_message.split('###!!! ABORT:', 1)[1].strip()
+
         if len(abort_message) > 80:
             abort_message = abort_message[:77] + '...'
 

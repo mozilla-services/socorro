@@ -1429,80 +1429,104 @@ class TestOOMSignature(TestCase):
 class TestAbortSignature(TestCase):
 
     #--------------------------------------------------------------------------
-    def test_predicate(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-        rd = {}
-        rc = DotDict()
-        rc.AbortMessage = 'something'
-
+    def get_config(self):
         fake_processor = create_basic_fake_processor()
-        rule = AbortSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = 'something'
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(predicate_result)
 
     #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-        rc = DotDict()
-        # No AbortMessage.
-        rd = {}
+        config = self.get_config()
+        rule = AbortSignature(config)
 
-        fake_processor = create_basic_fake_processor()
-        rule = AbortSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        # No AbortMessage.
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(not predicate_result)
 
     #--------------------------------------------------------------------------
     def test_predicate_empty_message(self):
-        pc = DotDict()
-        pc.signature = 'hello'
-        rc = DotDict()
-        rc.AbortMessage = ''
-        rd = {}
+        config = self.get_config()
+        rule = AbortSignature(config)
 
-        fake_processor = create_basic_fake_processor()
-        rule = AbortSignature(fake_processor.config)
-        predicate_result = rule.predicate(rc, rd, pc, fake_processor)
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = ''
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(not predicate_result)
 
     #--------------------------------------------------------------------------
     def test_action_success(self):
-        pc = DotDict()
-        pc.signature = 'hello'
+        config = self.get_config()
+        rule = AbortSignature(config)
 
-        rc = DotDict()
-        rc.AbortMessage = 'unknown'
-        rd = {}
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
 
-        fake_processor = create_basic_fake_processor()
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = 'unknown'
 
-        rule = AbortSignature(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(pc.original_signature, 'hello')
-        eq_(pc.signature, 'Abort | unknown | hello')
+        eq_(processed_crash.original_signature, 'hello')
+        eq_(processed_crash.signature, 'Abort | unknown | hello')
 
     #--------------------------------------------------------------------------
     def test_action_success_long_message(self):
-        pc = DotDict()
-        pc.signature = 'hello'
+        config = self.get_config()
+        rule = AbortSignature(config)
 
-        rc = DotDict()
-        rc.AbortMessage = 'a' * 81
-        rd = {}
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
 
-        fake_processor = create_basic_fake_processor()
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = 'a' * 81
 
-        rule = AbortSignature(fake_processor.config)
-        action_result = rule.action(rc, rd, pc, fake_processor)
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
 
         ok_(action_result)
-        eq_(pc.original_signature, 'hello')
+        eq_(processed_crash.original_signature, 'hello')
         expected_sig = 'Abort | {}... | hello'.format('a' * 77)
-        eq_(pc.signature, expected_sig)
+        eq_(processed_crash.signature, expected_sig)
+
+    #--------------------------------------------------------------------------
+    def test_action_success_remove_beginning(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = '[5392] ###!!! ABORT: foo bar line 42'
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | foo bar line 42 | hello'
+        eq_(processed_crash.signature, expected_sig)
 
 
 #==============================================================================
