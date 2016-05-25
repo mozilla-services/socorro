@@ -326,6 +326,7 @@ PIPELINE_JS = {
     'report_index': {
         'source_filenames': (
             'crashstats/js/socorro/report.js',
+            'crashstats/js/socorro/reprocessing.js',
         ),
         'output_filename': 'js/report-index.min.js',
     },

@@ -73,30 +73,68 @@
 
     function submit_form(form) {
         var url = $('p.url code', form).text();
-        // unlike regular, form.serialize() by doing it this way we get a
-        // query string that only contains actual values
-        // The second parameter (`true`) is so that things like
-        // `{products: ["Firefox", "Thunderbird"]}`
-        // becomes: `products=Firefox&products=Thunderbird`
-        var qs = Qs.stringify(form.serializeExclusive(), { indices: false });
-        if (qs) {
-            url += '?' + qs;
+
+        // Not entirely sure why this is a list
+        var method = form.data('methods')[0];
+        var ajax_url;
+        if (method === 'POST') {
+            ajax_url = url;
+        } else {
+            // unlike regular, form.serialize() by doing it this way we get a
+            // query string that only contains actual values
+            // The second parameter (`true`) is so that things like
+            // `{products: ["Firefox", "Thunderbird"]}`
+            // becomes: `products=Firefox&products=Thunderbird`
+            var qs = Qs.stringify(form.serializeExclusive(), { indices: false });
+            if (qs) {
+                url += '?' + qs;
+            }
+            ajax_url = url;
+            if (ajax_url.search(/\?/) == -1) {
+                ajax_url += '?';
+            } else {
+                ajax_url += '&';
+            }
+            ajax_url += 'pretty=print';
         }
-        var ajax_url = url;
-        if (ajax_url.search(/\?/) == -1) ajax_url += '?';
-        else ajax_url += '&';
-        ajax_url += 'pretty=print';
+
         $('img.loading-ajax', form).show();
         $('button.close', form).hide();
 
+        var container = $('.test-drive', form);
         $.ajax({
            url: ajax_url,
-           method: 'GET',
+           method: method,
+           // Only send the `data` if it's a POST. For get the params are
+           // in the `ajax_url` already.
+           data: method === 'POST' ? form.serializeArray() : null,
            dataType: 'text',
            success: function(response, textStatus, jqXHR) {
-               var container = $('.test-drive', form);
+               $('pre', container).text(response);
+               $('.status code', container).hide();
+               $('.status-error', container).hide();
+               $('.response-size code', container).text(filesize(response.length));
+               $('.response-size').show();
+           },
+           error: function(jqXHR, textStatus, errorThrown) {
+               $('pre', container).text(jqXHR.responseText);
+               $('.status code', container).text(jqXHR.status).show();
+               $('.status-error', container).show();
+               $('.response-size').hide();
+               // in case it was binary before this run
+               $('pre', container).show();
+               $('.binary-response-warning', container).hide();
+           },
+           complete: function(jqXHR, textStatus) {
                $('.used-url code', container).text(url);
                $('.used-url a', container).attr('href', url);
+               if (method === 'POST') {
+                   $('.used-data code')
+                   .text(JSON.stringify(form.serializeExclusive()));
+                   $('.used-data').show();
+               } else {
+                   $('.used-data').hide();
+               }
                if (jqXHR.getResponseHeader('Content-Type') === 'application/octet-stream') {
                     $('pre', container).hide();
                     $('.binary-response-warning', container).show();
@@ -105,31 +143,6 @@
                     $('pre', container).show();
                     $('.binary-response-warning', container).hide();
                }
-               $('pre', container).text(response);
-               $('.status code', container).hide();
-               $('.status-error', container).hide();
-               $('.response-size code', container).text(filesize(response.length));
-               $('.response-size').show();
-               container.show();
-               setTimeout(function() {
-                   // add a slight delay so it feels smoother for endpoints
-                   // that complete in milliseconds
-                   $('img.loading-ajax', form).hide();
-                   $('button.close', form).show();
-               }, 500);
-               _submission_locked = false;
-           },
-           error: function(jqXHR, textStatus, errorThrown) {
-               var container = $('.test-drive', form);
-               $('.used-url code', container).text(url);
-               $('.used-url a', container).attr('href', url);
-               $('pre', container).text(jqXHR.responseText);
-               $('.status code', container).text(jqXHR.status).show();
-               $('.status-error', container).show();
-               $('.response-size').hide();
-               // in case it was binary before this run
-               $('pre', container).show();
-               $('.binary-response-warning', container).hide();
                container.show();
                setTimeout(function() {
                    // add a slight delay so it feels smoother for endpoints
