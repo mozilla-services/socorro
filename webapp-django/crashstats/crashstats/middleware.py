@@ -1,6 +1,8 @@
 from django import http
 from django.conf import settings
 from django.core.exceptions import MiddlewareNotUsed
+from django.shortcuts import render
+
 from crashstats.crashstats.models import BadStatusCodeError
 
 
@@ -41,3 +43,21 @@ class Propagate400Errors(object):
             # "400" error
             if exception.status == 400:
                 return http.HttpResponseBadRequest(exception.message)
+
+
+class Pretty400Errors(object):
+
+    def process_response(self, request, response):
+
+        if (
+            response.status_code == 400 and
+            not request.is_ajax() and
+            response['Content-Type'].startswith('text/html')
+        ):
+            return render(
+                request,
+                '400.html',
+                {'error': response.content},
+                status=400
+            )
+        return response

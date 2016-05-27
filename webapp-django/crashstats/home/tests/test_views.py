@@ -47,3 +47,10 @@ class TestViews(BaseTestViews):
         response = self.client.get(intermediate_dest)
         eq_(response.status_code, redirect_code)
         ok_(destination in response['Location'], response['Location'])
+
+    def test_home_400(self):
+        url = reverse('home:home', args=('WaterWolf',))
+        response = self.client.get(url, {'days': 'xxx'})
+        eq_(response.status_code, 400)
+        ok_('Enter a whole number' in response.content)
+        eq_(response['Content-Type'], 'text/html; charset=utf-8')

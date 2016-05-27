@@ -114,6 +114,7 @@ MIDDLEWARE_CLASSES = (
     'ratelimit.middleware.RatelimitMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
     '%s.crashstats.middleware.Propagate400Errors' % PROJECT_MODULE,
+    '%s.crashstats.middleware.Pretty400Errors' % PROJECT_MODULE,
 )
 
 

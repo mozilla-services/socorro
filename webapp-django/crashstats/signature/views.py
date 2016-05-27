@@ -15,7 +15,8 @@ from socorrolib.lib import BadArgumentError
 from crashstats.base.utils import render_exception
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
-from crashstats.crashstats.views import pass_default_context
+from crashstats.crashstats.decorators import pass_default_context
+
 from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
