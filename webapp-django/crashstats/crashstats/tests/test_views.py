@@ -2920,7 +2920,9 @@ class TestViews(BaseTestViews):
             args=['11cb72f5-eb28-41e1-a8e4-849982120611']
         )
         response = self.client.get(url)
-        ok_('<th scope="row">Install Time</th>' in response.content)
+        ok_('<th scope="row" title="Time and date that this version was ' +
+            'installed. Search term: \'install time\'.">Install Time</th>'
+            in response.content)
         # This is what 1461170304 is in human friendly format.
         ok_('2016-04-20 16:38:24' in response.content)
 
@@ -2978,7 +2980,9 @@ class TestViews(BaseTestViews):
         )
         response = self.client.get(url)
         # The heading is there but there should not be a value for it
-        ok_('<th scope="row">Install Time</th>' in response.content)
+        ok_('<th scope="row" title="Time and date that this version was ' +
+            'installed. Search term: \'install time\'.">Install Time</th>'
+            in response.content)
         doc = pyquery.PyQuery(response.content)
         # Look for a <tr> whose <th> is 'Install Time', then
         # when we've found the row, we look at the text of its <td> child.

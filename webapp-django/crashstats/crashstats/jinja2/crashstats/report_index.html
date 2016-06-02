@@ -86,7 +86,7 @@
                     <table class="record data-table vertical">
                         <tbody>
                             <tr>
-                                <th scope="row">Signature</th>
+                                <th scope="row" title="This is the field most commonly used for aggregating individual crash reports into a group. It usually contains one or more stack frames from the crashing thread. The stack frames may also be augmented or replaced with other tokens such as 'OOM | small' or 'shutdownhang' that further identify the crash kind. Search term: 'signature'.">Signature</th>
                                 <td>
                                     {{ report.signature }}
                                     <a href="{{ url('signature:signature_report') }}?{{ make_query_string(product=report.product, signature=report.signature) }}" class="sig-overview" title="View more reports of this type">More Reports</a>
@@ -94,16 +94,21 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row">UUID</th>
+                                <th scope="row" title="The unique identifier for this crash report. Search term: N/A.">UUID</th>
                                 <td>{{ report.uuid }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Date Processed</th>
-                                <td>{{ report.date_processed }}</td>
+                                {# njn: is this right? is the "received" time different to the "processed" time? (does it matter?) #}
+                                <th scope="row" title="Time and date that the crash report was processed by Socorro. Search term: N/A.">Date Processed</th>
+                                <td>
+                                    {% if report.date_processed %}
+                                        {{ report.date_processed | timestamp_to_date }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% if report.process_type %}
                             <tr>
-                                <th scope="row">Process Type</th>
+                                <th scope="row" title="The type of the crashing process. One of: 'content', 'plugin'; for plugin processes this field may also list the plugin name, version, and filename. Search terms: 'process type', 'plugin name', 'plugin version', 'plugin filename'.">Process Type</th>
                                 <td>{{ report.process_type }}
                                     {% if report.PluginName %}
                                     <strong class="name">{{ report.PluginName }}</strong>
@@ -120,23 +125,23 @@
                             </tr>
                             {% endif %}
                             <tr>
-                                <th scope="row">Uptime</th>
-                                <td>{{ report.uptime }}</td>
+                                <th scope="row" title="Length of time the process was running before it crashed. Small values (from 0 to 5 or so) usually indicate start-up crashes. Search term: 'uptime'.">Uptime</th>
+                                <td>{{ report.uptime }} seconds</td>
                             </tr>
                             {% if report.last_crash %}
                             <tr>
-                                <th scope="row">Last Crash</th>
-                                <td>{{ report.last_crash }} seconds before submission</td>
+                                <th scope="row" title="Length of time between the previous crash submission and this one. Low values indicate repeated crashes. Search term: 'last crash'.">Last Crash</th>
+                                <td>{{ report.last_crash }} seconds</td>
                             </tr>
                             {% endif %}
                             {% if report.install_age %}
                             <tr>
-                                <th scope="row">Install Age</th>
-                                <td>{{ report.install_age }} since version was first installed.</td>
+                                <th scope="row" title="Length of time since this version was installed. Search term: 'install age'.">Install Age</th>
+                                <td>{{ report.install_age }} seconds</td>
                             </tr>
                             {% endif %}
                             <tr>
-                                <th scope="row">Install Time</th>
+                                <th scope="row" title="Time and date that this version was installed. Search term: 'install time'.">Install Time</th>
                                 <td>
                                     {% if raw.InstallTime %}
                                         {{ raw.InstallTime | timestamp_to_date }}
@@ -144,79 +149,86 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row">Product</th>
+                                <th scope="row" title="The crashing product. One of: 'Firefox', 'FennecAndroid', 'Thunderbird'. Search term: 'product'.">Product</th>
                                 <td>{{ report.product }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Version</th>
+                                <th scope="row" title="The product version number. A value lacking any letters indicates a normal release; a value with a 'b' indicates a Beta release; a value with an 'a' indicates an Aurora (a.k.a. Developer Edition) release; a value with 'esr' indicates an Extended Service Release. Search term: 'version'.">Version</th>
                                 <td>{{ report.version }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Build ID</th>
+                                <th scope="row" title="The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS. Search term: 'build id'.">Build ID</th>
                                 <td>{{ report.build }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Release Channel</th>
+                                <th scope="row" title="The release channel. Usually one of: 'release', 'beta', 'aurora', 'nightly', 'esr', though other values are possible. Search term: 'release channel'.">Release Channel</th>
                                 <td>{{ report.release_channel }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">OS</th>
+                                <th scope="row" title="The operating system. Search terms: 'platform_pretty_version', 'platform'.">OS</th>
                                 <td>{{ report.os_pretty_version or report.os_name }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">OS Version</th>
+                                <th scope="row" title="The operating system version. Search term: 'platform version'.">OS Version</th>
                                 <td>{{ report.os_version }}</td>
                             </tr>
                             {% if raw.B2G_OS_Version %}
                             <tr>
-                                <th scope="row">B2G OS Version</th>
+                                <th scope="row" title="The B2G version. Search term: 'b2g os version'.">B2G OS Version</th>
                                 <td>
                                     <pre>{{ raw.B2G_OS_Version }}</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             <tr>
-                                <th scope="row">Build Architecture</th>
+                                <th scope="row" title="The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'. Search term: 'cpu name'.">Build Architecture</th>
                                 <td>{{ report.cpu_name }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Build Architecture Info</th>
+                                <th scope="row" title="Detailed processor info. Usually contains information such as the family, model, and stepping number. Search term: 'cpu info'.">Build Architecture Info</th>
                                 <td>{{ report.cpu_info }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Crash Reason</th>
+                                <th scope="row" title="The crash's exception kind. Different OSes have different exception kinds. Example values: 'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'. Search term: 'reason'.">Crash Reason</th>
                                 <td>{{ report.reason }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Crash Address</th>
+                                <th scope="row" title="For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the accompanying description. Search term: 'moz crash reason'.">MOZ_CRASH Reason</th>
+                                <td>{{ report.MozCrashReason }}</td>
+                            </tr>
+                            <tr>
+                                {# njn: is this right? #}
+                                <th scope="row" title="The crashing address. This value is only meaningful for crashes involving bad memory accesses. Search term: 'address'.">Crash Address</th>
                                 <td>{{ report.address }}</td>
                             </tr>
                             {% if request.user.has_perm('crashstats.view_pii') %}
                             <tr>
-                                <th scope="row">Email Address</th>
+                                <th scope="row" title="The email address of the user, which they provided via the crash reporter. Search term: 'email'.">Email Address</th>
                                 <td>
                                     {% if raw.Email %}
-                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - Super Sensitive! Don't mess around! {% endif %}
+                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - This is super sensitive data! Be careful how you use it!
+                                    {% endif %}
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row">URL</th>
+                                <th scope="row" title="The URL of the web page being viewed at the time of the crash. Search term: 'url'.">URL</th>
                                 <td>
                                     {% if raw.URL %}
-                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - Super Sensitive! Don't mess around! {% endif %}
+                                    <a href="{{ raw.URL }}">{{ raw.URL }}</a> - This is super sensitive data! Be careful how you use it!
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endif %}
                             {% if request.user.has_perm('crashstats.view_exploitability') %}
                             <tr>
-                                <th scope="row">Exploitability</th>
+                                <th scope="row" title="An automated estimate of how exploitable this crash is. Search term: 'exploitability'.">Exploitability</th>
                                 <td>
                                     {% if report.exploitability %} {{ report.exploitability }} {% endif %}
                                 </td>
                             </tr>
                             {% endif %}
                             <tr>
-                                <th scope="row">User Comments</th>
+                                <th scope="row" title="Comments from the user, which they provided via the crash reporter. Search term: 'user comments'.">User Comments</th>
                                 <td>
                                     {% if report.user_comments %}
                                     {% if request.user.has_perm('crashstats.view_pii') %}
@@ -229,7 +241,7 @@
                             </tr>
                             {% if report.app_notes %}
                             <tr>
-                                <th title="Notes added by the application's code during crash" scope="row">App Notes</th>
+                                <th scope="row" title="Notes added by the application's code during the crash. Search term: 'app notes'.">App Notes</th>
                                 <td>
                                     <pre>{{ report.app_notes }}</pre>
                                 </td>
@@ -237,12 +249,14 @@
                             {% endif %}
                             {% if report.processor_notes %}
                             <tr>
-                                <th title="Notes added by Socorro when accepting the crash report" scope="row">Processor Notes</th>
+                                {# njn: "Socorro Notes" is better than "Processor Notes", because "Processor" sounds like a CPU. #}
+                                <th scope="row" title="Notes added by Socorro when processing the crash report. Search term: 'processor notes'.">Socorro Notes</th>
                                 <td>
                                     <code>{{ report.processor_notes }}</code>
                                 </td>
                             </tr>
                             {% endif %}
+                            {# njn: what is this one? I can't find the search term and the <th> element is unlabelled. #}
                             {% if report.distributor %}
                             <tr>
                                 <th>
@@ -251,6 +265,7 @@
                                     </td>
                             </tr>
                             {% endif %}
+                            {# njn: ditto #}
                             {% if report.distributor_version %}
                             <tr>
                                 <th>
@@ -260,32 +275,33 @@
                             </tr>
                             {% endif %}
                             <tr>
-                                <th scope="row">EMCheckCompatibility</th>
+                                {# njn: is this right? what's the difference betwen 'em check compatibility' and 'addons checked'? They give almost identical results... #}
+                                <th scope="row" title="Are extension compatibility checks enabled? Search term: 'em check compatibility'.">EMCheckCompatibility</th>
                                 <td>
                                     <pre>{% if report.addons_checked %}True{% else %}False{% endif %}</pre>
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row">Winsock LSP</th>
+                                <th scope="row" title="Winsock Layered Service Providers. Search term: 'winsock lsp'.">Winsock LSP</th>
                                 <td>
                                     <pre>{{ report.Winsock_LSP }}</pre>
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row">Adapter Vendor ID</th>
+                                <th scope="row" title="The graphics adapter vendor. This value is sometimes a name, and sometimes a hexidecimal identifier. Common identifiers include: 0x8086 (Intel), 0x1002 (AMD), 0x10de (NVIDIA). Search term 'adapter vendor id'.">Graphics Adapter Vendor ID</th>
                                 <td>
                                     <pre>{{ raw.AdapterVendorID }}</pre>
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row">Adapter Device ID</th>
+                                <th scope="row" title="The graphics adapter device identifier. Search term: 'adapter device id'.">Graphics Adapter Device ID</th>
                                 <td>
                                     <pre>{{ raw.AdapterDeviceID }}</pre>
                                 </td>
                             </tr>
                             {% if raw.JavaStackTrace %}
                             <tr>
-                                <th scope="row">Java Stack Trace</th>
+                                <th scope="row" title="When Java code crashes due to an unhandled exception, this is the Java Stack Trace. It is usually more useful than the system stack trace given for the crashing thread. Search term: 'java stack trace'.">Java Stack Trace</th>
                                 <td>
                                     <pre>{{ raw.JavaStackTrace }}</pre>
                                 </td>
@@ -293,55 +309,57 @@
                             {% endif %}
                             {% if raw.TotalVirtualMemory %}
                             <tr>
-                                <th scope="row">Total Virtual Memory</th>
+                                <th scope="row" title="The size of the user-mode portion of the virtual address space of the calling process. This value depends on the type of process, the type of processor, and the configuration of the operating system. 32-bit processes usually have values in the range 2--4 GiB. 64-bit processes usually have *much* larger values. Search term: 'total virtual memory'.">Total Virtual Memory</th>
                                 <td>
-                                    <pre>{{ raw.TotalVirtualMemory }}</pre>
+                                    {# njn: can we get commas in measurement of bytes and seconds? e.g. "123,456,789 bytes". Much more readable than "123456789 bytes". #}
+                                    <pre>{{ raw.TotalVirtualMemory }} bytes</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if raw.AvailableVirtualMemory %}
                             <tr>
-                                <th scope="row">Available Virtual Memory</th>
+                                <th scope="row" title="The amount of unreserved and uncommited (i.e. available) memory in the process's address space. Note that this memory may be fragmented into many separate segments, so an allocation attempt may fail even when this value is substantially greater than zero. Search term: 'available virtual memory'.">Available Virtual Memory</th>
                                 <td>
-                                    <pre>{{ raw.AvailableVirtualMemory }}</pre>
+                                    <pre>{{ raw.AvailableVirtualMemory }} bytes</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if raw.SystemMemoryUsePercentage %}
                             <tr>
-                                <th scope="row">System Memory Use Percentage</th>
+                                <th scope="row" title="The approximate percentage of physical memory that is in use. Search term: 'system memory use percentage'.">System Memory Use Percentage</th>
                                 <td>
-                                    <pre>{{ raw.SystemMemoryUsePercentage }}</pre>
+                                    <pre>{{ raw.SystemMemoryUsePercentage }}%</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if raw.AvailablePageFile %}
                             <tr>
-                                <th scope="row">Available Page File</th>
+                                <th scope="row" title="The maximum amount of memory the current process can commit. This value is equal to or smaller than the system-wide available commit value. Search term: 'available page file'.">Available Page File</th>
                                 <td>
-                                    <pre>{{ raw.AvailablePageFile }}</pre>
+                                    <pre>{{ raw.AvailablePageFile }} bytes</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if raw.AvailablePhysicalMemory %}
                             <tr>
-                                <th scope="row">Available Physical Memory</th>
+                                <th scope="row" title="The amount of physical memory currently available. This is the amount of physical memory that can be immediately reused without having to write its contents to disk first. Search term: 'available physical memory'.">Available Physical Memory</th>
                                 <td>
-                                    <pre>{{ raw.AvailablePhysicalMemory }}</pre>
+                                    <pre>{{ raw.AvailablePhysicalMemory }} bytes</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if raw.OOMAllocationSize %}
                             <tr>
-                                <th scope="row">OOM Allocation Size</th>
+                                <th scope="row" title="A measure or estimate of the allocation request size that triggered an OOM crash. Note that allocators usually work with large (e.g. 1 MiB) chunks of memory, and a small request may have triggered a large chunk request, in which case the latter actually caused the OOM crash. Search term: 'oom allocation size'.">OOM Allocation Size</th>
                                 <td>
-                                    <pre>{{ raw.OOMAllocationSize }}</pre>
+                                    <pre>{{ raw.OOMAllocationSize }} bytes</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if raw.FlashProcessDump %}
                             <tr>
-                                <th scope="row">Flash Process Dump</th>
+                                {# njn:  is this right? #}
+                                <th scope="row" title="The Flash process type. One of: 'Broker', 'Sandbox'. Search term: 'flash process dump'.">Flash Process Dump</th>
                                 <td>
                                     <pre>{{ raw.FlashProcessDump }}</pre>
                                 </td>
@@ -349,7 +367,7 @@
                             {% endif %}
                             {% if raw.Accessibility %}
                             <tr>
-                                <th scope="row">Accessibility</th>
+                                <th scope="row" title="The presence of this field indicates that accessibility services were accessed. Search term: 'accessibility'.">Accessibility</th>
                                 <td>
                                     <pre>{{ raw.Accessibility }}</pre>
                                 </td>
@@ -357,7 +375,7 @@
                             {% endif %}
                             {% if raw.Android_CPU_ABI%}
                             <tr>
-                                <th scope="row">Android CPU ABI</th>
+                                <th scope="row" title="The Android CPU ABI being used. Search term: 'android cpu abi'.">Android CPU ABI</th>
                                 <td>
                                     <pre>{{ raw.Android_CPU_ABI}}</pre>
                                 </td>
@@ -365,7 +383,7 @@
                             {% endif %}
                             {% if raw.Android_Manufacturer %}
                             <tr>
-                                <th scope="row">Android Manufacturer</th>
+                                <th scope="row" title="The Android device manufacturer. Search term: 'android manufacturer'.">Android Manufacturer</th>
                                 <td>
                                     <pre>{{ raw.Android_Manufacturer }}</pre>
                                 </td>
@@ -373,7 +391,7 @@
                             {% endif %}
                             {% if raw.Android_Model %}
                             <tr>
-                                <th scope="row">Android Model</th>
+                                <th scope="row" title="The Android device model. Search term: 'android model'.">Android Model</th>
                                 <td>
                                     <pre>{{ raw.Android_Model }}</pre>
                                 </td>
@@ -381,7 +399,7 @@
                             {% endif %}
                             {% if raw.Android_Version %}
                             <tr>
-                                <th scope="row">Android Version</th>
+                                <th scope="row" title="The Android version. Search term: 'android version'.">Android Version</th>
                                 <td>
                                     <pre>{{ raw.Android_Version }}</pre>
                                 </td>
