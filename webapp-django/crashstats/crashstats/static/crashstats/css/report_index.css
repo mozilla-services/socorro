@@ -2,3 +2,11 @@
 #metadata th {
     width: 15%;
 }
+
+.humanized {
+    padding-left: 3px;
+    color: rgb(111, 111, 111);
+    font-size: 11px;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
