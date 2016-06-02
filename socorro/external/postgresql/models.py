@@ -1414,6 +1414,8 @@ class MissingSymbols(DeclarativeBase):
     date_processed = Column(u'date_processed', DATE(), nullable=False)
     debug_file = Column(u'debug_file', TEXT(), nullable=True)
     debug_id = Column(u'debug_id', TEXT(), nullable=True)
+    code_file = Column(u'code_file', TEXT(), nullable=True)
+    code_id = Column(u'code_id', TEXT(), nullable=True)
 
     __mapper_args__ = {'primary_key': (date_processed, debug_file, debug_id)}
 
