@@ -1914,6 +1914,8 @@ class TestMissingSymbols(TestCase):
                     "debug_id": "ABCDEFG",
                     "debug_file": "some-file.pdb",
                     "missing_symbols": True,
+                    "code_id": "123",
+                    "code_file": "debug.py",
                 },
                 {
                     "debug_id": "BCDEFGH",
@@ -1924,6 +1926,9 @@ class TestMissingSymbols(TestCase):
                     "debug_id": "CDEFGHI",
                     "debug_file": "yet-another-file.pdb",
                     "missing_symbols": True,
+                    "code_id": None,
+                    # Note that this does not even have a key
+                    # called 'code_file'.
                 },
             ]
         }
@@ -1941,9 +1946,9 @@ class TestMissingSymbols(TestCase):
         eq_(config.transaction_executor_class.return_value.call_count, 2)
         expected_execute_args = [
             call(execute_no_results, expected_sql,
-                ('2014-12-31', 'some-file.pdb', 'ABCDEFG')),
+                ('2014-12-31', 'some-file.pdb', 'ABCDEFG', 'debug.py', '123')),
             call(execute_no_results, expected_sql,
-                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI'))
+                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI', None, None))
         ]
         config.transaction_executor_class.return_value.assert_has_calls(
                 expected_execute_args
@@ -1955,13 +1960,13 @@ class TestMissingSymbols(TestCase):
         eq_(config.transaction_executor_class.return_value.call_count, 4)
         expected_execute_args = [
             call(execute_no_results, expected_sql,
-                ('2014-12-31', 'some-file.pdb', 'ABCDEFG')),
+                ('2014-12-31', 'some-file.pdb', 'ABCDEFG', 'debug.py', '123')),
             call(execute_no_results, expected_sql,
-                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI')),
+                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI', None, None)),
             call(execute_no_results, expected_sql,
-                ('2014-12-31', 'some-file.pdb', 'ABCDEFG')),
+                ('2014-12-31', 'some-file.pdb', 'ABCDEFG', 'debug.py', '123')),
             call(execute_no_results, expected_sql,
-                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI')),
+                ('2014-12-31', 'yet-another-file.pdb', 'CDEFGHI', None, None)),
         ]
         config.transaction_executor_class.return_value.assert_has_calls(
                 expected_execute_args
