@@ -182,6 +182,7 @@
                                 <th scope="row">Build Architecture Info</th>
                                 <td>
                                     {% if report.cpu_info %}
+                                        {# These models are known to cause lots of crashes, we mark them for ease of find by users. #}
                                         {% if report.cpu_info.startswith('AuthenticAMD family 20 model 1') or
                                               report.cpu_info.startswith('AuthenticAMD family 20 model 2') %}
                                             <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="warning" title="Possible AMD CPU bug related crash report" />

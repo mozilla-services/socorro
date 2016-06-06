@@ -19,6 +19,7 @@
                 <td>
                     <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">{{ crash.uuid }}</a>
                     {% if crash.cpu_info %}
+                        {# These models are known to cause lots of crashes, we mark them for ease of find by users. #}
                         {% if crash.cpu_info.startswith('AuthenticAMD family 20 model 1') or
                               crash.cpu_info.startswith('AuthenticAMD family 20 model 2') %}
                             <span class="label" title="Possible AMD CPU bug related crash report">AMD</span>
