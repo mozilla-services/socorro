@@ -273,8 +273,8 @@ def model_wrapper(request, model_name):
         function = instance.post
     else:
         function = instance.get
-        if not function:
-            return http.HttpResponseNotAllowed(['POST'])
+    if not function:
+        return http.HttpResponseNotAllowed([request.method])
 
     # assume first that it won't need a binary response
     binary_response = False

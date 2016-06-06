@@ -1859,7 +1859,7 @@ class GraphicsReport(SocorroMiddleware):
 
 class Reprocessing(SocorroMiddleware):
     """Return true if all supplied crash IDs
-    was sucessfully submitted onto the reprocessing queue.
+    were sucessfully submitted onto the reprocessing queue.
     """
 
     API_REQUIRED_PERMISSIONS = (

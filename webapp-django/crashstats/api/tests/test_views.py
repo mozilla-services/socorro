@@ -1965,8 +1965,6 @@ class TestViews(BaseTestViews):
             return True
 
         Reprocessing.implementation().reprocess = mocked_reprocess
-        # func = ReprocessingOneRabbitMQCrashStore.implementation().reprocess
-        # func.side_effect = mocked_reprocess
 
         url = reverse('api:model_wrapper', args=('Reprocessing',))
         response = self.client.get(url)
@@ -1984,7 +1982,7 @@ class TestViews(BaseTestViews):
         perm = Permission.objects.get(
             codename='reprocess_crashes'
         )
-        # but make a token that only has the 'view_pii'
+        # but make a token that only has the 'reprocess_crashes'
         # permission associated with it
         token = Token.objects.create(
             user=user,
