@@ -802,8 +802,8 @@ class MissingSymbolsRule(Rule):
         )
         self.sql = (
             "INSERT INTO missing_symbols_%s"
-            " (date_processed, debug_file, debug_id)"
-            " VALUES (%%s, %%s, %%s)"
+            " (date_processed, debug_file, debug_id, code_file, code_id)"
+            " VALUES (%%s, %%s, %%s, %%s, %%s)"
         )
 
     #--------------------------------------------------------------------------
@@ -825,7 +825,13 @@ class MissingSymbolsRule(Rule):
                             (
                                 date,
                                 module['debug_file'],
-                                module['debug_id']
+                                module['debug_id'],
+                                # These two use .get() because the keys
+                                # were added later in history. If it's
+                                # non-existent (or existant and None), it
+                                # will proceed and insert as a nullable.
+                                module.get('code_file'),
+                                module.get('code_id'),
                             )
                         )
                 except self.database.ProgrammingError:
