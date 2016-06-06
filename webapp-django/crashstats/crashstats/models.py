@@ -1323,7 +1323,7 @@ class Bugs(SocorroMiddleware):
     implementation = socorro.external.postgresql.bugs.Bugs
 
     required_params = (
-        'signatures',
+        ('signatures', list),
     )
 
     API_WHITELIST = {
