@@ -1915,7 +1915,7 @@ class TestMissingSymbols(TestCase):
                     "debug_file": "some-file.pdb",
                     "missing_symbols": True,
                     "code_id": "123",
-                    "code_file": "debug.py",
+                    "filename": "debug.py",
                 },
                 {
                     "debug_id": "BCDEFGH",
