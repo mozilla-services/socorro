@@ -1685,12 +1685,13 @@ class TestViews(BaseTestViews):
         good_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         bad_crash_id = '00000000-0000-0000-0000-000000020611'
 
-        def mocked_reprocess(crash_id):
-            if crash_id == good_crash_id:
+        def mocked_reprocess(crash_ids):
+            assert isinstance(crash_ids, list)
+            if crash_ids == [good_crash_id]:
                 return True
-            elif crash_id == bad_crash_id:
+            elif crash_ids == [bad_crash_id]:
                 return
-            raise NotImplementedError(crash_id)
+            raise NotImplementedError(crash_ids)
 
         models.Reprocessing.implementation().reprocess = mocked_reprocess
 

@@ -80,6 +80,13 @@
                             <span>Correlations</span>
                         </a>
                     </li>
+                    {% if request.user.has_perm('crashstats.reprocess_crashes') %}
+                    <li class="ui-state-default ui-corner-top">
+                        <a href="#reprocess" class="ui-tabs-anchor">
+                            <span>Reprocess</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
 
                 <div id="details" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
@@ -650,6 +657,64 @@
                     </ul>
                 </div>
                 <!-- /correlation -->
+
+                {% if request.user.has_perm('crashstats.reprocess_crashes') %}
+                <div id="reprocess" class="ui-tabs-hide" data-crash-id="{{ report.uuid }}">
+                    <p>
+                        Reprocessing will submit the this raw crash back into
+                        the processors and the new processed crash will replace
+                        the existing one. The raw crash will never change.
+                    </p>
+                    <form method="post">
+                        <button type="submit">Reprocess this crash</button>
+                    </form>
+                    <div class="waiting" style="display:none">
+                        <p>
+                            <img
+                                src="{{ static('img/ajax-loader16x16.gif') }}"
+                                alt="Waiting...">
+                            <strong>
+                                Sending crash ID in for reprocessing...
+                            </strong>
+                        </p>
+                    </div>
+                    <div class="reprocessing-success" style="display:none">
+                        <p>
+                            <strong>
+                                Success!
+                            </strong>
+                        </p>
+                        <p>
+                            But unfortunately, it's hard to predict when this
+                            crash will be precisely reprocessed and the new
+                            processed crash uploaded.
+                            Also, there's <b>caching on the
+                            webapp</b> that might hold on to old crash a little
+                            bit longer.
+                        </p>
+                        <p>
+                            Expect to <a href="">Reload this crash</a> in about
+                            1 hour.
+                        </p>
+                    </div>
+                    <div class="reprocessing-error" style="display:none">
+                        <p>
+                            <strong>
+                                Sadly, it seems we were unable to send this crash
+                                in for reprocessing.
+                            </strong>
+                        </p>
+                        <p>
+                            HTTP Status code: <code class="status"></code>
+                        </p>
+                        <pre>
+
+                        </pre>
+                    </div>
+                </div>
+                <!-- /reproces -->
+                {% endif %}
+
             </div>
             <!-- /report-index -->
         </div>

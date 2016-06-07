@@ -9,6 +9,7 @@ from django.contrib.sites.requests import RequestSite
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django import forms
+from django.views.decorators.csrf import csrf_exempt
 # explicit import because django.forms has an __all__
 from django.forms.forms import DeclarativeFieldsMetaclass
 
@@ -188,8 +189,6 @@ BLACKLIST = (
     'Query',
     # because it's an internal thing only
     'GraphicsReport',
-    # Because we haven't figured out how auth it yet
-    'Reprocessing',
 )
 
 
@@ -208,6 +207,7 @@ def is_valid_model_class(model):
     )
 
 
+@csrf_exempt
 @waffle_switch('!app_api_all_disabled')
 @ratelimit(
     key='ip',
@@ -273,6 +273,8 @@ def model_wrapper(request, model_name):
         function = instance.post
     else:
         function = instance.get
+    if not function:
+        return http.HttpResponseNotAllowed([request.method])
 
     # assume first that it won't need a binary response
     binary_response = False

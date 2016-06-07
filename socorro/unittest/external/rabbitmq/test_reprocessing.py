@@ -40,9 +40,23 @@ class TestReprocessing(TestCase):
         config = self._setup_config()
         reprocessing = ReprocessingOneRabbitMQCrashStore(config)
 
-        def mocked_call(exc_func, crash_id):
+        def mocked_save_raw_crash(raw_crash, dumps, crash_id):
             eq_(crash_id, 'some-crash-id')
             return True
 
-        self.transaction_executor().side_effect = mocked_call
+        reprocessing.save_raw_crash = mocked_save_raw_crash
         ok_(reprocessing.reprocess('some-crash-id'))
+
+    def test_post_multiple_one_fails(self):
+        config = self._setup_config()
+        reprocessing = ReprocessingOneRabbitMQCrashStore(config)
+
+        def mocked_save_raw_crash(raw_crash, dumps, crash_id):
+            if crash_id == 'crash-id-1':
+                return True
+            elif crash_id == 'crash-id-2':
+                return False
+            raise NotImplementedError(crash_id)
+
+        reprocessing.save_raw_crash = mocked_save_raw_crash
+        ok_(not reprocessing.reprocess(['crash-id-1', 'crash-id-2']))

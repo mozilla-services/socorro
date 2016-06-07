@@ -25,6 +25,7 @@ from crashstats.crashstats.models import (
     ProductVersions,
     CrontabberState,
     CurrentProducts,
+    Reprocessing,
 )
 from crashstats.tokens.models import Token
 
@@ -1956,3 +1957,42 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['reports'])
         ok_('exploitability' in dump['reports'])
+
+    def test_Reprocessing(self):
+
+        def mocked_reprocess(crash_ids):
+            assert crash_ids == ['xxxx']
+            return True
+
+        Reprocessing.implementation().reprocess = mocked_reprocess
+
+        url = reverse('api:model_wrapper', args=('Reprocessing',))
+        response = self.client.get(url)
+        eq_(response.status_code, 403)
+
+        params = {
+            'crash_ids': 'xxxx',
+        }
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN='somecrap')
+        eq_(response.status_code, 403)
+
+        user = User.objects.create(username='test')
+        self._add_permission(user, 'reprocess_crashes')
+
+        perm = Permission.objects.get(
+            codename='reprocess_crashes'
+        )
+        # but make a token that only has the 'reprocess_crashes'
+        # permission associated with it
+        token = Token.objects.create(
+            user=user,
+            notes="Only reprocessing"
+        )
+        token.permissions.add(perm)
+
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 405)
+
+        response = self.client.post(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 200)
+        eq_(json.loads(response.content), True)

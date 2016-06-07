@@ -1858,17 +1858,25 @@ class GraphicsReport(SocorroMiddleware):
 
 
 class Reprocessing(SocorroMiddleware):
-    """Return true the supplied crash ID
-    was sucessfully submitted onto the reprocessing queue.
+    """Return true if all supplied crash IDs
+    were sucessfully submitted onto the reprocessing queue.
     """
+
+    API_REQUIRED_PERMISSIONS = (
+        'crashstats.reprocess_crashes',
+    )
+
+    API_WHITELIST = None
 
     implementation = ReprocessingOneRabbitMQCrashStore
 
     implementation_config_namespace = 'queuing'
 
     required_params = (
-        'crash_id',
+        ('crash_ids', list),
     )
+
+    get = None
 
     def post(self, **data):
         return self.get_implementation().reprocess(**data)

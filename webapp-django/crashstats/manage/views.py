@@ -976,7 +976,7 @@ def reprocessing(request):
         if form.is_valid():
             crash_id = form.cleaned_data['crash_id']
             url = reverse('manage:reprocessing')
-            worked = Reprocessing().post(crash_id=crash_id)
+            worked = Reprocessing().post(crash_ids=[crash_id])
             if worked:
                 url += '?crash_id={}'.format(crash_id)
                 messages.success(

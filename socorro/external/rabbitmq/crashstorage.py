@@ -314,9 +314,15 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
         'socorro.reprocessing'
     )
 
-    def reprocess(self, crash_id):
-        return self.save_raw_crash(
-            DotDict({'legacy_processing': 0}),
-            [],
-            crash_id
-        )
+    def reprocess(self, crash_ids):
+        if not isinstance(crash_ids, (list, tuple)):
+            crash_ids = [crash_ids]
+        success = bool(crash_ids)
+        for crash_id in crash_ids:
+            if not self.save_raw_crash(
+                DotDict({'legacy_processing': 0}),
+                [],
+                crash_id
+            ):
+                success = False
+        return success

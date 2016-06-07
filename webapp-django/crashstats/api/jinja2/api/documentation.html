@@ -47,7 +47,7 @@
             <h2><a href="#{{ endpoint.name }}">{{ endpoint.name }}</a></h2>
         </div>
         <div class="body">
-            <form class="testdrive">
+            <form class="testdrive" data-methods="{{ endpoint.methods | to_json }}">
                 <p class="url">
                     <strong>{{ ' | '.join(endpoint.methods) }}</strong>
                     <code>{{ base_url }}{{ endpoint.url }}</code>
@@ -119,6 +119,11 @@
                         <a href="">
                             <code></code>
                         </a>
+                    </p>
+                    <p class="used-data">
+                        <strong>Data</strong>
+                        <br>
+                        <code></code>
                     </p>
                     <p class="status">
                         Status
