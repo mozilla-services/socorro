@@ -830,7 +830,7 @@ class MissingSymbolsRule(Rule):
                                 # were added later in history. If it's
                                 # non-existent (or existant and None), it
                                 # will proceed and insert as a nullable.
-                                module.get('code_file'),
+                                module.get('filename'),
                                 module.get('code_id'),
                             )
                         )
