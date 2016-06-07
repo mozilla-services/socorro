@@ -47,6 +47,7 @@ class TestCSignatureTool(BaseTestClass):
         ig=['ignored1'],
         pr=['pre1', 'pre2'],
         si=['fnNeedNumber'],
+        td=['foo32\.dll.*'],
         ss=('sentinel', ('sentinel2', lambda x: 'ff' in x)),
     ):
         config = sutil.DotDict()
@@ -59,6 +60,7 @@ class TestCSignatureTool(BaseTestClass):
             mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
             mocked_siglists.PREFIX_SIGNATURE_RE = pr
             mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
+            mocked_siglists.TRIM_DLL_SIGNATURE_RE = td
             mocked_siglists.SIGNATURE_SENTINELS = ss
             s = CSignatureTool(config)
 
@@ -264,6 +266,33 @@ class TestCSignatureTool(BaseTestClass):
         a[22] = 'ff'
         e = 'f | e | d | i'
         sig, notes = s.generate(a)
+        self.assert_equal_with_nicer_output(e, sig)
+
+    #--------------------------------------------------------------------------
+    def test_generate_with_merged_dll(self):
+        generator, config = self.setup_config_c_sig_tool(
+            ['a', 'b', 'c'],
+            ['d', 'e', 'f']
+        )
+        source_list = (
+            'a',
+            'd',
+            'foo32.dll@0x231423',
+            'foo32.dll',
+            'foo32.dll@0x42',
+            'g',
+        )
+        e = 'd | foo32.dll | g'
+        sig, notes = generator.generate(source_list)
+        self.assert_equal_with_nicer_output(e, sig)
+
+        source_list = (
+            'foo32.dll',
+            'foo32.dll@0x231423',
+            'g',
+        )
+        e = 'foo32.dll | g'
+        sig, notes = generator.generate(source_list)
         self.assert_equal_with_nicer_output(e, sig)
 
 

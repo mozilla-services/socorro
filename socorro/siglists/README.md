@@ -4,12 +4,13 @@ This folder contains lists that are used to configure the C signature generation
 
 ## Signature Generation Algorithm
 
-When generating a C signature, 4 steps are involved.
+When generating a C signature, 5 steps are involved.
 
 1. We walk the crashing thread's stack, looking for things that would match the [Signature Sentinels](#signature-sentinels). The first matching element, if any, becomes the top of the sub-stack we'll consider going forward.
 2. We walk the stack, ignoring everything that matches the [Irrelevant Signatures](#irrelevant-signatures). We consider the first non-matching element the top of the new sub-stack.
-3. We accumulate signatures that match the [Prefix Signatures](#prefix-signatures), until something doesn't match.
-4. We normalize each signature we accumulated. Signatures that match the [Signatures With Line Numbers](#signatures-with-line-numbers) have their associated code line number added to them, like this: ``signature:42``.
+3. We rewrite every signature missing symbols that matches the [Trim DLL Signatures](#trim-dll-signatures) to be the module only (the part before the first ``@`` sign). We also merge them so only one of those frames makes it to the final signature.
+4. We accumulate signatures that match the [Prefix Signatures](#prefix-signatures), until something doesn't match.
+5. We normalize each signature we accumulated. Signatures that match the [Signatures With Line Numbers](#signatures-with-line-numbers) have their associated code line number added to them, like this: ``signature:42``.
 
 The generated signature is a concatenation of all the accumulated signatures, separated with a pipe sign (`` | ``).
 
@@ -30,6 +31,20 @@ Irrelevant Signatures are regular expressions of signatures that will be ignored
 File: [``prefix_signature_re.txt``](./prefix_signature_re.txt)
 
 Prefix Signatures are regular expressions of signatures that will be combined with the following frame's signature. Signature generation stops at the first non-matching signature it finds.
+
+## Trim DLL Signatures
+
+File: [``trim_dll_signature_re.txt``](./trim_dll_signature_re.txt)
+
+Trim DLL Signatures are regular expressions of signatures that will be trimmed down to only their module name. For example, if the list contains ``foo32\.dll.*`` and a stack trace looks like this:
+
+<pre>0x0
+foo32.dll@0x2131
+foo32.dll@0x1943
+myFavoriteSig()
+</pre>
+
+The generated signature will be: ``0x0 | foo32.dll | myFavoriteSig()``.
 
 ## Signatures With Line Numbers
 

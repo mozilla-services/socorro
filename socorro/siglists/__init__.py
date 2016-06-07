@@ -70,3 +70,4 @@ SIGNATURE_SENTINELS = _get_file_content('signature_sentinels')
 SIGNATURES_WITH_LINE_NUMBERS_RE = _get_file_content(
     'signatures_with_line_numbers_re'
 )
+TRIM_DLL_SIGNATURE_RE = _get_file_content('trim_dll_signature_re')
