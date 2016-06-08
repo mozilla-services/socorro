@@ -125,9 +125,13 @@ class CorrelationsApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             active=True,
             product=self.config.product
         )['hits']
-        versions = [
-            x['version'] for x in hits if not x['version'].endswith('b')
-        ]
+        versions = []
+        for hit in hits:
+            if hit['version'].endswith('b'):
+                continue
+            if 'esr' in hit['version']:
+                continue
+            versions.append(hit['version'])
         assert versions, "No active versions"
 
         # convert a datetime.date object to datetime.datetime
@@ -240,7 +244,7 @@ class LocallyCachedBotoS3CrashStorage(BotoS3CrashStorage):  # pragma: no cover
                 .get_unredacted_processed(crash_id)
             )
             with open(file_path, 'w') as f:
-                json.dump(crash, f)
+                json.dump(crash, f, indent=2)
             self.config.logger.debug(
                 'Cache MISS downloading {}'.format(crash_id)
             )

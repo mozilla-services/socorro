@@ -13,7 +13,7 @@ from socorrolib.lib import DatabaseError
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,
-    single_value_sql
+    single_value_sql,
 )
 logger = logging.getLogger("webapi")
 
