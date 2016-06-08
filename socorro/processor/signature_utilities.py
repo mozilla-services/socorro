@@ -256,16 +256,12 @@ class CSignatureToolBase(SignatureTool):
             # If the signature matches the trim dll signatures regex,
             # rewrite it to remove all but the module name.
             if self.trim_dll_signature_re.match(a_signature):
-                try:
-                    a_signature = a_signature[:a_signature.index('@')]
-                except ValueError:
-                    # No '@' in that signature, we cannot trim it.
-                    pass
+                a_signature = a_signature.split('@')[0]
 
                 # If this trimmed DLL signature is the same as the previous
                 # frame's, we do not want to add it.
                 if (
-                    len(new_signature_list) and
+                    new_signature_list and
                     a_signature == new_signature_list[-1]
                 ):
                     continue
