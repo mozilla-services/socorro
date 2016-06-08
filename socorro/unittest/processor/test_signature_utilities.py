@@ -1511,14 +1511,16 @@ class TestAbortSignature(TestCase):
         eq_(processed_crash.signature, expected_sig)
 
     #--------------------------------------------------------------------------
-    def test_action_success_remove_beginning(self):
+    def test_action_success_remove_unwanted_parts(self):
         config = self.get_config()
         rule = AbortSignature(config)
 
         processed_crash = DotDict()
-        processed_crash.signature = 'hello'
 
         raw_crash = DotDict()
+
+        # Test with just the "ABOR" thing at the start.
+        processed_crash.signature = 'hello'
         raw_crash.AbortMessage = '[5392] ###!!! ABORT: foo bar line 42'
 
         action_result = rule.action(raw_crash, {}, processed_crash, {})
@@ -1526,6 +1528,46 @@ class TestAbortSignature(TestCase):
         ok_(action_result)
         eq_(processed_crash.original_signature, 'hello')
         expected_sig = 'Abort | foo bar line 42 | hello'
+        eq_(processed_crash.signature, expected_sig)
+
+        # Test with a file name and line number.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = (
+            '[7616] ###!!! ABORT: unsafe destruction: file '
+            'c:/builds/moz2_slave/m-rel-w32-00000000000000000000/build/src/'
+            'dom/plugins/ipc/PluginModuleParent.cpp, line 777'
+        )
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | unsafe destruction | hello'
+        eq_(processed_crash.signature, expected_sig)
+
+        # Test with a message that lacks interesting content.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = '[204] ###!!! ABORT: file ?, '
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | hello'
+        eq_(processed_crash.signature, expected_sig)
+
+        # Test with another message that lacks interesting content.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = (
+            '[4648] ###!!! ABORT: file resource:///modules/sessionstore/'
+            'SessionStore.jsm, line 1459'
+        )
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | hello'
         eq_(processed_crash.signature, expected_sig)
 
 
