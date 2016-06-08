@@ -20,12 +20,12 @@ class CleanMissingSymbolsCronApp(BaseCronApp):
     required_config = Namespace()
     required_config.add_option(
         'days_to_keep',
-        default=5,
-        doc='Number of days of missing symbols to keep in Postgres')
+        default=7,
+        doc='Number of days of missing symbols to keep in Postgres',
+    )
 
     def run(self, connection):
         cursor = connection.cursor()
-        # Casting to date because stored procs in psql are strongly typed.
         assert self.config.days_to_keep > 0
         cursor.execute(
             """
