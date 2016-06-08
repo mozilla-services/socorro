@@ -14,12 +14,12 @@ OUTPUT_DIR="/mnt/crashanalysis/crash_analysis/${OUTPUT_DATE}"
 OUTPUT_FILE="${OUTPUT_DATE}-missing-symbols.txt"
 read -d '' SQL << EOF
 COPY
- (SELECT debug_file, debug_id
+ (SELECT debug_file, debug_id, code_file, code_id
  FROM missing_symbols WHERE
  date_processed='${OUTPUT_DATE}'
  AND debug_file != ''
  AND debug_id != ''
- GROUP BY debug_file, debug_id
+ GROUP BY debug_file, debug_id, code_file, code_id
  )
 TO STDOUT WITH CSV HEADER
 EOF
