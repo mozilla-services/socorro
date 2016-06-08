@@ -105,6 +105,19 @@ class PostgreSQLBase(object):
             connection=connection
         )
 
+    @contextlib.contextmanager
+    def cursor(self, sql, params=None, error_message=None, connection=None):
+        fresh_connection = not connection
+        if not connection:
+            connection = self.database.connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                yield cursor
+        finally:
+            if connection and fresh_connection:
+                connection.close()
+
     def _execute(
         self, actor_function, sql, error_message, params=None, connection=None
     ):
@@ -253,8 +266,8 @@ class PostgreSQLBase(object):
                     # Get all versions that are linked to this rapid beta.
                     rapid_beta_versions = [
                         x for x in versions_info
-                        if versions_info[x]["from_beta_version"] == key
-                        and not versions_info[x]["is_rapid_beta"]
+                        if versions_info[x]["from_beta_version"] == key and
+                        not versions_info[x]["is_rapid_beta"]
                     ]
 
                     for rapid_beta in rapid_beta_versions:
