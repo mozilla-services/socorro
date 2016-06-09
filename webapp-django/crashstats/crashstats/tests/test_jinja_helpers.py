@@ -214,11 +214,11 @@ class TestHumanizers(TestCase):
         )
 
         # if the number is digit but a string it should work too
-        html = show_duration('150')
+        html = show_duration('1500')
         eq_(
             html,
-            '150 seconds <span class="humanized" title="150 seconds">'
-            '(2 minutes and 30 seconds)</span>'
+            '1,500 seconds <span class="humanized" title="1,500 seconds">'
+            '(25 minutes)</span>'
         )
 
     def test_show_duration_different_unit(self):
@@ -263,8 +263,8 @@ class TestHumanizers(TestCase):
         ok_(isinstance(html, SafeText))
         eq_(
             html,
-            '10000 bytes '
-            '<span class="humanized" title="10000 bytes">'
+            '10,000 bytes '
+            '<span class="humanized" title="10,000 bytes">'
             '(9.77 KB)</span>'
         )
 
@@ -272,8 +272,8 @@ class TestHumanizers(TestCase):
         ok_(isinstance(html, SafeText))
         eq_(
             html,
-            '10000 bytes '
-            '<span class="humanized" title="10000 bytes">'
+            '10,000 bytes '
+            '<span class="humanized" title="10,000 bytes">'
             '(9.77 KB)</span>'
         )
 

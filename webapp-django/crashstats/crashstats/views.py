@@ -12,19 +12,23 @@ from io import BytesIO
 import isodate
 
 from django import http
-from django.shortcuts import render, redirect
 from django.conf import settings
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import permission_required
 from django.core.cache import cache
+from django.shortcuts import redirect, render
 from django.utils.http import urlquote
-from django.contrib import messages
 
 from session_csrf import anonymous_csrf
 
 from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
-from crashstats.supersearch.models import SuperSearchUnredacted
+
+from crashstats.supersearch.models import (
+    SuperSearchFields,
+    SuperSearchUnredacted
+)
 
 
 # To prevent running in to a known Python bug
@@ -1484,6 +1488,20 @@ def report_index(request, crash_id, default_context=None):
         # some crashes unfortunately don't have a platform (aka os_name)
         # so finding correlations on those will never work.
         context['total_correlations'] = 0
+
+    # Add descriptions to all fields.
+    all_fields = SuperSearchFields().get()
+    descriptions = {}
+    for field in all_fields.values():
+        key = '{}.{}'.format(field['namespace'], field['in_database_name'])
+        descriptions[key] = '{} Search: {}'.format(
+            field.get('description', '').strip() or
+            'No description for this field.',
+            field['is_exposed'] and field['name'] or 'N/A',
+        )
+
+    context['fields_desc'] = descriptions
+    context['empty_desc'] = 'No description for this field. Search: unknown'
 
     context['BUG_PRODUCT_MAP'] = settings.BUG_PRODUCT_MAP
     context['CRASH_ANALYSIS_URL'] = settings.CRASH_ANALYSIS_URL

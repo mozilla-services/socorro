@@ -15,6 +15,7 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         'is_returned': True,
         'is_mandatory': False,
         'in_database_name': 'signature',
+        'description': 'Description of the signature field',
     },
     'product': {
         'name': 'product',
