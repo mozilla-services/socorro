@@ -818,7 +818,15 @@ class MissingSymbolsRule(Rule):
             sql = self.sql % datestring_to_weekly_partition(date)
             for module in processed_crash['json_dump']['modules']:
                 try:
-                    if module['missing_symbols']:
+                    # First of all, only bother if there are
+                    # missing_symbols in this module.
+                    # And because it's not useful if either of debug_file
+                    # or debug_id are empty, we filter on that here too.
+                    if (
+                        module['missing_symbols'] and
+                        module['debug_file'] and
+                        module['debug_id']
+                    ):
                         self.transaction(
                             execute_no_results,
                             sql,
