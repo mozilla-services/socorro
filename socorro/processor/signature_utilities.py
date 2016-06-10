@@ -89,6 +89,7 @@ class CSignatureToolBase(SignatureTool):
         self.irrelevant_signature_re = None
         self.prefix_signature_re = None
         self.signatures_with_line_numbers_re = None
+        self.trim_dll_signature_re = None
         self.signature_sentinels = []
 
         self.fixup_space = re.compile(r' (?=[\*&,])')
@@ -170,7 +171,7 @@ class CSignatureToolBase(SignatureTool):
         serve as a signature.  The parameter names of this function reflect the
         exact names of the fields from the jsonMDSW frame output.  This allows
         this function to be invoked by passing a frame as **a_frame. Sometimes,
-        a frame may already have a normalized version cached.  If that exsists,
+        a frame may already have a normalized version cached.  If that exists,
         return it instead.
         """
         if normalized is not None:
@@ -226,9 +227,10 @@ class CSignatureToolBase(SignatureTool):
           - a prefix of a relevant frame: Append this element to the signature
           - a relevant frame: Append this element and stop looking
           - irrelevant: Append this element only after seeing a prefix frame
-        The signature is a ' | ' separated string of frame names
+        The signature is a ' | ' separated string of frame names.
         """
         signature_notes = []
+
         # shorten source_list to the first signatureSentinel
         sentinel_locations = []
         for a_sentinel in self.signature_sentinels:
@@ -243,17 +245,41 @@ class CSignatureToolBase(SignatureTool):
         if sentinel_locations:
             source_list = source_list[min(sentinel_locations):]
 
+        # Get all the relevant frame signatures.
         new_signature_list = []
         for a_signature in source_list:
+            # If the signature matches the irrelevant signatures regex,
+            # skip to the next frame.
             if self.irrelevant_signature_re.match(a_signature):
                 continue
+
+            # If the signature matches the trim dll signatures regex,
+            # rewrite it to remove all but the module name.
+            if self.trim_dll_signature_re.match(a_signature):
+                a_signature = a_signature.split('@')[0]
+
+                # If this trimmed DLL signature is the same as the previous
+                # frame's, we do not want to add it.
+                if (
+                    new_signature_list and
+                    a_signature == new_signature_list[-1]
+                ):
+                    continue
+
             new_signature_list.append(a_signature)
+
+            # If the signature does not match the prefix signatures regex,
+            # then it is the last one we add to the list.
             if not self.prefix_signature_re.match(a_signature):
                 break
+
+        # Add a special marker for hang crash reports.
         if hang_type:
             new_signature_list.insert(0, self.hang_prefixes[hang_type])
+
         signature = delimiter.join(new_signature_list)
 
+        # Handle empty signatures to explain why we failed generating them.
         if signature == '' or signature is None:
             if crashed_thread is None:
                 signature_notes.append("CSignatureTool: No signature could be "
@@ -289,6 +315,9 @@ class CSignatureTool(CSignatureToolBase):
         )
         self.signatures_with_line_numbers_re = re.compile(
             '|'.join(siglists.SIGNATURES_WITH_LINE_NUMBERS_RE)
+        )
+        self.trim_dll_signature_re = re.compile(
+            '|'.join(siglists.TRIM_DLL_SIGNATURE_RE)
         )
         self.signature_sentinels = siglists.SIGNATURE_SENTINELS
 

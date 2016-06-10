@@ -1,0 +1,6 @@
+# Trim DLL Signatures
+#
+# Regular expressions matching frame signatures that should be trimmed down to
+# only include the module name.
+
+igdumdim32\.dll.*
