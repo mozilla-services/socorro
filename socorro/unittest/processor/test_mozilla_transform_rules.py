@@ -1930,6 +1930,11 @@ class TestMissingSymbols(TestCase):
                     # Note that this does not even have a key
                     # called 'code_file'.
                 },
+                {
+                    "debug_id": "",
+                    "debug_file": None,
+                    "missing_symbols": True,
+                },
             ]
         }
 
