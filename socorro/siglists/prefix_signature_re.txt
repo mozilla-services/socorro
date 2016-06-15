@@ -37,6 +37,7 @@ HeapFree
 huge_dalloc
 huge_palloc
 ialloc
+igdumdim32\.dll
 imalloc
 init_library
 invalid_parameter_noinfo
