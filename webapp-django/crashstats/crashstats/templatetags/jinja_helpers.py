@@ -252,7 +252,7 @@ def show_duration(seconds, unit='seconds'):
         # escaped.
         return seconds
 
-    humanized = humanfriendly.format_timespan(int(seconds))
+    humanized = humanfriendly.format_timespan(seconds)
     return mark_safe(template.render({
         'seconds_str': format(seconds, ','),
         'seconds': seconds,
