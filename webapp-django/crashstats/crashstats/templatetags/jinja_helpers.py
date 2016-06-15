@@ -232,17 +232,17 @@ def show_duration(seconds, unit='seconds'):
     If we can't do it, just return as is.
     """
     template = engines['backend'].from_string(
-        '{{ seconds }} {{ unit }} '
+        '{{ seconds_str }} {{ unit }} '
         '{% if seconds > 60 %}'
-        '<span class="humanized" title="{{ seconds }} {{ unit }}">'
+        '<span class="humanized" title="{{ seconds_str }} {{ unit }}">'
         '({{ humanized }})</span>'
         '{% endif %}'
     )
 
     try:
-        humanized = humanfriendly.format_timespan(int(seconds))
+        seconds = int(seconds)
     except (ValueError, TypeError):
-        # ValueErrors happen when `seconds` is not a number`.
+        # ValueErrors happen when `seconds` is not a number.
         # TypeErrors happen when you try to convert a None to an integer.
 
         # Bail, but note how it's NOT marked as safe.
@@ -252,7 +252,9 @@ def show_duration(seconds, unit='seconds'):
         # escaped.
         return seconds
 
+    humanized = humanfriendly.format_timespan(seconds)
     return mark_safe(template.render({
+        'seconds_str': format(seconds, ','),
         'seconds': seconds,
         'unit': unit,
         'humanized': humanized,
@@ -269,16 +271,19 @@ def show_filesize(bytes, unit='bytes'):
     If we can't do it, just return as is.
     """
     template = engines['backend'].from_string(
-        '{{ bytes }} {{ unit }} '
+        '{{ bytes_str }} {{ unit }} '
         '{% if bytes > 1024 %}'
-        '<span class="humanized" title="{{ bytes }} {{ unit }}">'
+        '<span class="humanized" title="{{ bytes_str }} {{ unit }}">'
         '({{ humanized }})</span>'
         '{% endif %}'
     )
 
     try:
-        humanized = humanfriendly.format_size(int(bytes))
+        bytes = int(bytes)
     except (ValueError, TypeError):
+        # ValueErrors happen when `bytes` is not a number.
+        # TypeErrors happen when you try to convert a None to an integer.
+
         # Bail but note how it's NOT marked as safe.
         # That means that if `bytes` is literally '<script>'
         # it will be sent to the template rendering engine to be
@@ -286,7 +291,9 @@ def show_filesize(bytes, unit='bytes'):
         # escaped.
         return bytes
 
+    humanized = humanfriendly.format_size(bytes)
     return mark_safe(template.render({
+        'bytes_str': format(bytes, ','),
         'bytes': bytes,
         'unit': unit,
         'humanized': humanized,

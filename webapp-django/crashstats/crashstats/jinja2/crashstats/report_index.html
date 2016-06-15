@@ -92,7 +92,7 @@
                 <div id="details" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
                     <table class="record data-table vertical">
                         <tbody>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.signature'] }}">
                                 <th scope="row">Signature</th>
                                 <td>
                                     {{ report.signature }}
@@ -100,16 +100,20 @@
                                     <a href="{{ url('supersearch.search') }}?{{ make_query_string(product=report.product, signature='=' + report.signature) }}" class="sig-search" title="Search for more reports of this type">Search</a>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.uuid'] }}">
                                 <th scope="row">UUID</th>
                                 <td>{{ report.uuid }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.date_processed'] }}">
                                 <th scope="row">Date Processed</th>
-                                <td>{{ report.date_processed }}</td>
+                                <td>
+                                    {% if report.date_processed %}
+                                        {{ report.date_processed | human_readable_iso_date }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% if report.process_type %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.process_type'] }}">
                                 <th scope="row">Process Type</th>
                                 <td>{{ report.process_type }}
                                     {% if report.PluginName %}
@@ -126,14 +130,14 @@
                                 </td>
                             </tr>
                             {% endif %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.uptime'] }}">
                                 <th scope="row">Uptime</th>
                                 <td>
                                     {{ show_duration(report.get('uptime')) }}
                                 </td>
                             </tr>
                             {% if report.last_crash %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.last_crash'] }}">
                                 <th scope="row">Last Crash</th>
                                 <td>
                                     {{ show_duration(report.get('last_crash'), 'seconds before submission') }}
@@ -141,14 +145,14 @@
                             </tr>
                             {% endif %}
                             {% if report.install_age %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.install_age'] }}">
                                 <th scope="row">Install Age</th>
                                 <td>
                                     {{ show_duration(report.get('install_age'), 'seconds since version was first installed') }}
                                 </td>
                             </tr>
                             {% endif %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.InstallTime'] }}">
                                 <th scope="row">Install Time</th>
                                 <td>
                                     {% if raw.InstallTime %}
@@ -156,79 +160,89 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.product'] }}">
                                 <th scope="row">Product</th>
                                 <td>{{ report.product }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.version'] }}">
                                 <th scope="row">Version</th>
                                 <td>{{ report.version }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.build'] }}">
                                 <th scope="row">Build ID</th>
                                 <td>{{ report.build }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.release_channel'] }}">
                                 <th scope="row">Release Channel</th>
                                 <td>{{ report.release_channel }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.os_pretty_version'] }}">
                                 <th scope="row">OS</th>
                                 <td>{{ report.os_pretty_version or report.os_name }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.os_version'] }}">
                                 <th scope="row">OS Version</th>
                                 <td>{{ report.os_version }}</td>
                             </tr>
                             {% if raw.B2G_OS_Version %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.B2G_OS_Version'] }}">
                                 <th scope="row">B2G OS Version</th>
                                 <td>
                                     <pre>{{ raw.B2G_OS_Version }}</pre>
                                 </td>
                             </tr>
                             {% endif %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.cpu_arch'] }}">
                                 <th scope="row">Build Architecture</th>
                                 <td>{{ report.cpu_name }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.cpu_info'] }}">
                                 <th scope="row">Build Architecture Info</th>
                                 <td>{{ report.cpu_info }}</td>
                             </tr>
-                            <tr>
+                            {% if raw.MozCrashReason %}
+                            <tr title="{{ fields_desc['raw_crash.MozCrashReason'] }}">
+                                <th scope="row">MOZ_CRASH Reason</th>
+                                <td>{{ raw.MozCrashReason }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr title="{{ fields_desc['processed_crash.reason'] }}">
                                 <th scope="row">Crash Reason</th>
                                 <td>{{ report.reason }}</td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.address'] }}">
                                 <th scope="row">Crash Address</th>
                                 <td>{{ report.address }}</td>
                             </tr>
                             {% if request.user.has_perm('crashstats.view_pii') %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.email'] }}">
                                 <th scope="row">Email Address</th>
                                 <td>
                                     {% if raw.Email %}
-                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - Super Sensitive! Don't mess around! {% endif %}
+                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - This is super sensitive data! Be careful how you use it!
+                                    {% endif %}
                                 </td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.url'] }}">
                                 <th scope="row">URL</th>
                                 <td>
                                     {% if raw.URL %}
-                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - Super Sensitive! Don't mess around! {% endif %}
+                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - This is super sensitive data! Be careful how you use it!
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endif %}
                             {% if request.user.has_perm('crashstats.view_exploitability') %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
                                 <th scope="row">Exploitability</th>
                                 <td>
-                                    {% if report.exploitability %} {{ report.exploitability }} {% endif %}
+                                    {% if report.exploitability %}
+                                    {{ report.exploitability }} - This is super sensitive data! Be careful how you use it!
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endif %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
                                 <th scope="row">User Comments</th>
                                 <td>
                                     {% if report.user_comments %}
@@ -241,63 +255,47 @@
                                 </td>
                             </tr>
                             {% if report.app_notes %}
-                            <tr>
-                                <th title="Notes added by the application's code during crash" scope="row">App Notes</th>
+                            <tr title="{{ fields_desc['processed_crash.app_notes'] }}">
+                                <th scope="row">App Notes</th>
                                 <td>
                                     <pre>{{ report.app_notes }}</pre>
                                 </td>
                             </tr>
                             {% endif %}
                             {% if report.processor_notes %}
-                            <tr>
-                                <th title="Notes added by Socorro when accepting the crash report" scope="row">Processor Notes</th>
+                            <tr title="{{ fields_desc['processed_crash.processor_notes'] }}">
+                                <th scope="row">Processor Notes</th>
                                 <td>
                                     <code>{{ report.processor_notes }}</code>
                                 </td>
                             </tr>
                             {% endif %}
-                            {% if report.distributor %}
-                            <tr>
-                                <th>
-                                    <td>
-                                        <pre>{{ report.distributor }}</pre>
-                                    </td>
-                            </tr>
-                            {% endif %}
-                            {% if report.distributor_version %}
-                            <tr>
-                                <th>
-                                    <td>
-                                        <pre>{{ report.distributor_version }}</pre>
-                                    </td>
-                            </tr>
-                            {% endif %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.addons_checked'] }}">
                                 <th scope="row">EMCheckCompatibility</th>
                                 <td>
                                     <pre>{% if report.addons_checked %}True{% else %}False{% endif %}</pre>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.Winsock_LSP'] }}">
                                 <th scope="row">Winsock LSP</th>
                                 <td>
                                     <pre>{{ report.Winsock_LSP }}</pre>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.AdapterVendorID'] }}">
                                 <th scope="row">Adapter Vendor ID</th>
                                 <td>
                                     <pre>{{ raw.AdapterVendorID }}</pre>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.AdapterDeviceID'] }}">
                                 <th scope="row">Adapter Device ID</th>
                                 <td>
                                     <pre>{{ raw.AdapterDeviceID }}</pre>
                                 </td>
                             </tr>
                             {% if raw.JavaStackTrace %}
-                            <tr>
+                            <tr title="{{ fields_desc['processed_crash.java_stack_trace'] }}">
                                 <th scope="row">Java Stack Trace</th>
                                 <td>
                                     <pre>{{ raw.JavaStackTrace }}</pre>
@@ -305,7 +303,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.TotalVirtualMemory %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.TotalVirtualMemory'] }}">
                                 <th scope="row">Total Virtual Memory</th>
                                 <td>
                                     {{ show_filesize(raw.get('TotalVirtualMemory')) }}
@@ -313,7 +311,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.AvailableVirtualMemory %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.AvailableVirtualMemory'] }}">
                                 <th scope="row">Available Virtual Memory</th>
                                 <td>
                                     {{ show_filesize(raw.get('AvailableVirtualMemory')) }}
@@ -321,7 +319,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.SystemMemoryUsePercentage %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.SystemMemoryUsePercentage'] }}">
                                 <th scope="row">System Memory Use Percentage</th>
                                 <td>
                                     {{ raw.SystemMemoryUsePercentage }}
@@ -329,7 +327,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.AvailablePageFile %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.AvailablePageFile'] }}">
                                 <th scope="row">Available Page File</th>
                                 <td>
                                     {{ show_filesize(raw.get('AvailablePageFile')) }}
@@ -337,7 +335,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.AvailablePhysicalMemory %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.AvailablePhysicalMemory'] }}">
                                 <th scope="row">Available Physical Memory</th>
                                 <td>
                                     {{ show_filesize(raw.get('AvailablePhysicalMemory')) }}
@@ -345,7 +343,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.OOMAllocationSize %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.OOMAllocationSize'] }}">
                                 <th scope="row">OOM Allocation Size</th>
                                 <td>
                                     {{ show_filesize(raw.get('OOMAllocationSize')) }}
@@ -353,7 +351,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.FlashProcessDump %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.FlashProcessDump'] }}">
                                 <th scope="row">Flash Process Dump</th>
                                 <td>
                                     <pre>{{ raw.FlashProcessDump }}</pre>
@@ -361,7 +359,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.Accessibility %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.Accessibility'] }}">
                                 <th scope="row">Accessibility</th>
                                 <td>
                                     <pre>{{ raw.Accessibility }}</pre>
@@ -369,7 +367,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.Android_CPU_ABI%}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.Android_CPU_ABI'] }}">
                                 <th scope="row">Android CPU ABI</th>
                                 <td>
                                     <pre>{{ raw.Android_CPU_ABI}}</pre>
@@ -377,7 +375,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.Android_Manufacturer %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.Android_Manufacturer'] }}">
                                 <th scope="row">Android Manufacturer</th>
                                 <td>
                                     <pre>{{ raw.Android_Manufacturer }}</pre>
@@ -385,7 +383,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.Android_Model %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.Android_Model'] }}">
                                 <th scope="row">Android Model</th>
                                 <td>
                                     <pre>{{ raw.Android_Model }}</pre>
@@ -393,7 +391,7 @@
                             </tr>
                             {% endif %}
                             {% if raw.Android_Version %}
-                            <tr>
+                            <tr title="{{ fields_desc['raw_crash.Android_Version'] }}">
                                 <th scope="row">Android Version</th>
                                 <td>
                                     <pre>{{ raw.Android_Version }}</pre>
@@ -516,7 +514,7 @@
                     <table class="record data-table vertical">
                         <tbody>
                             {% for key in raw_keys %}
-                            <tr>
+                            <tr title="{{ fields_desc.get('raw_crash.{}'.format(key), empty_desc) }}">
                                 <th scope="row">{{ key }}</th>
                                 {% if key == 'Comments' %}
                                 <td><pre>{{ raw[key] | scrub_pii }}</pre></td>
