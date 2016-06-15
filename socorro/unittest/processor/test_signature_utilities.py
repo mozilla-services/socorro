@@ -11,15 +11,16 @@ import socorrolib.lib.util as sutil
 
 from socorrolib.lib.util import DotDict
 from socorro.processor.signature_utilities import (
+    AbortSignature,
     CSignatureTool,
     JavaSignatureTool,
-    SignatureGenerationRule,
     OOMSignature,
-    SigTrunc,
     StackwalkerErrorSignatureRule,
     SignatureIPCChannelError,
+    SignatureGenerationRule,
     SignatureJitCategory,
     SignatureRunWatchDog,
+    SigTrunc,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -1413,8 +1414,8 @@ class TestOOMSignature(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
-        ok_(pc.original_signature, 'hello')
-        ok_(pc.signature, 'OOM | unknown | hello')
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'OOM | unknown | hello')
 
     #--------------------------------------------------------------------------
     def test_action_small(self):
@@ -1431,8 +1432,8 @@ class TestOOMSignature(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
-        ok_(pc.original_signature, 'hello')
-        ok_(pc.signature, 'OOM | small')
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'OOM | small')
 
     #--------------------------------------------------------------------------
     def test_action_large(self):
@@ -1449,8 +1450,154 @@ class TestOOMSignature(TestCase):
         action_result = rule.action(rc, rd, pc, fake_processor)
 
         ok_(action_result)
-        ok_(pc.original_signature, 'hello')
-        ok_(pc.signature, 'OOM | large | hello')
+        eq_(pc.original_signature, 'hello')
+        eq_(pc.signature, 'OOM | large | hello')
+
+
+#==============================================================================
+class TestAbortSignature(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = 'something'
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        # No AbortMessage.
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate_empty_message(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = ''
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = 'unknown'
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        eq_(processed_crash.signature, 'Abort | unknown | hello')
+
+    #--------------------------------------------------------------------------
+    def test_action_success_long_message(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'hello'
+
+        raw_crash = DotDict()
+        raw_crash.AbortMessage = 'a' * 81
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | {}... | hello'.format('a' * 77)
+        eq_(processed_crash.signature, expected_sig)
+
+    #--------------------------------------------------------------------------
+    def test_action_success_remove_unwanted_parts(self):
+        config = self.get_config()
+        rule = AbortSignature(config)
+
+        processed_crash = DotDict()
+
+        raw_crash = DotDict()
+
+        # Test with just the "ABOR" thing at the start.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = '[5392] ###!!! ABORT: foo bar line 42'
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | foo bar line 42 | hello'
+        eq_(processed_crash.signature, expected_sig)
+
+        # Test with a file name and line number.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = (
+            '[7616] ###!!! ABORT: unsafe destruction: file '
+            'c:/builds/moz2_slave/m-rel-w32-00000000000000000000/build/src/'
+            'dom/plugins/ipc/PluginModuleParent.cpp, line 777'
+        )
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | unsafe destruction | hello'
+        eq_(processed_crash.signature, expected_sig)
+
+        # Test with a message that lacks interesting content.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = '[204] ###!!! ABORT: file ?, '
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | hello'
+        eq_(processed_crash.signature, expected_sig)
+
+        # Test with another message that lacks interesting content.
+        processed_crash.signature = 'hello'
+        raw_crash.AbortMessage = (
+            '[4648] ###!!! ABORT: file resource:///modules/sessionstore/'
+            'SessionStore.jsm, line 1459'
+        )
+
+        action_result = rule.action(raw_crash, {}, processed_crash, {})
+
+        ok_(action_result)
+        eq_(processed_crash.original_signature, 'hello')
+        expected_sig = 'Abort | hello'
+        eq_(processed_crash.signature, expected_sig)
 
 
 #==============================================================================

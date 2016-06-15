@@ -580,6 +580,56 @@ class OOMSignature(Rule):
 
 
 #==============================================================================
+class AbortSignature(Rule):
+    """To satisfy Bug 803779, this rule will modify the signature to
+    tag Abort crashes"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return 'AbortMessage' in raw_crash and raw_crash.AbortMessage
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash.original_signature = processed_crash.signature
+        abort_message = raw_crash.AbortMessage
+
+        if '###!!! ABORT: file ' in abort_message:
+            # This is an abort message that contains no interesting
+            # information. We just want to put the "Abort" marker in the
+            # signature.
+            processed_crash.signature = 'Abort | {}'.format(
+                processed_crash.signature
+            )
+            return True
+
+        if '###!!! ABORT:' in abort_message:
+            # Recent crash reports added some irrelevant information at the
+            # beginning of the abort message. We want to remove that and keep
+            # just the actual abort message.
+            abort_message = abort_message.split('###!!! ABORT:', 1)[1].strip()
+
+        if ': file ' in abort_message:
+            # Abort messages contain a file name and a line number. Since
+            # those are very likely to change between builds, we want to
+            # remove those parts from the signature.
+            abort_message = abort_message.split(': file ', 1)[0].strip()
+
+        if len(abort_message) > 80:
+            abort_message = abort_message[:77] + '...'
+
+        processed_crash.signature = 'Abort | {} | {}'.format(
+            abort_message,
+            processed_crash.signature
+        )
+
+        return True
+
+
+#==============================================================================
 class SigTrunc(Rule):
     """ensure that the signature is never longer than 255 characters"""
 
