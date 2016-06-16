@@ -283,7 +283,7 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
     required_config = Namespace()
     required_config.add_option(
         'products',
-        default='firefox,mobile,thunderbird,seamonkey,b2g',
+        default='firefox,mobile,thunderbird,seamonkey',
         from_string_converter=lambda line: tuple(
             [x.strip() for x in line.split(',') if x.strip()]
         ),
