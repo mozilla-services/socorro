@@ -103,7 +103,7 @@ Django needs to write its ORM tables:
 ::
   export SECRET_KEY="..."
   cd webapp-django
-  ./manage.py syncdb --noinput
+  ./manage.py migrate auth
   ./manage.py migrate
 
 Run Socorro in dev mode

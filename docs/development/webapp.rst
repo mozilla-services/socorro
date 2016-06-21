@@ -56,7 +56,7 @@ This file is executed when you run:
 ::
   cd webapp-django
   export SECRET_KEY="..."
-  ./manage.py syncdb --noinput
+  ./manage.py migrate auth
   ./manage.py migrate
 
 This should be done automatically on every release. Because it's idempotent
@@ -74,8 +74,8 @@ permission for being allowed to save searches could be::
     code name: save_search
     verbose name: Save User Searches
 
-Then, once that's added to the file run ``./manage.py syncdb
---noinput`` and it will be ready to depend on in the code.
+Then, once that's added to the file run ``./manage.py migrate``
+and it will be ready to depend on in the code.
 
 Here's for example how you use this permission in a view::
 
