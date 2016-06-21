@@ -56,6 +56,7 @@ This file is executed when you run:
 ::
   cd webapp-django
   export SECRET_KEY="..."
+  ./manage.py migrate auth
   ./manage.py migrate
 
 This should be done automatically on every release. Because it's idempotent
