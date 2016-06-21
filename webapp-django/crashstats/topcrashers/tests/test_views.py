@@ -214,6 +214,16 @@ class TestViews(BaseTestViews):
         # Check the startup crash icon is there.
         ok_('Startup Crash' in response.content)
 
+    def test_topcrashers_400_by_bad_days(self):
+        response = self.client.get(self.base_url, {
+            'product': 'SnowLion',
+            'version': '0.1',
+            'days': 'xxxxxx',
+        })
+        eq_(response.status_code, 400)
+        ok_('not a number' in response.content)
+        eq_(response['Content-Type'], 'text/html; charset=utf-8')
+
     def test_topcrasher_with_product_sans_release(self):
         # SnowLion is not a product at all
         response = self.client.get(self.base_url, {

@@ -8,7 +8,6 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.utils.http import urlquote
 
-
 from session_csrf import anonymous_csrf
 
 from crashstats.crashstats import models

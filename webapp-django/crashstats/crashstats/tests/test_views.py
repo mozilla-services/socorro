@@ -2845,6 +2845,8 @@ class TestViews(BaseTestViews):
                       args=['11cb72f5-eb28-41e1-a8e4-849982120230'])
         response = self.client.get(url)
         eq_(response.status_code, 400)
+        ok_('Invalid crash ID' in response.content)
+        eq_(response['Content-Type'], 'text/html; charset=utf-8')
 
     @mock.patch('requests.get')
     def test_report_pending_today(self, rget):

@@ -389,8 +389,11 @@ class TestViews(BaseTestViews):
 
         url = reverse('supersearch.search_results')
         params = {'product': 'WaterWolf'}
-        self.client.get(url, params)
-        response = self.client.get(url, params)
+        response = self.client.get(
+            url,
+            params,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
         eq_(response.status_code, 400)
         eq_(response['content-type'], 'text/html; charset=utf-8')
         ok_('<script>' not in response.content)
