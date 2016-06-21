@@ -3,4 +3,17 @@
 # Regular expressions matching frame signatures that should be trimmed down to
 # only include the module name.
 
+aticfx32\.dll.*
+atidxx32\.dll.*
+atiu9pag\.dll.*
+atiumd6a\.dll.*
+atiumdag\.dll.*
+atiumdva\.dll.*
+atiuxpag\.dll.*
+igd10umd32\.dll.*
+igdumd32\.dll.*
 igdumdim32\.dll.*
+nvd3dum\.dll.*
+nvoglnt\.dll.*
+nvumdshim\.dll.*
+nvwgf2um\.dll.*
