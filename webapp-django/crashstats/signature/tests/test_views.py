@@ -41,7 +41,8 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "build_id": 888981
+                            "build_id": 888981,
+                            "cpu_info": "FakeAMD family 20 model 42",
                         },
                         {
                             "date": "2017-01-31T23:12:57",
@@ -49,7 +50,8 @@ class TestViews(BaseTestViews):
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
-                            "build_id": 888981
+                            "build_id": 888981,
+                            "cpu_info": "AuthenticAMD family 20 model 1",
                         },
                         {
                             "date": "2017-01-31T23:12:57",
@@ -104,6 +106,8 @@ class TestViews(BaseTestViews):
         ok_('888981' in response.content)
         ok_('Linux' in response.content)
         ok_('2017-01-31 23:12:57' in response.content)
+        ok_('AMD' in response.content)
+        ok_('Cpu info' not in response.content)
 
         # Test with a different columns list.
         response = self.client.get(url, {
