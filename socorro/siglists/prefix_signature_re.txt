@@ -37,7 +37,6 @@ HeapFree
 huge_dalloc
 huge_palloc
 ialloc
-igdumdim32\.dll
 imalloc
 init_library
 invalid_parameter_noinfo
@@ -190,3 +189,21 @@ _ZdaPvRKSt9nothrow_t"
 zzz_AsmCodeRange_.*
 .*DebugAbort.*
 mozilla::ipc::MessageChannel::~MessageChannel.*
+
+# List of DLLs to add. At some point, should be replaced by one generic rule
+# for all DLLs.
+
+aticfx32\.dll
+atidxx32\.dll
+atiu9pag\.dll
+atiumd6a\.dll
+atiumdag\.dll
+atiumdva\.dll
+atiuxpag\.dll
+igd10umd32\.dll
+igdumd32\.dll
+igdumdim32\.dll
+nvd3dum\.dll
+nvoglnt\.dll
+nvumdshim\.dll
+nvwgf2um\.dll
