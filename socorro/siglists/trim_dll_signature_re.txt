@@ -10,6 +10,7 @@ atiumd6a\.dll.*
 atiumdag\.dll.*
 atiumdva\.dll.*
 atiuxpag\.dll.*
+igd10iumd32\.dll.*
 igd10umd32\.dll.*
 igdumd32\.dll.*
 igdumdim32\.dll.*
