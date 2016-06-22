@@ -37,19 +37,11 @@ class MissingSymbols(PostgreSQLBase):
             date_processed = %(date)s AND
             debug_file != '' AND
             debug_id != ''
+        GROUP BY debug_file, debug_id, code_file, code_id
         """
         if params['limit'] is not None:
             sql += '\nLIMIT %(limit)s'
         return sql, params
-
-    def get(self, **kwargs):
-        sql, params = self._get_sql_params(**kwargs)
-        results = self.query(sql, params)
-        hits = results.zipped()
-        return {
-            'hits': hits,
-            'total': len(hits),
-        }
 
     def iter(self, **kwargs):
         """return an iterator that yields dicts that look like this:

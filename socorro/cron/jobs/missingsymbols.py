@@ -76,9 +76,8 @@ class MissingSymbolsCronApp(BaseCronApp):
         key_object = bucket.new_key('latest.csv')
         key_object.set_contents_from_string(buf.getvalue())
         self.config.logger.info(
-            'Generated ' +
-            key_object.generate_url(expires_in=0, query_auth=False) +
-            ' ({} bytes, {:.2f} Mb)'.format(
+            'Generated {} ({} bytes, {:.2f} Mb)'.format(
+                key_object.generate_url(expires_in=0, query_auth=False),
                 format(key_object.size, ','),
                 key_object.size / 1024.0 / 1024.0
             )
