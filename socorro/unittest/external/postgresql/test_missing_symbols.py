@@ -91,59 +91,6 @@ class IntegrationTestMissingSymbols(PostgreSQLTestCase):
         cursor.close()
         super(IntegrationTestMissingSymbols, self).tearDown()
 
-    def test_get(self):
-        implementation = MissingSymbols(config=self.config)
-
-        res = implementation.get()
-        res_expected = {
-            'hits': [
-                {
-                    'debug_file': 'nvwgf2um.pdb',
-                    'debug_id': '9D492B844FF34800B34320464AA1E7E41',
-                    'code_file': 'nvwgf2um.dll',
-                    'code_id': '561D1D4Ff58000',
-                },
-            ],
-            'total': 1
-        }
-        eq_(res, res_expected)
-
-        today = datetime.datetime.utcnow().date()
-        res = implementation.get(date=today)
-        res_expected = {
-            'hits': [
-                {
-                    'debug_file': 'McBrwCtl.pdb',
-                    'debug_id': '133A2F3537E341A995D7C2BF8C3B2C663',
-                    'code_file': '',
-                    'code_id': '',
-                },
-                {
-                    'debug_file': 'msmpeg2vdec.pdb',
-                    'debug_id': '8515599DC90B4A01997BA2647DFE24941',
-                    'code_file': 'msmpeg2vdec.dll',
-                    'code_id': '54134E292c4000',
-                },
-            ],
-            'total': 2
-        }
-        eq_(res, res_expected)
-
-        ancient = today - datetime.timedelta(days=10)
-        res = implementation.get(date=ancient)
-        res_expected = {
-            'hits': [],
-            'total': 0
-        }
-        eq_(res, res_expected)
-
-        res = implementation.get(limit=0)
-        res_expected = {
-            'hits': [],
-            'total': 0
-        }
-        eq_(res, res_expected)
-
     def test_iter(self):
         implementation = MissingSymbols(config=self.config)
         today = datetime.datetime.utcnow().date()
