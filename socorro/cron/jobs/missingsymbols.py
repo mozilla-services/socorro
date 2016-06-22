@@ -27,7 +27,7 @@ class MissingSymbolsCronApp(BaseCronApp):
     required_config.add_option(
         'boto_class',
         default=(
-            'socorro.external.boto.connection_context.S3ConnectionContext',
+            'socorro.external.boto.connection_context.S3ConnectionContext'
         ),
         doc=(
             'fully qualified dotted Python classname to handle '
