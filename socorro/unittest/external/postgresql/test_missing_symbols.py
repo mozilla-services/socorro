@@ -97,8 +97,8 @@ class IntegrationTestMissingSymbols(PostgreSQLTestCase):
         res = implementation.iter(date=today)
         ok_(isinstance(res, types.GeneratorType))
 
-        rows = list(res)  # run the generator into a list
-        expected = [
+        rows = sorted(list(res))  # run the generator into a list
+        expected = sorted([
             {
                 'debug_file': 'McBrwCtl.pdb',
                 'debug_id': '133A2F3537E341A995D7C2BF8C3B2C663',
@@ -111,5 +111,5 @@ class IntegrationTestMissingSymbols(PostgreSQLTestCase):
                 'code_file': 'msmpeg2vdec.dll',
                 'code_id': '54134E292c4000',
             },
-        ]
+        ])
         eq_(rows, expected)
