@@ -3637,6 +3637,74 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
+    def test_report_index_with_invalid_date_processed(self, rget, rpost):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        def mocked_get(url, params, **options):
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'meta'
+            ):
+                return Response({
+                    'InstallTime': 'Not a number',
+                    'FramePoisonSize': '4096',
+                    'Theme': 'classic/1.0',
+                    'Version': '5.0a1',
+                    'Email': None,
+                    'Vendor': 'Mozilla',
+                    'URL': None,
+                    'HangID': '123456789',
+                })
+            if (
+                '/crash_data' in url and
+                'datatype' in params and
+                params['datatype'] == 'unredacted'
+            ):
+                return Response({
+                    'client_crash_date': '2012-06-11T06:08:45',
+                    'dump': 'anything',
+                    'signature': 'FakeSignature1',
+                    'user_comments': None,
+                    'uptime': 14693,
+                    'release_channel': 'nightly',
+                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
+                    'flash_version': '[blank]',
+                    'hangid': None,
+                    'distributor_version': None,
+                    'truncated': True,
+                    'process_type': None,
+                    'id': 383569625,
+                    'os_version': '10.6.8 10K549',
+                    'version': '5.0a1',
+                    'build': '20120609030536',
+                    'ReleaseChannel': 'nightly',
+                    'addons_checked': None,
+                    'product': 'WaterWolf',
+                    'os_name': 'Mac OS X',
+                    'last_crash': 371342,
+                    # NOTE! A wanna-be valid date that is not valid
+                    'date_processed': '2015-10-10 15:32:07.620535',
+                    'cpu_name': 'amd64',
+                    'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
+                    'address': '0x8',
+                    'completeddatetime': '2012-06-11T06:08:57',
+                    'success': True,
+                    'exploitability': 'Unknown Exploitability',
+                })
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('crashstats:report_index', args=[crash_id])
+
+        response = self.client.get(url)
+        # The date could not be converted in the jinja helper
+        # to a more human format.
+        ok_('2015-10-10 15:32:07.620535' in response.content)
+
     def test_report_list(self):
         url = reverse('crashstats:report_list')
         response = self.client.get(url)

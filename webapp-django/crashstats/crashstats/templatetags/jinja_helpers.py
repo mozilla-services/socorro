@@ -93,7 +93,15 @@ def timestamp_to_date(
 def human_readable_iso_date(dt):
     """ Python datetime to a human readable ISO datetime. """
     if not isinstance(dt, (datetime.date, datetime.datetime)):
-        dt = isodate.parse_datetime(dt)
+        try:
+            dt = isodate.parse_datetime(dt)
+        except isodate.ISO8601Error:
+            # Because we're paranoid, we don't want to fail
+            # the whole template rendering just because one date
+            # couldn't be displayed in a more human readable format.
+            # This, for example, can happen if the date isn't really
+            # valid but something. E.g. 2015-10-10 15:32:07.620535
+            return dt
 
     format = '%Y-%m-%d %H:%M:%S'
     return dt.strftime(format)
