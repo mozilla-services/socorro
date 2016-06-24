@@ -94,7 +94,7 @@ class ProductVersions(PostgreSQLBase):
                 pv.version_string AS version,
                 pv.build_date AS start_date,
                 pv.sunset_date AS end_date,
-                ((prc.throttle * (100)::numeric))::numeric(5,2) AS throttle,
+                ((prc.throttle * (100)::numeric))::REAL AS throttle,
                 pv.featured_version AS is_featured,
                 pv.build_type,
                 pv.has_builds,
@@ -117,6 +117,7 @@ class ProductVersions(PostgreSQLBase):
         """.format(sql_where)
         results = self.query(sql, sql_params).zipped()
 
+        print results[0]
         return {
             'hits': results,
             'total': len(results),
