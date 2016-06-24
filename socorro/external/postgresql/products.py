@@ -117,7 +117,6 @@ class ProductVersions(PostgreSQLBase):
         """.format(sql_where)
         results = self.query(sql, sql_params).zipped()
 
-        print results[0]
         return {
             'hits': results,
             'total': len(results),
