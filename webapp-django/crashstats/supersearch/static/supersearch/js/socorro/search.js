@@ -16,6 +16,7 @@ $(function () {
 
     var contentElt = $('#search_results');
     var optionsElt = $('fieldset.options', form);
+    var sortInput = $('input[name=_sort]', form);
     var facetsInput = $('input[name=_facets]', form);
     var columnsInput = $('input[name=_columns_fake]', form);
     var publicApiUrlInput = $('input[name=_public_api_url]', form);
@@ -49,7 +50,7 @@ $(function () {
                     activeTab = -1;
                 }
 
-                var params = form.dynamicForm('getParams');
+                var params = currentMode.getParams();
                 var url = prepareResultsQueryString(params);
 
                 contentElt.tabs({
@@ -66,6 +67,44 @@ $(function () {
                     }
                 });
                 $('.tablesorter').tablesorter();
+
+                $('.sort-header', contentElt).each(function() {
+                    $(this).click(function(event) {
+                        event.preventDefault();
+
+                        var thisElt = $(this);
+
+                        function removeFromArray(elt, arr) {
+                            var index = arr.indexOf(elt);
+                            if (index > -1) {
+                                arr.splice(index, 1);
+                            }
+                            return arr;
+                        }
+
+                        // Update the sort field.
+                        var fieldName = thisElt.data('field-name');
+                        var sortArr = sortInput.select2('val');
+
+                        removeFromArray(fieldName, sortArr);
+                        removeFromArray('-' + fieldName, sortArr);
+
+                        if (thisElt.hasClass('headerSortDown')) {
+                            sortArr.push('-' + fieldName);
+                        }
+                        else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                            sortArr.push(fieldName);
+                        }
+
+                        sortInput.select2('val', sortArr);
+
+                        var searchParams = currentMode.getParams();
+                        var searchUrl = prepareResultsQueryString(searchParams);
+                        updatePublicApiUrl(searchParams);
+                        pushHistoryState(searchParams, searchUrl);
+                        showResults(resultsURL + searchUrl);
+                    });
+                });
 
                 // Enhance bug links.
                 BugLinks.enhance();
@@ -106,6 +145,14 @@ $(function () {
     function prepareResultsQueryString(params) {
         var i;
         var len;
+
+        var sort = sortInput.select2('data');
+        if (sort) {
+            params._sort = [];
+            for (i = 0, len = sort.length; i < len; i++) {
+                params._sort[i] = sort[i].id;
+            }
+        }
 
         var facets = facetsInput.select2('data');
         if (facets) {
@@ -442,6 +489,21 @@ $(function () {
         submitButton.click();
     });
 
+    var sortFields = [];
+    window.COLUMNS.forEach(function (item) {
+        sortFields.push(item);
+        sortFields.push({
+            id: '-' + item.id,
+            text: item.text + ' (DESC)',
+        });
+    });
+
+    sortInput.select2({
+        'data': sortFields,
+        'multiple': true,
+        'width': 'element',
+        'sortResults': sortResults
+    });
     facetsInput.select2({
         'data': window.FACETS,
         'multiple': true,
