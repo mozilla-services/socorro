@@ -80,6 +80,7 @@ var BASE_URL = location.protocol + '//' + location.host;
 var FIELDS = {{ fields | json_dumps }};
 var CHANNELS = {{ channels | json_dumps }};
 var COLUMNS = {{ columns | json_dumps }};
+var SORT = "{{ sort | join(',') }}";
 var DEFAULT_CHANNEL = '{{ channel }}';
 </script>
 

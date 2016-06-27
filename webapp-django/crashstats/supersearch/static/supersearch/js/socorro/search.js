@@ -146,11 +146,11 @@ $(function () {
         var i;
         var len;
 
-        var sort = sortInput.select2('data');
-        if (sort) {
+        var sortArr = sortInput.select2('data');
+        if (sortArr) {
             params._sort = [];
-            for (i = 0, len = sort.length; i < len; i++) {
-                params._sort[i] = sort[i].id;
+            for (i = 0, len = sortArr.length; i < len; i++) {
+                params._sort[i] = sortArr[i].id;
             }
         }
 

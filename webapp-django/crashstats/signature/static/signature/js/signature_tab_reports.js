@@ -39,6 +39,12 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
         'value': window.COLUMNS
     });
 
+    this.$sortInputHidden = $('<input>', {
+        'type': 'hidden',
+        'name': '_sort',
+        'value': window.SORT
+    });
+
     var updateButton = $('<button>', {
         'type': 'submit',
         'text': 'Update'
@@ -46,6 +52,7 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
 
     // Append the controls.
     this.$controlsElement.append(
+        this.$sortInputHidden,
         this.$columnsInput,
         columnsInputHidden,
         updateButton,
@@ -78,7 +85,6 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
         e.preventDefault();
         that.loadContent(that.$contentElement);
     });
-
 };
 
 // Extends getParamsForUrl to do two extra things:
@@ -97,11 +103,20 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
         });
     }
 
+    // Get the sort for the input.
+    var sortArr = this.$sortInputHidden.val().split(',');
+    if (sortArr.length === 1 && !sortArr[0]) {
+        sortArr = [];
+    }
+
+    if (sortArr) {
+        params._sort = sortArr;
+    }
+
     // Get the page number.
     params.page = this.page || SignatureReport.pageNum;
 
     return params;
-
 };
 
 // Extends buildUrl to also replace the history.
@@ -115,5 +130,47 @@ SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
 
     // Return the whole URL.
     return this.dataUrl + queryString;
+};
+
+SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, data) {
+    SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
+    var that = this;
+
+    $('.sort-header', contentElement).each(function() {
+        $(this).click(function(event) {
+            event.preventDefault();
+
+            var thisElt = $(this);
+
+            function removeFromArray(elt, arr) {
+                var index = arr.indexOf(elt);
+                if (index > -1) {
+                    arr.splice(index, 1);
+                }
+                return arr;
+            }
+
+            // Update the sort field.
+            var fieldName = thisElt.data('field-name');
+            var sortArr = that.$sortInputHidden.val().split(',');
+
+            // First remove all previous mentions of that field.
+            removeFromArray(fieldName, sortArr);
+            removeFromArray('-' + fieldName, sortArr);
+
+            // Now add it in the order that follows this sequence:
+            // ascending -> descending -> none
+            if (thisElt.hasClass('headerSortDown')) {
+                sortArr.push('-' + fieldName);
+            }
+            else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                sortArr.push(fieldName);
+            }
+
+            that.$sortInputHidden.val(sortArr.join(','));
+
+            that.loadContent(that.$contentElement);
+        });
+    });
 
 };
