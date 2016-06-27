@@ -9,7 +9,8 @@
   "license": "MPL-2.0",
   "dependencies": {
     "cssmin": "0.4.3",
-    "less": "2.5.3",
+    "graceful-fs": "4.1.4",
+    "less": "2.7.1",
     "uglify-js": "2.6.1"
   }
 }
