@@ -52,16 +52,18 @@ class ProductVersions(PostgreSQLBase):
             if value is None:
                 continue
             param = {
-                'product': 'product_name',
+                'product': 'pv.product_name',
                 'version': 'version_string',
-                'featured': 'is_featured',
+                'is_featured': 'featured_version',
+                'end_date': 'sunset_date',
+                'start_date': 'build_date',
             }.get(param, param)
 
             if param == 'active':
                 # This is a convenient exception. It makes it possible
                 # to query for only productversions that are NOT sunset
                 # without having to do any particular date arithmetic.
-                param = 'end_date'
+                param = 'sunset_date'
                 operator_ = value and '>=' or '<'
                 value = datetime.datetime.utcnow().date().isoformat()
             elif isinstance(value, list):
@@ -85,24 +87,33 @@ class ProductVersions(PostgreSQLBase):
         else:
             sql_where = ''
 
-        # XXX TODO
-        # RE-write this to use the same SQL select that's used by the
-        # the `product_info` view.
         sql = """
             /* socorro.external.postgresql.products.ProductVersions.get */
             SELECT
-                product_name AS product,
-                version_string AS version,
-                start_date,
-                end_date,
-                throttle::REAL,
-                is_featured,
-                build_type,
-                has_builds,
-                is_rapid_beta
-            FROM product_info
+                pv.product_name AS product,
+                pv.version_string AS version,
+                pv.build_date AS start_date,
+                pv.sunset_date AS end_date,
+                ((prc.throttle * (100)::numeric))::REAL AS throttle,
+                pv.featured_version AS is_featured,
+                pv.build_type,
+                pv.has_builds,
+                pv.is_rapid_beta
+            FROM (
+                ( product_versions pv
+                  JOIN product_release_channels prc
+                    ON (
+                        pv.product_name = prc.product_name AND
+                        pv.build_type = prc.release_channel
+                  )
+                  JOIN products
+                    ON pv.product_name = products.product_name
+                )
+                JOIN release_channels
+                    ON pv.build_type = release_channels.release_channel
+            )
             {}
-            ORDER BY product_sort, version_sort DESC, channel_sort
+            ORDER BY products.sort, version_sort DESC, release_channels.sort
         """.format(sql_where)
         results = self.query(sql, sql_params).zipped()
 

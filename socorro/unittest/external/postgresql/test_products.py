@@ -567,7 +567,8 @@ class IntegrationTestProducts(IntegrationTestProductVersionsBase):
             ],
             "total": 1
         }
-
+        # make sure the 'throttle' is a floating point number
+        ok_(isinstance(res['hits'][0]['throttle'], float))
         eq_(
             sorted(res['hits'][0]),
             sorted(res_expected['hits'][0])
