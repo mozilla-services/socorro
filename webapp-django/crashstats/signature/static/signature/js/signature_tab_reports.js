@@ -138,32 +138,36 @@ SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, d
     });
     this.bindPaginationLinks(contentElement);
 
-    // Handle server-side sorting.
-    $('.sort-header', contentElement).click(function (e) {
-        e.preventDefault();
+    // Make sure there are more than 1 page of results. If not,
+    // do not activate server-side sorting, rely on the
+    // default client-side sorting.
+    if ($('.pagination a', contentElement).length) {
+        $('.sort-header', contentElement).click(function (e) {
+            e.preventDefault();
 
-        var thisElt = $(this);
+            var thisElt = $(this);
 
-        // Update the sort field.
-        var fieldName = thisElt.data('field-name');
-        var sortArr = tab.$sortInputHidden.val().split(',');
+            // Update the sort field.
+            var fieldName = thisElt.data('field-name');
+            var sortArr = tab.$sortInputHidden.val().split(',');
 
-        // First remove all previous mentions of that field.
-        sortArr = sortArr.filter(function (item) {
-            return item !== fieldName && item !== '-' + fieldName;
+            // First remove all previous mentions of that field.
+            sortArr = sortArr.filter(function (item) {
+                return item !== fieldName && item !== '-' + fieldName;
+            });
+
+            // Now add it in the order that follows this sequence:
+            // ascending -> descending -> none
+            if (thisElt.hasClass('headerSortDown')) {
+                sortArr.unshift('-' + fieldName);
+            }
+            else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                sortArr.unshift(fieldName);
+            }
+
+            tab.$sortInputHidden.val(sortArr.join(','));
+
+            tab.loadContent(tab.$contentElement);
         });
-
-        // Now add it in the order that follows this sequence:
-        // ascending -> descending -> none
-        if (thisElt.hasClass('headerSortDown')) {
-            sortArr.push('-' + fieldName);
-        }
-        else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
-            sortArr.push(fieldName);
-        }
-
-        tab.$sortInputHidden.val(sortArr.join(','));
-
-        tab.loadContent(tab.$contentElement);
-    });
+    }
 };

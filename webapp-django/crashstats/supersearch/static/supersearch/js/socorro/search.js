@@ -34,7 +34,7 @@ $(function () {
 
         $.ajax({
             url: url,
-            success: function(data) {
+            success: function (data) {
                 contentElt.empty().append(data);
 
                 if ($('.no-data', contentElt).length) {
@@ -75,42 +75,48 @@ $(function () {
                         }
                     }
                 });
-                $('.sort-header', contentElt).click(function(e) {
-                    e.preventDefault();
 
-                    var thisElt = $(this);
+                // Make sure there are more than 1 page of results. If not,
+                // do not activate server-side sorting, rely on the
+                // default client-side sorting.
+                if ($('.pagination a', contentElt).length) {
+                    $('.sort-header', contentElt).click(function (e) {
+                        e.preventDefault();
 
-                    // Update the sort field.
-                    var fieldName = thisElt.data('field-name');
-                    var sortArr = sortInput.select2('val');
+                        var thisElt = $(this);
 
-                    // First remove all previous mentions of that field.
-                    sortArr = sortArr.filter(function (item) {
-                        return item !== fieldName && item !== '-' + fieldName;
+                        // Update the sort field.
+                        var fieldName = thisElt.data('field-name');
+                        var sortArr = sortInput.select2('val');
+
+                        // First remove all previous mentions of that field.
+                        sortArr = sortArr.filter(function (item) {
+                            return item !== fieldName && item !== '-' + fieldName;
+                        });
+
+                        // Now add it in the order that follows this sequence:
+                        // ascending -> descending -> none
+                        if (thisElt.hasClass('headerSortDown')) {
+                            sortArr.unshift('-' + fieldName);
+                        }
+                        else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                            sortArr.unshift(fieldName);
+                        }
+
+                        sortInput.select2('val', sortArr);
+
+                        var searchParams = currentMode.getParams();
+                        var searchUrl = prepareResultsQueryString(searchParams);
+                        updatePublicApiUrl(searchParams);
+                        pushHistoryState(searchParams, searchUrl);
+                        showResults(resultsURL + searchUrl);
                     });
-
-                    // Now add it in the order that follows this sequence:
-                    // ascending -> descending -> none
-                    if (thisElt.hasClass('headerSortDown')) {
-                        sortArr.push('-' + fieldName);
-                    }
-                    else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
-                        sortArr.push(fieldName);
-                    }
-
-                    sortInput.select2('val', sortArr);
-
-                    var searchParams = currentMode.getParams();
-                    var searchUrl = prepareResultsQueryString(searchParams);
-                    updatePublicApiUrl(searchParams);
-                    pushHistoryState(searchParams, searchUrl);
-                    showResults(resultsURL + searchUrl);
-                });
+                }
 
                 // Enhance bug links.
                 BugLinks.enhance();
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 var errorContent = $('<div>', {class: 'error'});
 
                 if (jqXHR.status >= 400 && jqXHR.status < 500) {
@@ -505,16 +511,16 @@ $(function () {
     });
 
     // Make the columns input sortable
-    columnsInput.on("change", function() {
+    columnsInput.on("change", function () {
         $("input[name=_columns]").val(columnsInput.val());
     });
 
     columnsInput.select2("container").find("ul.select2-choices").sortable({
         containment: 'parent',
-        start: function() {
+        start: function () {
             columnsInput.select2("onSortStart");
         },
-        update: function() {
+        update: function () {
             columnsInput.select2("onSortEnd");
         }
     });
