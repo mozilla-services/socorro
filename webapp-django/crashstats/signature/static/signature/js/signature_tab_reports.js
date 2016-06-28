@@ -104,14 +104,7 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
     }
 
     // Get the sort for the input.
-    var sortArr = this.$sortInputHidden.val().split(',');
-    if (sortArr.length === 1 && !sortArr[0]) {
-        sortArr = [];
-    }
-
-    if (sortArr) {
-        params._sort = sortArr;
-    }
+    params._sort = this.$sortInputHidden.val().trim().split(',');
 
     // Get the page number.
     params.page = this.page || SignatureReport.pageNum;
@@ -133,44 +126,44 @@ SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
 };
 
 SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, data) {
-    SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
-    var that = this;
+    var tab = this;
 
-    $('.sort-header', contentElement).each(function() {
-        $(this).click(function(event) {
-            event.preventDefault();
-
-            var thisElt = $(this);
-
-            function removeFromArray(elt, arr) {
-                var index = arr.indexOf(elt);
-                if (index > -1) {
-                    arr.splice(index, 1);
-                }
-                return arr;
+    contentElement.empty().append($(data));
+    $('.tablesorter').tablesorter({
+        headers: {
+            0: {  // disable the first column, `Crash ID`
+                sorter: false
             }
-
-            // Update the sort field.
-            var fieldName = thisElt.data('field-name');
-            var sortArr = that.$sortInputHidden.val().split(',');
-
-            // First remove all previous mentions of that field.
-            removeFromArray(fieldName, sortArr);
-            removeFromArray('-' + fieldName, sortArr);
-
-            // Now add it in the order that follows this sequence:
-            // ascending -> descending -> none
-            if (thisElt.hasClass('headerSortDown')) {
-                sortArr.push('-' + fieldName);
-            }
-            else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
-                sortArr.push(fieldName);
-            }
-
-            that.$sortInputHidden.val(sortArr.join(','));
-
-            that.loadContent(that.$contentElement);
-        });
+        }
     });
+    this.bindPaginationLinks(contentElement);
 
+    // Handle server-side sorting.
+    $('.sort-header', contentElement).click(function (e) {
+        e.preventDefault();
+
+        var thisElt = $(this);
+
+        // Update the sort field.
+        var fieldName = thisElt.data('field-name');
+        var sortArr = tab.$sortInputHidden.val().split(',');
+
+        // First remove all previous mentions of that field.
+        sortArr = sortArr.filter(function (item) {
+            return item !== fieldName && item !== '-' + fieldName;
+        });
+
+        // Now add it in the order that follows this sequence:
+        // ascending -> descending -> none
+        if (thisElt.hasClass('headerSortDown')) {
+            sortArr.push('-' + fieldName);
+        }
+        else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+            sortArr.push(fieldName);
+        }
+
+        tab.$sortInputHidden.val(sortArr.join(','));
+
+        tab.loadContent(tab.$contentElement);
+    });
 };

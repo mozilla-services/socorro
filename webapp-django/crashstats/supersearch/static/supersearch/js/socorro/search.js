@@ -66,44 +66,45 @@ $(function () {
                         pushHistoryState(params, url, hash, true);
                     }
                 });
-                $('.tablesorter').tablesorter();
 
-                $('.sort-header', contentElt).each(function() {
-                    $(this).click(function(event) {
-                        event.preventDefault();
-
-                        var thisElt = $(this);
-
-                        function removeFromArray(elt, arr) {
-                            var index = arr.indexOf(elt);
-                            if (index > -1) {
-                                arr.splice(index, 1);
-                            }
-                            return arr;
+                // Handle server-side sorting.
+                $('.tablesorter').tablesorter({
+                    headers: {
+                        0: {  // disable the first column, `Crash ID`
+                            sorter: false
                         }
+                    }
+                });
+                $('.sort-header', contentElt).click(function(e) {
+                    e.preventDefault();
 
-                        // Update the sort field.
-                        var fieldName = thisElt.data('field-name');
-                        var sortArr = sortInput.select2('val');
+                    var thisElt = $(this);
 
-                        removeFromArray(fieldName, sortArr);
-                        removeFromArray('-' + fieldName, sortArr);
+                    // Update the sort field.
+                    var fieldName = thisElt.data('field-name');
+                    var sortArr = sortInput.select2('val');
 
-                        if (thisElt.hasClass('headerSortDown')) {
-                            sortArr.push('-' + fieldName);
-                        }
-                        else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
-                            sortArr.push(fieldName);
-                        }
-
-                        sortInput.select2('val', sortArr);
-
-                        var searchParams = currentMode.getParams();
-                        var searchUrl = prepareResultsQueryString(searchParams);
-                        updatePublicApiUrl(searchParams);
-                        pushHistoryState(searchParams, searchUrl);
-                        showResults(resultsURL + searchUrl);
+                    // First remove all previous mentions of that field.
+                    sortArr = sortArr.filter(function (item) {
+                        return item !== fieldName && item !== '-' + fieldName;
                     });
+
+                    // Now add it in the order that follows this sequence:
+                    // ascending -> descending -> none
+                    if (thisElt.hasClass('headerSortDown')) {
+                        sortArr.push('-' + fieldName);
+                    }
+                    else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                        sortArr.push(fieldName);
+                    }
+
+                    sortInput.select2('val', sortArr);
+
+                    var searchParams = currentMode.getParams();
+                    var searchUrl = prepareResultsQueryString(searchParams);
+                    updatePublicApiUrl(searchParams);
+                    pushHistoryState(searchParams, searchUrl);
+                    showResults(resultsURL + searchUrl);
                 });
 
                 // Enhance bug links.
@@ -143,31 +144,17 @@ $(function () {
     }
 
     function prepareResultsQueryString(params) {
-        var i;
-        var len;
-
         var sortArr = sortInput.select2('data');
-        if (sortArr) {
-            params._sort = [];
-            for (i = 0, len = sortArr.length; i < len; i++) {
-                params._sort[i] = sortArr[i].id;
-            }
-        }
+        params._sort = sortArr.map(function (x) { return x.id; });
 
         var facets = facetsInput.select2('data');
         if (facets) {
-            params._facets = [];
-            for (i = 0, len = facets.length; i < len; i++) {
-                params._facets[i] = facets[i].id;
-            }
+            params._facets = facets.map(function (x) { return x.id; });
         }
 
         var columns = columnsInput.select2('data');
         if (columns) {
-            params._columns = [];
-            for (i = 0, len = columns.length; i < len; i++) {
-                params._columns[i] = columns[i].id;
-            }
+            params._columns = columns.map(function (x) { return x.id; });
         }
 
         var queryString = Qs.stringify(params, { indices: false });

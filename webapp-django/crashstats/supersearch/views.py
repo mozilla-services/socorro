@@ -96,8 +96,8 @@ def get_params(request):
 
         params[key] = value
 
-    params['_sort'] = request.GET.getlist('_sort') or DEFAULT_SORT
-    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
+    params['_sort'] = request.GET.getlist('_sort')
+    params['_facets'] = request.GET.getlist('_facets', DEFAULT_FACETS)
     params['_columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     allowed_fields = get_allowed_fields(request.user)
@@ -143,8 +143,8 @@ def search(request, default_context=None):
         {'id': x, 'text': x.replace('_', ' ')} for x in allowed_fields
     ]
 
-    context['sort'] = request.GET.getlist('_sort') or DEFAULT_SORT
-    context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
+    context['sort'] = request.GET.getlist('_sort', DEFAULT_SORT)
+    context['facets'] = request.GET.getlist('_facets', DEFAULT_FACETS)
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     # Fields data for the simple search UI.

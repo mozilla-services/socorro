@@ -141,7 +141,7 @@ def signature_reports(request, params):
     if '_columns' in context['params']:
         del context['params']['_columns']
 
-    context['sort'] = request.GET.getlist('_sort') or DEFAULT_SORT
+    context['sort'] = request.GET.getlist('_sort')
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     # Make sure only allowed fields are used.
