@@ -81,3 +81,10 @@ GOOGLE_ANALYTICS_ID = None
 # Forcibly setting this to be what the default is in settings/base.py
 # so that local settings don't break tests.
 GOOGLE_ANALYTICS_DOMAIN = 'auto'
+
+
+# During testing we want to pretend that we've set up the OAuth2
+# credentials.
+OAUTH2_CLIENT_ID = '12345-example.apps.googleusercontent.com'
+OAUTH2_CLIENT_SECRET = 'somethingsomethingsecret'
+OAUTH2_VALID_ISSUERS = ['accounts.example.com']
