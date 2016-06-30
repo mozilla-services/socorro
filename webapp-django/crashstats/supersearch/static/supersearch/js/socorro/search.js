@@ -16,6 +16,7 @@ $(function () {
 
     var contentElt = $('#search_results');
     var optionsElt = $('fieldset.options', form);
+    var sortInput = $('input[name=_sort]', form);
     var facetsInput = $('input[name=_facets]', form);
     var columnsInput = $('input[name=_columns_fake]', form);
     var publicApiUrlInput = $('input[name=_public_api_url]', form);
@@ -33,7 +34,7 @@ $(function () {
 
         $.ajax({
             url: url,
-            success: function(data) {
+            success: function (data) {
                 contentElt.empty().append(data);
 
                 if ($('.no-data', contentElt).length) {
@@ -49,7 +50,7 @@ $(function () {
                     activeTab = -1;
                 }
 
-                var params = form.dynamicForm('getParams');
+                var params = currentMode.getParams();
                 var url = prepareResultsQueryString(params);
 
                 contentElt.tabs({
@@ -65,12 +66,58 @@ $(function () {
                         pushHistoryState(params, url, hash, true);
                     }
                 });
-                $('.tablesorter').tablesorter();
+
+                // Handle server-side sorting.
+                $('.tablesorter.facet').tablesorter();
+                $('#reports-list').tablesorter({
+                    headers: {
+                        0: {  // disable the first column, `Crash ID`
+                            sorter: false
+                        }
+                    }
+                });
+
+                // Make sure there are more than 1 page of results. If not,
+                // do not activate server-side sorting, rely on the
+                // default client-side sorting.
+                if ($('.pagination a', contentElt).length) {
+                    $('.sort-header', contentElt).click(function (e) {
+                        e.preventDefault();
+
+                        var thisElt = $(this);
+
+                        // Update the sort field.
+                        var fieldName = thisElt.data('field-name');
+                        var sortArr = sortInput.select2('val');
+
+                        // First remove all previous mentions of that field.
+                        sortArr = sortArr.filter(function (item) {
+                            return item !== fieldName && item !== '-' + fieldName;
+                        });
+
+                        // Now add it in the order that follows this sequence:
+                        // ascending -> descending -> none
+                        if (thisElt.hasClass('headerSortDown')) {
+                            sortArr.unshift('-' + fieldName);
+                        }
+                        else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                            sortArr.unshift(fieldName);
+                        }
+
+                        sortInput.select2('val', sortArr);
+
+                        var searchParams = currentMode.getParams();
+                        var searchUrl = prepareResultsQueryString(searchParams);
+                        updatePublicApiUrl(searchParams);
+                        pushHistoryState(searchParams, searchUrl);
+                        showResults(resultsURL + searchUrl);
+                    });
+                }
 
                 // Enhance bug links.
                 BugLinks.enhance();
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 var errorContent = $('<div>', {class: 'error'});
 
                 if (jqXHR.status >= 400 && jqXHR.status < 500) {
@@ -104,23 +151,17 @@ $(function () {
     }
 
     function prepareResultsQueryString(params) {
-        var i;
-        var len;
+        var sortArr = sortInput.select2('data');
+        params._sort = sortArr.map(function (x) { return x.id; });
 
         var facets = facetsInput.select2('data');
         if (facets) {
-            params._facets = [];
-            for (i = 0, len = facets.length; i < len; i++) {
-                params._facets[i] = facets[i].id;
-            }
+            params._facets = facets.map(function (x) { return x.id; });
         }
 
         var columns = columnsInput.select2('data');
         if (columns) {
-            params._columns = [];
-            for (i = 0, len = columns.length; i < len; i++) {
-                params._columns[i] = columns[i].id;
-            }
+            params._columns = columns.map(function (x) { return x.id; });
         }
 
         var queryString = Qs.stringify(params, { indices: false });
@@ -442,6 +483,21 @@ $(function () {
         submitButton.click();
     });
 
+    var sortFields = [];
+    window.COLUMNS.forEach(function (item) {
+        sortFields.push(item);
+        sortFields.push({
+            id: '-' + item.id,
+            text: item.text + ' (DESC)',
+        });
+    });
+
+    sortInput.select2({
+        'data': sortFields,
+        'multiple': true,
+        'width': 'element',
+        'sortResults': sortResults
+    });
     facetsInput.select2({
         'data': window.FACETS,
         'multiple': true,
@@ -456,16 +512,16 @@ $(function () {
     });
 
     // Make the columns input sortable
-    columnsInput.on("change", function() {
+    columnsInput.on("change", function () {
         $("input[name=_columns]").val(columnsInput.val());
     });
 
     columnsInput.select2("container").find("ul.select2-choices").sortable({
         containment: 'parent',
-        start: function() {
+        start: function () {
             columnsInput.select2("onSortStart");
         },
-        update: function() {
+        update: function () {
             columnsInput.select2("onSortEnd");
         }
     });

@@ -291,7 +291,7 @@ class TestViews(BaseTestViews):
         ok_('Linux' in response.content)
         ok_('2017-01-31 23:12:57' in response.content)
         # Test facets are existing
-        ok_('table id="facets-list"' in response.content)
+        ok_('table id="facets-list-' in response.content)
         # Test bugs are existing
         ok_('<th scope="col">Bugs</th>' in response.content)
         ok_('123456' in response.content)
@@ -324,7 +324,7 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
         ok_('table id="reports-list"' in response.content)
-        ok_('table id="facets-list"' in response.content)
+        ok_('table id="facets-list-' in response.content)
         ok_('888981' in response.content)
         # Bugs should not be there, they appear only in the signature facet
         ok_('<th>Bugs</th>' not in response.content)
@@ -337,7 +337,7 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
         ok_('table id="reports-list"' in response.content)
-        ok_('table id="facets-list"' in response.content)
+        ok_('table id="facets-list-' in response.content)
         # The build and platform appear
         ok_('888981' in response.content)
         ok_('Linux' in response.content)

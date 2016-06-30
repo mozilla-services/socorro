@@ -1,8 +1,9 @@
-import isodate
 import datetime
 import json
 import math
 from collections import defaultdict
+
+import isodate
 
 from django import http
 from django.conf import settings
@@ -12,8 +13,9 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 
-from waffle.decorators import waffle_switch
 from ratelimit.decorators import ratelimit
+
+from waffle.decorators import waffle_switch
 
 from socorrolib.lib import BadArgumentError
 
@@ -21,9 +23,10 @@ from crashstats.base.utils import render_exception
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
+
 from . import forms
 from .form_fields import split_on_operator
-from .models import SuperSearchFields, SuperSearchUnredacted, Query
+from .models import Query, SuperSearchFields, SuperSearchUnredacted
 
 
 DEFAULT_COLUMNS = (
@@ -37,6 +40,10 @@ DEFAULT_COLUMNS = (
 
 DEFAULT_FACETS = (
     'signature',
+)
+
+DEFAULT_SORT = (
+    '-date',
 )
 
 # Facetting on those fields doesn't provide useful information.
@@ -89,14 +96,29 @@ def get_params(request):
 
         params[key] = value
 
-    params['_facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
+    params['_sort'] = request.GET.getlist('_sort')
+    params['_facets'] = request.GET.getlist('_facets', DEFAULT_FACETS)
+    params['_columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     allowed_fields = get_allowed_fields(request.user)
 
-    # Make sure only allowed fields are used
+    # Make sure only allowed fields are used.
+    params['_sort'] = [
+        x for x in params['_sort']
+        if x in allowed_fields or
+        (x.startswith('-') and x[1:] in allowed_fields)
+    ]
     params['_facets'] = [
         x for x in params['_facets'] if x in allowed_fields
     ]
+    params['_columns'] = [
+        x for x in params['_columns'] if x in allowed_fields
+    ]
+
+    # The uuid is always displayed in the UI so we need to make sure it is
+    # always returned by the model.
+    if 'uuid' not in params['_columns']:
+        params['_columns'].append('uuid')
 
     return params
 
@@ -121,7 +143,8 @@ def search(request, default_context=None):
         {'id': x, 'text': x.replace('_', ' ')} for x in allowed_fields
     ]
 
-    context['facets'] = request.GET.getlist('_facets') or DEFAULT_FACETS
+    context['sort'] = request.GET.getlist('_sort', DEFAULT_SORT)
+    context['facets'] = request.GET.getlist('_facets', DEFAULT_FACETS)
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
     # Fields data for the simple search UI.
@@ -156,8 +179,6 @@ def search_results(request):
         'total_pages': 0
     }
 
-    allowed_fields = get_allowed_fields(request.user)
-
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']
@@ -170,24 +191,14 @@ def search_results(request):
     if '_facets' in context['params']:
         del context['params']['_facets']
 
-    context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
-
-    # Make sure only allowed fields are used
-    context['columns'] = [
-        x for x in context['columns'] if x in allowed_fields
-    ]
+    context['sort'] = list(params['_sort'])
 
     # Copy the list of columns so that they can differ.
-    params['_columns'] = list(context['columns'])
-
-    # The uuid is always displayed in the UI so we need to make sure it is
-    # always returned by the model.
-    if 'uuid' not in params['_columns']:
-        params['_columns'].append('uuid')
+    context['columns'] = list(params['_columns'])
 
     # The `uuid` field is a special case, it is always displayed in the first
     # column of the table. Hence we do not want to show it again in the
-    # auto-generated list of columns, so we its name from the list of
+    # auto-generated list of columns, so we remove it from the list of
     # columns to display.
     if 'uuid' in context['columns']:
         context['columns'].remove('uuid')

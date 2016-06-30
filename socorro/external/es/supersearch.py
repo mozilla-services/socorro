@@ -375,13 +375,13 @@ class SuperSearch(SearchBase):
                 # In order to retrieve the database name of the field, we
                 # must first remove the '-' part and add it back later.
                 # Example: given ['product', '-version'], the results will be
-                # sorted by ascending product and descending version.
+                # sorted by ascending product then descending version.
                 desc = False
                 if value.startswith('-'):
                     desc = True
                     value = value[1:]
 
-                field_name = self.get_field_name(value, full=False)
+                field_name = self.get_field_name(value)
 
                 if desc:
                     # The underlying library understands that '-' means

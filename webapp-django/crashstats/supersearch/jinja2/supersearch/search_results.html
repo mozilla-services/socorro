@@ -17,7 +17,7 @@
             <tr>
                 <th scope="col" class="crash-id">Crash ID</th>
                 {% for column in columns %}
-                <th scope="col">{{ column | replace('_', ' ') | capitalize }}</th>
+                <th scope="col" class="sort-header {% if column in sort %}headerSortDown{% elif '-{}'.format(column) in sort %}headerSortUp{% endif %}" data-field-name="{{ column }}">{{ column | replace('_', ' ') | capitalize }}</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -75,7 +75,7 @@
 
 {% for facet in query.facets %}
 <div id="facet-{{ facet }}" class="ui-tabs-hide">
-    <table id="facets-list" class="tablesorter data-table facet">
+    <table id="facets-list-{{ facet }}" class="tablesorter data-table facet">
         <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
         <thead>
             <tr>

@@ -39,6 +39,12 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
         'value': window.COLUMNS
     });
 
+    this.$sortInputHidden = $('<input>', {
+        'type': 'hidden',
+        'name': '_sort',
+        'value': window.SORT
+    });
+
     var updateButton = $('<button>', {
         'type': 'submit',
         'text': 'Update'
@@ -46,6 +52,7 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
 
     // Append the controls.
     this.$controlsElement.append(
+        this.$sortInputHidden,
         this.$columnsInput,
         columnsInputHidden,
         updateButton,
@@ -78,7 +85,6 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
         e.preventDefault();
         that.loadContent(that.$contentElement);
     });
-
 };
 
 // Extends getParamsForUrl to do two extra things:
@@ -97,11 +103,13 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
         });
     }
 
+    // Get the sort for the input.
+    params._sort = this.$sortInputHidden.val().trim().split(',') || [];
+
     // Get the page number.
     params.page = this.page || SignatureReport.pageNum;
 
     return params;
-
 };
 
 // Extends buildUrl to also replace the history.
@@ -115,5 +123,51 @@ SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
 
     // Return the whole URL.
     return this.dataUrl + queryString;
+};
 
+SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, data) {
+    var tab = this;
+
+    contentElement.empty().append($(data));
+    $('#reports-list').tablesorter({
+        headers: {
+            0: {  // disable the first column, `Crash ID`
+                sorter: false
+            }
+        }
+    });
+    this.bindPaginationLinks(contentElement);
+
+    // Make sure there are more than 1 page of results. If not,
+    // do not activate server-side sorting, rely on the
+    // default client-side sorting.
+    if ($('.pagination a', contentElement).length) {
+        $('.sort-header', contentElement).click(function (e) {
+            e.preventDefault();
+
+            var thisElt = $(this);
+
+            // Update the sort field.
+            var fieldName = thisElt.data('field-name');
+            var sortArr = tab.$sortInputHidden.val().split(',');
+
+            // First remove all previous mentions of that field.
+            sortArr = sortArr.filter(function (item) {
+                return item !== fieldName && item !== '-' + fieldName;
+            });
+
+            // Now add it in the order that follows this sequence:
+            // ascending -> descending -> none
+            if (thisElt.hasClass('headerSortDown')) {
+                sortArr.unshift('-' + fieldName);
+            }
+            else if (!thisElt.hasClass('headerSortDown') && !thisElt.hasClass('headerSortUp')) {
+                sortArr.unshift(fieldName);
+            }
+
+            tab.$sortInputHidden.val(sortArr.join(','));
+
+            tab.loadContent(tab.$contentElement);
+        });
+    }
 };

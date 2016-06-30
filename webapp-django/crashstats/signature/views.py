@@ -39,6 +39,10 @@ DEFAULT_COLUMNS = (
     'address',
 )
 
+DEFAULT_SORT = (
+    '-date',
+)
+
 
 def pass_validated_params(view):
     @functools.wraps(view)
@@ -93,6 +97,10 @@ def signature_report(request, params, default_context=None):
     columns = [x for x in columns if x in fields]
     context['columns'] = columns or DEFAULT_COLUMNS
 
+    sort = request.GET.getlist('_sort')
+    sort = [x for x in sort if x in fields]
+    context['sort'] = sort or DEFAULT_SORT
+
     context['channels'] = ','.join(settings.CHANNELS).split(',')
     context['channel'] = settings.CHANNEL
 
@@ -127,15 +135,26 @@ def signature_reports(request, params):
 
     context['params'] = current_query.copy()
 
+    if '_sort' in context['params']:
+        del context['params']['_sort']
+
     if '_columns' in context['params']:
         del context['params']['_columns']
 
+    context['sort'] = request.GET.getlist('_sort')
     context['columns'] = request.GET.getlist('_columns') or DEFAULT_COLUMNS
 
-    # Make sure only allowed fields are used
+    # Make sure only allowed fields are used.
+    context['sort'] = [
+        x for x in context['sort']
+        if x in allowed_fields or
+        (x.startswith('-') and x[1:] in allowed_fields)
+    ]
     context['columns'] = [
         x for x in context['columns'] if x in allowed_fields
     ]
+
+    params['_sort'] = context['sort']
 
     # Copy the list of columns so that they can differ.
     params['_columns'] = list(context['columns'])

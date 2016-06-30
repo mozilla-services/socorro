@@ -81,11 +81,19 @@
             <fieldset class="options">
                 <h4>More options... <span class="show">click to show</span><span class="hide">click to hide</span></h4>
                 <div>
-                    Facet on:
-                    <input type="text" name="_facets" value="{{ facets | join(', ') }}">
-                    Show columns:
-                    <input type="text" name="_columns_fake" value="{{ columns | join(', ') }}">
-                    <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+                    <p>
+                        <label for="_facets">Facet on:</label>
+                        <input type="text" name="_facets" id="_facets" value="{{ facets | join(', ') }}">
+                    </p>
+                    <p>
+                        <label for="_columns_fake">Show columns:</label>
+                        <input type="text" name="_columns_fake" id="_columns_fake" value="{{ columns | join(', ') }}">
+                        <input type="hidden" name="_columns" value="{{ columns | join(', ') }}">
+                    </p>
+                    <p>
+                        <label for="_sort">Sort by:</label>
+                        <input type="text" name="_sort" id="_sort" value="{{ sort | join(', ') }}">
+                    </p>
 
                     <div class="public-api-url">
                         Public API URL: (<a href="{{ url('documentation:supersearch_home') }}">Super Search API Documentation</a>)
