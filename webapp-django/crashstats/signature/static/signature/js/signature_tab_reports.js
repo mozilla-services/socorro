@@ -104,7 +104,7 @@ SignatureReport.ReportsTab.prototype.getParamsForUrl = function () {
     }
 
     // Get the sort for the input.
-    params._sort = this.$sortInputHidden.val().trim().split(',');
+    params._sort = this.$sortInputHidden.val().trim().split(',') || [];
 
     // Get the page number.
     params.page = this.page || SignatureReport.pageNum;
@@ -129,7 +129,7 @@ SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, d
     var tab = this;
 
     contentElement.empty().append($(data));
-    $('.tablesorter').tablesorter({
+    $('#reports-list').tablesorter({
         headers: {
             0: {  // disable the first column, `Crash ID`
                 sorter: false

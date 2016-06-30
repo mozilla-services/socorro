@@ -68,7 +68,8 @@ $(function () {
                 });
 
                 // Handle server-side sorting.
-                $('.tablesorter').tablesorter({
+                $('.tablesorter.facet').tablesorter();
+                $('#reports-list').tablesorter({
                     headers: {
                         0: {  // disable the first column, `Crash ID`
                             sorter: false

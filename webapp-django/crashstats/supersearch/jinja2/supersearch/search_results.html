@@ -75,7 +75,7 @@
 
 {% for facet in query.facets %}
 <div id="facet-{{ facet }}" class="ui-tabs-hide">
-    <table id="facets-list" class="tablesorter data-table facet">
+    <table id="facets-list-{{ facet }}" class="tablesorter data-table facet">
         <caption>{{ facet | replace('_', ' ') | capitalize }} facet</caption>
         <thead>
             <tr>
