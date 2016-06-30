@@ -189,7 +189,7 @@ def assert_supersearch_counts():
     supersearch.cache_seconds = 0
     results = supersearch.get(
         product=settings.DEFAULT_PRODUCT,
-        _results_number=1,
+        _results_number=0,
         _columns=['uuid'],
     )
     # Use this total just to
