@@ -12,6 +12,7 @@ from django.core.cache import cache
 
 from crashstats.crashstats import utils
 from crashstats.crashstats.models import CrontabberState
+from crashstats.supersearch.models import SuperSearch
 
 
 def index(request):
@@ -167,4 +168,56 @@ def healthcheck(request):
         )
         es.info()  # will raise an error if there's a problem with the cluster
 
+        # Check SuperSearch paginated results
+        assert_supersearch_counts()
+
     return {'ok': True}
+
+
+def assert_supersearch_counts():
+    """Make sure that all shards in ElasticSearch return all results.
+    If some nodes in the cluster are unhealthy, the whole
+    SuperSearch query might succeed but the number of records
+    might not match the "total" count provided in every result page.
+
+    This test has been tested in our production database, using the
+    /api/SuperSearch endpoint and the epsilon hovers around 0.005 roughly
+    and that's *with* webapp caching at play.
+    """
+    supersearch = SuperSearch()
+    # We don't want any caching this time
+    supersearch.cache_seconds = 0
+    results = supersearch.get(
+        product=settings.DEFAULT_PRODUCT,
+        _results_number=0,
+        _columns=['uuid'],
+    )
+    # Use this total just to
+    total = results['total']
+    # This looks weird but if total is 350 then 350 / 100 is 3
+    # and multiplied with 100 becomes 300. Meaning he last page
+    # offset is 300 if the limit is 100.
+    limit = 100
+    offset = total / limit * limit
+    results = supersearch.get(
+        product=settings.DEFAULT_PRODUCT,
+        _results_number=limit,
+        _results_offset=offset,
+        _columns=['uuid'],
+    )
+    counted = len(results['hits']) + offset
+    # use the second total count
+    total = results['total']
+    # The difference is a percentage. It doesn't matter if
+    # counted > total or the other way around.
+    epsilon = abs(100 - 100.0 * counted / total)
+    # If the difference is bigger than 1/100 of a percent
+    # the difference is too large to be considered healthy.
+    # The reason we accept this small difference to be slightly
+    # more than 0 is because ElasticSearch has its own internal
+    # caching which it tries to leverage when doing pagination.
+    assert epsilon < 0.01, {
+        'epsilon': epsilon,
+        'counted': counted,
+        'total': total,
+    }

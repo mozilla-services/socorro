@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, assert_raises
 import mock
 
 from django.core.urlresolvers import reverse
@@ -10,6 +10,8 @@ from django.utils import timezone
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.crashstats.models import CrontabberState
+from crashstats.supersearch.models import SuperSearch
+from crashstats.monitoring.views import assert_supersearch_counts
 
 
 class TestViews(BaseTestViews):
@@ -278,3 +280,82 @@ class TestHealthcheckViews(BaseTestViews):
         )
 
         eq_(es_instance.info.call_count, 2)
+
+    def test_assert_supersearch_counts(self):
+
+        searches = []
+
+        def mocked_supersearch_get(**params):
+            searches.append(params)
+            eq_(params['product'], [settings.DEFAULT_PRODUCT])
+            if len(searches) == 1:
+                # this is the first one
+                eq_(params['_results_number'], 0)
+                eq_(params['_columns'], ['uuid'])
+                return {
+                    'hits': [
+                        {'uuid': '12345'},
+                    ],
+                    'facets': [],
+                    'total': 30002
+                }
+            else:
+                # second search
+                eq_(params['_results_number'], 100)
+                eq_(params['_results_offset'], 30000)
+                return {
+                    'hits': [
+                        {'uuid': '0128940'},
+                        {'uuid': '9156826'},
+                        {'uuid': '3969175'},
+                    ],
+                    'facets': [],
+                    'total': 30004
+                }
+
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+        assert_supersearch_counts()
+        assert len(searches) == 2
+
+    def test_assert_supersearch_counts_failing(self):
+
+        searches = []
+
+        def mocked_supersearch_get(**params):
+            searches.append(params)
+            eq_(params['product'], [settings.DEFAULT_PRODUCT])
+            if len(searches) == 1:
+                # this is the first one
+                eq_(params['_results_number'], 0)
+                eq_(params['_columns'], ['uuid'])
+                return {
+                    'hits': [
+                        {'uuid': '12345'},
+                    ],
+                    'facets': [],
+                    'total': 320
+                }
+            else:
+                # second search
+                eq_(params['_results_number'], 100)
+                eq_(params['_results_offset'], 300)
+                return {
+                    'hits': [
+                        {'uuid': '0128940'},
+                        {'uuid': '9156826'},
+                        {'uuid': '3969175'},
+                    ],
+                    'facets': [],
+                    'total': 320
+                }
+
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+        assert_raises(
+            AssertionError,
+            assert_supersearch_counts
+        )
+        assert len(searches) == 2
