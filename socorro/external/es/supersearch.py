@@ -4,16 +4,18 @@
 
 import datetime
 import re
-from elasticsearch_dsl import Search, A, F, Q
+
 from elasticsearch.exceptions import NotFoundError
+from elasticsearch_dsl import A, F, Q, Search
 
 from socorrolib.lib import (
     BadArgumentError,
     MissingArgumentError,
+    datetimeutil,
 )
+
 from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.middleware.search_common import SearchBase
-from socorrolib.lib import datetimeutil
 
 
 BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
@@ -304,6 +306,10 @@ class SuperSearch(SearchBase):
                     }
                 elif param.operator == '__null__':
                     filter_type = 'missing'
+                    args['field'] = name
+                elif param.operator == '__true__':
+                    filter_type = 'term'
+                    filter_value = True
                     args['field'] = name
                 elif param.operator == '@':
                     filter_type = 'regexp'
