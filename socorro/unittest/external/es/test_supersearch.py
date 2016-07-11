@@ -430,11 +430,19 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 'Accessibility': True,
             },
         )
+        self.index_crash(
+            processed_crash={
+                'date_processed': self.now,
+            },
+            raw_crash={
+                # Missing value should also be considered as "false".
+            },
+        )
         self.refresh_index()
 
         # Test the "has terms" operator.
         res = self.api.get(
-            accessibility='true',  # is true
+            accessibility='__true__',  # is true
             _columns=['accessibility'],
         )
 
@@ -444,12 +452,12 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             ok_(hit['accessibility'])
 
         res = self.api.get(
-            accessibility='f',  # is false
+            accessibility='!__true__',  # is false
             _columns=['accessibility'],
         )
 
-        eq_(res['total'], 1)
-        eq_(len(res['hits']), 1)
+        eq_(res['total'], 2)
+        eq_(len(res['hits']), 2)
         ok_(not res['hits'][0]['accessibility'])
 
     @minimum_es_version('1.0')
