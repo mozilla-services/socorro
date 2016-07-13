@@ -194,16 +194,22 @@ mozilla::ipc::MessageChannel::~MessageChannel.*
 # for all DLLs.
 
 aticfx32\.dll
+aticfx64\.dll
 atidxx32\.dll
+atidxx64\.dll
 atiu9pag\.dll
 atiumd6a\.dll
 atiumdag\.dll
 atiumdva\.dll
 atiuxpag\.dll
 igd10iumd32\.dll
+igd10iumd64\.dll
 igd10umd32\.dll
+igd10umd64\.dll
 igdumd32\.dll
+igdumd64\.dll
 igdumdim32\.dll
+igdumdim64\.dll
 nvd3dum\.dll
 nvoglnt\.dll
 nvumdshim\.dll
