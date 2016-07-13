@@ -29,6 +29,7 @@ import socorrolib.lib.external_common as extern
      * '>' -> 'greater'
      * '<' -> 'lower'
      * '__null__' -> 'is null'
+     * '__true__' -> 'is true'
      * '!' -> 'not' (prefix)
 
     Note: the order of operators matters, largest operators should be first.
@@ -37,6 +38,7 @@ import socorrolib.lib.external_common as extern
 """
 OPERATOR_NOT = '!'
 OPERATORS_BASE = ['']
+OPERATORS_BOOL = ['__true__']
 OPERATORS_STRING = ['__null__', '=', '~', '$', '^', '@']
 OPERATORS_NUMBER = ['>=', '<=', '<', '>']
 OPERATORS_MAP = {
@@ -44,6 +46,7 @@ OPERATORS_MAP = {
     'int': OPERATORS_NUMBER + OPERATORS_BASE,
     'date': OPERATORS_NUMBER,
     'datetime': OPERATORS_NUMBER,
+    'bool': OPERATORS_BOOL,
     'enum': OPERATORS_BASE,
     'default': OPERATORS_BASE,
 }
