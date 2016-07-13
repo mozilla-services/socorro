@@ -149,5 +149,5 @@ class BooleanField(forms.CharField):
         if value is None:
             return None
         if str(value).lower() in ('__true__', 'true', 't', '1', 'y', 'yes'):
-            return 'true'
-        return 'false'
+            return '__true__'
+        return '!__true__'
