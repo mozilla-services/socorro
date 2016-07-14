@@ -19,7 +19,6 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.ESRVersionRewrite,"
         "socorro.processor.mozilla_transform_rules.PluginContentURL,"
         "socorro.processor.mozilla_transform_rules.PluginUserComment,"
-        "socorro.processor.mozilla_transform_rules.WebAppRuntime,"
         "socorro.processor.mozilla_transform_rules.FennecBetaError20150430"
 
     ],

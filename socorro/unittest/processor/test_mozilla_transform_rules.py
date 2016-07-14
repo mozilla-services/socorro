@@ -29,7 +29,6 @@ from socorro.processor.mozilla_transform_rules import (
     ESRVersionRewrite,
     PluginContentURL,
     PluginUserComment,
-    WebAppRuntime,
     ExploitablityRule,
     FlashVersionRule,
     Winsock_LSPRule,
@@ -1460,64 +1459,6 @@ class TestPluginUserComment(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         eq_(raw_crash.Comments, 'I wrote something here')
-
-        # processed_crash should be unchanged
-        eq_(processed_crash, DotDict())
-
-
-#==============================================================================
-class TestWebAppRuntime(TestCase):
-
-    #--------------------------------------------------------------------------
-    def get_basic_config(self):
-        config = CDotDict()
-        config.logger = Mock()
-        config.chatty = False
-
-        return config
-
-    #--------------------------------------------------------------------------
-    def get_basic_processor_meta(self):
-        processor_meta = DotDict()
-        processor_meta.processor_notes = []
-
-        return processor_meta
-
-    #--------------------------------------------------------------------------
-    def test_everything_we_hoped_for(self):
-        config = self.get_basic_config()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_crash.ProductName = 'Webapp Runtime by Lars'
-        raw_dumps = {}
-        processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
-
-        rule = WebAppRuntime(config)
-
-        # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        eq_(raw_crash.ProductName, 'WebappRuntimebyLars')
-
-        # processed_crash should be unchanged
-        eq_(processed_crash, DotDict())
-
-    #--------------------------------------------------------------------------
-    def test_this_is_not_the_crash_you_are_looking_for(self):
-        config = self.get_basic_config()
-
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {}
-        processed_crash = DotDict()
-        processor_meta = self.get_basic_processor_meta()
-
-        rule = WebAppRuntime(config)
-
-        # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
-
-        eq_(raw_crash.ProductName, 'Firefox')
 
         # processed_crash should be unchanged
         eq_(processed_crash, DotDict())

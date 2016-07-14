@@ -571,23 +571,6 @@ class PluginUserComment(Rule):
 
 
 #==============================================================================
-class WebAppRuntime(Rule):
-
-    #--------------------------------------------------------------------------
-    def version(self):
-        return '2.0'
-
-    #--------------------------------------------------------------------------
-    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return raw_crash['ProductName'].startswith('Webapp Runtime')
-
-    #--------------------------------------------------------------------------
-    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        raw_crash['ProductName'] = raw_crash['ProductName'].replace(' ', '')
-        return True
-
-
-#==============================================================================
 class ExploitablityRule(Rule):
 
     #--------------------------------------------------------------------------
