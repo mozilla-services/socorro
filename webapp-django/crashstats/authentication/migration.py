@@ -38,6 +38,16 @@ def migrate_users(combos, dry_run=False):
                 for group in user.groups.all():
                     print '\tTransferring group membership %r' % group.name
                     destination.groups.add(group)
+                if (
+                    user.last_login and destination.last_login and
+                    user.last_login > destination.last_login
+                ):
+                    destination.last_login = user.last_login
+                if (
+                    user.date_joined and destination.date_joined and
+                    user.date_joined > destination.date_joined
+                ):
+                    destination.date_joined = user.date_joined
                 user.is_active = False
                 if not dry_run:
                     user.save()

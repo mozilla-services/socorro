@@ -1,15 +1,17 @@
 import contextlib
 import csv
+import datetime
 import os
 import re
 import tempfile
 
-from nose.tools import ok_
+from nose.tools import ok_, eq_
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.utils.six import StringIO
+from django.utils import timezone
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.authentication.migration import migrate_users
@@ -41,6 +43,9 @@ class TestMigrateUsersCSV(DjangoTestCase):
             os.remove(tmp_csv_file)
 
     def test_migrate_users(self):
+        today = timezone.now()
+        yesterday = today - datetime.timedelta(days=1)
+
         cool = Group.objects.create(name='Cool People')
         not_cool = Group.objects.create(name='Not So Cool')
 
@@ -49,11 +54,14 @@ class TestMigrateUsersCSV(DjangoTestCase):
         # and give it some fancy permissions
         alias.is_staff = True
         alias.is_superuser = True
+        alias.last_login = today
         alias.save()
         alias.groups.add(cool)
         alias.groups.add(not_cool)
 
         real = User.objects.create(username='r', email='flastname@example.com')
+        real.last_login = yesterday
+        real.save()
         # just one group
         real.groups.add(not_cool)
 
@@ -90,6 +98,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
         ok_(real.is_superuser)
         ok_(cool in real.groups.all())
         ok_(not_cool in real.groups.all())
+        eq_(real.last_login, today)
 
         # And the `alias2` user should just simply have its email changed.
         ok_(not User.objects.filter(email__iexact='alias2@example.com'))
