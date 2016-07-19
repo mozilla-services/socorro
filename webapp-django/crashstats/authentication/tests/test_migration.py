@@ -65,7 +65,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
         # just one group
         real.groups.add(not_cool)
 
-        alias2 = User.objects.create(username='a2', email='alias2@example.com')
+        alias2 = User.objects.create(username='a2', email='Alias2@example.com')
 
         combos = (
             [alias.email.upper(), real.email.capitalize()],
@@ -82,7 +82,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
             out.getvalue()
         ))
         ok_(re.findall(
-            'NEED TO MIGRATE alias2@example.com\s+TO corrected@example.com',
+            'NEED TO MIGRATE Alias2@example.com\s+TO corrected@example.com',
             out.getvalue()
         ))
 

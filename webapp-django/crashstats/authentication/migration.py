@@ -56,8 +56,8 @@ def migrate_users(combos, dry_run=False):
                 # then it's easy peasy!
                 print '\tSimply changing email from %r to %r' % (
                     user.email,
-                    transform[user.email]
+                    transform[user.email.lower()]
                 )
-                user.email = transform[user.email]
+                user.email = transform[user.email.lower()]
                 if not dry_run:
                     user.save()
