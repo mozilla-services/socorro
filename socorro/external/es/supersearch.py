@@ -310,7 +310,6 @@ class SuperSearch(SearchBase):
                 elif param.operator == '__true__':
                     filter_type = 'term'
                     filter_value = True
-                    args['field'] = name
                 elif param.operator == '@':
                     filter_type = 'regexp'
                     if field_data['has_full_version']:
