@@ -50,7 +50,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
         not_cool = Group.objects.create(name='Not So Cool')
 
         # create a user with "an alias email"
-        alias = User.objects.create(username='a', email='alias@example.com')
+        alias = User.objects.create(username='a', email='Alias@example.com')
         # and give it some fancy permissions
         alias.is_staff = True
         alias.is_superuser = True
@@ -59,7 +59,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
         alias.groups.add(cool)
         alias.groups.add(not_cool)
 
-        real = User.objects.create(username='r', email='flastname@example.com')
+        real = User.objects.create(username='r', email='Flastname@example.com')
         real.last_login = yesterday
         real.save()
         # just one group
@@ -78,7 +78,7 @@ class TestMigrateUsersCSV(DjangoTestCase):
 
         # Check the stdout blather
         ok_(re.findall(
-            'NEED TO MIGRATE alias@example.com\s+TO Flastname@example.com',
+            'NEED TO MIGRATE Alias@example.com\s+TO Flastname@example.com',
             out.getvalue()
         ))
         ok_(re.findall(

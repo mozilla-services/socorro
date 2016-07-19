@@ -24,10 +24,10 @@ def migrate_users(combos, dry_run=False):
         users = User.objects.filter(q)
         for user in users:
             print 'NEED TO MIGRATE', user.email.ljust(30),
-            print 'TO', transform[user.email]
+            print 'TO', transform[user.email.lower()]
             try:
                 destination = User.objects.get(
-                    email__iexact=transform[user.email]
+                    email__iexact=transform[user.email.lower()]
                 )
                 if user.is_staff:
                     print "\tTransferring 'is_staff'"
