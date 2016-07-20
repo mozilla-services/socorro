@@ -1,3 +1,5 @@
+import urllib
+
 from django.template import engines
 
 
@@ -11,3 +13,7 @@ def render_exception(exception):
         '<ul><li>{{ exception }}</li></ul>'
     )
     return template.render({'exception': exception})
+
+
+def urlencode_dict(val):
+    return urllib.urlencode(val, True).replace('+', '%20')

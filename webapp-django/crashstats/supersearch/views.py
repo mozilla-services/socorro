@@ -220,7 +220,7 @@ def search_results(request):
 
     context['current_url'] = '%s?%s' % (
         reverse('supersearch.search'),
-        current_query.urlencode()
+        current_query.urlencode().replace('+', '%20')
     )
 
     api = SuperSearchUnredacted()
