@@ -2,7 +2,7 @@
 
 {% block page_title %}Super Search API Reference{% endblock %}
 
-{% macro table_content(fields, columns_number, prefix = None) %}
+{% macro table_content(fields, columns_number, prefix='') %}
 <tr>
 {% for i in range(0, fields | length) %}
     {% if i % columns_number == 0 %}
