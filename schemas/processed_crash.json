@@ -1,0 +1,397 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "description": "schema of a processed crash from Socorro",
+    "definitions": {
+        "frames": {
+            "type": "object",
+            "properties": {
+                "frame": {
+                    "type": ["integer", "null"],
+                    "description": "Index of the frame. "
+                },
+                "module": {
+                    "type": ["string", "null"],
+                    "description": "If present, the basename of the code module containing the instruction in this frame. If missing, the instruction was not in any known module."
+                },
+                "function": {
+                    "type": ["string", "null"],
+                    "description": "If present, the name of the function containing the instruction in this frame.  If missing, either the instruction was not in any known function, or symbols were not available for this module."
+                },
+                "file": {
+                    "type": ["string", "null"],
+                    "description": "If present, the source file containing `function` in this frame. If absent, source line information may not be available for the function. May be a filename or a string including VCS information in the form <vcs>:<repository>:<relative source path>:<changeset>."
+                },
+                "line": {
+                    "type": ["integer", "null"],
+                    "description": "If present, the line in `file` corresponding to the instruction in this frame."
+                },
+                "offset": {
+                    "type": ["string", "null"],
+                    "description": "The value of the instruction pointer in this frame."
+                },
+                "module_offset": {
+                    "type": ["string", "null"],
+                    "description": "If present, the offset of the instruction pointer in this frame relative to the module base."
+                },
+                "function_offset": {
+                    "type": ["string", "null"],
+                    "description": "If present, the offset of the instruction pointer in this frame relative to the function base."
+                }
+            }
+        }
+    },
+    "properties": {
+        "PluginFilename": {
+            "type": ["string", "null"],
+            "description": "When a plugin process crashes, this is the name of the file of the plugin loaded into that process."
+        },
+        "PluginName": {
+            "type": ["string", "null"],
+            "description": "When a plugin process crashes, this is the name of the plugin loaded into that process."
+        },
+        "PluginVersion": {
+            "type": ["string", "null"],
+            "description": "When a plugin process crashes, this is the version of the plugin loaded into that process."
+        },
+        "Winsock_LSP": {
+            "type": ["string", "null"],
+            "description": "On Windows, a string of data from the Windows OS about the list of installed LSPs (Layered Service Provider)."
+        },
+        "additional_minidumps": {
+            "type": "array",
+            "description": "List the prefixes of the additionnal minidumps, when there are dumps from multiple processes."
+        },
+        "addons": {
+            "type": "array",
+            "description": "A list of the addons currently enabled at the time of the crash. This takes the form of \"addonid:version,[addonid:version...]\". This value could be empty if the crash happens during startup before the addon manager is enabled, and on products/platforms which don't support addons."
+        },
+        "addons_checked": {
+            "type": "boolean",
+            "description": "Value of the 'extensions. checkCompatibility' preference."
+        },
+        "address": {
+            "type": ["string", "null"],
+            "description": "The crashing address. This value is only meaningful for crashes involving bad memory accesses. "
+        },
+        "app_notes": {
+            "type": ["string", "null"],
+            "description": "Notes from the application that crashed. Mostly contains graphics-related annotations."
+        },
+        "build": {
+            "type": ["integer", "string", "null"],
+            "description": "The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS. "
+        },
+        "classifications": {
+            "type": "object",
+            "properties": {
+                "jit": {
+                    "type": "object",
+                    "properties": {
+                        "category": {
+                            "type": ["string", "null"],
+                            "description": "JIT classification."
+                        },
+                        "category_return_code": {
+                            "type": ["string", "null"],
+                            "description": "JIT classification."
+                        }
+                    }
+                },
+                "support": {
+                    "type": "object",
+                    "properties": {
+                        "classification": {
+                            "type": ["string", "null"],
+                            "description": "The support classification of this crash report, assigned by the processors."
+                        },
+                        "classification_data": {
+                            "type": ["string", "null"],
+                            "description": "Data of the classification."
+                        },
+                        "classification_version": {
+                            "type": ["string", "null"],
+                            "description": "Version of the classification."
+                        }
+                    }
+                },
+                "skunk_works": {
+                    "type": "object",
+                    "properties": {
+                        "classification": {
+                            "type": ["string", "null"],
+                            "description": "The skunk classification of this crash report, assigned by the processors."
+                        },
+                        "classification_data": {
+                            "type": ["string", "null"],
+                            "description": "Data of the classification."
+                        },
+                        "classification_version": {
+                            "type": ["string", "null"],
+                            "description": "Version of the classification."
+                        }
+                    }
+                }
+            }
+        },
+        "cpu_info": {
+            "type": ["string", "null"],
+            "description": "Detailed processor info. Usually contains information such as the family, model, and stepping number. "
+        },
+        "cpu_name": {
+            "type": ["string", "null"],
+            "description": "The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'."
+        },
+        "crash_id": {
+            "type": ["string", "null"],
+            "description": "Unique identifier of the crash report."
+        },
+        "date_processed": {
+            "type": ["string", "null"],
+            "description": "Date at which the crash report was received by Socorro."
+        },
+        "flash_version": {
+            "type": ["string", "null"],
+            "description": "Version of the Flash Player plugin."
+        },
+        "hang_type": {
+            "type": ["integer", "null"],
+            "description": "Tells if a report was caused by a crash or a hang. In the database, the value is `0` if the problem was a crash of the software, and `1` or `-1` if the problem was a hang of the software. \n\nNote: for querying, you should use `crash` or `hang`, since those are automatically transformed into the correct underlying values."
+        },
+        "install_age": {
+            "type": ["integer", "null"],
+            "description": "Length of time since this version was installed. "
+        },
+        "java_stack_trace": {
+            "type": ["string", "null"],
+            "description": "When Java code crashes due to an unhandled exception, this is the Java Stack Trace. It is usually more useful than the system stack trace given for the crashing thread. "
+        },
+        "json_dump": {
+            "type": "object",
+            "description": "The dump as a JSON object.",
+            "properties": {
+                "crash_info": {
+                    "type": "object",
+                    "properties": {
+                        "address": {
+                            "type": ["string", "null"],
+                            "description": "Address of the crash."
+                        },
+                        "crashing_thread": {
+                            "type": ["integer", "null"],
+                            "description": "Number of the crashing thread?"
+                        },
+                        "type": {
+                            "type": ["string", "null"],
+                            "description": "Type of the crash."
+                        }
+                    }
+                },
+                "crashing_thread": {
+                    "type": "object",
+                    "properties": {
+                        "threads_index": {
+                            "type": ["integer", "null"],
+                            "description": "Index of this thread in the list of threads?"
+                        },
+                        "total_frames": {
+                            "type": ["integer", "null"],
+                            "description": "Total number of frames in the thread."
+                        },
+                        "frames": {
+                            "type": "array",
+                            "description": "Top frames of the crashing thread. Max 10 frames.",
+                            "items": {
+                                "$ref": "#/definitions/frames"
+                            }
+                        }
+                    }
+                },
+                "largest_free_vm_block": {
+                    "type": ["string", "null"],
+                    "description": "If present, the size of the largest free block of virtual memory in the crashing process as a hex string."
+                },
+                "main_module": {
+                    "type": ["integer", "null"],
+                    "description": "Index into modules."
+                },
+                "status": {
+                    "type": ["string", "null"],
+                    "description": "Status of the output of the stackwalker. Can be \"OK\", \"ERROR_*\" or \"SYMBOL_SUPPLIER_INTERRUPTED\"."
+                },
+                "system_info": {
+                    "type": "object",
+                    "properties": {
+                        "cpu_arch": {
+                            "type": ["string", "null"],
+                            "description": "Architecture of the CPU."
+                        },
+                        "cpu_count": {
+                            "type": ["integer", "null"],
+                            "description": "Number of CPU cores."
+                        },
+                        "cpu_info": {
+                            "type": ["string", "null"],
+                            "description": "Extended name of the CPU."
+                        },
+                        "os": {
+                            "type": ["string", "null"],
+                            "description": "Operating System."
+                        },
+                        "os_ver": {
+                            "type": ["string", "null"],
+                            "description": "Operating System Version."
+                        }
+                    }
+                },
+                "tiny_block_size": {
+                    "type": ["integer", "string", "null"],
+                    "description": "If present, the total size of all memory regions in the crashing process that are smaller than 1 MB."
+                },
+                "thread_count": {
+                    "type": ["integer", "null"],
+                    "description": "Number of threads."
+                },
+                "threads": {
+                    "type": "array",
+                    "description": "All the threads.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "frame_count": {
+                                "type": ["integer", "null"],
+                                "description": "Number of frames in the thread."
+                            },
+                            "frames": {
+                                "type": "array",
+                                "description": "All frames of the thread.",
+                                "items": {
+                                    "$ref": "#/definitions/frames"
+                                }
+                            }
+                        }
+                    }
+                },
+                "write_combine_size": {
+                    "type": ["integer", "string", "null"],
+                    "description": "If present, the total size of all committed memory regions in the crashing process marked with PAGE_WRITECOMBINE."
+                }
+            }
+        },
+        "last_crash": {
+            "type": ["integer", "null"],
+            "description": "Length of time between the previous crash submission and this one. Low values indicate repeated crashes."
+        },
+        "memory_report": {
+            "type": "object",
+            "description": "Anonymized data about the memory usage of the software, generated client-side when a crash report happens because of a memory issue.",
+            "properties": {
+                "version": {
+                    "type": ["integer", "null"],
+                    "description": "A version number. "
+                },
+                "hasMozMallocUsableSize": {
+                    "type": "boolean",
+                    "description": "Has Moz Malloc usable size? "
+                },
+                "reports": {
+                    "type": "array",
+                    "description": "A list of reports about various aspects of the memory.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "kind": {
+                                "type": ["integer", "null"],
+                                "description": "Number that tells what kind of report it is. "
+                            },
+                            "description": {
+                                "type": ["string", "null"],
+                                "description": "A description of what the report is. "
+                            },
+                            "process": {
+                                "type": ["string", "null"],
+                                "description": "The concerned process, with its pid. "
+                            },
+                            "amount": {
+                                "type": ["integer", "null"],
+                                "description": "The amount of things."
+                            },
+                            "units": {
+                                "type": ["integer", "null"],
+                                "description": "The unit of the amount of things."
+                            },
+                            "path": {
+                                "type": ["string", "null"],
+                                "description": "A path to the resource being described."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "os_name": {
+            "type": ["string", "null"],
+            "description": "Basic name of the operating system. Can be \"Windows NT\", \"Mac OS X\" or \"Linux\". Use `platform_pretty_version` for a more precise OS name including version."
+        },
+        "os_pretty_version": {
+            "type": ["string", "null"],
+            "description": "A better platform name, including version for Windows and Mac OS X."
+        },
+        "os_version": {
+            "type": ["string", "null"],
+            "description": "Version of the operating system."
+        },
+        "process_type": {
+            "type": ["string", "null"],
+            "description": "What type of process the crash happened in. When the main process crashes, this will not be present. But when a plugin or content process crashes, this will be \"plugin\" or \"content\"."
+        },
+        "processor_notes": {
+            "type": ["string", "null"],
+            "description": "Notes of the Socorro processor, contains information about what changes were made to the report during processing."
+        },
+        "product": {
+            "type": ["string", "null"],
+            "description": "Name of the software."
+        },
+        "productid": {
+            "type": ["string", "null"],
+            "description": "Identifier of the software."
+        },
+        "proto_signature": {
+            "type": ["string", "null"],
+            "description": "A concatenation of the signatures of all the frames of the crashing thread."
+        },
+        "reason": {
+            "type": ["string", "null"],
+            "description": "The crash's exception kind. Different OSes have different exception kinds. Example values: 'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'. "
+        },
+        "release_channel": {
+            "type": ["string", "null"],
+            "description": "The update channel that the user is on. Typically \"nightly\", \"aurora\", \"beta\", or \"release\", but this may also be other values like \"release-cck-partner\"."
+        },
+        "signature": {
+            "type": ["string", "null"],
+            "description": "This is the field most commonly used for aggregating individual crash reports into a group. It usually contains one or more stack frames from the crashing thread. The stack frames may also be augmented or replaced with other tokens such as 'OOM | small' or 'shutdownhang' that further identify the crash kind. "
+        },
+        "topmost_filenames": {
+            "type": ["string", "null"],
+            "description": "Paths of the files at the top of the stack."
+        },
+        "uptime": {
+            "type": ["integer", "null"],
+            "description": "Length of time the process was running before it crashed. Small values (from 0 to 5 or so) usually indicate start-up crashes."
+        },
+        "user_comments": {
+            "type": ["string", "null"],
+            "description": "Comments entered by the user when they crashed."
+        },
+        "uuid": {
+            "type": ["string", "null"],
+            "description": "Unique identifier of the report."
+        },
+        "version": {
+            "type": ["string", "null"],
+            "description": "The product version number. A value lacking any letters indicates a normal release; a value with a 'b' indicates a Beta release; a value with an 'a' indicates an Aurora (a.k.a. Developer Edition) release; a value with 'esr' indicates an Extended Service Release. "
+        }
+    }
+}
