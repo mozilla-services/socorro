@@ -220,15 +220,17 @@
                                 <th scope="row">Crash Address</th>
                                 <td>{{ report.address }}</td>
                             </tr>
-                            {% if request.user.has_perm('crashstats.view_pii') %}
-                            <tr title="{{ fields_desc['processed_crash.email'] }}">
-                                <th scope="row">Email Address</th>
+                            {% if request.user.has_perm('crashstats.view_exploitability') %}
+                            <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
+                                <th scope="row">Exploitability</th>
                                 <td>
-                                    {% if raw.Email %}
-                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - This is super sensitive data! Be careful how you use it!
+                                    {% if report.exploitability %}
+                                    {{ report.exploitability }} - This is super sensitive data! Be careful how you use it!
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% endif %}
+                            {% if request.user.has_perm('crashstats.view_pii') %}
                             <tr title="{{ fields_desc['processed_crash.url'] }}">
                                 <th scope="row">URL</th>
                                 <td>
@@ -237,13 +239,11 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            {% endif %}
-                            {% if request.user.has_perm('crashstats.view_exploitability') %}
-                            <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
-                                <th scope="row">Exploitability</th>
+                            <tr title="{{ fields_desc['processed_crash.email'] }}">
+                                <th scope="row">Email Address</th>
                                 <td>
-                                    {% if report.exploitability %}
-                                    {{ report.exploitability }} - This is super sensitive data! Be careful how you use it!
+                                    {% if raw.Email %}
+                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - This is super sensitive data! Be careful how you use it!
                                     {% endif %}
                                 </td>
                             </tr>
@@ -324,14 +324,6 @@
                                 </td>
                             </tr>
                             {% endif %}
-                            {% if raw.SystemMemoryUsePercentage %}
-                            <tr title="{{ fields_desc['raw_crash.SystemMemoryUsePercentage'] }}">
-                                <th scope="row">System Memory Use Percentage</th>
-                                <td>
-                                    {{ raw.SystemMemoryUsePercentage }}
-                                </td>
-                            </tr>
-                            {% endif %}
                             {% if raw.AvailablePageFile %}
                             <tr title="{{ fields_desc['raw_crash.AvailablePageFile'] }}">
                                 <th scope="row">Available Page File</th>
@@ -345,6 +337,14 @@
                                 <th scope="row">Available Physical Memory</th>
                                 <td>
                                     {{ show_filesize(raw.get('AvailablePhysicalMemory')) }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if raw.SystemMemoryUsePercentage %}
+                            <tr title="{{ fields_desc['raw_crash.SystemMemoryUsePercentage'] }}">
+                                <th scope="row">System Memory Use Percentage</th>
+                                <td>
+                                    {{ raw.SystemMemoryUsePercentage }}
                                 </td>
                             </tr>
                             {% endif %}
