@@ -356,6 +356,14 @@
                                 </td>
                             </tr>
                             {% endif %}
+                            {% if raw.ContainsMemoryReport %}
+                            <tr title="{{ fields_desc['raw_crash.ContainsMemoryReport'] }}">
+                                <th scope="row">Contains Memory Report</th>
+                                <td>
+                                    <pre>{{ raw.ContainsMemoryReport }}</pre>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% if raw.FlashProcessDump %}
                             <tr title="{{ fields_desc['raw_crash.FlashProcessDump'] }}">
                                 <th scope="row">Flash Process Dump</th>
