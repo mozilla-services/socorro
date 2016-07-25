@@ -193,7 +193,7 @@ def signature_reports(request, params):
 
     context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
-        current_query.urlencode().replace('+', '%20')
+        urlencode_dict(current_query)
     )
 
     api = SuperSearchUnredacted()
@@ -343,7 +343,7 @@ def signature_comments(request, params):
 
     context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
-        current_query.urlencode()
+        urlencode_dict(current_query)
     )
 
     api = SuperSearchUnredacted()
