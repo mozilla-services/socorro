@@ -1,6 +1,8 @@
+import json
+import urllib
+
 import mock
 import pyquery
-import json
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
@@ -10,7 +12,7 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 
 
-DUMB_SIGNATURE = 'mozilla::wow::such_signature(smth*)'
+DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'
 
 
 class TestViews(BaseTestViews):
@@ -229,6 +231,14 @@ class TestViews(BaseTestViews):
         ok_('product=WaterWolf' in next_page_url)
         ok_('_columns=platform' in next_page_url)
         ok_('page=2' in next_page_url)
+
+        # Verify white spaces are correctly encoded.
+        ok_(
+            # Note we use `quote` and not `quote_plus`, so white spaces are
+            # turned into '%20' instead of '+'.
+            urllib.quote(DUMB_SIGNATURE)
+            in next_page_url
+        )
 
         # Test that a negative page value does not break it.
         response = self.client.get(url, {

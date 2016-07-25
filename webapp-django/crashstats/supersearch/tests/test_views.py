@@ -1,5 +1,6 @@
 import datetime
 import json
+import urllib
 import re
 
 import mock
@@ -621,7 +622,7 @@ class TestViews(BaseTestViews):
             hits = []
             for i in range(140):
                 hits.append({
-                    "signature": "nsASDOMWindowEnumerator::GetNext()",
+                    "signature": "hang | nsASDOMWindowEnumerator::GetNext()",
                     "date": "2017-01-31T23:12:57",
                     "uuid": i,
                     "product": "WaterWolf",
@@ -643,10 +644,10 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(
             url,
-
             {
+                'signature': 'hang | nsASDOMWindowEnumerator::GetNext()',
                 '_columns': ['version'],
-                '_facets': ['platform']
+                '_facets': ['platform'],
             }
         )
 
@@ -660,6 +661,14 @@ class TestViews(BaseTestViews):
         ok_('_columns=version' in next_page_url)
         ok_('page=2' in next_page_url)
         ok_('#crash-reports' in next_page_url)
+
+        # Verify white spaces are correctly encoded.
+        ok_(
+            # Note we use `quote` and not `quote_plus`, so white spaces are
+            # turned into '%20' instead of '+'.
+            urllib.quote('hang | nsASDOMWindowEnumerator::GetNext()')
+            in next_page_url
+        )
 
         # Test that a negative page value does not break it.
         response = self.client.get(url, {'page': '-1'})

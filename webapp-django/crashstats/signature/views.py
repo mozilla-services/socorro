@@ -1,7 +1,6 @@
 import datetime
 import functools
 import math
-import urllib
 
 import isodate
 
@@ -12,7 +11,7 @@ from django.conf import settings
 
 from socorrolib.lib import BadArgumentError
 
-from crashstats.base.utils import render_exception
+from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
@@ -104,11 +103,10 @@ def signature_report(request, params, default_context=None):
     context['channels'] = ','.join(settings.CHANNELS).split(',')
     context['channel'] = settings.CHANNEL
 
-    context['report_list_query_string'] = urllib.urlencode(
+    context['report_list_query_string'] = urlencode_obj(
         utils.sanitize_dict(
             get_report_list_parameters(params)
-        ),
-        True
+        )
     )
 
     return render(request, 'signature/signature_report.html', context)
@@ -195,7 +193,7 @@ def signature_reports(request, params):
 
     context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
-        current_query.urlencode()
+        urlencode_obj(current_query)
     )
 
     api = SuperSearchUnredacted()
@@ -345,7 +343,7 @@ def signature_comments(request, params):
 
     context['current_url'] = '%s?%s' % (
         reverse('signature:signature_report'),
-        current_query.urlencode()
+        urlencode_obj(current_query)
     )
 
     api = SuperSearchUnredacted()

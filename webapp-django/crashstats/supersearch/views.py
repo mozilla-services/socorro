@@ -19,7 +19,7 @@ from waffle.decorators import waffle_switch
 
 from socorrolib.lib import BadArgumentError
 
-from crashstats.base.utils import render_exception
+from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.views import pass_default_context
@@ -220,7 +220,7 @@ def search_results(request):
 
     context['current_url'] = '%s?%s' % (
         reverse('supersearch.search'),
-        current_query.urlencode()
+        urlencode_obj(current_query)
     )
 
     api = SuperSearchUnredacted()
