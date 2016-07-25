@@ -192,6 +192,7 @@ def assert_supersearch_counts():
         _results_number=0,
         _columns=['uuid'],
     )
+    assert not results['errors'], results['errors']
     # Use this total just to
     total = results['total']
     # This looks weird but if total is 350 then 350 / 100 is 3
@@ -205,6 +206,7 @@ def assert_supersearch_counts():
         _results_offset=offset,
         _columns=['uuid'],
     )
+    assert not results['errors'], results['errors']
     counted = len(results['hits']) + offset
     # use the second total count
     total = results['total']
