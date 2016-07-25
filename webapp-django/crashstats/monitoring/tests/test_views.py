@@ -287,6 +287,7 @@ class TestHealthcheckViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             searches.append(params)
+            assert params['_return_shards']
             eq_(params['product'], [settings.DEFAULT_PRODUCT])
             if len(searches) == 1:
                 # this is the first one
@@ -297,7 +298,12 @@ class TestHealthcheckViews(BaseTestViews):
                         {'uuid': '12345'},
                     ],
                     'facets': [],
-                    'total': 30002
+                    'total': 30002,
+                    'shards': [{
+                        'successful': 10,
+                        'failed': 0,
+                        'total': 10,
+                    }],
                 }
             else:
                 # second search
@@ -310,7 +316,12 @@ class TestHealthcheckViews(BaseTestViews):
                         {'uuid': '3969175'},
                     ],
                     'facets': [],
-                    'total': 30004
+                    'total': 30004,
+                    'shards': [{
+                        'successful': 10,
+                        'failed': 0,
+                        'total': 10,
+                    }],
                 }
 
         SuperSearch.implementation().get.side_effect = (
@@ -325,6 +336,7 @@ class TestHealthcheckViews(BaseTestViews):
 
         def mocked_supersearch_get(**params):
             searches.append(params)
+            assert params['_return_shards']
             eq_(params['product'], [settings.DEFAULT_PRODUCT])
             if len(searches) == 1:
                 # this is the first one
@@ -335,7 +347,12 @@ class TestHealthcheckViews(BaseTestViews):
                         {'uuid': '12345'},
                     ],
                     'facets': [],
-                    'total': 320
+                    'total': 320,
+                    'shards': [{
+                        'successful': 10,
+                        'failed': 0,
+                        'total': 10,
+                    }],
                 }
             else:
                 # second search
@@ -348,7 +365,12 @@ class TestHealthcheckViews(BaseTestViews):
                         {'uuid': '3969175'},
                     ],
                     'facets': [],
-                    'total': 320
+                    'total': 320,
+                    'shards': [{
+                        'successful': 10,
+                        'failed': 0,
+                        'total': 10,
+                    }],
                 }
 
         SuperSearch.implementation().get.side_effect = (
@@ -359,3 +381,37 @@ class TestHealthcheckViews(BaseTestViews):
             assert_supersearch_counts
         )
         assert len(searches) == 2
+
+    def test_assert_supersearch_counts_failing_shards(self):
+
+        searches = []
+
+        def mocked_supersearch_get(**params):
+            searches.append(params)
+            assert params['_return_shards']
+            eq_(params['product'], [settings.DEFAULT_PRODUCT])
+            if len(searches) == 1:
+                # this is the first one
+                eq_(params['_results_number'], 0)
+                eq_(params['_columns'], ['uuid'])
+                return {
+                    'hits': [
+                        {'uuid': '12345'},
+                    ],
+                    'facets': [],
+                    'total': 320,
+                    'shards': [{
+                        'successful': 8,
+                        'failed': 2,
+                        'total': 10,
+                    }],
+                }
+
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+        assert_raises(
+            AssertionError,
+            assert_supersearch_counts
+        )
+        assert len(searches) == 1
