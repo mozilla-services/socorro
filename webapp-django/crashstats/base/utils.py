@@ -15,7 +15,7 @@ def render_exception(exception):
     return template.render({'exception': exception})
 
 
-def urlencode_dict(thing):
+def urlencode_obj(thing):
     """Return a URL encoded string, created from a regular dict or any object
     that has a `urlencode` method.
 

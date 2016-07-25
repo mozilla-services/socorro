@@ -7,7 +7,7 @@ from django_jinja import library
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.urlresolvers import reverse
 
-from crashstats.base.utils import urlencode_dict
+from crashstats.base.utils import urlencode_obj
 
 
 @library.global_function
@@ -98,7 +98,7 @@ def change_query_string(context, **kwargs):
 
 @library.global_function
 def make_query_string(**kwargs):
-    return urlencode_dict(kwargs)
+    return urlencode_obj(kwargs)
 
 
 @library.global_function
