@@ -1159,7 +1159,6 @@ def exploitable_crashes(
     """This function is now deprecated in favor of the new one called
     exploitability_report"""
     context = default_context or {}
-
     if product is None:
         return redirect(
             'crashstats:exploitable_crashes',
@@ -2542,7 +2541,7 @@ def graphics_report(request):
     """Return a CSV output of all crashes for a specific date for a
     particular day and a particular product."""
     if (
-        not request.user.is_authenticated() or
+        not request.user.is_active or
         not request.user.has_perm('crashstats.run_long_queries')
     ):
         return http.HttpResponseForbidden(

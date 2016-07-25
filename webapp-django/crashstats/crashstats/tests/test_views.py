@@ -7,13 +7,13 @@ import json
 import urllib
 import random
 import urlparse
+from cStringIO import StringIO
 
 import pyquery
 import mock
-
-from cStringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from nose.plugins.skip import SkipTest
+
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
@@ -1157,6 +1157,15 @@ class TestViews(BaseTestViews):
         # if you try to mess with the paginator it should just load page 1
         response = self.client.get(url, {'page': 'meow'})
         eq_(response.status_code, 200)
+
+        # If you cease to be active, access should be revoked automatically
+        user = User.objects.get(id=user.id)
+        user.is_active = False
+        user.save()
+        assert not user.has_perm('crashstats.view_exploitability')
+        response = self.client.get(url)
+        ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
+        eq_(response.status_code, 302)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
@@ -2441,6 +2450,14 @@ class TestViews(BaseTestViews):
         # Ensure fields have their description in title.
         ok_('No description for this field.' in response.content)
         ok_('Description of the signature field' in response.content)
+
+        # If the user ceases to be active, these PII fields should disappear
+        User.objects.filter(id=user.id).update(is_active=False)
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('peterbe@mozilla.com' not in response.content)
+        ok_(_SAMPLE_META['Email'] not in response.content)
+        ok_(_SAMPLE_META['URL'] not in response.content)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')

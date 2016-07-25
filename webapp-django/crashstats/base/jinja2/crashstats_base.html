@@ -165,7 +165,7 @@
         <div class="login">
             <ul>
                 <li>
-                {% if request.user and request.user.is_authenticated() %}
+                {% if request.user and request.user.is_active %}
                     <a href="{{ url('profile:profile') }}"
                       title="You are signed in as {{ request.user.email }}"
                     >

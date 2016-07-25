@@ -112,6 +112,11 @@ class TestViews(BaseTestViews):
         releases_url = reverse('manage:releases')
         ok_(releases_url in response.content)
 
+        User.objects.filter(id=self.user.id).update(is_active=False)
+        home_url = reverse('manage:home')
+        response = self.client.get(home_url)
+        eq_(response.status_code, 302)
+
     @mock.patch('requests.put')
     @mock.patch('requests.get')
     def test_featured_versions(self, rget, rput):

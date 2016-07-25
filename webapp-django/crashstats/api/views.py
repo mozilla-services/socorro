@@ -239,7 +239,10 @@ def model_wrapper(request, model_name):
         required_permissions = [required_permissions]
     if (
         required_permissions and
-        not has_permissions(request.user, required_permissions)
+        (
+            not request.user.is_active or
+            not has_permissions(request.user, required_permissions)
+        )
     ):
         permission_names = []
         for permission in required_permissions:
@@ -470,7 +473,7 @@ def documentation(request):
         '%s://%s' % (request.is_secure() and 'https' or 'http',
                      RequestSite(request).domain)
     )
-    if request.user.is_authenticated():
+    if request.user.is_active:
         your_tokens = Token.objects.active().filter(user=request.user)
     else:
         your_tokens = Token.objects.none()

@@ -1,7 +1,8 @@
 import pyquery
-
 from nose.tools import eq_, ok_
+
 from django.core.urlresolvers import reverse
+from django.contrib.auth.models import User
 
 from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.models import SuperSearchUnredacted
@@ -100,3 +101,34 @@ class TestViews(BaseTestViews):
                 eq_(cells[1], 'No')
             elif cells[0] == PERMISSIONS['view_exploitability']:
                 eq_(cells[1], 'Yes!')
+
+        # If the user ceases to be active, this page should redirect instead
+        User.objects.filter(id=user.id).update(is_active=False)
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse('crashstats:login') + '?next=%s' % url
+        )
+
+    def test_homepage_profile_footer(self):
+        """This test isn't specifically for the profile page, because
+        it ultimately tests the crashstats_base.html template. But
+        that template has a link to the profile page."""
+        url = reverse('home:home', args=('WaterWolf',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        profile_url = reverse('profile:profile')
+        ok_(profile_url not in response.content)
+
+        # Render again when signed in
+        user = self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(profile_url in response.content)
+
+        # Render again when no longer an active user
+        User.objects.filter(id=user.id).update(is_active=False)
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_(profile_url not in response.content)

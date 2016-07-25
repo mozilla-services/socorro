@@ -87,7 +87,7 @@ def notice_change(before, after):
 def superuser_required(view_func):
     @functools.wraps(view_func)
     def inner(request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        if not request.user.is_active:
             return redirect(settings.LOGIN_URL)
         elif not request.user.is_superuser:
             messages.error(

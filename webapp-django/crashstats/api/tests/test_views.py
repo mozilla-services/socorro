@@ -1627,6 +1627,12 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
         eq_(response.status_code, 200)
 
+        # But if you stop being active, it should break
+        user.is_active = False
+        user.save()
+        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        eq_(response.status_code, 403)
+
     def test_hit_or_not_hit_ratelimit(self):
 
         def mocked_get(**options):
