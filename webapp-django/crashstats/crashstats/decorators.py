@@ -29,7 +29,7 @@ def login_required(
     active and halt the user's access even after the user has signed in.
     """
     actual_decorator = user_passes_test(
-        lambda u: u.is_authenticated() and u.is_active,
+        lambda u: u.is_active,
         login_url=login_url,
         redirect_field_name=redirect_field_name
     )
