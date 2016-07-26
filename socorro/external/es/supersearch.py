@@ -514,6 +514,8 @@ class SuperSearch(SearchBase):
             'total': total,
             'facets': aggregations,
         }
+        print "PARAMS"
+        print params
         if params.get('_return_shards'):
             results['shards'] = shards
         return results

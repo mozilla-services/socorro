@@ -15,9 +15,9 @@ from socorro.unittest.external.es.base import (
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
+import logging
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 class IntegrationTestSuperSearch(ElasticsearchTestCase):
@@ -1741,7 +1741,7 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         res = api.get(**params)
-        eq_(res, {'total': 0, 'hits': [], 'facets': {}})
+        eq_(res, {'total': 0, 'hits': [], 'facets': {}, 'shards': []})
 
     def test_get_too_large_date_range(self):
         # this is a whole year apart
@@ -1766,6 +1766,17 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('query' in query)
         ok_('aggs' in query)
         ok_('size' in query)
+
+    def test_get_return_shards_mode(self):
+        res = self.api.get(
+            signature='js',
+            _return_shards=True
+        )
+        assert res['shards']
+        ok_(isinstance(res['shards'], list))
+        ok_(res['shards'][0]['successful'])
+        ok_(not res['shards'][0]['failed'])
+        ok_(res['shards'][0]['total'])
 
     @minimum_es_version('1.0')
     def test_get_with_zero(self):
