@@ -30,7 +30,7 @@ def main():
     for hit in search['hits']:
         r = requests.get(
             API_BASE.format('ProcessedCrash'),
-            params={'uuid': hit['uuid']}
+            params={'crash_id': hit['uuid']}
         )
         print(r.url)
         crash = r.json()
