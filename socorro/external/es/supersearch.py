@@ -461,7 +461,7 @@ class SuperSearch(SearchBase):
 
         # Query and compute results.
         hits = []
-        shards = []
+        shards = None
 
         if params['_return_query'][0].value[0]:
             # Return only the JSON query that would be sent to elasticsearch.
@@ -478,7 +478,7 @@ class SuperSearch(SearchBase):
         while True:
             try:
                 results = search.execute()
-                shards.append(results._shards)
+                shards = results._shards
                 for hit in results:
                     hits.append(self.format_fields(hit.to_dict()))
 
@@ -514,8 +514,6 @@ class SuperSearch(SearchBase):
             'total': total,
             'facets': aggregations,
         }
-        print "PARAMS"
-        print params
         if params.get('_return_shards'):
             results['shards'] = shards
         return results

@@ -193,9 +193,8 @@ def assert_supersearch_counts():
         _columns=['uuid'],
         _return_shards=True,
     )
-    for shards in results['shards']:
-        assert not shards['failed'], shards['failed']
-        assert shards['successful'], shards['successful']
+    assert not results['shards']['failed'], results['shards']['failed']
+    assert results['shards']['successful'], results['shards']['successful']
     # Use this total just to
     total = results['total']
     # This looks weird but if total is 350 then 350 / 100 is 3
@@ -210,9 +209,8 @@ def assert_supersearch_counts():
         _columns=['uuid'],
         _return_shards=True,
     )
-    for shards in results['shards']:
-        assert not shards['failed'], shards['failed']
-        assert shards['successful'], shards['successful']
+    assert not results['shards']['failed'], results['shards']['failed']
+    assert results['shards']['successful'], results['shards']['successful']
     counted = len(results['hits']) + offset
     # use the second total count
     total = results['total']

@@ -254,35 +254,6 @@ class TestHealthcheckViews(BaseTestViews):
 
     @mock.patch('crashstats.monitoring.views.elasticsearch')
     def test_healthcheck(self, mocked_elasticsearch):
-
-        es_instance = mock.MagicMock()
-
-        def fake_es_instance(**config):
-            eq_(
-                config['hosts'],
-                settings.SOCORRO_IMPLEMENTATIONS_CONFIG
-                ['resource']['elasticsearch']['elasticsearch_urls']
-            )
-            return es_instance
-
-        mocked_elasticsearch.Elasticsearch.side_effect = fake_es_instance
-        url = reverse('monitoring:healthcheck')
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        eq_(json.loads(response.content)['ok'], True)
-
-        es_instance.info.assert_called_with()
-
-        self.assertNumQueries(
-            1,
-            self.client.get,
-            url,
-        )
-
-        eq_(es_instance.info.call_count, 2)
-
-    def test_assert_supersearch_counts(self):
-
         searches = []
 
         def mocked_supersearch_get(**params):
@@ -299,11 +270,11 @@ class TestHealthcheckViews(BaseTestViews):
                     ],
                     'facets': [],
                     'total': 30002,
-                    'shards': [{
+                    'shards': {
                         'successful': 10,
                         'failed': 0,
                         'total': 10,
-                    }],
+                    },
                 }
             else:
                 # second search
@@ -317,21 +288,25 @@ class TestHealthcheckViews(BaseTestViews):
                     ],
                     'facets': [],
                     'total': 30004,
-                    'shards': [{
+                    'shards': {
                         'successful': 10,
                         'failed': 0,
                         'total': 10,
-                    }],
+                    },
                 }
 
         SuperSearch.implementation().get.side_effect = (
             mocked_supersearch_get
         )
-        assert_supersearch_counts()
+
+        url = reverse('monitoring:healthcheck')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(json.loads(response.content)['ok'], True)
+
         assert len(searches) == 2
 
     def test_assert_supersearch_counts_failing(self):
-
         searches = []
 
         def mocked_supersearch_get(**params):
@@ -348,11 +323,11 @@ class TestHealthcheckViews(BaseTestViews):
                     ],
                     'facets': [],
                     'total': 320,
-                    'shards': [{
+                    'shards': {
                         'successful': 10,
                         'failed': 0,
                         'total': 10,
-                    }],
+                    },
                 }
             else:
                 # second search
@@ -366,11 +341,11 @@ class TestHealthcheckViews(BaseTestViews):
                     ],
                     'facets': [],
                     'total': 320,
-                    'shards': [{
+                    'shards': {
                         'successful': 10,
                         'failed': 0,
                         'total': 10,
-                    }],
+                    },
                 }
 
         SuperSearch.implementation().get.side_effect = (
@@ -400,11 +375,11 @@ class TestHealthcheckViews(BaseTestViews):
                     ],
                     'facets': [],
                     'total': 320,
-                    'shards': [{
+                    'shards': {
                         'successful': 8,
                         'failed': 2,
                         'total': 10,
-                    }],
+                    },
                 }
 
         SuperSearch.implementation().get.side_effect = (
