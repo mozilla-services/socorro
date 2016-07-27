@@ -265,6 +265,9 @@ def model_wrapper(request, model_name):
 
     instance = model()
 
+    # Any additional headers we intend to set on the response
+    headers = {}
+
     # Certain models need to know who the user is to be able to
     # internally use that to determine its output.
     instance.api_user = request.user
@@ -417,10 +420,21 @@ def model_wrapper(request, model_name):
             result['DEPRECATION_WARNING'] = model.deprecation_warning
         # If you return a tuple of two dicts, the second one becomes
         # the extra headers.
-        return result, {
-            'DEPRECATION-WARNING': model.deprecation_warning.replace('\n', ' ')
-        }
-    return result
+        # return result, {
+        headers['DEPRECATION-WARNING'] = (
+            model.deprecation_warning.replace('\n', ' ')
+        )
+
+    if model.cache_seconds:
+        # We can set a Cache-Control header.
+        # We say 'private' because the content can depend on the user
+        # and we don't want the response to be collected in HTTP proxies
+        # by mistake.
+        headers['Cache-Control'] = 'private, max-age={}'.format(
+            model.cache_seconds,
+        )
+
+    return result, headers
 
 
 @waffle_switch('!app_api_all_disabled')
