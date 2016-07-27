@@ -1805,6 +1805,61 @@ class TestViews(BaseTestViews):
         ok_(is_percentage(first_row[3]))  # throttle
         ok_(is_percentage(first_row[4]))  # ratio
 
+    @mock.patch('requests.get')
+    def test_crashes_per_day_failing_shards(self, rget):
+        url = reverse('crashstats:crashes_per_day')
+
+        def mocked_adi_get(**options):
+            return {
+                'total': 0,
+                'hits': []
+            }
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
+
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
+
+        def mocked_supersearch_get(**params):
+            return {
+                'facets': {
+                    'histogram_date': [],
+                    'signature': [],
+                    'version': []
+                },
+                'hits': [],
+                'total': 21187,
+                'errors': [
+                    {
+                        'type': 'shards',
+                        'index': 'socorro201001',
+                        'shards_count': 2,
+                    }
+                ],
+            }
+
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        response = self.client.get(url, {
+            'p': 'WaterWolf',
+            'v': ['20.0', '19.0']
+        })
+        eq_(response.status_code, 200)
+
+        ok_('Our database is experiencing troubles' in response.content)
+        ok_('week of 2010-01-04 is ~40% lower' in response.content)
+
     def test_crashes_per_day_legacy_by_build_date(self):
         url = reverse('crashstats:crashes_per_day')
 

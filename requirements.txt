@@ -262,3 +262,5 @@ functools32==3.2.3-2 \
 requests-mock==1.0.0 \
     --hash=sha256:c6c659e50a312eb5cf0191ae33d6b232909e4a248551e79cef11c3c93497923d \
     --hash=sha256:3d58070a781befed02036f9359ddc193d7227d04d53d3f6bccfbc3d2d0662638
+isoweek==1.3.0 \
+    --hash=sha256:e7c7625e093df53a37321f98d9d6ea08e7a78d977e7db0933eb66569eda1a179
