@@ -483,17 +483,13 @@ class SuperSearch(SearchBase):
 
                 total = search.count()
 
-                try:
+                aggregations = getattr(results, 'aggregations', {})
+                if aggregations:
                     aggregations = self.format_aggregations(
                         results.aggregations
                     )
-                except AttributeError:
-                    aggregations = {}
 
-                try:
-                    shards = results._shards
-                except AttributeError:
-                    shards = {}
+                shards = getattr(results, '_shards', {})
 
                 break  # Yay! Results!
             except NotFoundError, e:
@@ -539,8 +535,6 @@ class SuperSearch(SearchBase):
                     'index': index,
                     'shards_count': shards_count,
                 })
-
-            # TODO: send an error to sentry?
 
         return {
             'hits': hits,
