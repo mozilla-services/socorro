@@ -464,10 +464,10 @@ class BaseTestViews(DjangoTestCase):
         # once like they are in unit test running.
         SocorroCommon.clear_implementations_cache()
 
-    def _login(self):
-        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
-        return user
+    def _login(self, username='test', password='s', email='test@mozilla.com'):
+        User.objects.create_user(username, email, password)
+        assert self.client.login(username=username, password=password)
+        return User.objects.get(username=username)
 
     def _logout(self):
         self.client.logout()
@@ -1159,7 +1159,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         # If you cease to be active, access should be revoked automatically
-        user = User.objects.get(id=user.id)
         user.is_active = False
         user.save()
         assert not user.has_perm('crashstats.view_exploitability')
@@ -2359,7 +2358,7 @@ class TestViews(BaseTestViews):
     def test_report_index(self, rget, rpost):
         dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@mozilla.com'
+        comment0 += '\npeterbe@example.com'
         comment0 += '\nwww.p0rn.com'
 
         rpost.side_effect = mocked_post_threeothersigs
@@ -2410,13 +2409,13 @@ class TestViews(BaseTestViews):
         comment_transformed = (
             comment0
             .replace('\n', '<br />')
-            .replace('peterbe@mozilla.com', '(email removed)')
+            .replace('peterbe@example.com', '(email removed)')
             .replace('www.p0rn.com', '(URL removed)')
         )
 
         ok_(comment_transformed in response.content)
         # but the email should have been scrubbed
-        ok_('peterbe@mozilla.com' not in response.content)
+        ok_('peterbe@example.com' not in response.content)
         ok_(_SAMPLE_META['Email'] not in response.content)
         ok_(_SAMPLE_META['URL'] not in response.content)
         ok_(
@@ -2440,7 +2439,7 @@ class TestViews(BaseTestViews):
         assert user.has_perm('crashstats.view_pii')
 
         response = self.client.get(url)
-        ok_('peterbe@mozilla.com' in response.content)
+        ok_('peterbe@example.com' in response.content)
         ok_(_SAMPLE_META['Email'] in response.content)
         ok_(_SAMPLE_META['URL'] in response.content)
         ok_('&#34;sensitive&#34;' in response.content)
@@ -2452,10 +2451,11 @@ class TestViews(BaseTestViews):
         ok_('Description of the signature field' in response.content)
 
         # If the user ceases to be active, these PII fields should disappear
-        User.objects.filter(id=user.id).update(is_active=False)
+        user.is_active = False
+        user.save()
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('peterbe@mozilla.com' not in response.content)
+        ok_('peterbe@example.com' not in response.content)
         ok_(_SAMPLE_META['Email'] not in response.content)
         ok_(_SAMPLE_META['URL'] not in response.content)
 

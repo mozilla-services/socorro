@@ -40,7 +40,8 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-        User.objects.filter(id=user.id).update(is_active=False)
+        user.is_active = False
+        user.save()
         response = self.client.get(url)
         self.assertRedirects(
             response,

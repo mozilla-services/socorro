@@ -161,8 +161,9 @@ class TestViews(BaseTestViews):
             ok_(link['url'] in response.content)
             ok_(link['label'] in response.content)
 
-        # The access should disappar if you cease to be active
-        User.objects.filter(id=user.id).update(is_active=False)
+        # The access should disappear if you cease to be active
+        user.is_active = False
+        user.save()
         response = self.client.get(url)
         eq_(response.status_code, 302)
         self.assertRedirects(

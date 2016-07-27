@@ -2,7 +2,6 @@ import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User
 
 from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.models import SuperSearchUnredacted
@@ -103,7 +102,8 @@ class TestViews(BaseTestViews):
                 eq_(cells[1], 'Yes!')
 
         # If the user ceases to be active, this page should redirect instead
-        User.objects.filter(id=user.id).update(is_active=False)
+        user.is_active = False
+        user.save()
         response = self.client.get(url)
         eq_(response.status_code, 302)
         self.assertRedirects(
@@ -128,7 +128,8 @@ class TestViews(BaseTestViews):
         ok_(profile_url in response.content)
 
         # Render again when no longer an active user
-        User.objects.filter(id=user.id).update(is_active=False)
+        user.is_active = False
+        user.save()
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_(profile_url not in response.content)

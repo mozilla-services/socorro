@@ -57,12 +57,13 @@ class TestViews(BaseTestViews):
         models.ProductVersions().get(active=True)
 
     def _login(self, is_superuser=True):
-        self.user = User.objects.create_user('kairo', 'kai@ro.com', 'secret')
-        self.user.is_superuser = is_superuser
-        # django doesn't set this unless the user has actually signed in
-        self.user.last_login = datetime.datetime.utcnow()
-        self.user.save()
-        assert self.client.login(username='kairo', password='secret')
+        user = super(TestViews, self)._login(
+            username='kairo',
+            email='kai@ro.com',
+        )
+        user.is_superuser = is_superuser
+        user.save()
+        return user
 
     def _create_permission(self, name='Mess Around', codename='mess_around'):
         ct, __ = ContentType.objects.get_or_create(
@@ -94,7 +95,7 @@ class TestViews(BaseTestViews):
         ok_('You need to be a superuser to access this' in response.content)
 
     def test_home_page_signed_in(self):
-        self._login()
+        user = self._login()
         # at the moment it just redirects
         home_url = reverse('manage:home')
         response = self.client.get(home_url)
@@ -112,7 +113,8 @@ class TestViews(BaseTestViews):
         releases_url = reverse('manage:releases')
         ok_(releases_url in response.content)
 
-        User.objects.filter(id=self.user.id).update(is_active=False)
+        user.is_active = False
+        user.save()
         home_url = reverse('manage:home')
         response = self.client.get(home_url)
         eq_(response.status_code, 302)
@@ -120,7 +122,7 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.put')
     @mock.patch('requests.get')
     def test_featured_versions(self, rget, rput):
-        self._login()
+        user = self._login()
         url = reverse('manage:featured_versions')
 
         put_calls = []  # some mutable
@@ -205,7 +207,7 @@ class TestViews(BaseTestViews):
 
         # check that it got logged
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'featured_versions.update')
         eq_(event.extra['success'], True)
         eq_(event.extra['data'], {'WaterWolf': ['18.0.1']})
@@ -279,19 +281,19 @@ class TestViews(BaseTestViews):
         url = reverse('manage:users_data')
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        self._login()
+        user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 200)
         data = json.loads(response.content)
         eq_(data['count'], 1)
-        eq_(data['users'][0]['email'], self.user.email)
-        eq_(data['users'][0]['id'], self.user.pk)
+        eq_(data['users'][0]['email'], user.email)
+        eq_(data['users'][0]['id'], user.pk)
         eq_(data['users'][0]['is_superuser'], True)
         eq_(data['users'][0]['is_active'], True)
         eq_(data['users'][0]['groups'], [])
 
         austrians = Group.objects.create(name='Austrians')
-        self.user.groups.add(austrians)
+        user.groups.add(austrians)
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -305,9 +307,9 @@ class TestViews(BaseTestViews):
         url = reverse('manage:users_data')
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        self._login()
-        self.user.last_login -= datetime.timedelta(days=365)
-        self.user.save()
+        user = self._login()
+        user.last_login -= datetime.timedelta(days=365)
+        user.save()
         now = timezone.now()
         for i in range(1, 101):  # 100 times, 1-100
             User.objects.create(
@@ -341,7 +343,7 @@ class TestViews(BaseTestViews):
         data = json.loads(response.content)
         eq_(data['count'], 101)
         # because it's sorted by last_login
-        eq_(data['users'][0]['email'], self.user.email)
+        eq_(data['users'][0]['email'], user.email)
         eq_(len(data['users']), 1)
         eq_(data['page'], 11)
         eq_(data['batch_size'], settings.USERS_ADMIN_BATCH_SIZE)
@@ -445,7 +447,7 @@ class TestViews(BaseTestViews):
         url = reverse('manage:user', args=(bob.pk,))
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        self._login()
+        user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('bob@example.com' in response.content)
@@ -465,7 +467,7 @@ class TestViews(BaseTestViews):
 
         # check that the event got logged
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'user.edit')
         eq_(event.extra['id'], bob.pk)
         change = event.extra['change']
@@ -493,7 +495,7 @@ class TestViews(BaseTestViews):
 
     def test_group(self):
         url = reverse('manage:groups')
-        self._login()
+        user = self._login()
         ct = ContentType.objects.create(
             model='',
             app_label='crashstats.crashstats',
@@ -525,7 +527,7 @@ class TestViews(BaseTestViews):
 
         # check that it got logged
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'group.add')
         eq_(event.extra, {
             'id': group.id,
@@ -547,7 +549,7 @@ class TestViews(BaseTestViews):
         eq_(list(group.permissions.all()), [p1])
 
         event, = Log.objects.all()[:1]
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'group.edit')
         eq_(event.extra['change']['name'], ['New Group', 'New New Group'])
         eq_(event.extra['change']['permissions'], [
@@ -561,7 +563,7 @@ class TestViews(BaseTestViews):
         ok_(not Group.objects.filter(name=data['name']))
 
         event, = Log.objects.all()[:1]
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'group.delete')
         eq_(event.extra['name'], data['name'])
 
@@ -628,7 +630,7 @@ class TestViews(BaseTestViews):
         )
 
     def test_graphics_devices_edit(self):
-        self._login()
+        user = self._login()
         url = reverse('manage:graphics_devices')
 
         def mocked_post(**payload):
@@ -659,13 +661,13 @@ class TestViews(BaseTestViews):
         ok_(url in response['location'])
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'graphicsdevices.add')
         eq_(event.extra['payload'], [data])
         eq_(event.extra['success'], True)
 
     def test_graphics_devices_csv_upload_pcidatabase_com(self):
-        self._login()
+        user = self._login()
         url = reverse('manage:graphics_devices')
 
         def mocked_post(**payload):
@@ -699,14 +701,14 @@ class TestViews(BaseTestViews):
             ok_(url in response['location'])
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'graphicsdevices.post')
         eq_(event.extra['success'], True)
         eq_(event.extra['database'], 'pcidatabase.com')
         eq_(event.extra['no_lines'], 7)
 
     def test_graphics_devices_csv_upload_pci_ids(self):
-        self._login()
+        user = self._login()
         url = reverse('manage:graphics_devices')
 
         def mocked_post(**payload):
@@ -740,7 +742,7 @@ class TestViews(BaseTestViews):
             ok_(url in response['location'])
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'graphicsdevices.post')
         eq_(event.extra['success'], True)
         eq_(event.extra['database'], 'pci.ids')
@@ -903,7 +905,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
     def test_supersearch_field_create(self):
-        self._login()
+        user = self._login()
         url = reverse('manage:supersearch_field_create')
 
         def mocked_supersearchfields_get_fields(**params):
@@ -931,7 +933,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'supersearch_field.post')
         eq_(event.extra['name'], 'something')
 
@@ -945,7 +947,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
     def test_supersearch_field_update(self):
-        self._login()
+        user = self._login()
         url = reverse('manage:supersearch_field_update')
 
         # Create a permission to test permission validation.
@@ -1000,7 +1002,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'supersearch_field.put')
         eq_(event.extra['name'], 'something')
 
@@ -1014,7 +1016,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
     def test_supersearch_field_delete(self):
-        self._login()
+        user = self._login()
         url = reverse('manage:supersearch_field_delete')
 
         def mocked_supersearchfields_get_fields(**params):
@@ -1035,7 +1037,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'supersearch_field.delete')
         eq_(event.extra['name'], 'signature')
 
@@ -1053,7 +1055,7 @@ class TestViews(BaseTestViews):
             mocked_post
         )
 
-        self._login()
+        user = self._login()
         url = reverse('manage:products')
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1075,7 +1077,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'product.add')
         eq_(event.extra['product'], 'WaterCat')
 
@@ -1093,7 +1095,7 @@ class TestViews(BaseTestViews):
 
         rpost.side_effect = mocked_post
 
-        self._login()
+        user = self._login()
         url = reverse('manage:releases')
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -1137,7 +1139,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 302)
 
         event, = Log.objects.all()
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'release.add')
         eq_(event.extra['product'], 'WaterCat')
 
@@ -1177,19 +1179,19 @@ class TestViews(BaseTestViews):
         url = reverse('manage:events')
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        self._login()
+        user = self._login()
 
         # this page will iterate over all unique possible Log actions
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='actionA'
         )
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='actionB'
         )
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='actionA'
         )
         response = self.client.get(url)
@@ -1202,10 +1204,10 @@ class TestViews(BaseTestViews):
         url = reverse('manage:events_data')
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        self._login()
+        user = self._login()
 
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='actionA',
             extra={'foo': True}
         )
@@ -1269,32 +1271,32 @@ class TestViews(BaseTestViews):
 
     def test_events_data_urls(self):
         """some logged events have a URL associated with them"""
-        self._login()
+        user = self._login()
 
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='user.edit',
-            extra={'id': self.user.id}
+            extra={'id': user.id}
         )
 
         group = Group.objects.create(name='Wackos')
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='group.add',
             extra={'id': group.id}
         )
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='group.edit',
             extra={'id': group.id}
         )
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='supersearch_field.post',
             extra={'name': 'sig1'}
         )
         Log.objects.create(
-            user=self.user,
+            user=user,
             action='supersearch_field.put',
             extra={'name': 'sig2'}
         )
@@ -1303,7 +1305,7 @@ class TestViews(BaseTestViews):
         data = json.loads(response.content)
         eq_(data['count'], 5)
         five, four, three, two, one = data['events']
-        eq_(one['url'], reverse('manage:user', args=(self.user.id,)))
+        eq_(one['url'], reverse('manage:user', args=(user.id,)))
         eq_(two['url'], reverse('manage:group', args=(group.id,)))
         eq_(three['url'], reverse('manage:group', args=(group.id,)))
         eq_(four['url'], reverse('manage:supersearch_field') + '?name=sig1')
@@ -1327,7 +1329,7 @@ class TestViews(BaseTestViews):
         )
 
     def test_create_api_token(self):
-        self._login()
+        superuser = self._login()
         user = User.objects.create_user(
             'user',
             'user@example.com',
@@ -1358,7 +1360,7 @@ class TestViews(BaseTestViews):
 
         event, = Log.objects.all()
 
-        eq_(event.user, self.user)
+        eq_(event.user, superuser)
         eq_(event.action, 'api_token.create')
         eq_(event.extra['notes'], 'Some notes')
         ok_(event.extra['expires'])
@@ -1454,7 +1456,7 @@ class TestViews(BaseTestViews):
         url = reverse('manage:api_tokens_data')
         response = self.client.get(url)
         eq_(response.status_code, 302)
-        self._login()
+        user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 200)
         result = json.loads(response.content)
@@ -1468,7 +1470,7 @@ class TestViews(BaseTestViews):
             days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
         )
         token = Token.objects.create(
-            user=self.user,
+            user=user,
             notes='Some notes',
             expires=expires
         )
@@ -1485,7 +1487,7 @@ class TestViews(BaseTestViews):
             'id': token.id,
             'expired': False,
             'permissions': [permission.name],
-            'user': self.user.email,
+            'user': user.email,
             'key': token.key,
         }
         eq_(result['tokens'], [expected_token])
@@ -1499,7 +1501,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 400)
 
         # filter by email
-        response = self.client.get(url, {'email': self.user.email[:5]})
+        response = self.client.get(url, {'email': user.email[:5]})
         eq_(response.status_code, 200)
         result = json.loads(response.content)
         eq_(result['tokens'], [expected_token])
@@ -1549,7 +1551,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 405)
         response = self.client.post(url)
         eq_(response.status_code, 302)
-        self._login()
+        user = self._login()
         response = self.client.post(url)
         eq_(response.status_code, 400)
         response = self.client.post(url, {'id': '99999'})
@@ -1560,7 +1562,7 @@ class TestViews(BaseTestViews):
             days=settings.TOKENS_DEFAULT_EXPIRATION_DAYS
         )
         token = Token.objects.create(
-            user=self.user,
+            user=user,
             notes='Some notes',
             expires=expires
         )
@@ -1575,10 +1577,10 @@ class TestViews(BaseTestViews):
 
         event, = Log.objects.all()
 
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'api_token.delete')
         eq_(event.extra['notes'], 'Some notes')
-        eq_(event.extra['user'], self.user.email)
+        eq_(event.extra['user'], user.email)
         eq_(event.extra['permissions'], permission.name)
 
     def test_crash_me_now(self):
