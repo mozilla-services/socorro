@@ -1822,6 +1822,8 @@ class ADI(SocorroMiddleware):
 
 class ProductBuildTypes(SocorroMiddleware):
 
+    cache_seconds = 60 * 60 * 24
+
     implementation = (
         socorro.external.postgresql.product_build_types.ProductBuildTypes
     )

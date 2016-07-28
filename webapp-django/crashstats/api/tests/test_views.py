@@ -26,6 +26,7 @@ from crashstats.crashstats.models import (
     CrontabberState,
     CurrentProducts,
     Reprocessing,
+    ProductBuildTypes,
 )
 from crashstats.tokens.models import Token
 
@@ -177,6 +178,32 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         eq_(response['Access-Control-Allow-Origin'], '*')
+
+    def test_cache_control(self):
+        """successful queries against models with caching should
+        set a Cache-Control header."""
+
+        def mocked_get(**options):
+            assert options['product'] == settings.DEFAULT_PRODUCT
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'nightly': 1.0,
+                    'beta': 1.0,
+                    'aurora': 1.0,
+                    'esr': 1.0,
+                }
+            }
+
+        ProductBuildTypes.implementation().get.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('ProductBuildTypes',))
+        response = self.client.get(url, {'product': settings.DEFAULT_PRODUCT})
+        eq_(response.status_code, 200)
+        assert response['Cache-Control']
+        ok_('private' in response['Cache-Control'])
+        cache_seconds = ProductBuildTypes.cache_seconds
+        ok_('max-age={}'.format(cache_seconds) in response['Cache-Control'])
 
     @mock.patch('requests.get')
     def test_CrashesPerAdu_too_much(self, rget):
