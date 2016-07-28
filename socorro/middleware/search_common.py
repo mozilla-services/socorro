@@ -98,6 +98,7 @@ class SearchBase(object):
         SearchFilter('_results_number', data_type='int', default=100),
         SearchFilter('_results_offset', data_type='int', default=0),
         SearchFilter('_return_query', data_type='bool', default=False),
+        SearchFilter('_return_shards', data_type='bool', default=False),
         SearchFilter('_sort', default=''),
     )
 

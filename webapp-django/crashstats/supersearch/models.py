@@ -21,6 +21,7 @@ SUPERSEARCH_META_PARAMS = (
     ('_results_number', int),
     '_return_query',
     ('_sort', list),
+    '_return_shards',
 )
 
 
@@ -176,7 +177,6 @@ class SuperSearch(ESSocorroMiddleware):
 
         # SuperSearch requires that the list of fields be passed to it.
         kwargs['_fields'] = self.all_fields
-
         return super(SuperSearch, self).get(**kwargs)
 
 

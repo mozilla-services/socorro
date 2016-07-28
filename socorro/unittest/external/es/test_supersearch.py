@@ -1767,6 +1767,16 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('aggs' in query)
         ok_('size' in query)
 
+    def test_get_return_shards_mode(self):
+        res = self.api.get(
+            signature='js',
+            _return_shards=True
+        )
+        assert res['shards']
+        ok_(res['shards']['successful'])
+        ok_(not res['shards']['failed'])
+        ok_(res['shards']['total'])
+
     @minimum_es_version('1.0')
     def test_get_with_zero(self):
         res = self.api.get(

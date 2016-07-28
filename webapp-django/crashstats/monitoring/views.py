@@ -191,7 +191,10 @@ def assert_supersearch_counts():
         product=settings.DEFAULT_PRODUCT,
         _results_number=0,
         _columns=['uuid'],
+        _return_shards=True,
     )
+    assert not results['shards']['failed'], results['shards']['failed']
+    assert results['shards']['successful'], results['shards']['successful']
     # Use this total just to
     total = results['total']
     # This looks weird but if total is 350 then 350 / 100 is 3
@@ -204,7 +207,10 @@ def assert_supersearch_counts():
         _results_number=limit,
         _results_offset=offset,
         _columns=['uuid'],
+        _return_shards=True,
     )
+    assert not results['shards']['failed'], results['shards']['failed']
+    assert results['shards']['successful'], results['shards']['successful']
     counted = len(results['hits']) + offset
     # use the second total count
     total = results['total']

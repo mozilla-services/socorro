@@ -461,6 +461,7 @@ class SuperSearch(SearchBase):
 
         # Query and compute results.
         hits = []
+        shards = None
 
         if params['_return_query'][0].value[0]:
             # Return only the JSON query that would be sent to elasticsearch.
@@ -477,6 +478,7 @@ class SuperSearch(SearchBase):
         while True:
             try:
                 results = search.execute()
+                shards = results._shards
                 for hit in results:
                     hits.append(self.format_fields(hit.to_dict()))
 
@@ -507,11 +509,14 @@ class SuperSearch(SearchBase):
                     aggregations = {}
                     break
 
-        return {
+        results = {
             'hits': hits,
             'total': total,
             'facets': aggregations,
         }
+        if params.get('_return_shards'):
+            results['shards'] = shards
+        return results
 
     def _get_histogram_agg(self, field, intervals):
         histogram_type = (
