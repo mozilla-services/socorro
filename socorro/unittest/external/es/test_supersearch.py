@@ -1744,7 +1744,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         res = api.get(**params)
-        eq_(res, {'total': 0, 'hits': [], 'facets': {}})
+        eq_(res['total'], 0)
+        eq_(len(res['hits']), 0)
+        eq_(len(res['errors']), 3)  # 3 weeks are missing
 
     def test_get_too_large_date_range(self):
         # this is a whole year apart

@@ -483,9 +483,9 @@ class SuperSearch(SearchBase):
 
                 total = search.count()
 
-                aggregations = self.format_aggregations(
-                    getattr(results, 'aggregations', {})
-                )
+                aggregations = getattr(results, 'aggregations', {})
+                if aggregations:
+                    aggregations = self.format_aggregations(aggregations)
 
                 shards = getattr(results, '_shards', {})
 
