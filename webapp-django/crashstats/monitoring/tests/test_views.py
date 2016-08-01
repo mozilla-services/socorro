@@ -11,7 +11,7 @@ from django.utils import timezone
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.crashstats.models import CrontabberState
 from crashstats.supersearch.models import SuperSearch
-from crashstats.monitoring.views import assert_supersearch_counts
+from crashstats.monitoring.views import assert_supersearch_no_errors
 
 
 class TestViews(BaseTestViews):
@@ -254,108 +254,55 @@ class TestHealthcheckViews(BaseTestViews):
 
     @mock.patch('crashstats.monitoring.views.elasticsearch')
     def test_healthcheck(self, mocked_elasticsearch):
+        searches = []
 
-        es_instance = mock.MagicMock()
+        def mocked_supersearch_get(**params):
+            searches.append(params)
+            eq_(params['product'], [settings.DEFAULT_PRODUCT])
+            eq_(params['_results_number'], 1)
+            eq_(params['_columns'], ['uuid'])
+            return {
+                'hits': [
+                    {'uuid': '12345'},
+                ],
+                'facets': [],
+                'total': 30002,
+                'errors': [],
+            }
 
-        def fake_es_instance(**config):
-            eq_(
-                config['hosts'],
-                settings.SOCORRO_IMPLEMENTATIONS_CONFIG
-                ['resource']['elasticsearch']['elasticsearch_urls']
-            )
-            return es_instance
+        SuperSearch.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
 
-        mocked_elasticsearch.Elasticsearch.side_effect = fake_es_instance
         url = reverse('monitoring:healthcheck')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         eq_(json.loads(response.content)['ok'], True)
 
-        es_instance.info.assert_called_with()
+        assert len(searches) == 1
 
-        self.assertNumQueries(
-            1,
-            self.client.get,
-            url,
-        )
-
-        eq_(es_instance.info.call_count, 2)
-
-    def test_assert_supersearch_counts(self):
-
+    def test_assert_supersearch_errors(self):
         searches = []
 
         def mocked_supersearch_get(**params):
             searches.append(params)
             eq_(params['product'], [settings.DEFAULT_PRODUCT])
-            if len(searches) == 1:
-                # this is the first one
-                eq_(params['_results_number'], 0)
-                eq_(params['_columns'], ['uuid'])
-                return {
-                    'hits': [
-                        {'uuid': '12345'},
-                    ],
-                    'facets': [],
-                    'total': 30002
-                }
-            else:
-                # second search
-                eq_(params['_results_number'], 100)
-                eq_(params['_results_offset'], 30000)
-                return {
-                    'hits': [
-                        {'uuid': '0128940'},
-                        {'uuid': '9156826'},
-                        {'uuid': '3969175'},
-                    ],
-                    'facets': [],
-                    'total': 30004
-                }
-
-        SuperSearch.implementation().get.side_effect = (
-            mocked_supersearch_get
-        )
-        assert_supersearch_counts()
-        assert len(searches) == 2
-
-    def test_assert_supersearch_counts_failing(self):
-
-        searches = []
-
-        def mocked_supersearch_get(**params):
-            searches.append(params)
-            eq_(params['product'], [settings.DEFAULT_PRODUCT])
-            if len(searches) == 1:
-                # this is the first one
-                eq_(params['_results_number'], 0)
-                eq_(params['_columns'], ['uuid'])
-                return {
-                    'hits': [
-                        {'uuid': '12345'},
-                    ],
-                    'facets': [],
-                    'total': 320
-                }
-            else:
-                # second search
-                eq_(params['_results_number'], 100)
-                eq_(params['_results_offset'], 300)
-                return {
-                    'hits': [
-                        {'uuid': '0128940'},
-                        {'uuid': '9156826'},
-                        {'uuid': '3969175'},
-                    ],
-                    'facets': [],
-                    'total': 320
-                }
+            eq_(params['_results_number'], 1)
+            eq_(params['_columns'], ['uuid'])
+            return {
+                'hits': [
+                    {'uuid': '12345'},
+                ],
+                'facets': [],
+                'total': 320,
+                'errors': ['bad'],
+            }
 
         SuperSearch.implementation().get.side_effect = (
             mocked_supersearch_get
         )
         assert_raises(
             AssertionError,
-            assert_supersearch_counts
+            assert_supersearch_no_errors
         )
-        assert len(searches) == 2
+        assert len(searches) == 1
