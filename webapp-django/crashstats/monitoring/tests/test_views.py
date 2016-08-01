@@ -259,7 +259,6 @@ class TestHealthcheckViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             searches.append(params)
             eq_(params['product'], [settings.DEFAULT_PRODUCT])
-            # this is the first one
             eq_(params['_results_number'], 1)
             eq_(params['_columns'], ['uuid'])
             return {
@@ -288,7 +287,6 @@ class TestHealthcheckViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             searches.append(params)
             eq_(params['product'], [settings.DEFAULT_PRODUCT])
-            # this is the first one
             eq_(params['_results_number'], 1)
             eq_(params['_columns'], ['uuid'])
             return {

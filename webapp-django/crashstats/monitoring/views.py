@@ -175,7 +175,7 @@ def healthcheck(request):
 
 
 def assert_supersearch_no_errors():
-    """Makre sure an uncached SuperSearch query doesn't have any errors"""
+    """Make sure an uncached SuperSearch query doesn't have any errors"""
     supersearch = SuperSearch()
     # We don't want any caching this time
     supersearch.cache_seconds = 0
