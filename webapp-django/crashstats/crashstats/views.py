@@ -1127,7 +1127,7 @@ def crashes_per_day(request, default_context=None):
         week = int(error['index'][-2:])
         year = int(error['index'][-6:-2])
         day = isoweek.Week(year, week).monday()
-        percent = error['shards_count'] * 100 / 5
+        percent = error['shards_count'] * 100 / settings.ES_SHARDS_PER_INDEX
         errors.append(
             'The data for the week of {} is ~{}% lower than expected.'.format(
                 day, percent

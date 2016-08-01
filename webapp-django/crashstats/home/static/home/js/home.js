@@ -40,6 +40,7 @@ $(function () {
     var versions = container.data('versions');
     var platforms = container.data('platforms');
     var duration = container.data('duration');
+    var esShardsPerIndex = container.data('es-shards-per-index');
 
     var pageTitle = $('title').text();
 
@@ -399,7 +400,7 @@ $(function () {
         var week = error.index.slice(-2);
         var year = error.index.slice(-6, error.index.length - 2);
         var firstDay = getDateOfISOWeek(year, week);
-        var percent = error.shards_count / 5 * 100; // because we have 5 shards per index
+        var percent = error.shards_count * 100 / esShardsPerIndex;
 
         $('.message', container)
             .append(

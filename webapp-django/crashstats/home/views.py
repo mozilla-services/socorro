@@ -5,6 +5,7 @@ from django.views.generic.base import RedirectView
 
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.crashstats import models
+
 from . import forms
 
 
@@ -33,6 +34,8 @@ def home(request, product, default_context=None):
     platforms_api = models.Platforms()
     platforms = platforms_api.get()
     context['platforms'] = [x['name'] for x in platforms if x.get('display')]
+
+    context['es_shards_per_index'] = settings.ES_SHARDS_PER_INDEX
 
     return render(request, 'home/home.html', context)
 

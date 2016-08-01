@@ -51,6 +51,7 @@ Crash Data for {{ product }}
             data-versions="{{ versions | to_json }}"
             data-platforms="{{ platforms | to_json }}"
             data-duration="{{ days }}"
+            data-es-shards-per-index="{{ es_shards_per_index }}"
         >
             <div class="message error hide"></div>
             <div id="homepage-graph-graph"></div>
