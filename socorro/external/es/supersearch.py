@@ -4,17 +4,16 @@
 
 import datetime
 import re
+from collections import defaultdict
 
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch_dsl import A, F, Q, Search
-
 from socorrolib.lib import (
     BadArgumentError,
     MissingArgumentError,
     datetimeutil,
 )
 
-from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.middleware.search_common import SearchBase
 
 
@@ -469,6 +468,8 @@ class SuperSearch(SearchBase):
                 'indices': indices,
             }
 
+        errors = []
+
         # We call elasticsearch with a computed list of indices, based on
         # the date range. However, if that list contains indices that do not
         # exist in elasticsearch, an error will be raised. We thus want to
@@ -481,7 +482,13 @@ class SuperSearch(SearchBase):
                     hits.append(self.format_fields(hit.to_dict()))
 
                 total = search.count()
-                aggregations = self.format_aggregations(results.aggregations)
+
+                aggregations = getattr(results, 'aggregations', {})
+                if aggregations:
+                    aggregations = self.format_aggregations(aggregations)
+
+                shards = getattr(results, '_shards', {})
+
                 break  # Yay! Results!
             except NotFoundError, e:
                 missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
@@ -492,6 +499,11 @@ class SuperSearch(SearchBase):
                     # in the request? That should never happen, but in case
                     # it does, better know it.
                     raise
+
+                errors.append({
+                    'type': 'missing_index',
+                    'index': missing_index,
+                })
 
                 if indices:
                     # Update the list of indices and try again.
@@ -505,12 +517,28 @@ class SuperSearch(SearchBase):
                     hits = []
                     total = 0
                     aggregations = {}
+                    shards = None
                     break
+
+        if shards and shards.failed:
+            # Some shards failed. We want to explain what happened in the
+            # results, so the client can decide what to do.
+            failed_indices = defaultdict(int)
+            for failure in shards.failures:
+                failed_indices[failure.index] += 1
+
+            for index, shards_count in failed_indices.items():
+                errors.append({
+                    'type': 'shards',
+                    'index': index,
+                    'shards_count': shards_count,
+                })
 
         return {
             'hits': hits,
             'total': total,
             'facets': aggregations,
+            'errors': errors,
         }
 
     def _get_histogram_agg(self, field, intervals):
@@ -568,22 +596,3 @@ class SuperSearch(SearchBase):
                 bucket_name,
                 bucket
             )
-
-    # For backwards compatibility with the previous elasticsearch module.
-    # All those methods used to live in this file, but have been moved to
-    # the super_search_fields.py file now. Since the configuration of the
-    # middleware expect those to still be here, we bind them for now.
-    def get_fields(self, **kwargs):
-        return SuperSearchFields(config=self.config).get_fields(**kwargs)
-
-    def create_field(self, **kwargs):
-        return SuperSearchFields(config=self.config).create_field(**kwargs)
-
-    def update_field(self, **kwargs):
-        return SuperSearchFields(config=self.config).update_field(**kwargs)
-
-    def delete_field(self, **kwargs):
-        return SuperSearchFields(config=self.config).delete_field(**kwargs)
-
-    def get_missing_fields(self):
-        return SuperSearchFields(config=self.config).get_missing_fields()

@@ -3,6 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import datetime
+import json
+
+import requests_mock
 from nose.tools import assert_raises, eq_, ok_
 
 from socorrolib.lib import BadArgumentError, datetimeutil
@@ -1741,7 +1744,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         res = api.get(**params)
-        eq_(res, {'total': 0, 'hits': [], 'facets': {}})
+        eq_(res['total'], 0)
+        eq_(len(res['hits']), 0)
+        eq_(len(res['errors']), 3)  # 3 weeks are missing
 
     def test_get_too_large_date_range(self):
         # this is a whole year apart
@@ -1781,3 +1786,109 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             self.api.get,
             _results_number=1001,
         )
+
+    @minimum_es_version('1.0')
+    @requests_mock.Mocker(real_http=True)
+    def test_get_with_failing_shards(self, mock_requests):
+        # Test with one failing shard.
+        es_results = {
+            'hits': {
+                'hits': [],
+                'total': 0,
+                'max_score': None,
+            },
+            'timed_out': False,
+            'took': 194,
+            '_shards': {
+                'successful': 9,
+                'failed': 1,
+                'total': 10,
+                'failures': [
+                    {
+                        'status': 500,
+                        'index': 'fake_index',
+                        'reason': 'foo bar gone bad',
+                        'shard': 3,
+                    }
+                ]
+            },
+        }
+
+        mock_requests.get(
+            'http://localhost:9200/{}/crash_reports/_search'.format(
+                self.config.elasticsearch.elasticsearch_index
+            ),
+            text=json.dumps(es_results)
+        )
+
+        res = self.api.get()
+        ok_('errors' in res)
+
+        errors_exp = [
+            {
+                'type': 'shards',
+                'index': 'fake_index',
+                'shards_count': 1,
+            }
+        ]
+        eq_(res['errors'], errors_exp)
+
+        # Test with several failures.
+        es_results = {
+            'hits': {
+                'hits': [],
+                'total': 0,
+                'max_score': None,
+            },
+            'timed_out': False,
+            'took': 194,
+            '_shards': {
+                'successful': 9,
+                'failed': 3,
+                'total': 10,
+                'failures': [
+                    {
+                        'status': 500,
+                        'index': 'fake_index',
+                        'reason': 'foo bar gone bad',
+                        'shard': 2,
+                    },
+                    {
+                        'status': 500,
+                        'index': 'fake_index',
+                        'reason': 'foo bar gone bad',
+                        'shard': 3,
+                    },
+                    {
+                        'status': 500,
+                        'index': 'other_index',
+                        'reason': 'foo bar gone bad',
+                        'shard': 1,
+                    },
+                ]
+            },
+        }
+
+        mock_requests.get(
+            'http://localhost:9200/{}/crash_reports/_search'.format(
+                self.config.elasticsearch.elasticsearch_index
+            ),
+            text=json.dumps(es_results)
+        )
+
+        res = self.api.get()
+        ok_('errors' in res)
+
+        errors_exp = [
+            {
+                'type': 'shards',
+                'index': 'fake_index',
+                'shards_count': 2,
+            },
+            {
+                'type': 'shards',
+                'index': 'other_index',
+                'shards_count': 1,
+            },
+        ]
+        eq_(res['errors'], errors_exp)
