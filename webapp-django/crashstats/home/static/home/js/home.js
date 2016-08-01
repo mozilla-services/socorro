@@ -383,7 +383,7 @@ $(function () {
         $('.message', container)
             .show()
             .append(
-                $('<p><b>Warning:</b> Our database is experiencing troubles, the data you see might be wrong. We have been notified of the issue. </p>')
+                $('<p><b>Warning:</b> Our database is experiencing troubles, the data you see might be wrong. The team has been notified of the issue. </p>')
             );
 
         errors.forEach(function (error) {
