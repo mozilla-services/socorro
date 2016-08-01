@@ -17,6 +17,21 @@ Crashes per Day for {{ product }}
     <h2>Crashes per Day for {{ product }}</h2>
 </div>
 
+{% if errors %}
+<div class="message error">
+    <p>
+        <b>Warning:</b>
+        Our database is experiencing troubles, the data you see might
+        be wrong. The team has been notified of the issue.
+    </p>
+
+    <ul>
+        {% for error in errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
 
 <div class="panel daily_search">
     <div class="title daily_search_title">

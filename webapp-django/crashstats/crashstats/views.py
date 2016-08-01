@@ -10,6 +10,7 @@ from operator import itemgetter
 from io import BytesIO
 
 import isodate
+import isoweek
 
 from django import http
 from django.conf import settings
@@ -1117,6 +1118,22 @@ def crashes_per_day(request, default_context=None):
     context['data_table'] = data_table
     context['graph_data'] = graph_data
     context['report'] = 'daily'
+
+    errors = []
+    for error in results.get('errors', []):
+        if not error['type'] == 'shards':
+            continue
+
+        week = int(error['index'][-2:])
+        year = int(error['index'][-6:-2])
+        day = isoweek.Week(year, week).monday()
+        percent = error['shards_count'] * 100 / settings.ES_SHARDS_PER_INDEX
+        errors.append(
+            'The data for the week of {} is ~{}% lower than expected.'.format(
+                day, percent
+            )
+        )
+    context['errors'] = errors
 
     # This 'Crashes per User' report replaces an older version
     # of the report that produces near identical output, but does

@@ -16,6 +16,19 @@ $(function () {
         };
     }
 
+    // Get the date of the first day of a specified year and week.
+    // Source: https://stackoverflow.com/a/16591175
+    function getDateOfISOWeek(y, w) {
+        var simple = new Date(Date.UTC(y, 0, 1 + (w - 1) * 7));
+        var dow = simple.getDay();
+        var ISOweekStart = simple;
+        if (dow <= 4)
+            ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+        else
+            ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+        return ISOweekStart;
+    }
+
     var COLORS = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'];
 
     var container = $('#homepage-graph-container');
@@ -27,6 +40,7 @@ $(function () {
     var versions = container.data('versions');
     var platforms = container.data('platforms');
     var duration = container.data('duration');
+    var esShardsPerIndex = container.data('es-shards-per-index');
 
     var pageTitle = $('title').text();
 
@@ -201,6 +215,12 @@ $(function () {
      * what we will pass to the graph library.
      */
     function onSuperSearchData(data) {
+        // If there are shards errors, show a warning to the user that the
+        // data is incorrect.
+        if (data.errors && data.errors.length) {
+            showShardsErrors(data.errors);
+        }
+
         // dataStruct is a temporary data structure that makes it easy to
         // add up crash counts and handle the special cases of beta versions.
         var dataStruct = {};
@@ -357,6 +377,35 @@ $(function () {
             .show()
             .empty()
             .append('Error validating argument "' + arg + '": ' + message);
+    }
+
+    function showShardsErrors(errors) {
+        $('.message', container)
+            .show()
+            .append(
+                $('<p><b>Warning:</b> Our database is experiencing troubles, the data you see might be wrong. The team has been notified of the issue. </p>')
+            );
+
+        errors.forEach(function (error) {
+            if (error.type === 'shards') {
+                addShardWarning(error);
+            }
+        });
+    }
+
+    /**
+     * Show a warning when a shard is failing in the database.
+     */
+    function addShardWarning(error) {
+        var week = error.index.slice(-2);
+        var year = error.index.slice(-6, error.index.length - 2);
+        var firstDay = getDateOfISOWeek(year, week);
+        var percent = error.shards_count * 100 / esShardsPerIndex;
+
+        $('.message', container)
+            .append(
+                $('<p>The data for the week of ' + firstDay.toDateString() + ' is ~' + percent + '% lower than expected.</p>')
+            );
     }
 
     /**

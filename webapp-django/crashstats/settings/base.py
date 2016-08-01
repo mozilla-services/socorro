@@ -349,6 +349,9 @@ BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
 # Super Search Custom Query page.
 ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
 
+# Number of shards per index in our Elasticsearch database.
+ES_SHARDS_PER_INDEX = 5
+
 # Valid type for correlations reports
 CORRELATION_REPORT_TYPES = (
     'core-counts',
