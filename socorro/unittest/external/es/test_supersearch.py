@@ -767,6 +767,57 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
     @minimum_es_version('1.0')
+    def test_get_with_no_facets(self):
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Windows NT',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'NightTrain',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'foo(bar)',
+            'product': 'EarthRacoon',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+
+        # Index a lot of distinct values to test the results limit.
+        number_of_crashes = 5
+        processed_crash = {
+            'version': '10.%s',
+            'date_processed': self.now,
+        }
+        self.index_many_crashes(
+            number_of_crashes,
+            processed_crash,
+            loop_field='version',
+        )
+        # Note: index_many_crashes does the index refreshing.
+
+        # Test 0 facets
+        kwargs = {
+            '_facets': ['signature'],
+            '_facets_size': 0
+        }
+        res = self.api.get(**kwargs)
+        eq_(res['facets'], {})
+        # hits should still work as normal
+        ok_(res['hits'])
+        eq_(len(res['hits']), res['total'])
+
+    @minimum_es_version('1.0')
     def test_get_with_cardinality(self):
         self.index_crash({
             'signature': 'js::break_your_browser',

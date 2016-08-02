@@ -401,13 +401,14 @@ class SuperSearch(SearchBase):
         search = search[results_from:results_to]
 
         # Create facets.
-        for param in params['_facets']:
-            self._add_second_level_aggs(
-                param,
-                search.aggs,
-                facets_size,
-                histogram_intervals,
-            )
+        if facets_size:
+            for param in params['_facets']:
+                self._add_second_level_aggs(
+                    param,
+                    search.aggs,
+                    facets_size,
+                    histogram_intervals,
+                )
 
         # Create sub-aggregations.
         for key in params:
