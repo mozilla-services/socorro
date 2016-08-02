@@ -250,6 +250,8 @@ def search_results(request):
                         hit['bugs'].extend(bugs[sig])
                     else:
                         hit['bugs'] = bugs[sig]
+                    # most recent bugs first
+                    hit['bugs'].sort(reverse=True)
 
     search_results['total_pages'] = int(math.ceil(
         search_results['total'] / float(results_per_page)))
