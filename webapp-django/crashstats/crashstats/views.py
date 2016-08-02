@@ -2053,12 +2053,15 @@ def adu_by_signature_json(request, default_context=None):
 
 
 def status_json(request):
-    response = http.HttpResponse(
-        models.Status().get(decode_json=False),
-        content_type='application/json; charset=UTF-8'
-    )
-    response['Access-Control-Allow-Origin'] = '*'
-    return response
+    """This is deprecated and should not be used.
+    Use the /api/Status/ endpoint instead.
+    """
+    if settings.DEBUG:
+        raise Exception(
+            'This view is deprecated and should not be accessed. '
+            'The only reason it\'s kept is for legacy reasons.'
+        )
+    return redirect(reverse('api:model_wrapper', args=('Status',)))
 
 
 def status_revision(request):

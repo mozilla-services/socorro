@@ -27,6 +27,7 @@ from crashstats.crashstats.models import (
     CurrentProducts,
     Reprocessing,
     ProductBuildTypes,
+    Status,
 )
 from crashstats.tokens.models import Token
 
@@ -149,30 +150,16 @@ class TestViews(BaseTestViews):
         ok_(dump['errors']['product'])
         ok_('versions' not in dump['errors'])
 
-    @mock.patch('requests.get')
-    def test_CORS(self, rget):
+    def test_CORS(self):
         """any use of model_wrapper should return a CORS header"""
 
-        def mocked_get(url, params, **options):
-            return Response({
+        def mocked_get(**options):
+            return {
                 "breakpad_revision": "1139",
-                "hits": [
-                    {
-                        "date_oldest_job_queued": None,
-                        "date_recently_completed": None,
-                        "processors_count": 1,
-                        "avg_wait_sec": 0.0,
-                        "waiting_job_count": 0,
-                        "date_created": "2013-04-01T21:40:01+00:00",
-                        "id": 463859,
-                        "avg_process_sec": 0.0
-                    }
-                ],
-                "total": 12,
-                "socorro_revision": "9cfa4de"
-            })
+                "socorro_revision": "9cfa4de",
+            }
 
-        rget.side_effect = mocked_get
+        Status.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('Status',))
         response = self.client.get(url)
@@ -1329,40 +1316,22 @@ class TestViews(BaseTestViews):
         ok_('errors' in res)
         eq_(len(res['errors']), 3)
 
-    @mock.patch('requests.get')
-    def test_Status(self, rget):
+    def test_Status(self):
 
-        def mocked_get(url, params, **options):
+        def mocked_get(**options):
+            return {
+                "breakpad_revision": "1139",
+                "socorro_revision": "9cfa4de",
+            }
 
-            if '/server_status' in url:
-                return Response({
-                    "breakpad_revision": "1139",
-                    "hits": [
-                        {
-                            "date_oldest_job_queued": None,
-                            "date_recently_completed": None,
-                            "processors_count": 1,
-                            "avg_wait_sec": 0.0,
-                            "waiting_job_count": 0,
-                            "date_created": "2013-04-01T21:40:01+00:00",
-                            "id": 463859,
-                            "avg_process_sec": 0.0
-                        }
-                    ],
-                    "total": 12,
-                    "socorro_revision": "9cfa4de",
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        Status.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('Status',))
         response = self.client.get(url)
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump['hits'])
         ok_(dump['socorro_revision'])
+        ok_(dump['breakpad_revision'])
 
     def test_CrontabberState(self):
         # The actual dates dont matter, but it matters that it's a
