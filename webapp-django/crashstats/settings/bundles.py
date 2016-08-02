@@ -252,12 +252,18 @@ PIPELINE_JS = {
             'crashstats/js/jquery/jquery-2.0.3.min.js',
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
             'crashstats/js/lib/qs.js',
+            'crashstats/js/socorro/oauth2.js',
             'crashstats/js/socorro/nav.js',
             'crashstats/js/socorro/analytics.js',
+        ),
+        'output_filename': 'js/crashstats-base.min.js',
+    },
+    'browserid': {
+        'source_filenames': (
             'browserid/api.js',
             'browserid/browserid.js',
         ),
-        'output_filename': 'js/crashstats-base.min.js',
+        'output_filename': 'js/browserid.min.js',
     },
     'api_documentation': {
         'source_filenames': (

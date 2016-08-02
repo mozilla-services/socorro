@@ -132,6 +132,7 @@ _CONTEXT_PROCESSORS = (
     'session_csrf.context_processor',
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
+    '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
     '%s.base.context_processors.browserid' % PROJECT_MODULE,
 )
@@ -749,5 +750,33 @@ GOOGLE_ANALYTICS_API_URL = config(
 GOOGLE_ANALYTICS_API_TIMEOUT = config(
     'GOOGLE_ANALYTICS_API_TIMEOUT',
     5,  # seconds
+    cast=int
+)
+
+# OAuth2 credentials are needed to be able to connect with Google OpenID
+# Connect. Credentials can be retrieved from the
+# Google Developers Console at
+# https://console.developers.google.com/apis/credentials
+OAUTH2_CLIENT_ID = config(
+    'OAUTH2_CLIENT_ID',
+    ''
+)
+OAUTH2_CLIENT_SECRET = config(
+    'OAUTH2_CLIENT_SECRET',
+    ''
+)
+
+OAUTH2_VALID_ISSUERS = config(
+    'OAUTH2_VALID_ISSUERS',
+    default='accounts.google.com',
+    cast=Csv()
+)
+
+# Max number of seconds you are allowed to be signed in with OAuth2.
+# When the user has been signed in >= this number, the user is automatically
+# signed out.
+LAST_LOGIN_MAX = config(
+    'LAST_LOGIN_MAX',
+    default=60 * 60 * 24,
     cast=int
 )

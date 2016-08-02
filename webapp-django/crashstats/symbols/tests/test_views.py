@@ -105,11 +105,6 @@ class TestViews(BaseTestViews):
         self.patcher.stop()
         settings.SYMBOLS_COMPRESS_EXTENSIONS = self.symbols_compress_extensions
 
-    def _login(self):
-        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
-        return user
-
     def test_unpack_and_upload_misconfigured(self):
         with self.settings(AWS_ACCESS_KEY=''):
             assert_raises(

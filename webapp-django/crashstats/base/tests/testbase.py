@@ -4,6 +4,7 @@ import mock
 
 import django.test
 import django.utils.unittest
+from django.contrib.auth.models import User
 
 import crashstats.crashstats.models
 import crashstats.supersearch.models
@@ -45,3 +46,8 @@ class DjangoTestCase(django.test.TestCase):
 
     def shortDescription(self):
         return None
+
+    def _login(self):
+        user = User.objects.create_user('test', 'test@example.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        return user

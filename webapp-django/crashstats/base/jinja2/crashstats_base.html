@@ -19,10 +19,18 @@
           ga('send', 'pageview');
         </script>
     {% endif %}
+
+    <meta name="google-signin-client_id" content="{{ OAUTH2_CLIENT_ID }}">
+    {% if OAUTH2_SIGNOUT %}
+    <meta name="signin" content="signout">
+    {% endif %}
+
     </head>
 
     <body>
+    {% if not (request.session.get('signin_method') and request.user.is_authenticated()) %}
     {{ browserid_info() }}
+    {% endif %}
     <div class="page-header">
         <h1>
             <a href="/">
@@ -172,8 +180,22 @@
                     <a href="{{ url('manage:home') }}">Admin</a>
                     {% endif %}
                     |
-                    {{ browserid_logout(text='Sign out') }}
+                    {% if request.session.get('signin_method') == 'google' %}
+                        {% csrf_token %}
+                        <a href="{{ url('auth:oauth2_signout') }}" class="google-signout">
+                            <span>Sign out</span>
+                        </a>
+                    {% else %}
+                        {# legacy #}
+                        {{ browserid_logout(text='Sign out') }}
+                    {% endif %}
                 {% else %}
+                    {% csrf_token %}
+                    <div
+                        id="signin2"
+                        class="google-signin"
+                        style="float:right"
+                        data-signin-url="{{ url('auth:oauth2_signin') }}"></div>
                     {# the redirect_next function comes from the browserid context processor #}
                     {{ browserid_login(text='Sign in', color='dark', next=redirect_next()) }}
                 {% endif %}
@@ -183,8 +205,18 @@
         <br class="clear" />
     </div>
     {% block site_js %}
-    <script type="text/javascript" src="https://login.persona.org/include.js"></script>
+
     {% javascript 'crashstats_base' %}
+
+    {# If the user has signed in with Google, definitely don't bother with Persona #}
+    {% if not (request.session.get('signin_method') == 'google' and request.user.is_authenticated()) %}
+        {# persona is still valid #}
+        <script type="text/javascript" src="https://login.persona.org/include.js"></script>
+        {% javascript 'browserid' %}
+    {% endif %}
+
+    <script src="https://apis.google.com/js/auth2:signin2.js?onload=googleAPILoaded"></script>
     {% endblock %}
+
   </body>
 </html>
