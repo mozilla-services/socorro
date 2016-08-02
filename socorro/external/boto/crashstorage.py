@@ -4,6 +4,7 @@
 
 import json
 
+import json_schema_reducer
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
@@ -14,7 +15,7 @@ from socorrolib.lib.converters import change_default
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
-
+from socorro.schemas import PROCESSED_CRASH_JSON_SCHEMA
 
 #==============================================================================
 class BotoCrashStorage(CrashStorageBase):
@@ -269,6 +270,35 @@ class BotoS3CrashStorage(BotoCrashStorage):
         'resource_class',
         'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
     )
+
+
+#==============================================================================
+class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
+    """S3 crash storage class for sending a subset of the processed crash
+    but reduced to only include the files in the processed crash
+    JSON Schema."""
+
+    required_config = Namespace()
+    required_config.resource_class = change_default(
+        BotoCrashStorage,
+        'resource_class',
+        'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+    )
+
+    #--------------------------------------------------------------------------
+    def save_raw_and_processed(
+        self,
+        raw_crash,
+        dumps,
+        processed_crash,
+        crash_id
+    ):
+        schema = PROCESSED_CRASH_JSON_SCHEMA
+        crash = json_schema_reducer.make_reduced_dict(schema, processed_crash)
+        from pprint import pprint
+        print "NEW CRASH"
+        pprint(crash)
+        self.save_processed(crash)
 
 
 #==============================================================================

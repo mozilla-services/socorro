@@ -17,11 +17,13 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.external.boto.connection_context import (
     KeyBuilderBase,
-    S3ConnectionContext
+    S3ConnectionContext,
+    SimpleDatePrefixKeyBuilder,
 )
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
-    SupportReasonAPIStorage
+    SupportReasonAPIStorage,
+    TelemetryBotoS3CrashStorage,
 )
 from socorro.database.transaction_executor import (
     TransactionExecutor,
@@ -48,17 +50,81 @@ S3ConnectionContext.operational_exceptions = (ABadDeal, )
 S3ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
 
 
-class TestCase(socorro.unittest.testbase.TestCase):
+class BaseTestCase(socorro.unittest.testbase.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestCase, cls).setUpClass()
+        super(BaseTestCase, cls).setUpClass()
         cls.TEMPDIR = tempfile.mkdtemp()
 
     @classmethod
     def tearDownClass(cls):
-        super(TestCase, cls).tearDownClass()
+        super(BaseTestCase, cls).tearDownClass()
         shutil.rmtree(cls.TEMPDIR)
+
+    def setup_mocked_s3_storage(
+            self,
+            executor=TransactionExecutor,
+            executor_for_gets=TransactionExecutor,
+            keybuilder_class=KeyBuilderBase,
+            storage_class='BotoS3CrashStorage',
+            bucket_name='mozilla-support-reason',
+            host='',
+            port=0):
+
+        config = DotDict({
+            'source': {
+                'dump_field': 'dump'
+            },
+            'transaction_executor_class': executor,
+            'transaction_executor_class_for_get': executor_for_gets,
+            'resource_class': S3ConnectionContext,
+            'keybuilder_class': keybuilder_class,
+            'backoff_delays': [0, 0, 0],
+            'redactor_class': Redactor,
+            'forbidden_keys': Redactor.required_config.forbidden_keys.default,
+            'logger': mock.Mock(),
+            'host': host,
+            'port': port,
+            'access_key': 'this is the access key',
+            'secret_access_key': 'secrets',
+            'temporary_file_system_storage_path': self.TEMPDIR,
+            'dump_file_suffix': '.dump',
+            'bucket_name': bucket_name,
+            'prefix': 'dev',
+            'calling_format': mock.Mock()
+        })
+        if isinstance(storage_class, basestring):
+            if storage_class == 'BotoS3CrashStorage':
+                config.bucket_name = 'crash_storage'
+                s3 = BotoS3CrashStorage(config)
+            elif storage_class == 'SupportReasonAPIStorage':
+                s3 = SupportReasonAPIStorage(config)
+        else:
+            s3 = storage_class(config)
+        s3_conn = s3.connection_source
+        s3_conn._connect_to_endpoint = mock.Mock()
+        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
+        s3_conn._calling_format.return_value = mock.Mock()
+        s3_conn._CreateError = mock.Mock()
+##        s3_conn.ResponseError = mock.Mock()
+        s3_conn._open = mock.MagicMock()
+
+        return s3
+
+    def assert_s3_connection_parameters(self, boto_s3_store):
+        kwargs = {
+            "aws_access_key_id": boto_s3_store.config.access_key,
+            "aws_secret_access_key": boto_s3_store.config.secret_access_key,
+            "is_secure": True,
+            "calling_format": boto_s3_store.connection_source._calling_format.return_value
+        }
+        boto_s3_store.connection_source._connect_to_endpoint.assert_called_with(
+            **kwargs
+        )
+
+
+class TestCase(BaseTestCase):
 
     def _fake_processed_crash(self):
         d = DotDict()
@@ -113,62 +179,6 @@ class TestCase(socorro.unittest.testbase.TestCase):
         d = self._fake_unredacted_processed_crash()
         s = json.dumps(d)
         return s
-
-    def setup_mocked_s3_storage(
-            self,
-            executor=TransactionExecutor,
-            executor_for_gets=TransactionExecutor,
-            storage_class='BotoS3CrashStorage',
-            host='',
-            port=0):
-
-        config = DotDict({
-            'source': {
-                'dump_field': 'dump'
-            },
-            'transaction_executor_class': executor,
-            'transaction_executor_class_for_get': executor_for_gets,
-            'resource_class': S3ConnectionContext,
-            'keybuilder_class': KeyBuilderBase,
-            'backoff_delays': [0, 0, 0],
-            'redactor_class': Redactor,
-            'forbidden_keys': Redactor.required_config.forbidden_keys.default,
-            'logger': mock.Mock(),
-            'host': host,
-            'port': port,
-            'access_key': 'this is the access key',
-            'secret_access_key': 'secrets',
-            'temporary_file_system_storage_path': self.TEMPDIR,
-            'dump_file_suffix': '.dump',
-            'bucket_name': 'mozilla-support-reason',
-            'prefix': 'dev',
-            'calling_format': mock.Mock()
-        })
-        if storage_class == 'BotoS3CrashStorage':
-            config.bucket_name = 'crash_storage'
-            s3 = BotoS3CrashStorage(config)
-        elif storage_class == 'SupportReasonAPIStorage':
-            s3 = SupportReasonAPIStorage(config)
-        s3_conn = s3.connection_source
-        s3_conn._connect_to_endpoint = mock.Mock()
-        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
-        s3_conn._calling_format.return_value = mock.Mock()
-        s3_conn._CreateError = mock.Mock()
-##        s3_conn.ResponseError = mock.Mock()
-        s3_conn._open = mock.MagicMock()
-
-        return s3
-
-    def assert_s3_connection_parameters(self, boto_s3_store):
-        kwargs = {
-            "aws_access_key_id": boto_s3_store.config.access_key,
-            "aws_secret_access_key": boto_s3_store.config.secret_access_key,
-            "is_secure": True,
-            "calling_format": boto_s3_store.connection_source._calling_format.return_value
-        }
-        boto_s3_store.connection_source._connect_to_endpoint.assert_called_with(
-            **kwargs
-        )
 
     def test_save_raw_crash_1(self):
         boto_s3_store = self.setup_mocked_s3_storage()
@@ -1043,4 +1053,75 @@ class TestCase(socorro.unittest.testbase.TestCase):
             CrashIDNotFound,
             boto_s3_store.get_raw_crash,
             '0bba929f-dead-dead-dead-a43c20071027'
+        )
+
+
+class TelemetryTestCase(BaseTestCase):
+
+    def setup_mocked_s3_storage(self):
+        parent = super(TelemetryTestCase, self)
+        return parent.setup_mocked_s3_storage(
+            storage_class=TelemetryBotoS3CrashStorage,
+            keybuilder_class=SimpleDatePrefixKeyBuilder,
+            bucket_name='telemetry-crashes',
+        )
+
+    def test_save_raw_and_processed(self):
+        boto_s3_store = self.setup_mocked_s3_storage()
+
+        # the tested call
+        boto_s3_store.save_raw_and_processed(
+            {
+                "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
+            },
+            None,
+            {
+                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+                "completeddatetime": "2012-04-08 10:56:50.902884",
+                "signature": 'now_this_is_a_signature'
+            },
+            "0bba929f-8721-460c-dead-a43c20071027"
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store.connection_source._calling_format.call_count, 1)
+        boto_s3_store.connection_source._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store.connection_source._connect_to_endpoint.call_count, 1)
+        self.assert_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store.connection_source._mocked_connection.get_bucket.call_count,
+            1
+        )
+
+        # print boto_s3_store.connection_source._mocked_connection.mock_calls
+        boto_s3_store.connection_source._mocked_connection.get_bucket.assert_called_with(
+            'telemetry-crashes'
+        )
+
+        bucket_mock = boto_s3_store.connection_source._mocked_connection.get_bucket \
+            .return_value
+        self.assertEqual(bucket_mock.new_key.call_count, 1)
+        bucket_mock.new_key.assert_has_calls(
+            [
+                mock.call(
+                    'dev/v1/processed_crash/20071027/0bba929f-8721-460c-dead-a43c20071027'
+                ),
+            ],
+        )
+
+        storage_key_mock = bucket_mock.new_key.return_value
+        self.assertEqual(
+            storage_key_mock.set_contents_from_string.call_count,
+            1
+        )
+        storage_key_mock.set_contents_from_string.assert_has_calls(
+            [
+                mock.call(
+                    '{"uuid": "0bba929f-8721-460c-dead-a43c20071027", '
+                    '"signature": "now_this_is_a_signature"}'
+                ),
+            ],
+            any_order=True,
         )
