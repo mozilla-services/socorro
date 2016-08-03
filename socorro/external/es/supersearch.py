@@ -402,62 +402,12 @@ class SuperSearch(SearchBase):
 
         # Create facets.
         if facets_size:
-            for param in params['_facets']:
-                self._add_second_level_aggs(
-                    param,
-                    search.aggs,
-                    facets_size,
-                    histogram_intervals,
-                )
-
-        # Create sub-aggregations.
-        for key in params:
-            if not key.startswith('_aggs.'):
-                continue
-
-            fields = key.split('.')[1:]
-
-            if fields[0] not in self.all_fields:
-                continue
-
-            base_bucket = self._get_fields_agg(fields[0], facets_size)
-            sub_bucket = base_bucket
-
-            for field in fields[1:]:
-                # For each field, make a bucket, then include that bucket in
-                # the latest one, and then make that new bucket the latest.
-                if field in self.all_fields:
-                    tmp_bucket = self._get_fields_agg(field, facets_size)
-                    sub_bucket.bucket(field, tmp_bucket)
-                    sub_bucket = tmp_bucket
-
-            for value in params[key]:
-                self._add_second_level_aggs(
-                    value,
-                    sub_bucket,
-                    facets_size,
-                    histogram_intervals,
-                )
-
-            search.aggs.bucket(fields[0], base_bucket)
-
-        # Create histograms.
-        for f in self.histogram_fields:
-            key = '_histogram.%s' % f
-            if params.get(key):
-                histogram_bucket = self._get_histogram_agg(
-                    f, histogram_intervals
-                )
-
-                for param in params[key]:
-                    self._add_second_level_aggs(
-                        param,
-                        histogram_bucket,
-                        facets_size,
-                        histogram_intervals,
-                    )
-
-                search.aggs.bucket('histogram_%s' % f, histogram_bucket)
+            self._create_aggregations(
+                params,
+                search,
+                facets_size,
+                histogram_intervals
+            )
 
         # Query and compute results.
         hits = []
@@ -541,6 +491,67 @@ class SuperSearch(SearchBase):
             'facets': aggregations,
             'errors': errors,
         }
+
+    def _create_aggregations(
+        self, params, search, facets_size, histogram_intervals
+    ):
+        # Create facets.
+        for param in params['_facets']:
+            self._add_second_level_aggs(
+                param,
+                search.aggs,
+                facets_size,
+                histogram_intervals,
+            )
+
+        # Create sub-aggregations.
+        for key in params:
+            if not key.startswith('_aggs.'):
+                continue
+
+            fields = key.split('.')[1:]
+
+            if fields[0] not in self.all_fields:
+                continue
+
+            base_bucket = self._get_fields_agg(fields[0], facets_size)
+            sub_bucket = base_bucket
+
+            for field in fields[1:]:
+                # For each field, make a bucket, then include that bucket in
+                # the latest one, and then make that new bucket the latest.
+                if field in self.all_fields:
+                    tmp_bucket = self._get_fields_agg(field, facets_size)
+                    sub_bucket.bucket(field, tmp_bucket)
+                    sub_bucket = tmp_bucket
+
+            for value in params[key]:
+                self._add_second_level_aggs(
+                    value,
+                    sub_bucket,
+                    facets_size,
+                    histogram_intervals,
+                )
+
+            search.aggs.bucket(fields[0], base_bucket)
+
+        # Create histograms.
+        for f in self.histogram_fields:
+            key = '_histogram.%s' % f
+            if params.get(key):
+                histogram_bucket = self._get_histogram_agg(
+                    f, histogram_intervals
+                )
+
+                for param in params[key]:
+                    self._add_second_level_aggs(
+                        param,
+                        histogram_bucket,
+                        facets_size,
+                        histogram_intervals,
+                    )
+
+                search.aggs.bucket('histogram_%s' % f, histogram_bucket)
 
     def _get_histogram_agg(self, field, intervals):
         histogram_type = (
