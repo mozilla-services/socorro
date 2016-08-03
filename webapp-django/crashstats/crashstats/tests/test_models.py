@@ -1001,60 +1001,20 @@ class TestModels(DjangoTestCase):
         )
         ok_(r[0]['version_string'])
 
-    @mock.patch('requests.get')
-    def test_status(self, rget):
+    def test_status(self):
         def mocked_get(**options):
-            assert 'status' in options['url'], options['url']
-            return Response({
+            return {
                 'breakpad_revision': '1035',
-                'hits': [
-                    {
-                        'date_oldest_job_queued':
-                        '2012-09-28T20:39:33+00:00',
-                        'date_recently_completed':
-                        '2012-09-28T20:40:00+00:00',
-                        'processors_count': 1,
-                        'avg_wait_sec': 16.407,
-                        'waiting_job_count': 56,
-                        'date_created': '2012-09-28T20:40:02+00:00',
-                        'id': 410655,
-                        'avg_process_sec': 0.914149
-                    },
-                    {
-                        'date_oldest_job_queued':
-                        '2012-09-28T20:34:33+00:00',
-                        'date_recently_completed':
-                        '2012-09-28T20:35:00+00:00',
-                        'processors_count': 1,
-                        'avg_wait_sec': 13.8293,
-                        'waiting_job_count': 48,
-                        'date_created': '2012-09-28T20:35:01+00:00',
-                        'id': 410654,
-                        'avg_process_sec': 1.24177
-                    },
-                    {
-                        'date_oldest_job_queued':
-                        '2012-09-28T20:29:32+00:00',
-                        'date_recently_completed':
-                        '2012-09-28T20:30:01+00:00',
-                        'processors_count': 1,
-                        'avg_wait_sec': 14.8803,
-                        'waiting_job_count': 1,
-                        'date_created': '2012-09-28T20:30:01+00:00',
-                        'id': 410653,
-                        'avg_process_sec': 1.19637
-                    }
-                ],
-                'total': 12,
                 'socorro_revision': (
                     '017d7b3f7042ce76bc80949ae55b41d1e915ab62'
                 ),
-            })
+            }
 
-        rget.side_effect = mocked_get
+        models.Status.implementation().get.side_effect = mocked_get
 
         response = models.Status().get('3')
-        ok_(response['hits'])
+        ok_(response['breakpad_revision'])
+        ok_(response['socorro_revision'])
 
     @mock.patch('requests.get')
     def test_exploitable_crashes(self, rget):

@@ -27,6 +27,7 @@ import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
+import socorro.external.postgresql.server_status
 
 from socorrolib.app import socorro_app
 
@@ -1482,20 +1483,11 @@ class SignatureSummary(SocorroMiddleware):
 
 class Status(SocorroMiddleware):
 
-    possible_params = (
-        'duration',
-    )
-
-    cache_seconds = 0
-
-    def get(self, decode_json=True, **kwargs):
-        duration = kwargs.get('duration') or 12
-        return self.fetch(
-            '/server_status/duration/%s' % duration,
-            expect_json=decode_json
-        )
-
     API_WHITELIST = None
+
+    implementation = (
+        socorro.external.postgresql.server_status.ServerStatus
+    )
 
 
 class CrontabberState(SocorroMiddleware):

@@ -5,12 +5,9 @@
 import json
 import logging
 import mock
-import os
 import psycopg2
 import urllib
 import re
-
-import socorro
 
 from paste.fixture import TestApp, AppError
 from nose.tools import eq_, ok_, assert_raises
@@ -910,42 +907,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 }
             )
             eq_(response.data, {'hits': [], 'total': 0})
-
-    def test_server_status(self):
-        breakpad_revision = '1.0'
-        socorro_revision = '19.5'
-
-        # Create fake revision files
-        self.basedir = os.path.dirname(socorro.__file__)
-        open(os.path.join(
-            self.basedir, 'socorro_revision.txt'
-        ), 'w').write(socorro_revision)
-        open(os.path.join(
-            self.basedir, 'breakpad_revision.txt'
-        ), 'w').write(breakpad_revision)
-
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/server_status/',
-                {'duration': 12}
-            )
-            eq_(response.data, {
-                'hits': [],
-                'total': 0,
-                'breakpad_revision': breakpad_revision,
-                'socorro_revision': socorro_revision,
-                'schema_revision': 'Unknown',
-            })
-
-        # Delete fake revision files
-        os.remove(os.path.join(self.basedir, 'socorro_revision.txt'))
-        os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
 
     def test_report_list(self):
         config_manager = self._setup_config_manager()
