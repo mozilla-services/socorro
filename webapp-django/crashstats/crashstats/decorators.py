@@ -4,9 +4,38 @@ import urlparse
 from django.http import HttpResponseBadRequest, Http404
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
+from django.contrib.auth.decorators import (
+    REDIRECT_FIELD_NAME,
+    user_passes_test,
+)
 
 from . import utils
 from crashstats.base import ga
+
+
+def login_required(
+    function=None,
+    redirect_field_name=REDIRECT_FIELD_NAME,
+    login_url=None
+):
+    """This is a re-implementation of the ever useful default decorator
+    in django.contrib.auth.decorators which is exactly the same except
+    that it also requires the user to be active.
+
+    In other words, if you use this decorator you're saying that
+    being logged in AND being active is required.
+
+    The usefulness of this is that super users can revoke a user being
+    active and halt the user's access even after the user has signed in.
+    """
+    actual_decorator = user_passes_test(
+        lambda u: u.is_active,
+        login_url=login_url,
+        redirect_field_name=redirect_field_name
+    )
+    if function:
+        return actual_decorator(function)
+    return actual_decorator
 
 
 _marker = object()

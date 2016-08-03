@@ -10,7 +10,7 @@ from django import http
 from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import Permission
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.contrib.sites.requests import RequestSite
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -22,6 +22,7 @@ import boto
 import boto.s3.connection
 import boto.exception
 
+from crashstats.crashstats.decorators import login_required
 from crashstats.tokens.models import Token
 from . import models
 from . import forms
@@ -34,7 +35,7 @@ def api_login_required(view_func):
     authenticated."""
     @wraps(view_func)
     def inner(request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        if not request.user.is_active:
             return http.HttpResponseForbidden(
                 "This requires an Auth-Token to authenticate the request"
             )

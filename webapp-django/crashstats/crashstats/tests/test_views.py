@@ -7,13 +7,13 @@ import json
 import urllib
 import random
 import urlparse
+from cStringIO import StringIO
 
 import pyquery
 import mock
-
-from cStringIO import StringIO
 from nose.tools import eq_, ok_, assert_raises
 from nose.plugins.skip import SkipTest
+
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.conf import settings
@@ -464,10 +464,10 @@ class BaseTestViews(DjangoTestCase):
         # once like they are in unit test running.
         SocorroCommon.clear_implementations_cache()
 
-    def _login(self):
-        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
-        assert self.client.login(username='test', password='secret')
-        return user
+    def _login(self, username='test', password='s', email='test@mozilla.com'):
+        User.objects.create_user(username, email, password)
+        assert self.client.login(username=username, password=password)
+        return User.objects.get(username=username)
 
     def _logout(self):
         self.client.logout()
@@ -1157,6 +1157,14 @@ class TestViews(BaseTestViews):
         # if you try to mess with the paginator it should just load page 1
         response = self.client.get(url, {'page': 'meow'})
         eq_(response.status_code, 200)
+
+        # If you cease to be active, access should be revoked automatically
+        user.is_active = False
+        user.save()
+        assert not user.has_perm('crashstats.view_exploitability')
+        response = self.client.get(url)
+        ok_(settings.LOGIN_URL in response['Location'] + '?next=%s' % url)
+        eq_(response.status_code, 302)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
@@ -2350,7 +2358,7 @@ class TestViews(BaseTestViews):
     def test_report_index(self, rget, rpost):
         dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment\nOn multiple lines'
-        comment0 += '\npeterbe@mozilla.com'
+        comment0 += '\npeterbe@example.com'
         comment0 += '\nwww.p0rn.com'
 
         rpost.side_effect = mocked_post_threeothersigs
@@ -2401,13 +2409,13 @@ class TestViews(BaseTestViews):
         comment_transformed = (
             comment0
             .replace('\n', '<br />')
-            .replace('peterbe@mozilla.com', '(email removed)')
+            .replace('peterbe@example.com', '(email removed)')
             .replace('www.p0rn.com', '(URL removed)')
         )
 
         ok_(comment_transformed in response.content)
         # but the email should have been scrubbed
-        ok_('peterbe@mozilla.com' not in response.content)
+        ok_('peterbe@example.com' not in response.content)
         ok_(_SAMPLE_META['Email'] not in response.content)
         ok_(_SAMPLE_META['URL'] not in response.content)
         ok_(
@@ -2431,7 +2439,7 @@ class TestViews(BaseTestViews):
         assert user.has_perm('crashstats.view_pii')
 
         response = self.client.get(url)
-        ok_('peterbe@mozilla.com' in response.content)
+        ok_('peterbe@example.com' in response.content)
         ok_(_SAMPLE_META['Email'] in response.content)
         ok_(_SAMPLE_META['URL'] in response.content)
         ok_('&#34;sensitive&#34;' in response.content)
@@ -2441,6 +2449,15 @@ class TestViews(BaseTestViews):
         # Ensure fields have their description in title.
         ok_('No description for this field.' in response.content)
         ok_('Description of the signature field' in response.content)
+
+        # If the user ceases to be active, these PII fields should disappear
+        user.is_active = False
+        user.save()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('peterbe@example.com' not in response.content)
+        ok_(_SAMPLE_META['Email'] not in response.content)
+        ok_(_SAMPLE_META['URL'] not in response.content)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')

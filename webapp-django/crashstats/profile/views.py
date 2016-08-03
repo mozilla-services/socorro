@@ -1,10 +1,12 @@
 import datetime
 
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.contrib.auth.models import Permission
 
-from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.decorators import (
+    pass_default_context,
+    login_required,
+)
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 

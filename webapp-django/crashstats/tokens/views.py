@@ -1,10 +1,10 @@
 from django import http
 from django.contrib.auth.models import Permission
-from django.contrib.auth.decorators import login_required
 from django.contrib.sites.requests import RequestSite
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction
 
+from crashstats.crashstats.decorators import login_required
 from . import models
 from . import forms
 

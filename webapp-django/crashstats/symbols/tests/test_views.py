@@ -145,7 +145,7 @@ class TestViews(BaseTestViews):
             response,
             reverse('crashstats:login') + '?next=%s' % url
         )
-        self._login()
+        user = self._login()
         with self.settings(SYMBOLS_PERMISSION_HINT_LINK=None):
             response = self.client.get(url)
             eq_(response.status_code, 200)
@@ -160,6 +160,16 @@ class TestViews(BaseTestViews):
 
             ok_(link['url'] in response.content)
             ok_(link['label'] in response.content)
+
+        # The access should disappear if you cease to be active
+        user.is_active = False
+        user.save()
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse('crashstats:login') + '?next=%s' % url
+        )
 
     def test_home_with_previous_uploads(self):
         url = reverse('symbols:home')

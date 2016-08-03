@@ -36,9 +36,17 @@ class TestViews(BaseTestViews):
             reverse('crashstats:login') + '?next=%s' % url
         )
 
-        self._login()
+        user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 200)
+
+        user.is_active = False
+        user.save()
+        response = self.client.get(url)
+        self.assertRedirects(
+            response,
+            reverse('crashstats:login') + '?next=%s' % url
+        )
 
     def test_generate_new_token_form(self):
         url = reverse('tokens:home')
