@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import time
 
 import requests_mock
 from nose.tools import assert_raises, eq_, ok_
@@ -765,6 +766,59 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             self.api.get,
             _facets=['unknownfield']
         )
+
+    @minimum_es_version('1.0')
+    def test_get_with_no_facets(self):
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Windows NT',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'WaterWolf',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'product': 'NightTrain',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+        self.index_crash({
+            'signature': 'foo(bar)',
+            'product': 'EarthRacoon',
+            'os_name': 'Linux',
+            'date_processed': self.now,
+        })
+
+        # Index a lot of distinct values to test the results limit.
+        number_of_crashes = 5
+        processed_crash = {
+            'version': '10.%s',
+            'date_processed': self.now,
+        }
+        self.index_many_crashes(
+            number_of_crashes,
+            processed_crash,
+            loop_field='version',
+        )
+        # Note: index_many_crashes does the index refreshing.
+
+        # Test 0 facets
+        kwargs = {
+            '_facets': ['signature'],
+            '_aggs.product': ['version'],
+            '_aggs.platform': ['_histogram.date'],
+            '_facets_size': 0
+        }
+        res = self.api.get(**kwargs)
+        eq_(res['facets'], {})
+        # hits should still work as normal
+        ok_(res['hits'])
+        eq_(len(res['hits']), res['total'])
 
     @minimum_es_version('1.0')
     def test_get_with_cardinality(self):
@@ -1774,6 +1828,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
     @minimum_es_version('1.0')
     def test_get_with_zero(self):
+        # !FIXME Wait for Elasticsearch to be ready.
+        time.sleep(0.1)
+
         res = self.api.get(
             _results_number=0,
         )
@@ -1790,6 +1847,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
     @minimum_es_version('1.0')
     @requests_mock.Mocker(real_http=True)
     def test_get_with_failing_shards(self, mock_requests):
+        # !FIXME Wait for Elasticsearch to be ready.
+        time.sleep(0.1)
+
         # Test with one failing shard.
         es_results = {
             'hits': {
