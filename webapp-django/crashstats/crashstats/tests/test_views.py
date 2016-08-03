@@ -547,7 +547,6 @@ class TestViews(BaseTestViews):
 
         # to make a mock call to the django view functions you need a request
         fake_request = RequestFactory().request(**{'wsgi.input': None})
-        fake_request.session = {}
 
         # the reason for first causing an exception to be raised is because
         # the handler500 function is only called by django when an exception
@@ -574,7 +573,6 @@ class TestViews(BaseTestViews):
         handler500 = getattr(views, end)
 
         fake_request = RequestFactory().request(**{'wsgi.input': None})
-        fake_request.session = {}
         # This is what the utils.json_view decorator sets on views
         # that should eventually return JSON.
         fake_request._json_view = True

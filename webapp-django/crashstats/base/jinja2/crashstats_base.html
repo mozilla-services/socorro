@@ -28,7 +28,7 @@
     </head>
 
     <body>
-    {% if not (request.session.get('signin_method') and request.user.is_authenticated()) %}
+    {% if request.session and not (request.session.get('signin_method') and request.user.is_authenticated()) %}
     {{ browserid_info() }}
     {% endif %}
     <div class="page-header">
@@ -209,7 +209,7 @@
     {% javascript 'crashstats_base' %}
 
     {# If the user has signed in with Google, definitely don't bother with Persona #}
-    {% if not (request.session.get('signin_method') == 'google' and request.user.is_authenticated()) %}
+    {% if request.session and not (request.session.get('signin_method') == 'google' and request.user.is_authenticated()) %}
         {# persona is still valid #}
         <script type="text/javascript" src="https://login.persona.org/include.js"></script>
         {% javascript 'browserid' %}
