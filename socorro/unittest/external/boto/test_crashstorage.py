@@ -2,18 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
 import json
-import tempfile
 import shutil
+import tempfile
+
 from os.path import join
 
 import boto.exception
 
-from socorrolib.lib.util import DotDict
-from socorro.external.crashstorage_base import (
-    Redactor,
-    MemoryDumpsMapping
+import mock
+
+from socorro.database.transaction_executor import (
+    TransactionExecutor,
+    TransactionExecutorWithLimitedBackoff,
 )
 from socorro.external.boto.connection_context import (
     KeyBuilderBase,
@@ -25,12 +26,22 @@ from socorro.external.boto.crashstorage import (
     SupportReasonAPIStorage,
     TelemetryBotoS3CrashStorage,
 )
-from socorro.database.transaction_executor import (
-    TransactionExecutor,
-    TransactionExecutorWithLimitedBackoff,
+from socorro.external.crashstorage_base import (
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+    Redactor,
 )
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.unittest.external.es.base import ElasticsearchTestCase
+
 import socorro.unittest.testbase
+
+from socorrolib.lib.util import DotDict
+
+# Uncomment these lines to decrease verbosity of the elasticsearch library
+# while running unit tests.
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 a_raw_crash = {
@@ -63,15 +74,15 @@ class BaseTestCase(socorro.unittest.testbase.TestCase):
         shutil.rmtree(cls.TEMPDIR)
 
     def setup_mocked_s3_storage(
-            self,
-            executor=TransactionExecutor,
-            executor_for_gets=TransactionExecutor,
-            keybuilder_class=KeyBuilderBase,
-            storage_class='BotoS3CrashStorage',
-            bucket_name='mozilla-support-reason',
-            host='',
-            port=0):
-
+        self,
+        executor=TransactionExecutor,
+        executor_for_gets=TransactionExecutor,
+        keybuilder_class=KeyBuilderBase,
+        storage_class='BotoS3CrashStorage',
+        bucket_name='mozilla-support-reason',
+        host='',
+        port=0,
+    ):
         config = DotDict({
             'source': {
                 'dump_field': 'dump'
@@ -94,6 +105,7 @@ class BaseTestCase(socorro.unittest.testbase.TestCase):
             'prefix': 'dev',
             'calling_format': mock.Mock()
         })
+
         if isinstance(storage_class, basestring):
             if storage_class == 'BotoS3CrashStorage':
                 config.bucket_name = 'crash_storage'
@@ -107,7 +119,6 @@ class BaseTestCase(socorro.unittest.testbase.TestCase):
         s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
         s3_conn._calling_format.return_value = mock.Mock()
         s3_conn._CreateError = mock.Mock()
-##        s3_conn.ResponseError = mock.Mock()
         s3_conn._open = mock.MagicMock()
 
         return s3
@@ -1056,31 +1067,61 @@ class TestCase(BaseTestCase):
         )
 
 
-class TelemetryTestCase(BaseTestCase):
+class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
 
-    def setup_mocked_s3_storage(self):
-        parent = super(TelemetryTestCase, self)
-        return parent.setup_mocked_s3_storage(
-            storage_class=TelemetryBotoS3CrashStorage,
-            keybuilder_class=SimpleDatePrefixKeyBuilder,
-            bucket_name='telemetry-crashes',
+    def get_s3_store(
+        self,
+        keybuilder_class=SimpleDatePrefixKeyBuilder,
+        storage_class=TelemetryBotoS3CrashStorage,
+        bucket_name='telemetry-crashes',
+    ):
+        s3 = TelemetryBotoS3CrashStorage(
+            config=self.get_tuned_config(
+                TelemetryBotoS3CrashStorage,
+                extra_values={
+                    'transaction_executor_class': TransactionExecutor,
+                    'transaction_executor_class_for_get': TransactionExecutor,
+                    'resource_class': S3ConnectionContext,
+                    'keybuilder_class': keybuilder_class,
+                    'redactor_class': Redactor,
+                    'forbidden_keys': (
+                        Redactor.required_config.forbidden_keys.default
+                    ),
+                    'logger': mock.Mock(),
+                    'access_key': 'this is the access key',
+                    'secret_access_key': 'secrets',
+                    'temporary_file_system_storage_path': self.TEMPDIR,
+                    'bucket_name': bucket_name,
+                    'prefix': 'dev',
+                    'calling_format': mock.Mock()
+                }
+            )
         )
+        s3_conn = s3.connection_source
+        s3_conn._connect_to_endpoint = mock.Mock()
+        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
+        s3_conn._calling_format.return_value = mock.Mock()
+        s3_conn._CreateError = mock.Mock()
+        s3_conn._open = mock.MagicMock()
+
+        return s3
 
     def test_save_raw_and_processed(self):
-        boto_s3_store = self.setup_mocked_s3_storage()
+        boto_s3_store = self.get_s3_store()
 
         # the tested call
         boto_s3_store.save_raw_and_processed(
             {
-                "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
+                'submitted_timestamp': '2013-01-09T22:21:18.646733+00:00'
             },
             None,
             {
-                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-                "completeddatetime": "2012-04-08 10:56:50.902884",
-                "signature": 'now_this_is_a_signature'
+                'uuid': '0bba929f-8721-460c-dead-a43c20071027',
+                'completeddatetime': '2012-04-08 10:56:50.902884',
+                'signature': 'now_this_is_a_signature',
+                'os_name': 'Linux',
             },
-            "0bba929f-8721-460c-dead-a43c20071027"
+            '0bba929f-8721-460c-dead-a43c20071027'
         )
 
         # what should have happened internally
@@ -1119,7 +1160,8 @@ class TelemetryTestCase(BaseTestCase):
         storage_key_mock.set_contents_from_string.assert_has_calls(
             [
                 mock.call(
-                    '{"uuid": "0bba929f-8721-460c-dead-a43c20071027", '
+                    '{"platform": "Linux", '
+                    '"uuid": "0bba929f-8721-460c-dead-a43c20071027", '
                     '"signature": "now_this_is_a_signature"}'
                 ),
             ],

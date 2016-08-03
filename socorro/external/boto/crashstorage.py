@@ -5,17 +5,20 @@
 import json
 
 import json_schema_reducer
+from socorrolib.lib.converters import change_default
+from socorrolib.lib.util import DotDict
+
+from configman import Namespace
+from configman.converters import class_converter, py_obj_to_str
+
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorrolib.lib.util import DotDict
-from socorrolib.lib.converters import change_default
-
-from configman import Namespace
-from configman.converters import class_converter, py_obj_to_str
+from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.schemas import PROCESSED_CRASH_JSON_SCHEMA
+
 
 #==============================================================================
 class BotoCrashStorage(CrashStorageBase):
@@ -285,6 +288,14 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
     )
 
+    required_config.elasticsearch = Namespace()
+    required_config.elasticsearch.add_option(
+        'elasticsearch_class',
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch',
+    )
+
     #--------------------------------------------------------------------------
     def save_raw_and_processed(
         self,
@@ -293,12 +304,37 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         processed_crash,
         crash_id
     ):
-        schema = PROCESSED_CRASH_JSON_SCHEMA
-        crash = json_schema_reducer.make_reduced_dict(schema, processed_crash)
+        all_fields = SuperSearchFields(config=self.config).get()
+        crash_report = {}
+
+        # Rename fields in raw_crash.
+        raw_fields_map = dict(
+            (x['in_database_name'], x['name'])
+            for x in all_fields.values()
+            if x['namespace'] == 'raw_crash'
+        )
+        for key, val in raw_crash.items():
+            crash_report[raw_fields_map.get(key, key)] = val
+
+        # Rename fields in processed_crash.
+        processed_fields_map = dict(
+            (x['in_database_name'], x['name'])
+            for x in all_fields.values()
+            if x['namespace'] == 'processed_crash'
+        )
+        for key, val in processed_crash.items():
+            crash_report[processed_fields_map.get(key, key)] = val
+
         from pprint import pprint
+        pprint(crash_report)
+
+        # Validate crash_report.
+        crash_report = json_schema_reducer.make_reduced_dict(
+            PROCESSED_CRASH_JSON_SCHEMA, crash_report
+        )
         print "NEW CRASH"
-        pprint(crash)
-        self.save_processed(crash)
+        pprint(crash_report)
+        self.save_processed(crash_report)
 
 
 #==============================================================================
