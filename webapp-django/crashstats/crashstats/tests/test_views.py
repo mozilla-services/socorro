@@ -21,7 +21,6 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils import timezone
 from django.contrib.auth.models import (
     User,
-    AnonymousUser,
     Group,
     Permission
 )
@@ -549,8 +548,6 @@ class TestViews(BaseTestViews):
         # to make a mock call to the django view functions you need a request
         fake_request = RequestFactory().request(**{'wsgi.input': None})
         fake_request.session = {}
-        # Need a fake user for the persona bits on crashstats_base
-        fake_request.user = AnonymousUser()
 
         # the reason for first causing an exception to be raised is because
         # the handler500 function is only called by django when an exception
