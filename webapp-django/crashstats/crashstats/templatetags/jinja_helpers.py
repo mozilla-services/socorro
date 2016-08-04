@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 import urllib
 
 import isodate
@@ -212,6 +213,23 @@ def bugzilla_submit_url(report, bug_product):
 
     url += '?' + urllib.urlencode(kwargs, True)
     return url
+
+
+@library.filter
+def replace_bugzilla_links(text):
+    """Returns a text with any bugzilla URL replaced with a link to that URL
+    with a nice 'Bug XXX' text. """
+    bugzilla_finder = re.compile(
+        '(https?://bugzilla.mozilla.org/show_bug.cgi\?id='
+        '([0-9]*)[a-zA-Z0-9#&=]*)'
+    )
+
+    # Sanitize the text first, before adding some HTML into it.
+    text = text.replace('</', '<\\/')
+
+    return jinja2.Markup(
+        bugzilla_finder.sub(r'<a href="\1">Bug \2</a>', text)
+    )
 
 
 @library.global_function

@@ -39,6 +39,7 @@ PIPELINE_CSS = {
     'crashstats_base': {
         'source_filenames': (
             'crashstats/css/screen.less',
+            'status/css/status.less',
             'browserid/persona-buttons.css',
         ),
         'output_filename': 'css/crashstats-base.min.css',
