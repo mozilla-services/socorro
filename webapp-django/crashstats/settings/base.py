@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     '%s.monitoring' % PROJECT_MODULE,
     '%s.profile' % PROJECT_MODULE,
     '%s.signature' % PROJECT_MODULE,
+    '%s.status' % PROJECT_MODULE,
     '%s.supersearch' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
@@ -135,6 +136,7 @@ _CONTEXT_PROCESSORS = (
     '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
     '%s.base.context_processors.browserid' % PROJECT_MODULE,
+    '%s.status.context_processors.status_message' % PROJECT_MODULE,
 )
 
 TEMPLATES = [

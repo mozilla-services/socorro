@@ -1,0 +1,62 @@
+{% extends "manage/base.html" %}
+
+{% block page_title %}{{ super() }} - Status Message{% endblock %}
+
+{% block site_js %}
+{{ super() }}
+{% javascript 'moment' %}
+{% javascript 'pagination' %}
+{% javascript 'api_tokens' %}
+{% endblock %}
+
+{% block site_css %}
+{{ super() }}
+{% stylesheet 'api_tokens' %}
+{% endblock %}
+
+{% block admin_title %}{{ super() }} - Status Message{% endblock %}
+
+{% block mainbody %}
+<div class="panel">
+    <div class="body notitle">
+
+        <h3>Current Active Status Messages</h3>
+
+        <table class="data-table vertical">
+            <thead>
+                <tr>
+                    <th>Message</th>
+                    <th>Severity</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for status in statuses %}
+                <tr>
+                    <td>{{ status.message }}</td>
+                    <td>{{ status.severity }}</td>
+                    <td><a href="{{ url('manage:status_message_disable') }}?id={{ status.id }}">Disable</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>Create new Status Message</h3>
+
+        <form action="{{ url('manage:status_message') }}" id="create" method="post">
+            {% csrf_token %}
+            <table class="data-table">
+                {{ form }}
+                <tr>
+                    <th>&nbsp;</th>
+                    <td>
+                        <input type="submit" value="Save">
+                    </td>
+                </tr>
+            </table>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}
