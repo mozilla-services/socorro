@@ -57,6 +57,7 @@ SERVICES_LIST = (
     (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
     (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
     (r'/util/(versions_info)/(.*)', 'util.Util'),
+    (r'/healthcheck/', 'healthcheck.Healthcheck'),
 )
 
 # certain items in a URL path should NOT be split by `+`

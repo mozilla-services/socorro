@@ -252,8 +252,9 @@ class TestHealthcheckViews(BaseTestViews):
             {'elb': 'true'}
         )
 
+    @mock.patch('requests.get')
     @mock.patch('crashstats.monitoring.views.elasticsearch')
-    def test_healthcheck(self, mocked_elasticsearch):
+    def test_healthcheck(self, mocked_elasticsearch, rget):
         searches = []
 
         def mocked_supersearch_get(**params):
@@ -273,6 +274,11 @@ class TestHealthcheckViews(BaseTestViews):
         SuperSearch.implementation().get.side_effect = (
             mocked_supersearch_get
         )
+
+        def mocked_requests_get(url, **params):
+            return Response(True)
+
+        rget.side_effect = mocked_requests_get
 
         url = reverse('monitoring:healthcheck')
         response = self.client.get(url)

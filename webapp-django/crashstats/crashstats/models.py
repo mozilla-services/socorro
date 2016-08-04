@@ -1874,3 +1874,16 @@ class Reprocessing(SocorroMiddleware):
 
     def post(self, **data):
         return self.get_implementation().reprocess(**data)
+
+
+class Healthcheck(SocorroMiddleware):
+    """Return a sign of life from the middleware.
+
+    This model can be removed (and its only user which is the monitoring)
+    once https://bugzilla.mozilla.org/show_bug.cgi?id=1188083 finishes.
+
+    See https://bugzilla.mozilla.org/show_bug.cgi?id=1292227
+    """
+
+    URL_PREFIX = '/healthcheck/'
+    cache_seconds = 0
