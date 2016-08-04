@@ -17,14 +17,18 @@ logger = logging.getLogger("webapi")
 class Bugs(PostgreSQLBase):
     """Implement the /bugs service with PostgreSQL. """
     filters = [
-        ("signatures", None, ["list", "str"]),
-        ("bug_ids", None, ["list", "str"]),
+        ("signatures", None, [str]),
+        ("bug_ids", None, [int]),
     ]
 
     def get(self, **kwargs):
         """Return a list of signatures-to-bug_ids or bug_ids-to-signatures
            associations. """
-        params = external_common.parse_arguments(self.filters, kwargs)
+        params = external_common.parse_arguments(
+            self.filters,
+            kwargs,
+            modern=True
+        )
 
         if not params['signatures'] and not params['bug_ids']:
             raise MissingArgumentError('specify one of signatures or bug_ids')

@@ -832,7 +832,7 @@ class TestModels(DjangoTestCase):
         api = model()
 
         def mocked_get(**options):
-            assert options == {'bug_ids': '123456789'}
+            assert options == {'bug_ids': ['123456789']}
             return {'hits': {'signatures': 'Pickle::ReadBytes'}}
 
         models.SignaturesByBugs.implementation().get.side_effect = mocked_get
