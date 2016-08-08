@@ -332,15 +332,10 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         for key, val in processed_crash.items():
             crash_report[processed_fields_map.get(key, key)] = val
 
-        from pprint import pprint
-        pprint(crash_report)
-
         # Validate crash_report.
         crash_report = json_schema_reducer.make_reduced_dict(
             CRASH_REPORT_JSON_SCHEMA, crash_report
         )
-        print "NEW CRASH"
-        pprint(crash_report)
         self.save_processed(crash_report)
 
 
