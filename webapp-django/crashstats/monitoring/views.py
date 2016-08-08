@@ -11,7 +11,7 @@ from django.contrib.auth.models import Permission
 from django.core.cache import cache
 
 from crashstats.crashstats import utils
-from crashstats.crashstats.models import CrontabberState
+from crashstats.crashstats.models import CrontabberState, Healthcheck
 from crashstats.supersearch.models import SuperSearch
 
 
@@ -170,6 +170,11 @@ def healthcheck(request):
 
         # Check SuperSearch paginated results
         assert_supersearch_no_errors()
+
+        # Check that the middleware server is healthy
+        response = Healthcheck().get()
+        # check specifically for `True` and no other truthy value
+        assert response is True, response
 
     return {'ok': True}
 
