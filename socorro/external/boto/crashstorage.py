@@ -17,7 +17,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
-from socorro.schemas import PROCESSED_CRASH_JSON_SCHEMA
+from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 
 #==============================================================================
@@ -308,7 +308,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         crash_report = {}
 
         # TODO Opportunity of optimization;
-        # We could inspect PROCESSED_CRASH_JSON_SCHEMA and get a list
+        # We could inspect CRASH_REPORT_JSON_SCHEMA and get a list
         # of all (recursive) keys that are in there and use that
         # to limit the two following loops to not bother
         # filling up `crash_report` with keys that will never been
@@ -337,7 +337,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
         # Validate crash_report.
         crash_report = json_schema_reducer.make_reduced_dict(
-            PROCESSED_CRASH_JSON_SCHEMA, crash_report
+            CRASH_REPORT_JSON_SCHEMA, crash_report
         )
         print "NEW CRASH"
         pprint(crash_report)

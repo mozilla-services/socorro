@@ -11,4 +11,4 @@ def _get_file_content(filename):
     with resource_stream(__name__, filename) as f:
         return json.load(f)
 
-PROCESSED_CRASH_JSON_SCHEMA = _get_file_content('processed_crash.json')
+CRASH_REPORT_JSON_SCHEMA = _get_file_content('crash_report.json')
