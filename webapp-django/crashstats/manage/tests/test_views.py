@@ -1595,7 +1595,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-        # expects some permissions to be available as dropdowns
+        # expects some severity options to be available as dropdowns
         ok_(
             '<option value="%s">%s</option>' % (
                 'critical',
@@ -1610,7 +1610,7 @@ class TestViews(BaseTestViews):
         response = self.client.post(url)
         eq_(response.status_code, 302)
 
-        self._login()
+        user = self._login()
         response = self.client.post(url)
         eq_(response.status_code, 200)
         ok_('This field is required' in response.content)
@@ -1623,7 +1623,7 @@ class TestViews(BaseTestViews):
 
         event, = Log.objects.all()
 
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'status_message.create')
         eq_(event.extra['severity'], 'critical')
 
@@ -1632,7 +1632,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 302)
 
-        self._login()
+        user = self._login()
         response = self.client.get(url)
         eq_(response.status_code, 400)
         response = self.client.get(url, {'id': '99999'})
@@ -1651,7 +1651,7 @@ class TestViews(BaseTestViews):
 
         event, = Log.objects.all()
 
-        eq_(event.user, self.user)
+        eq_(event.user, user)
         eq_(event.action, 'status_message.disable')
 
     def test_crash_me_now(self):

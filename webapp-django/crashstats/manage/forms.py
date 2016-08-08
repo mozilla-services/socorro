@@ -310,8 +310,8 @@ class StatusMessageForm(BaseForm):
     message = forms.CharField(required=True, widget=forms.widgets.Textarea)
     severity = forms.ChoiceField(
         choices=(
-            ('info', 'info'),
-            ('warning', 'warning'),
-            ('critical', 'critical'),
+            ('info', 'Info'),
+            ('warning', 'Warning'),
+            ('critical', 'Critical'),
         )
     )

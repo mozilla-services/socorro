@@ -1,19 +1,6 @@
 {% extends "manage/base.html" %}
 
 {% block page_title %}{{ super() }} - Status Message{% endblock %}
-
-{% block site_js %}
-{{ super() }}
-{% javascript 'moment' %}
-{% javascript 'pagination' %}
-{% javascript 'api_tokens' %}
-{% endblock %}
-
-{% block site_css %}
-{{ super() }}
-{% stylesheet 'api_tokens' %}
-{% endblock %}
-
 {% block admin_title %}{{ super() }} - Status Message{% endblock %}
 
 {% block mainbody %}

@@ -1047,7 +1047,9 @@ def status_message_disable(request):
         return http.HttpResponseBadRequest('No id')
     status = get_object_or_404(StatusMessage, id=request.GET['id'])
 
-    log(request.user, 'status_message.disable', {})
+    log(request.user, 'status_message.disable', {
+        'id': status.id,
+    })
 
     status.enabled = False
     status.save()

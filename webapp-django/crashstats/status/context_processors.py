@@ -6,7 +6,7 @@ def status_message(request):
         StatusMessage.objects.filter(enabled=True).order_by('-created_at')
     )
 
-    if not len(statuses):
+    if not statuses.count():
         return {}
 
     status = statuses[0]
