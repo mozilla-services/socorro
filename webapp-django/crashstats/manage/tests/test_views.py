@@ -1599,7 +1599,7 @@ class TestViews(BaseTestViews):
         ok_(
             '<option value="%s">%s</option>' % (
                 'critical',
-                'critical'
+                'Critical'
             ) in response.content
         )
 
