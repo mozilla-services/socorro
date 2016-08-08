@@ -307,6 +307,13 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         all_fields = SuperSearchFields(config=self.config).get()
         crash_report = {}
 
+        # TODO Opportunity of optimization;
+        # We could inspect PROCESSED_CRASH_JSON_SCHEMA and get a list
+        # of all (recursive) keys that are in there and use that
+        # to limit the two following loops to not bother
+        # filling up `crash_report` with keys that will never been
+        # needed.
+
         # Rename fields in raw_crash.
         raw_fields_map = dict(
             (x['in_database_name'], x['name'])
