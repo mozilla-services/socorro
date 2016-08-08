@@ -1,4 +1,4 @@
-{% macro pagination(report, current_url, current_page, tab = None) %}
+{% macro pagination(report, current_url, current_page, tab = '') %}
 {% set separator = not current_url.endswith('?') and '&' or '' %}
 <div class="pagination">
     <span class="totalItems">{{ report.total_count | digitgroupseparator }}</span>

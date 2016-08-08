@@ -404,6 +404,7 @@ USERS_ADMIN_BATCH_SIZE = 10
 EVENTS_ADMIN_BATCH_SIZE = 10
 API_TOKENS_ADMIN_BATCH_SIZE = 10
 SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE = 10
+STATUS_MESSAGE_ADMIN_BATCH_SIZE = 10
 
 # Individual strings that can't be allowed in any of the lines in the
 # content of a symbols archive file.

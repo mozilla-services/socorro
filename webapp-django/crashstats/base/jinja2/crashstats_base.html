@@ -141,11 +141,11 @@
         </div>
     </div>
 
-    {% if status_message %}
-    <div id="status-message" class="severity-{{ status_message.severity }}">
-        {{ status_message.text | replace_bugzilla_links }}
+    {% for status in status_messages %}
+    <div class="status-message severity-{{ status.severity }}">
+        {{ status.text | replace_bugzilla_links }}
     </div>
-    {% endif %}
+    {% endfor %}
 
     {% if messages %}
         {% for message in messages %}

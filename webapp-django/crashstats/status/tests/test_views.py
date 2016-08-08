@@ -23,8 +23,8 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('id="status-message' in response.content)
-        ok_('class="severity-critical' in response.content)
+        ok_('class="status-message' in response.content)
+        ok_('severity-critical' in response.content)
         ok_(status.message in response.content)
 
         # Now disable that status and verify it doesn't show anymore.

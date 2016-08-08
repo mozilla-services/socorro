@@ -9,10 +9,13 @@ def status_message(request):
     if not statuses.count():
         return {}
 
-    status = statuses[0]
-    return {
-        'status_message': {
+    messages = []
+    for status in statuses:
+        messages.append({
             'text': status.message,
             'severity': status.severity,
-        },
+        })
+
+    return {
+        'status_messages': messages,
     }

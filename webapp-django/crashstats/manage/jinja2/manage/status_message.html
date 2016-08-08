@@ -1,5 +1,7 @@
 {% extends "manage/base.html" %}
 
+{% from "macros/pagination.html" import pagination %}
+
 {% block page_title %}{{ super() }} - Status Message{% endblock %}
 {% block admin_title %}{{ super() }} - Status Message{% endblock %}
 
@@ -9,6 +11,7 @@
 
         <h3>Current Active Status Messages</h3>
 
+        {{ pagination(pagination_data, pagination_data.current_url, pagination_data.page) }}
         <table class="data-table vertical">
             <thead>
                 <tr>
@@ -20,13 +23,14 @@
             <tbody>
                 {% for status in statuses %}
                 <tr>
-                    <td>{{ status.message }}</td>
+                    <td {% if not status.enabled %}class="strike" title="Disabled"{% endif %}>{{ status.message }}</td>
                     <td>{{ status.severity }}</td>
                     <td><a href="{{ url('manage:status_message_disable') }}?id={{ status.id }}">Disable</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {{ pagination(pagination_data, pagination_data.current_url, pagination_data.page) }}
 
         <h3>Create new Status Message</h3>
 
