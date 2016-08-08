@@ -34,6 +34,7 @@ from crashstats.supersearch.models import (
     SuperSearchMissingFields,
 )
 from crashstats.tokens.models import Token
+from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 
@@ -1002,3 +1003,53 @@ def reprocessing(request):
         'crash_id': request.GET.get('crash_id'),
     }
     return render(request, 'manage/reprocessing.html', context)
+
+
+@superuser_required
+@transaction.atomic
+def status_message(request):
+    if request.method == 'POST':
+        form = forms.StatusMessageForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            status = StatusMessage.objects.create(
+                message=data['message'],
+                severity=data['severity'],
+            )
+
+            log(request.user, 'status_message.create', {
+                'user': request.user.email,
+                'severity': status.severity,
+            })
+
+            messages.success(
+                request,
+                'Status Message created. '
+            )
+            return redirect('manage:status_message')
+    else:
+        form = forms.StatusMessageForm()
+
+    statuses = (
+        StatusMessage.objects.filter(enabled=True).order_by('-created_at')
+    )
+
+    context = {
+        'form': form,
+        'statuses': statuses,
+    }
+    return render(request, 'manage/status_message.html', context)
+
+
+@superuser_required
+def status_message_disable(request):
+    if not request.GET.get('id'):
+        return http.HttpResponseBadRequest('No id')
+    status = get_object_or_404(StatusMessage, id=request.GET['id'])
+
+    log(request.user, 'status_message.disable', {})
+
+    status.enabled = False
+    status.save()
+
+    return redirect(reverse('manage:status_message'))

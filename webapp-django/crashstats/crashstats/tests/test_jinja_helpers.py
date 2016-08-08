@@ -3,18 +3,20 @@ import time
 import urlparse
 
 from nose.tools import eq_, ok_
+
 from django.core.cache import cache
 from django.utils.safestring import SafeText
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.templatetags.jinja_helpers import (
-    timestamp_to_date,
-    recursive_state_filter,
-    show_bug_link,
     bugzilla_submit_url,
     digitgroupseparator,
+    recursive_state_filter,
+    replace_bugzilla_links,
+    show_bug_link,
     show_duration,
     show_filesize,
+    timestamp_to_date,
 )
 
 
@@ -184,6 +186,55 @@ class TestBugzillaSubmitURL(TestCase):
         url = bugzilla_submit_url(report, 'Core')
         qs = self._extract_query_string(url)
         ok_('op_sys' not in qs)
+
+
+class TestReplaceBugzillaLinks(TestCase):
+    def test_simple(self):
+        text = 'foo https://bugzilla.mozilla.org/show_bug.cgi?id=1129515 bar'
+        res = replace_bugzilla_links(text)
+        eq_(
+            res,
+            'foo <a href="https://bugzilla.mozilla.org/show_bug.cgi?id='
+            '1129515">Bug 1129515</a> bar'
+        )
+
+    def test_url_http(self):
+        text = 'hey http://bugzilla.mozilla.org/show_bug.cgi?id=1129515#c5 ho'
+        res = replace_bugzilla_links(text)
+        eq_(
+            res,
+            'hey <a href="http://bugzilla.mozilla.org/show_bug.cgi?id='
+            '1129515#c5">Bug 1129515</a> ho'
+        )
+
+    def test_url_with_hash(self):
+        text = 'hey https://bugzilla.mozilla.org/show_bug.cgi?id=1129515#c5 ho'
+        res = replace_bugzilla_links(text)
+        eq_(
+            res,
+            'hey <a href="https://bugzilla.mozilla.org/show_bug.cgi?id='
+            '1129515#c5">Bug 1129515</a> ho'
+        )
+
+    def test_several_urls(self):
+        text = '''hey, I https://bugzilla.mozilla.org/show_bug.cgi?id=43 met
+        you and this is
+        https://bugzilla.mozilla.org/show_bug.cgi?id=40878 but here's my
+        https://bugzilla.mozilla.org/show_bug.cgi?id=7845 so call me maybe
+        '''
+        res = replace_bugzilla_links(text)
+        ok_('Bug 43' in res)
+        ok_('Bug 40878' in res)
+        ok_('Bug 7845' in res)
+
+    def test_several_with_unsafe_html(self):
+        text = '''malicious <script></script> tag
+        for https://bugzilla.mozilla.org/show_bug.cgi?id=43
+        '''
+        res = replace_bugzilla_links(text)
+        ok_('</script>' not in res)
+        ok_('Bug 43' in res)
+        ok_('</a>' in res)
 
 
 class TesDigitGroupSeparator(TestCase):
