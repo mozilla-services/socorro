@@ -303,3 +303,15 @@ class ReprocessingForm(BaseForm):
                 'Does not appear to be a valid crash ID'
             )
         return crash_id
+
+
+class StatusMessageForm(BaseForm):
+
+    message = forms.CharField(required=True, widget=forms.widgets.Textarea)
+    severity = forms.ChoiceField(
+        choices=(
+            ('info', 'Info'),
+            ('warning', 'Warning'),
+            ('critical', 'Critical'),
+        )
+    )

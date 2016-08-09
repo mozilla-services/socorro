@@ -1,8 +1,9 @@
-import functools
-import copy
-import urllib
 import collections
+import copy
+import functools
 import hashlib
+import math
+import urllib
 
 from django import http
 from django.conf import settings
@@ -34,6 +35,7 @@ from crashstats.supersearch.models import (
     SuperSearchMissingFields,
 )
 from crashstats.tokens.models import Token
+from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
 
@@ -1002,3 +1004,80 @@ def reprocessing(request):
         'crash_id': request.GET.get('crash_id'),
     }
     return render(request, 'manage/reprocessing.html', context)
+
+
+@superuser_required
+@transaction.atomic
+def status_message(request):
+    if request.method == 'POST':
+        form = forms.StatusMessageForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            status = StatusMessage.objects.create(
+                message=data['message'],
+                severity=data['severity'],
+            )
+
+            log(request.user, 'status_message.create', {
+                'user': request.user.email,
+                'severity': status.severity,
+            })
+
+            messages.success(
+                request,
+                'Status Message created. '
+            )
+            return redirect('manage:status_message')
+    else:
+        form = forms.StatusMessageForm()
+
+    try:
+        page = int(request.GET.get('page', 1))
+        assert page >= 1
+    except (ValueError, AssertionError):
+        return http.HttpResponseBadRequest('invalid page')
+
+    statuses = (
+        StatusMessage.objects.all().order_by('-created_at')
+    )
+
+    count = statuses.count()
+    batch_size = settings.STATUS_MESSAGE_ADMIN_BATCH_SIZE
+    m = (page - 1) * batch_size
+    n = page * batch_size
+
+    current_query = request.GET.copy()
+    if 'page' in current_query:
+        del current_query['page']
+    current_url = '{}?{}'.format(
+        reverse('manage:status_message'),
+        current_query.urlencode()
+    )
+
+    context = {
+        'form': form,
+        'statuses': statuses[m:n],
+        'pagination_data': {
+            'page': page,
+            'current_url': current_url,
+            'total_pages': int(math.ceil(float(count) / batch_size)),
+            'total_count': count,
+        }
+    }
+    return render(request, 'manage/status_message.html', context)
+
+
+@superuser_required
+def status_message_disable(request):
+    if not request.GET.get('id'):
+        return http.HttpResponseBadRequest('No id')
+    status = get_object_or_404(StatusMessage, id=request.GET['id'])
+
+    log(request.user, 'status_message.disable', {
+        'id': status.id,
+    })
+
+    status.enabled = False
+    status.save()
+
+    return redirect(reverse('manage:status_message'))

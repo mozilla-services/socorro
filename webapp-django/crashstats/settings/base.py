@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     '%s.monitoring' % PROJECT_MODULE,
     '%s.profile' % PROJECT_MODULE,
     '%s.signature' % PROJECT_MODULE,
+    '%s.status' % PROJECT_MODULE,
     '%s.supersearch' % PROJECT_MODULE,
     '%s.symbols' % PROJECT_MODULE,
     '%s.tokens' % PROJECT_MODULE,
@@ -135,6 +136,7 @@ _CONTEXT_PROCESSORS = (
     '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
     '%s.base.context_processors.browserid' % PROJECT_MODULE,
+    '%s.status.context_processors.status_message' % PROJECT_MODULE,
 )
 
 TEMPLATES = [
@@ -402,6 +404,7 @@ USERS_ADMIN_BATCH_SIZE = 10
 EVENTS_ADMIN_BATCH_SIZE = 10
 API_TOKENS_ADMIN_BATCH_SIZE = 10
 SYMBOLS_UPLOADS_ADMIN_BATCH_SIZE = 10
+STATUS_MESSAGE_ADMIN_BATCH_SIZE = 10
 
 # Individual strings that can't be allowed in any of the lines in the
 # content of a symbols archive file.

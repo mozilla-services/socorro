@@ -141,6 +141,12 @@
         </div>
     </div>
 
+    {% for status in status_messages %}
+    <div class="status-message severity-{{ status.severity }}">
+        {{ status.text | replace_bugzilla_links }}
+    </div>
+    {% endfor %}
+
     {% if messages %}
         {% for message in messages %}
           <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
@@ -150,6 +156,7 @@
     {% endif %}
 
     {% block content %}{% endblock %}
+
     <div id="footer" class="page-footer">
         <div class="nav">
             <div class="about">

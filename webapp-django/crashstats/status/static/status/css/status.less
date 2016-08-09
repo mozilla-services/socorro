@@ -1,0 +1,41 @@
+
+.status-message {
+    position: relative;
+    background-color: #dae2e6;
+    border-bottom: 1px solid #c0c0c0;
+    color: white;
+    font-size: 1.1em;
+    padding: 0 20px;
+    padding-left: 124px;
+    line-height: 32px;
+
+    &:before {
+        padding: 4px 4px 0 0;
+        vertical-align: middle;
+    }
+
+    &.severity-info {
+        background-color: #31b0d5;
+        border-color: #269abc;
+
+        &:before {
+            content: url(../../img/3rdparty/silk/information.png);
+        }
+    }
+    &.severity-warning {
+        background-color: #f0ad4e;
+        border-color: #eea236;
+
+        &:before {
+            content: url(../../img/3rdparty/silk/error.png);
+        }
+    }
+    &.severity-critical {
+        background-color: #d9534f;
+        border-color: #d43f3a;
+
+        &:before {
+            content: url(../../img/3rdparty/silk/exclamation.png);
+        }
+    }
+}

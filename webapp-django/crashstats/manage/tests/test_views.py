@@ -14,6 +14,7 @@ import mock
 from nose.tools import eq_, ok_, assert_raises
 from eventlog.models import Log
 
+from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.tokens.models import Token
 from crashstats.supersearch.models import (
@@ -1582,6 +1583,76 @@ class TestViews(BaseTestViews):
         eq_(event.extra['notes'], 'Some notes')
         eq_(event.extra['user'], user.email)
         eq_(event.extra['permissions'], permission.name)
+
+    def test_status_message(self):
+        url = reverse('manage:status_message')
+
+        # Test while logged out.
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        # expects some severity options to be available as dropdowns
+        ok_(
+            '<option value="%s">%s</option>' % (
+                'critical',
+                'Critical'
+            ) in response.content
+        )
+
+    def test_create_status_message(self):
+        url = reverse('manage:status_message')
+
+        # Test while logged out.
+        response = self.client.post(url)
+        eq_(response.status_code, 302)
+
+        user = self._login()
+        response = self.client.post(url)
+        eq_(response.status_code, 200)
+        ok_('This field is required' in response.content)
+
+        response = self.client.post(url, {
+            'message': 'Foo',
+            'severity': 'critical'
+        })
+        eq_(response.status_code, 302)
+
+        event, = Log.objects.all()
+
+        eq_(event.user, user)
+        eq_(event.action, 'status_message.create')
+        eq_(event.extra['severity'], 'critical')
+
+    def test_disable_status_message(self):
+        url = reverse('manage:status_message_disable')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+
+        user = self._login()
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
+        response = self.client.get(url, {'id': '99999'})
+        eq_(response.status_code, 404)
+
+        status = StatusMessage.objects.create(
+            message='foo',
+            severity='critical',
+        )
+
+        response = self.client.get(url, {'id': status.id})
+        eq_(response.status_code, 302)  # redirect on success
+
+        # Verify there is no enabled statuses anymore.
+        ok_(not StatusMessage.objects.filter(enabled=True))
+
+        event, = Log.objects.all()
+
+        eq_(event.user, user)
+        eq_(event.action, 'status_message.disable')
 
     def test_crash_me_now(self):
         url = reverse('manage:crash_me_now')
