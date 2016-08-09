@@ -39,9 +39,9 @@ from socorrolib.lib.util import DotDict
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
+import logging
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 a_raw_crash = {
@@ -1166,4 +1166,117 @@ class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
                 ),
             ],
             any_order=True,
+        )
+
+    @mock.patch('socorro.external.boto.crashstorage.SuperSearchFields')
+    def test_save_raw_and_processed_supersearchfields_caching(self, ssf):
+
+        # Mock the SuperSearchFields().get() so that it returns a
+        # dict where the "corrected" name for "PluginName"
+        # becomes.
+        first_supersearch_fields = {
+             'plugin_name': {
+                'in_database_name': 'PluginName',
+                'name': 'plugin_name',
+                'namespace': 'processed_crash',
+            },
+        }
+        ssf().get.return_value = first_supersearch_fields
+        boto_s3_store = self.get_s3_store()
+
+        # First one
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2013-01-09T22:21:18.646733+00:00'
+            },
+            None,
+            {
+                'uuid': '0bba929f-8721-460c-dead-a43c20071027',
+                'PluginName': 'Flash',
+            },
+            '0bba929f-8721-460c-dead-a43c20071027'
+        )
+        mocked_connection = (
+            boto_s3_store.connection_source._connect_to_endpoint()
+        )
+        mocked_set_function = (
+            mocked_connection.get_bucket().new_key().set_contents_from_string
+        )
+        mocked_set_function.assert_called_with(
+            json.dumps({
+                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+                "plugin_name": "Flash"
+            })
+        )
+
+        # And the instance of TelemetryBotoS3CrashStorage should now
+        # have these fields cached in a instance attribute
+        self.assertEqual(
+            boto_s3_store._all_fields,
+            first_supersearch_fields
+        )
+        # and there's a timestamp too
+        self.assertTrue(
+            isinstance(boto_s3_store._all_fields_timestamp, float)
+        )
+
+        # Now let's mess with the SuperSearchFields().get() and return
+        # a different name that the JSON Schema will NOT like
+        second_supersearch_fields = {
+             u'plugin_name': {
+                u'in_database_name': u'PluginName',
+                u'name': u'UNRECOGNIZED_JUNK',
+                u'namespace': u'processed_crash',
+            },
+        }
+        ssf().get.return_value = second_supersearch_fields
+        # Second crash saved and processed
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2014-02-10T23:22:19.646733+00:00'
+            },
+            None,
+            {
+                'uuid': 'e01c9a77-8a09-43b5-bc84-3deb52160503',
+                'PluginName': 'SilverLight',
+            },
+            'e01c9a77-8a09-43b5-bc84-3deb52160503'
+        )
+        # But! Because the SuperSearchFields are cached for X seconds,
+        # this does NOT prevent the save from working.
+        mocked_set_function.assert_called_with(
+            json.dumps({
+                "uuid": "e01c9a77-8a09-43b5-bc84-3deb52160503",
+                "plugin_name": "SilverLight"
+            })
+        )
+
+        # The cached all fields should be the same as before
+        self.assertEqual(
+            boto_s3_store._all_fields,
+            first_supersearch_fields
+        )
+
+        # Before we send the 3rd crash, let's pretend a long time has passed.
+        boto_s3_store._all_fields_timestamp -= 60 * 60 * 24
+
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2014-02-10T23:22:19.646733+00:00'
+            },
+            None,
+            {
+                'uuid': '3f267a63-2f8c-407d-8683-adc452160804',
+                'PluginName': 'PerfectlyFine',
+            },
+            '3f267a63-2f8c-407d-8683-adc452160804'
+        )
+        # NOTE the lack of 'plugin_name=PerfectlyFine' in this S3 write.
+        # It's because the SuperSearchFields renames it to "UNRECOGNIZED_JUNK"
+        # which the JSON Schema is going to reject, so it gets filtered
+        # out before being stored in S3.
+        mocked_set_function.assert_called_with(
+            json.dumps({
+                "uuid": "3f267a63-2f8c-407d-8683-adc452160804",
+            })
         )
