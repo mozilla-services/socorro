@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import json
+import time
 
 import json_schema_reducer
 from socorrolib.lib.converters import change_default
@@ -275,7 +276,6 @@ class BotoS3CrashStorage(BotoCrashStorage):
     )
 
 
-#==============================================================================
 class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     """S3 crash storage class for sending a subset of the processed crash
     but reduced to only include the files in the processed crash
@@ -296,7 +296,21 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         reference_value_from='resource.elasticsearch',
     )
 
-    #--------------------------------------------------------------------------
+    def _get_all_fields(self):
+        if (
+            hasattr(self, '_all_fields') and
+            hasattr(self, '_all_fields_timestamp')
+        ):
+            # we might have it cached
+            age = time.time() - self._all_fields_timestamp
+            if age < 60 * 60:
+                # fresh enough
+                return self._all_fields
+
+        self._all_fields = SuperSearchFields(config=self.config).get()
+        self._all_fields_timestamp = time.time()
+        return self._all_fields
+
     def save_raw_and_processed(
         self,
         raw_crash,
@@ -304,7 +318,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         processed_crash,
         crash_id
     ):
-        all_fields = SuperSearchFields(config=self.config).get()
+        all_fields = self._get_all_fields()
         crash_report = {}
 
         # TODO Opportunity of optimization;
