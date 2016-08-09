@@ -140,7 +140,7 @@ SignatureReport.init = function () {
             callback();
         }
 
-        form.hide();
+        searchSection.hide();
     }
 
     function bindEvents() {
@@ -157,18 +157,16 @@ SignatureReport.init = function () {
         });
 
         // Show or hide filters.
-        searchSection.on('click', '.toggle-filters', function (e) {
+        $('.toggle-filters').click(function (e) {
             e.preventDefault();
+            searchSection.slideToggle(350);
 
-            var elt = $(this);
-            form.toggle();
-            elt.toggleClass('show');
-            if (elt.hasClass('show')) {
-                elt.html('Show');
-            }
-            else {
-                elt.html('Hide');
-            }
+            // Update the main toggle link.
+            var mainToggleLink = $('.display-toggle-filters');
+            mainToggleLink.toggleClass('show');
+            mainToggleLink.html(
+                (mainToggleLink.hasClass('show') ? 'Show' : 'Hide') + ' Search Filters'
+            );
         });
 
         // Change tab using navigation links.

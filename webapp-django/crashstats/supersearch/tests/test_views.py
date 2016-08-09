@@ -1,4 +1,3 @@
-import datetime
 import json
 import urllib
 import re
@@ -16,9 +15,6 @@ from socorrolib.lib import BadArgumentError
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.models import SuperSearchUnredacted
-from crashstats.supersearch.views import (
-    get_report_list_parameters,
-)
 
 
 class TestViews(BaseTestViews):
@@ -673,51 +669,6 @@ class TestViews(BaseTestViews):
         # Test that a negative page value does not break it.
         response = self.client.get(url, {'page': '-1'})
         eq_(response.status_code, 200)
-
-    def test_get_report_list_parameters(self):
-        source = {
-            'date': ['<2013-01-01T10:00:00+00:00']
-        }
-        res = get_report_list_parameters(source)
-        eq_(res['date'], '2013-01-01 10:00:00')
-        ok_('range_value' not in res)
-        ok_('range_unit' not in res)
-
-        source = {
-            'date': ['>=2013-01-01T10:00:00+00:00']
-        }
-        res = get_report_list_parameters(source)
-        eq_(
-            res['date'].split(' ')[0],
-            datetime.datetime.utcnow().date().isoformat()
-        )
-        ok_('range_value' in res)
-        eq_(res['range_unit'], 'hours')
-
-        source = {
-            'date': [
-                '>2013-01-01T10:00:00+00:00',
-                '<2013-02-01T10:00:00+00:00'
-            ],
-            'product': ['WaterWolf'],
-            'version': ['3.0b1', '4.0a', '5.1'],
-            'release_channel': 'aurora',
-            'build_id': ['12345', '~67890'],
-        }
-        res = get_report_list_parameters(source)
-        eq_(res['date'], '2013-02-01 10:00:00')
-        ok_('range_value' in res)
-        ok_(res['range_unit'], 'hours')
-
-        eq_(res['release_channels'], 'aurora')
-        ok_('release_channel' not in res)
-        eq_(res['product'], ['WaterWolf'])
-        eq_(
-            res['version'],
-            ['WaterWolf:3.0b1', 'WaterWolf:4.0a', 'WaterWolf:5.1']
-        )
-
-        eq_(res['build_id'], ['12345'])
 
     def create_custom_query_perm(self):
         user = self._login()

@@ -1,4 +1,15 @@
+.page-heading {
+    p {
+        font-style: italic;
+
+        time {
+            font-weight: bold;
+        }
+    }
+}
+
 #panels-nav {
+    display: block;
     margin: 20px;
 }
 
@@ -37,19 +48,25 @@
     display: block;
 }
 
-.toggle-filters {
+.display-toggle-filters {
     float: right;
+    font-weight: bold;
+
+    &:before {
+        content: url('../../img/3rdparty/silk/arrow_top.png');
+        display: inline-block;
+        height: 16px;
+        padding: 5px;
+        vertical-align: middle;
+        width: 16px;
+    }
+    &.show:before {
+        content: url('../../img/3rdparty/silk/arrow_bottom.png');
+    }
 }
-.toggle-filters:before {
-    content: url('../../img/3rdparty/silk/arrow_top.png');
-    display: inline-block;
-    height: 16px;
-    padding: 5px;
-    vertical-align: middle;
-    width: 16px;
-}
-.toggle-filters.show:before {
-    content: url('../../img/3rdparty/silk/arrow_bottom.png');
+
+#search-params-fieldset {
+    width: 100%;
 }
 
 th.crash-id {
