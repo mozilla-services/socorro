@@ -325,7 +325,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # We could inspect CRASH_REPORT_JSON_SCHEMA and get a list
         # of all (recursive) keys that are in there and use that
         # to limit the two following loops to not bother
-        # filling up `crash_report` with keys that will never been
+        # filling up `crash_report` with keys that will never be
         # needed.
 
         # Rename fields in raw_crash.
