@@ -122,7 +122,7 @@
             "type": ["string", "null"],
             "description": "Detailed processor info. Usually contains information such as the family, model, and stepping number. "
         },
-        "cpu_name": {
+        "cpu_arch": {
             "type": ["string", "null"],
             "description": "The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'."
         },
