@@ -163,7 +163,7 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                                     date=['<' + query.end_date.isoformat(), '>=' + query.start_date.isoformat()],
                                 ) }}" title="{{ crash.signature }}"
                             >
-                                {{ crash.signature | truncate(length=80, killwords=True) }}
+                                {{ crash.signature }}
                             </a>
                             <div class="sig-history-container hide">
                                 <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
