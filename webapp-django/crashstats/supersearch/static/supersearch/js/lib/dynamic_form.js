@@ -5,6 +5,45 @@
     // String used to separate values in select2 fields.
     var VALUES_SEPARATOR = '|||';
 
+    // All available operators.
+    var OPERATORS = {
+        'has': 'has terms',
+        '!': 'does not have terms',
+        '=': 'is',
+        '!=': 'is not',
+        '~': 'contains',
+        '!~': 'does not contain',
+        '^': 'starts with',
+        '!^': 'does not start with',
+        '$': 'ends with',
+        '!$': 'does not end with',
+        '@': 'matches regex',
+        '!@': 'does not match regex',
+        '>': '>',
+        '>=': '>=',
+        '<': '<',
+        '<=': '<=',
+        '__null__': 'does not exist',
+        '!__null__': 'exists',
+        '__true__': 'is true',
+        '!__true__': 'is false'
+    };
+
+    // Order matters here, the first operator will be used as the default
+    // value when no operator is passed for a field.
+    var OPERATORS_BASE = ['has', '!'];
+    var OPERATORS_RANGE = ['>', '>=', '<', '<='];
+    var OPERATORS_REGEX = ['~', '=', '$', '^', '@', '!=', '!~', '!$', '!^', '!@'];
+    var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
+    var OPERATORS_BOOLEAN = ['__true__', '!__true__'];
+
+    var OPERATORS_ENUM = OPERATORS_BASE;
+    var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
+    var OPERATORS_DATE = OPERATORS_RANGE;
+    var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX).concat(OPERATORS_EXISTENCE);
+
+    var OPERATORS_NO_VALUE = OPERATORS_EXISTENCE.concat(OPERATORS_BOOLEAN);
+
     /**
      * Create a new dynamic form or run an action on an existing form.
      *
@@ -31,6 +70,10 @@
 
         initialParams = initialParams || null;
         containerId = containerId || null;
+
+        if (action === 'getOperatorsList') {
+            return Object.keys(OPERATORS);
+        }
 
         if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
             if (!dynamic) {
@@ -77,53 +120,12 @@
                 if (initialParams) {
                     setParams(initialParams);
                 }
-                else {
-                    newLine();
-                }
 
                 if (onReadyCallback) {
                     onReadyCallback();
                 }
             }
         );
-
-        var OPERATORS = {
-            'has': 'has terms',
-            '!': 'does not have terms',
-            '=': 'is',
-            '!=': 'is not',
-            '~': 'contains',
-            '!~': 'does not contain',
-            '^': 'starts with',
-            '!^': 'does not start with',
-            '$': 'ends with',
-            '!$': 'does not end with',
-            '@': 'matches regex',
-            '!@': 'does not match regex',
-            '>': '>',
-            '>=': '>=',
-            '<': '<',
-            '<=': '<=',
-            '__null__': 'does not exist',
-            '!__null__': 'exists',
-            '__true__': 'is true',
-            '!__true__': 'is false'
-        };
-
-        // Order matters here, the first operator will be used as the default
-        // value when no operator is passed for a field.
-        var OPERATORS_BASE = ['has', '!'];
-        var OPERATORS_RANGE = ['>', '>=', '<', '<='];
-        var OPERATORS_REGEX = ['~', '=', '$', '^', '@', '!=', '!~', '!$', '!^', '!@'];
-        var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
-        var OPERATORS_BOOLEAN = ['__true__', '!__true__'];
-
-        var OPERATORS_ENUM = OPERATORS_BASE;
-        var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
-        var OPERATORS_DATE = OPERATORS_RANGE;
-        var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX).concat(OPERATORS_EXISTENCE);
-
-        var OPERATORS_NO_VALUE = OPERATORS_EXISTENCE.concat(OPERATORS_BOOLEAN);
 
         /**
          * Get the list of operators for a field.
@@ -244,8 +246,11 @@
 
                 if (Array.isArray(param)) {
                     var valuesWithoutOperator = [];
-                    for (var i = 0, l = param.length; i < l; i++) {
-                        var value = param[i];
+                    param.forEach(function (value) {
+                        if (!value) {
+                            return;
+                        }
+
                         var operator = getOperatorFromValue(value);
                         value = value.slice(operator.length);
                         if (operator) {
@@ -254,7 +259,7 @@
                         else {
                             valuesWithoutOperator.push(value);
                         }
-                    }
+                    });
                     if (valuesWithoutOperator.length > 0) {
                         createLine(p, allowed_operators[0], valuesWithoutOperator);
                     }

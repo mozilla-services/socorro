@@ -30,15 +30,15 @@
             data-custom-url="{{ url('supersearch.search_custom') }}"
             data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
         >
-            <button type="submit" id="search-button">Search</button>
+            <header>
+                <button type="submit" id="search-button">Search</button>
+                <button class="new-line">New line</button>
+                {% if not waffle.switch('supersearch-custom-query-disabled') and request.user.has_perm('crashstats.run_custom_queries') %}
+                <button class="customize">Customize</button>
+                {% endif %}
 
-            <div id="ui-mode-switch">
-                <span>
-                    <input type="checkbox">
-                    <label data-on="ON" data-off="OFF"></label>
-                </span>
-                Simple search mode
-            </div>
+                <h4>Search filters</h4>
+            </header>
 
             <!-- Simplified search UI -->
             <div id="simple-search">
@@ -59,19 +59,11 @@
                     </div>
                     {% endfor %}
                 </fieldset>
-
-                <p><em>
-                    Note: the date will be a range between now and a week ago.
-                    You can change it by switching the simple search mode off.
-                </em></p>
             </div>
+
 
             <!-- Advanced search UI -->
             <div id="advanced-search">
-                {% if not waffle.switch('supersearch-custom-query-disabled') and request.user.has_perm('crashstats.run_custom_queries') %}
-                <button class="customize">Customize</button>
-                {% endif %}
-                <button class="new-line">New line</button>
 
                 <fieldset id="search-params-fieldset"></fieldset>
 
