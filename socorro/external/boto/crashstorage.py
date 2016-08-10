@@ -3,17 +3,22 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import json
+import time
+
+import json_schema_reducer
+from socorrolib.lib.converters import change_default
+from socorrolib.lib.util import DotDict
+
+from configman import Namespace
+from configman.converters import class_converter, py_obj_to_str
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorrolib.lib.util import DotDict
-from socorrolib.lib.converters import change_default
-
-from configman import Namespace
-from configman.converters import class_converter, py_obj_to_str
+from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 
 #==============================================================================
@@ -269,6 +274,83 @@ class BotoS3CrashStorage(BotoCrashStorage):
         'resource_class',
         'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
     )
+
+
+class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
+    """S3 crash storage class for sending a subset of the processed crash
+    but reduced to only include the files in the processed crash
+    JSON Schema."""
+
+    required_config = Namespace()
+    required_config.resource_class = change_default(
+        BotoCrashStorage,
+        'resource_class',
+        'socorro.external.boto.connection_context.RegionalS3ConnectionContext'
+    )
+
+    required_config.elasticsearch = Namespace()
+    required_config.elasticsearch.add_option(
+        'elasticsearch_class',
+        default='socorro.external.es.connection_context.ConnectionContext',
+        from_string_converter=class_converter,
+        reference_value_from='resource.elasticsearch',
+    )
+
+    def _get_all_fields(self):
+        if (
+            hasattr(self, '_all_fields') and
+            hasattr(self, '_all_fields_timestamp')
+        ):
+            # we might have it cached
+            age = time.time() - self._all_fields_timestamp
+            if age < 60 * 60:
+                # fresh enough
+                return self._all_fields
+
+        self._all_fields = SuperSearchFields(config=self.config).get()
+        self._all_fields_timestamp = time.time()
+        return self._all_fields
+
+    def save_raw_and_processed(
+        self,
+        raw_crash,
+        dumps,
+        processed_crash,
+        crash_id
+    ):
+        all_fields = self._get_all_fields()
+        crash_report = {}
+
+        # TODO Opportunity of optimization;
+        # We could inspect CRASH_REPORT_JSON_SCHEMA and get a list
+        # of all (recursive) keys that are in there and use that
+        # to limit the two following loops to not bother
+        # filling up `crash_report` with keys that will never be
+        # needed.
+
+        # Rename fields in raw_crash.
+        raw_fields_map = dict(
+            (x['in_database_name'], x['name'])
+            for x in all_fields.values()
+            if x['namespace'] == 'raw_crash'
+        )
+        for key, val in raw_crash.items():
+            crash_report[raw_fields_map.get(key, key)] = val
+
+        # Rename fields in processed_crash.
+        processed_fields_map = dict(
+            (x['in_database_name'], x['name'])
+            for x in all_fields.values()
+            if x['namespace'] == 'processed_crash'
+        )
+        for key, val in processed_crash.items():
+            crash_report[processed_fields_map.get(key, key)] = val
+
+        # Validate crash_report.
+        crash_report = json_schema_reducer.make_reduced_dict(
+            CRASH_REPORT_JSON_SCHEMA, crash_report
+        )
+        self.save_processed(crash_report)
 
 
 #==============================================================================

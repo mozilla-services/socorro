@@ -33,7 +33,6 @@ setup(
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: MPL License',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
     ],
@@ -61,5 +60,7 @@ setup(
             'JENKINS_BUILD_NUMBER'
         ]),
         ('socorro/siglists', glob.glob('socorro/siglists/*.txt')),
+        ('socorro/schemas', glob.glob('socorro/schemas/*.json')),
     ],
-),
+)
+assert glob.glob('socorro/schemas/*.json') # TEMP

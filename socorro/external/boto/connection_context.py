@@ -89,6 +89,33 @@ class DatePrefixKeyBuilder(KeyBuilderBase):
         return keys
 
 
+class SimpleDatePrefixKeyBuilder(KeyBuilderBase):
+    """s3 pseudo-filename key builder with simple date prefixes.
+
+    Simply the {prefix}/{name_of_thing}/{date}/{id}
+
+    This key builder is useful for the S3 upload of processed crashes
+    to go into Telemetry. It's important that the {date} is of the
+    format YYYYMMDD.
+    """
+
+    def build_keys(self, prefix, name_of_thing, id):
+        """return a list of one key. The reason for not returning more than
+        one is that this key builder class is going to be used for
+        something new so it has no legacy."""
+        datestamp = dateFromOoid(id)
+        if datestamp is None:
+            # the id did not have a date component in it
+            datestamp = datetime.datetime.utcnow()
+        date = datestamp.strftime('%Y%m%d')
+        keys = [
+            '%s/v1/%s/%s/%s' % (
+                prefix, name_of_thing, date, id
+            )
+        ]
+        return keys
+
+
 #==============================================================================
 class ConnectionContextBase(RequiredConfig):
 

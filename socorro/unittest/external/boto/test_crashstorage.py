@@ -2,33 +2,46 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import mock
 import json
-import tempfile
 import shutil
+import tempfile
+
 from os.path import join
 
 import boto.exception
 
-from socorrolib.lib.util import DotDict
-from socorro.external.crashstorage_base import (
-    Redactor,
-    MemoryDumpsMapping
-)
-from socorro.external.boto.connection_context import (
-    KeyBuilderBase,
-    S3ConnectionContext
-)
-from socorro.external.boto.crashstorage import (
-    BotoS3CrashStorage,
-    SupportReasonAPIStorage
-)
+import mock
+
 from socorro.database.transaction_executor import (
     TransactionExecutor,
     TransactionExecutorWithLimitedBackoff,
 )
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.boto.connection_context import (
+    KeyBuilderBase,
+    S3ConnectionContext,
+    SimpleDatePrefixKeyBuilder,
+)
+from socorro.external.boto.crashstorage import (
+    BotoS3CrashStorage,
+    SupportReasonAPIStorage,
+    TelemetryBotoS3CrashStorage,
+)
+from socorro.external.crashstorage_base import (
+    CrashIDNotFound,
+    MemoryDumpsMapping,
+    Redactor,
+)
+from socorro.unittest.external.es.base import ElasticsearchTestCase
+
 import socorro.unittest.testbase
+
+from socorrolib.lib.util import DotDict
+
+# Uncomment these lines to decrease verbosity of the elasticsearch library
+# while running unit tests.
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+# logging.getLogger('requests').setLevel(logging.ERROR)
 
 
 a_raw_crash = {
@@ -48,17 +61,81 @@ S3ConnectionContext.operational_exceptions = (ABadDeal, )
 S3ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
 
 
-class TestCase(socorro.unittest.testbase.TestCase):
+class BaseTestCase(socorro.unittest.testbase.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestCase, cls).setUpClass()
+        super(BaseTestCase, cls).setUpClass()
         cls.TEMPDIR = tempfile.mkdtemp()
 
     @classmethod
     def tearDownClass(cls):
-        super(TestCase, cls).tearDownClass()
+        super(BaseTestCase, cls).tearDownClass()
         shutil.rmtree(cls.TEMPDIR)
+
+    def setup_mocked_s3_storage(
+        self,
+        executor=TransactionExecutor,
+        executor_for_gets=TransactionExecutor,
+        keybuilder_class=KeyBuilderBase,
+        storage_class='BotoS3CrashStorage',
+        bucket_name='mozilla-support-reason',
+        host='',
+        port=0,
+    ):
+        config = DotDict({
+            'source': {
+                'dump_field': 'dump'
+            },
+            'transaction_executor_class': executor,
+            'transaction_executor_class_for_get': executor_for_gets,
+            'resource_class': S3ConnectionContext,
+            'keybuilder_class': keybuilder_class,
+            'backoff_delays': [0, 0, 0],
+            'redactor_class': Redactor,
+            'forbidden_keys': Redactor.required_config.forbidden_keys.default,
+            'logger': mock.Mock(),
+            'host': host,
+            'port': port,
+            'access_key': 'this is the access key',
+            'secret_access_key': 'secrets',
+            'temporary_file_system_storage_path': self.TEMPDIR,
+            'dump_file_suffix': '.dump',
+            'bucket_name': bucket_name,
+            'prefix': 'dev',
+            'calling_format': mock.Mock()
+        })
+
+        if isinstance(storage_class, basestring):
+            if storage_class == 'BotoS3CrashStorage':
+                config.bucket_name = 'crash_storage'
+                s3 = BotoS3CrashStorage(config)
+            elif storage_class == 'SupportReasonAPIStorage':
+                s3 = SupportReasonAPIStorage(config)
+        else:
+            s3 = storage_class(config)
+        s3_conn = s3.connection_source
+        s3_conn._connect_to_endpoint = mock.Mock()
+        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
+        s3_conn._calling_format.return_value = mock.Mock()
+        s3_conn._CreateError = mock.Mock()
+        s3_conn._open = mock.MagicMock()
+
+        return s3
+
+    def assert_s3_connection_parameters(self, boto_s3_store):
+        kwargs = {
+            "aws_access_key_id": boto_s3_store.config.access_key,
+            "aws_secret_access_key": boto_s3_store.config.secret_access_key,
+            "is_secure": True,
+            "calling_format": boto_s3_store.connection_source._calling_format.return_value
+        }
+        boto_s3_store.connection_source._connect_to_endpoint.assert_called_with(
+            **kwargs
+        )
+
+
+class TestCase(BaseTestCase):
 
     def _fake_processed_crash(self):
         d = DotDict()
@@ -113,62 +190,6 @@ class TestCase(socorro.unittest.testbase.TestCase):
         d = self._fake_unredacted_processed_crash()
         s = json.dumps(d)
         return s
-
-    def setup_mocked_s3_storage(
-            self,
-            executor=TransactionExecutor,
-            executor_for_gets=TransactionExecutor,
-            storage_class='BotoS3CrashStorage',
-            host='',
-            port=0):
-
-        config = DotDict({
-            'source': {
-                'dump_field': 'dump'
-            },
-            'transaction_executor_class': executor,
-            'transaction_executor_class_for_get': executor_for_gets,
-            'resource_class': S3ConnectionContext,
-            'keybuilder_class': KeyBuilderBase,
-            'backoff_delays': [0, 0, 0],
-            'redactor_class': Redactor,
-            'forbidden_keys': Redactor.required_config.forbidden_keys.default,
-            'logger': mock.Mock(),
-            'host': host,
-            'port': port,
-            'access_key': 'this is the access key',
-            'secret_access_key': 'secrets',
-            'temporary_file_system_storage_path': self.TEMPDIR,
-            'dump_file_suffix': '.dump',
-            'bucket_name': 'mozilla-support-reason',
-            'prefix': 'dev',
-            'calling_format': mock.Mock()
-        })
-        if storage_class == 'BotoS3CrashStorage':
-            config.bucket_name = 'crash_storage'
-            s3 = BotoS3CrashStorage(config)
-        elif storage_class == 'SupportReasonAPIStorage':
-            s3 = SupportReasonAPIStorage(config)
-        s3_conn = s3.connection_source
-        s3_conn._connect_to_endpoint = mock.Mock()
-        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
-        s3_conn._calling_format.return_value = mock.Mock()
-        s3_conn._CreateError = mock.Mock()
-##        s3_conn.ResponseError = mock.Mock()
-        s3_conn._open = mock.MagicMock()
-
-        return s3
-
-    def assert_s3_connection_parameters(self, boto_s3_store):
-        kwargs = {
-            "aws_access_key_id": boto_s3_store.config.access_key,
-            "aws_secret_access_key": boto_s3_store.config.secret_access_key,
-            "is_secure": True,
-            "calling_format": boto_s3_store.connection_source._calling_format.return_value
-        }
-        boto_s3_store.connection_source._connect_to_endpoint.assert_called_with(
-            **kwargs
-        )
 
     def test_save_raw_crash_1(self):
         boto_s3_store = self.setup_mocked_s3_storage()
@@ -1043,4 +1064,219 @@ class TestCase(socorro.unittest.testbase.TestCase):
             CrashIDNotFound,
             boto_s3_store.get_raw_crash,
             '0bba929f-dead-dead-dead-a43c20071027'
+        )
+
+
+class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
+
+    def get_s3_store(
+        self,
+        keybuilder_class=SimpleDatePrefixKeyBuilder,
+        storage_class=TelemetryBotoS3CrashStorage,
+        bucket_name='telemetry-crashes',
+    ):
+        s3 = TelemetryBotoS3CrashStorage(
+            config=self.get_tuned_config(
+                TelemetryBotoS3CrashStorage,
+                extra_values={
+                    'transaction_executor_class': TransactionExecutor,
+                    'transaction_executor_class_for_get': TransactionExecutor,
+                    'resource_class': S3ConnectionContext,
+                    'keybuilder_class': keybuilder_class,
+                    'redactor_class': Redactor,
+                    'forbidden_keys': (
+                        Redactor.required_config.forbidden_keys.default
+                    ),
+                    'logger': mock.Mock(),
+                    'access_key': 'this is the access key',
+                    'secret_access_key': 'secrets',
+                    'temporary_file_system_storage_path': self.TEMPDIR,
+                    'bucket_name': bucket_name,
+                    'prefix': 'dev',
+                    'calling_format': mock.Mock()
+                }
+            )
+        )
+        s3_conn = s3.connection_source
+        s3_conn._connect_to_endpoint = mock.Mock()
+        s3_conn._mocked_connection = s3_conn._connect_to_endpoint.return_value
+        s3_conn._calling_format.return_value = mock.Mock()
+        s3_conn._CreateError = mock.Mock()
+        s3_conn._open = mock.MagicMock()
+
+        return s3
+
+    def test_save_raw_and_processed(self):
+        boto_s3_store = self.get_s3_store()
+
+        # the tested call
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2013-01-09T22:21:18.646733+00:00'
+            },
+            None,
+            {
+                'uuid': '0bba929f-8721-460c-dead-a43c20071027',
+                'completeddatetime': '2012-04-08 10:56:50.902884',
+                'signature': 'now_this_is_a_signature',
+                'os_name': 'Linux',
+            },
+            '0bba929f-8721-460c-dead-a43c20071027'
+        )
+
+        # what should have happened internally
+        self.assertEqual(boto_s3_store.connection_source._calling_format.call_count, 1)
+        boto_s3_store.connection_source._calling_format.assert_called_with()
+
+        self.assertEqual(boto_s3_store.connection_source._connect_to_endpoint.call_count, 1)
+        self.assert_s3_connection_parameters(boto_s3_store)
+
+        self.assertEqual(
+            boto_s3_store.connection_source._mocked_connection.get_bucket.call_count,
+            1
+        )
+
+        # print boto_s3_store.connection_source._mocked_connection.mock_calls
+        boto_s3_store.connection_source._mocked_connection.get_bucket.assert_called_with(
+            'telemetry-crashes'
+        )
+
+        bucket_mock = boto_s3_store.connection_source._mocked_connection.get_bucket \
+            .return_value
+        self.assertEqual(bucket_mock.new_key.call_count, 1)
+        bucket_mock.new_key.assert_has_calls(
+            [
+                mock.call(
+                    'dev/v1/processed_crash/20071027/0bba929f-8721-460c-dead-a43c20071027'
+                ),
+            ],
+        )
+
+        storage_key_mock = bucket_mock.new_key.return_value
+        self.assertEqual(
+            storage_key_mock.set_contents_from_string.call_count,
+            1
+        )
+        storage_key_mock.set_contents_from_string.assert_has_calls(
+            [
+                mock.call(
+                    '{"platform": "Linux", '
+                    '"uuid": "0bba929f-8721-460c-dead-a43c20071027", '
+                    '"signature": "now_this_is_a_signature"}'
+                ),
+            ],
+            any_order=True,
+        )
+
+    @mock.patch('socorro.external.boto.crashstorage.SuperSearchFields')
+    def test_save_raw_and_processed_supersearchfields_caching(self, ssf):
+
+        # Mock the SuperSearchFields().get() so that it returns a
+        # dict where the "corrected" name for "PluginName"
+        # becomes.
+        first_supersearch_fields = {
+             'plugin_name': {
+                'in_database_name': 'PluginName',
+                'name': 'plugin_name',
+                'namespace': 'processed_crash',
+            },
+        }
+        ssf().get.return_value = first_supersearch_fields
+        boto_s3_store = self.get_s3_store()
+
+        # First one
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2013-01-09T22:21:18.646733+00:00'
+            },
+            None,
+            {
+                'uuid': '0bba929f-8721-460c-dead-a43c20071027',
+                'PluginName': 'Flash',
+            },
+            '0bba929f-8721-460c-dead-a43c20071027'
+        )
+        mocked_connection = (
+            boto_s3_store.connection_source._connect_to_endpoint()
+        )
+        mocked_set_function = (
+            mocked_connection.get_bucket().new_key().set_contents_from_string
+        )
+        mocked_set_function.assert_called_with(
+            json.dumps({
+                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+                "plugin_name": "Flash"
+            })
+        )
+
+        # And the instance of TelemetryBotoS3CrashStorage should now
+        # have these fields cached in a instance attribute
+        self.assertEqual(
+            boto_s3_store._all_fields,
+            first_supersearch_fields
+        )
+        # and there's a timestamp too
+        self.assertTrue(
+            isinstance(boto_s3_store._all_fields_timestamp, float)
+        )
+
+        # Now let's mess with the SuperSearchFields().get() and return
+        # a different name that the JSON Schema will NOT like
+        second_supersearch_fields = {
+             u'plugin_name': {
+                u'in_database_name': u'PluginName',
+                u'name': u'UNRECOGNIZED_JUNK',
+                u'namespace': u'processed_crash',
+            },
+        }
+        ssf().get.return_value = second_supersearch_fields
+        # Second crash saved and processed
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2014-02-10T23:22:19.646733+00:00'
+            },
+            None,
+            {
+                'uuid': 'e01c9a77-8a09-43b5-bc84-3deb52160503',
+                'PluginName': 'SilverLight',
+            },
+            'e01c9a77-8a09-43b5-bc84-3deb52160503'
+        )
+        # But! Because the SuperSearchFields are cached for X seconds,
+        # this does NOT prevent the save from working.
+        mocked_set_function.assert_called_with(
+            json.dumps({
+                "uuid": "e01c9a77-8a09-43b5-bc84-3deb52160503",
+                "plugin_name": "SilverLight"
+            })
+        )
+
+        # The cached all fields should be the same as before
+        self.assertEqual(
+            boto_s3_store._all_fields,
+            first_supersearch_fields
+        )
+
+        # Before we send the 3rd crash, let's pretend a long time has passed.
+        boto_s3_store._all_fields_timestamp -= 60 * 60 * 24
+
+        boto_s3_store.save_raw_and_processed(
+            {
+                'submitted_timestamp': '2014-02-10T23:22:19.646733+00:00'
+            },
+            None,
+            {
+                'uuid': '3f267a63-2f8c-407d-8683-adc452160804',
+                'PluginName': 'PerfectlyFine',
+            },
+            '3f267a63-2f8c-407d-8683-adc452160804'
+        )
+        # NOTE the lack of 'plugin_name=PerfectlyFine' in this S3 write.
+        # It's because the SuperSearchFields renames it to "UNRECOGNIZED_JUNK"
+        # which the JSON Schema is going to reject, so it gets filtered
+        # out before being stored in S3.
+        mocked_set_function.assert_called_with(
+            json.dumps({
+                "uuid": "3f267a63-2f8c-407d-8683-adc452160804",
+            })
         )

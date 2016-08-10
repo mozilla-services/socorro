@@ -282,3 +282,6 @@ pyasn1-modules==0.0.8 \
 rsa==3.4.2 \
     --hash=sha256:43f682fea81c452c98d09fc316aae12de6d30c4b5c84226642cf8f8fd1c93abd \
     --hash=sha256:25df4e10c263fb88b5ace923dd84bf9aa7f5019687b5e55382ffcdb8bede9db5
+json-schema-reducer==0.1.4 \
+    --hash=sha256:b6fbe437361e0ec14f5c05daf752604834bd9abe5af9ab6bdcb05ea1f8df1df6 \
+    --hash=sha256:41c674275c2650dadb7f8af1193640ca41eb863926985ecda5bfee93aef265c0

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import json
 
 import mock
@@ -9,6 +10,7 @@ import mock
 from socorrolib.lib.util import DotDict
 from socorro.external.boto.connection_context import (
     DatePrefixKeyBuilder,
+    SimpleDatePrefixKeyBuilder,
     KeyBuilderBase,
     KeyNotFound,
     S3ConnectionContext,
@@ -239,6 +241,7 @@ class MultiplePathsBase(socorro.unittest.testbase.TestCase):
         host='',
         port=0,
         resource_class=S3ConnectionContext,
+        keybuilder_class=DatePrefixKeyBuilder,
         **extra
     ):
         config = DotDict({
@@ -249,7 +252,7 @@ class MultiplePathsBase(socorro.unittest.testbase.TestCase):
             'access_key': 'this is the access key',
             'secret_access_key': 'secrets',
             'bucket_name': 'silliness',
-            'keybuilder_class': DatePrefixKeyBuilder,
+            'keybuilder_class': keybuilder_class,
             'prefix': 'dev',
             'calling_format': mock.Mock()
         })
@@ -311,6 +314,51 @@ class DatePrefixKeyBuilderTestCase(MultiplePathsBase):
         self.assertEqual(
             all_keys[0],
             'dev/v1/raw_crash/fff13cf0-5671-4496-ab89-47a922xxxxxx'
+        )
+
+
+class SimpleDatePrefixKeyBuilderTestCase(MultiplePathsBase):
+    """Tests the SimpleDatePrefixKeyBuilder with different crash types"""
+
+    def setup_mocked_s3_storage(self):
+        parent = super(SimpleDatePrefixKeyBuilderTestCase, self)
+        return parent.setup_mocked_s3_storage(
+            keybuilder_class=SimpleDatePrefixKeyBuilder,
+        )
+
+    def test_dir_builder(self):
+        connection_source = self.setup_mocked_s3_storage()
+        prefix = 'dev'
+        name_of_thing = 'crash'
+        crash_id = 'fff13cf0-5671-4496-ab89-47a922141114'
+        all_keys = connection_source.build_keys(
+            prefix, name_of_thing, crash_id
+        )
+
+        # The new- and old-style keys are returned
+        self.assertEqual(len(all_keys), 1)
+        self.assertEqual(
+            all_keys[0],
+            'dev/v1/crash/20141114/fff13cf0-5671-4496-ab89-47a922141114'
+        )
+
+    def test_dir_builder_with_no_date(self):
+        connection_source = self.setup_mocked_s3_storage()
+        prefix = 'dev'
+        name_of_thing = 'crash'
+        crash_id = 'fff13cf0-5671-4496-ab89-47a922xxxxxx'
+        all_keys = connection_source.build_keys(
+            prefix, name_of_thing, crash_id
+        )
+
+        # The suffix is not a date, so only the old-style key is returned
+        self.assertEqual(len(all_keys), 1)
+        now = datetime.datetime.utcnow()
+        self.assertEqual(
+            all_keys[0],
+            'dev/v1/crash/{}/fff13cf0-5671-4496-ab89-47a922xxxxxx'.format(
+                now.strftime('%Y%m%d')
+            )
         )
 
 

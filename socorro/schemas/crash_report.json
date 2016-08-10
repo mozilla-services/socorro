@@ -42,22 +42,6 @@
         }
     },
     "properties": {
-        "PluginFilename": {
-            "type": ["string", "null"],
-            "description": "When a plugin process crashes, this is the name of the file of the plugin loaded into that process."
-        },
-        "PluginName": {
-            "type": ["string", "null"],
-            "description": "When a plugin process crashes, this is the name of the plugin loaded into that process."
-        },
-        "PluginVersion": {
-            "type": ["string", "null"],
-            "description": "When a plugin process crashes, this is the version of the plugin loaded into that process."
-        },
-        "Winsock_LSP": {
-            "type": ["string", "null"],
-            "description": "On Windows, a string of data from the Windows OS about the list of installed LSPs (Layered Service Provider)."
-        },
         "additional_minidumps": {
             "type": "array",
             "description": "List the prefixes of the additionnal minidumps, when there are dumps from multiple processes."
@@ -78,7 +62,7 @@
             "type": ["string", "null"],
             "description": "Notes from the application that crashed. Mostly contains graphics-related annotations."
         },
-        "build": {
+        "build_id": {
             "type": ["integer", "string", "null"],
             "description": "The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS. "
         },
@@ -138,7 +122,7 @@
             "type": ["string", "null"],
             "description": "Detailed processor info. Usually contains information such as the family, model, and stepping number. "
         },
-        "cpu_name": {
+        "cpu_arch": {
             "type": ["string", "null"],
             "description": "The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'."
         },
@@ -146,7 +130,7 @@
             "type": ["string", "null"],
             "description": "Unique identifier of the crash report."
         },
-        "date_processed": {
+        "date": {
             "type": ["string", "null"],
             "description": "Date at which the crash report was received by Socorro."
         },
@@ -329,17 +313,29 @@
                 }
             }
         },
-        "os_name": {
+        "platform": {
             "type": ["string", "null"],
             "description": "Basic name of the operating system. Can be \"Windows NT\", \"Mac OS X\" or \"Linux\". Use `platform_pretty_version` for a more precise OS name including version."
         },
-        "os_pretty_version": {
+        "platform_pretty_version": {
             "type": ["string", "null"],
             "description": "A better platform name, including version for Windows and Mac OS X."
         },
-        "os_version": {
+        "platform_version": {
             "type": ["string", "null"],
             "description": "Version of the operating system."
+        },
+        "plugin_filename": {
+            "type": ["string", "null"],
+            "description": "When a plugin process crashes, this is the name of the file of the plugin loaded into that process."
+        },
+        "plugin_name": {
+            "type": ["string", "null"],
+            "description": "When a plugin process crashes, this is the name of the plugin loaded into that process."
+        },
+        "plugin_version": {
+            "type": ["string", "null"],
+            "description": "When a plugin process crashes, this is the version of the plugin loaded into that process."
         },
         "process_type": {
             "type": ["string", "null"],
@@ -392,6 +388,10 @@
         "version": {
             "type": ["string", "null"],
             "description": "The product version number. A value lacking any letters indicates a normal release; a value with a 'b' indicates a Beta release; a value with an 'a' indicates an Aurora (a.k.a. Developer Edition) release; a value with 'esr' indicates an Extended Service Release. "
+        },
+        "winsock_lsp": {
+            "type": ["string", "null"],
+            "description": "On Windows, a string of data from the Windows OS about the list of installed LSPs (Layered Service Provider)."
         }
     }
 }
