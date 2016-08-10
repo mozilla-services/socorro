@@ -12,6 +12,7 @@ def status_message(request):
         messages.append({
             'text': status.message,
             'severity': status.severity,
+            'date': status.created_at,
         })
 
     return {
