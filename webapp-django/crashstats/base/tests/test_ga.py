@@ -180,6 +180,26 @@ class TestTrackingPageviews(DjangoTestCase):
             )
 
     @mock.patch('raven.transport.threaded_requests.AsyncWorker')
+    @mock.patch('crashstats.base.ga.logger')
+    def test_basic_pageview_strange_errors(self, logger, aw):
+
+        def mocked_queue(function, data, headers, success_cb, failure_cb):
+            raise Exception('crap')
+
+        aw().queue.side_effect = mocked_queue
+
+        request = RequestFactory().get('/some/page')
+        request.user = AnonymousUser()
+
+        with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
+            track_pageview(request, 'Test page')
+            # ANY error inside the queue will get caught
+            logger.error.assert_called_with(
+                'Failed for unknown reason to send to GA',
+                exc_info=True
+            )
+
+    @mock.patch('raven.transport.threaded_requests.AsyncWorker')
     @mock.patch('requests.post')
     @mock.patch('crashstats.base.ga.logger')
     def test_api_pageview_decorator(self, logger, rpost, aw):
