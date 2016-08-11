@@ -1,17 +1,18 @@
 import datetime
+
 import freezegun
 import mock
 import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
-from django.utils.timezone import UTC
+from django.utils.timezone import utc
 
-from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.models import SignatureFirstDate
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews, mocked_post_123
 )
+from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):
@@ -41,7 +42,7 @@ class TestViews(BaseTestViews):
                         "signature": u"FakeSignature1 \u7684 Japanese",
                         "first_date": datetime.datetime(
                             2000, 1, 1, 12, 23, 34,
-                            tzinfo=UTC(),
+                            tzinfo=utc,
                         ),
                         "first_build": "20000101122334",
                     },
@@ -49,7 +50,7 @@ class TestViews(BaseTestViews):
                         "signature": u"mozCool()",
                         "first_date": datetime.datetime(
                             2016, 5, 2, 0, 0, 0,
-                            tzinfo=UTC(),
+                            tzinfo=utc,
                         ),
                         "first_build": "20160502000000",
                     },

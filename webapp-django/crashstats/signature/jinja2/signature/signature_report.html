@@ -13,13 +13,12 @@
 {% block content %}
 <div id="mainbody">
     <div class="page-heading">
-        <a href="#" class="display-toggle-filters toggle-filters show">Show Search Filters</a>
         <h2>Signature report for <em>{{ signature }}</em></h2>
         <p>
-            Showing results from
-            <time class="ago" datetime="{{ query.start_date.isoformat() }}">{{ query.start_date | human_readable_iso_date }} UTC</time>
-            to <time class="ago" datetime="{{ query.end_date.isoformat() }}">{{ query.end_date | human_readable_iso_date }} UTC</time>.
-            <a href="#" class="toggle-filters">Edit filters</a>.
+            <a href="#" class="display-toggle-filters toggle-filters show" data-text-opposite="Hide Filters">
+                Show Filters
+            </a>
+            Showing results from {{ query.start_date | time_ago }} to {{ query.end_date | time_ago }}.
         </p>
     </div>
 

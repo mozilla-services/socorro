@@ -1,4 +1,3 @@
-import datetime
 import json
 import urllib
 
@@ -7,46 +6,13 @@ import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
-from django.utils.timezone import utc
 
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.signature.views import get_date_range
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'
-
-
-class TestDateRange(BaseTestViews):
-    def test_get_date_range(self):
-        # Simple test.
-        start, end = get_date_range({
-            'date': [
-                '>2010-03-01T12:12:12',
-                '<=2010-03-10T00:00:00',
-            ]
-        })
-        eq_(
-            start,
-            datetime.datetime(2010, 3, 1, 12, 12, 12).replace(tzinfo=utc)
-        )
-        eq_(end, datetime.datetime(2010, 3, 10).replace(tzinfo=utc))
-
-        # Test with messy dates.
-        start, end = get_date_range({
-            'date': [
-                '>2010-03-01T12:12:12',
-                '>2009-01-01T12:12:12',
-                '<2010-03-11T00:00:00',
-                '<=2010-03-10T00:00:00',
-            ]
-        })
-        eq_(
-            start,
-            datetime.datetime(2009, 1, 1, 12, 12, 12).replace(tzinfo=utc)
-        )
-        eq_(end, datetime.datetime(2010, 3, 11).replace(tzinfo=utc))
 
 
 class TestViews(BaseTestViews):

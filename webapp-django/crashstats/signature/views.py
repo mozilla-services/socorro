@@ -8,7 +8,6 @@ from django import http
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
-from django.utils.timezone import utc
 
 from socorrolib.lib import BadArgumentError
 
@@ -16,6 +15,7 @@ from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
+from crashstats.supersearch.utils import get_date_boundaries
 
 from crashstats.supersearch.models import (
     SuperSearchFields,
@@ -41,43 +41,6 @@ DEFAULT_COLUMNS = (
 DEFAULT_SORT = (
     '-date',
 )
-
-
-def get_date_range(params):
-    now = datetime.datetime.utcnow().replace(tzinfo=utc)
-
-    if not params.get('date'):
-        return (now - datetime.timedelta(days=7), now)
-
-    start_date = None
-    end_date = None
-    for date in params['date']:
-        # Set the earliest given start date as the start date
-        if date.startswith('>'):
-            if date.startswith('>='):
-                d = date[2:]
-            else:
-                d = date[1:]
-            d = isodate.parse_datetime(d).replace(tzinfo=utc)
-            if not start_date or d < start_date:
-                start_date = d
-        # Set the latest given end date as the end date
-        elif date.startswith('<'):
-            if date.startswith('<='):
-                d = date[2:]
-            else:
-                d = date[1:]
-            d = isodate.parse_datetime(d).replace(tzinfo=utc)
-            if not end_date or d > end_date:
-                end_date = d
-
-    if not start_date:
-        start_date = now - datetime.timedelta(days=7)
-
-    if not end_date:
-        end_date = now
-
-    return (start_date, end_date)
 
 
 def pass_validated_params(view):
@@ -141,7 +104,7 @@ def signature_report(request, params, default_context=None):
     context['channel'] = settings.CHANNEL
 
     # Compute dates to show them to the user.
-    start_date, end_date = get_date_range(params)
+    start_date, end_date = get_date_boundaries(params)
     context['query'] = {
         'start_date': start_date,
         'end_date': end_date,

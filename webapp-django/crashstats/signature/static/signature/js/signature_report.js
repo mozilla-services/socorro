@@ -157,16 +157,16 @@ SignatureReport.init = function () {
         });
 
         // Show or hide filters.
-        $('.toggle-filters').click(function (e) {
+        $('.toggle-filters').on('click', function (e) {
             e.preventDefault();
-            searchSection.slideToggle(350);
+            searchSection.slideToggle(300);
 
             // Update the main toggle link.
             var mainToggleLink = $('.display-toggle-filters');
             mainToggleLink.toggleClass('show');
-            mainToggleLink.html(
-                (mainToggleLink.hasClass('show') ? 'Show' : 'Hide') + ' Search Filters'
-            );
+            var newText = mainToggleLink.data('text-opposite');
+            mainToggleLink.data('text-opposite', mainToggleLink.text());
+            mainToggleLink.text(newText);
         });
 
         // Change tab using navigation links.
