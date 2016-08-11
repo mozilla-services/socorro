@@ -121,10 +121,12 @@ def track_pageview(
         # then this will NOT be a failure callback. In fact, the
         # success callback will be executed.
         logger.exception('Failed to send GA page tracking')
-
-    transporter.async_send(
-        params,
-        headers,
-        success_cb,
-        failure_cb
-    )
+    try:
+        transporter.async_send(
+            params,
+            headers,
+            success_cb,
+            failure_cb
+        )
+    except Exception:
+        logger.error('Failed for unknown reason to send to GA', exc_info=True)
