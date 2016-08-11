@@ -21,7 +21,6 @@ from socorro.external.es.super_search_fields import SuperSearchFields
 from socorro.schemas import CRASH_REPORT_JSON_SCHEMA
 
 
-#==============================================================================
 class BotoCrashStorage(CrashStorageBase):
     """This class sends processed crash reports to an end point reachable
     by the boto S3 library.
@@ -29,8 +28,13 @@ class BotoCrashStorage(CrashStorageBase):
     required_config = Namespace()
     required_config.add_option(
         "resource_class",
-        default='socorro.external.boto.connection_context.ConnectionContextBase',
-        doc="fully qualified dotted Python classname to handle Boto connections",
+        default=(
+            'socorro.external.boto.connection_context.ConnectionContextBase'
+        ),
+        doc=(
+            'fully qualified dotted Python classname to handle Boto '
+            'connections'
+        ),
         from_string_converter=class_converter,
         reference_value_from='resource.boto'
     )
@@ -64,7 +68,6 @@ class BotoCrashStorage(CrashStorageBase):
         reference_value_from='resource.boto',
     )
 
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, x):
         if "not found, no value returned" in str(x):
             # the not found error needs to be re-tryable to compensate for
@@ -75,7 +78,6 @@ class BotoCrashStorage(CrashStorageBase):
         #elif   # for further cases...
         return False
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(BotoCrashStorage, self).__init__(
             config,
@@ -102,7 +104,6 @@ class BotoCrashStorage(CrashStorageBase):
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def do_save_raw_crash(boto_connection, raw_crash, dumps, crash_id):
         if dumps is None:
@@ -133,11 +134,9 @@ class BotoCrashStorage(CrashStorageBase):
                 dump_name = 'dump'
             boto_connection.submit(crash_id, dump_name, dump)
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         self.transaction(self.do_save_raw_crash, raw_crash, dumps, crash_id)
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
         crash_id = processed_crash['uuid']
@@ -150,12 +149,16 @@ class BotoCrashStorage(CrashStorageBase):
             processed_crash_as_string
         )
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         self.transaction(self._do_save_processed, processed_crash)
 
-    #--------------------------------------------------------------------------
-    def save_raw_and_processed(self, raw_crash, dumps, processed_crash, crash_id):
+    def save_raw_and_processed(
+        self,
+        raw_crash,
+        dumps,
+        processed_crash,
+        crash_id
+    ):
         """ bug 866973 - do not put raw_crash back into permanent storage again
             We are doing this in lieu of a queuing solution that could allow
             us to operate an independent crashmover. When the queuing system
@@ -167,7 +170,6 @@ class BotoCrashStorage(CrashStorageBase):
         """
         self.save_processed(processed_crash)
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def do_get_raw_crash(boto_connection, crash_id):
         try:
@@ -181,11 +183,9 @@ class BotoCrashStorage(CrashStorageBase):
                 '%s not found: %s' % (crash_id, x)
             )
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         return self.transaction_for_get(self.do_get_raw_crash, crash_id)
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def do_get_raw_dump(boto_connection, crash_id, name=None):
         try:
@@ -198,11 +198,9 @@ class BotoCrashStorage(CrashStorageBase):
                 '%s not found: %s' % (crash_id, x)
             )
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         return self.transaction_for_get(self.do_get_raw_dump, crash_id, name)
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def do_get_raw_dumps(boto_connection, crash_id):
         try:
@@ -229,12 +227,10 @@ class BotoCrashStorage(CrashStorageBase):
                 '%s not found: %s' % (crash_id, x)
             )
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """this returns a MemoryDumpsMapping"""
         return self.transaction_for_get(self.do_get_raw_dumps, crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         in_memory_dumps = self.get_raw_dumps(crash_id)
         # convert our native memory dump mapping into a file dump mapping.
@@ -244,7 +240,6 @@ class BotoCrashStorage(CrashStorageBase):
             self.config.dump_file_suffix
         )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _do_get_unredacted_processed(boto_connection, crash_id):
         try:
@@ -261,12 +256,13 @@ class BotoCrashStorage(CrashStorageBase):
                 '%s not found: %s' % (crash_id, x)
             )
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        return self.transaction_for_get(self._do_get_unredacted_processed, crash_id)
+        return self.transaction_for_get(
+            self._do_get_unredacted_processed,
+            crash_id
+        )
 
 
-#==============================================================================
 class BotoS3CrashStorage(BotoCrashStorage):
     required_config = Namespace()
     required_config.resource_class = change_default(
@@ -364,19 +360,6 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
     # I suspect that we'll end up using a prefix instead of differing bucket
     # name in the future.  Leaving this code in place for the moment
 
-##    required_config = Namespace()
-##    required_config.bucket_name = change_default(
-##        BotoS3CrashStorage,
-##        'bucket_name',
-##        'mozilla-support-reason'
-##    )
-##    required_config.prefix = change_default(
-##        BotoS3CrashStorage,
-##        'prefix',
-##        'mozilla-support-reason'
-##    )
-
-    #--------------------------------------------------------------------------
     @staticmethod
     def _do_save_processed(boto_connection, processed_crash):
         """Replaces the function of the same name in the parent class.
@@ -402,7 +385,6 @@ class SupportReasonAPIStorage(BotoS3CrashStorage):
             json.dumps(content)
         )
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """There are no scenarios in which the raw crash could possibly be of
         interest to the Support Reason API, therefore this function does
