@@ -248,8 +248,9 @@ pyinotify==0.9.6 ; sys_platform == 'linux' or sys_platform == 'linux2' \
     --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
 django-jinja==2.1.2 \
     --hash=sha256:fc2b6a65201b27711e800eb2e1262ff42a32f027bd2267e34121f1bd2bd6b933
-socorrolib==0.2.2 \
-    --hash=sha256:b7575dc7be0ffc7c1d5f15bcacba290aed5234ea0d5802b68806e4563480fb79
+socorrolib==0.2.3 \
+    --hash=sha256:f8502ef21f6db7e9a72737aa442b50f958cdf48fd437ebcf4fe51dd379cbcd8e \
+    --hash=sha256:aa83e259155df030227e857a10fb65c8f43d8717f4e28556cd15b8ed60964214
 humanfriendly==1.44.7 \
     --hash=sha256:fcee758612edc6fead9b8fd1d5a473eab2c3a84cf8766f3ce70862ccd35e8a64
 jsonschema==2.5.1 \
