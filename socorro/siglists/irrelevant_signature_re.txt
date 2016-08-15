@@ -38,10 +38,11 @@ mozcrt19.dll@0x.*
 mozilla::gfx::Log<.*
 mozilla::ipc::RPCChannel::Call
 _NSRaiseError
-(Nt|Zw)WaitForSingleObject(Ex)?
-(Nt|Zw)WaitForMultipleObjects(Ex)?
+(Nt|Zw)?WaitForSingleObject(Ex)?
+(Nt|Zw)?WaitForMultipleObjects(Ex)?
 nvmap@0x.*
 org\.mozilla\.f.*-\d\.apk@0x.*
+PR_WaitCondVar
 RaiseException
 RtlpAdjustHeapLookasideDepth
 std::_Atomic_fetch_add_4
