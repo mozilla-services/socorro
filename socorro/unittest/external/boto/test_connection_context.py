@@ -16,6 +16,7 @@ from socorro.external.boto.connection_context import (
     KeyNotFound,
     S3ConnectionContext,
     RegionalS3ConnectionContext,
+    HostPortS3ConnectionContext,
 )
 from socorro.database.transaction_executor import (
     TransactionExecutor,
@@ -232,6 +233,53 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         self.assert_regional_s3_connection_parameters(
             'us-south-3',
             connection_source
+        )
+
+    def test_HostPortS3ConnectionContext_host_port_secure(self):
+        # Test with secure=True
+        conn = self.setup_mocked_s3_storage(
+            resource_class=HostPortS3ConnectionContext,
+            host='localhost',
+            port='4569',
+            secure='True',
+        )
+        conn.fetch(
+            'name_of_thing',
+            'this_is_an_id'
+        )
+        kwargs = {
+            'aws_access_key_id': conn.config.access_key,
+            'aws_secret_access_key': conn.config.secret_access_key,
+            'calling_format': conn.config._calling_format.return_value,
+            'host': 'localhost',
+            'port': 4569,
+            'is_secure': True,
+        }
+        conn._connect_to_endpoint.assert_called_with(
+            **kwargs
+        )
+
+        # Test with secure=False
+        conn = self.setup_mocked_s3_storage(
+            resource_class=HostPortS3ConnectionContext,
+            host='localhost',
+            port='4569',
+            secure='False',
+        )
+        conn.fetch(
+            'name_of_thing',
+            'this_is_an_id'
+        )
+        kwargs = {
+            'aws_access_key_id': conn.config.access_key,
+            'aws_secret_access_key': conn.config.secret_access_key,
+            'calling_format': conn.config._calling_format.return_value,
+            'host': 'localhost',
+            'port': 4569,
+            'is_secure': False,
+        }
+        conn._connect_to_endpoint.assert_called_with(
+            **kwargs
         )
 
 
