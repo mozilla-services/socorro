@@ -315,26 +315,6 @@ class ConnectionContextBase(RequiredConfig):
 
 
 #==============================================================================
-class ConnectionContextWithHostAndPortBase(RequiredConfig):
-    """an alternative base class that specific implementations of Boto
-    connection can derive.  It adds "host" and "port" to the configuration"""
-
-    required_config = Namespace()
-    required_config.add_option(
-        'host',
-        doc="The hostname (leave empty for AWS)",
-        default="",
-        reference_value_from='resource.boto',
-    )
-    required_config.add_option(
-        'port',
-        doc="The network port (leave at 0 for AWS)",
-        default=0,
-        reference_value_from='resource.boto',
-    )
-
-
-#==============================================================================
 class S3ConnectionContext(ConnectionContextBase):
     """This derived class includes the specifics for connection to S3"""
     required_config = Namespace()
