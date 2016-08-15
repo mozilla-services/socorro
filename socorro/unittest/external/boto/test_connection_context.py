@@ -240,8 +240,8 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         conn = self.setup_mocked_s3_storage(
             resource_class=HostPortS3ConnectionContext,
             host='localhost',
-            port='4569',
-            secure='True',
+            port=4569,
+            secure=True,
         )
         conn.fetch(
             'name_of_thing',
@@ -250,7 +250,7 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         kwargs = {
             'aws_access_key_id': conn.config.access_key,
             'aws_secret_access_key': conn.config.secret_access_key,
-            'calling_format': conn.config._calling_format.return_value,
+            'calling_format': conn._calling_format.return_value,
             'host': 'localhost',
             'port': 4569,
             'is_secure': True,
@@ -263,8 +263,8 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         conn = self.setup_mocked_s3_storage(
             resource_class=HostPortS3ConnectionContext,
             host='localhost',
-            port='4569',
-            secure='False',
+            port=4569,
+            secure=False,
         )
         conn.fetch(
             'name_of_thing',
@@ -273,7 +273,7 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
         kwargs = {
             'aws_access_key_id': conn.config.access_key,
             'aws_secret_access_key': conn.config.secret_access_key,
-            'calling_format': conn.config._calling_format.return_value,
+            'calling_format': conn._calling_format.return_value,
             'host': 'localhost',
             'port': 4569,
             'is_secure': False,
