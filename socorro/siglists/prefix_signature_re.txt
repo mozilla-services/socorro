@@ -115,6 +115,7 @@ NtUser.*
 objc_exception_throw
 objc_msgSend
 operator new
+<.*>::operator()
 PLDHashTable::.*
 PL_.*
 port_.*
@@ -165,6 +166,7 @@ SocketWritev
 ssl_.*
 SSL_.*
 std::_Allocate.*
+std::list<.*>::.*
 strcat
 ssl3_.*
 strchr
