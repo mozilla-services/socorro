@@ -411,7 +411,6 @@ class HostPortS3ConnectionContext(S3ConnectionContext):
     )
 
     def _get_credentials(self):
-        print repr((self.config.secure, self.config.host, self.config.port))
         return {
             'aws_access_key_id': self.config.access_key,
             'aws_secret_access_key': self.config.secret_access_key,
