@@ -15,9 +15,11 @@
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
         <p>
-            <a href="#" class="display-toggle-filters toggle-filters show" data-text-opposite="Hide Filters">
-                Show Filters
-            </a>
+            <a
+                href="#"
+                class="display-toggle-filters toggle-filters show"
+                data-text-opposite="Hide Filters"
+            >Show Filters</a>
             Showing results from {{ query.start_date | time_ago }} to {{ query.end_date | time_ago }}.
         </p>
     </div>
@@ -29,7 +31,7 @@
         >
             <button type="submit" id="search-button">Search</button>
             <button class="new-line">New line</button>
-            <h4>Search filters</h4>
+            <h4>Search Filters</h4>
 
             <fieldset id="search-params-fieldset"></fieldset>
 
