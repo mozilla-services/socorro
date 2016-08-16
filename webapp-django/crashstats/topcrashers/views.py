@@ -1,11 +1,9 @@
 import datetime
-import isodate
 from collections import defaultdict
 
 from django import http
 from django.conf import settings
-from django.shortcuts import render, redirect
-from django.utils import timezone
+from django.shortcuts import redirect, render
 from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
@@ -15,54 +13,8 @@ from crashstats.crashstats.decorators import (
     check_days_parameter,
     pass_default_context,
 )
-from crashstats.supersearch.form_fields import split_on_operator
-from crashstats.supersearch.models import (
-    SuperSearchUnredacted,
-)
-
-
-def get_date_boundaries(parameters):
-    """Return the date boundaries in a set of parameters.
-
-    Return a tuple with 2 datetime objects, the first one is the lower bound
-    date and the second one is the upper bound date.
-    """
-    default_date_range = datetime.timedelta(days=7)
-
-    greater_than = None
-    lower_than = None
-
-    if not parameters.get('date'):
-        lower_than = timezone.now()
-        greater_than = lower_than - default_date_range
-    else:
-        for param in parameters['date']:
-            value = isodate.parse_datetime(split_on_operator(param)[1])
-
-            if (
-                '<' in param and (
-                    not lower_than or
-                    (lower_than and lower_than > value)
-                )
-            ):
-                lower_than = value
-            if (
-                '>' in param and (
-                    not greater_than or
-                    (greater_than and greater_than < value)
-                )
-            ):
-                greater_than = value
-
-        if not lower_than:
-            # add a lower than that is now
-            lower_than = timezone.now()
-
-        if not greater_than:
-            # add a greater than that is lower_than minus the date range
-            greater_than = lower_than - default_date_range
-
-    return (greater_than, lower_than)
+from crashstats.supersearch.models import SuperSearchUnredacted
+from crashstats.supersearch.utils import get_date_boundaries
 
 
 def datetime_to_build_id(date):

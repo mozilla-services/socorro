@@ -8,8 +8,8 @@ from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 
 from crashstats.crashstats import models
-from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 DUMB_SIGNATURE = 'hang | mozilla::wow::such_signature(smth*)'

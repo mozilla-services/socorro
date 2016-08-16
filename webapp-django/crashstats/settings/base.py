@@ -335,15 +335,12 @@ SIGNATURE_MAX_LENGTH = 255
 # to avoid byte-big messages as cookies
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-
 # A prefix that is sometimes prefixed on the crash ID when used elsewhere in
 # the socorro eco-system.
 CRASH_ID_PREFIX = 'bp-'
 
-
 # If true, allow robots to spider the site
 ENGAGE_ROBOTS = False
-
 
 # Base URL for when we use the Bugzilla API
 BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'

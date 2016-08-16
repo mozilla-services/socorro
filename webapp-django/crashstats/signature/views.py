@@ -5,9 +5,9 @@ import math
 import isodate
 
 from django import http
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
-from django.conf import settings
 
 from socorrolib.lib import BadArgumentError
 
@@ -15,6 +15,7 @@ from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.api.views import has_permissions
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
+from crashstats.supersearch.utils import get_date_boundaries
 
 from crashstats.supersearch.models import (
     SuperSearchFields,
@@ -24,7 +25,6 @@ from crashstats.supersearch.views import (
     ValidationError,
     get_allowed_fields,
     get_params,
-    get_report_list_parameters,
 )
 
 
@@ -103,11 +103,12 @@ def signature_report(request, params, default_context=None):
     context['channels'] = ','.join(settings.CHANNELS).split(',')
     context['channel'] = settings.CHANNEL
 
-    context['report_list_query_string'] = urlencode_obj(
-        utils.sanitize_dict(
-            get_report_list_parameters(params)
-        )
-    )
+    # Compute dates to show them to the user.
+    start_date, end_date = get_date_boundaries(params)
+    context['query'] = {
+        'start_date': start_date,
+        'end_date': end_date,
+    }
 
     return render(request, 'signature/signature_report.html', context)
 

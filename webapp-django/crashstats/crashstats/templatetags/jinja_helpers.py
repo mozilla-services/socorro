@@ -91,6 +91,17 @@ def timestamp_to_date(
 
 
 @library.filter
+def time_ago(dt, format='%a, %b %d %H:%M %Z'):
+    return jinja2.Markup(
+        '<time datetime="{}" class="ago">{}</time>'
+        .format(
+            dt.isoformat(),
+            dt.strftime(format)
+        )
+    )
+
+
+@library.filter
 def human_readable_iso_date(dt):
     """ Python datetime to a human readable ISO datetime. """
     if not isinstance(dt, (datetime.date, datetime.datetime)):

@@ -1,30 +1,42 @@
-#panels-nav {
-    margin: 20px;
+.page-heading {
+    p {
+        font-style: italic;
+
+        time {
+            font-weight: bold;
+        }
+    }
 }
 
-.tabs {
-    margin: 0.3em 1em 1em 0;
-    padding: 0;
-    a:link,
-    a:visited {
-        display: inline-block;
-        background-color: #e0e0e0;
-        color: #333;
-        margin-right: .2em;
-        padding: .3em .8em;
-        text-decoration: none;
-        text-align: center;
-        border-radius: 6px;
-    }
-    a:hover {
-        background-color: #B6D3E2;
-    }
-    a.selected {
-        background-color: #2e5d74;
-        color: #fff;
-    }
-    li {
-        display: inline;
+#panels-nav {
+    display: block;
+    margin: 20px 0 0 20px;
+
+    .tabs {
+        li {
+            display: inline-block;
+
+            a:link,
+            a:visited {
+                display: inline-block;
+                background-color: #e0e0e0;
+                border: 1px solid #d1d1d1;
+                border-bottom: none;
+                color: #333;
+                font-size: 1.1em;
+                padding: .3em .8em;
+                text-decoration: none;
+                text-align: center;
+                border-radius: 8px 8px 0 0;
+            }
+            a:hover {
+                background-color: #B6D3E2;
+            }
+            a.selected {
+                background-color: #2e5d74;
+                color: #fff;
+            }
+        }
     }
 }
 
@@ -36,20 +48,34 @@
 #loading-panel {
     display: block;
 }
+#mainbody .tab-panel {
+    margin-top: 0;
 
-.toggle-filters {
+    > header {
+        display: none;
+    }
+}
+
+.display-toggle-filters {
     float: right;
+    font-style: normal;
+    font-weight: bold;
+
+    &:before {
+        content: url('../../img/3rdparty/silk/arrow_bottom.png');
+        display: inline-block;
+        height: 16px;
+        padding: 5px;
+        vertical-align: middle;
+        width: 16px;
+    }
+    &.show:before {
+        content: url('../../img/3rdparty/silk/resultset_next.png');
+    }
 }
-.toggle-filters:before {
-    content: url('../../img/3rdparty/silk/arrow_top.png');
-    display: inline-block;
-    height: 16px;
-    padding: 5px;
-    vertical-align: middle;
-    width: 16px;
-}
-.toggle-filters.show:before {
-    content: url('../../img/3rdparty/silk/arrow_bottom.png');
+
+#search-params-fieldset {
+    width: 100%;
 }
 
 th.crash-id {

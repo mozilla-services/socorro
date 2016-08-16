@@ -14,20 +14,28 @@
 <div id="mainbody">
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
+        <p>
+            <a
+                href="#"
+                class="display-toggle-filters toggle-filters show"
+                data-text-opposite="Hide Filters"
+            >Show Filters</a>
+            Showing results from {{ query.start_date | time_ago }} to {{ query.end_date | time_ago }}.
+        </p>
     </div>
 
     <section id="search-form">
-        <a href="#" class="toggle-filters show">Show</a>
-        <h4>Search filters</h4>
-
         <form method="get" action="{{ url('signature:signature_report') }}"
             data-fields-url="{{ url('supersearch.search_fields') }}?exclude=signature"
             data-signature="{{ signature }}"
         >
             <button type="submit" id="search-button">Search</button>
-            <button class="new-line">new line</button>
+            <button class="new-line">New line</button>
+            <h4>Search Filters</h4>
+
             <fieldset id="search-params-fieldset"></fieldset>
 
+            <p><em>Note: by default, the date will be a range between now and a week ago. You can override the lower bound, the upper bound, or both. </em></p>
             <div class="clear"></div>
         </form>
     </section>
@@ -90,6 +98,8 @@ var DEFAULT_CHANNEL = '{{ channel }}';
 {% javascript 'select2' %}
 {% javascript 'accordion' %}
 {% javascript 'dynamic_form' %}
+{% javascript 'moment' %}
+{% javascript 'timeutils' %}
 {% javascript 'socorro_utils' %}
 {% javascript 'bugzilla' %}
 {% javascript 'metricsgraphics' %}
