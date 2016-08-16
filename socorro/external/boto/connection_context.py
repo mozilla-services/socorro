@@ -12,6 +12,7 @@ import boto.s3.connection
 import boto.exception
 
 from configman import Namespace, RequiredConfig, class_converter
+from configman.converters import str_to_boolean
 
 from socorrolib.lib.converters import change_default
 from socorrolib.lib.ooid import dateFromOoid
@@ -406,7 +407,7 @@ class HostPortS3ConnectionContext(S3ConnectionContext):
         'secure',
         doc='Whether to connect securely or not (true/false)',
         reference_value_from='resource.boto',
-        from_string_converter=lambda x: x.lower().startswith('t'),
+        from_string_converter=str_to_boolean,
         default=True,
     )
 
