@@ -12,6 +12,7 @@ import boto.s3.connection
 import boto.exception
 
 from configman import Namespace, RequiredConfig, class_converter
+from configman.converters import str_to_boolean
 
 from socorrolib.lib.converters import change_default
 from socorrolib.lib.ooid import dateFromOoid
@@ -315,26 +316,6 @@ class ConnectionContextBase(RequiredConfig):
 
 
 #==============================================================================
-class ConnectionContextWithHostAndPortBase(RequiredConfig):
-    """an alternative base class that specific implementations of Boto
-    connection can derive.  It adds "host" and "port" to the configuration"""
-
-    required_config = Namespace()
-    required_config.add_option(
-        'host',
-        doc="The hostname (leave empty for AWS)",
-        default="",
-        reference_value_from='resource.boto',
-    )
-    required_config.add_option(
-        'port',
-        doc="The network port (leave at 0 for AWS)",
-        default=0,
-        reference_value_from='resource.boto',
-    )
-
-
-#==============================================================================
 class S3ConnectionContext(ConnectionContextBase):
     """This derived class includes the specifics for connection to S3"""
     required_config = Namespace()
@@ -399,3 +380,43 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
                 **self._get_credentials()
             )
             return self.connection
+
+
+class HostPortS3ConnectionContext(S3ConnectionContext):
+    """Connection context for connecting to an S3-like service at a specified
+    host/port
+
+    This is useful if you're connecting to a fake s3 or minio or some other
+    non-S3 thing.
+
+    """
+
+    required_config = Namespace()
+    required_config.add_option(
+        'host',
+        doc='The hostname to connect to',
+        reference_value_from='resource.boto',
+    )
+    required_config.add_option(
+        'port',
+        doc='The network port',
+        reference_value_from='resource.boto',
+        from_string_converter=int
+    )
+    required_config.add_option(
+        'secure',
+        doc='Whether to connect securely or not (true/false)',
+        reference_value_from='resource.boto',
+        from_string_converter=str_to_boolean,
+        default=True,
+    )
+
+    def _get_credentials(self):
+        return {
+            'aws_access_key_id': self.config.access_key,
+            'aws_secret_access_key': self.config.secret_access_key,
+            'is_secure': self.config.secure,
+            'calling_format': self._calling_format(),
+            'host': self.config.host,
+            'port': self.config.port,
+        }
