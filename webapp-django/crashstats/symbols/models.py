@@ -31,6 +31,10 @@ class UploadedSymbols(crashstats_models.SocorroMiddleware):
     ones were new or different and which were uploaded under the
     existing key.
     """
+    # Don't have to worry about stampeding herds on this
+    # model because it requires a permission anyway.
+    cache_seconds = 0
+
     required_params = (
         ('start_date', datetime.date),
         ('end_date', datetime.date),
