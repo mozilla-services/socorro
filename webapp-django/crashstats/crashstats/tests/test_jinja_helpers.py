@@ -16,6 +16,7 @@ from crashstats.crashstats.templatetags.jinja_helpers import (
     show_bug_link,
     show_duration,
     show_filesize,
+    time_tag,
     timestamp_to_date,
 )
 
@@ -35,6 +36,40 @@ class TestTimestampToDate(TestCase):
 
         output = timestamp_to_date('abc')
         eq_(output, '')
+
+
+class TestTimeTag(TestCase):
+
+    def test_time_tag_with_datetime(self):
+        date = datetime.datetime(2000, 1, 2, 3, 4, 5)
+        output = time_tag(date)
+
+        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+            date.isoformat(),
+            date.strftime('%a, %b %d %H:%M %Z')
+        ))
+
+    def test_time_tag_with_date(self):
+        date = datetime.date(2000, 1, 2)
+        output = time_tag(date)
+
+        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+            date.isoformat(),
+            date.strftime('%a, %b %d %H:%M %Z')
+        ))
+
+    def test_time_tag_future(self):
+        date = datetime.datetime(2000, 1, 2, 3, 4, 5)
+        output = time_tag(date, future=True)
+
+        eq_(output, '<time datetime="{}" class="in">{}</time>'.format(
+            date.isoformat(),
+            date.strftime('%a, %b %d %H:%M %Z')
+        ))
+
+    def test_time_tag_invalid_date(self):
+        output = time_tag('junk')
+        eq_(output, 'junk')
 
 
 class TestRecursiveStateFilter(TestCase):

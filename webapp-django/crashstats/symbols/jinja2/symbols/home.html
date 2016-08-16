@@ -54,7 +54,7 @@
                     </td>
                     <td>{{ upload.size | filesizeformat }}</td>
                     <td>
-                        <time class="ago" data-date="{{ upload.created.isoformat() }}">{{ upload.created.isoformat() }}</time>
+                        {{ upload.created | time_tag }}
                     </td>
                 </tr>
                 {% endfor %}
