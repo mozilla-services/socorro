@@ -42,6 +42,7 @@ class BreakpadCollectorBase(GenericCollectorBase):
         self.accept_submitted_legacy_processing = \
             self._get_accept_submitted_legacy_processing()
         self.throttler = self._get_throttler()
+        self.metrics = self._get_metrics()
         self.crash_storage = self._get_crash_storage()
 
     #--------------------------------------------------------------------------
@@ -55,6 +56,10 @@ class BreakpadCollectorBase(GenericCollectorBase):
     #--------------------------------------------------------------------------
     def _get_accept_submitted_legacy_processing(self):
         return self.config.accept_submitted_legacy_processing
+
+    #--------------------------------------------------------------------------
+    def _get_metrics(self):
+        return self.config.metrics
 
     #--------------------------------------------------------------------------
     def _get_crash_storage(self):
@@ -95,11 +100,36 @@ class BreakpadCollectorBase(GenericCollectorBase):
 
         raw_crash.type_tag = self.dump_id_prefix.strip('-')
 
+        # Save crash to storage.
         self.crash_storage.save_raw_crash(
             raw_crash,
             dumps,
             crash_id
         )
+
+        # We want to capture the crash report size, but need to differentiate
+        # between crashes that came in compressed and those that didn't in the
+        # metrics.
+        crash_report_size = self._get_content_length()
+        is_compressed = self._is_content_gzipped()
+
+        try:
+            metrics_data = {}
+            if is_compressed:
+                metrics_data['size_compressed'] = crash_report_size
+            else:
+                metrics_data['size'] = crash_report_size
+            self.metrics.capture_stats(metrics_data)
+        except Exception as exc:
+            # We *never* want metrics reporting to prevent saving a crash, so
+            # we catch everything and log an error.
+            self.logger.error(
+                'metrics kicked up exception: %s',
+                str(exc),
+                exc_info=True
+            )
+
+        # Return crash id to http client.
         self.logger.info('%s accepted', crash_id)
         return "CrashID=%s%s\n" % (self.dump_id_prefix, crash_id)
 

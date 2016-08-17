@@ -64,10 +64,18 @@ class GenericCollectorBase(RequiredConfig):
             return fs
 
     #--------------------------------------------------------------------------
+    def _is_content_gzipped(self):
+        return web.ctx.env.get('HTTP_CONTENT_ENCODING') == 'gzip'
+
+    #--------------------------------------------------------------------------
+    def _get_content_length(self):
+        return web.ctx.env.get('CONTENT_LENGTH', 0)
+
+    #--------------------------------------------------------------------------
     def _form_as_mapping(self):
         """this method returns the POST form mapping with any gzip
         decompression automatically handled"""
-        if web.ctx.env.get('HTTP_CONTENT_ENCODING') == 'gzip':
+        if self._is_content_gzipped():
             # Handle gzipped form posts
             gzip_header = 16 + zlib.MAX_WBITS
             data = zlib.decompress(web.webapi.data(), gzip_header)

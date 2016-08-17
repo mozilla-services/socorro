@@ -81,6 +81,17 @@ class CollectorApp(BaseCollectorApp):
         from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
+    # metrics namespace
+    #     the namespace is for config parameters for the metrics system
+    #--------------------------------------------------------------------------
+    required_config.namespace('metrics')
+    required_config.metrics.add_option(
+        'metrics_class',
+        default='socorro.external.metrics_base.MetricsBase',
+        doc='the class that implements metrics; no value means no metrics',
+        from_string_converter=class_converter
+    )
+    #--------------------------------------------------------------------------
     # storage namespace
     #     the namespace is for config parameters crash storage
     #--------------------------------------------------------------------------
@@ -106,6 +117,9 @@ class CollectorApp(BaseCollectorApp):
         )
         self.config.throttler = self.config.throttler.throttler_class(
             self.config.throttler
+        )
+        self.config.metrics = self.config.metrics.metrics_class(
+            self.config.metrics
         )
         self.web_server = self.config.web_server.wsgi_server_class(
             self.config,  # needs the whole config not the local namespace
