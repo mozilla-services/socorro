@@ -1166,7 +1166,7 @@ class TestSignatureGeneration(TestCase):
 
         eq_(
             processed_crash.signature,
-            'WaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
+            'MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
         eq_(
@@ -1748,7 +1748,7 @@ class TestSignatureWatchDogRule(TestCase):
         eq_(
             processed_crash.signature,
             'shutdownhang | '
-            'WaitForMultipleObjectsEx | MsgWaitForMultipleObjects | '
+            'MsgWaitForMultipleObjects | '
             'F_1152915508__________________________________'
         )
         eq_(processor_meta.processor_notes, [])
