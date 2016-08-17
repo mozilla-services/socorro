@@ -292,6 +292,20 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         reference_value_from='resource.elasticsearch',
     )
 
+    required_config.add_option(
+        'keybuilder_class',
+        default=(
+            'socorro.external.boto.connection_context'
+            '.SimpleDatePrefixKeyBuilder'
+        ),
+        doc=(
+            'fully qualified dotted Python classname to handle building s3 '
+            'pseudo-filenames'
+        ),
+        from_string_converter=class_converter,
+        reference_value_from='resource.boto',
+    )
+
     def _get_all_fields(self):
         if (
             hasattr(self, '_all_fields') and

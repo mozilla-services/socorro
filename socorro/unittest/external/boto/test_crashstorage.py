@@ -19,7 +19,6 @@ from socorro.database.transaction_executor import (
 from socorro.external.boto.connection_context import (
     KeyBuilderBase,
     S3ConnectionContext,
-    SimpleDatePrefixKeyBuilder,
 )
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
@@ -1089,7 +1088,6 @@ class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
 
     def get_s3_store(
         self,
-        keybuilder_class=SimpleDatePrefixKeyBuilder,
         storage_class=TelemetryBotoS3CrashStorage,
         bucket_name='telemetry-crashes',
     ):
@@ -1100,7 +1098,6 @@ class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
                     'transaction_executor_class': TransactionExecutor,
                     'transaction_executor_class_for_get': TransactionExecutor,
                     'resource_class': S3ConnectionContext,
-                    'keybuilder_class': keybuilder_class,
                     'redactor_class': Redactor,
                     'forbidden_keys': (
                         Redactor.required_config.forbidden_keys.default
