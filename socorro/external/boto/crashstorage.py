@@ -303,7 +303,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             'pseudo-filenames'
         ),
         from_string_converter=class_converter,
-        reference_value_from='resource.boto',
     )
 
     def _get_all_fields(self):
