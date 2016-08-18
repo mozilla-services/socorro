@@ -1173,7 +1173,7 @@ class TelemetryTestCase(ElasticsearchTestCase, BaseTestCase):
         bucket_mock.new_key.assert_has_calls(
             [
                 mock.call(
-                    'dev/v1/processed_crash/20071027/0bba929f-8721-460c-dead-'
+                    'dev/v1/crash_report/20071027/0bba929f-8721-460c-dead-'
                     'a43c20071027'
                 ),
             ],

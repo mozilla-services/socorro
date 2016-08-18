@@ -360,6 +360,20 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         )
         self.save_processed(crash_report)
 
+    @staticmethod
+    def _do_save_processed(boto_connection, processed_crash):
+        """Overriding this method so we can control the "name of thing"
+        prefix used to upload to S3."""
+        crash_id = processed_crash['uuid']
+        processed_crash_as_string = boto_connection._convert_mapping_to_string(
+            processed_crash
+        )
+        boto_connection.submit(
+            crash_id,
+            "crash_report",
+            processed_crash_as_string
+        )
+
 
 #==============================================================================
 class SupportReasonAPIStorage(BotoS3CrashStorage):
