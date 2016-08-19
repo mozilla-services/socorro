@@ -143,6 +143,7 @@
 
     {% for status in status_messages %}
     <div class="status-message severity-{{ status.severity }}">
+        <span>({{ status.date | time_tag }})</span>
         {{ status.text | replace_bugzilla_links }}
     </div>
     {% endfor %}

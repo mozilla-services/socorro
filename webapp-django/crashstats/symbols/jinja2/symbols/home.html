@@ -5,12 +5,6 @@
 {% stylesheet 'symbols' %}
 {% endblock %}
 
-{% block site_js %}
-{{ super() }}
-{% javascript 'moment' %}
-{% javascript 'timeutils' %}
-{% endblock %}
-
 {% block content_inner %}
 
 {% if user.has_perm('crashstats.upload_symbols') %}
@@ -60,7 +54,7 @@
                     </td>
                     <td>{{ upload.size | filesizeformat }}</td>
                     <td>
-                        <time class="ago" data-date="{{ upload.created.isoformat() }}">{{ upload.created.isoformat() }}</time>
+                        {{ upload.created | time_tag }}
                     </td>
                 </tr>
                 {% endfor %}

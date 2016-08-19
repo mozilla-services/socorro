@@ -11,8 +11,6 @@
 
 {% block site_js %}
 {{ super() }}
-{% javascript 'moment' %}
-{% javascript 'timeutils' %}
 {% javascript 'tokens' %}
 {% endblock %}
 
@@ -39,7 +37,7 @@
             {% for token in your_tokens %}
             <div class="token">
                 <h4>Generated
-                    <time class="ago" data-date="{{ token.created.isoformat() }}">{{ token.created.isoformat() }}</time>
+                    {{ token.created | time_tag }}
                 </h4>
                 <p class="code" data-key="{{ token.key }}">
                     <!-- jQuery will put in the <code> tag here -->
@@ -72,15 +70,15 @@
                         <th>Expired:</th>
                         <td>
                             {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }} (
-                            <time class="ago" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time>)
+                            {{ token.expires | time_tag }})
                         </td>
                     </tr>
                     {% else %}
                     <tr>
                         <th>Expires:</th>
                         <td>
-                            {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }} (
-                            <time class="in" data-date="{{ token.expires.isoformat() }}">{{ token.expires.isoformat() }}</time> from now)
+                            {{ token.expires.strftime('%Y-%m-%d %H:%M:%S%Z') }}
+                            ({{ token.expires | time_tag(future=True) }} from now)
                         </td>
                     </tr>
                     {% endif %}

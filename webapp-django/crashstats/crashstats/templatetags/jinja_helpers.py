@@ -91,11 +91,18 @@ def timestamp_to_date(
 
 
 @library.filter
-def time_ago(dt, format='%a, %b %d %H:%M %Z'):
+def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
+    if not isinstance(dt, (datetime.date, datetime.datetime)):
+        try:
+            dt = isodate.parse_datetime(dt)
+        except isodate.ISO8601Error:
+            return dt
+
     return jinja2.Markup(
-        '<time datetime="{}" class="ago">{}</time>'
+        '<time datetime="{}" class="{}">{}</time>'
         .format(
             dt.isoformat(),
+            future and 'in' or 'ago',
             dt.strftime(format)
         )
     )

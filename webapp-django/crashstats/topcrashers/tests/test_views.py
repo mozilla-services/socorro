@@ -277,14 +277,13 @@ class TestViews(BaseTestViews):
             mocked_supersearch_get
         )
 
-        now = datetime.datetime.utcnow()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-        timestr = '%Y-%m-%d %H:%M:%S'
-        now = now.strftime(timestr)
-        today = today.strftime(timestr)
+        now = datetime.datetime.utcnow().replace(microsecond=0)
+        today = now.replace(hour=0, minute=0, second=0)
 
         with freezegun.freeze_time(now, tz_offset=0):
+            now = now.isoformat()
+            today = today.isoformat()
+
             # By default, it returns "real-time" data.
             response = self.client.get(self.base_url, {
                 'product': 'WaterWolf',

@@ -1,6 +1,5 @@
 {% extends "crashstats_base.html" %}
 
-
 {% block page_title %}Crontabber State{% endblock %}
 
 
@@ -8,6 +7,13 @@
   {{ super() }}
   {% stylesheet 'jquery_ui' %}
   {% stylesheet 'crontabber_state' %}
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  {% javascript 'd3' %}
+  {% javascript 'jquery_tablesorter' %}
+  {% javascript 'crontabber_state' %}
 {% endblock %}
 
 
@@ -47,12 +53,4 @@
     </div>
 
 </div>
-{% endblock %}
-
-{% block site_js %}
-  {{ super() }}
-  {% javascript 'd3' %}
-  {% javascript 'moment' %}
-  {% javascript 'jquery_tablesorter' %}
-  {% javascript 'crontabber_state' %}
 {% endblock %}

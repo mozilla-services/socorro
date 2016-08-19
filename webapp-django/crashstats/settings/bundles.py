@@ -158,12 +158,6 @@ PIPELINE_CSS = {
 
 
 PIPELINE_JS = {
-    'moment': {
-        'source_filenames': (
-            'crashstats/js/moment.min.js',
-        ),
-        'output_filename': 'js/moment.min.js',
-    },
     'pagination': {
         'source_filenames': (
             'manage/js/pagination_utils.js',
@@ -224,12 +218,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/jquery-tablesorter.min.js',
     },
-    'timeutils': {
-        'source_filenames': (
-            'crashstats/js/timeutils.js',
-        ),
-        'output_filename': 'js/timeutils.min.js',
-    },
     'socorro_utils': {
         'source_filenames': (
             'crashstats/js/socorro/utils.js',
@@ -253,6 +241,8 @@ PIPELINE_JS = {
             'crashstats/js/jquery/jquery-2.0.3.min.js',
             'crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js',
             'crashstats/js/lib/qs.js',
+            'crashstats/js/lib/moment.min.js',
+            'crashstats/js/socorro/timeutils.js',
             'crashstats/js/socorro/oauth2.js',
             'crashstats/js/socorro/nav.js',
             'crashstats/js/socorro/analytics.js',
@@ -352,15 +342,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/report_list_table.js',
         ),
         'output_filename': 'js/report-list.min.js',
-    },
-    'status': {
-        'source_filenames': (
-            'crashstats/js/lib/filesize.min.js',
-            'crashstats/js/flot-0.7/jquery.flot.pack.js',
-            'crashstats/js/timeago/jquery.timeago.js',
-            'crashstats/js/socorro/server_status.js',
-        ),
-        'output_filename': 'js/status.min.js',
     },
     'api_tokens': {
         'source_filenames': (

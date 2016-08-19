@@ -9,7 +9,6 @@
 
 {% block site_js %}
     {{ super() }}
-    {% javascript 'moment' %}
     {% javascript 'profile' %}
 {% endblock %}
 
@@ -69,7 +68,7 @@
                 <tbody>
                     {% for crash in crashes_list %}
                     <tr>
-                        <td><time datetime="{{ crash.date }}">{{ crash.date }}</time></td>
+                        <td>{{ crash.date | time_tag }}</td>
                         <td>
                             <a href="{{ url('crashstats:report_index', crash.crash_id) }}">
                                 {{ crash.crash_id }}
