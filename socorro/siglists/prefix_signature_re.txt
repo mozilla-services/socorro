@@ -112,6 +112,7 @@ nsTArray<.*
 nsTArray_base<.*
 nsTArray_Impl<.*
 nsTHashtable<.*>::.*
+nsThread::Shutdown
 NtUser.*
 objc_exception_throw
 objc_msgSend
