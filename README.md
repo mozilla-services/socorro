@@ -25,6 +25,6 @@ irc://irc.mozilla.org/breakpad
 Deployment status:
 https://whatsdeployed.io/s-7M7
 
-Infrastructure code:
+Infrastructure (AWS) code:
 https://github.com/mozilla/socorro-infra
 
