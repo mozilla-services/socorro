@@ -5,7 +5,7 @@
 import time
 
 from socorrolib.lib.ooid import createNewOoid
-from socorro.collector.throttler import DISCARD, IGNORE
+from socorro.collector.throttler import ACCEPT, DEFER, DISCARD, IGNORE
 from socorrolib.lib.datetimeutil import utc_now
 from socorro.collector.wsgi_generic_collector import GenericCollectorBase
 
@@ -91,6 +91,33 @@ class BreakpadCollectorBase(GenericCollectorBase):
         else:
             raw_crash.legacy_processing = int(raw_crash.legacy_processing)
 
+        # We want to capture the crash report size, but need to differentiate
+        # between compressed vs. uncompressed data as well as accepted vs.
+        # rejected data.
+        crash_report_size = self._get_content_length()
+        is_compressed = self._is_content_gzipped()
+        is_accepted = (raw_crash.legacy_processing in (ACCEPT, DEFER))
+
+        try:
+            metrics_data = {}
+            size_key = '_'.join([
+                'crash_report_size',
+                'accepted' if is_accepted else 'rejected',
+                'compressed' if is_compressed else 'uncompressed',
+            ])
+            metrics_data = {
+                size_key: crash_report_size
+            }
+            self.metrics.capture_stats(metrics_data)
+        except Exception as exc:
+            # We *never* want metrics reporting to prevent saving a crash, so
+            # we catch everything and log an error.
+            self.logger.error(
+                'metrics kicked up exception: %s',
+                str(exc),
+                exc_info=True
+            )
+
         if raw_crash.legacy_processing == DISCARD:
             self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
@@ -106,28 +133,6 @@ class BreakpadCollectorBase(GenericCollectorBase):
             dumps,
             crash_id
         )
-
-        # We want to capture the crash report size, but need to differentiate
-        # between crashes that came in compressed and those that didn't in the
-        # metrics.
-        crash_report_size = self._get_content_length()
-        is_compressed = self._is_content_gzipped()
-
-        try:
-            metrics_data = {}
-            if is_compressed:
-                metrics_data['size_compressed'] = crash_report_size
-            else:
-                metrics_data['size'] = crash_report_size
-            self.metrics.capture_stats(metrics_data)
-        except Exception as exc:
-            # We *never* want metrics reporting to prevent saving a crash, so
-            # we catch everything and log an error.
-            self.logger.error(
-                'metrics kicked up exception: %s',
-                str(exc),
-                exc_info=True
-            )
 
         # Return crash id to http client.
         self.logger.info('%s accepted', crash_id)

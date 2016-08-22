@@ -134,7 +134,9 @@ class TestWSGIBreakpadCollector(TestCase):
         )
 
         # Verify metrics were captured and .capture_stats() was called.
-        config.metrics.capture_stats.assert_called_with({'size': 1000})
+        config.metrics.capture_stats.assert_called_with(
+            {'crash_report_size_accepted_uncompressed': 1000}
+        )
 
     @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
     @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
@@ -173,6 +175,11 @@ class TestWSGIBreakpadCollector(TestCase):
         erc.type_tag = 'bp'
         erc = dict(erc)
 
+        mocked_web.ctx.configure_mock(
+            env={
+                'CONTENT_LENGTH': 1000
+            }
+        )
         mocked_webapi.rawinput.return_value = rawform
         mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
         mocked_time.time.return_value = 3.0
@@ -181,6 +188,11 @@ class TestWSGIBreakpadCollector(TestCase):
         eq_(r, "Unsupported=1\n")
         ok_(not
             c.crash_storage.save_raw_crash.call_count
+        )
+
+        # Verify metrics were captured and .capture_stats() was called.
+        config.metrics.capture_stats.assert_called_with(
+            {'crash_report_size_rejected_uncompressed': 1000}
         )
 
     @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
@@ -506,7 +518,9 @@ aux_dump contents
             {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
             r[11:-1]
         )
-        config.metrics.capture_stats.assert_called_with({'size_compressed': 1000})
+        config.metrics.capture_stats.assert_called_with(
+            {'crash_report_size_accepted_compressed': 1000}
+        )
 
     def test_no_x00_character(self):
         config = self.get_standard_config()
