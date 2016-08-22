@@ -113,14 +113,14 @@ class MultiplePrefixedValueField(PrefixedField):
         return cleaned_values
 
     def validate_ordered_values(self, values, operators):
+        operator_functions = {
+            '>': operator.gt,
+            '<': operator.lt,
+            '>=': operator.ge,
+            '<=': operator.le,
+        }
         for i, value in enumerate(values):
             op = operators[i]
-            operator_functions = {
-                '>': operator.gt,
-                '<': operator.lt,
-                '>=': operator.ge,
-                '<=': operator.le,
-            }
             if op not in operator_functions:
                 # Can only check those operators listed
                 continue
