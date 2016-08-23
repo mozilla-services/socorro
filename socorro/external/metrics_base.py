@@ -18,7 +18,7 @@ class MetricsBase(RequiredConfig):
 
     Subclasses should implement::
 
-        def capture_data(self, raw_crash, dumps, crash_id)
+        def capture_stats(self, data_items):
 
 
     This method should never throw an exception. This method should return

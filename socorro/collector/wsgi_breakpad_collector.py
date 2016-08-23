@@ -91,14 +91,15 @@ class BreakpadCollectorBase(GenericCollectorBase):
         else:
             raw_crash.legacy_processing = int(raw_crash.legacy_processing)
 
-        # We want to capture the crash report size, but need to differentiate
-        # between compressed vs. uncompressed data as well as accepted vs.
-        # rejected data.
-        crash_report_size = self._get_content_length()
-        is_compressed = self._is_content_gzipped()
-        is_accepted = (raw_crash.legacy_processing in (ACCEPT, DEFER))
 
         try:
+            # We want to capture the crash report size, but need to
+            # differentiate between compressed vs. uncompressed data as well as
+            # accepted vs. rejected data.
+            crash_report_size = self._get_content_length()
+            is_compressed = self._is_content_gzipped()
+            is_accepted = (raw_crash.legacy_processing in (ACCEPT, DEFER))
+
             metrics_data = {}
             size_key = '_'.join([
                 'crash_report_size',
@@ -109,12 +110,11 @@ class BreakpadCollectorBase(GenericCollectorBase):
                 size_key: crash_report_size
             }
             self.metrics.capture_stats(metrics_data)
-        except Exception as exc:
+        except Exception:
             # We *never* want metrics reporting to prevent saving a crash, so
             # we catch everything and log an error.
             self.logger.error(
-                'metrics kicked up exception: %s',
-                str(exc),
+                'metrics kicked up exception',
                 exc_info=True
             )
 
