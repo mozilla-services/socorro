@@ -191,6 +191,17 @@ class BreakpadCollector2015(BreakpadCollectorBase):
         from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
+    # metrics namespace
+    #     the namespace is for config parameters for the metrics system
+    #--------------------------------------------------------------------------
+    required_config.namespace('metrics')
+    required_config.metrics.add_option(
+        'metrics_class',
+        default='socorro.external.metrics_base.MetricsBase',
+        doc='the class that implements metrics; no value means no metrics',
+        from_string_converter=class_converter
+    )
+    #--------------------------------------------------------------------------
     # storage namespace
     #     the namespace is for config parameters crash storage
     #--------------------------------------------------------------------------
@@ -211,6 +222,15 @@ class BreakpadCollector2015(BreakpadCollectorBase):
             self.config.throttler.throttler_instance = \
                 self.config.throttler.throttler_class(self.config.throttler)
             return self.config.throttler.throttler_instance
+
+    #--------------------------------------------------------------------------
+    def _get_metrics(self):
+        try:
+            return self.config.metrics.metrics_instance
+        except KeyError:
+            self.config.metrics.metrics_instance = \
+                self.config.metrics.metrics_class(self.config.metrics)
+            return self.config.metrics.metrics_instance
 
     #--------------------------------------------------------------------------
     def _get_crash_storage(self):
