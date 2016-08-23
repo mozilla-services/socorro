@@ -39,6 +39,7 @@ huge_palloc
 ialloc
 imalloc
 init_library
+InvalidArrayIndex_CRASH
 invalid_parameter_noinfo
 _invalid_parameter_noinfo
 isalloc
