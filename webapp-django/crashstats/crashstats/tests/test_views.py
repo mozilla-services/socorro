@@ -25,7 +25,6 @@ from django.contrib.auth.models import (
     Permission
 )
 from django.core.cache import cache
-from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 
@@ -280,10 +279,8 @@ class BaseTestViews(DjangoTestCase):
     def setUp(self, rget):
         super(BaseTestViews, self).setUp()
 
-        if 'LocMemCache' not in settings.CACHES['default']['BACKEND']:
-            raise ImproperlyConfigured(
-                'The tests requires that you use LocMemCache when running'
-            )
+        # Tests assume and require a non-persistent cache backend
+        assert 'LocMemCache' in settings.CACHES['default']['BACKEND']
 
         def mocked_platforms_get(**options):
             return {
