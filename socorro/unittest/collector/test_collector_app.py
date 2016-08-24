@@ -30,6 +30,12 @@ class TestCollectorApp(TestCase):
             return_value=self.mocked_throttler
         )
 
+        config.metrics = DotDict()
+        self.mocked_metrics = mock.MagicMock()
+        config.metrics.metrics_class = mock.MagicMock(
+            return_value=self.mocked_metrics
+        )
+
         config.storage = mock.MagicMock()
         self.mocked_crash_storage = mock.MagicMock()
         config.storage.crashstorage_class = mock.MagicMock(

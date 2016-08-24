@@ -34,6 +34,7 @@ class TestWSGIBreakpadCollector(TestCase):
         config.logger = mock.MagicMock()
 
         config.throttler = mock.MagicMock()
+        config.metrics = mock.MagicMock()
 
         config.collector = DotDict()
         config.collector.collector_class = BreakpadCollector
@@ -112,6 +113,11 @@ class TestWSGIBreakpadCollector(TestCase):
         erc.type_tag = 'bp'
         erc = dict(erc)
 
+        mocked_web.ctx.configure_mock(
+            env={
+                'CONTENT_LENGTH': 1000
+            }
+        )
         mocked_web.input.return_value = form
         mocked_webapi.rawinput.return_value = rawform
         mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
@@ -125,6 +131,11 @@ class TestWSGIBreakpadCollector(TestCase):
             erc,
             {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
             r[11:-1]
+        )
+
+        # Verify metrics were captured and .capture_stats() was called.
+        config.metrics.capture_stats.assert_called_with(
+            {'crash_report_size_accepted_uncompressed': 1000}
         )
 
     @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
@@ -164,6 +175,11 @@ class TestWSGIBreakpadCollector(TestCase):
         erc.type_tag = 'bp'
         erc = dict(erc)
 
+        mocked_web.ctx.configure_mock(
+            env={
+                'CONTENT_LENGTH': 1000
+            }
+        )
         mocked_webapi.rawinput.return_value = rawform
         mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
         mocked_time.time.return_value = 3.0
@@ -172,6 +188,11 @@ class TestWSGIBreakpadCollector(TestCase):
         eq_(r, "Unsupported=1\n")
         ok_(not
             c.crash_storage.save_raw_crash.call_count
+        )
+
+        # Verify metrics were captured and .capture_stats() was called.
+        config.metrics.capture_stats.assert_called_with(
+            {'crash_report_size_rejected_uncompressed': 1000}
         )
 
     @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
@@ -477,6 +498,7 @@ aux_dump contents
         mocked_web_ctx.configure_mock(
             env={
                 'HTTP_CONTENT_ENCODING': 'gzip',
+                'CONTENT_LENGTH': 1000,
                 'CONTENT_ENCODING': 'gzip',
                 'CONTENT_TYPE':
                     'multipart/form-data; boundary="socorro1234567"',
@@ -496,6 +518,9 @@ aux_dump contents
             {'dump':'fake dump', 'aux_dump':'aux_dump contents'},
             r[11:-1]
         )
+        config.metrics.capture_stats.assert_called_with(
+            {'crash_report_size_accepted_compressed': 1000}
+        )
 
     def test_no_x00_character(self):
         config = self.get_standard_config()
@@ -504,6 +529,68 @@ aux_dump contents
         eq_(c._no_x00_character('\x00hello'), 'hello')
         eq_(c._no_x00_character(u'\u0000bye'), 'bye')
         eq_(c._no_x00_character(u'\u0000\x00bye'), 'bye')
+
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
+    @mock.patch('socorro.collector.wsgi_breakpad_collector.utc_now')
+    @mock.patch('socorro.collector.wsgi_generic_collector.web.webapi')
+    @mock.patch('socorro.collector.wsgi_generic_collector.web')
+    def test_bad_capture_stats(self, mocked_web, mocked_webapi, mocked_utc_now, mocked_time):
+        """Verify that a misbehaving capture_stats doesn't prevent collection"""
+        config = self.get_standard_config()
+
+        class MisbehavingMetrics(object):
+            def __init__(self, config):
+                self.capture_stats_calls = 0
+
+            def capture_stats(self, stats):
+                # Register that this was called
+                self.capture_stats_calls += 1
+                # Throw an exception because we're a misbehaving metrics
+                raise Exception('ou812')
+
+        config.metrics = MisbehavingMetrics(config)
+
+        c = BreakpadCollector(config)
+        rawform = DotDict()
+        rawform.ProductName = '\x00FireSquid'
+        rawform.Version = '99'
+        rawform.dump = DotDict({'value': 'fake dump', 'file': 'faked file'})
+
+        form = DotDict(rawform)
+        form.dump = rawform.dump.value
+
+        erc = DotDict()
+        erc.ProductName = 'FireSquid'
+        erc.Version = '99'
+        # erc.some_field = '23'
+        # erc.some_other_field = 'XYZ'
+        erc.legacy_processing = ACCEPT
+        erc.timestamp = 3.0
+        erc.submitted_timestamp = '2012-05-04T15:10:00'
+        erc.throttle_rate = 100
+        erc.dump_checksums = {
+            'dump': '2036fd064f93a0d086cf236c5f0fd8d4',
+            'aux_dump': 'aa2e5bf71df8a4730446b2551d29cb3a',
+        }
+        erc.type_tag = 'bp'
+        erc = dict(erc)
+
+        mocked_web.ctx.configure_mock(
+            env={
+                'CONTENT_LENGTH': 1000
+            }
+        )
+        mocked_web.input.return_value = form
+        mocked_webapi.rawinput.return_value = rawform
+        mocked_utc_now.return_value = datetime(2012, 5, 4, 15, 10)
+        mocked_time.time.return_value = 3.0
+        c.throttler.throttle.return_value = (ACCEPT, 100)
+        r = c.POST()
+
+        # Verify capture_stats was called
+        eq_(config.metrics.capture_stats_calls, 1)
+        ok_(r.startswith('CrashID=bp-'))
+
 
 
 class TestWSGIBreakpadCollector2015(TestCase):
@@ -514,6 +601,7 @@ class TestWSGIBreakpadCollector2015(TestCase):
         config.logger = mock.MagicMock()
 
         config.throttler = mock.MagicMock()
+        config.metrics = mock.MagicMock()
 
         config.collector_class = BreakpadCollector2015
         config.dump_id_prefix = 'bp-'

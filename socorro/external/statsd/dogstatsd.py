@@ -22,6 +22,11 @@ class StatsClient(object):
         return statsd.increment(name)
 
     #--------------------------------------------------------------------------
+    def histogram(self, name, value):
+        # histogram is a datadog statsd extension. It's kind of like timing,
+        # but operates on values other than durations.
+        return statsd.histogram(name, value)
+
+    #--------------------------------------------------------------------------
     def __getattr__(self, attr):
         return getattr(statsd, attr)
-

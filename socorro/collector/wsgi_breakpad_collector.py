@@ -5,7 +5,7 @@
 import time
 
 from socorrolib.lib.ooid import createNewOoid
-from socorro.collector.throttler import DISCARD, IGNORE
+from socorro.collector.throttler import ACCEPT, DEFER, DISCARD, IGNORE
 from socorrolib.lib.datetimeutil import utc_now
 from socorro.collector.wsgi_generic_collector import GenericCollectorBase
 
@@ -42,6 +42,7 @@ class BreakpadCollectorBase(GenericCollectorBase):
         self.accept_submitted_legacy_processing = \
             self._get_accept_submitted_legacy_processing()
         self.throttler = self._get_throttler()
+        self.metrics = self._get_metrics()
         self.crash_storage = self._get_crash_storage()
 
     #--------------------------------------------------------------------------
@@ -55,6 +56,10 @@ class BreakpadCollectorBase(GenericCollectorBase):
     #--------------------------------------------------------------------------
     def _get_accept_submitted_legacy_processing(self):
         return self.config.accept_submitted_legacy_processing
+
+    #--------------------------------------------------------------------------
+    def _get_metrics(self):
+        return self.config.metrics
 
     #--------------------------------------------------------------------------
     def _get_crash_storage(self):
@@ -86,6 +91,33 @@ class BreakpadCollectorBase(GenericCollectorBase):
         else:
             raw_crash.legacy_processing = int(raw_crash.legacy_processing)
 
+
+        try:
+            # We want to capture the crash report size, but need to
+            # differentiate between compressed vs. uncompressed data as well as
+            # accepted vs. rejected data.
+            crash_report_size = self._get_content_length()
+            is_compressed = self._is_content_gzipped()
+            is_accepted = (raw_crash.legacy_processing in (ACCEPT, DEFER))
+
+            metrics_data = {}
+            size_key = '_'.join([
+                'crash_report_size',
+                'accepted' if is_accepted else 'rejected',
+                'compressed' if is_compressed else 'uncompressed',
+            ])
+            metrics_data = {
+                size_key: crash_report_size
+            }
+            self.metrics.capture_stats(metrics_data)
+        except Exception:
+            # We *never* want metrics reporting to prevent saving a crash, so
+            # we catch everything and log an error.
+            self.logger.error(
+                'metrics kicked up exception',
+                exc_info=True
+            )
+
         if raw_crash.legacy_processing == DISCARD:
             self.logger.info('%s discarded', crash_id)
             return "Discarded=1\n"
@@ -95,11 +127,14 @@ class BreakpadCollectorBase(GenericCollectorBase):
 
         raw_crash.type_tag = self.dump_id_prefix.strip('-')
 
+        # Save crash to storage.
         self.crash_storage.save_raw_crash(
             raw_crash,
             dumps,
             crash_id
         )
+
+        # Return crash id to http client.
         self.logger.info('%s accepted', crash_id)
         return "CrashID=%s%s\n" % (self.dump_id_prefix, crash_id)
 
@@ -156,6 +191,17 @@ class BreakpadCollector2015(BreakpadCollectorBase):
         from_string_converter=class_converter
     )
     #--------------------------------------------------------------------------
+    # metrics namespace
+    #     the namespace is for config parameters for the metrics system
+    #--------------------------------------------------------------------------
+    required_config.namespace('metrics')
+    required_config.metrics.add_option(
+        'metrics_class',
+        default='socorro.external.metrics_base.MetricsBase',
+        doc='the class that implements metrics; no value means no metrics',
+        from_string_converter=class_converter
+    )
+    #--------------------------------------------------------------------------
     # storage namespace
     #     the namespace is for config parameters crash storage
     #--------------------------------------------------------------------------
@@ -176,6 +222,15 @@ class BreakpadCollector2015(BreakpadCollectorBase):
             self.config.throttler.throttler_instance = \
                 self.config.throttler.throttler_class(self.config.throttler)
             return self.config.throttler.throttler_instance
+
+    #--------------------------------------------------------------------------
+    def _get_metrics(self):
+        try:
+            return self.config.metrics.metrics_instance
+        except KeyError:
+            self.config.metrics.metrics_instance = \
+                self.config.metrics.metrics_class(self.config.metrics)
+            return self.config.metrics.metrics_instance
 
     #--------------------------------------------------------------------------
     def _get_crash_storage(self):
