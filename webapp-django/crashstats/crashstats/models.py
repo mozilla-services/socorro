@@ -1483,6 +1483,11 @@ class SignatureSummary(SocorroMiddleware):
 
 class Status(SocorroMiddleware):
 
+    # This model uses an implementation that only really reads
+    # files off disk so it doesn't have to be protected from
+    # a stampeding herd.
+    cache_seconds = 0
+
     API_WHITELIST = None
 
     implementation = (
