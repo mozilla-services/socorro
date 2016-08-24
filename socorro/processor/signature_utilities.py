@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import re
+import ujson
 
 from itertools import islice
 
@@ -697,6 +698,40 @@ class SignatureRunWatchDog(SignatureGenerationRule):
         )
         return result
 
+class SignatureShutdownTimeout(SignatureGenerationRule):
+    """Customize the signature for shutdown timeouts"""
+
+    def version(self):
+        return '1.0'
+
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return 'AsyncShutdownTimeout' in raw_crash
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        result = super(SignatureShutdownTimeout, self)._action(
+            raw_crash,
+            raw_dumps,
+            processed_crash,
+            processor_meta
+        )
+        parts = ['AsyncShutdownTimeout']
+        try:
+            shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
+            parts.append(shutdown_data['phase'])
+            conditions = [c['name'] for c in shutdown_data['conditions']]
+            if len(conditions):
+                conditions.sort()
+                parts.append(','.join(conditions))
+            else:
+                parts.append("(none)")
+        except (ValueError, KeyError), e:
+            parts.append("UNKNOWN")
+            processor_meta['processor_notes'].append(
+                'Error parsing AsyncShutdownTimeout: {}'.format(e)
+            )
+
+        processed_crash['signature'] = ' | '.join(parts)
+        return result
 
 #==============================================================================
 class SignatureJitCategory(Rule):
