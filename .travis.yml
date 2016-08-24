@@ -4,7 +4,7 @@ cache:
     - $HOME/.cache/pip
 language: python
 python:
-  - "2.7"
+  - "2.7.11"
 
 addons:
   postgresql: "9.3"
