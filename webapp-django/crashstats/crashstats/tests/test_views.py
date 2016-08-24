@@ -25,7 +25,6 @@ from django.contrib.auth.models import (
     Permission
 )
 from django.core.cache import cache
-from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 
