@@ -58,7 +58,6 @@ var OAuth2 = (function() {
         });
     };
 
-
     /* http://stackoverflow.com/a/901144/205832 */
     var getParameterByName = function getParameterByName(name, url) {
         if (!url) url = window.location.href;
@@ -123,12 +122,14 @@ var OAuth2 = (function() {
                         .done(function(response) {
                             // It worked!
                             var next = getParameterByName('next');
+                            // only if ?next=/... exists on the current URL
                             if (next) {
                                 // A specific URL exits.
                                 // This is most likely the case when you tried
                                 // to access a privileged URL whilst being
                                 // anonymous and being redirected.
-                                document.location.href = next;
+                                // Make sure it's on this server
+                                document.location.pathname = next;
                             } else {
                                 document.location.reload();
                             }
