@@ -698,6 +698,8 @@ class SignatureRunWatchDog(SignatureGenerationRule):
         )
         return result
 
+
+#==============================================================================
 class SignatureShutdownTimeout(SignatureGenerationRule):
     """Customize the signature for shutdown timeouts"""
 
