@@ -6,12 +6,6 @@
 
 {% block content %}
 
-{% if redirect_from %}
-    <div style="display:none">
-        <input type="hidden" name="redirect_from" value="{{ redirect_from }}"/>
-    </div>
-{% endif %}
-
 <div id="mainbody">
 <div class="page-heading">
     {% if request.user.is_active %}
