@@ -58,6 +58,18 @@ var OAuth2 = (function() {
         });
     };
 
+
+    /* http://stackoverflow.com/a/901144/205832 */
+    var getParameterByName = function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    };
+
     return {
         init: function() {
             // The "signin" meta tag, and its value being "signout"
@@ -110,8 +122,16 @@ var OAuth2 = (function() {
                         $.post(url, data)
                         .done(function(response) {
                             // It worked!
-                            // TODO: https://bugzilla.mozilla.org/show_bug.cgi?id=1283296
-                            document.location.reload();
+                            var next = getParameterByName('next');
+                            if (next) {
+                                // A specific URL exits.
+                                // This is most likely the case when you tried
+                                // to access a privileged URL whilst being
+                                // anonymous and being redirected.
+                                document.location.href = next;
+                            } else {
+                                document.location.reload();
+                            }
                         })
                         .fail(function(xhr) {
                             console.error(xhr);
