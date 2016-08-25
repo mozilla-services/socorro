@@ -1068,16 +1068,22 @@ def status_message(request):
 
 
 @superuser_required
-def status_message_disable(request):
-    if not request.GET.get('id'):
-        return http.HttpResponseBadRequest('No id')
-    status = get_object_or_404(StatusMessage, id=request.GET['id'])
+@require_POST
+@transaction.atomic
+def status_message_disable(request, id):
+    status = get_object_or_404(StatusMessage, id=id)
 
     log(request.user, 'status_message.disable', {
+        'user': request.user.email,
         'id': status.id,
     })
 
     status.enabled = False
     status.save()
+
+    messages.success(
+        request,
+        'Status message successfully disabled.'
+    )
 
     return redirect(reverse('manage:status_message'))
