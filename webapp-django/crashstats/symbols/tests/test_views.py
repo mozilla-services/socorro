@@ -641,24 +641,35 @@ class TestViews(BaseTestViews):
     def test_api_upload_about(self):
         url = reverse('symbols:api_upload')
         response = self.client.get(url)
-        eq_(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
+        eq_(response.status_code, 200)
+        # When you're anonymous it talks about you needing to have a
+        # an API Token to upload.
+        ok_(
+            'To be able to upload symbols you need to have an' in
+            response.content
         )
+
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 302)
-        self.assertRedirects(
-            response,
-            reverse('crashstats:login') + '?next=%s' % url
+        eq_(response.status_code, 200)
+
+        # If you're viewing the page, authenticated but without the
+        # necessary permission to generate an API Token with this
+        # permission.
+        ok_(
+            'You do not have permission to generate an API Token' in
+            response.content
         )
         self._add_permission(user, 'upload_symbols')
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('you need to generate' in response.content)
-
+        # You now have the permission to do so but you haven't generated
+        # an API token yet. Encourge them to do so.
+        ok_(
+            'To be able to upload by a script, using the API, '
+            'you need to generate an' in response.content
+        )
         token = Token.objects.create(
             user=user,
         )
@@ -668,7 +679,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('you need to generate' not in response.content)
+        ok_('Now that you have an actively working' in response.content)
 
     def test_upload(self):
         user = User.objects.create(username='user')
