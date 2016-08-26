@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+
 import mock
 from nose.tools import eq_, ok_
 
@@ -21,6 +23,7 @@ from socorro.processor.signature_utilities import (
     SignatureJitCategory,
     SignatureRunWatchDog,
     SigTrunc,
+    SignatureShutdownTimeout,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -1901,4 +1904,150 @@ class TestSignatureIPCChannelError(TestCase):
         eq_(
             processor_meta.processor_notes,
             ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
+        )
+
+#==============================================================================
+class TestSignatureShutdownTimeout(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        config = DotDict({
+            'c_signature': {
+                'c_signature_tool_class': CSignatureTool,
+                'maximum_frames_to_consider': 40,
+                'collapse_arguments': True,
+            },
+            'java_signature': {
+                'java_signature_tool_class': JavaSignatureTool,
+            }
+        })
+        config.logger = sutil.FakeLogger()
+
+        return CDotDict(config)
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        raw_crash = DotDict()
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        raw_crash = DotDict()
+        raw_crash.AsyncShutdownTimeout = '{"foo": "bar"}'
+
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_missing_valueerror(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        processed_crash = DotDict()
+        raw_crash = DotDict()
+        raw_crash.AsyncShutdownTimeout = "{{{{"
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, processor_meta
+        )
+        ok_(action_result)
+        ok_(
+            'Error parsing AsyncShutdownTimeout:' in
+            processor_meta.processor_notes[-1]
+        )
+        ok_(
+            'Expected object or value' in
+            processor_meta.processor_notes[-1]
+        )
+
+    #--------------------------------------------------------------------------
+    def test_action_missing_keyerror(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        processed_crash = DotDict()
+        raw_crash = DotDict()
+        raw_crash.AsyncShutdownTimeout = json.dumps({
+            'no': 'phase or condition'
+        })
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, processor_meta
+        )
+        ok_(action_result)
+        eq_(
+            "Error parsing AsyncShutdownTimeout: 'phase'",
+            processor_meta.processor_notes[-1]
+        )
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        processed_crash = DotDict()
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+        raw_crash = DotDict()
+        raw_crash.AsyncShutdownTimeout = json.dumps({
+            'phase': 'beginning',
+            'conditions': [
+                {'name': 'A'},
+                {'name': 'B'},
+            ]
+        })
+
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, processor_meta
+        )
+        ok_(action_result)
+
+        eq_(
+            processed_crash.signature,
+            'AsyncShutdownTimeout | beginning | A,B'
+        )
+        # this is from the parent class's _action(). only.
+        eq_(
+            processor_meta.processor_notes,
+            [
+                'CSignatureTool: No signature could be created because we do '
+                'not know which thread crashed'
+            ]
+        )
+
+    #--------------------------------------------------------------------------
+    def test_action_success_empty_conditions_key(self):
+        config = self.get_config()
+        rule = SignatureShutdownTimeout(config)
+
+        processed_crash = DotDict()
+        processor_meta = CDotDict({
+            'processor_notes': []
+        })
+        raw_crash = DotDict()
+        raw_crash.AsyncShutdownTimeout = json.dumps({
+            'phase': 'beginning',
+            'conditions': []
+        })
+
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, processor_meta
+        )
+        ok_(action_result)
+
+        eq_(
+            processed_crash.signature,
+            'AsyncShutdownTimeout | beginning | (none)'
         )
