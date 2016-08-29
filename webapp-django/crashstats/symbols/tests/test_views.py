@@ -355,6 +355,27 @@ class TestViews(BaseTestViews):
             )
             eq_(result[0], 'my-bucket')
 
+        # now with wildcards inside the email
+        exceptions = {'start*@example.com': 'my-bucket'}
+        with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exceptions):
+            # a failing match
+            result = get_bucket_name_and_location(
+                _User('user@example.com')
+            )
+            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+
+            # a failing match containing 'start'
+            result = get_bucket_name_and_location(
+                _User('notstarting@example.com')
+            )
+            eq_(result[0], settings.SYMBOLS_BUCKET_DEFAULT_NAME)
+
+            # a good match and case insensitive
+            result = get_bucket_name_and_location(
+                _User('STARter@example.COM')
+            )
+            eq_(result[0], 'my-bucket')
+
     def test_web_upload_different_bucket_by_user_different_location(self):
         url = reverse('symbols:web_upload')
         user = self._login()

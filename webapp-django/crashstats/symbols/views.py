@@ -1,7 +1,7 @@
 import gzip
-import re
 import os
 import mimetypes
+import fnmatch
 from functools import wraps
 from cStringIO import StringIO
 from zipfile import BadZipfile
@@ -170,17 +170,12 @@ def get_bucket_name_and_location(user):
         # match against every possible wildcard
         exception = None  # assume no match
         for email_or_wildcard in settings.SYMBOLS_BUCKET_EXCEPTIONS:
-            if '*' in email_or_wildcard:
-                regex = re.compile(re.escape(email_or_wildcard).replace(
-                    '\\*',
-                    '.'
-                ), re.I)
-                if regex.findall(user.email):
-                    # a match!
-                    exception = settings.SYMBOLS_BUCKET_EXCEPTIONS[
-                        email_or_wildcard
-                    ]
-                    break
+            if fnmatch.fnmatch(user.email.lower(), email_or_wildcard.lower()):
+                # a match!
+                exception = settings.SYMBOLS_BUCKET_EXCEPTIONS[
+                    email_or_wildcard
+                ]
+                break
 
     if exception:
         if '|' in exception:
