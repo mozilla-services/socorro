@@ -5,6 +5,13 @@
 {% block page_title %}{{ super() }} - Status Message{% endblock %}
 {% block admin_title %}{{ super() }} - Status Message{% endblock %}
 
+{% block site_css %}
+    {{ super() }}
+    {% stylesheet 'select2' %}
+    {% stylesheet 'manage:status_message' %}
+{% endblock %}
+
+
 {% block mainbody %}
 <div class="panel">
     <div class="body notitle">
@@ -27,7 +34,12 @@
                     <td>{{ status.severity }}</td>
                     <td>
                         {% if status.enabled %}
-                        <a href="{{ url('manage:status_message_disable') }}?id={{ status.id }}">Disable</a>
+                        <form
+                            action="{{ url('manage:status_message_disable', status.id) }}"
+                            method="post">
+                            {% csrf_token %}
+                            <button type="submit">Disable</button>
+                        </form>
                         {% else %}
                         disabled
                         {% endif %}

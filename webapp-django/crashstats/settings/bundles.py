@@ -113,6 +113,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/manage-supersearch-fields.min.css',
     },
+    'manage:status_message': {
+        'source_filenames': (
+            'manage/css/status_message.css',
+        ),
+        'output_filename': 'css/manage-status-message.min.css',
+    },
     'profile': {
         'source_filenames': (
             'profile/css/profile.css',

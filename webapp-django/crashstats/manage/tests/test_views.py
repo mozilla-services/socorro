@@ -1628,22 +1628,23 @@ class TestViews(BaseTestViews):
         eq_(event.extra['severity'], 'critical')
 
     def test_disable_status_message(self):
-        url = reverse('manage:status_message_disable')
+        url = reverse('manage:status_message_disable', args=('99999',))
         response = self.client.get(url)
         eq_(response.status_code, 302)
 
         user = self._login()
         response = self.client.get(url)
-        eq_(response.status_code, 400)
-        response = self.client.get(url, {'id': '99999'})
+        eq_(response.status_code, 405)
+        response = self.client.post(url)
         eq_(response.status_code, 404)
 
         status = StatusMessage.objects.create(
             message='foo',
             severity='critical',
         )
+        url = reverse('manage:status_message_disable', args=(status.id,))
 
-        response = self.client.get(url, {'id': status.id})
+        response = self.client.post(url)
         eq_(response.status_code, 302)  # redirect on success
 
         # Verify there is no enabled statuses anymore.

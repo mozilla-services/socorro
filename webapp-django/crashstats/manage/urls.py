@@ -92,7 +92,7 @@ urlpatterns = patterns(
     url('^status/$',
         views.status_message,
         name='status_message'),
-    url('^status/disable/$',
+    url('^status/disable/(?P<id>\d+)/$',
         views.status_message_disable,
         name='status_message_disable'),
     url('^crash-me-now/$',
