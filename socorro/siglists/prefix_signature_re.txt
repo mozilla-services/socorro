@@ -101,6 +101,7 @@ NS_ABORT_OOM.*
 nsDataHashtable<.*>::.*
 NS_DebugBreak.*
 nsDebugImpl::Abort
+nsEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
 nsJSThingHashtable<.*>::.*
@@ -112,6 +113,7 @@ nsTArray<.*
 nsTArray_base<.*
 nsTArray_Impl<.*
 nsTHashtable<.*>::.*
+nsThread::Shutdown
 NtUser.*
 objc_exception_throw
 objc_msgSend
