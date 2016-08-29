@@ -381,6 +381,17 @@ class RegionalS3ConnectionContext(S3ConnectionContext):
             )
             return self.connection
 
+    #--------------------------------------------------------------------------
+    def _get_or_create_bucket(self, conn, bucket_name):
+        try:
+            return self._get_bucket(conn, bucket_name)
+        except self.ResponseError:
+            self._bucket_cache[bucket_name] = conn.create_bucket(
+                bucket_name,
+                location=self._region,
+            )
+            return self._bucket_cache[bucket_name]
+
 
 class HostPortS3ConnectionContext(S3ConnectionContext):
     """Connection context for connecting to an S3-like service at a specified
