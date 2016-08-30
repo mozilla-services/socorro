@@ -1704,16 +1704,6 @@ class TestSignatureWatchDogRule(TestCase):
         return CDotDict(config)
 
     #--------------------------------------------------------------------------
-    def test_instantiation(self):
-        config = self.get_config()
-        srwd = SignatureRunWatchDog(config)
-
-        ok_(isinstance(srwd.c_signature_tool, CSignatureTool))
-        ok_(isinstance(srwd.java_signature_tool, JavaSignatureTool))
-
-        eq_(srwd._get_crashing_thread({}), 0)
-
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         srwd = SignatureRunWatchDog(config)
@@ -1740,7 +1730,9 @@ class TestSignatureWatchDogRule(TestCase):
 
         raw_crash = CDotDict()
         raw_dumps = {}
-        processed_crash = CDotDict(sample_json_dump)
+        processed_crash = CDotDict({
+            'signature': 'MsgWaitForMultipleObjects | F_1152915508'
+        })
         processor_meta = CDotDict({
             'processor_notes': []
         })
@@ -1750,9 +1742,7 @@ class TestSignatureWatchDogRule(TestCase):
 
         eq_(
             processed_crash.signature,
-            'shutdownhang | '
-            'MsgWaitForMultipleObjects | '
-            'F_1152915508__________________________________'
+            'shutdownhang | MsgWaitForMultipleObjects | F_1152915508'
         )
         eq_(processor_meta.processor_notes, [])
 
@@ -1906,24 +1896,14 @@ class TestSignatureIPCChannelError(TestCase):
             ['Signature replaced with an IPC Channel Error, was: "foo::bar"']
         )
 
+
 #==============================================================================
 class TestSignatureShutdownTimeout(TestCase):
 
     #--------------------------------------------------------------------------
     def get_config(self):
-        config = DotDict({
-            'c_signature': {
-                'c_signature_tool_class': CSignatureTool,
-                'maximum_frames_to_consider': 40,
-                'collapse_arguments': True,
-            },
-            'java_signature': {
-                'java_signature_tool_class': JavaSignatureTool,
-            }
-        })
-        config.logger = sutil.FakeLogger()
-
-        return CDotDict(config)
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
 
     #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
@@ -1951,6 +1931,7 @@ class TestSignatureShutdownTimeout(TestCase):
         rule = SignatureShutdownTimeout(config)
 
         processed_crash = DotDict()
+        processed_crash.signature = 'foo'
         raw_crash = DotDict()
         raw_crash.AsyncShutdownTimeout = "{{{{"
         processor_meta = CDotDict({
@@ -1960,13 +1941,22 @@ class TestSignatureShutdownTimeout(TestCase):
             raw_crash, {}, processed_crash, processor_meta
         )
         ok_(action_result)
+        eq_(
+            processed_crash.signature,
+            'AsyncShutdownTimeout | UNKNOWN'
+        )
+
         ok_(
             'Error parsing AsyncShutdownTimeout:' in
-            processor_meta.processor_notes[-1]
+            processor_meta.processor_notes[0]
         )
         ok_(
-            'Expected object or value' in
-            processor_meta.processor_notes[-1]
+            'Expecting property name' in
+            processor_meta.processor_notes[0]
+        )
+        eq_(
+            processor_meta.processor_notes[1],
+            'Signature replaced with a Shutdown Timeout error, was: "foo"'
         )
 
     #--------------------------------------------------------------------------
@@ -1975,6 +1965,7 @@ class TestSignatureShutdownTimeout(TestCase):
         rule = SignatureShutdownTimeout(config)
 
         processed_crash = DotDict()
+        processed_crash.signature = 'foo'
         raw_crash = DotDict()
         raw_crash.AsyncShutdownTimeout = json.dumps({
             'no': 'phase or condition'
@@ -1987,8 +1978,17 @@ class TestSignatureShutdownTimeout(TestCase):
         )
         ok_(action_result)
         eq_(
-            "Error parsing AsyncShutdownTimeout: 'phase'",
-            processor_meta.processor_notes[-1]
+            processed_crash.signature,
+            'AsyncShutdownTimeout | UNKNOWN'
+        )
+
+        eq_(
+            processor_meta.processor_notes[0],
+            "Error parsing AsyncShutdownTimeout: 'phase'"
+        )
+        eq_(
+            processor_meta.processor_notes[1],
+            'Signature replaced with a Shutdown Timeout error, was: "foo"'
         )
 
     #--------------------------------------------------------------------------
@@ -1997,6 +1997,7 @@ class TestSignatureShutdownTimeout(TestCase):
         rule = SignatureShutdownTimeout(config)
 
         processed_crash = DotDict()
+        processed_crash.signature = 'foo'
         processor_meta = CDotDict({
             'processor_notes': []
         })
@@ -2018,13 +2019,9 @@ class TestSignatureShutdownTimeout(TestCase):
             processed_crash.signature,
             'AsyncShutdownTimeout | beginning | A,B'
         )
-        # this is from the parent class's _action(). only.
         eq_(
-            processor_meta.processor_notes,
-            [
-                'CSignatureTool: No signature could be created because we do '
-                'not know which thread crashed'
-            ]
+            processor_meta.processor_notes[0],
+            'Signature replaced with a Shutdown Timeout error, was: "foo"'
         )
 
     #--------------------------------------------------------------------------
@@ -2033,6 +2030,7 @@ class TestSignatureShutdownTimeout(TestCase):
         rule = SignatureShutdownTimeout(config)
 
         processed_crash = DotDict()
+        processed_crash.signature = 'foo'
         processor_meta = CDotDict({
             'processor_notes': []
         })
@@ -2050,4 +2048,8 @@ class TestSignatureShutdownTimeout(TestCase):
         eq_(
             processed_crash.signature,
             'AsyncShutdownTimeout | beginning | (none)'
+        )
+        eq_(
+            processor_meta.processor_notes[0],
+            'Signature replaced with a Shutdown Timeout error, was: "foo"'
         )

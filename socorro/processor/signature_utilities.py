@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import re
-import ujson
 
 from itertools import islice
 
@@ -670,7 +670,7 @@ class StackwalkerErrorSignatureRule(Rule):
 
 
 #==============================================================================
-class SignatureRunWatchDog(SignatureGenerationRule):
+class SignatureRunWatchDog(Rule):
     """ensure that the signature contains the stackwalker error message"""
 
     #--------------------------------------------------------------------------
@@ -687,41 +687,32 @@ class SignatureRunWatchDog(SignatureGenerationRule):
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        result = super(SignatureRunWatchDog, self)._action(
-            raw_crash,
-            raw_dumps,
-            processed_crash,
-            processor_meta
-        )
         processed_crash['signature'] = (
             "shutdownhang | %s" % processed_crash['signature']
         )
-        return result
+        return True
 
 
 #==============================================================================
-class SignatureShutdownTimeout(SignatureGenerationRule):
+class SignatureShutdownTimeout(Rule):
     """Customize the signature for shutdown timeouts"""
 
     def version(self):
         return '1.0'
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return 'AsyncShutdownTimeout' in raw_crash
+        try:
+            return bool(raw_crash['AsyncShutdownTimeout'])
+        except KeyError:
+            return False
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        result = super(SignatureShutdownTimeout, self)._action(
-            raw_crash,
-            raw_dumps,
-            processed_crash,
-            processor_meta
-        )
         parts = ['AsyncShutdownTimeout']
         try:
-            shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
+            shutdown_data = json.loads(raw_crash['AsyncShutdownTimeout'])
             parts.append(shutdown_data['phase'])
             conditions = [c['name'] for c in shutdown_data['conditions']]
-            if len(conditions):
+            if conditions:
                 conditions.sort()
                 parts.append(','.join(conditions))
             else:
@@ -732,8 +723,16 @@ class SignatureShutdownTimeout(SignatureGenerationRule):
                 'Error parsing AsyncShutdownTimeout: {}'.format(e)
             )
 
-        processed_crash['signature'] = ' | '.join(parts)
-        return result
+        new_sig = ' | '.join(parts)
+        processor_meta['processor_notes'].append(
+            'Signature replaced with a Shutdown Timeout error, '
+            'was: "{}"'.format(processed_crash['signature'])
+        )
+        processed_crash['signature'] = new_sig
+
+        print 3
+        return True
+
 
 #==============================================================================
 class SignatureJitCategory(Rule):
