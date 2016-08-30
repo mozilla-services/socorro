@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 import re
 
+import ujson
 from itertools import islice
 
 from configman import Namespace, RequiredConfig
@@ -695,7 +695,8 @@ class SignatureRunWatchDog(Rule):
 
 #==============================================================================
 class SignatureShutdownTimeout(Rule):
-    """Customize the signature for shutdown timeouts"""
+    """replaces the signature if there is a shutdown timeout message in the
+    crash"""
 
     def version(self):
         return '1.0'
@@ -709,7 +710,7 @@ class SignatureShutdownTimeout(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         parts = ['AsyncShutdownTimeout']
         try:
-            shutdown_data = json.loads(raw_crash['AsyncShutdownTimeout'])
+            shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
             parts.append(shutdown_data['phase'])
             conditions = [c['name'] for c in shutdown_data['conditions']]
             if conditions:
@@ -725,12 +726,11 @@ class SignatureShutdownTimeout(Rule):
 
         new_sig = ' | '.join(parts)
         processor_meta['processor_notes'].append(
-            'Signature replaced with a Shutdown Timeout error, '
+            'Signature replaced with a Shutdown Timeout signature, '
             'was: "{}"'.format(processed_crash['signature'])
         )
         processed_crash['signature'] = new_sig
 
-        print 3
         return True
 
 

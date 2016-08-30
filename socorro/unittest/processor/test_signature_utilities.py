@@ -1950,13 +1950,10 @@ class TestSignatureShutdownTimeout(TestCase):
             'Error parsing AsyncShutdownTimeout:' in
             processor_meta.processor_notes[0]
         )
-        ok_(
-            'Expecting property name' in
-            processor_meta.processor_notes[0]
-        )
+        ok_('Expected object or value' in processor_meta.processor_notes[0])
         eq_(
             processor_meta.processor_notes[1],
-            'Signature replaced with a Shutdown Timeout error, was: "foo"'
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
     #--------------------------------------------------------------------------
@@ -1988,7 +1985,7 @@ class TestSignatureShutdownTimeout(TestCase):
         )
         eq_(
             processor_meta.processor_notes[1],
-            'Signature replaced with a Shutdown Timeout error, was: "foo"'
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
     #--------------------------------------------------------------------------
@@ -2021,7 +2018,7 @@ class TestSignatureShutdownTimeout(TestCase):
         )
         eq_(
             processor_meta.processor_notes[0],
-            'Signature replaced with a Shutdown Timeout error, was: "foo"'
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
     #--------------------------------------------------------------------------
@@ -2051,5 +2048,5 @@ class TestSignatureShutdownTimeout(TestCase):
         )
         eq_(
             processor_meta.processor_notes[0],
-            'Signature replaced with a Shutdown Timeout error, was: "foo"'
+            'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
