@@ -236,19 +236,22 @@ $(function () {
     }
 
     /**
+     * Returns true if a value starts with a known operator.
+     */
+    function hasOperator(value) {
+        var operators = form.dynamicForm('getOperatorsList');
+        return operators.some(function (operator) {
+            if (operator === 'has') {
+                return false; // we don't care about that one
+            }
+            return value.indexOf(operator) === 0;
+        });
+    }
+
+    /**
      * Update the search form with new parameters.
      */
     function setParams(params) {
-        function hasOperator(value) {
-            var operators = form.dynamicForm('getOperatorsList');
-            return operators.some(function (operator) {
-                if (operator === 'has') {
-                    return false; // we don't care about that one
-                }
-                return value.indexOf(operator) === 0;
-            });
-        }
-
         $('select', simpleSearchContainer).each(function (i, item) {
             if (item.name in params) {
                 var values = params[item.name];
