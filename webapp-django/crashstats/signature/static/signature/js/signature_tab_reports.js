@@ -63,7 +63,8 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
     this.$columnsInput.select2({
         'data': window.FIELDS,
         'multiple': true,
-        'width': 'element'
+        'width': 'element',
+        'sortResults': socorro.search.sortResults,
     });
 
     this.$columnsInput.on("change", function() {

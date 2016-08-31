@@ -44,7 +44,8 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
     // Set the placeholder.
     this.$selectElement.select2({
         'placeholder': 'Crashes per day, by...',
-        'allowClear': true
+        'allowClear': true,
+        'sortResults': socorro.search.sortResults,
     });
 
     // On changing the selected option, load a new panel.
