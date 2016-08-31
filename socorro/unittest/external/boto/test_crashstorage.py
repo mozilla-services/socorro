@@ -103,7 +103,8 @@ class BaseTestCase(TestCase):
             'dump_file_suffix': '.dump',
             'bucket_name': bucket_name,
             'prefix': 'dev',
-            'calling_format': mock.Mock()
+            'calling_format': mock.Mock(),
+            'json_object_hook': DotDict,
         })
 
         if isinstance(storage_class, basestring):
