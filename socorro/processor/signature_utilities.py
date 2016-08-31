@@ -4,6 +4,7 @@
 
 import re
 
+import ujson
 from itertools import islice
 
 from configman import Namespace, RequiredConfig
@@ -669,7 +670,7 @@ class StackwalkerErrorSignatureRule(Rule):
 
 
 #==============================================================================
-class SignatureRunWatchDog(SignatureGenerationRule):
+class SignatureRunWatchDog(Rule):
     """ensure that the signature contains the stackwalker error message"""
 
     #--------------------------------------------------------------------------
@@ -686,16 +687,51 @@ class SignatureRunWatchDog(SignatureGenerationRule):
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        result = super(SignatureRunWatchDog, self)._action(
-            raw_crash,
-            raw_dumps,
-            processed_crash,
-            processor_meta
-        )
         processed_crash['signature'] = (
             "shutdownhang | %s" % processed_crash['signature']
         )
-        return result
+        return True
+
+
+#==============================================================================
+class SignatureShutdownTimeout(Rule):
+    """replaces the signature if there is a shutdown timeout message in the
+    crash"""
+
+    def version(self):
+        return '1.0'
+
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        try:
+            return bool(raw_crash['AsyncShutdownTimeout'])
+        except KeyError:
+            return False
+
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        parts = ['AsyncShutdownTimeout']
+        try:
+            shutdown_data = ujson.loads(raw_crash['AsyncShutdownTimeout'])
+            parts.append(shutdown_data['phase'])
+            conditions = [c['name'] for c in shutdown_data['conditions']]
+            if conditions:
+                conditions.sort()
+                parts.append(','.join(conditions))
+            else:
+                parts.append("(none)")
+        except (ValueError, KeyError), e:
+            parts.append("UNKNOWN")
+            processor_meta['processor_notes'].append(
+                'Error parsing AsyncShutdownTimeout: {}'.format(e)
+            )
+
+        new_sig = ' | '.join(parts)
+        processor_meta['processor_notes'].append(
+            'Signature replaced with a Shutdown Timeout signature, '
+            'was: "{}"'.format(processed_crash['signature'])
+        )
+        processed_crash['signature'] = new_sig
+
+        return True
 
 
 #==============================================================================

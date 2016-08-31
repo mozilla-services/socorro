@@ -18,7 +18,7 @@ thread_over_255_chars = {
             "file": "nsTerminator.cpp:604367e1fa5e",
             "frame": 0,
             "function": ("mozilla::`anonymous namespace::"
-                         "RunWatchdog(void *)" + "a"*255),
+                         "RunWatchdog(void *)" + "a" * 255),
             "function_offset": "0x0",
             "line": 151,
             "module": "xul.dll",
@@ -84,7 +84,7 @@ class TestMozillaProcessorAlgorithm2015(TestCase):
         raw_crash = DotDict({
             "uuid": "00000000-0000-0000-0000-000002140504",
             "CrashTime": "1336519554",
-            "SecondsSinceLastCrash":  "86985",
+            "SecondsSinceLastCrash": "86985",
             "PluginHang": "1",
             "ProductName": "Firefox",
             "Version": "19",
@@ -101,7 +101,6 @@ class TestMozillaProcessorAlgorithm2015(TestCase):
         ok_(processed_crash.success)
         eq_(processed_crash.processor_notes,
             'dwight; MozillaProcessorAlgorithm2015; '
-            'SignatureTool: signature truncated due to length; '
             'SignatureTool: signature truncated due to length')
         ok_(processed_crash.signature.startswith('shutdownhang'))
         eq_(len(processed_crash.signature), 255)
