@@ -679,7 +679,7 @@ class SignatureRunWatchDog(Rule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        return '::RunWatchdog' in processed_crash['signature']
+        return 'RunWatchdog' in processed_crash['signature']
 
     #--------------------------------------------------------------------------
     def _get_crashing_thread(self, processed_crash):
