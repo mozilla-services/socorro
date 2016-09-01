@@ -1,3 +1,5 @@
+import operator
+
 import isodate
 
 from django import forms
@@ -11,10 +13,10 @@ OPERATORS = (
 
 
 def split_on_operator(value):
-    for operator in sorted(OPERATORS, key=len, reverse=True):
-        if value.startswith(operator):
-            value = value[len(operator):]
-            return (operator, value)
+    for op in sorted(OPERATORS, key=len, reverse=True):
+        if value.startswith(op):
+            value = value[len(op):]
+            return (op, value)
 
     return (None, value)
 
@@ -85,6 +87,7 @@ class MultiplePrefixedValueField(PrefixedField):
     def clean(self, values, *args, **kwargs):
         cleaned_values = []
         prefixed_values = []
+        operators = []
 
         if values is None:
             # call the mother classe's clean to do other verifications
@@ -103,9 +106,36 @@ class MultiplePrefixedValueField(PrefixedField):
             if cleaned_value is not None:
                 cleaned_values.append(cleaned_value)
                 prefixed_values.append(self.prefixed_value)
-
+                operators.append(self.operator)
+        if operators and cleaned_values:
+            self.validate_ordered_values(cleaned_values, operators)
         self.prefixed_value = prefixed_values
         return cleaned_values
+
+    def validate_ordered_values(self, values, operators):
+        operator_functions = {
+            '>': operator.gt,
+            '<': operator.lt,
+            '>=': operator.ge,
+            '<=': operator.le,
+        }
+        for i, value in enumerate(values):
+            op = operators[i]
+            if op not in operator_functions:
+                # Can only check those operators listed
+                continue
+            op_function = operator_functions[op]
+            for j, other_value in enumerate(values):
+                if i == j:
+                    continue
+                if not op_function(other_value, value):
+                    raise forms.ValidationError(
+                        'Operator combination failed {} {} {}'.format(
+                            value,
+                            op,
+                            other_value
+                        )
+                    )
 
 
 class IntegerField(MultiplePrefixedValueField, forms.IntegerField):

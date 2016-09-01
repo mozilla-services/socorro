@@ -1,7 +1,8 @@
 import datetime
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises
 
 from django.utils.timezone import utc
+from django.forms import ValidationError
 
 from crashstats.base.tests.testbase import TestCase
 from crashstats.supersearch import form_fields
@@ -61,3 +62,95 @@ class TestFormFields(TestCase):
 
         eq_(field1.operator, '>')
         eq_(field2.operator, '<')
+
+    def test_several_fields_illogically_integerfield(self):
+        field = form_fields.IntegerField()
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>10', '<10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<10', '>10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<10', '>=10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<=10', '>10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<10', '<10']
+        )
+
+    def test_several_fields_illogically_datetimefield(self):
+        field = form_fields.DateTimeField()
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>2016-08-10', '<2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<2016-08-10', '<2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>=2016-08-10', '<2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>2016-08-10', '<=2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>=2016-08-10', '<=2016-08-09']
+        )
+        # but note, this should work!
+        field.clean(['>=2016-08-10', '<=2016-08-10'])
+
+        # any use of the equal sign and a less or greater than
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['=2016-08-10', '<2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['=2016-08-10', '>2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>2016-08-10', '=2016-08-10']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<2016-08-10', '=2016-08-10']
+        )
+
+        # more than two fields
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['>2016-08-01', '<=2016-08-02', '>=2016-08-02']
+        )
+        assert_raises(
+            ValidationError,
+            field.clean,
+            ['<2016-08-01', '<2016-08-02', '<2016-08-03']
+        )
