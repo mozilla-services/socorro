@@ -35,6 +35,11 @@ a, a:link, a:hover, a:active {
 a:visited {
     color: #800080;
 }
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
 body > h1 {
     font-size: 200%;
 }
@@ -209,6 +214,7 @@ html.production {
 }
 .page-header {
     position: relative;
+    min-height: 64px;
     height: 64px;
     background-color: #0a2533;
     background-image: url(../../img/2.0/header-bg.png);
@@ -584,8 +590,8 @@ div#message {
 #mainbody {
      position: relative;
      margin: 1em 2em;
-     min-height: 50em;
      text-align: left;
+     flex: 1;
 }
 /* Admin */
 div.admin {
