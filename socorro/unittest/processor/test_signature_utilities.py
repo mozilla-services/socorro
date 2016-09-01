@@ -1704,6 +1704,16 @@ class TestSignatureWatchDogRule(TestCase):
         return CDotDict(config)
 
     #--------------------------------------------------------------------------
+    def test_instantiation(self):
+        config = self.get_config()
+        srwd = SignatureRunWatchDog(config)
+
+        ok_(isinstance(srwd.c_signature_tool, CSignatureTool))
+        ok_(isinstance(srwd.java_signature_tool, JavaSignatureTool))
+
+        eq_(srwd._get_crashing_thread({}), 0)
+
+    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         srwd = SignatureRunWatchDog(config)
@@ -1730,9 +1740,8 @@ class TestSignatureWatchDogRule(TestCase):
 
         raw_crash = CDotDict()
         raw_dumps = {}
-        processed_crash = CDotDict({
-            'signature': 'MsgWaitForMultipleObjects | F_1152915508'
-        })
+        processed_crash = CDotDict(sample_json_dump)
+        processed_crash.signature = 'foo::bar'  # set a fake signature
         processor_meta = CDotDict({
             'processor_notes': []
         })
@@ -1740,9 +1749,11 @@ class TestSignatureWatchDogRule(TestCase):
         # the call to be tested
         ok_(sgr._action(raw_crash, raw_dumps, processed_crash, processor_meta))
 
+        # Verify the signature has been re-generated based on thread 0.
         eq_(
             processed_crash.signature,
-            'shutdownhang | MsgWaitForMultipleObjects | F_1152915508'
+            'shutdownhang | MsgWaitForMultipleObjects | '
+            'F_1152915508__________________________________'
         )
         eq_(processor_meta.processor_notes, [])
 

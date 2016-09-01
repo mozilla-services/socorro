@@ -101,6 +101,7 @@ class TestMozillaProcessorAlgorithm2015(TestCase):
         ok_(processed_crash.success)
         eq_(processed_crash.processor_notes,
             'dwight; MozillaProcessorAlgorithm2015; '
+            'SignatureTool: signature truncated due to length; '
             'SignatureTool: signature truncated due to length')
         ok_(processed_crash.signature.startswith('shutdownhang'))
         eq_(len(processed_crash.signature), 255)

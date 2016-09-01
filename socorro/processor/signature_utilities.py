@@ -670,7 +670,7 @@ class StackwalkerErrorSignatureRule(Rule):
 
 
 #==============================================================================
-class SignatureRunWatchDog(Rule):
+class SignatureRunWatchDog(SignatureGenerationRule):
     """ensure that the signature contains the stackwalker error message"""
 
     #--------------------------------------------------------------------------
@@ -683,14 +683,27 @@ class SignatureRunWatchDog(Rule):
 
     #--------------------------------------------------------------------------
     def _get_crashing_thread(self, processed_crash):
+        # Always use thread 0 in this case, because that's the thread that
+        # was hanging when the software was artificially crashed.
         return 0
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        # For shutdownhang crashes, we need to use thread 0 instead of the
+        # crashing thread. The reason is because those crashes happen
+        # artificially when thread 0 gets stuck. So whatever the crashing
+        # thread is, we don't care about it and only want to know what was
+        # happening in thread 0 when it got stuck.
+        result = super(SignatureRunWatchDog, self)._action(
+            raw_crash,
+            raw_dumps,
+            processed_crash,
+            processor_meta
+        )
         processed_crash['signature'] = (
             "shutdownhang | %s" % processed_crash['signature']
         )
-        return True
+        return result
 
 
 #==============================================================================
