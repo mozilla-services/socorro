@@ -97,7 +97,7 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
             if isinstance(dt, unicode):
                 # isodate struggles to convert unicode strings with
                 # its parse_datetime() if the input string is unicode.
-                dt = dt.encode('utf-8')
+                dt = dt.encode('ascii')
             dt = isodate.parse_datetime(dt)
         except isodate.ISO8601Error:
             return dt
