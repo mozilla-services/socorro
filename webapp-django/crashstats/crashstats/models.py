@@ -19,7 +19,6 @@ from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
 )
-# from socorro.external.rabbitmq.priorityjobs import Priorityjobs
 from socorro.external.boto.crash_data import SimplifiedCrashData
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
