@@ -32,14 +32,15 @@ def unixtime(value, millis=False, format='%Y-%m-%d'):
         return epoch_seconds
 
 
-def parse_isodate(ds, format_string="%b %d %Y %H:%M:%S"):
+def parse_isodate(ds):
     """
-    parses iso8601 date string and returns a truncated
-    string representation suitable for display on the status page
+    return a datetime object from a date string
     """
-    if not ds:
-        return ""
-    return isodate.parse_datetime(ds).strftime(format_string)
+    if isinstance(ds, unicode):
+        # isodate struggles to convert unicode strings with
+        # its parse_datetime() if the input string is unicode.
+        ds = ds.encode('ascii')
+    return isodate.parse_datetime(ds)
 
 
 def daterange(start_date, end_date, format='%Y-%m-%d'):

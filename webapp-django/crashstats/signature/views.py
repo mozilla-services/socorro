@@ -2,8 +2,6 @@ import datetime
 import functools
 import math
 
-import isodate
-
 from django import http
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -433,17 +431,17 @@ def signature_graph_data(request, params, channel):
             # Set the earliest given start date as the start date
             if date.startswith('>'):
                 if date.startswith('>='):
-                    d = isodate.parse_date(date.lstrip('>='))
+                    d = utils.parse_isodate(date.lstrip('>='))
                 else:
-                    d = isodate.parse_date(date.lstrip('>')) + one_day
+                    d = utils.parse_isodate(date.lstrip('>')) + one_day
                 if not start_date or d < start_date:
                     start_date = d
             # Set the latest given end date as the end date
             elif date.startswith('<'):
                 if date.startswith('<='):
-                    d = isodate.parse_date(date.lstrip('<='))
+                    d = utils.parse_isodate(date.lstrip('<='))
                 else:
-                    d = isodate.parse_date(date.lstrip('<')) - one_day
+                    d = utils.parse_isodate(date.lstrip('<')) - one_day
                 if not end_date or d > end_date:
                     end_date = d
 
