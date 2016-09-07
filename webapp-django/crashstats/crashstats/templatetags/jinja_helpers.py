@@ -15,6 +15,7 @@ from django.template import engines
 from django.utils.safestring import mark_safe
 
 from crashstats import scrubber
+from crashstats.crashstats.utils import parse_isodate
 
 
 @library.filter
@@ -94,10 +95,9 @@ def timestamp_to_date(
 def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         try:
-            dt = isodate.parse_datetime(dt)
+            dt = parse_isodate(dt)
         except isodate.ISO8601Error:
             return dt
-
     return jinja2.Markup(
         '<time datetime="{}" class="{}">{}</time>'
         .format(
@@ -113,7 +113,7 @@ def human_readable_iso_date(dt):
     """ Python datetime to a human readable ISO datetime. """
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         try:
-            dt = isodate.parse_datetime(dt)
+            dt = parse_isodate(dt)
         except isodate.ISO8601Error:
             # Because we're paranoid, we don't want to fail
             # the whole template rendering just because one date

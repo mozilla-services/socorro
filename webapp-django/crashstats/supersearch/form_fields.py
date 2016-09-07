@@ -5,6 +5,8 @@ import isodate
 from django import forms
 from django.utils.timezone import utc
 
+from crashstats.crashstats.utils import parse_isodate
+
 
 OPERATORS = (
     '__true__', '__null__', '$', '~', '^', '@', '=', '<=', '>=', '<', '>',
@@ -146,7 +148,7 @@ class IsoDateTimeField(forms.DateTimeField):
     def to_python(self, value):
         if value:
             try:
-                return isodate.parse_datetime(value).replace(tzinfo=utc)
+                return parse_isodate(value).replace(tzinfo=utc)
             except (ValueError, isodate.isoerror.ISO8601Error):
                 # let the super method deal with that
                 pass

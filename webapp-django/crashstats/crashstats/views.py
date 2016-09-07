@@ -9,7 +9,6 @@ from collections import defaultdict
 from operator import itemgetter
 from io import BytesIO
 
-import isodate
 import isoweek
 
 from django import http
@@ -1779,7 +1778,7 @@ def report_list(request, partial=None, default_context=None):
 
             counts[(product, os_name, version)] += 1
 
-            report['date_processed'] = isodate.parse_datetime(
+            report['date_processed'] = utils.parse_isodate(
                 report['date_processed']
             ).strftime('%b %d, %Y %H:%M')
 
@@ -1794,9 +1793,7 @@ def report_list(request, partial=None, default_context=None):
                         )
                     else:
                         # old style, middleware returned a formatted string
-                        install_time = isodate.parse_datetime(
-                            install_time
-                        )
+                        install_time = utils.parse_isodate(install_time)
                 # put it back into the report
                 report['install_time'] = install_time.strftime(
                     '%Y-%m-%d %H:%M:%S'
