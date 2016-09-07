@@ -576,9 +576,14 @@ class PolyCrashStorage(CrashStorageBase):
         parameters:
             processed_crash - a mapping containing the processed crash"""
         storage_exception = PolyStorageError()
+        print "IN SAVE_PROCESSED"
         for a_store in self.stores.itervalues():
             self.quit_check()
             try:
+                print('\tA_STORE')
+                print('\t', a_store)
+                print(repr(str(processed_crash)[:100]))
+                print('')
                 a_store.save_processed(processed_crash)
             except Exception, x:
                 self.logger.error('%s failure: %s', a_store.__class__,
