@@ -3425,7 +3425,10 @@ class TestViews(BaseTestViews):
 
         eq_(response.status_code, 200)
         ok_('Please wait...' in response.content)
-        ok_('Fetching this archived report' in response.content)
+        ok_(
+            'Processing this crash only takes a couple of seconds' in
+            response.content
+        )
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_report_index_with_invalid_date_processed(self, rpost):
