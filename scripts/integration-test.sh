@@ -467,28 +467,6 @@ do
   retry 'processor' "saved - $CRASHID"
 
   #----------------------------------------------------------------------------
-  # check that mware has raw crash using curl to hit the HTTP endpoint
-  curl -s -D middleware_headers.log "http://localhost:8883/crash_data/?datatype=meta&uuid=$CRASHID" > /dev/null
-  err=$?
-  echo "  looking for errors in hitting the middleware for $CRASHID"
-  check_for_logged_fatal_errors $err middleware
-
-  echo "  looking for "200 OK" in hitting the middleware for $CRASHID"
-  grep '200 OK' middleware_headers.log > /dev/null
-  fatal $? "middleware test failed, no raw data for crash ID $CRASHID"
-
-  echo "  looking for processed crash through middleware for $CRASHID"
-  function find_crash_in_middleware() {
-    curl -s "http://localhost:8883/crash_data/?datatype=processed&uuid=$CRASHID" | grep date_processed
-    echo "http://localhost:8883/crash_data/?datatype=processed&uuid=$CRASHID"
-    return $?
-  }
-  retry_command middleware find_crash_in_middleware
-
-  # check that mware logs the request for the crash, and logs no errors
-  retry 'middleware' "/crash_data"
-
-  #----------------------------------------------------------------------------
   # EXTRA submission test
   if [ $extra_submission_test = 1 ]
   then
