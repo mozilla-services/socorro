@@ -30,8 +30,15 @@ EXTRA_OBJS := \
 
 VPATH += $(JSON_SRCDIR)
 
+OS := $(shell uname -s)
+ifeq ($(OS),Linux)
 CURL_CFLAGS := $(shell pkg-config libcurl --cflags)
 CURL_LIBS := $(shell pkg-config libcurl --libs)
+# Don't -Werror everywhere, some compilers are too picky.
+WERROR := -Werror
+else
+CURL_LIBS := -lcurl
+endif
 
 CXXFLAGS += \
   -I$(BREAKPAD_SRCDIR) \
@@ -39,7 +46,7 @@ CXXFLAGS += \
   -D__STDC_FORMAT_MACROS=1 \
   -std=gnu++0x \
   -Wno-format \
-  -Werror \
+  $(WERROR) \
   $(CURL_CFLAGS) \
   $(NULL)
 LIBS := $(CURL_LIBS)
