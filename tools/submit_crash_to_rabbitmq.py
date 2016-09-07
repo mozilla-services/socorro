@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+"""
+Script to put crash IDs into RabbitMQ from the command line.
+This is useful when you have a local processor running without a
+collector or crashmover.
+
+To run it, pass one more more crash IDs like this::
+
+
+    $ ./tools/submit_crash_to_rabbitmq.py e9a624b0-fbcc-4e95-a0a8-d2a152160907
+
+"""
+
 import logging
 
 from configman import configuration, Namespace
