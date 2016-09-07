@@ -1132,14 +1132,6 @@ class UnredactedCrash(ProcessedCrash):
     # already get from `ProcessedCrash`. And if you have `view_pii`
     # there's no point writing down a whitelist.
 
-    # def get(self, *args, **kwargs):
-    #     result = super(UnredactedCrash, self).get(*args, **kwargs)
-    #     # Because we're dealing with BotoS3C
-    #     from configman.dotdict import DotDict
-    #     if isinstance(result, DotDict):
-    #         return dict(result)
-    #     return result
-
 
 class RawCrash(SocorroMiddleware):
     """
