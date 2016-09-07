@@ -334,4 +334,3 @@ class ConnectionContextPooled(ConnectionContext):
             name = self.config.executor_identity()
         if name in self.pool:
             del self.pool[name]
-

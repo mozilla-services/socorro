@@ -245,3 +245,9 @@ class SymbolLRUCacheManager(RequiredConfig):
     # -------------------------------------------------------------------------
     def close(self):
         self._notifier.stop()
+
+
+# =============================================================================
+class NoOpCacheManager(RequiredConfig):
+    def __init__(self, *args, **kwargs):
+        pass
