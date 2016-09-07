@@ -94,10 +94,13 @@ def timestamp_to_date(
 def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         try:
+            if isinstance(dt, unicode):
+                # isodate struggles to convert unicode strings with
+                # its parse_datetime() if the input string is unicode.
+                dt = dt.encode('utf-8')
             dt = isodate.parse_datetime(dt)
         except isodate.ISO8601Error:
             return dt
-
     return jinja2.Markup(
         '<time datetime="{}" class="{}">{}</time>'
         .format(

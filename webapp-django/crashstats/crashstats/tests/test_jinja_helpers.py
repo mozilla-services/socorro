@@ -71,6 +71,16 @@ class TestTimeTag(TestCase):
         output = time_tag('junk')
         eq_(output, 'junk')
 
+    def test_parse_with_unicode_with_timezone(self):
+        # See https://bugzilla.mozilla.org/show_bug.cgi?id=1300921
+        date = u'2016-09-07T00:38:42.630775+00:00'
+        output = time_tag(date)
+
+        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+            '2016-09-07T00:38:42.630775+00:00',
+            'Wed, Sep 07 00:38 +00:00'
+        ))
+
 
 class TestRecursiveStateFilter(TestCase):
 
