@@ -1001,15 +1001,6 @@ class IntegrationTestMiddlewareApp(TestCase):
 
             response = self.get(
                 server,
-                '/crash_data/',
-                {'xx': 'yy'},
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('uuid' in response.body)
-
-            response = self.get(
-                server,
                 '/crashes/comments/',
                 expect_errors=True
             )
