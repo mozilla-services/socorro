@@ -37,7 +37,7 @@ from crashstats.tokens.models import Token
 from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
-from crashstats.crashstats.decorators import superuser_required
+from crashstats.manage.decorators import superuser_required
 
 from . import forms
 from . import utils
