@@ -52,6 +52,17 @@ class B(A):
                               )
 
 
+class MutatingProcessedCrashCrashStorage(CrashStorageBase):
+    def save_raw_and_processed(
+        self,
+        raw_crash,
+        dump,
+        processed_crash,
+        crash_id
+    ):
+        del processed_crash['foo']
+
+
 def fake_quit_check():
     return False
 
@@ -269,6 +280,44 @@ class TestBase(TestCase):
             assert_raises(PolyStorageError, poly_store.close)
             for v in poly_store.stores.itervalues():
                 v.close.assert_called_with()
+
+    def test_poly_crash_storage_processed_crash_immutability(self):
+        n = Namespace()
+        n.add_option(
+          'storage',
+          default=PolyCrashStorage,
+        )
+        n.add_option(
+          'logger',
+          default=mock.Mock(),
+        )
+        value = {
+            'storage_classes': (
+                'socorro.unittest.external.test_crashstorage_base'
+                '.MutatingProcessedCrashCrashStorage'
+            ),
+        }
+        cm = ConfigurationManager(n, values_source_list=[value])
+        with cm.context() as config:
+            raw_crash = {'ooid': '12345'}
+            dump = '12345'
+            processed_crash = {'foo': 'bar'}
+
+            poly_store = config.storage(config)
+
+            poly_store.save_raw_and_processed(
+                raw_crash,
+                dump,
+                processed_crash,
+                'n'
+            )
+            # It's important to be aware that the only thing
+            # MutatingProcessedCrashCrashStorage class does, in its
+            # save_raw_and_processed() is that it deletes a key called
+            # 'foo'.
+            # This test makes sure that the dict processed_crash here
+            # is NOT affected.
+            eq_(processed_crash['foo'], 'bar')
 
     def test_fallback_crash_storage(self):
         n = Namespace()
