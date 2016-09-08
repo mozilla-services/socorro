@@ -63,7 +63,7 @@
             "description": "Notes from the application that crashed. Mostly contains graphics-related annotations."
         },
         "build_id": {
-            "type": ["integer", "string", "null"],
+            "type": ["string", "null"],
             "description": "The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS. "
         },
         "classifications": {
@@ -229,7 +229,7 @@
                     }
                 },
                 "tiny_block_size": {
-                    "type": ["integer", "string", "null"],
+                    "type": ["string", "null"],
                     "description": "If present, the total size of all memory regions in the crashing process that are smaller than 1 MB."
                 },
                 "thread_count": {
@@ -257,7 +257,7 @@
                     }
                 },
                 "write_combine_size": {
-                    "type": ["integer", "string", "null"],
+                    "type": ["string", "null"],
                     "description": "If present, the total size of all committed memory regions in the crashing process marked with PAGE_WRITECOMBINE."
                 }
             }
