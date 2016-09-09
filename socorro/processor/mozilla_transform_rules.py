@@ -1088,3 +1088,38 @@ class OSPrettyVersionRule(Rule):
             processed_crash
         )
         return True
+
+
+#==============================================================================
+class ThemePrettyNameRule(Rule):
+    """The Firefox theme shows up commonly in crash reports referenced by its
+    internal ID. The ID is not easy to change, and is referenced by id in other
+    software.
+
+    This rule attempts to modify it to have a more identifiable name, like
+    other built-in extensions"""
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(ThemePrettyNameRule, self).__init__(config)
+        self.theme_ext_id = "{972ce4c6-7e08-4474-a285-3208198ce6fd}"
+        self.pretty_ext_id = "default-theme@mozilla.org"
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        for extension, version in processed_crash.addons:
+            if self.theme_ext_id == extension:
+                return True
+        return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        for index, (extension, version) in enumerate(processed_crash.addons):
+            if self.theme_ext_id == extension:
+                processed_crash.addons[index] = (self.pretty_ext_id, version)
+                break
+        return True
