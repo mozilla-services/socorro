@@ -1105,7 +1105,9 @@ class ThemePrettyNameRule(Rule):
     def __init__(self, config):
         super(ThemePrettyNameRule, self).__init__(config)
         self.theme_ext_id = "{972ce4c6-7e08-4474-a285-3208198ce6fd}"
-        self.pretty_ext_id = "default-theme@mozilla.org"
+        self.pretty_ext_id = (
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd} (default Firefox theme)"
+        )
 
     #--------------------------------------------------------------------------
     def version(self):
