@@ -1097,7 +1097,9 @@ class ThemePrettyNameRule(Rule):
     software.
 
     This rule attempts to modify it to have a more identifiable name, like
-    other built-in extensions"""
+    other built-in extensions.
+
+    Must be run after the Addons Rule."""
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
