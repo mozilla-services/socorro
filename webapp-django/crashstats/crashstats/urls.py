@@ -107,7 +107,7 @@ urlpatterns = patterns(
         views.signature_summary,
         name='signature_summary'),
     url(r'^rawdumps/(?P<crash_id>[\w-]{36})-(?P<name>\w+)\.'
-        r'(?P<extension>json|dmp)$',
+        r'(?P<extension>json|dmp|json\.gz)$',
         views.raw_data,
         name='raw_data_named'),
     url(r'^rawdumps/(?P<crash_id>[\w-]{36}).(?P<extension>json|dmp)$',

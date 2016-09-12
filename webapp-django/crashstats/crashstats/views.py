@@ -1457,6 +1457,13 @@ def report_index(request, crash_id, default_context=None):
                         args=(crash_id, name, 'dmp')
                     )
                 )
+        if context['raw'].get('ContainsMemoryReport'):
+            context['raw_dump_urls'].append(
+                reverse(
+                    'crashstats:raw_data_named',
+                    args=(crash_id, 'memory_report', 'json.gz')
+                )
+            )
 
     # On the report_index template, we have a piece of JavaScript
     # that triggers an AJAX query to find out if there are correlations
@@ -2351,12 +2358,19 @@ def raw_data(request, crash_id, extension, name=None):
     elif extension == 'dmp':
         format = 'raw'
         content_type = 'application/octet-stream'
+    elif extension == 'json.gz' and name == 'memory_report':
+        # Note, if the name is 'memory_report' it will fetch a raw
+        # crash with name and the files in the memory_report bucket
+        # are already gzipped.
+        # This is important because it means we don't need to gzip
+        # the HttpResponse below.
+        format = 'raw'
+        content_type = 'application/octet-stream'
     else:
         raise NotImplementedError(extension)
 
     data = api.get(crash_id=crash_id, format=format, name=name)
     response = http.HttpResponse(content_type=content_type)
-
     if extension == 'json':
         response.write(json.dumps(data))
     else:
