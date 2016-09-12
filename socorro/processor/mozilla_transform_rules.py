@@ -1104,10 +1104,11 @@ class ThemePrettyNameRule(Rule):
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ThemePrettyNameRule, self).__init__(config)
-        self.theme_ext_id = "{972ce4c6-7e08-4474-a285-3208198ce6fd}"
-        self.pretty_ext_id = (
-            "{972ce4c6-7e08-4474-a285-3208198ce6fd} (default Firefox theme)"
-        )
+        self.conversions = {
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd}":
+                "{972ce4c6-7e08-4474-a285-3208198ce6fd} "
+                "(default Firefox theme)",
+        }
 
     #--------------------------------------------------------------------------
     def version(self):
@@ -1116,14 +1117,14 @@ class ThemePrettyNameRule(Rule):
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         for extension, version in processed_crash.addons:
-            if self.theme_ext_id == extension:
+            if extension in self.conversions:
                 return True
         return False
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        for index, (extension, version) in enumerate(processed_crash.addons):
-            if self.theme_ext_id == extension:
-                processed_crash.addons[index] = (self.pretty_ext_id, version)
-                break
+        addons = processed_crash.addons
+        for index, (extension, version) in enumerate(addons):
+            if extension in self.conversions:
+                addons[index] = (self.conversions[extension], version)
         return True
