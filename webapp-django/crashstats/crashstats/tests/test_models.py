@@ -1616,31 +1616,31 @@ class TestModels(DjangoTestCase):
     def test_Reprocessing(self):
         api = models.Reprocessing()
 
-        def mocked_reprocess(crash_id):
-            if crash_id == 'some-crash-id':
+        def mocked_reprocess(crash_ids):
+            if crash_ids == 'some-crash-id':
                 return True
-            elif crash_id == 'bad-crash-id':
+            elif crash_ids == 'bad-crash-id':
                 return
-            raise NotImplementedError(crash_id)
+            raise NotImplementedError(crash_ids)
 
         models.Reprocessing.implementation().reprocess = mocked_reprocess
-        ok_(api.post(crash_id='some-crash-id'))
+        ok_(api.post(crash_ids='some-crash-id'))
         # Note that it doesn't raise an error if
         # the ReprocessingOneRabbitMQCrashStore choses NOT to queue it.
-        ok_(not api.post(crash_id='bad-crash-id'))
+        ok_(not api.post(crash_ids='bad-crash-id'))
 
     def test_Priorityjob(self):
         api = models.Priorityjob()
 
-        def mocked_process(crash_id):
-            if crash_id == 'some-crash-id':
+        def mocked_process(crash_ids):
+            if crash_ids == 'some-crash-id':
                 return True
-            elif crash_id == 'bad-crash-id':
+            elif crash_ids == 'bad-crash-id':
                 return
-            raise NotImplementedError(crash_id)
+            raise NotImplementedError(crash_ids)
 
         models.Priorityjob.implementation().process = mocked_process
-        ok_(api.post(crash_id='some-crash-id'))
+        ok_(api.post(crash_ids='some-crash-id'))
         # Note that it doesn't raise an error if
         # the PriorityjobRabbitMQCrashStore choses NOT to queue it.
-        ok_(not api.post(crash_id='bad-crash-id'))
+        ok_(not api.post(crash_ids='bad-crash-id'))

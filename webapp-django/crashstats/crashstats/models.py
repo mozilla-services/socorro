@@ -19,7 +19,6 @@ from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
     PriorityjobRabbitMQCrashStore,
 )
-from socorro.external.boto.crash_data import SimplifiedCrashData
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
 import socorro.external.postgresql.products
@@ -79,7 +78,7 @@ def config_from_configman():
     definition_source.namespace('data')
     definition_source.data.add_option(
         'crash_data_class',
-        default=SimplifiedCrashData,
+        default=socorro.external.boto.crash_data.SimplifiedCrashData,
     )
     config = configuration(
         definition_source=definition_source,
@@ -1256,16 +1255,16 @@ class RawCrash(SocorroMiddleware):
     )
 
     def get(self, **kwargs):
-        fmt = kwargs.get('format', 'meta')
-        if fmt == 'raw_crash':
+        format_ = kwargs.get('format', 'meta')
+        if format_ == 'raw_crash':
             # legacy
-            fmt = kwargs['format'] = 'raw'
-        expect_dict = fmt != 'raw'
+            format_ = kwargs['format'] = 'raw'
+        expect_dict = format_ != 'raw'
         result = super(RawCrash, self).get(**kwargs)
         # This 'result', will either be a binary blob or a python dict.
         # Unless kwargs['format']==raw, this has to be a python dict.
         if expect_dict and not isinstance(result, dict):
-            raise BadArgumentError(fmt)
+            raise BadArgumentError('format')
         return result
 
 
@@ -1919,8 +1918,8 @@ class Priorityjob(SocorroMiddleware):
 
     get = None
 
-    def post(self, **data):
-        return self.get_implementation().process(**data)
+    def post(self, **kwargs):
+        return self.get_implementation().process(**kwargs)
 
 
 class Healthcheck(SocorroMiddleware):

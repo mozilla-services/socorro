@@ -3426,7 +3426,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('Please wait...' in response.content)
         ok_(
-            'Processing this crash only takes a couple of seconds' in
+            'Processing this crash report only takes a few seconds' in
             response.content
         )
 
