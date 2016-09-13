@@ -1054,10 +1054,10 @@ class OSPrettyVersionRule(Rule):
 
         elif processed_crash.os_name == 'Mac OS X':
             if (
-                major_version >= 10
-                and major_version < 11
-                and minor_version >= 0
-                and minor_version < 20
+                major_version >= 10 and
+                major_version < 11 and
+                minor_version >= 0 and
+                minor_version < 20
             ):
                 pretty_name = 'OS X %s.%s' % (major_version, minor_version)
             else:
@@ -1070,4 +1070,48 @@ class OSPrettyVersionRule(Rule):
         processed_crash['os_pretty_version'] = self._get_pretty_os_version(
             processed_crash
         )
+        return True
+
+
+#==============================================================================
+class ThemePrettyNameRule(Rule):
+    """The Firefox theme shows up commonly in crash reports referenced by its
+    internal ID. The ID is not easy to change, and is referenced by id in other
+    software.
+
+    This rule attempts to modify it to have a more identifiable name, like
+    other built-in extensions.
+
+    Must be run after the Addons Rule."""
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        super(ThemePrettyNameRule, self).__init__(config)
+        self.conversions = {
+            "{972ce4c6-7e08-4474-a285-3208198ce6fd}":
+                "{972ce4c6-7e08-4474-a285-3208198ce6fd} "
+                "(default Firefox theme)",
+        }
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        '''addons is a list of tuples containing (extension, version)'''
+        addons = processed_crash.get('addons', [])
+
+        for extension, version in addons:
+            if extension in self.conversions:
+                return True
+        return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        addons = processed_crash.addons
+
+        for index, (extension, version) in enumerate(addons):
+            if extension in self.conversions:
+                addons[index] = (self.conversions[extension], version)
         return True

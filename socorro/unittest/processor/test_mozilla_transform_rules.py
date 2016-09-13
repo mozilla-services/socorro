@@ -36,6 +36,7 @@ from socorro.processor.mozilla_transform_rules import (
     MissingSymbolsRule,
     BetaVersionRule,
     OSPrettyVersionRule,
+    ThemePrettyNameRule,
 )
 
 canonical_standard_raw_crash = DotDict({
@@ -1020,6 +1021,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
             opened.read.return_value = json.dumps({
                 'some': 'notveryshortpieceofjson'
             })
+
             def gzip_open(filename, mode):
                 assert mode == 'rb'
                 return opened
@@ -2119,3 +2121,95 @@ class TestOsPrettyName(TestCase):
         rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
         ok_('os_pretty_version' in processed_crash)
         eq_(processed_crash['os_pretty_version'], 'Windows NT')
+
+
+#==============================================================================
+class TestThemePrettyNameRule(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_basic_config(self):
+        config = CDotDict()
+        config.logger = Mock()
+        config.chatty = False
+        return config
+
+    #--------------------------------------------------------------------------
+    def get_basic_processor_meta(self):
+        processor_meta = DotDict()
+        processor_meta.processor_notes = []
+
+        return processor_meta
+
+    #--------------------------------------------------------------------------
+    def test_everything_we_hoped_for(self):
+        config = self.get_basic_config()
+
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_dumps = {}
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = ThemePrettyNameRule(config)
+
+        processed_crash.addons = [
+            ('adblockpopups@jessehakanen.net', '0.3'),
+            ('dmpluginff@westbyte.com', '1,4.8'),
+            ('firebug@software.joehewitt.com', '1.9.1'),
+            ('killjasmin@pierros14.com', '2.4'),
+            ('support@surfanonymous-free.com', '1.0'),
+            ('uploader@adblockfilters.mozdev.org', '2.1'),
+            ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
+            ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
+            ('anttoolbar@ant.com', '2.4.6.4'),
+            ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
+            ('elemhidehelper@adblockplus.org', '1.2.1')
+        ]
+
+        # the call to be tested
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        # the raw crash & raw_dumps should not have changed
+        eq_(raw_crash, canonical_standard_raw_crash)
+        eq_(raw_dumps, {})
+
+        expected_addon_list = [
+            ('adblockpopups@jessehakanen.net', '0.3'),
+            ('dmpluginff@westbyte.com', '1,4.8'),
+            ('firebug@software.joehewitt.com', '1.9.1'),
+            ('killjasmin@pierros14.com', '2.4'),
+            ('support@surfanonymous-free.com', '1.0'),
+            ('uploader@adblockfilters.mozdev.org', '2.1'),
+            ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
+            ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
+            ('anttoolbar@ant.com', '2.4.6.4'),
+            ('{972ce4c6-7e08-4474-a285-3208198ce6fd} (default Firefox theme)',
+             '12.0'),
+            ('elemhidehelper@adblockplus.org', '1.2.1')
+        ]
+        eq_(processed_crash.addons, expected_addon_list)
+
+    #--------------------------------------------------------------------------
+    def test_missing_key(self):
+        config = self.get_basic_config()
+
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = ThemePrettyNameRule(config)
+
+        # Test with missing key.
+        res = rule._predicate({}, {}, processed_crash, processor_meta)
+        ok_(not res)
+
+        # Test with empty list.
+        processed_crash.addons = []
+        res = rule._predicate({}, {}, processed_crash, processor_meta)
+        ok_(not res)
+
+        # Test with key missing from list.
+        processed_crash.addons = [
+            ('adblockpopups@jessehakanen.net', '0.3'),
+            ('dmpluginff@westbyte.com', '1,4.8'),
+        ]
+        res = rule._predicate({}, {}, processed_crash, processor_meta)
+        ok_(not res)

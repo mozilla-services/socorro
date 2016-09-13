@@ -54,6 +54,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.OSPrettyVersionRule, "
         "socorro.processor.mozilla_transform_rules.TopMostFilesRule, "
         "socorro.processor.mozilla_transform_rules.MissingSymbolsRule, "
+        "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
         "socorro.processor.signature_utilities.SignatureGenerationRule,"
         "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
         "socorro.processor.signature_utilities.OOMSignature, "
