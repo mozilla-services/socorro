@@ -339,7 +339,7 @@ class PriorityjobRabbitMQCrashStore(RabbitMQCrashStorage):
     required_config.add_option(
         'routing_key',
         default='socorro.priority',
-        doc='the name of the queue to recieve crashes',
+        doc='the name of the queue to receive crashes',
     )
 
     def process(self, crash_ids):

@@ -12,7 +12,7 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.unittest.testbase import TestCase
 
 
-class SimplifiedCrashData(TestCase):
+class TestSimplifiedCrashData(TestCase):
 
     def _get_config(self, sources, extra_values=None):
         self.mock_logging = mock.Mock()
@@ -36,9 +36,9 @@ class SimplifiedCrashData(TestCase):
 
         return config_manager.get_config()
 
-    def get_s3_store(self, storage_class=SimplifiedCrashData):
-        s3 = storage_class(
-            config=self._get_config([storage_class])
+    def get_s3_store(self):
+        s3 = SimplifiedCrashData(
+            config=self._get_config([SimplifiedCrashData])
         )
         s3_conn = s3.connection_source
         s3_conn._connect_to_endpoint = mock.Mock()
