@@ -1022,6 +1022,7 @@ class TestOutOfMemoryBinaryRule(TestCase):
             opened.read.return_value = json.dumps({
                 'some': 'notveryshortpieceofjson'
             })
+
             def gzip_open(filename, mode):
                 assert mode == 'rb'
                 return opened
@@ -2245,3 +2246,29 @@ class TestThemePrettyNameRule(TestCase):
             ('elemhidehelper@adblockplus.org', '1.2.1')
         ]
         eq_(processed_crash.addons, expected_addon_list)
+
+    #--------------------------------------------------------------------------
+    def test_missing_key(self):
+        config = self.get_basic_config()
+
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        rule = ThemePrettyNameRule(config)
+
+        # Test with missing key.
+        res = rule._predicate({}, {}, processed_crash, processor_meta)
+        ok_(not res)
+
+        # Test with empty list.
+        processed_crash.addons = []
+        res = rule._predicate({}, {}, processed_crash, processor_meta)
+        ok_(not res)
+
+        # Test with key missing from list.
+        processed_crash.addons = [
+            ('adblockpopups@jessehakanen.net', '0.3'),
+            ('dmpluginff@westbyte.com', '1,4.8'),
+        ]
+        res = rule._predicate({}, {}, processed_crash, processor_meta)
+        ok_(not res)

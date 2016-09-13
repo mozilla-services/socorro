@@ -1116,6 +1116,9 @@ class ThemePrettyNameRule(Rule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        if not processed_crash.get('addons'):
+            return False
+
         for extension, version in processed_crash.addons:
             if extension in self.conversions:
                 return True
