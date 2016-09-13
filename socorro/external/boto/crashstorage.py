@@ -73,7 +73,6 @@ class BotoCrashStorage(CrashStorageBase):
         'json_object_hook',
         default='configman.dotdict.DotDict',
         from_string_converter=class_converter,
-        reference_value_from='resource.boto',
     )
 
     def is_operational_exception(self, x):
