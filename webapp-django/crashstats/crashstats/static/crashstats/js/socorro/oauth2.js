@@ -58,23 +58,6 @@ var OAuth2 = (function() {
         });
     };
 
-    /* http://stackoverflow.com/a/901144/205832 */
-    function getParameterByName(name, url) {
-        if (!url) {
-            url = window.location.href;
-        }
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
-        var results = regex.exec(url);
-        if (!results) {
-            return null;
-        }
-        if (!results[2]) {
-            return '';
-        }
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    }
-
     return {
         init: function() {
             // The "signin" meta tag, and its value being "signout"
@@ -127,7 +110,9 @@ var OAuth2 = (function() {
                         $.post(url, data)
                         .done(function(response) {
                             // It worked!
-                            var next = getParameterByName('next');
+                            var next = Qs.parse(
+                                document.location.search.slice(1)
+                            ).next;
                             // only if ?next=/... exists on the current URL
                             if (next) {
                                 // A specific URL exits.
