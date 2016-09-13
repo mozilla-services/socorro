@@ -93,7 +93,10 @@ class TestViews(BaseTestViews):
         self._login(is_superuser=False)
         response = self.client.get(home_url, follow=True)
         assert response.status_code == 200
-        ok_('You need to be a superuser to access this' in response.content)
+        ok_(
+            'You are signed in but you do not have sufficient permissions '
+            'to reach the resource you requested.' in response.content
+        )
 
     def test_home_page_signed_in(self):
         user = self._login()

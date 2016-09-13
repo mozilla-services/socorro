@@ -1,13 +1,14 @@
 {% extends "crashstats_base.html" %}
 
 {% block page_title %}
-{% if request.user.is_authenticated() %}Insufficient Privileges{% else %}Login Required{% endif %}
+{% if request.user.is_active %}Insufficient Privileges{% else %}Login Required{% endif %}
 {% endblock %}
 
 {% block content %}
+
 <div id="mainbody">
 <div class="page-heading">
-    {% if request.user.is_authenticated() %}
+    {% if request.user.is_active %}
     <h2>Insufficient Privileges</h2>
     {% else %}
     <h2>Login Required</h2>
@@ -16,15 +17,15 @@
 
 <div class="panel">
     <div class="body">
-        {% if request.user.is_authenticated() %}
-                <p>
-                  You are signed in but you do not have sufficient permissions to reach the resource you requested.
-                </p>
-	{% else %}
-            <p>
-              The page you requested requires authentication. Use the login button at the lower right to log in.
-            </p>
-	{% endif %}
+    {% if request.user.is_authenticated() %}
+        <p>
+          You are signed in but you do not have sufficient permissions to reach the resource you requested.
+        </p>
+    {% else %}
+        <p>
+          The page you requested requires authentication. Use the login button at the lower right to log in.
+        </p>
+    {% endif %}
     </div>
 </div>
 

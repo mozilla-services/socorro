@@ -110,8 +110,20 @@ var OAuth2 = (function() {
                         $.post(url, data)
                         .done(function(response) {
                             // It worked!
-                            // TODO: https://bugzilla.mozilla.org/show_bug.cgi?id=1283296
-                            document.location.reload();
+                            var next = Qs.parse(
+                                document.location.search.slice(1)
+                            ).next;
+                            // only if ?next=/... exists on the current URL
+                            if (next) {
+                                // A specific URL exits.
+                                // This is most likely the case when you tried
+                                // to access a privileged URL whilst being
+                                // anonymous and being redirected.
+                                // Make sure it's on this server
+                                document.location.pathname = next;
+                            } else {
+                                document.location.reload();
+                            }
                         })
                         .fail(function(xhr) {
                             console.error(xhr);

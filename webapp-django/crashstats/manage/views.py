@@ -1,6 +1,5 @@
 import collections
 import copy
-import functools
 import hashlib
 import math
 import urllib
@@ -38,6 +37,7 @@ from crashstats.tokens.models import Token
 from crashstats.status.models import StatusMessage
 from crashstats.symbols.models import SymbolsUpload
 from crashstats.crashstats.utils import json_view
+from crashstats.manage.decorators import superuser_required
 
 from . import forms
 from . import utils
@@ -84,21 +84,6 @@ def notice_change(before, after):
                 changes[fieldname] = [v1, v2]
         return changes
     raise NotImplementedError(before.__class__.__name__)
-
-
-def superuser_required(view_func):
-    @functools.wraps(view_func)
-    def inner(request, *args, **kwargs):
-        if not request.user.is_active:
-            return redirect(settings.LOGIN_URL)
-        elif not request.user.is_superuser:
-            messages.error(
-                request,
-                'You need to be a superuser to access this.'
-            )
-            return redirect('home:home', settings.DEFAULT_PRODUCT)
-        return view_func(request, *args, **kwargs)
-    return inner
 
 
 @superuser_required
