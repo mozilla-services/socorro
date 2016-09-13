@@ -1116,10 +1116,10 @@ class ThemePrettyNameRule(Rule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        if not processed_crash.get('addons'):
-            return False
+        '''addons is a list of tuples containing (extension, version)'''
+        addons = processed_crash.get('addons', [])
 
-        for extension, version in processed_crash.addons:
+        for extension, version in addons:
             if extension in self.conversions:
                 return True
         return False
@@ -1127,6 +1127,7 @@ class ThemePrettyNameRule(Rule):
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         addons = processed_crash.addons
+
         for index, (extension, version) in enumerate(addons):
             if extension in self.conversions:
                 addons[index] = (self.conversions[extension], version)
