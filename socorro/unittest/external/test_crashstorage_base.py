@@ -16,7 +16,7 @@ from socorro.external.crashstorage_base import (
     Redactor,
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
-    FileDumpsMapping
+    FileDumpsMapping,
 )
 from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
@@ -27,11 +27,8 @@ from mock import Mock
 class A(CrashStorageBase):
     foo = 'a'
     required_config = Namespace()
-    required_config.add_option('x',
-                               default=1)
-    required_config.add_option('y',
-                               default=2
-                              )
+    required_config.add_option('x', default=1)
+    required_config.add_option('y', default=2)
 
     def __init__(self, config, quit_check=None):
         super(A, self).__init__(config, quit_check)
@@ -47,9 +44,7 @@ class A(CrashStorageBase):
 class B(A):
     foo = 'b'
     required_config = Namespace()
-    required_config.add_option('z',
-                               default=2
-                              )
+    required_config.add_option('z', default=2)
 
 
 class MutatingProcessedCrashCrashStorage(CrashStorageBase):
@@ -78,31 +73,39 @@ class TestBase(TestCase):
         required_config.update(CrashStorageBase.required_config)
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-          }],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:
             crashstorage = CrashStorageBase(
-              config,
-              quit_check_callback=fake_quit_check
+                config,
+                quit_check_callback=fake_quit_check
             )
             crashstorage.save_raw_crash({}, 'payload', 'ooid')
             crashstorage.save_processed({})
-            assert_raises(NotImplementedError,
-                              crashstorage.get_raw_crash, 'ooid')
-            assert_raises(NotImplementedError,
-                              crashstorage.get_raw_dump, 'ooid')
-            assert_raises(NotImplementedError,
-                              crashstorage.get_unredacted_processed, 'ooid')
-            assert_raises(NotImplementedError,
-                              crashstorage.remove, 'ooid')
+            assert_raises(
+                NotImplementedError,
+                crashstorage.get_raw_crash, 'ooid'
+            )
+            assert_raises(
+                NotImplementedError,
+                crashstorage.get_raw_dump, 'ooid'
+            )
+            assert_raises(
+                NotImplementedError,
+                crashstorage.get_unredacted_processed, 'ooid'
+            )
+            assert_raises(
+                NotImplementedError,
+                crashstorage.remove, 'ooid'
+            )
             eq_(crashstorage.new_crashes(), [])
             crashstorage.close()
 
@@ -132,8 +135,10 @@ class TestBase(TestCase):
 
             with mock.patch("__builtin__.open") as open_mock:
                 open_mock.return_value = mock.MagicMock()
-                open_mock.return_value.__enter__.return_value.read  \
-                   .side_effect = open_function
+                (
+                    open_mock.return_value.__enter__
+                    .return_value.read.side_effect
+                ) = open_function
                 crashstorage.save_raw_crash_with_file_dumps(
                     "fake raw crash",
                     FileDumpsMapping({
@@ -174,19 +179,21 @@ class TestBase(TestCase):
     def test_poly_crash_storage(self):
         n = Namespace()
         n.add_option(
-          'storage',
-          default=PolyCrashStorage,
+            'storage',
+            default=PolyCrashStorage,
         )
         n.add_option(
-          'logger',
-          default=mock.Mock(),
+            'logger',
+            default=mock.Mock(),
         )
-        value = {'storage_classes':
-                    'socorro.unittest.external.test_crashstorage_base.A,'
-                    'socorro.unittest.external.test_crashstorage_base.A,'
-                    'socorro.unittest.external.test_crashstorage_base.B',
-                 'storage1.y': 37,
-                }
+        value = {
+            'storage_classes': (
+                'socorro.unittest.external.test_crashstorage_base.A,'
+                'socorro.unittest.external.test_crashstorage_base.A,'
+                'socorro.unittest.external.test_crashstorage_base.B'
+            ),
+            'storage1.y': 37,
+        }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
             eq_(config.storage0.crashstorage_class.foo, 'a')
@@ -196,15 +203,20 @@ class TestBase(TestCase):
 
             poly_store = config.storage(config)
             l = len(poly_store.storage_namespaces)
-            eq_(l, 3, 'expected poly_store to have lenth of 3, '
-                                  'but %d was found instead' % l)
+            eq_(
+                l, 3,
+                'expected poly_store to have lenth of 3, '
+                'but %d was found instead' % l
+            )
             eq_(poly_store.storage_namespaces[0], 'storage0')
             eq_(poly_store.storage_namespaces[1], 'storage1')
             eq_(poly_store.storage_namespaces[2], 'storage2')
             l = len(poly_store.stores)
-            eq_(l, 3,
-                             'expected poly_store.store to have lenth of 3, '
-                                  'but %d was found instead' % l)
+            eq_(
+                l, 3,
+                'expected poly_store.store to have lenth of 3, '
+                'but %d was found instead' % l
+            )
             eq_(poly_store.stores.storage0.foo, 'a')
             eq_(poly_store.stores.storage1.foo, 'a')
             eq_(poly_store.stores.storage2.foo, 'b')
@@ -226,10 +238,10 @@ class TestBase(TestCase):
                 v.save_processed.assert_called_once_with(processed_crash)
 
             poly_store.save_raw_and_processed(
-              raw_crash,
-              dump,
-              processed_crash,
-              'n'
+                raw_crash,
+                dump,
+                processed_crash,
+                'n'
             )
             for v in poly_store.stores.itervalues():
                 v.save_raw_crash.assert_called_with(raw_crash, dump, 'n')
@@ -284,12 +296,12 @@ class TestBase(TestCase):
     def test_poly_crash_storage_processed_crash_immutability(self):
         n = Namespace()
         n.add_option(
-          'storage',
-          default=PolyCrashStorage,
+            'storage',
+            default=PolyCrashStorage,
         )
         n.add_option(
-          'logger',
-          default=mock.Mock(),
+            'logger',
+            default=mock.Mock(),
         )
         value = {
             'storage_classes': (
@@ -322,18 +334,21 @@ class TestBase(TestCase):
     def test_fallback_crash_storage(self):
         n = Namespace()
         n.add_option(
-          'storage',
-          default=FallbackCrashStorage,
+            'storage',
+            default=FallbackCrashStorage,
         )
         n.add_option(
-          'logger',
-          default=mock.Mock(),
+            'logger',
+            default=mock.Mock(),
         )
-        value = {'primary.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.A',
-                 'fallback.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.B',
-                }
+        value = {
+            'primary.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.A'
+            ),
+            'fallback.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.B'
+            ),
+        }
         cm = ConfigurationManager(
             n,
             values_source_list=[value],
@@ -354,44 +369,44 @@ class TestBase(TestCase):
             fb_store.fallback_store.save_raw_crash = Mock()
             fb_store.save_raw_crash(raw_crash, dump, crash_id)
             fb_store.primary_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
-            eq_(fb_store.fallback_store.save_raw_crash.call_count,
-                             0)
+            eq_(fb_store.fallback_store.save_raw_crash.call_count, 0)
 
             fb_store.primary_store.save_raw_crash = Mock()
             fb_store.primary_store.save_raw_crash.side_effect = Exception('!')
             fb_store.save_raw_crash(raw_crash, dump, crash_id)
             fb_store.primary_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
             fb_store.fallback_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
 
             fb_store.fallback_store.save_raw_crash = Mock()
             fb_store.fallback_store.save_raw_crash.side_effect = Exception('!')
-            assert_raises(PolyStorageError,
-                              fb_store.save_raw_crash,
-                              raw_crash,
-                              dump,
-                              crash_id
-                             )
+            assert_raises(
+                PolyStorageError,
+                fb_store.save_raw_crash,
+                raw_crash,
+                dump,
+                crash_id
+            )
             fb_store.primary_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
             fb_store.fallback_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
 
             # save_processed tests
@@ -399,32 +414,32 @@ class TestBase(TestCase):
             fb_store.fallback_store.save_processed = Mock()
             fb_store.save_processed(processed_crash)
             fb_store.primary_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
-            eq_(fb_store.fallback_store.save_processed.call_count,
-                             0)
+            eq_(fb_store.fallback_store.save_processed.call_count, 0)
 
             fb_store.primary_store.save_processed = Mock()
             fb_store.primary_store.save_processed.side_effect = Exception('!')
             fb_store.save_processed(processed_crash)
             fb_store.primary_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
             fb_store.fallback_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
 
             fb_store.fallback_store.save_processed = Mock()
             fb_store.fallback_store.save_processed.side_effect = Exception('!')
-            assert_raises(PolyStorageError,
-                              fb_store.save_processed,
-                              processed_crash
-                             )
+            assert_raises(
+                PolyStorageError,
+                fb_store.save_processed,
+                processed_crash
+            )
             fb_store.primary_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
             fb_store.fallback_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
 
             # close tests
@@ -449,27 +464,29 @@ class TestBase(TestCase):
 
             fb_store.fallback_store.close = Mock()
             fb_store.fallback_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError,
-                              fb_store.close)
+            assert_raises(PolyStorageError, fb_store.close)
             fb_store.primary_store.close.assert_called_with()
             fb_store.fallback_store.close.assert_called_with()
 
     def test_migration_crash_storage(self):
         n = Namespace()
         n.add_option(
-          'storage',
-          default=MigrationCrashStorage,
+            'storage',
+            default=MigrationCrashStorage,
         )
         n.add_option(
-          'logger',
-          default=mock.Mock(),
+            'logger',
+            default=mock.Mock(),
         )
-        value = {'primary.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.A',
-                 'fallback.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.B',
-                 'date_threshold': '150315'
-                }
+        value = {
+            'primary.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.A'
+            ),
+            'fallback.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.B'
+            ),
+            'date_threshold': '150315'
+        }
         cm = ConfigurationManager(
             n,
             values_source_list=[value],
@@ -489,9 +506,9 @@ class TestBase(TestCase):
             migration_store.fallback_store.save_raw_crash = Mock()
             migration_store.save_raw_crash(raw_crash, dump, after_crash_id)
             migration_store.primary_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              after_crash_id
+                raw_crash,
+                dump,
+                after_crash_id
             )
             eq_(migration_store.fallback_store.save_raw_crash.call_count, 0)
 
@@ -501,9 +518,9 @@ class TestBase(TestCase):
             migration_store.save_raw_crash(raw_crash, dump, before_crash_id)
             eq_(migration_store.primary_store.save_raw_crash.call_count, 0)
             migration_store.fallback_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              before_crash_id
+                raw_crash,
+                dump,
+                before_crash_id
             )
 
             # save_processed tests
@@ -513,7 +530,7 @@ class TestBase(TestCase):
             migration_store.fallback_store.save_processed = Mock()
             migration_store.save_processed(processed_crash)
             migration_store.primary_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
             eq_(migration_store.fallback_store.save_processed.call_count, 0)
 
@@ -524,7 +541,7 @@ class TestBase(TestCase):
             migration_store.save_processed(processed_crash)
             eq_(migration_store.primary_store.save_processed.call_count, 0)
             migration_store.fallback_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
 
             # close tests
@@ -536,7 +553,9 @@ class TestBase(TestCase):
 
             migration_store.primary_store.close = Mock()
             migration_store.fallback_store.close = Mock()
-            migration_store.fallback_store.close.side_effect = NotImplementedError()
+            migration_store.fallback_store.close.side_effect = (
+                NotImplementedError()
+            )
             migration_store.close()
             migration_store.primary_store.close.assert_called_with()
             migration_store.fallback_store.close.assert_called_with()
@@ -549,27 +568,29 @@ class TestBase(TestCase):
 
             migration_store.fallback_store.close = Mock()
             migration_store.fallback_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError,
-                              migration_store.close)
+            assert_raises(PolyStorageError, migration_store.close)
             migration_store.primary_store.close.assert_called_with()
             migration_store.fallback_store.close.assert_called_with()
 
     def test_deferred_crash_storage(self):
         n = Namespace()
         n.add_option(
-          'storage',
-          default=PrimaryDeferredStorage,
+            'storage',
+            default=PrimaryDeferredStorage,
         )
         n.add_option(
-          'logger',
-          default=mock.Mock(),
+            'logger',
+            default=mock.Mock(),
         )
-        value = {'primary.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.A',
-                 'deferred.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.B',
-                  'deferral_criteria': lambda x: x.get('foo') == 'foo'
-                }
+        value = {
+            'primary.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.A'
+            ),
+            'deferred.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.B'
+            ),
+            'deferral_criteria': lambda x: x.get('foo') == 'foo'
+        }
         cm = ConfigurationManager(n, values_source_list=[value])
         with cm.context() as config:
             eq_(config.primary.storage_class.foo, 'a')
@@ -587,18 +608,17 @@ class TestBase(TestCase):
             pd_store.deferred_store.save_raw_crash = Mock()
             pd_store.save_raw_crash(raw_crash, dump, crash_id)
             pd_store.primary_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
-            eq_(pd_store.deferred_store.save_raw_crash.call_count,
-                             0)
+            eq_(pd_store.deferred_store.save_raw_crash.call_count, 0)
 
             pd_store.save_raw_crash(deferred_crash, dump, crash_id)
             pd_store.deferred_store.save_raw_crash.assert_called_with(
-              deferred_crash,
-              dump,
-              crash_id
+                deferred_crash,
+                dump,
+                crash_id
             )
 
             # save_processed tests
@@ -606,14 +626,13 @@ class TestBase(TestCase):
             pd_store.deferred_store.save_processed = Mock()
             pd_store.save_processed(processed_crash)
             pd_store.primary_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
-            eq_(pd_store.deferred_store.save_processed.call_count,
-                             0)
+            eq_(pd_store.deferred_store.save_processed.call_count, 0)
 
             pd_store.save_processed(deferred_crash)
             pd_store.deferred_store.save_processed.assert_called_with(
-              deferred_crash
+                deferred_crash
             )
 
             # close tests
@@ -638,29 +657,32 @@ class TestBase(TestCase):
 
             pd_store.deferred_store.close = Mock()
             pd_store.deferred_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError,
-                              pd_store.close)
+            assert_raises(PolyStorageError, pd_store.close)
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
 
     def test_processed_crash_storage(self):
         n = Namespace()
         n.add_option(
-          'storage',
-          default=PrimaryDeferredProcessedStorage,
+            'storage',
+            default=PrimaryDeferredProcessedStorage,
         )
         n.add_option(
-          'logger',
-          default=mock.Mock(),
+            'logger',
+            default=mock.Mock(),
         )
-        value = {'primary.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.A',
-                 'deferred.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.B',
-                 'processed.storage_class':
-                    'socorro.unittest.external.test_crashstorage_base.B',
-                  'deferral_criteria': lambda x: x.get('foo') == 'foo'
-                }
+        value = {
+            'primary.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.A'
+            ),
+            'deferred.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.B'
+            ),
+            'processed.storage_class': (
+                'socorro.unittest.external.test_crashstorage_base.B'
+            ),
+            'deferral_criteria': lambda x: x.get('foo') == 'foo'
+        }
         cm = ConfigurationManager(
             n,
             values_source_list=[value],
@@ -684,18 +706,17 @@ class TestBase(TestCase):
             pd_store.processed_store.save_raw_crash = Mock()
             pd_store.save_raw_crash(raw_crash, dump, crash_id)
             pd_store.primary_store.save_raw_crash.assert_called_with(
-              raw_crash,
-              dump,
-              crash_id
+                raw_crash,
+                dump,
+                crash_id
             )
-            eq_(pd_store.deferred_store.save_raw_crash.call_count,
-                             0)
+            eq_(pd_store.deferred_store.save_raw_crash.call_count, 0)
 
             pd_store.save_raw_crash(deferred_crash, dump, crash_id)
             pd_store.deferred_store.save_raw_crash.assert_called_with(
-              deferred_crash,
-              dump,
-              crash_id
+                deferred_crash,
+                dump,
+                crash_id
             )
 
             # save_processed tests
@@ -704,14 +725,13 @@ class TestBase(TestCase):
             pd_store.processed_store.save_processed = Mock()
             pd_store.save_processed(processed_crash)
             pd_store.processed_store.save_processed.assert_called_with(
-              processed_crash
+                processed_crash
             )
-            eq_(pd_store.primary_store.save_processed.call_count,
-                             0)
+            eq_(pd_store.primary_store.save_processed.call_count, 0)
 
             pd_store.save_processed(deferred_crash)
             pd_store.processed_store.save_processed.assert_called_with(
-              deferred_crash
+                deferred_crash
             )
 
             # close tests
@@ -736,8 +756,7 @@ class TestBase(TestCase):
 
             pd_store.deferred_store.close = Mock()
             pd_store.deferred_store.close.side_effect = Exception('!')
-            assert_raises(PolyStorageError,
-                              pd_store.close)
+            assert_raises(PolyStorageError, pd_store.close)
             pd_store.primary_store.close.assert_called_with()
             pd_store.deferred_store.close.assert_called_with()
 
@@ -805,22 +824,22 @@ class TestBench(TestCase):
         fake_crash_store = Mock()
 
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{
-            'logger': mock_logging,
-            'wrapped_crashstore': fake_crash_store,
-            'benchmark_tag': 'test'
-          }],
-          argv_source=[]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{
+                'logger': mock_logging,
+                'wrapped_crashstore': fake_crash_store,
+                'benchmark_tag': 'test'
+            }],
+            argv_source=[]
         )
 
         with config_manager.context() as config:
             crashstorage = BenchmarkingCrashStorage(
-              config,
-              quit_check_callback=fake_quit_check
+                config,
+                quit_check_callback=fake_quit_check
             )
             crashstorage.start_timer = lambda: 0
             crashstorage.end_timer = lambda: 1
