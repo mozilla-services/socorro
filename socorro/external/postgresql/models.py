@@ -1057,24 +1057,6 @@ class ReprocessingJob(DeclarativeBase):
     __mapper_args__ = {"primary_key": (uuid)}
 
 
-class ServerStatu(DeclarativeBase):
-    __tablename__ = 'server_status'
-
-    #column definitions
-    avg_process_sec = Column(u'avg_process_sec', REAL())
-    avg_wait_sec = Column(u'avg_wait_sec', REAL())
-    date_created = Column(u'date_created', TIMESTAMP(timezone=True), nullable=False)
-    date_oldest_job_queued = Column(u'date_oldest_job_queued', TIMESTAMP(timezone=True))
-    date_recently_completed = Column(u'date_recently_completed', TIMESTAMP(timezone=True))
-    id = Column(u'id', INTEGER(), primary_key=True, nullable=False)
-    processors_count = Column(u'processors_count', INTEGER(), nullable=True)
-    waiting_job_count = Column(u'waiting_job_count', INTEGER(), nullable=False)
-
-    __table_args__ = (
-        Index('idx_server_status_date', date_created, id),
-    )
-
-
 class Session(DeclarativeBase):
     __tablename__ = 'sessions'
 

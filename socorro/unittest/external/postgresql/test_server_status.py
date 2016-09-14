@@ -52,7 +52,7 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
 
         cursor = self.connection.cursor()
-        cursor.execute("TRUNCATE server_status, alembic_version CASCADE;")
+        cursor.execute("TRUNCATE alembic_version CASCADE;")
         self.connection.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 

@@ -428,9 +428,6 @@ priorityjobs
 processors
 	The registration list for currently active processors.
 
-server_status
-	Contains summary statistics on the various processor servers.
-
 
 *UI management tables*
 

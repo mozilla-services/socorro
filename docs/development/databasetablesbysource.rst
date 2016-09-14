@@ -117,7 +117,6 @@ These tables are used by various parts of the application to do other things tha
 * processor management tables
 
 	* processors
-	* server_status
 	* transform_rules
 
 * UI management tables
