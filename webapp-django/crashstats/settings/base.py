@@ -688,7 +688,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'rabbitmq_password': config('RABBITMQ_PASSWORD', ''),
         },
         'boto': {
-            'secret_access_key': config('resource.boto.secret_access_key', ''),
+            'secret_access_key': config('secrets.boto.secret_access_key', ''),
         },
     },
     'resource': {
