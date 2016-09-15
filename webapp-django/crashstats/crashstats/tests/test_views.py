@@ -11,7 +11,7 @@ from cStringIO import StringIO
 
 import pyquery
 import mock
-from nose.tools import eq_, ok_, assert_raises
+from nose.tools import eq_, ok_
 from nose.plugins.skip import SkipTest
 
 from django.test.client import RequestFactory
@@ -27,6 +27,8 @@ from django.contrib.auth.models import (
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
+
+from socorro.external.crashstorage_base import CrashIDNotFound
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import models, views
@@ -418,7 +420,7 @@ class BaseTestViews(DjangoTestCase):
         )
 
         def mocked_supersearchfields(**params):
-            results = copy.copy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
+            results = copy.deepcopy(SUPERSEARCH_FIELDS_MOCKED_RESULTS)
             # to be realistic we want to introduce some dupes
             # that have a different key but its `in_database_name`
             # is one that is already in the hardcoded list (the
@@ -2359,18 +2361,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response(_SAMPLE_META)
-                if params['datatype'] == 'unredacted':
-                    return Response(dict(
-                        _SAMPLE_UNREDACTED,
-                        dump=dump,
-                        user_comments=comment0
-                    ))
-
             if 'correlations/signatures' in url:
                 return Response({
                     'hits': [
@@ -2379,9 +2369,33 @@ class TestViews(BaseTestViews):
                     ],
                     'total': 2
                 })
-
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['dump'] = dump
+                crash['user_comments'] = comment0
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -2463,52 +2477,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response({
-                        'InstallTime': '1339289895',
-                        'FramePoisonSize': '4096',
-                        'Theme': 'classic/1.0',
-                        'Version': '5.0a1',
-                        'Email': 'secret@email.com',
-                        'Vendor': 'Mozilla',
-                        'URL': 'farmville.com',
-                        'additional_minidumps': 'foo, bar,',
-                    })
-                if params['datatype'] == 'unredacted':
-                    return Response({
-                        'client_crash_date': '2012-06-11T06:08:45',
-                        'dump': dump,
-                        'signature': 'FakeSignature1',
-                        'user_comments': None,
-                        'uptime': 14693,
-                        'release_channel': 'nightly',
-                        'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                        'flash_version': '[blank]',
-                        'hangid': None,
-                        'distributor_version': None,
-                        'truncated': True,
-                        'process_type': None,
-                        'id': 383569625,
-                        'os_version': '10.6.8 10K549',
-                        'version': '5.0a1',
-                        'build': '20120609030536',
-                        'ReleaseChannel': 'nightly',
-                        'addons_checked': None,
-                        'product': 'WaterWolf',
-                        'os_name': 'Mac OS X',
-                        'last_crash': 371342,
-                        'date_processed': '2012-06-11T06:08:44',
-                        'cpu_name': 'amd64',
-                        'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                        'address': '0x8',
-                        'completeddatetime': '2012-06-11T06:08:57',
-                        'success': True,
-                        'exploitability': 'Unknown Exploitability'
-                    })
-
             if 'correlations/signatures' in url:
                 return Response({
                     'hits': [
@@ -2521,6 +2489,42 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                del crash['json_dump']
+                crash['dump'] = dump
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+
+            if params['datatype'] == 'meta':
+                return {
+                    'InstallTime': '1339289895',
+                    'FramePoisonSize': '4096',
+                    'Theme': 'classic/1.0',
+                    'Version': '5.0a1',
+                    'Email': 'secret@email.com',
+                    'Vendor': 'Mozilla',
+                    'URL': 'farmville.com',
+                    'additional_minidumps': 'foo, bar,',
+                }
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -2565,7 +2569,6 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_report_index_with_symbol_url_in_modules(self, rget, rpost):
         rpost.side_effect = mocked_post_threeothersigs
-        dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'
         json_dump = {
             'status': 'OK',
             'sensitive': {
@@ -2598,54 +2601,6 @@ class TestViews(BaseTestViews):
         }
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response({
-                        'InstallTime': '1339289895',
-                        'FramePoisonSize': '4096',
-                        'Theme': 'classic/1.0',
-                        'Version': '5.0a1',
-                        'Email': 'secret@email.com',
-                        'Vendor': 'Mozilla',
-                        'URL': 'farmville.com',
-                        'additional_minidumps': 'foo, bar,',
-                    })
-                if params['datatype'] == 'unredacted':
-                    return Response({
-                        'client_crash_date': '2012-06-11T06:08:45',
-                        # 'dump': 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64',
-                        'dump': dump,
-                        'signature': 'FakeSignature1',
-                        'user_comments': None,
-                        'uptime': 14693,
-                        'release_channel': 'nightly',
-                        'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                        'flash_version': '[blank]',
-                        'hangid': None,
-                        'distributor_version': None,
-                        'truncated': True,
-                        'process_type': None,
-                        'id': 383569625,
-                        'os_version': '10.6.8 10K549',
-                        'version': '5.0a1',
-                        'build': '20120609030536',
-                        'ReleaseChannel': 'nightly',
-                        'addons_checked': None,
-                        'product': 'WaterWolf',
-                        'os_name': 'Mac OS X',
-                        'last_crash': 371342,
-                        'date_processed': '2012-06-11T06:08:44',
-                        'cpu_name': 'amd64',
-                        'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                        'address': '0x8',
-                        'completeddatetime': '2012-06-11T06:08:57',
-                        'success': True,
-                        'exploitability': 'Unknown Exploitability',
-                        'json_dump': json_dump,
-                    })
-
             if 'correlations/signatures' in url:
                 return Response({
                     'hits': [
@@ -2658,6 +2613,31 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                crash = copy.deepcopy(_SAMPLE_META)
+                crash['additional_minidumps'] = 'foo, bar,'
+                return crash
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         url = reverse('crashstats:report_index', args=(crash_id,))
@@ -2673,7 +2653,6 @@ class TestViews(BaseTestViews):
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_fennecandroid_report(self, rget, rpost):
-        dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'
         comment0 += '\nwww.p0rn.com'
@@ -2681,21 +2660,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response(_SAMPLE_META)
-                if params['datatype'] == 'unredacted':
-                    raw_crash = dict(
-                        _SAMPLE_UNREDACTED,
-                        dump=dump,
-                        user_comments=comment0,
-                    )
-                    raw_crash['product'] = 'WinterSun'
-
-                    return Response(raw_crash)
-
             if 'correlations/signatures' in url:
                 return Response({
                     'hits': [
@@ -2706,7 +2670,32 @@ class TestViews(BaseTestViews):
                 })
 
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['product'] = 'WinterSun'
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -2733,7 +2722,6 @@ class TestViews(BaseTestViews):
         """If the processed JSON references an unfamiliar product and
         version it should not use that to make links in the nav to
         reports for that unfamiliar product and version."""
-        dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'
         comment0 += '\nwww.p0rn.com'
@@ -2741,21 +2729,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response(_SAMPLE_META)
-                if params['datatype'] == 'unredacted':
-                    processed = dict(
-                        _SAMPLE_UNREDACTED,
-                        dump=dump,
-                        user_comments=comment0,
-                    )
-                    processed['product'] = 'SummerWolf'
-                    processed['version'] = '99.9'
-                    return Response(processed)
-
             if 'correlations/signatures' in url:
                 return Response({
                     'hits': [
@@ -2766,7 +2739,33 @@ class TestViews(BaseTestViews):
                 })
 
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['product'] = 'SummerWolf'
+                crash['version'] = '99.9'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -2792,23 +2791,38 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response(_SAMPLE_META)
-                if params['datatype'] == 'unredacted':
-                    return Response(dict(
-                        _SAMPLE_UNREDACTED,
-                        dump=dump,
-                        user_comments=comment0,
-                    ))
-
             if 'correlations/signatures' in url:
                 raise models.BadStatusCodeError(500)
 
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(dict(
+                    _SAMPLE_UNREDACTED,
+                    dump=dump,
+                    user_comments=comment0,
+                ))
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -2818,32 +2832,39 @@ class TestViews(BaseTestViews):
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_no_dump(self, rget, rpost):
-        dump = ''
-        comment0 = 'This is a comment'
-
         rpost.side_effect = mocked_post_threesigs
 
         def mocked_get(url, params, **options):
-            if '/crash_data' in url:
-                assert 'datatype' in params
-
-                if params['datatype'] == 'meta':
-                    return Response(_SAMPLE_META)
-                if params['datatype'] == 'unredacted':
-                    data = dict(
-                        _SAMPLE_UNREDACTED,
-                        dump=dump,
-                        user_comments=comment0,
-                    )
-                    del data['dump']
-                    del data['json_dump']
-                    return Response(data)
-
             if 'correlations/signatures' in url:
                 raise models.BadStatusCodeError(500)
 
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                del crash['json_dump']
+                return crash
+
+            raise NotImplementedError(url)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -2860,53 +2881,12 @@ class TestViews(BaseTestViews):
         ok_('Invalid crash ID' in response.content)
         eq_(response['Content-Type'], 'text/html; charset=utf-8')
 
-    @mock.patch('requests.get')
-    def test_report_pending_today(self, rget):
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                raise models.BadStatusCodeError(404)
-
-        rget.side_effect = mocked_get
-
-        today = datetime.datetime.utcnow().strftime('%y%m%d')
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982%s' % today])
-        response = self.client.get(url)
-        ok_('pendingStatus' in response.content)
-        eq_(response.status_code, 200)
-
-        yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
-        yesterday = yesterday.strftime('%y%m%d')
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982%s' % yesterday])
-        response = self.client.get(url)
-        ok_('Crash Not Found' in response.content)
-        eq_(response.status_code, 200)
-
-        url = reverse('crashstats:report_index',
-                      args=['blablabla'])
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_valid_install_time(self, rget, rpost):
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': '1461170304',
-                    'Version': '5.0a1',
-                })
             if 'crashes/comments' in url:
                 return Response({
                     'hits': [],
@@ -2918,25 +2898,34 @@ class TestViews(BaseTestViews):
                     'total': 0,
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'dump': 'some dump',
-                    'signature': 'FakeSignature1',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'process_type': None,
-                    'os_name': 'Windows NT',
-                    'product': 'WaterWolf',
-                    'version': '1.0',
-                    'cpu_name': 'amd64',
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return {
+                    'InstallTime': '1461170304',
+                    'Version': '5.0a1',
+                }
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(_SAMPLE_UNREDACTED)
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse(
             'crashstats:report_index',
@@ -2954,17 +2943,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': 'Not a number',
-                    'Version': '5.0a1',
-                    'Email': '',
-                    'URL': None,
-                })
             if 'crashes/comments' in url:
                 return Response({
                     'hits': [],
@@ -2976,24 +2954,33 @@ class TestViews(BaseTestViews):
                     'total': 0
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'dump': 'some dump',
-                    'signature': 'FakeSignature1',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'process_type': None,
-                    'os_name': 'Windows NT',
-                    'product': 'WaterWolf',
-                    'version': '1.0',
-                    'cpu_name': 'amd64',
-                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                crash = copy.deepcopy(_SAMPLE_META)
+                crash['InstallTime'] = 'Not a number'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(_SAMPLE_UNREDACTED)
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse(
             'crashstats:report_index',
@@ -3015,17 +3002,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': 'Not a number',
-                    'Version': '5.0a1',
-                    'Email': '',
-                    'URL': None,
-                })
             if 'crashes/comments' in url:
                 return Response({
                     'hits': [],
@@ -3037,12 +3013,25 @@ class TestViews(BaseTestViews):
                     'total': 0
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return {
                     'dump': 'some dump',
                     'signature': 'FakeSignature1',
                     'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
@@ -3051,10 +3040,13 @@ class TestViews(BaseTestViews):
                     'product': 'WaterWolf',
                     'version': '1.0',
                     'cpu_name': 'amd64',
-                })
-            raise NotImplementedError(url)
+                }
 
-        rget.side_effect = mocked_get
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse(
             'crashstats:report_index',
@@ -3087,17 +3079,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': 'Not a number',
-                    'Version': '5.0a1',
-                    'Email': '',
-                    'URL': None,
-                })
             if 'crashes/comments' in url:
                 return Response({
                     'hits': [],
@@ -3109,24 +3090,33 @@ class TestViews(BaseTestViews):
                     'total': 0
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'dump': 'some dump',
-                    'signature': 'FakeSignature1',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'process_type': None,
-                    'os_name': None,
-                    'product': 'WaterWolf',
-                    'version': '1.0',
-                    'cpu_name': 'amd64',
-                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['os_name'] = None
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse(
             'crashstats:report_index',
@@ -3172,28 +3162,11 @@ class TestViews(BaseTestViews):
         }
 
         comment0 = "This is a comment"
-        email0 = "some@emailaddress.com"
-        url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
 
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    "InstallTime": "Not a number",
-                    "FramePoisonSize": "4096",
-                    "Theme": "classic/1.0",
-                    "Version": "5.0a1",
-                    "Email": email0,
-                    "Vendor": "Mozilla",
-                    "URL": url0,
-                    "HangID": "123456789"
-                })
             if 'crashes/comments' in url:
                 return Response({
                     "hits": [
@@ -3215,44 +3188,33 @@ class TestViews(BaseTestViews):
                     "total": 2
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    "client_crash_date": "2012-06-11T06:08:45",
-                    "json_dump": json_dump,
-                    "signature": "FakeSignature1",
-                    "user_comments": None,
-                    "uptime": 14693,
-                    "release_channel": "nightly",
-                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                    "flash_version": "[blank]",
-                    "hangid": None,
-                    "distributor_version": None,
-                    "truncated": True,
-                    "process_type": None,
-                    "id": 383569625,
-                    "os_version": "10.6.8 10K549",
-                    "version": "5.0a1",
-                    "build": "20120609030536",
-                    "ReleaseChannel": "nightly",
-                    "addons_checked": None,
-                    "product": "WaterWolf",
-                    "os_name": "Mac OS X",
-                    "last_crash": 371342,
-                    "date_processed": "2012-06-11T06:08:44",
-                    "cpu_name": "amd64",
-                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                    "address": "0x8",
-                    "completeddatetime": "2012-06-11T06:08:57",
-                    "success": True,
-                    "exploitability": "Unknown Exploitability"
-                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -3265,28 +3227,11 @@ class TestViews(BaseTestViews):
         json_dump = {'status': 'ERROR_NO_MINIDUMP_HEADER', 'sensitive': {}}
 
         comment0 = 'This is a comment'
-        email0 = 'some@emailaddress.com'
-        url0 = 'someaddress.com'
         email1 = 'some@otheremailaddress.com'
 
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': 'Not a number',
-                    'FramePoisonSize': '4096',
-                    'Theme': 'classic/1.0',
-                    'Version': '5.0a1',
-                    'Email': email0,
-                    'Vendor': 'Mozilla',
-                    'URL': url0,
-                    'HangID': '123456789',
-                })
             if 'crashes/comments' in url:
                 return Response({
                     'hits': [
@@ -3308,44 +3253,33 @@ class TestViews(BaseTestViews):
                     'total': 2
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'client_crash_date': '2012-06-11T06:08:45',
-                    'json_dump': json_dump,
-                    'signature': 'FakeSignature1',
-                    'user_comments': None,
-                    'uptime': 14693,
-                    'release_channel': 'nightly',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'flash_version': '[blank]',
-                    'hangid': None,
-                    'distributor_version': None,
-                    'truncated': True,
-                    'process_type': None,
-                    'id': 383569625,
-                    'os_version': '10.6.8 10K549',
-                    'version': '5.0a1',
-                    'build': '20120609030536',
-                    'ReleaseChannel': 'nightly',
-                    'addons_checked': None,
-                    'product': 'WaterWolf',
-                    'os_name': 'Mac OS X',
-                    'last_crash': 371342,
-                    'date_processed': '2012-06-11T06:08:44',
-                    'cpu_name': 'amd64',
-                    'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                    'address': '0x8',
-                    'completeddatetime': '2012-06-11T06:08:57',
-                    'success': True,
-                    'exploitability': 'Unknown Exploitability'
-                })
-
             raise NotImplementedError(url)
+
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
@@ -3355,10 +3289,7 @@ class TestViews(BaseTestViews):
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_with_crash_exploitability(self, rget, rpost):
-        dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment'
-        email0 = 'some@emailaddress.com'
-        url0 = 'someaddress.com'
         email1 = 'some@otheremailaddress.com'
 
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
@@ -3366,21 +3297,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': 'Not a number',
-                    'FramePoisonSize': '4096',
-                    'Theme': 'classic/1.0',
-                    'Version': '5.0a1',
-                    'Email': email0,
-                    'Vendor': 'Mozilla',
-                    'URL': url0,
-                    'HangID': '123456789',
-                })
             if '/crashes/comments' in url:
                 return Response({
                     'hits': [
@@ -3402,44 +3318,33 @@ class TestViews(BaseTestViews):
                     'total': 2
                 })
 
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'client_crash_date': '2012-06-11T06:08:45',
-                    'dump': dump,
-                    'signature': 'FakeSignature1',
-                    'user_comments': None,
-                    'uptime': 14693,
-                    'release_channel': 'nightly',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'flash_version': '[blank]',
-                    'hangid': None,
-                    'distributor_version': None,
-                    'truncated': True,
-                    'process_type': None,
-                    'id': 383569625,
-                    'os_version': '10.6.8 10K549',
-                    'version': '5.0a1',
-                    'build': '20120609030536',
-                    'ReleaseChannel': 'nightly',
-                    'addons_checked': None,
-                    'product': 'WaterWolf',
-                    'os_name': 'Mac OS X',
-                    'last_crash': 371342,
-                    'date_processed': '2012-06-11T06:08:44',
-                    'cpu_name': 'amd64',
-                    'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                    'address': '0x8',
-                    'completeddatetime': '2012-06-11T06:08:57',
-                    'success': True,
-                    'exploitability': 'Unknown Exploitability',
-                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['exploitability'] = 'Unknown Exploitability'
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -3455,260 +3360,103 @@ class TestViews(BaseTestViews):
         ok_('Exploitability</th>' in response.content)
         ok_('Unknown Exploitability' in response.content)
 
-    @mock.patch('requests.get')
-    def test_report_index_processed_crash_not_found(self, rget):
-        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                raise models.BadStatusCodeError(404)
-
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
-
-        url = reverse('crashstats:report_index',
-                      args=[crash_id])
-        response = self.client.get(url)
-
-        eq_(response.status_code, 200)
-        ok_('Crash Not Found' in response.content)
-
     @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_raw_crash_not_found(self, rget, rpost):
+    def test_report_index_raw_crash_not_found(self, rpost):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-        dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'
 
         rpost.side_effect = mocked_post_123
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data/' in url
+        def mocked_raw_crash_get(**params):
             assert 'datatype' in params
-            if params['datatype'] == 'unredacted':
-                return Response({
-                    'client_crash_date': '2012-06-11T06:08:45',
-                    'dump': dump,
-                    'signature': 'FakeSignature1',
-                    'user_comments': None,
-                    'uptime': 14693,
-                    'release_channel': 'nightly',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'flash_version': '[blank]',
-                    'hangid': None,
-                    'distributor_version': None,
-                    'truncated': True,
-                    'process_type': None,
-                    'id': 383569625,
-                    'os_version': '10.6.8 10K549',
-                    'version': '5.0a1',
-                    'build': '20120609030536',
-                    'ReleaseChannel': 'nightly',
-                    'addons_checked': None,
-                    'product': 'WaterWolf',
-                    'os_name': 'Mac OS X',
-                    'last_crash': 371342,
-                    'date_processed': '2012-06-11T06:08:44',
-                    'cpu_name': 'amd64',
-                    'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                    'address': '0x8',
-                    'completeddatetime': '2012-06-11T06:08:57',
-                    'success': True,
-                    'exploitability': 'Unknown Exploitability'
-                })
-            elif params['datatype'] == 'meta':  # raw crash json!
-                raise models.BadStatusCodeError(404)
+            if params['datatype'] == 'meta':
+                raise CrashIDNotFound(params['uuid'])
 
-            raise NotImplementedError(url)
+            raise NotImplementedError
 
-        rget.side_effect = mocked_get
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
 
         url = reverse('crashstats:report_index',
                       args=[crash_id])
         response = self.client.get(url)
 
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 404)
         ok_('Crash Not Found' in response.content)
 
-    @mock.patch('requests.get')
-    def test_report_index_pending(self, rget):
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    def test_report_index_processed_crash_not_found(self, rpost):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                raise models.BadStatusCodeError(408)
+        rpost.side_effect = mocked_post_123
 
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
 
-        url = reverse('crashstats:report_index',
-                      args=[crash_id])
-        response = self.client.get(url)
+            raise NotImplementedError
 
-        eq_(response.status_code, 200)
-        ok_('Fetching this archived report' in response.content)
-
-    @mock.patch('requests.get')
-    def test_report_index_too_old(self, rget):
-        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                raise models.BadStatusCodeError(410)
-
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
-
-        url = reverse('crashstats:report_index',
-                      args=[crash_id])
-        response = self.client.get(url)
-
-        eq_(response.status_code, 200)
-        ok_('This archived report has expired' in response.content)
-
-    @mock.patch('requests.get')
-    def test_report_index_other_error(self, rget):
-        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response('Scary Error', status_code=500)
-
-            raise NotImplementedError(url)
-        rget.side_effect = mocked_get
-
-        url = reverse('crashstats:report_index',
-                      args=[crash_id])
-        assert_raises(
-            models.BadStatusCodeError,
-            self.client.get,
-            url
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
         )
-        # Let's also check that we get the response in the exception
-        # message.
-        try:
-            self.client.get(url)
-            assert False  # shouldn't get here
-        except models.BadStatusCodeError as exception:
-            ok_('Scary Error' in str(exception))
-            # and it should include the URL it used
-            mware_url = models.UnredactedCrash.base_url + '/crash_data/'
-            ok_(mware_url in str(exception))
 
-    @mock.patch('requests.get')
-    def test_report_pending_json(self, rget):
-        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                raise CrashIDNotFound(params['uuid'])
 
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                raise models.BadStatusCodeError(408)
+            raise NotImplementedError
 
-            raise NotImplementedError(url)
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
-        rget.side_effect = mocked_get
+        def mocked_priority_job_process(**params):
+            assert params['crash_ids'] == [crash_id]
+            return True
 
-        url = reverse('crashstats:report_pending',
-                      args=[crash_id])
+        models.Priorityjob.implementation().process.side_effect = (
+            mocked_priority_job_process
+        )
+
+        url = reverse('crashstats:report_index', args=[crash_id])
         response = self.client.get(url)
-
-        expected = {
-            'status': 'error',
-            'status_message': ('The report for %s'
-                               ' is not available yet.' % crash_id),
-            'url_redirect': ''
-        }
 
         eq_(response.status_code, 200)
-        eq_(expected, json.loads(response.content))
-
-    def test_report_index_and_pending_missing_crash_id(self):
-        url = reverse('crashstats:report_index', args=[''])
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        url = reverse('crashstats:report_pending', args=[''])
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
+        ok_('Please wait...' in response.content)
+        ok_(
+            'Processing this crash report only takes a few seconds' in
+            response.content
+        )
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_invalid_date_processed(self, rget, rpost):
+    def test_report_index_with_invalid_date_processed(self, rpost):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
-        def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': 'Not a number',
-                    'FramePoisonSize': '4096',
-                    'Theme': 'classic/1.0',
-                    'Version': '5.0a1',
-                    'Email': None,
-                    'Vendor': 'Mozilla',
-                    'URL': None,
-                    'HangID': '123456789',
-                })
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'client_crash_date': '2012-06-11T06:08:45',
-                    'dump': 'anything',
-                    'signature': 'FakeSignature1',
-                    'user_comments': None,
-                    'uptime': 14693,
-                    'release_channel': 'nightly',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'flash_version': '[blank]',
-                    'hangid': None,
-                    'distributor_version': None,
-                    'truncated': True,
-                    'process_type': None,
-                    'id': 383569625,
-                    'os_version': '10.6.8 10K549',
-                    'version': '5.0a1',
-                    'build': '20120609030536',
-                    'ReleaseChannel': 'nightly',
-                    'addons_checked': None,
-                    'product': 'WaterWolf',
-                    'os_name': 'Mac OS X',
-                    'last_crash': 371342,
-                    # NOTE! A wanna-be valid date that is not valid
-                    'date_processed': '2015-10-10 15:32:07.620535',
-                    'cpu_name': 'amd64',
-                    'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                    'address': '0x8',
-                    'completeddatetime': '2012-06-11T06:08:57',
-                    'success': True,
-                    'exploitability': 'Unknown Exploitability',
-                })
-            raise NotImplementedError(url)
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
 
-        rget.side_effect = mocked_get
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                # NOTE! A wanna-be valid date that is not valid
+                crash['date_processed'] = '2015-10-10 15:32:07.620535'
+                return crash
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         url = reverse('crashstats:report_index', args=[crash_id])
 
@@ -4802,30 +4550,12 @@ class TestViews(BaseTestViews):
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
     def test_report_index_redirect_by_prefix(self, rget, rpost):
-
-        dump = "OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1"
         comment0 = "This is a comment"
-        email0 = "some@emailaddress.com"
-        url0 = "someaddress.com"
         email1 = "some@otheremailaddress.com"
 
         rpost.side_effect = mocked_post_123
 
         def mocked_get(url, params, **options):
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'meta'
-            ):
-                return Response({
-                    'InstallTime': '1339289895',
-                    'FramePoisonSize': '4096',
-                    'Theme': 'classic/1.0',
-                    'Version': '5.0a1',
-                    'Email': email0,
-                    'Vendor': 'Mozilla',
-                    'URL': url0
-                })
             if 'crashes/comments' in url:
                 return Response({
                     'hits': [
@@ -4837,42 +4567,6 @@ class TestViews(BaseTestViews):
                         }
                     ],
                     'total': 1
-                })
-
-            if (
-                '/crash_data' in url and
-                'datatype' in params and
-                params['datatype'] == 'unredacted'
-            ):
-                return Response({
-                    'client_crash_date': '2012-06-11T06:08:45',
-                    'dump': dump,
-                    'signature': 'FakeSignature1',
-                    'user_comments': None,
-                    'uptime': 14693,
-                    'release_channel': 'nightly',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'flash_version': '[blank]',
-                    'hangid': None,
-                    'distributor_version': None,
-                    'truncated': True,
-                    'process_type': None,
-                    'id': 383569625,
-                    'os_version': '10.6.8 10K549',
-                    'version': '5.0a1',
-                    'build': '20120609030536',
-                    'ReleaseChannel': 'nightly',
-                    'addons_checked': None,
-                    'product': 'WaterWolf',
-                    'os_name': 'Mac OS X',
-                    'last_crash': 371342,
-                    'date_processed': '2012-06-11T06:08:44',
-                    'cpu_name': 'amd64',
-                    'reason': 'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS',
-                    'address': '0x8',
-                    'completeddatetime': '2012-06-11T06:08:57',
-                    'success': True,
-                    'exploitability': 'Unknown Exploitability'
                 })
 
             if 'correlations/signatures' in url:
@@ -4887,6 +4581,28 @@ class TestViews(BaseTestViews):
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(_SAMPLE_UNREDACTED)
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
 
         base_crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
         crash_id = settings.CRASH_ID_PREFIX + base_crash_id
@@ -4917,22 +4633,19 @@ class TestViews(BaseTestViews):
         ok_('</html>' not in response.content)  # it's a partial
         ok_('no reports in the time period specified' in response.content)
 
-    @mock.patch('requests.get')
-    def test_raw_data(self, rget):
-        def mocked_get(url, params, **options):
-            assert '/crash_data' in url
+    def test_raw_data(self):
+
+        def mocked_get(**params):
             if 'datatype' in params and params['datatype'] == 'raw':
-                return Response("""
-                  bla bla bla
-                """.strip())
+                return "bla bla bla"
             else:
                 # default is datatype/meta
-                return Response({
+                return {
                     'foo': 'bar',
                     'stuff': 123,
-                })
+                }
 
-        rget.side_effect = mocked_get
+        models.RawCrash.implementation().get.side_effect = mocked_get
 
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
         json_url = reverse('crashstats:raw_data', args=(crash_id, 'json'))
@@ -4962,14 +4675,10 @@ class TestViews(BaseTestViews):
 
         # dump files are cached.
         # check the mock function and expect no change
-        def different_mocked_get(url, **options):
-            if '/crash_data' in url and 'datatype=raw' in url:
-                return Response("""
-                  SOMETHING DIFFERENT
-                """.strip())
-            raise NotImplementedError(url)
+        def different_mocked_get(**params):
+            raise AssertionError("shouldn't be used due to caching")
 
-        rget.side_effect = different_mocked_get
+        models.RawCrash.implementation().get.side_effect = different_mocked_get
 
         response = self.client.get(dump_url)
         eq_(response.status_code, 200)

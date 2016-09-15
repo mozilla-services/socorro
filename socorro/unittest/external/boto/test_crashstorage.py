@@ -32,7 +32,8 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
-import socorro.unittest.testbase
+from socorro.unittest.testbase import TestCase
+
 
 from socorrolib.lib.util import DotDict
 
@@ -60,7 +61,7 @@ S3ConnectionContext.operational_exceptions = (ABadDeal, )
 S3ConnectionContext.conditional_exceptions = (ConditionallyABadDeal, )
 
 
-class BaseTestCase(socorro.unittest.testbase.TestCase):
+class BaseTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -102,7 +103,8 @@ class BaseTestCase(socorro.unittest.testbase.TestCase):
             'dump_file_suffix': '.dump',
             'bucket_name': bucket_name,
             'prefix': 'dev',
-            'calling_format': mock.Mock()
+            'calling_format': mock.Mock(),
+            'json_object_hook': DotDict,
         })
 
         if isinstance(storage_class, basestring):

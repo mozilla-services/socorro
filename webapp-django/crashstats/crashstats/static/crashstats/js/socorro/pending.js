@@ -1,47 +1,38 @@
+$(function() {
+    var Checker = (function() {
+        var intervalTime = 5 * 1000;
+        var checkInterval;
+        var totalTime = 0;
 
-/* Javascript for the Pending Reports page */
-
-// Begin the timer and Ajax calls for reports
-var original_seconds = 30;
-var seconds = original_seconds;
-var number_calls = 1;
-
-// Maintain the time in seconds, and make an ajax call every 30 seconds
-function pendingReportTimer(url){
-    if (seconds == 0){
-        $('#next_attempt').hide();
-        $('#processing').show();
-
-        // Upon the third attempt, state that this failed
-        if (number_calls == 10) {
-            $('#checking').hide();
-            $('#fail').show();
-        } else {
-            pendingReportCheck(url);
-            number_calls += 1;
-            seconds = original_seconds;
-            $('#counter').html(original_seconds);
-            setTimeout("pendingReportTimer(\""+url+"\")",1000);
-        }
-    }
-    // Decrement the seconds count
-    else {
-        $('#processing').hide();
-        $('#next_attempt').show();
-        seconds -= 1;
-        $('#counter').html(seconds);
-        setTimeout("pendingReportTimer(\""+url+"\")",1000);
-    }
-}
-
-// Perform the ajax call to check for this report
-function pendingReportCheck (url)
-{
-    $.get(url, {},
-        function(responseJSON){
-            if (responseJSON.status == 'ready') {
-                top.location = responseJSON.url_redirect;
+        return {
+            startChecking: function(crashID) {
+                checkInterval = setInterval(function() {
+                    $.get('/api/ProcessedCrash/', {crash_id: crashID})
+                    .then(function() {
+                        clearInterval(checkInterval);
+                        // If it exists, we can reload the page we're on.
+                        $('.pending .searching').hide();
+                        $('.pending .found').fadeIn(300, function() {
+                            document.location.reload();
+                        });
+                    })
+                    .fail(function(err) {
+                        // Perfectly expected.
+                        // We kind of expect the processed crash to not
+                        // exist for a while. Once it's been processed,
+                        // it should exist and yield a 200 error.
+                        if (err.status !== 404) {
+                            // But it's not a 404 error it's something unexpected.
+                            clearInterval(checkInterval);
+                            throw new Error(err);
+                        }
+                    });
+                }, intervalTime);
             }
-        },"json"
-    );
-}
+        };
+    })();
+
+    var pathname = document.location.pathname.split('/');
+    var crashID = pathname[pathname.length - 1];
+    Checker.startChecking(crashID);
+});

@@ -7,7 +7,6 @@ import time
 
 import json_schema_reducer
 from socorrolib.lib.converters import change_default
-from socorrolib.lib.util import DotDict
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
@@ -69,6 +68,11 @@ class BotoCrashStorage(CrashStorageBase):
         doc='the suffix used to identify a dump file (for use in temp files)',
         default='.dump',
         reference_value_from='resource.boto',
+    )
+    required_config.add_option(
+        'json_object_hook',
+        default='configman.dotdict.DotDict',
+        from_string_converter=class_converter,
     )
 
     def is_operational_exception(self, x):
@@ -174,20 +178,27 @@ class BotoCrashStorage(CrashStorageBase):
         self.save_processed(processed_crash)
 
     @staticmethod
-    def do_get_raw_crash(boto_connection, crash_id):
+    def do_get_raw_crash(boto_connection, crash_id, json_object_hook):
         try:
             raw_crash_as_string = boto_connection.fetch(
                 crash_id,
                 "raw_crash"
             )
-            return json.loads(raw_crash_as_string, object_hook=DotDict)
+            return json.loads(
+                raw_crash_as_string,
+                object_hook=json_object_hook
+            )
         except boto_connection.ResponseError, x:
             raise CrashIDNotFound(
                 '%s not found: %s' % (crash_id, x)
             )
 
     def get_raw_crash(self, crash_id):
-        return self.transaction_for_get(self.do_get_raw_crash, crash_id)
+        return self.transaction_for_get(
+            self.do_get_raw_crash,
+            crash_id,
+            self.config.json_object_hook
+        )
 
     @staticmethod
     def do_get_raw_dump(boto_connection, crash_id, name=None):
@@ -244,7 +255,11 @@ class BotoCrashStorage(CrashStorageBase):
         )
 
     @staticmethod
-    def _do_get_unredacted_processed(boto_connection, crash_id):
+    def _do_get_unredacted_processed(
+        boto_connection,
+        crash_id,
+        json_object_hook,
+    ):
         try:
             processed_crash_as_string = boto_connection.fetch(
                 crash_id,
@@ -252,7 +267,7 @@ class BotoCrashStorage(CrashStorageBase):
             )
             return json.loads(
                 processed_crash_as_string,
-                object_hook=DotDict
+                object_hook=json_object_hook,
             )
         except boto_connection.ResponseError, x:
             raise CrashIDNotFound(
@@ -262,7 +277,8 @@ class BotoCrashStorage(CrashStorageBase):
     def get_unredacted_processed(self, crash_id):
         return self.transaction_for_get(
             self._do_get_unredacted_processed,
-            crash_id
+            crash_id,
+            self.config.json_object_hook,
         )
 
 

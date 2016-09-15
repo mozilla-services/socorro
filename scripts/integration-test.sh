@@ -131,7 +131,7 @@ function cleanup() {
   echo "INFO: Terminating background jobs"
   echo "  any kill usage errors below may be ignored"
 
-  for p in collector processor middleware
+  for p in collector processor
   do
     # destroy any running processes started by this shell
     kill $(jobs -p) > /dev/null 2>&1
@@ -206,7 +206,7 @@ function retry() {
 }
 
 #------------------------------------------------------------------------------
-# setup and run the collector, processor and middleware
+# setup and run the collector and processor
 # The collector should be configured using the 2015 method of having the
 # ability to collect multiple crash types using different end points.
 #    breakpad crashes on /submit
@@ -255,30 +255,13 @@ function start_2015_socorro_apps() {
       > processor.log 2>&1 &
   echo '   processor started'
 
-  sleep 1
-  socorro middleware \
-      --admin.conf=./config/middleware.ini \
-      --database.database_hostname=$database_hostname \
-      --database.database_username=$database_username \
-      --database.database_password=$database_password \
-      --rabbitmq.host=$rmq_host \
-      --rabbitmq.rabbitmq_user=$rmq_user \
-      --rabbitmq.rabbitmq_password=$rmq_password \
-      --rabbitmq.virtual_host=$rmq_virtual_host \
-      --rabbitmq.standard_queue_name=$rmq_normal_queue_name \
-      --rabbitmq.priority_queue_name=$rmq_priority_queue_name \
-      --rabbitmq.reprocessing_queue_name=$rmq_reprocessing_queue_name \
-      --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy \
-      > middleware.log 2>&1 &
-  echo '   middleware started'
-
   # tell the test routine to use the extra submission test
   extra_submission_test=1
   echo " Done."
 }
 
 #------------------------------------------------------------------------------
-# setup and run the collector, processor and middleware
+# setup and run the collector and processor
 # The collector will use the traditional wsgi function that can only receive
 # breakpad crashes on the endpoint /submit
 #------------------------------------------------------------------------------
@@ -320,20 +303,6 @@ function start_standard_socorro_apps() {
       --processor.processor_class=socorro.processor.mozilla_processor_2015.MozillaProcessorAlgorithm2015 \
       > processor.log 2>&1 &
   sleep 1
-  socorro middleware \
-      --admin.conf=./config/middleware.ini \
-      --database.database_hostname=$database_hostname \
-      --database.database_username=$database_username \
-      --database.database_password=$database_password \
-      --rabbitmq.host=$rmq_host \
-      --rabbitmq.rabbitmq_user=$rmq_user \
-      --rabbitmq.rabbitmq_password=$rmq_password \
-      --rabbitmq.virtual_host=$rmq_virtual_host \
-      --rabbitmq.standard_queue_name=$rmq_normal_queue_name \
-      --rabbitmq.priority_queue_name=$rmq_priority_queue_name \
-      --rabbitmq.reprocessing_queue_name=$rmq_reprocessing_queue_name \
-      --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy \
-      > middleware.log 2>&1 &
 
   # tell the test routine NOT to use the extra submission test
   extra_submission_test=0
@@ -342,7 +311,7 @@ function start_standard_socorro_apps() {
 }
 
 #------------------------------------------------------------------------------
-# setup and run the collector, processor and middleware WITHOUT RabbitMQ
+# setup and run the collector and processor WITHOUT RabbitMQ
 # The collector will use the traditional wsgi function that can only receive
 # breakpad crashes on the endpoint /submit
 # The collector saves in
@@ -368,21 +337,6 @@ function start_minimal_socorro_apps() {
       --destination.fs_root=./processedCrashStore \
       > processor.log 2>&1 &
   sleep 1
-  socorro middleware \
-      --admin.conf=./config/middleware.ini \
-      --database.database_hostname=$database_hostname \
-      --database.database_username=$database_username \
-      --database.database_password=$database_password \
-      --filesystem.fs_root=./processedCrashStore \
-      --rabbitmq.host=$rmq_host \
-      --rabbitmq.rabbitmq_user=$rmq_user \
-      --rabbitmq.rabbitmq_password=$rmq_password \
-      --rabbitmq.virtual_host=$rmq_virtual_host \
-      --rabbitmq.standard_queue_name=$rmq_normal_queue_name \
-      --rabbitmq.priority_queue_name=$rmq_priority_queue_name \
-      --rabbitmq.reprocessing_queue_name=$rmq_reprocessing_queue_name \
-      --web_server.wsgi_server_class=socorro.webapi.servers.CherryPy \
-      > middleware.log 2>&1 &
   # tell the test routine NOT to use the extra submission test
   extra_submission_test=0
 
@@ -423,7 +377,7 @@ echo " Done."
 
 #******************************************************************************
 # Here's where we actually start testing
-# Iterate through some combinations of collector/crashmover/processor/middleware/setups
+# Iterate through some combinations of collector/crashmover/processor/setups
 # These setups are defined in functions with their names list in the for loop:
 for an_app_set in start_2015_socorro_apps start_standard_socorro_apps start_minimal_socorro_apps
 do
@@ -465,28 +419,6 @@ do
   # make sure crashes are picked up, and no errors are logged
   retry 'collector' "$CRASHID"
   retry 'processor' "saved - $CRASHID"
-
-  #----------------------------------------------------------------------------
-  # check that mware has raw crash using curl to hit the HTTP endpoint
-  curl -s -D middleware_headers.log "http://localhost:8883/crash_data/?datatype=meta&uuid=$CRASHID" > /dev/null
-  err=$?
-  echo "  looking for errors in hitting the middleware for $CRASHID"
-  check_for_logged_fatal_errors $err middleware
-
-  echo "  looking for "200 OK" in hitting the middleware for $CRASHID"
-  grep '200 OK' middleware_headers.log > /dev/null
-  fatal $? "middleware test failed, no raw data for crash ID $CRASHID"
-
-  echo "  looking for processed crash through middleware for $CRASHID"
-  function find_crash_in_middleware() {
-    curl -s "http://localhost:8883/crash_data/?datatype=processed&uuid=$CRASHID" | grep date_processed
-    echo "http://localhost:8883/crash_data/?datatype=processed&uuid=$CRASHID"
-    return $?
-  }
-  retry_command middleware find_crash_in_middleware
-
-  # check that mware logs the request for the crash, and logs no errors
-  retry 'middleware' "/crash_data"
 
   #----------------------------------------------------------------------------
   # EXTRA submission test

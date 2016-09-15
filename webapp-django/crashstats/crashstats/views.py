@@ -22,6 +22,7 @@ from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
 
+from socorro.external.crashstorage_base import CrashIDNotFound
 from . import forms, models, utils
 from .decorators import check_days_parameter, pass_default_context
 
@@ -1334,8 +1335,6 @@ def exploitability_report(request, default_context=None):
 
 @pass_default_context
 def report_index(request, crash_id, default_context=None):
-    if not crash_id:
-        raise http.Http404('Crash id is missing')
     valid_crash_id = utils.find_crash_id(crash_id)
     if not valid_crash_id:
         return http.HttpResponseBadRequest('Invalid crash ID')
@@ -1353,33 +1352,26 @@ def report_index(request, crash_id, default_context=None):
     context = default_context or {}
     context['crash_id'] = crash_id
 
+    raw_api = models.RawCrash()
+    try:
+        context['raw'] = raw_api.get(crash_id=crash_id)
+    except CrashIDNotFound:
+        # If the raw crash can't be found, we can't do much.
+        tmpl = 'crashstats/report_index_not_found.html'
+        return render(request, tmpl, context, status=404)
+
     api = models.UnredactedCrash()
-
-    def handle_middleware_404(crash_id, error_code):
-        if error_code == 404:
-            # if crash was submitted today, send to pending screen
-            crash_date = datetime.datetime.strptime(crash_id[-6:], '%y%m%d')
-            crash_age = datetime.datetime.utcnow() - crash_date
-            if crash_age < datetime.timedelta(days=1):
-                tmpl = 'crashstats/report_index_pending.html'
-            else:
-                tmpl = 'crashstats/report_index_not_found.html'
-            return render(request, tmpl, context)
-        elif error_code == 408:
-            return render(request,
-                          'crashstats/report_index_pending.html', context)
-        elif error_code == 410:
-            return render(request,
-                          'crashstats/report_index_too_old.html', context)
-
-        # this is OK because this function is expected to be called within
-        # an exception stack frame
-        raise
-
     try:
         context['report'] = api.get(crash_id=crash_id)
-    except models.BadStatusCodeError as e:
-        return handle_middleware_404(crash_id, e.status)
+    except CrashIDNotFound:
+        # ...if we haven't already done so.
+        cache_key = 'priority_job:{}'.format(crash_id)
+        if not cache.get(cache_key):
+            priority_api = models.Priorityjob()
+            priority_api.post(crash_ids=[crash_id])
+            cache.set(cache_key, True, 60)
+        tmpl = 'crashstats/report_index_pending.html'
+        return render(request, tmpl, context)
 
     if 'json_dump' in context['report']:
         json_dump = context['report']['json_dump']
@@ -1434,12 +1426,6 @@ def report_index(request, crash_id, default_context=None):
         reverse=True
     )
 
-    raw_api = models.RawCrash()
-    try:
-        context['raw'] = raw_api.get(crash_id=crash_id)
-    except models.BadStatusCodeError as e:
-        return handle_middleware_404(crash_id, e.status)
-
     context['raw_keys'] = []
     if request.user.has_perm('crashstats.view_pii'):
         # hold nothing back
@@ -1449,7 +1435,8 @@ def report_index(request, crash_id, default_context=None):
             x for x in context['raw']
             if x in models.RawCrash.API_WHITELIST
         ]
-    context['raw_keys'].sort(key=unicode.lower)
+    # Sort keys case-insensitively
+    context['raw_keys'].sort(key=lambda s: s.lower())
 
     if request.user.has_perm('crashstats.view_rawdump'):
         context['raw_dump_urls'] = [
@@ -1521,37 +1508,6 @@ def report_index(request, crash_id, default_context=None):
     context['BUG_PRODUCT_MAP'] = settings.BUG_PRODUCT_MAP
     context['CRASH_ANALYSIS_URL'] = settings.CRASH_ANALYSIS_URL
     return render(request, 'crashstats/report_index.html', context)
-
-
-@utils.json_view
-def report_pending(request, crash_id):
-    if not crash_id:
-        raise http.Http404("Crash id is missing")
-
-    data = {}
-
-    url = reverse('crashstats:report_index', kwargs=dict(crash_id=crash_id))
-
-    api = models.UnredactedCrash()
-
-    try:
-        data['report'] = api.get(crash_id=crash_id)
-        status = 'ready'
-        status_message = 'The report for %s is now available.' % crash_id
-        url_redirect = "%s" % url
-    except models.BadStatusCodeError as e:
-        if str(e).startswith('5'):
-            raise
-        status = 'error'
-        status_message = 'The report for %s is not available yet.' % crash_id
-        url_redirect = ''
-
-    data = {
-        "status": status,
-        "status_message": status_message,
-        "url_redirect": url_redirect
-    }
-    return data
 
 
 @pass_default_context

@@ -1,32 +1,33 @@
 {% extends "crashstats_base.html" %}
 
-{% block content %}
-<div id="mainbody">
-    <div id="checking" class="pendingStatus">
-        <form>
-            <input type="hidden" id="count" name="count" value="0" />
-        </form>
-        <h3>Please Wait...</h3>
-        <p>Fetching this archived report will take 30 seconds to 5 minutes</p>
-        <img src="{{ static('img/ajax-loader.gif') }}">
-        <p id="next_attempt">Next attempt in
-            <span id="counter" name="counter">30</span> seconds...</p>
-        <p id="processing" class="pendingProcessing" style="display:none">Querying for archived report...</p>
-    </div>
-
-    <div id="fail" class="pendingStatus" style="display:none;">
-        <h3>Oh Noes!</h3>
-        <p>This archived report could not be located.</p>
-    </div>
-
-</div>
-
+{% block site_css %}
+{{ super() }}
+{% stylesheet 'report_pending' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
-<script type="text/javascript" src="{{ static('crashstats/js/socorro/pending.js') }}"></script>
-<script type="text/javascript">
-    document.onload = pendingReportTimer("{{ url('crashstats:report_pending', crash_id) }}");
-</script>
+{% javascript 'report_pending' %}
+{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="pending">
+        <div class="searching">
+            <h3>Please wait...</h3>
+            <p>
+                Processing this crash report only takes a few seconds.
+            </p>
+            <img src="{{ static('img/ajax-loader.gif') }}">
+        </div>
+        <div class="found" style="display:none">
+            <h3>Crash ID found!</h3>
+            <p>
+                Reloading this page now.
+            </p>
+        </div>
+    </div>
+
+</div>
+
 {% endblock %}

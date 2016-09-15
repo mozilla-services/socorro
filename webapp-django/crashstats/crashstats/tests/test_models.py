@@ -735,17 +735,15 @@ class TestModels(DjangoTestCase):
         ok_(r['hits'])
         ok_(r['total'])
 
-    @mock.patch('requests.get')
-    def test_processed_crash(self, rget):
+    def test_processed_crash(self):
         model = models.ProcessedCrash
         api = model()
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data' in url
+        def mocked_get(**params):
             ok_('datatype' in params)
             eq_(params['datatype'], 'processed')
 
-            return Response({
+            return {
                 'product': 'WaterWolf',
                 'uuid': '7c44ade2-fdeb-4d6c-830a-07d302120525',
                 'version': '13.0',
@@ -765,23 +763,21 @@ class TestModels(DjangoTestCase):
                         '13.0'
                     ]
                 ]
-            })
+            }
 
-        rget.side_effect = mocked_get
+        model.implementation().get.side_effect = mocked_get
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
         ok_(r['product'])
 
-    @mock.patch('requests.get')
-    def test_unredacted_crash(self, rget):
+    def test_unredacted_crash(self):
         model = models.UnredactedCrash
         api = model()
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data' in url
+        def mocked_get(**params):
             ok_('datatype' in params)
             eq_(params['datatype'], 'unredacted')
 
-            return Response({
+            return {
                 'product': 'WaterWolf',
                 'uuid': '7c44ade2-fdeb-4d6c-830a-07d302120525',
                 'version': '13.0',
@@ -802,9 +798,10 @@ class TestModels(DjangoTestCase):
                         '13.0',
                     ]
                 ],
-            })
+            }
 
-        rget.side_effect = mocked_get
+        model.implementation().get.side_effect = mocked_get
+
         r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
         ok_(r['product'])
         ok_(r['exploitability'])
@@ -1081,58 +1078,47 @@ class TestModels(DjangoTestCase):
         # but this should work
         api.get(batch='250', page='1')
 
-    @mock.patch('requests.get')
-    def test_raw_crash(self, rget):
+    def test_raw_crash(self):
         model = models.RawCrash
         api = model()
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data/' in url
-            return Response({
+        def mocked_get(**params):
+            return {
                 'InstallTime': '1339289895',
                 'FramePoisonSize': '4096',
                 'Theme': 'classic/1.0',
                 'Version': '5.0a1',
                 'Email': 'socorro-123@restmail.net',
                 'Vendor': 'Mozilla',
-            })
+            }
 
-        rget.side_effect = mocked_get
+        model.implementation().get.side_effect = mocked_get
         r = api.get(crash_id='some-crash-id')
         eq_(r['Vendor'], 'Mozilla')
         ok_('Email' in r)  # no filtering at this level
 
-    @mock.patch('requests.get')
-    def test_raw_crash_raw_data(self, rget):
+    def test_raw_crash_raw_data(self):
 
         model = models.RawCrash
         api = model()
 
         mocked_calls = []
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data/' in url
+        def mocked_get(**params):
             mocked_calls.append(params)
             assert params['datatype'] == 'raw'
             if params.get('name') == 'other':
-                return Response('\xe0\xe0')
-            elif params.get('name') == 'unknown':
-                return Response('not found', 404)
+                return '\xe0\xe0'
             else:
-                return Response('\xe0')
+                return '\xe0'
 
-        rget.side_effect = mocked_get
+        model.implementation().get.side_effect = mocked_get
+
         r = api.get(crash_id='some-crash-id', format='raw')
         eq_(r, '\xe0')
 
         r = api.get(crash_id='some-crash-id', format='raw', name='other')
         eq_(r, '\xe0\xe0')
-
-        assert_raises(
-            models.BadStatusCodeError,
-            api.get,
-            crash_id='some-crash-id', format='raw', name='unknown'
-        )
 
     @mock.patch('requests.put')
     def test_put_featured_versions(self, rput):
@@ -1630,15 +1616,31 @@ class TestModels(DjangoTestCase):
     def test_Reprocessing(self):
         api = models.Reprocessing()
 
-        def mocked_reprocess(crash_id):
-            if crash_id == 'some-crash-id':
+        def mocked_reprocess(crash_ids):
+            if crash_ids == 'some-crash-id':
                 return True
-            elif crash_id == 'bad-crash-id':
+            elif crash_ids == 'bad-crash-id':
                 return
-            raise NotImplementedError(crash_id)
+            raise NotImplementedError(crash_ids)
 
         models.Reprocessing.implementation().reprocess = mocked_reprocess
-        ok_(api.post(crash_id='some-crash-id'))
+        ok_(api.post(crash_ids='some-crash-id'))
         # Note that it doesn't raise an error if
         # the ReprocessingOneRabbitMQCrashStore choses NOT to queue it.
-        ok_(not api.post(crash_id='bad-crash-id'))
+        ok_(not api.post(crash_ids='bad-crash-id'))
+
+    def test_Priorityjob(self):
+        api = models.Priorityjob()
+
+        def mocked_process(crash_ids):
+            if crash_ids == 'some-crash-id':
+                return True
+            elif crash_ids == 'bad-crash-id':
+                return
+            raise NotImplementedError(crash_ids)
+
+        models.Priorityjob.implementation().process = mocked_process
+        ok_(api.post(crash_ids='some-crash-id'))
+        # Note that it doesn't raise an error if
+        # the PriorityjobRabbitMQCrashStore choses NOT to queue it.
+        ok_(not api.post(crash_ids='bad-crash-id'))

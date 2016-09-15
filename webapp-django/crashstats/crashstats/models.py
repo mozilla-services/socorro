@@ -12,10 +12,12 @@ import time
 import ujson
 from configman import configuration, Namespace
 
+from socorrolib.lib import BadArgumentError
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.rabbitmq.crashstorage import (
     ReprocessingOneRabbitMQCrashStore,
+    PriorityjobRabbitMQCrashStore,
 )
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
@@ -28,6 +30,7 @@ import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.server_status
+import socorro.external.boto.crash_data
 
 from socorrolib.app import socorro_app
 
@@ -67,6 +70,16 @@ def config_from_configman():
         'rabbitmq_reprocessing_class',
         default=ReprocessingOneRabbitMQCrashStore,
     )
+    definition_source.namespace('priority')
+    definition_source.priority.add_option(
+        'rabbitmq_priority_class',
+        default=PriorityjobRabbitMQCrashStore,
+    )
+    definition_source.namespace('data')
+    definition_source.data.add_option(
+        'crash_data_class',
+        default=socorro.external.boto.crash_data.SimplifiedCrashData,
+    )
     config = configuration(
         definition_source=definition_source,
         values_source_list=[
@@ -78,6 +91,8 @@ def config_from_configman():
     # logger set up by configman as an aggregate, we just use the
     # same logger as we have here in the webapp.
     config.queuing.logger = logger
+    config.priority.logger = logger
+    config.data.logger = logger
     return config
 
 
@@ -395,7 +410,6 @@ class SocorroCommon(object):
                 config = config_from_configman()
                 if self.implementation_config_namespace:
                     config = config[self.implementation_config_namespace]
-
                 _implementations[key] = self.implementation(
                     config=config
                 )
@@ -1010,7 +1024,9 @@ class ReportList(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
-    URL_PREFIX = '/crash_data/'
+
+    implementation = socorro.external.boto.crash_data.SimplifiedCrashData
+    implementation_config_namespace = 'data'
 
     required_params = (
         'crash_id',
@@ -1092,7 +1108,6 @@ class ProcessedCrash(SocorroMiddleware):
 
 
 class UnredactedCrash(ProcessedCrash):
-    URL_PREFIX = '/crash_data/'
 
     defaults = {
         'datatype': 'unredacted',
@@ -1123,7 +1138,8 @@ class RawCrash(SocorroMiddleware):
     token that carries the "View Raw Dumps" permission.
     """
 
-    URL_PREFIX = '/crash_data/'
+    implementation = socorro.external.boto.crash_data.SimplifiedCrashData
+    implementation_config_namespace = 'data'
 
     required_params = (
         'crash_id',
@@ -1239,11 +1255,17 @@ class RawCrash(SocorroMiddleware):
     )
 
     def get(self, **kwargs):
-        format = kwargs.get('format', 'meta')
-        if format == 'raw_crash':
-            format = kwargs['format'] = 'raw'
-        kwargs['expect_json'] = format != 'raw'
-        return super(RawCrash, self).get(**kwargs)
+        format_ = kwargs.get('format', 'meta')
+        if format_ == 'raw_crash':
+            # legacy
+            format_ = kwargs['format'] = 'raw'
+        expect_dict = format_ != 'raw'
+        result = super(RawCrash, self).get(**kwargs)
+        # This 'result', will either be a binary blob or a python dict.
+        # Unless kwargs['format']==raw, this has to be a python dict.
+        if expect_dict and not isinstance(result, dict):
+            raise BadArgumentError('format')
+        return result
 
 
 class CommentsBySignature(SocorroMiddleware):
@@ -1879,6 +1901,25 @@ class Reprocessing(SocorroMiddleware):
 
     def post(self, **data):
         return self.get_implementation().reprocess(**data)
+
+
+class Priorityjob(SocorroMiddleware):
+    """Return true if all supplied crash IDs
+    were sucessfully submitted onto the priority queue.
+    """
+
+    implementation = PriorityjobRabbitMQCrashStore
+
+    implementation_config_namespace = 'priority'
+
+    required_params = (
+        ('crash_ids', list),
+    )
+
+    get = None
+
+    def post(self, **kwargs):
+        return self.get_implementation().process(**kwargs)
 
 
 class Healthcheck(SocorroMiddleware):

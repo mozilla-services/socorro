@@ -105,11 +105,13 @@ class RabbitMQCrashStorage(CrashStorageBase):
         if config.throttle == 100:
             self.dont_queue_this_crash = lambda: False
         else:
-            self.dont_queue_this_crash = lambda: randint(1, 100) > config.throttle
+            self.dont_queue_this_crash = (
+                lambda: randint(1, 100) > config.throttle
+            )
 
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        if  self.dont_queue_this_crash():
+        if self.dont_queue_this_crash():
             self.config.logger.info(
                 'Crash %s filtered out of RabbitMQ queue %s',
                 crash_id,
@@ -118,8 +120,7 @@ class RabbitMQCrashStorage(CrashStorageBase):
             return
         try:
             this_crash_should_be_queued = (
-                (not self.config.filter_on_legacy_processing)
-                or
+                not self.config.filter_on_legacy_processing or
                 raw_crash.legacy_processing == 0
             )
         except KeyError:
@@ -170,7 +171,6 @@ class RabbitMQCrashStorage(CrashStorageBase):
         # queues the crash_id. The '_consume_acknowledgement_queue' function
         # is run to send acknowledgments back to RabbitMQ
         self._consume_acknowledgement_queue()
-        conn = self.rabbitmq.connection()
         queues = [
             self.rabbitmq.config.priority_queue_name,
             self.rabbitmq.config.standard_queue_name,
@@ -315,6 +315,34 @@ class ReprocessingOneRabbitMQCrashStore(ReprocessingRabbitMQCrashStore):
     )
 
     def reprocess(self, crash_ids):
+        if not isinstance(crash_ids, (list, tuple)):
+            crash_ids = [crash_ids]
+        success = bool(crash_ids)
+        for crash_id in crash_ids:
+            if not self.save_raw_crash(
+                DotDict({'legacy_processing': 0}),
+                [],
+                crash_id
+            ):
+                success = False
+        return success
+
+
+#==============================================================================
+class PriorityjobRabbitMQCrashStore(RabbitMQCrashStorage):
+    required_config = Namespace()
+    required_config.rabbitmq_class = change_default(
+        RabbitMQCrashStorage,
+        'rabbitmq_class',
+        ConnectionContext,
+    )
+    required_config.add_option(
+        'routing_key',
+        default='socorro.priority',
+        doc='the name of the queue to receive crashes',
+    )
+
+    def process(self, crash_ids):
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
         success = bool(crash_ids)

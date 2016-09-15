@@ -17,6 +17,7 @@ from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
 
 from socorrolib.lib import BadArgumentError, MissingArgumentError
+from socorro.external.crashstorage_base import CrashIDNotFound
 
 import crashstats
 from crashstats.crashstats.decorators import track_api_pageview
@@ -39,6 +40,10 @@ BAD_REQUEST_EXCEPTIONS = (
     BadArgumentError,
     MissingArgumentError,
     models.RequiredParameterError,
+)
+
+NOT_FOUND_EXCEPTIONS = (
+    CrashIDNotFound,
 )
 
 
@@ -337,6 +342,11 @@ def model_wrapper(request, model_name):
                     content_type='application/json; charset=UTF-8'
                 )
             raise
+        except NOT_FOUND_EXCEPTIONS as exception:
+            return http.HttpResponseNotFound(
+                json.dumps({'error': str(exception)}),
+                content_type='application/json; charset=UTF-8'
+            )
         except BAD_REQUEST_EXCEPTIONS as exception:
             return http.HttpResponseBadRequest(
                 json.dumps({'error': str(exception)}),

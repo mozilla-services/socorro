@@ -28,6 +28,9 @@ from crashstats.crashstats.models import (
     Reprocessing,
     ProductBuildTypes,
     Status,
+    ProcessedCrash,
+    RawCrash,
+    UnredactedCrash,
 )
 from crashstats.tokens.models import Token
 
@@ -767,8 +770,7 @@ class TestViews(BaseTestViews):
         ok_(dump['hits'])
         ok_(dump['total'])
 
-    @mock.patch('requests.get')
-    def test_ProcessedCrash(self, rget):
+    def test_ProcessedCrash(self):
         url = reverse('api:model_wrapper', args=('ProcessedCrash',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -776,11 +778,9 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data' in url, url
-
+        def mocked_get(**params):
             if 'datatype' in params and params['datatype'] == 'processed':
-                return Response({
+                return {
                     "client_crash_date": "2012-06-11T06:08:45",
                     "dump": dump,
                     "signature": "FakeSignature1",
@@ -812,10 +812,10 @@ class TestViews(BaseTestViews):
                     "upload_file_minidump_flash1": "a crash",
                     "upload_file_minidump_flash2": "a crash",
                     "upload_file_minidump_plugin": "a crash"
-                })
-            raise NotImplementedError(url)
+                }
+            raise NotImplementedError
 
-        rget.side_effect = mocked_get
+        ProcessedCrash.implementation().get.side_effect = mocked_get
 
         response = self.client.get(url, {
             'crash_id': '123',
@@ -826,8 +826,7 @@ class TestViews(BaseTestViews):
         ok_('upload_file_minidump_flash2' in dump)
         ok_('url' not in dump)
 
-    @mock.patch('requests.get')
-    def test_UnredactedCrash(self, rget):
+    def test_UnredactedCrash(self):
         url = reverse('api:model_wrapper', args=('UnredactedCrash',))
         response = self.client.get(url)
         # because we don't have the sufficient permissions yet to use it
@@ -855,11 +854,9 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['crash_id'])
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data/' in url
-
+        def mocked_get(**params):
             if 'datatype' in params and params['datatype'] == 'unredacted':
-                return Response({
+                return {
                     "client_crash_date": "2012-06-11T06:08:45",
                     "dump": dump,
                     "signature": "FakeSignature1",
@@ -892,10 +889,10 @@ class TestViews(BaseTestViews):
                     "upload_file_minidump_flash2": "a crash",
                     "upload_file_minidump_plugin": "a crash",
                     "exploitability": "Unknown Exploitability",
-                })
-            raise NotImplementedError(url)
+                }
+            raise NotImplementedError
 
-        rget.side_effect = mocked_get
+        UnredactedCrash.implementation().get.side_effect = mocked_get
 
         response = self.client.get(url, {
             'crash_id': '123',
@@ -906,13 +903,11 @@ class TestViews(BaseTestViews):
         ok_('upload_file_minidump_flash2' in dump)
         ok_('exploitability' in dump)
 
-    @mock.patch('requests.get')
-    def test_RawCrash(self, rget):
+    def test_RawCrash(self):
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data' in url
+        def mocked_get(**params):
             if 'uuid' in params and params['uuid'] == 'abc123':
-                return Response({
+                return {
                     "InstallTime": "1366691881",
                     "AdapterVendorID": "0x8086",
                     "Theme": "classic/1.0",
@@ -946,10 +941,10 @@ class TestViews(BaseTestViews):
                     "upload_file_minidump_flash1": "a crash",
                     "upload_file_minidump_flash2": "a crash",
                     "upload_file_minidump_plugin": "a crash"
-                })
-            raise NotImplementedError(url)
+                }
+            raise NotImplementedError
 
-        rget.side_effect = mocked_get
+        RawCrash.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url)
@@ -977,16 +972,14 @@ class TestViews(BaseTestViews):
         ok_('http://p0rn.com' not in dump['Comments'])
         ok_('mail@email.com' not in dump['Comments'])
 
-    @mock.patch('requests.get')
-    def test_RawCrash_binary_blob(self, rget):
+    def test_RawCrash_binary_blob(self):
 
-        def mocked_get(url, params, **options):
-            assert '/crash_data' in url
+        def mocked_get(**params):
             if 'uuid' in params and params['uuid'] == 'abc':
-                return Response('\xe0')
-            raise NotImplementedError(url)
+                return '\xe0'
+            raise NotImplementedError
 
-        rget.side_effect = mocked_get
+        RawCrash.implementation().get.side_effect = mocked_get
 
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url, {
@@ -996,7 +989,6 @@ class TestViews(BaseTestViews):
         # because we don't have permission
         eq_(response.status_code, 403)
 
-        url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url, {
             'crash_id': 'abc',
             'format': 'wrong'  # note
