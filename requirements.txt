@@ -36,8 +36,6 @@ configman==1.2.11 \
     --hash=sha256:16798e8a67467f50f8f9b080c8e70a41f0ff7d2dd061e74423e53bc7ed92fb8d
 configobj==4.7.2 \
     --hash=sha256:515ff923462592e8321df8b48c47e3428f8d406ee22b8de77bef969d1af11171
-hbase-thrift==0.20.4 \
-    --hash=sha256:a33e36759cba1a8c31c3c01e943b4ee204604d6ff13dda281f8f3893b23910e6
 isodate==0.5.4 \
     --hash=sha256:42105c41d037246dc1987e36d96f3752ffd5c0c24834dd12e4fdbe1e79544e31
 lxml==3.5.0 \

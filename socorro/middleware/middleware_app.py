@@ -123,7 +123,6 @@ class MiddlewareApp(App):
         'implementation_list',
         doc='list of packages for service implementations',
         default='psql:socorro.external.postgresql, '
-                'hbase:socorro.external.hb, '
                 'es:socorro.external.es, '
                 'fs:socorro.external.fs, '
                 'http:socorro.external.http, '
@@ -134,7 +133,7 @@ class MiddlewareApp(App):
 
     required_config.implementations.add_option(
         'service_overrides',
-        doc='comma separated list of class overrides, e.g `Crashes: hbase`',
+        doc='comma separated list of class overrides, e.g `Query: es`',
         default='Correlations: http, '
                 'CorrelationsSignatures: http, '
                 'SuperSearch: es, '
@@ -153,17 +152,6 @@ class MiddlewareApp(App):
         'crashstorage_class',
         default='socorro.external.postgresql.crashstorage.'
                 'PostgreSQLCrashStorage',
-        from_string_converter=class_converter
-    )
-
-    #--------------------------------------------------------------------------
-    # hbase namespace
-    #     the namespace is for external implementations of the services
-    #-------------------------------------------------------------------------
-    required_config.namespace('hbase')
-    required_config.hbase.add_option(
-        'hbase_class',
-        default='socorro.external.boto.crashstorage.BotoS3CrashStorage',
         from_string_converter=class_converter
     )
 

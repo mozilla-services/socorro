@@ -56,7 +56,6 @@ rsync -a sql $BUILD_DIR/application
 rsync -a wsgi $BUILD_DIR/application
 rsync -a stackwalk $BUILD_DIR/
 rsync -a scripts/stackwalk.sh $BUILD_DIR/stackwalk/bin/
-rsync -a analysis $BUILD_DIR/
 rsync -a alembic $BUILD_DIR/application
 rsync -a webapp-django $BUILD_DIR/
 # because this file is served from the parent of the `webapp-django/` directory

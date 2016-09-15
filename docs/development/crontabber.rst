@@ -342,8 +342,8 @@ Writing cron apps (aka. jobs)
 
 Because of the configurable nature of the ``crontabber`` the actual
 cron apps can be located anywhere. For example, if it's related to
-``HBase`` it could for example be in
-``socorro/external/hbase/mycronapp.py``. However, for the most part
+``S3`` it could for example be in
+``socorro/external/boto/mycronapp.py``. However, for the most part
 it's probably a good idea to write them in ``socorro/cron/jobs/`` and
 write one class per file to make it clear. There are already some
 "sample apps" in there that does nothing except serving as good

@@ -22,4 +22,4 @@ failed saves. This file system would likely be an NFS mounted file
 system.
 
 After a crash is saved, there is an app called :ref:`crashmover-chapter` that
-will transfer the crashes to HBase.
+will transfer the crashes to S3.

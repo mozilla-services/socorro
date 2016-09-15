@@ -53,7 +53,7 @@ in the ``TransactionExecutor`` is
 you can see `here
 <https://github.com/mozilla/socorro/blob/master/socorro/database/transaction_executor.py#L29>`_
 
-The idea is that any external module (e.g. HBase, PostgreSQL, etc)
+The idea is that any external module (e.g. Boto, PostgreSQL, etc)
 can define a ``ConnectionContext`` class as per this model. What its job
 is is to create and close connections and it has to do so in a
 contextmanager. What that means is that you can do this::
