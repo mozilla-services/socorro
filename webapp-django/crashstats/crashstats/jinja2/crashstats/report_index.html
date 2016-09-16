@@ -39,7 +39,10 @@
 
     <div class="panel">
         <div class="body">
-            <div id="sumo-link"><a href="https://support.mozilla.org/search?{{ make_query_string(q=report.signature) }}" title="Find more answers at support.mozilla.org!">Search Mozilla Support for Help</a></div>
+            <div id="sumo-link">
+                <a href="https://support.mozilla.org/search?{{ make_query_string(q=report.signature) }}" title="Find more answers at support.mozilla.org!">Search Mozilla Support for this signature</a>
+                <a href="https://developer.mozilla.org/en-US/docs/Understanding_crash_reports" title="MDN documentation about crash reports">How to read this crash report</a>
+            </div>
 
             <div id="report-header-details">
                 ID: <code>{{ report.uuid }}</code><br/>
