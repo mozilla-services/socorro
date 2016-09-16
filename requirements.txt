@@ -140,8 +140,9 @@ django-jsonfield==0.9.15 \
     --hash=sha256:429690b1c69cbd65c6c592c66d1592f8a1cf3d5282103083731fa90ea53c17c2
 eventlog==0.8.0 \
     --hash=sha256:8935e34589a6549b2dce6eeffae40d22739eb55b6a994a30f66a428d6f98b813
-pyOpenSSL==0.14 \
-    --hash=sha256:a99db8e59c120138ad8a72eecedcc24b4510d2eed3ce48213b7e32f22cc4ee6e
+pyOpenSSL==16.1.0 \
+    --hash=sha256:13a0d85cb44b2b20117b1ff51b3bce4947972f2f5e5e705a2f9d616457f127ca \
+    --hash=sha256:88f7ada2a71daf2c78a4f139b19d57551b4c8be01f53a1cb5c86c2f3bf01355f
 ndg-httpsclient==0.4.0 \
     --hash=sha256:e8c155fdebd9c4bcb0810b4ed01ae1987554b1ee034dd7532d7b8fdae38a6274
 pyasn1==0.1.7 \
