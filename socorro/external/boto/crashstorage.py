@@ -71,7 +71,7 @@ class BotoCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'json_object_hook',
-        default='configman.dotdict.DotDict',
+        default='socorrolib.lib.util.DotDict',
         from_string_converter=class_converter,
     )
 
