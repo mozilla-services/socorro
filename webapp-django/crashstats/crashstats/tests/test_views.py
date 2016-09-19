@@ -592,7 +592,7 @@ class TestViews(BaseTestViews):
         url = reverse('home:home', args=('Unknown',))
         response = self.client.get(url)
         eq_(response.status_code, 404)
-        ok_('Page not Found' in response.content)
+        ok_('Page Not Found' in response.content)
         ok_('id="products_select"' not in response.content)
 
     def test_handler404_json(self):

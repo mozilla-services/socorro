@@ -15,6 +15,7 @@ patch()
 
 handler500 = 'crashstats.base.views.handler500'
 handler404 = 'crashstats.base.views.handler404'
+handler400 = 'crashstats.base.views.handler400'
 
 
 urlpatterns = patterns(

@@ -1,24 +1,19 @@
-{% extends "crashstats_base.html" %}
-
-{% block page_title %}
-Internal Server Error
-{% endblock %}
-
-{% block product_nav_filter %}&nbsp;{% endblock %}
-
+{% extends "error.html" %}
+{% block page_title %}Internal Server Error{% endblock %}</title>
 {% block content %}
 <div id="mainbody">
+    <div class="page-heading">
+        <h2>Internal Server Error</h2>
+    </div>
     <div class="panel">
         <div class="title">
-            <h2>Internal Server Error</h2>
+            <h2>Something went wrong, it is not you it's me.</h2>
         </div>
 
         <div class="body">
-            <p>Something went wrong, it is not you it's me</p>
-            <p>Please file an <a href="https://bugzilla.mozilla.org/enter_bug.cgi?{{ make_query_string(
+            <p>Please file an <a class="bugzilla-link" href="https://bugzilla.mozilla.org/enter_bug.cgi?{{ make_query_string(
                 product='Socorro',
                 component='Webapp',
-                bug_file_loc=request.build_absolute_uri(),
             ) }}">issue in Bugzilla</a> describing what happened, and please include the URL for this page.</p>
         </div>
     </div>

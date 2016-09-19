@@ -32,12 +32,7 @@
     {{ browserid_info() }}
     {% endif %}
     <div class="page-header">
-        <h1>
-            <a href="/">
-                <span class="icon"></span>
-                <span class="title">Mozilla Crash Reports</span>
-            </a>
-        </h1>
+        {% include "header_title.html" %}
 
         <form id="simple_search" method="get" action="{{ url('crashstats:quick_search') }}">
             <label for="q" class="visually-hidden">Search</label>
@@ -159,17 +154,8 @@
     {% block content %}{% endblock %}
 
     <div id="footer" class="page-footer">
-        <div class="nav">
-            <div class="about">
-                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> - All dates are UTC
-            </div>
-            <ul>
-                <li><a href="{{ url('documentation:home') }}">User Documentation</a></li>
-                <li><a href="{{ url('api:documentation') }}">API</a></li>
-                <li><a href="https://github.com/mozilla/socorro">Source</a></li>
-                <li><a href="https://www.mozilla.org/privacy/websites/">Privacy Policy</a></li>
-            </ul>
-        </div>
+        {% include "footer_nav.html" %}
+
         <div class="login">
             <ul>
                 <li>

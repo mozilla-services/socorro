@@ -1,13 +1,11 @@
-{% extends "crashstats_base.html" %}
+{% extends "error.html" %}
 
 {% block page_title %}Page Not Found{% endblock %}
-
-{% block product_nav_filter %}&nbsp;{% endblock %}
 
 {% block content %}
 <div id="mainbody">
     <div class="page-heading">
-        <h2>Page not Found</h2>
+        <h2>Page Not Found</h2>
     </div>
     <div class="panel">
         <div class="title">
@@ -15,10 +13,9 @@
         </div>
         <div class="body">
             <p>If you followed a dead link on the website, please file an
-                <a href="https://bugzilla.mozilla.org/enter_bug.cgi?{{ make_query_string(
+                <a class="bugzilla-link" href="https://bugzilla.mozilla.org/enter_bug.cgi?{{ make_query_string(
                     product='Socorro',
                     component='Webapp',
-                    bug_file_loc=request.build_absolute_uri()
                 ) }}">issue in Bugzilla</a> describing
                 what happened, and please include the URL for this page.</p>
         </div>
