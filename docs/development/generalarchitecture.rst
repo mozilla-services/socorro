@@ -19,8 +19,6 @@ will find the following folders. Here is what each of them contains:
 +-----------------+-------------------------------------------------------------+
 | Folder          | Description                                                 |
 +=================+=============================================================+
-| analysis/       | Contains metrics jobs such as mapreduce. Will be moved.     |
-+-----------------+-------------------------------------------------------------+
 | config/         | Contains the Apache configuration for the different parts   |
 |                 | of the Socorro application.                                 |
 +-----------------+-------------------------------------------------------------+
@@ -60,19 +58,7 @@ Here are descriptions of every submodule in there:
 +-------------------+---------------------------------------------------------------+
 | external          | Here are APIs related to external resources like databases.   |
 +-------------------+---------------------------------------------------------------+
-| integrationtest   | Osolete.                                                      |
-+-------------------+---------------------------------------------------------------+
-| lib               | Different libraries used all over Socorro’s code.             |
-+-------------------+---------------------------------------------------------------+
 | middleware        | New-style middleware services place.                          |
-+-------------------+---------------------------------------------------------------+
-| monitor           | All code related to monitors.                                 |
-+-------------------+---------------------------------------------------------------+
-| othertests        | Some other tests?                                             |
-+-------------------+---------------------------------------------------------------+
-| services          | Old-style middleware services place.                          |
-+-------------------+---------------------------------------------------------------+
-| storage           | HBase related code.                                           |
 +-------------------+---------------------------------------------------------------+
 | unittest          | All our unit tests are here.                                  |
 +-------------------+---------------------------------------------------------------+

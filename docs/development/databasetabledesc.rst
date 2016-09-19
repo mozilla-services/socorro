@@ -304,7 +304,7 @@ Contains crash-count summaries of crashes per architecture and number of cores. 
 
 *correlation_modules*
 
-Will contain crash-counts for modules per correlation.  Will be populated daily by pull from Hbase.
+Will contain crash-counts for modules per correlation.  Will be populated daily by pull from S3.
 
 *crashes_by_user, crashes_by_user_view*
 

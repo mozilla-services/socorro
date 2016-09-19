@@ -188,7 +188,7 @@ in AWS using Consul at https://github.com/mozilla/socorro-infra/
 
 Socorro has a very powerful and expressive configuration system, and can
 be configured to read from and write to a number of different data stores
-(S3, Elasticsearch, HBase, PostgreSQL) and use queues (RabbitMQ)
+(S3, Elasticsearch, PostgreSQL) and use queues (RabbitMQ)
 
 For instance, to have processor store crashes to both to the filesystem and to
 ElasticSearch:

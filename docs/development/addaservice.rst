@@ -16,7 +16,7 @@ URL with parameters. Documentation for each service is available in the
 Those services are not containing any code, but are only interfaces. They are
 using other resources from the external module. That external module is
 composed of one submodule for each external resource we are using. For example,
-there is a PostgreSQL submodule, an elasticsearch submodule and an HBase
+there is a PostgreSQL submodule, an elasticsearch submodule and a boto (AWS S3)
 submodule.
 
 You will also find some common code among external resources in

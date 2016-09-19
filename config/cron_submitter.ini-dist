@@ -119,41 +119,6 @@
     # converter: str
     dump_file_suffix='.dump'
 
-    # name: forbidden_keys
-    # doc: a comma delimited list of keys banned from the processed crash in HBase
-    # converter: socorro.external.hbase.connection_context.<lambda>
-    forbidden_keys='email, url, user_id, exploitability'
-
-    # name: hbase_connection_pool_class
-    # doc: the class responsible for pooling and giving out HBaseconnections
-    # converter: configman.converters.class_converter
-    hbase_connection_pool_class='socorro.external.hbase.connection_context.HBaseConnectionContextPooled'
-
-    # name: hbase_host
-    # doc: Host to HBase server
-    # converter: str
-    hbase_host='localhost'
-
-    # name: hbase_port
-    # doc: Port to HBase server
-    # converter: int
-    hbase_port='9090'
-
-    # name: hbase_timeout
-    # doc: timeout in milliseconds for an HBase connection
-    # converter: int
-    hbase_timeout='5000'
-
-    # name: number_of_retries
-    # doc: Max. number of retries when fetching from hbaseClient
-    # converter: int
-    number_of_retries='2'
-
-    # name: source_implementation
-    # doc: a class for a source of raw crashes
-    # converter: configman.converters.class_converter
-    source_implementation='socorro.external.hbase.crashstorage.HBaseCrashStorage'
-
     # name: sql
     # doc: an sql string that selects crash_ids
     # converter: str
@@ -195,4 +160,3 @@
     # doc: the number of crashes to submit (all, forever, 1...)
     # converter: str
     number_of_submissions='all'
-

@@ -62,40 +62,6 @@
         # umask to use for new files
         #umask=18
 
-    [[hb]]
-
-        #+include ./common_hb.ini
-
-        # delays in seconds between retries
-        #backoff_delays=10, 30, 60, 120, 300
-
-        # the suffix used to identify a dump file (for use in temp files)
-        #dump_file_suffix=.dump
-
-        # the class responsible for proving an hbase connection
-        #hbase_connection_context_class=socorro.external.hb.connection_context.HBaseConnectionContext
-
-        # Host to HBase server
-        #hbase_host=localhost
-
-        # Port to HBase server
-        #hbase_port=9090
-
-        # timeout in milliseconds for an HBase connection
-        #hbase_timeout=5000
-
-        # the maximum number of new crashes to yield at a time
-        #new_crash_limit=1000000
-
-        # a local filesystem path where dumps temporarily during processing
-        #temporary_file_system_storage_path=/tmp
-
-        # a class that will execute transactions
-        #transaction_executor_class=socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff
-
-        # seconds between log during retries
-        #wait_log_interval=10
-
     [[logging]]
 
         #+include ./common_logging.ini
@@ -263,59 +229,6 @@
     # see "resource.fs.umask" for the default or override it here
     #umask=18
 
-[hbase]
-
-    # delays in seconds between retries
-    # see "resource.hb.backoff_delays" for the default or override it here
-    #backoff_delays=10, 30, 60, 120, 300
-
-    # the suffix used to identify a dump file (for use in temp files)
-    # see "resource.hb.dump_file_suffix" for the default or override it here
-    #dump_file_suffix=.dump
-
-    # a list of keys not allowed in a redacted processed crash
-    # see "resource.redactor.forbidden_keys" for the default or override it here
-    #forbidden_keys=url, email, user_id, exploitability,json_dump.sensitive,upload_file_minidump_flash1.json_dump.sensitive,upload_file_minidump_flash2.json_dump.sensitive,upload_file_minidump_browser.json_dump.sensitive,memory_info
-
-    # None
-    #hbase_class=socorro.external.hb.crashstorage.HBaseCrashStorage
-
-    # the class responsible for proving an hbase connection
-    # see "resource.hb.hbase_connection_context_class" for the default or override it here
-    #hbase_connection_context_class=socorro.external.hb.connection_context.HBaseConnectionContext
-
-    # Host to HBase server
-    # see "resource.hb.hbase_host" for the default or override it here
-    #hbase_host=localhost
-
-    # Port to HBase server
-    # see "resource.hb.hbase_port" for the default or override it here
-    #hbase_port=9090
-
-    # timeout in milliseconds for an HBase connection
-    # see "resource.hb.hbase_timeout" for the default or override it here
-    #hbase_timeout=5000
-
-    # the maximum number of new crashes to yield at a time
-    # see "resource.hb.new_crash_limit" for the default or override it here
-    #new_crash_limit=1000000
-
-    # the name of the class that implements a 'redact' method
-    # see "resource.redactor.redactor_class" for the default or override it here
-    #redactor_class=socorro.external.crashstorage_base.Redactor
-
-    # a local filesystem path where dumps temporarily during processing
-    # see "resource.hb.temporary_file_system_storage_path" for the default or override it here
-    #temporary_file_system_storage_path=/tmp
-
-    # a class that will execute transactions
-    # see "resource.hb.transaction_executor_class" for the default or override it here
-    #transaction_executor_class=socorro.database.transaction_executor.TransactionExecutorWithInfiniteBackoff
-
-    # seconds between log during retries
-    # see "resource.hb.wait_log_interval" for the default or override it here
-    #wait_log_interval=10
-
 [http]
 
     [[correlations]]
@@ -336,9 +249,9 @@
 [implementations]
 
     # list of packages for service implementations
-    #implementation_list=psql: socorro.external.postgresql, hbase: socorro.external.hb, es: socorro.external.es, fs: socorro.external.fs, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq
+    #implementation_list=psql: socorro.external.postgresql, boto: socorro.external.boto, es: socorro.external.es, fs: socorro.external.fs, http: socorro.external.http, rabbitmq: socorro.external.rabbitmq
 
-    # comma separated list of class overrides, e.g `Crashes: hbase`
+    # comma separated list of class overrides, e.g `Crashes: boto`
     #service_overrides=CrashData: fs, Correlations: http, CorrelationsSignatures: http, SuperSearch: es, Priorityjobs: rabbitmq, Query: es
 
 [introspection]

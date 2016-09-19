@@ -32,16 +32,16 @@ Concrete implementation:
 * `NullCrashStorage`: Silently ignores everything it is told to do.
 
 Examples of other concrete implementations are: `PostgreSQLCrashStorage`,
-`HBaseCrashStorage`.
+`BotoCrashStorage`.
 
 CrashStorage containers for aggregating multiple crash storage implementations:
 
 * `PolyCrashStorage`: Container for other crash storage systems.
 * `FallbackCrashStorage`: Container for two other crash storage systems,
   a primary and a secondary. Attempts on the primary, if it fails it will
-  fallback to the secondary. In use when we had primary/secondary HBase.
-  Can be heterogeneous, example: Hbase + filesystem and use crashmovers to
-  move from filesystem into hbase when hbase comes back.
+  fallback to the secondary. In use when we have cutover between data stores.
+  Can be heterogeneous, example: S3 + filesystem and use crashmovers to
+  move from filesystem into S3 when S3 comes back.
 * `PrimaryDeferredStorage`: Container for two different storage systems and a
   predicate function. If predicate is false, store in primary, otherwise
   store in secondary. Usecase: situation where we want crashes to be put
@@ -142,7 +142,7 @@ Use cases:
 
 * For Mozilla use by the collectors.
 * For other users, you can use this class as your primary storage instead of
-HBase. Be sure to implement this in collectors, crashmovers, processors and
+S3. Be sure to implement this in collectors, crashmovers, processors and
 middleware (depending on which components you use in your configuration).
 
 `Important ops note:`
@@ -167,48 +167,6 @@ Classes:
 * `FSLegacyDatedRadixTreeStorage` - In production use on collectors. Use
   in-filesystem queueing techniques so that we know which crashes are new.
   Backwards compatible with `socorro.external.filesystem` (aka the 2009 system).
-
-socorro.external.hb
--------------------
-
-socorro.external.hb.crashstorage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This is used by crashmovers, processors. In the future, our middleware will
-also use this instead of socorro.external.hbase. Can store raw crashes and
-dumps. It has no knowledge of aggregations or normalized data.
-
-*TODO: Needs crash_data to be implemented for middleware*
-
-Special functions:
-
-* `crash_id_to_timestamped_row_id`: HBase uses a different primary key than our
-  internal UUID. Taking the first character and last six, and copying them to the
-  front of the UUID. First character is the salt for the region, and the next
-  six provide the date, for ordering. Sometimes you'll see 'ooid' or 'uuid' in
-  the docs, but we really mean `crash_id`.
-
-Implementation:
-
-* `HBaseCrashStorage`: implements access to HBase. HBase schema is defined in
-  ``analysis/hbase_schema``.
-
-Exceptions:
-
-* `BadCrashIdException`: just passes
-
-socorro.external.hb.connection_context
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* `HBaseConnection`: all of the code that implements the core connection. Loose
-  wrapper around a bare socket speaking Thrift protocol. Commit/rollback are
-  noops.
-
-* `HBaseConnectionContext`: In production use. A factory in the form of a
-  functor for creating the HBaseConnection instances.
-
-* `HBasePersistentConnectionContext`: These are "pooled" so you can use them
-  again without closing. We don't use it and appears to be broken.
 
 socorro.external.postgresql
 ---------------------------
@@ -303,11 +261,6 @@ socorro.external.filesystem
 
 * Preceded `socorro.external.fs`.
 
-socorro.external.hbase
-^^^^^^^^^^^^^^^^^^^^^^
-
-* Still in use by the middleware for `crash_data`.
-
 socorro.storage
 ^^^^^^^^^^^^^^^
 
@@ -331,7 +284,7 @@ Which classes are used with which _app
   using `PolyCrashStore`. In testing we use `socorro.external.fs`,
   `socorro.external.rabbitmq`, and `socorro.external.postgresql`.
 
-* `socorro.middleware.middleware_app`: In production: `socorro.external.hbase`.
+* `socorro.middleware.middleware_app`: In production: `socorro.external.boto`.
   In testing: we use `socorro.external.fs` and `socorro.external.postgresql`.
 
 * `socorro.collector.submitter_app`: Defines it's own storage classes:
@@ -339,8 +292,6 @@ Which classes are used with which _app
   inside the app. Also has `SamplingCrashStorageSource` does a query to PostgreSQL
   to get a list of crashstorage ids and uses any other crashstorage as a source
   for the raw crashes that it pulls.
-
-*TODO: update submitter_app to use the new socorro.external.hb instead of hbase*
 
 Which classes can be used together
 ----------------------------------
