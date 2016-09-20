@@ -1,4 +1,4 @@
-/*global $ window Analytics */
+/*global $ window Analytics socorro Qs BugLinks */
 
 $(function () {
     'use strict';
@@ -71,7 +71,7 @@ $(function () {
                 // Put the first tab's id in the hash of the URL.
                 var hash = '#' + ui.panel.attr('id');
                 pushHistoryState(params, url, hash, true);
-            }
+            },
         });
 
         // Handle server-side sorting.
@@ -79,9 +79,9 @@ $(function () {
         $('#reports-list').tablesorter({
             headers: {
                 0: {  // disable the first column, `Crash ID`
-                    sorter: false
-                }
-            }
+                    sorter: false,
+                },
+            },
         });
 
         // Make sure there are more than 1 page of results. If not,
@@ -128,7 +128,9 @@ $(function () {
         try {
             contentElt.tabs('destroy');
         }
-        catch (e) {}
+        catch (e) {
+            // It is possible that no tabs existed before, and that is fine.
+        }
         contentElt.empty().append($('<div>', {'class': 'loader'}));
 
         // If a tracker is available, track that AJAX call.
@@ -137,7 +139,7 @@ $(function () {
         $.ajax({
             url: url,
             success: showResults,
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR) {
                 var errorContent = $('<div>', {class: 'error'});
 
                 if (jqXHR.status >= 400 && jqXHR.status < 500) {
@@ -157,14 +159,14 @@ $(function () {
                         $('<p>', {
                             text: 'We have been automatically informed ' +
                                   'of that error, and are working on a ' +
-                                  'solution. '
+                                  'solution. ',
                         })
                     );
                 }
 
                 contentElt.empty().append(errorContent);
             },
-            dataType: 'HTML'
+            dataType: 'HTML',
         });
     }
 
@@ -198,7 +200,7 @@ $(function () {
         var queryString = Qs.stringify(params, { indices: false });
         queryString = queryString.replace(/!/g, '%21');
         $('input[name=_public_api_url]', form).val(
-            BASE_URL + form.data('public-api-url') + '?' + queryString
+            window.BASE_URL + form.data('public-api-url') + '?' + queryString
         );
     }
 
@@ -284,7 +286,7 @@ $(function () {
         form.dynamicForm('newLine', {
             field: name,
             operator: '=', // will fall back to the default operator if 'is exactly' is not implemented for that field
-            value: value
+            value: value,
         });
     }
 
@@ -324,11 +326,11 @@ $(function () {
         // Create the simple search form.
         $('input[type=text]', simpleSearchContainer).select2({
             'width': 'element',
-            'tags': []
+            'tags': [],
         });
         $('select', simpleSearchContainer).select2({
             'width': 'element',
-            'closeOnSelect': false
+            'closeOnSelect': false,
         });
 
         // Create the advanced search form.
@@ -430,23 +432,23 @@ $(function () {
         });
 
         // Make the columns input sortable
-        columnsInput.on("change", function () {
-            $("input[name=_columns]").val(columnsInput.val());
+        columnsInput.on('change', function () {
+            $('input[name=_columns]').val(columnsInput.val());
         });
 
-        columnsInput.select2("container").find("ul.select2-choices").sortable({
+        columnsInput.select2('container').find('ul.select2-choices').sortable({
             containment: 'parent',
             start: function () {
-                columnsInput.select2("onSortStart");
+                columnsInput.select2('onSortStart');
             },
             update: function () {
-                columnsInput.select2("onSortEnd");
-            }
+                columnsInput.select2('onSortEnd');
+            },
         });
 
         // Show or hide advanced options.
         var optionsElt = $('fieldset.options', form);
-        $('h4', optionsElt).click(function (e) {
+        $('h4', optionsElt).click(function () {
             $('h4 + div', optionsElt).toggle();
             $('span', this).toggle();
         });
