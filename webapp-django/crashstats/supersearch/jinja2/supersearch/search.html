@@ -25,49 +25,64 @@
 
     <section id="search-form">
         <form method="get" action="{{ url('supersearch.search') }}"
-            data-fields-url="{{ url('supersearch.search_fields') }}"
+            data-fields-url="{{ url('supersearch.search_fields') }}?{{ make_query_string(exclude='date') }}"
             data-results-url="{{ url('supersearch.search_results') }}"
             data-custom-url="{{ url('supersearch.search_custom') }}"
             data-public-api-url="{{ url('api:model_wrapper', 'SuperSearch') }}"
         >
-            <header>
-                <button type="submit" id="search-button">Search</button>
-                <button class="new-line">New line</button>
+            <div class="form-controls">
                 {% if not waffle.switch('supersearch-custom-query-disabled') and request.user.has_perm('crashstats.run_custom_queries') %}
                 <button class="customize">Customize</button>
                 {% endif %}
+                <button class="new-line">New line</button>
+                <button type="submit" id="search-button">Search</button>
+            </div>
 
-                <h4>Search Filters</h4>
-            </header>
+            <fieldset class="date-filters">
+                <div>
+                    <label for="date_from">From</label>
+                    {{ datetime_picker('date_from', dates.from) }}
+                </div>
+                <div>
+                    <label for="date_to">To</label>
+                    {{ datetime_picker('date_to', dates.to) }}
+                </div>
+            </fieldset>
+
+            <p class="date-shortcuts">
+                Shortcuts, last
+                <a href="#" data-range="1d">24 hours</a> -
+                <a href="#" data-range="3d">3 days</a> -
+                <a href="#" data-range="7d">7 days</a> -
+                <a href="#" data-range="2w">14 days</a> -
+                <a href="#" data-range="1M">1 month</a> -
+                <a href="#" data-range="3M">3 months</a> -
+                <a href="#" data-range="6M">6 months</a>
+            </p>
 
             <!-- Simplified search UI -->
-            <div id="simple-search">
-                <fieldset>
-                    {% for field, field_data, examples in simple_search_data %}
-                    <div>
-                        <label for="simple-{{ field }}">
-                            {{ field | replace('_', ' ') | capitalize }}
-                        </label>
-                        <select name="{{ field }}" id="simple-{{ field }}"
-                            multiple="multiple"
-                            placeholder="{{ ', '.join(examples) }}..."
-                        >
-                            {% for opt in field_data %}
-                            <option value="{{ opt[0] }}">{{ opt[1] }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% endfor %}
-                </fieldset>
-            </div>
+            <fieldset id="simple-search">
+                {% for field, field_data, examples in simple_search_data %}
+                <div>
+                    <label for="simple-{{ field }}">
+                        {{ field | replace('_', ' ') | capitalize }}
+                    </label>
+                    <select name="{{ field }}" id="simple-{{ field }}"
+                        multiple="multiple"
+                        placeholder="{{ ', '.join(examples) }}..."
+                    >
+                        {% for opt in field_data %}
+                        <option value="{{ opt[0] }}">{{ opt[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+            </fieldset>
 
 
             <!-- Advanced search UI -->
             <div id="advanced-search">
-
                 <fieldset id="search-params-fieldset"></fieldset>
-
-                <p><em>Note: by default, the date will be a range between now and a week ago. You can override the lower bound, the upper bound, or both. </em></p>
             </div>
 
             <fieldset class="options">
@@ -122,5 +137,6 @@ var BASE_URL = location.protocol + '//' + location.host;
     {% javascript 'dynamic_form' %}
     {% javascript 'socorro_utils' %}
     {% javascript 'bugzilla' %}
+    {% javascript 'date_filters' %}
     {% javascript 'search' %}
 {% endblock %}

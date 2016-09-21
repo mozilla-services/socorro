@@ -5,6 +5,7 @@
 PIPELINE_CSS = {
     'search': {
         'source_filenames': (
+            'crashstats/css/lib/flatpickr.dark.min.css',
             'supersearch/css/search.less',
         ),
         'output_filename': 'css/search.min.css',
@@ -175,6 +176,13 @@ PIPELINE_JS = {
             'manage/js/pagination_utils.js',
         ),
         'output_filename': 'js/pagination.min.js',
+    },
+    'date_filters': {
+        'source_filenames': (
+            'crashstats/js/lib/flatpickr.min.js',
+            'supersearch/js/socorro/date_filters.js',
+        ),
+        'output_filename': 'js/date-filters.min.js',
     },
     'dynamic_form': {
         'source_filenames': (

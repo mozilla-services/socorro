@@ -26,12 +26,35 @@
 
     <section id="search-form">
         <form method="get" action="{{ url('signature:signature_report') }}"
-            data-fields-url="{{ url('supersearch.search_fields') }}?exclude=signature"
+            data-fields-url="{{ url('supersearch.search_fields') }}?{{ make_query_string(exclude=['signature', 'date']) }}"
             data-signature="{{ signature }}"
         >
-            <button type="submit" id="search-button">Search</button>
-            <button class="new-line">New line</button>
-            <h4>Search Filters</h4>
+            <div class="form-controls">
+                <button class="new-line">New line</button>
+                <button type="submit" id="search-button">Search</button>
+            </div>
+
+            <fieldset class="date-filters">
+                <div>
+                    <label for="date_from">From</label>
+                    {{ datetime_picker('date_from', query.start_date) }}
+                </div>
+                <div>
+                    <label for="date_to">To</label>
+                    {{ datetime_picker('date_to', query.end_date) }}
+                </div>
+            </fieldset>
+
+            <p class="date-shortcuts">
+                Shortcuts, last
+                <a href="#" data-range="1d">24 hours</a> -
+                <a href="#" data-range="3d">3 days</a> -
+                <a href="#" data-range="7d">7 days</a> -
+                <a href="#" data-range="2w">14 days</a> -
+                <a href="#" data-range="1M">1 month</a> -
+                <a href="#" data-range="3M">3 months</a> -
+                <a href="#" data-range="6M">6 months</a>
+            </p>
 
             <fieldset id="search-params-fieldset"></fieldset>
 
@@ -104,5 +127,6 @@ var DEFAULT_CHANNEL = '{{ channel }}';
 {% javascript 'bugzilla' %}
 {% javascript 'metricsgraphics' %}
 {% javascript 'correlation' %}
+{% javascript 'date_filters' %}
 {% javascript 'signature_report' %}
 {% endblock %}

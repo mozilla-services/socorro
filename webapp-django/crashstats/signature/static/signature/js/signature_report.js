@@ -1,4 +1,4 @@
-/* global socorro:true, $:true, Analytics:true */
+/* global socorro $ Analytics Qs DateFilters */
 
 var SignatureReport = {
     // Function to help with inheritance.
@@ -49,6 +49,10 @@ SignatureReport.init = function () {
     SignatureReport.getParamsWithSignature = function () {
         var params = form.dynamicForm('getParams');
         params.signature = SIGNATURE;
+
+        // Add dates from the date filters.
+        params.date = DateFilters.getDates();
+
         return params;
     };
 
@@ -124,6 +128,11 @@ SignatureReport.init = function () {
             }
             if (initialParams.signature) {
                 delete initialParams.signature;
+            }
+
+            if (initialParams.date) {
+                DateFilters.setDates(initialParams.date);
+                delete initialParams.date;
             }
 
             initialParams = socorro.search.getFilteredParams(initialParams);

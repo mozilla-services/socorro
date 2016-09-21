@@ -1,4 +1,4 @@
-/*global $ window Analytics socorro Qs BugLinks */
+/*global $ window Analytics socorro Qs BugLinks moment DateFilters */
 
 $(function () {
     'use strict';
@@ -221,6 +221,7 @@ $(function () {
     function getParams() {
         var params = form.dynamicForm('getParams');
 
+        // Add Simple Search parameters.
         $('select', simpleSearchContainer).each(function (i, item) {
             var name = item.name;
             var value = $(item).select2('val');
@@ -233,6 +234,9 @@ $(function () {
                 }
             }
         });
+
+        // Add dates from the date filters.
+        params.date = DateFilters.getDates();
 
         return params;
     }
@@ -254,6 +258,7 @@ $(function () {
      * Update the search form with new parameters.
      */
     function setParams(params) {
+        // Set Simple Search parameters.
         $('select', simpleSearchContainer).each(function (i, item) {
             if (item.name in params) {
                 var values = params[item.name];
@@ -275,6 +280,13 @@ $(function () {
                 $(item).select2('val', simpleValues);
             }
         });
+
+        // Set date filters values.
+        if (params.date) {
+            DateFilters.setDates(params.date);
+            delete params.date;
+        }
+
         form.dynamicForm('setParams', params);
     }
 
@@ -400,7 +412,8 @@ $(function () {
     }
 
     /**
-     * Initialize the form options fields, handling aggregations, sorting and more.
+     * Initialize the form options fields, handling aggregations, sorting,
+     * date filters and more.
      */
     function initFormOptions() {
         var sortFields = [];
