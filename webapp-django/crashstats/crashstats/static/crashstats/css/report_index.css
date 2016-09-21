@@ -10,3 +10,7 @@
     text-decoration: underline;
     text-decoration-style: dotted;
 }
+
+#sumo-link a {
+    margin-left: 5px;
+}
