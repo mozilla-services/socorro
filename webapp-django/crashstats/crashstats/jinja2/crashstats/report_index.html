@@ -606,13 +606,22 @@
 
                 <div id="rawdump" class="ui-tabs-hide">
                     <div class="code">{{ raw_stackwalker_output }}</div>
-                    {% if request.user.has_perm('crashstats.view_rawdump') %}
+
                     <h3>Download the Raw Dump</h3>
-                    {% for url in raw_dump_urls %}
-                    <p><a href="{{ url }}">{{ url }}</a></p>
-                    {% endfor %}
+                    {% if request.user.has_perm('crashstats.view_rawdump') %}
+                        {% for url in raw_dump_urls %}
+                            <p><a href="{{ url }}">{{ url }}</a></p>
+                        {% endfor %}
                     {% else %}
-                    <p>You need to be signed in to be able to download raw dumps.</p>
+                        <p>You need to be signed in to download raw dumps.</p>
+                    {% endif %}
+
+                    <h3>View the Unredacted Crash</h3>
+                    {% if request.user.has_perm('crashstats.view_rawdump') %}
+                        {% set unredacted_url = url('api:model_wrapper', model_name='UnredactedCrash') + '?' + make_query_string(crash_id=report.uuid) %}
+                        <p><a href="{{ unredacted_url }}" target="_blank">{{ unredacted_url }}</a></p>
+                    {% else %}
+                        <p>You need to be signed in to view unredacted crashes.</p>
                     {% endif %}
                 </div>
                 <!-- /rawdump -->

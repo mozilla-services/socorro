@@ -2428,7 +2428,11 @@ class TestViews(BaseTestViews):
         ok_(_SAMPLE_META['Email'] not in response.content)
         ok_(_SAMPLE_META['URL'] not in response.content)
         ok_(
-            'You need to be signed in to be able to download raw dumps.'
+            'You need to be signed in to download raw dumps.'
+            in response.content
+        )
+        ok_(
+            'You need to be signed in to view unredacted crashes.'
             in response.content
         )
         # Should not be able to see sensitive key from stackwalker JSON
