@@ -21,8 +21,7 @@ We suggest using a different virtual environment for these tests than the
 rest of Socorro so you're not mixing requirements:
 
 	$ mkvirtualenv socorro-tests
-	$ pip install -r e2e-tests/requirements.txt
-
+	$ pip install -r requirements.txt
 
 ___Running tests against localhost___
 
@@ -31,6 +30,10 @@ ___Running tests against localhost___
 ___Running the tests on stage___
 
 	$ py.test --driver Firefox tests/
+
+___Running tests against production___
+
+	$ py.test --driver Firefox --base-url https://crash-stats.mozilla.com tests/
 
 ___Running specific tests___
 
