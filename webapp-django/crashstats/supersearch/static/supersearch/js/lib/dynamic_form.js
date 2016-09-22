@@ -114,7 +114,6 @@
         $.getJSON(
             fieldsURL,
             function(data) {
-                $('.loader', container).remove();
                 fields = data;
                 sortedFieldNames = Object.keys(fields).sort();
                 if (initialParams) {
@@ -124,6 +123,7 @@
                 if (onReadyCallback) {
                     onReadyCallback();
                 }
+                $('.loader', container).remove();
             }
         );
 
