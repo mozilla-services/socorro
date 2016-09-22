@@ -2652,6 +2652,69 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
+    def test_report_index_with_shutdownhang_signature(self, rget, rpost):
+        rpost.side_effect = mocked_post_threeothersigs
+        json_dump = {
+            'crash_info': {
+                'crashing_thread': 2,
+            },
+            'status': 'OK',
+            'threads': [
+                {'frame_count': 0, 'frames': []},
+                {'frame_count': 0, 'frames': []},
+                {'frame_count': 0, 'frames': []},
+            ],
+            'modules': [],
+        }
+
+        def mocked_get(url, params, **options):
+            if 'correlations/signatures' in url:
+                return Response({
+                    'hits': [
+                        'FakeSignature1',
+                        'FakeSignature2'
+                    ],
+                    'total': 2
+                })
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                crash['signature'] = 'shutdownhang | foo::bar()'
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        url = reverse('crashstats:report_index', args=(crash_id,))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        ok_('Crashing Thread (2)' not in response.content)
+        ok_('Crashing Thread (0)' in response.content)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
     def test_report_index_fennecandroid_report(self, rget, rpost):
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'

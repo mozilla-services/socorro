@@ -467,7 +467,7 @@
 
                     {% if parsed_dump.threads %}
                     <div id="frames">
-                        <h2>Crashing Thread ({{ parsed_dump.crash_info.crashing_thread }})</h2>
+                        <h2>Crashing Thread ({{ crashing_thread }})</h2>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -478,7 +478,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for frame in parsed_dump.threads[parsed_dump.crash_info.crashing_thread].frames %}
+                                {% for frame in parsed_dump.threads[crashing_thread].frames %}
                                 <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
                                     <td>
                                         {% if frame.missing_symbols %}
@@ -508,7 +508,7 @@
 
                         <div id="allthreads">
                             {% for thread in parsed_dump.threads %}
-                            {% if thread.thread != parsed_dump.crash_info.crashing_thread %}
+                            {% if thread.thread != crashing_thread %}
                             <h2>Thread {{ thread.thread }}</h2>
                             <table class="data-table">
                                 <thead>
