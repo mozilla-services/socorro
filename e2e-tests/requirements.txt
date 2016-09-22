@@ -1,6 +1,11 @@
-bidpom
-PyPOM
-pytest~=3.0.0
-pytest-selenium
+bidpom==2.0.1
+PyPOM==1.0
+bidpom==2.0.1
+pytest==3.0.2
+pytest-base-url==1.1.0
+pytest-html==1.10.0
+pytest-selenium==1.3.1
+pytest-variables==1.4
 pytest-xdist==1.15.0
+selenium==2.53.6
 requests==2.11.1
