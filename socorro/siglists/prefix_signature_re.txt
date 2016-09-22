@@ -76,6 +76,9 @@ moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::.*
 mozilla::ipc::LogicError
+mozilla::ipc::MessageChannel::AssertWorkerThread
+mozilla::ipc::MessageChannel::Call
+mozilla::ipc::MessageChannel::CxxStackFrame::CxxStackFrame
 mozilla::ipc::MessageChannel::Send
 mozilla::ipc::RPCChannel::Call
 mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame
