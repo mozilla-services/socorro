@@ -38,8 +38,12 @@ $(function () {
         // Enable the date filters range shortcuts.
         $('.date-shortcuts').on('click', 'a', function (e) {
             e.preventDefault();
+            var thisElt = $(this);
 
-            var range = $(this).data('range');
+            $('.date-shortcuts a').removeClass('selected');
+            thisElt.addClass('selected');
+
+            var range = thisElt.data('range');
             var value = parseInt(range.slice(0, -1));
             var unit = range.slice(-1);
             var toDate = moment().utc().toDate();

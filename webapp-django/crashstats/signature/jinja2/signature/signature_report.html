@@ -1,3 +1,5 @@
+{% from "supersearch/macros/datetime_filters.html" import datetime_filters %}
+
 {% extends "crashstats_base.html" %}
 {% block page_title %}{{ signature }} - Signature report - Mozilla Crash Reports{% endblock %}
 
@@ -34,27 +36,7 @@
                 <button type="submit" id="search-button">Search</button>
             </div>
 
-            <fieldset class="date-filters">
-                <div>
-                    <label for="date_from">From</label>
-                    {{ datetime_picker('date_from', query.start_date) }}
-                </div>
-                <div>
-                    <label for="date_to">To</label>
-                    {{ datetime_picker('date_to', query.end_date) }}
-                </div>
-            </fieldset>
-
-            <p class="date-shortcuts">
-                Shortcuts, last
-                <a href="#" data-range="1d">24 hours</a> -
-                <a href="#" data-range="3d">3 days</a> -
-                <a href="#" data-range="7d">7 days</a> -
-                <a href="#" data-range="2w">14 days</a> -
-                <a href="#" data-range="1M">1 month</a> -
-                <a href="#" data-range="3M">3 months</a> -
-                <a href="#" data-range="6M">6 months</a>
-            </p>
+            {{ datetime_filters(query.start_date, query.end_date) }}
 
             <fieldset id="search-params-fieldset"></fieldset>
 

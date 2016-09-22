@@ -114,27 +114,27 @@ def datetime_picker(input_name, default_value=''):
     """
     return jinja2.Markup('''
         <span
-            class="datetime-picker {0}"
+            class="datetime-picker {input_name}"
             data-wrap="true"
             data-enable-time="true"
             data-utc="true"
             data-time_24hr="true"
             data-alt-input="true"
             data-alt-format="F j, Y - H:i"
-            date-default-date="{1}"
+            date-default-date="{default_value}"
         >
             <input
                 type="date"
-                name="{0}"
-                value="{1}"
+                name="{input_name}"
+                value="{default_value}"
                 data-input
             ><a data-toggle><i class="icon-calendar"></i></a>
         </span>
         '''.format(
-            input_name,
+            input_name=input_name,
             # We need special formatting here because that's the only timezone
             # format the JS library will correctly parse.
-            default_value.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            default_value=default_value.strftime('%Y-%m-%dT%H:%M:%SZ'),
         )
     )
 
