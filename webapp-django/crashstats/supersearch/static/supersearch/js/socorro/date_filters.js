@@ -54,29 +54,27 @@ $(function () {
             get: getDate,
             setDates: function (dates) {
                 // Set date filters values.
-                if (dates) {
-                    dates.forEach(function (value) {
-                        var date;
-                        if (value.indexOf('>') === 0) {
-                            if (value.indexOf('>=') === 0) {
-                                date = value.slice(2);
-                            }
-                            else {
-                                date = value.slice(1);
-                            }
-                            setDate('from', moment(date).toDate());
+                dates.forEach(function (value) {
+                    var date;
+                    if (value.indexOf('>') === 0) {
+                        if (value.indexOf('>=') === 0) {
+                            date = value.slice(2);
                         }
-                        else if (value.indexOf('<') === 0) {
-                            if (value.indexOf('<=') === 0) {
-                                date = value.slice(2);
-                            }
-                            else {
-                                date = value.slice(1);
-                            }
-                            setDate('to', moment(date).toDate());
+                        else {
+                            date = value.slice(1);
                         }
-                    });
-                }
+                        setDate('from', moment(date).toDate());
+                    }
+                    else if (value.indexOf('<') === 0) {
+                        if (value.indexOf('<=') === 0) {
+                            date = value.slice(2);
+                        }
+                        else {
+                            date = value.slice(1);
+                        }
+                        setDate('to', moment(date).toDate());
+                    }
+                });
             },
             getDates: function () {
                 var dateFrom = getDate('from');

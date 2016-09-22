@@ -1,4 +1,4 @@
-/*global $ window Analytics socorro Qs BugLinks moment DateFilters */
+/*global $ window Analytics socorro Qs BugLinks DateFilters */
 
 $(function () {
     'use strict';
@@ -412,8 +412,7 @@ $(function () {
     }
 
     /**
-     * Initialize the form options fields, handling aggregations, sorting,
-     * date filters and more.
+     * Initialize the form options fields, handling aggregations, sorting and more.
      */
     function initFormOptions() {
         var sortFields = [];
