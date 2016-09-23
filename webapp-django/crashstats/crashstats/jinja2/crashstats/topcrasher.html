@@ -154,13 +154,10 @@ Top Crashers for {{ product }} {{ version }}
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td class="signature-column">
-                            <a class="signature" href="{{ url('crashstats:report_list') }}?{{ make_query_string(
+                            <a class="signature" href="{{ url('supersearch.search') }}?{{ make_query_string(
                                 product=product,
-                                range_value=days,
-                                range_unit='days',
-                                date=tcbs.end_date,
                                 signature=crash.signature,
-                                version=product + ':' + version,
+                                version=version,
                             ) }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80, killwords=True) }}</a>
                             <div class="signature-icons">
                                 {% if crash.hang_count > 0 %}
