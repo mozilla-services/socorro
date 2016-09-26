@@ -26,7 +26,7 @@
         '__null__': 'does not exist',
         '!__null__': 'exists',
         '__true__': 'is true',
-        '!__true__': 'is false'
+        '!__true__': 'is false',
     };
 
     // Order matters here, the first operator will be used as the default
@@ -120,10 +120,11 @@
                     setParams(initialParams);
                 }
 
+                $('.loader', container).remove();
+
                 if (onReadyCallback) {
                     onReadyCallback();
                 }
-                $('.loader', container).remove();
             }
         );
 
@@ -323,9 +324,10 @@
          * Reset this form by removing all lines.
          */
         function reset() {
-            var line = false;
-            while (line = lines.pop()) {
+            var line = lines.pop();
+            while (line) {
                 line.remove();
+                line = lines.pop();
             }
         }
 
@@ -348,7 +350,7 @@
             var deleteOption = $('<a>', {
                 'class': 'dynamic-line-delete',
                 'href': '#',
-                'text': 'x'
+                'text': 'x',
             }).click(function (e) {
                 e.preventDefault();
                 this.remove();
@@ -366,14 +368,14 @@
         FormLine.prototype.createFieldInput = function (field) {
             this.fieldInput = $('<select>', {
                 'class': 'field',
-                'data-placeholder': 'Choose a field'
+                'data-placeholder': 'Choose a field',
             });
             this.fieldInput.append($('<option>'));
 
             sortedFieldNames.forEach(function(f) {
                 this.fieldInput.append($('<option>', {
                     'value': f,
-                    'text': fields[f].name
+                    'text': fields[f].name,
                 }));
             }, this);
             this.line.append(this.fieldInput);
@@ -381,7 +383,7 @@
             this.fieldInput.select2({
                 placeholder: 'Choose a field',
                 width: 'element',
-                sortResults: sortFuntion
+                sortResults: sortFuntion,
             });
             this.fieldInput.on('change', this.createOperatorInput.bind(this));
 
@@ -401,7 +403,7 @@
 
             this.operatorInput = $('<select>', {
                 'class': 'operator',
-                'placeholder': 'Choose an operator'
+                'placeholder': 'Choose an operator',
             });
             this.operatorInput.append($('<option>'));
 
@@ -409,14 +411,14 @@
             for (var i = 0, l = options.length; i < l; i++) {
                 this.operatorInput.append($('<option>', {
                     'value': options[i],
-                    'text': OPERATORS[options[i]]
+                    'text': OPERATORS[options[i]],
                 }));
             }
 
             this.line.append(this.operatorInput);
 
             this.operatorInput.select2({
-                width: 'element'
+                width: 'element',
             });
             this.operatorInput.on('change', function (e) {
                 // We should create the value input only if there was no value
@@ -459,7 +461,7 @@
 
             if (field.valueType === 'enum' && field.extendable === false) {
                 this.valueInput = $('<select>', {
-                    'class': 'value'
+                    'class': 'value',
                 });
                 if (operator === 'in') {
                     this.valueInput.attr('multiple', 'multiple');
@@ -467,21 +469,21 @@
                 for (var i in values) {
                     this.valueInput.append($('<option>', {
                         'value': values[i],
-                        'text': values[i]
+                        'text': values[i],
                     }));
                 }
             }
             else {
                 this.valueInput = $('<input>', {
                     'type': 'text',
-                    'class': 'value'
+                    'class': 'value',
                 });
             }
             this.line.append(this.valueInput);
 
             var selectParams = {
                 'separator': VALUES_SEPARATOR,
-                'width': 'element'
+                'width': 'element',
             };
             if (field.extendable !== false) {
                 selectParams.tags = values;
@@ -565,7 +567,7 @@
                     return {
                         'field': field,
                         'operator': operator,
-                        'value': value
+                        'value': value,
                     };
                 }
             }
@@ -579,7 +581,7 @@
             getParams: getParams,
             setParams: setParams,
             lines: lines,
-            container: container
+            container: container,
         });
 
         return form;
