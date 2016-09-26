@@ -38,24 +38,16 @@ from configman.converters import class_converter
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
-    (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
     (
         r'/crashes/'
-        r'(comments|count_by_day|daily|frequency|signatures|'
+        r'(count_by_day|daily|signatures|'
         r'signature_history|exploitability|adu_by_signature)/(.*)',
         'crashes.Crashes'
     ),
     (r'/field/(.*)', 'field.Field'),
-    (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
-    (r'/products/(.*)', 'products.Products'),  # deprecated
-    (r'/query/', 'query.Query'),
-    (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
-    (r'/report/(list)/(.*)', 'report.Report'),
-    (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
-    (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
-    (r'/util/(versions_info)/(.*)', 'util.Util'),
+    (r'/releases/(featured|release)/(.*)', 'releases.Releases'),
     (r'/healthcheck/', 'healthcheck.Healthcheck'),
 )
 
