@@ -148,6 +148,14 @@ urlpatterns = patterns(
             permanent=True
         )),
 
+    # redirect deceased Report List URLs to Signature report
+    url(r'^report/list$',
+        RedirectView.as_view(
+            pattern_name='signature:signature_report',
+            query_string=True,
+            permanent=True
+        )),
+
     # Redirect from the old name "Crashes per User" to "Crashes per Day"
     url(
         r'^crashes-per-user/$',
