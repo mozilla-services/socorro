@@ -4,7 +4,6 @@ import copy
 import csv
 import datetime
 import json
-import urllib
 import random
 import urlparse
 from cStringIO import StringIO

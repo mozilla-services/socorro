@@ -1,9 +1,6 @@
 import datetime
 from nose.tools import eq_, ok_
 
-from django.conf import settings
-from django.utils.timezone import utc
-
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats import forms
 
