@@ -98,8 +98,11 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
             dt = parse_isodate(dt)
         except isodate.ISO8601Error:
             return dt
+    # Don't call it tag `time`. Because there is a HTML5 element called this.
+    # https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
+    # Use a hyphen to make it a real custom tag.
     return jinja2.Markup(
-        '<time datetime="{}" class="{}">{}</time>'
+        '<time-tag datetime="{}" class="{}">{}</time-tag>'
         .format(
             dt.isoformat(),
             future and 'in' or 'ago',
