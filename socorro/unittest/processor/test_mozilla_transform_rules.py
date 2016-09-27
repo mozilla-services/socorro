@@ -1011,6 +1011,10 @@ class TestOutOfMemoryBinaryRule(TestCase):
         config.max_size_uncompressed = 5
         config.logger = Mock()
 
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_dumps = {'memory_report': 'a_pathname'}
+        processed_crash = DotDict()
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
@@ -1048,12 +1052,23 @@ class TestOutOfMemoryBinaryRule(TestCase):
             )
             opened.close.assert_called_with()
 
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            ok_('memory_report' not in processed_crash)
+            eq_(
+                processed_crash.memory_report_error,
+                expected_error_message
+            )
+
     #--------------------------------------------------------------------------
     def test_extract_memory_info_with_trouble(self):
         config = CDotDict()
         config.max_size_uncompressed = 1024
         config.logger = Mock()
 
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_dumps = {'memory_report': 'a_pathname'}
+        processed_crash = DotDict()
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
@@ -1075,6 +1090,13 @@ class TestOutOfMemoryBinaryRule(TestCase):
                 ["error in gzip for a_pathname: IOError()"]
             )
 
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            ok_('memory_report' not in processed_crash)
+            eq_(
+                processed_crash.memory_report_error,
+                'error in gzip for a_pathname: IOError()'
+            )
+
     #--------------------------------------------------------------------------
     def test_extract_memory_info_with_json_trouble(self):
         config = CDotDict()
@@ -1082,6 +1104,10 @@ class TestOutOfMemoryBinaryRule(TestCase):
         config.logger = Mock()
         config.chatty = False
 
+        raw_crash = copy.copy(canonical_standard_raw_crash)
+        raw_crash.JavaStackTrace = "this is a Java Stack trace"
+        raw_dumps = {'memory_report': 'a_pathname'}
+        processed_crash = DotDict()
         processor_meta = self.get_basic_processor_meta()
 
         with patch(
@@ -1108,6 +1134,13 @@ class TestOutOfMemoryBinaryRule(TestCase):
                 )
                 mocked_gzip_open.return_value.close.assert_called_with()
 
+                rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+                ok_('memory_report' not in processed_crash)
+                eq_(
+                    processed_crash.memory_report_error,
+                    'error in json for a_pathname: ValueError()'
+                )
+
     #--------------------------------------------------------------------------
     def test_everything_we_hoped_for(self):
         config = self.get_basic_config()
@@ -1119,11 +1152,11 @@ class TestOutOfMemoryBinaryRule(TestCase):
         processor_meta = self.get_basic_processor_meta()
 
         class MyOutOfMemoryBinaryRule(OutOfMemoryBinaryRule):
-                @staticmethod
-                def _extract_memory_info(dump_pathname, processor_notes):
-                    eq_(dump_pathname, raw_dumps['memory_report'])
-                    eq_(processor_notes, [])
-                    return 'mysterious-awesome-memory'
+            @staticmethod
+            def _extract_memory_info(dump_pathname, processor_notes):
+                eq_(dump_pathname, raw_dumps['memory_report'])
+                eq_(processor_notes, [])
+                return 'mysterious-awesome-memory'
 
         with patch(
             'socorro.processor.mozilla_transform_rules'
