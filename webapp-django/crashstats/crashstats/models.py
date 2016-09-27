@@ -1725,3 +1725,16 @@ class Healthcheck(SocorroMiddleware):
 
     URL_PREFIX = '/healthcheck/'
     cache_seconds = 0
+
+
+# Deprecated Models
+class ReportList(SocorroMiddleware):
+    API_WHITELIST = None
+
+    def get(*args, **kwargs):
+        return {
+            'error': (
+                'This endpoint has been removed. Please consider using our '
+                'other API endpoints. '
+            )
+        }
