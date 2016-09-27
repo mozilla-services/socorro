@@ -4,6 +4,11 @@
     margin-bottom: 20px;
     padding: 1em 112px;
 
+    /* By default hide all elements of the search form until it is fully loaded. */
+    form {
+        display: none;
+    }
+
     .form-controls {
         float: right;
 
@@ -102,6 +107,10 @@
 
         a {
             color: #666;
+
+            &.selected {
+                text-decoration: none;
+            }
         }
     }
 

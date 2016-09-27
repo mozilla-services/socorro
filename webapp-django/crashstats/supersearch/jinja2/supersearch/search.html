@@ -1,4 +1,4 @@
-{% from "supersearch/macros/datetime_filters.html" import datetime_filters %}
+{% from "supersearch/macros/date_filters.html" import date_filters %}
 
 {% extends "crashstats_base.html" %}
 {% block page_title %}Search - Mozilla Crash Reports{% endblock %}
@@ -26,6 +26,8 @@
     </div>
 
     <section id="search-form">
+        <div class="loader"></div>
+
         <form method="get" action="{{ url('supersearch.search') }}"
             data-fields-url="{{ url('supersearch.search_fields') }}?{{ make_query_string(exclude='date') }}"
             data-results-url="{{ url('supersearch.search_results') }}"
@@ -40,7 +42,7 @@
                 <button type="submit" id="search-button">Search</button>
             </div>
 
-            {{ datetime_filters(dates.from, dates.to) }}
+            {{ date_filters(dates.from, dates.to) }}
 
             <!-- Simplified search UI -->
             <fieldset id="simple-search">

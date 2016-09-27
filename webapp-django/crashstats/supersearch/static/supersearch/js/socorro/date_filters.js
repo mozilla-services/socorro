@@ -57,6 +57,10 @@ $(function () {
             set: setDate,
             get: getDate,
             setDates: function (dates) {
+                // Remove any previously selected date shortcut because it
+                // will most likely be wrong now.
+                $('.date-shortcuts a').removeClass('selected');
+
                 // Set date filters values.
                 dates.forEach(function (value) {
                     var date;

@@ -1,4 +1,4 @@
-{% from "supersearch/macros/datetime_filters.html" import datetime_filters %}
+{% from "supersearch/macros/date_filters.html" import date_filters %}
 
 {% extends "crashstats_base.html" %}
 {% block page_title %}{{ signature }} - Signature report - Mozilla Crash Reports{% endblock %}
@@ -36,7 +36,7 @@
                 <button type="submit" id="search-button">Search</button>
             </div>
 
-            {{ datetime_filters(query.start_date, query.end_date) }}
+            {{ date_filters(query.start_date, query.end_date) }}
 
             <fieldset id="search-params-fieldset"></fieldset>
 

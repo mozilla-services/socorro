@@ -3,7 +3,8 @@
 $(function () {
     'use strict';
 
-    var form = $('#search-form form');
+    var searchContainer = $('#search-form');
+    var form = $('form', searchContainer);
     var resultsURL = form.data('results-url');
     var simpleSearchContainer = $('#simple-search');
 
@@ -331,25 +332,32 @@ $(function () {
     };
 
     /**
+     * Show the search form and initialize parts that were hidden. This
+     * function is called once the dynamicForm library is done loading the
+     * advanced search form.
+     */
+    function showForm() {
+        $('.loader', searchContainer).remove();
+
+        form.show();
+
+        initSimpleSearch();
+        initFormButtons();
+        initFormOptions();
+    }
+
+    /**
      * Initialize the search form, populating it with whatever parameters
      * are passed in the query string.
      */
     function initForm() {
-        // Create the simple search form.
-        $('input[type=text]', simpleSearchContainer).select2({
-            'width': 'element',
-            'tags': [],
-        });
-        $('select', simpleSearchContainer).select2({
-            'width': 'element',
-            'closeOnSelect': false,
-        });
-
         // Create the advanced search form.
         var queryString = window.location.search.substring(1);
         var initialParams = socorro.search.parseQueryString(queryString);
 
         var formCallback = function () {
+            showForm();
+
             // By default, we simply create a new line in the form.
             form.dynamicForm('newLine');
         };
@@ -372,6 +380,8 @@ $(function () {
             // the dynamicForm library. This will avoid strange behaviors
             // that can be caused by manually set parameters, for example.
             formCallback = function () {
+                showForm();
+
                 setParams(initialParams);
                 if (!dontRun) {
                     search(false, page);
@@ -386,6 +396,20 @@ $(function () {
             formCallback,
             socorro.search.sortResults
         );
+    }
+
+    /**
+     * Initialize the simplified search form.
+     */
+    function initSimpleSearch() {
+        $('input[type=text]', simpleSearchContainer).select2({
+            'width': 'element',
+            'tags': [],
+        });
+        $('select', simpleSearchContainer).select2({
+            'width': 'element',
+            'closeOnSelect': false,
+        });
     }
 
     /**
@@ -460,9 +484,9 @@ $(function () {
 
         // Show or hide advanced options.
         var optionsElt = $('fieldset.options', form);
-        $('h4', optionsElt).click(function () {
+        $('h4', optionsElt).on('click', function () {
             $('h4 + div', optionsElt).toggle();
-            $('span', this).toggle();
+            $('span', this).toggleClass('hide');
         });
         $('h4 + div', optionsElt).hide();
     }
@@ -490,8 +514,6 @@ $(function () {
      */
     function initialize() {
         initForm();
-        initFormButtons();
-        initFormOptions();
         initContentBinding();
     }
     initialize();
