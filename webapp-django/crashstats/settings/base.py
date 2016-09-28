@@ -655,11 +655,11 @@ if (
 
 
 SYMBOLS_FILE_PREFIX = config('SYMBOLS_FILE_PREFIX', 'v1')
-# e.g. "us-west-2" see boto.s3.connection.Location
-# Only needed if the bucket has never been created
+
+# Set to the default Mozilla Socorro uses
 SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
     'SYMBOLS_BUCKET_DEFAULT_LOCATION',
-    None
+    'us-west-2'
 )
 
 # This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the

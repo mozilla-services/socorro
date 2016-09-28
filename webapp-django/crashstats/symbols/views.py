@@ -69,17 +69,11 @@ def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
                 "Setting %s must be set" % key
             )
 
-    conn = boto.connect_s3(
-        settings.AWS_ACCESS_KEY,
-        settings.AWS_SECRET_ACCESS_KEY,
-        # Deliberately commented out until we know a better way to do
-        # this. When connecting to S3 on a Python 2.7 on OSX, you can't
-        # get buckets that dots in the name. But applying this calling_format
-        # thing breaks on our Python 2.7 on production.
-        # So it's commented out, in a rush, until we discover a unified
-        # way of dealing with this on local dev environments as well
-        # as in production.
-        # calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+    conn = boto.s3.connect_to_region(
+        bucket_location,
+        aws_access_key_id=settings.AWS_ACCESS_KEY,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
     )
     assert bucket_name
 
