@@ -11,7 +11,7 @@ Crashes per Day for {{ product }}
 {% endblock %}
 
 {% block content %}
-<div id="mainbody">
+<div id="mainbody" data-graph-data="{{ graph_data | to_json }}">
 
 <div class="page-heading">
     <h2>Crashes per Day for {{ product }}</h2>
@@ -261,8 +261,4 @@ Crashes per Day for {{ product }}
     {% javascript 'jquery_ui' %}
     {% javascript 'metricsgraphics' %}
     {% javascript 'crashes_per_day' %}
-    <script>
-    var DATA = {{ graph_data | json_dumps }};
-    window.socGraphByReportType = false;
-    </script>
 {% endblock %}

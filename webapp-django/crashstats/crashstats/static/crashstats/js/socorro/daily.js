@@ -4,44 +4,44 @@ $(function() {
     var aduChartContainer = $("#crashes-per-adi-graph"),
         colours = ['#6a3d9a', '#e31a1c', '#008800', '#1f78b4'];
 
-    if (window.socGraphByReportType === false) {
-        if(data.count > 0) {
+    var data = $('#mainbody').data('graph-data');
 
-            // Format the graph data.
-            var graphData = [];
-            var legend = [];
-            for (var i = 1; i < data.product_versions.length + 1; i++) {
-                graphData.push(
-                    $.map(data['ratio' + i], function(value) {
-                        return {
-                            'date': new Date(value[0]),
-                            'ratio': value[1]
-                        };
-                    })
-                );
+    if(data.count > 0) {
 
-                legend.push(data.labels[i - 1]);
-            }
+        // Format the graph data.
+        var graphData = [];
+        var legend = [];
+        for (var i = 1; i < data.product_versions.length + 1; i++) {
+            graphData.push(
+                $.map(data['ratio' + i], function(value) {
+                    return {
+                        'date': new Date(value[0]),
+                        'ratio': value[1]
+                    };
+                })
+            );
 
-            // Draw the graph.
-            MG.data_graphic({
-                data: graphData,
-                full_width: true,
-                target: '#crashes-per-adi-graph',
-                x_accessor: 'date',
-                y_accessor: 'ratio',
-                axes_not_compact: true,
-                utc_time: true,
-                interpolate: 'basic',
-                area: false,
-                legend: legend,
-                legend_target: '#crashes-per-adi-legend',
-                show_secondary_x_label: false
-            });
-
-        } else {
-            aduChartContainer.text('No results were found.');
+            legend.push(data.labels[i - 1]);
         }
+
+        // Draw the graph.
+        MG.data_graphic({
+            data: graphData,
+            full_width: true,
+            target: '#crashes-per-adi-graph',
+            x_accessor: 'date',
+            y_accessor: 'ratio',
+            axes_not_compact: true,
+            utc_time: true,
+            interpolate: 'basic',
+            area: false,
+            legend: legend,
+            legend_target: '#crashes-per-adi-legend',
+            show_secondary_x_label: false
+        });
+
+    } else {
+        aduChartContainer.text('No results were found.');
     }
 
     $("#daily_search_version_form_products").change(function() {
