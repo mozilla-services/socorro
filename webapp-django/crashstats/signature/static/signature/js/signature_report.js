@@ -9,6 +9,11 @@ var SignatureReport = {
     },
 };
 
+SignatureReport.getURL = function (name) {
+    'use strict';
+    return $('#mainbody').data('urls-' + name);
+};
+
 SignatureReport.init = function () {
     'use strict';
 

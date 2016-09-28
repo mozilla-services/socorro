@@ -30,8 +30,11 @@ SignatureReport.GraphTab.prototype.loadControls = function() {
     var selectElement = $('<select>', {'class': 'channels-list'});
     selectElement.append($('<option>'));
 
+    // Pick up necessary data from the DOM
+    var channels = $('#mainbody').data('channels');
+
     // Make and append and option for each channel.
-    $.each(window.CHANNELS, function (i, channel) {
+    $.each(channels, function (i, channel) {
         selectElement.append($('<option>', {
             'value': channel,
             'text': channel

@@ -11,7 +11,23 @@
 {% endblock %}
 
 {% block content %}
-<div id="mainbody">
+<div
+    id="mainbody"
+    data-urls-summary="{{ url('signature:signature_summary') }}"
+    data-urls-aggregations="{{ url('signature:signature_report') }}aggregation/"
+    data-urls-reports="{{ url('signature:signature_reports') }}"
+    data-urls-graphs="{{ url('signature:signature_report') }}graphs/"
+    data-urls-bugzilla="{{ url('signature:signature_bugzilla') }}"
+    data-urls-comments="{{ url('signature:signature_comments') }}"
+    data-urls-correlations="{{ url('signature:signature_correlations') }}"
+    data-urls-graph="{{ url('signature:signature_report') }}graphdata/"
+
+    data-channels="{{ channels | to_json }}"
+    data-fields="{{ fields | to_json }}"
+    data-columns="{{ columns | to_json }}"
+    data-sort="{{ sort | join(',') }}"
+    data-default-channel="{{ channel }}"
+>
     <div class="page-heading">
         <h2>Signature report for <em>{{ signature }}</em></h2>
         <p>
@@ -72,25 +88,6 @@
 
 {% block site_js %}
     {{ super() }}
-
-<script>
-var SOURCE_URLS = {
-    'summary': "{{ url('signature:signature_summary') }}",
-    'aggregations': "{{ url('signature:signature_report') }}aggregation/",
-    'reports': "{{ url('signature:signature_reports') }}",
-    'graphs': "{{ url('signature:signature_report') }}graphs/",
-    'bugzilla': "{{ url('signature:signature_bugzilla') }}",
-    'comments': "{{ url('signature:signature_comments') }}",
-    'correlations': "{{ url('signature:signature_correlations') }}",
-    'graph': "{{ url('signature:signature_report') }}graphdata/",
-};
-var BASE_URL = location.protocol + '//' + location.host;
-var FIELDS = {{ fields | json_dumps }};
-var CHANNELS = {{ channels | json_dumps }};
-var COLUMNS = {{ columns | json_dumps }};
-var SORT = "{{ sort | join(',') }}";
-var DEFAULT_CHANNEL = '{{ channel }}';
-</script>
 
 {% javascript 'd3' %}
 {% javascript 'jquery_ui' %}

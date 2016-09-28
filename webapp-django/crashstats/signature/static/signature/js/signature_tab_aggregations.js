@@ -31,8 +31,10 @@ SignatureReport.AggregationsTab.prototype.loadControls = function() {
     this.$selectElement = $('<select>', {'class': 'fields-list'});
     this.$selectElement.append($('<option>'));
 
+    var fields = $('#mainbody').data('fields');
+
     // Append an option element for each field.
-    $.each(window.FIELDS, function(i, field) {
+    $.each(fields, function(i, field) {
         that.$selectElement.append($('<option>', {
             'value': field.id,
             'text': field.text
