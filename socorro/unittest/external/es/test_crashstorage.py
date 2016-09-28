@@ -50,6 +50,10 @@ a_processed_crash = {
     },
     'install_age': 22385,
     'last_crash': None,
+    'memory_report': {
+        'version': 1,
+        'reports': [],
+    },
     'os_name': 'Linux',
     'os_version': '0.0.0 Linux 2.6.35.7-perf-CL727859 #1 ',
     'processor_notes': 'SignatureTool: signature truncated due to length',
@@ -225,7 +229,7 @@ class IntegrationTestESCrashStorage(ElasticsearchTestCase):
                 x,
                 a_processed_crash['uuid'][2:]
             )
-            # Ensure that the document was indexed by attempting to retreive it.
+            # Ensure that the document was indexed by attempting to retreive it
             ok_(
                 self.es_client.get(
                     index=local_config.elasticsearch.elasticsearch_index,
@@ -428,6 +432,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         modified_config.es_redactor = DotDict()
         modified_config.es_redactor.redactor_class = Redactor
         modified_config.es_redactor.forbidden_keys = (
+            "memory_report, "
             "upload_file_minidump_flash1.json_dump, "
             "upload_file_minidump_flash2.json_dump, "
             "upload_file_minidump_browser.json_dump"
@@ -446,7 +451,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         es_storage.save_raw_and_processed(
             raw_crash=a_raw_crash,
             dumps=None,
-            processed_crash=a_processed_crash,
+            processed_crash=deepcopy(a_processed_crash),
             crash_id=crash_id,
         )
 
@@ -464,6 +469,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             k: a_processed_crash['json_dump'][k]
             for k in modified_config.json_dump_whitelist_keys
         }
+        del expected_processed_crash['memory_report']
 
         # The actual call to index the document (crash).
         document = {

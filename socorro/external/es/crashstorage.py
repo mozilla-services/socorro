@@ -231,9 +231,12 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
     required_config.es_redactor.forbidden_keys = change_default(
         Redactor,
         "forbidden_keys",
-        "upload_file_minidump_flash1.json_dump, "
-        "upload_file_minidump_flash2.json_dump, "
-        "upload_file_minidump_browser.json_dump"
+        (
+            "memory_report, "
+            "upload_file_minidump_flash1.json_dump, "
+            "upload_file_minidump_flash2.json_dump, "
+            "upload_file_minidump_browser.json_dump"
+        )
     )
 
     #--------------------------------------------------------------------------
