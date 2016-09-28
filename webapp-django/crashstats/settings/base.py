@@ -656,7 +656,7 @@ if (
 
 SYMBOLS_FILE_PREFIX = config('SYMBOLS_FILE_PREFIX', 'v1')
 
-# But we set the default to what Mozilla Socorro uses
+# Set to the default Mozilla Socorro uses
 SYMBOLS_BUCKET_DEFAULT_LOCATION = config(
     'SYMBOLS_BUCKET_DEFAULT_LOCATION',
     'us-west-2'
