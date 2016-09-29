@@ -776,7 +776,7 @@ class SignatureJitCategory(Rule):
 
 #==============================================================================
 class SignatureIPCChannelError(Rule):
-    """replaces the signature if there is a JIT classification in the crash"""
+    """replaces the signature if there is a IPC channel error in the crash"""
 
     #--------------------------------------------------------------------------
     def version(self):
