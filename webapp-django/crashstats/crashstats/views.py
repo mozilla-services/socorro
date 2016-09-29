@@ -1457,7 +1457,11 @@ def report_index(request, crash_id, default_context=None):
                         args=(crash_id, name, 'dmp')
                     )
                 )
-        if context['raw'].get('ContainsMemoryReport'):
+        if (
+            context['raw'].get('ContainsMemoryReport') and
+            context['report'].get('memory_report') and
+            not context['report'].get('memory_report_error')
+        ):
             context['raw_dump_urls'].append(
                 reverse(
                     'crashstats:raw_data_named',
