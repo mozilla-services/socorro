@@ -37,9 +37,27 @@ var SignatureCorrelations = (function() {
 
 
 $(document).ready(function () {
+
+    // If the page is loaded with a location.hash like '#tab-...'
+    // then find out which index that is so when we set up $.tabs()
+    // we can set the right active one.
+    var activeTab = 0;
+    if (location.hash.search(/#tab-/) > -1) {
+        var tabId = location.hash.split('#tab-')[1];
+        var tab = $('#' + tabId);
+        // only bother if this tab exists
+        if (tab.length) {
+            $('.ui-tabs li a').each(function(i, tab) {
+                if (tab.href.search('#' + tabId) > -1) {
+                    activeTab = i;
+                }
+            });
+        }
+    }
     $('#report-index').tabs({
-        selected: 0,
+        active: activeTab,
         activate: function(event, ui) {
+            document.location.hash = 'tab-' + ui.newPanel.attr('id');
             Analytics.trackTabSwitch('report_index', ui.newPanel.attr('id'));
         }
     });
@@ -116,14 +134,6 @@ $(document).ready(function () {
             return false;
         }
     });
-
-    // if the page is loaded with #allthreads, then pretend we immediately
-    // click the toggle switch.
-    if (location.hash === '#allthreads') {
-        $('a[href="#allthreads"]').click();
-    } else if (location.hash === '#correlation') {
-        $('a[href="#correlation"]').click();
-    }
 
     var tbls = $("#frames").find("table");
     var addExpand = function(sigColumn) {
