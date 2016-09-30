@@ -2110,7 +2110,7 @@ class TestSignatureIPCMessageName(TestCase):
         raw_crash.ipc_message_name = 'foo, bar'
 
         action_result = rule.action(
-            raw_crash, {}, processed_crash, processor_meta
+            raw_crash, {}, processed_crash, {}
         )
         ok_(action_result)
 
