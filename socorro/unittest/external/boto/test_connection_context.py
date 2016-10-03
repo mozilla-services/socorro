@@ -235,6 +235,32 @@ class ConnectionContextTestCase(socorro.unittest.testbase.TestCase):
             connection_source
         )
 
+    def test_create_bucket_with_regional_s3connection_context(self):
+        connection_source = self.setup_mocked_s3_storage(
+            resource_class=RegionalS3ConnectionContext,
+            region='us-south-3'
+        )
+
+        # by overriding, we can set any type of exception here
+        connection_source.ResponseError = (NameError,)
+
+        def mocked_get_bucket(bucket_name):
+            assert bucket_name == 'name-of-bucket'
+            raise NameError('nope!')
+
+        connection_source._mocked_connection.get_bucket.side_effect = (
+            mocked_get_bucket
+        )
+
+        connection_source._get_or_create_bucket(
+            connection_source._mocked_connection,
+            'name-of-bucket'
+        )
+        connection_source._mocked_connection.create_bucket.assert_called_with(
+            'name-of-bucket',
+            location='us-south-3'
+        )
+
     def test_HostPortS3ConnectionContext_host_port_secure(self):
         # Test with secure=True
         conn = self.setup_mocked_s3_storage(
