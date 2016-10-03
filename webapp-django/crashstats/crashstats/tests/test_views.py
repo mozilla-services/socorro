@@ -4751,6 +4751,36 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('bla bla bla' in response.content)  # still. good.
 
+    def test_raw_data_memory_report(self):
+
+        crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
+
+        def mocked_get(**params):
+            assert params['name'] == 'memory_report'
+            assert params['uuid'] == crash_id
+            assert params['datatype'] == 'raw'
+            return "binary stuff"
+
+        models.RawCrash.implementation().get.side_effect = mocked_get
+
+        dump_url = reverse(
+            'crashstats:raw_data_named',
+            args=(crash_id, 'memory_report', 'json.gz')
+        )
+        response = self.client.get(dump_url)
+        eq_(response.status_code, 302)
+        assert 'login' in response['Location']
+
+        user = self._login()
+        group = self._create_group_with_permission('view_rawdump')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_rawdump')
+
+        response = self.client.get(dump_url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/octet-stream')
+        ok_('binary stuff' in response.content, response.content)
+
     @mock.patch('requests.get')
     def test_correlations_json(self, rget):
         url = reverse('crashstats:correlations_json')
