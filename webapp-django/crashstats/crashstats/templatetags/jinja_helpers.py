@@ -108,6 +108,37 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
     )
 
 
+@library.global_function
+def datetime_picker(input_name, default_value=''):
+    """Return a datetime picker HTML element to be powered by a JS library.
+    """
+    return jinja2.Markup('''
+        <span
+            class="datetime-picker {input_name}"
+            data-wrap="true"
+            data-enable-time="true"
+            data-utc="true"
+            data-time_24hr="true"
+            data-alt-input="true"
+            data-alt-format="F j, Y - H:i"
+            date-default-date="{default_value}"
+        >
+            <input
+                type="date"
+                name="{input_name}"
+                value="{default_value}"
+                data-input
+            ><a data-toggle><i class="icon-calendar"></i></a>
+        </span>
+        '''.format(
+            input_name=input_name,
+            # We need special formatting here because that's the only timezone
+            # format the JS library will correctly parse.
+            default_value=default_value.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        )
+    )
+
+
 @library.filter
 def human_readable_iso_date(dt):
     """ Python datetime to a human readable ISO datetime. """

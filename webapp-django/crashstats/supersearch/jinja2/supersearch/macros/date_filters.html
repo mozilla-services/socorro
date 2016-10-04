@@ -1,0 +1,23 @@
+{% macro date_filters(start_date, end_date) %}
+    <fieldset class="date-filters">
+        <div>
+            <label for="date_from">From</label>
+            {{ datetime_picker('date_from', start_date) }}
+        </div>
+        <div>
+            <label for="date_to">To</label>
+            {{ datetime_picker('date_to', end_date) }}
+        </div>
+    </fieldset>
+
+    <p class="date-shortcuts">
+        Shortcuts: last
+        <a href="#" data-range="1d">24 hours</a> -
+        <a href="#" data-range="3d">3 days</a> -
+        <a href="#" data-range="7d" class="selected">7 days</a> -
+        <a href="#" data-range="2w">14 days</a> -
+        <a href="#" data-range="1M">1 month</a> -
+        <a href="#" data-range="3M">3 months</a> -
+        <a href="#" data-range="6M">6 months</a>
+    </p>
+{%- endmacro %}

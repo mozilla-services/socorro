@@ -50,6 +50,9 @@ EXCLUDED_FIELDS_FROM_FACETS = (
 )
 
 
+DEFAULT_DATE_RANGE_DAYS = 7
+
+
 class ValidationError(Exception):
     pass
 
@@ -151,6 +154,13 @@ def search(request, default_context=None):
         (x, form.fields[x].choices, [x[1] for x in form.fields[x].choices[:3]])
         for x in settings.SIMPLE_SEARCH_FIELDS
     ]
+
+    # Default dates for the date filters.
+    now = timezone.now()
+    context['dates'] = {
+        'to': now,
+        'from': now - datetime.timedelta(days=DEFAULT_DATE_RANGE_DAYS),
+    }
 
     return render(request, 'supersearch/search.html', context)
 

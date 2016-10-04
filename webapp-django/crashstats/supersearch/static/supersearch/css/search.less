@@ -4,24 +4,114 @@
     margin-bottom: 20px;
     padding: 1em 112px;
 
-    button {
-        cursor: pointer;
+    /* By default hide all elements of the search form until it is fully loaded. */
+    form {
+        display: none;
+    }
+
+    .form-controls {
         float: right;
-        padding: 6px 15px;
-        font-size: 1.2em;
+
+        button {
+            cursor: pointer;
+            padding: 6px 15px;
+            font-size: 1.2em;
+        }
+        button:before {
+            padding-right: 8px;
+            vertical-align: middle;
+        }
+        #search-button:before {
+            content: url(../../img/3rdparty/silk/magnifier.png);
+        }
+        .new-line:before {
+            content: url(../../img/3rdparty/silk/application_form_add.png);
+        }
+        .customize:before {
+            content: url(../../img/3rdparty/silk/wrench.png);
+        }
     }
-    button:before {
-        padding-right: 8px;
-        vertical-align: middle;
+
+    #simple-search,
+    .date-filters {
+        text-align: center;
+        display: flex;
+        justify-content: space-between;
+
+        > div {
+            width: 24%;
+
+            select,
+            .datetime-picker {
+                width: 100%;
+            }
+
+            label {
+                display: block;
+                font-weight: bold;
+            }
+        }
     }
-    #search-button:before {
-        content: url(../../img/3rdparty/silk/magnifier.png);
+
+    .date-filters {
+        float: left;
+        margin: 0;
+        padding-bottom: 0px;
+        width: 49.33%;
+
+        > div {
+            width: 48.66%;
+        }
+
+        .datetime-picker {
+            display: flex;
+            cursor: pointer;
+
+            /* Picked from select2 styles */
+            height: auto !important;
+            height: 1%;
+            margin: 0;
+            border: 1px solid #aaa;
+            overflow: hidden;
+            position: relative;
+            background-color: #fff;
+            background-image: linear-gradient(top, #eee 1%, #fff 15%);
+
+            input {
+                border: none;
+                background: none;
+                flex-grow: 10;
+                padding: 6px 5px;
+                line-height: 16px;
+                color: #333;
+            }
+
+            a {
+                background-color: #eee;
+                border-left: 1px solid #aaa;
+                padding: 6px 5px 0 5px;
+
+                .icon-calendar::before {
+                    content: url(../../img/3rdparty/silk/calendar.png);
+                }
+            }
+        }
     }
-    .new-line:before {
-        content: url(../../img/3rdparty/silk/application_form_add.png);
-    }
-    .customize:before {
-        content: url(../../img/3rdparty/silk/wrench.png);
+
+    .date-shortcuts {
+        clear: left;
+        font-style: italic;
+        margin: 0 0 inherit 0;
+        text-align: center;
+        width: 49.33%;
+
+        a {
+            color: #666;
+
+            &.selected {
+                text-decoration: none;
+            }
+        }
     }
 
     fieldset {
@@ -52,33 +142,9 @@
         text-indent: -9999px;
     }
 
-    #advanced-search,
-    #simple-search {
-        clear: both;
-    }
     #advanced-search {
         fieldset fieldset {
             border-top: 1px solid #ccc;
-        }
-    }
-    #simple-search {
-        fieldset {
-            text-align: center;
-
-            > div {
-                float: left;
-                padding: 4px 10px;
-                width: 25%;
-
-                select {
-                    width: 100%;
-                }
-
-                label {
-                    display: block;
-                    font-weight: bold;
-                }
-            }
         }
     }
 

@@ -1,9 +1,10 @@
-/*global $ window Analytics */
+/*global $ window Analytics socorro Qs BugLinks DateFilters */
 
 $(function () {
     'use strict';
 
-    var form = $('#search-form form');
+    var searchContainer = $('#search-form');
+    var form = $('form', searchContainer);
     var resultsURL = form.data('results-url');
     var simpleSearchContainer = $('#simple-search');
 
@@ -71,7 +72,7 @@ $(function () {
                 // Put the first tab's id in the hash of the URL.
                 var hash = '#' + ui.panel.attr('id');
                 pushHistoryState(params, url, hash, true);
-            }
+            },
         });
 
         // Handle server-side sorting.
@@ -79,9 +80,9 @@ $(function () {
         $('#reports-list').tablesorter({
             headers: {
                 0: {  // disable the first column, `Crash ID`
-                    sorter: false
-                }
-            }
+                    sorter: false,
+                },
+            },
         });
 
         // Make sure there are more than 1 page of results. If not,
@@ -128,7 +129,9 @@ $(function () {
         try {
             contentElt.tabs('destroy');
         }
-        catch (e) {}
+        catch (e) {
+            // It is possible that no tabs existed before, and that is fine.
+        }
         contentElt.empty().append($('<div>', {'class': 'loader'}));
 
         // If a tracker is available, track that AJAX call.
@@ -137,7 +140,7 @@ $(function () {
         $.ajax({
             url: url,
             success: showResults,
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR) {
                 var errorContent = $('<div>', {class: 'error'});
 
                 if (jqXHR.status >= 400 && jqXHR.status < 500) {
@@ -157,14 +160,14 @@ $(function () {
                         $('<p>', {
                             text: 'We have been automatically informed ' +
                                   'of that error, and are working on a ' +
-                                  'solution. '
+                                  'solution. ',
                         })
                     );
                 }
 
                 contentElt.empty().append(errorContent);
             },
-            dataType: 'HTML'
+            dataType: 'HTML',
         });
     }
 
@@ -198,7 +201,7 @@ $(function () {
         var queryString = Qs.stringify(params, { indices: false });
         queryString = queryString.replace(/!/g, '%21');
         $('input[name=_public_api_url]', form).val(
-            BASE_URL + form.data('public-api-url') + '?' + queryString
+            window.BASE_URL + form.data('public-api-url') + '?' + queryString
         );
     }
 
@@ -219,6 +222,7 @@ $(function () {
     function getParams() {
         var params = form.dynamicForm('getParams');
 
+        // Add Simple Search parameters.
         $('select', simpleSearchContainer).each(function (i, item) {
             var name = item.name;
             var value = $(item).select2('val');
@@ -231,6 +235,9 @@ $(function () {
                 }
             }
         });
+
+        // Add dates from the date filters.
+        params.date = DateFilters.getDates();
 
         return params;
     }
@@ -252,6 +259,7 @@ $(function () {
      * Update the search form with new parameters.
      */
     function setParams(params) {
+        // Set Simple Search parameters.
         $('select', simpleSearchContainer).each(function (i, item) {
             if (item.name in params) {
                 var values = params[item.name];
@@ -273,6 +281,13 @@ $(function () {
                 $(item).select2('val', simpleValues);
             }
         });
+
+        // Set date filters values.
+        if (params.date) {
+            DateFilters.setDates(params.date);
+            delete params.date;
+        }
+
         form.dynamicForm('setParams', params);
     }
 
@@ -284,7 +299,7 @@ $(function () {
         form.dynamicForm('newLine', {
             field: name,
             operator: '=', // will fall back to the default operator if 'is exactly' is not implemented for that field
-            value: value
+            value: value,
         });
     }
 
@@ -317,25 +332,32 @@ $(function () {
     };
 
     /**
+     * Show the search form and initialize parts that were hidden. This
+     * function is called once the dynamicForm library is done loading the
+     * advanced search form.
+     */
+    function showForm() {
+        $('.loader', searchContainer).remove();
+
+        form.show();
+
+        initSimpleSearch();
+        initFormButtons();
+        initFormOptions();
+    }
+
+    /**
      * Initialize the search form, populating it with whatever parameters
      * are passed in the query string.
      */
     function initForm() {
-        // Create the simple search form.
-        $('input[type=text]', simpleSearchContainer).select2({
-            'width': 'element',
-            'tags': []
-        });
-        $('select', simpleSearchContainer).select2({
-            'width': 'element',
-            'closeOnSelect': false
-        });
-
         // Create the advanced search form.
         var queryString = window.location.search.substring(1);
         var initialParams = socorro.search.parseQueryString(queryString);
 
         var formCallback = function () {
+            showForm();
+
             // By default, we simply create a new line in the form.
             form.dynamicForm('newLine');
         };
@@ -358,6 +380,8 @@ $(function () {
             // the dynamicForm library. This will avoid strange behaviors
             // that can be caused by manually set parameters, for example.
             formCallback = function () {
+                showForm();
+
                 setParams(initialParams);
                 if (!dontRun) {
                     search(false, page);
@@ -372,6 +396,20 @@ $(function () {
             formCallback,
             socorro.search.sortResults
         );
+    }
+
+    /**
+     * Initialize the simplified search form.
+     */
+    function initSimpleSearch() {
+        $('input[type=text]', simpleSearchContainer).select2({
+            'width': 'element',
+            'tags': [],
+        });
+        $('select', simpleSearchContainer).select2({
+            'width': 'element',
+            'closeOnSelect': false,
+        });
     }
 
     /**
@@ -430,25 +468,25 @@ $(function () {
         });
 
         // Make the columns input sortable
-        columnsInput.on("change", function () {
-            $("input[name=_columns]").val(columnsInput.val());
+        columnsInput.on('change', function () {
+            $('input[name=_columns]').val(columnsInput.val());
         });
 
-        columnsInput.select2("container").find("ul.select2-choices").sortable({
+        columnsInput.select2('container').find('ul.select2-choices').sortable({
             containment: 'parent',
             start: function () {
-                columnsInput.select2("onSortStart");
+                columnsInput.select2('onSortStart');
             },
             update: function () {
-                columnsInput.select2("onSortEnd");
-            }
+                columnsInput.select2('onSortEnd');
+            },
         });
 
         // Show or hide advanced options.
         var optionsElt = $('fieldset.options', form);
-        $('h4', optionsElt).click(function (e) {
+        $('h4', optionsElt).on('click', function () {
             $('h4 + div', optionsElt).toggle();
-            $('span', this).toggle();
+            $('span', this).toggleClass('hide');
         });
         $('h4 + div', optionsElt).hide();
     }
@@ -476,8 +514,6 @@ $(function () {
      */
     function initialize() {
         initForm();
-        initFormButtons();
-        initFormOptions();
         initContentBinding();
     }
     initialize();
