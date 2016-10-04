@@ -16,22 +16,28 @@ $(function () {
             to: $('.datetime-picker.date_to').flatpickr(),
         };
 
-        var setDate = function (key, value) {
+        function setDate(key, value) {
             filters[key].setDate(value, true);
-        };
+        }
 
-        var getDate = function (key) {
+        function getDate(key) {
             return moment(filters[key].input.value + 'Z').utc().toDate();
-        };
+        }
+
+        function removeSelectedShortcut() {
+            $('.date-shortcuts a').removeClass('selected');
+        }
 
         // Limit filters based on the other filter's value.
         filters.to.set('minDate', getDate('from'));
         filters.from.set('maxDate', getDate('to'));
 
         filters.from.config.onChange = function (dateObj) {
+            removeSelectedShortcut();
             filters.to.set('minDate', dateObj);
         };
         filters.to.config.onChange = function (dateObj) {
+            removeSelectedShortcut();
             filters.from.set('maxDate', dateObj);
         };
 
@@ -39,9 +45,6 @@ $(function () {
         $('.date-shortcuts').on('click', 'a', function (e) {
             e.preventDefault();
             var thisElt = $(this);
-
-            $('.date-shortcuts a').removeClass('selected');
-            thisElt.addClass('selected');
 
             var range = thisElt.data('range');
             var value = parseInt(range.slice(0, -1));
@@ -51,6 +54,11 @@ $(function () {
 
             setDate('to', toDate);
             setDate('from', fromDate);
+
+            // The selected shortcut will be de-selected by the change trigger
+            // on the date filters. We thus re-select the correct one after
+            // everything else is done.
+            thisElt.addClass('selected');
         });
 
         return {
