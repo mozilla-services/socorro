@@ -297,11 +297,6 @@ def find_crash_id(input_str):
             pass  # will return None
 
 
-def sanitize_dict(dict_):
-    """Return a copy of the passed dict, without null or empty values."""
-    return dict((k, v) for (k, v) in dict_.items() if v not in (None, '', []))
-
-
 class UnicodeWriter:
     """
     A CSV writer which will write rows to CSV file "f",

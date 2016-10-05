@@ -248,34 +248,6 @@ LOGIN_URL = '/login/'
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# Types of query that can be run in search
-QUERY_TYPES = (
-    'contains',
-    'is_exactly',
-    'starts_with',
-    'simple',
-    'exact',  # for backward compatibility
-    'startswith',  # for backward compatibility
-)
-
-# This is for backward compatibility with the PHP app.
-QUERY_TYPES_MAP = {
-    'exact': 'is_exactly',
-    'startswith': 'starts_with',
-}
-
-# Maximum and default range of query that can be run in search
-QUERY_RANGE_MAXIMUM_DAYS = 30
-QUERY_RANGE_MAXIMUM_DAYS_ADMIN = 120
-QUERY_RANGE_DEFAULT_DAYS = 14
-
-# range unit values to allow in queries
-RANGE_UNITS = (
-    'weeks',
-    'days',
-    'hours',
-)
-
 # process types to allow in queries
 PROCESS_TYPES = (
     'any',
@@ -283,20 +255,6 @@ PROCESS_TYPES = (
     'plugin',
     'content',
     'all',  # alias for 'any'
-)
-
-# hang types to allow in queries
-HANG_TYPES = (
-    'any',
-    'crash',
-    'hang',
-    'all',  # alias for 'any'
-)
-
-# plugin fields to allow in queries
-PLUGIN_FIELDS = (
-    'filename',
-    'name',
 )
 
 # fields used in the simplified UI for Super Search

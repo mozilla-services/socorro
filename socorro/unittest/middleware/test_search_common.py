@@ -9,7 +9,7 @@ from configman import ConfigurationManager, Namespace
 
 from socorrolib.lib import BadArgumentError, datetimeutil
 from socorro.middleware.search_common import (
-    SearchBase, SearchParam, convert_to_type, get_parameters, restrict_fields
+    SearchBase, SearchParam, convert_to_type
 )
 from socorrolib.unittest.testbase import TestCase
 
@@ -437,99 +437,3 @@ class TestSearchCommon(TestCase):
         # Test error
         assert_raises(ValueError, convert_to_type, 'abds', 'int')
         assert_raises(ValueError, convert_to_type, '2013-02-32', 'date')
-
-    # -------------------------------------------------------------------------
-    def test_get_parameters(self):
-        """
-        Test search_common.get_parameters()
-        """
-        # Empty params, only default values are returned
-        params = get_parameters({})
-        ok_(params)
-
-        for i in params:
-            typei = type(params[i])
-            if i in ("from_date", "to_date", "build_from", "build_to"):
-                ok_(typei is datetime.datetime)
-            else:
-                ok_(
-                    not params[i] or
-                    typei is int or
-                    typei is str or
-                    typei is list
-                )
-
-        # Empty params
-        params = get_parameters({
-            "terms": "",
-            "fields": "",
-            "products": "",
-            "from_date": "",
-            "to_date": "",
-            "versions": "",
-            "reasons": "",
-            "release_channels": "",
-            "os": "",
-            "search_mode": "",
-            "build_ids": "",
-            "report_process": "",
-            "report_type": "",
-            "plugin_in": "",
-            "plugin_search_mode": "",
-            "plugin_terms": ""
-        })
-        assert params, "SearchCommon.get_parameters() returned something " \
-                       "empty or null."
-        for i in params:
-            typei = type(params[i])
-            if i in ("from_date", "to_date", "build_from", "build_to"):
-                ok_(typei is datetime.datetime)
-            else:
-                ok_(
-                    not params[i] or
-                    typei is int or
-                    typei is str or
-                    typei is list
-                )
-
-        # Test with encoded slashes in terms and signature
-        params = get_parameters({
-            "terms": ["some", "terms/sig"],
-            "signature": "my/little/signature"
-        })
-
-        ok_("signature" in params)
-        ok_("terms" in params)
-        eq_(params["terms"], ["some", "terms/sig"])
-        eq_(params["signature"], "my/little/signature")
-
-    # -------------------------------------------------------------------------
-    def test_restrict_fields(self):
-        """
-        Test search_common.restrict_fields()
-        """
-        authorized_fields = ['signature', 'dump']
-
-        fields = ["signatute", "signature", "123456sfdgerw&$%#&", "dump",
-                  None, "dump"]
-        theoric_fields = ["signature", "dump"]
-        restricted_fields = restrict_fields(fields, authorized_fields)
-        eq_(restricted_fields, theoric_fields)
-
-        fields = []
-        theoric_fields = ["signature"]
-        restricted_fields = restrict_fields(fields, authorized_fields)
-        eq_(restricted_fields, theoric_fields)
-
-        fields = None
-        theoric_fields = ["signature"]
-        restricted_fields = restrict_fields(fields, authorized_fields)
-        eq_(restricted_fields, theoric_fields)
-
-        fields = ["nothing"]
-        theoric_fields = ["signature"]
-        restricted_fields = restrict_fields(fields, authorized_fields)
-        eq_(restricted_fields, theoric_fields)
-
-        assert_raises(ValueError, restrict_fields, fields, [])
-        assert_raises(TypeError, restrict_fields, fields, None)

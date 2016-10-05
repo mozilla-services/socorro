@@ -953,76 +953,6 @@ class TCBS(SocorroMiddleware):
     }
 
 
-class ReportList(SocorroMiddleware):
-    """
-    The `start_date` and `end_date` are both required and its span
-    can not be more than 30 days.
-    """
-    URL_PREFIX = '/report/list/'
-
-    required_params = (
-        'signature',
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
-    )
-
-    possible_params = (
-        ('products', list),
-        ('versions', list),
-        ('os', list),
-        'build_ids',
-        'reasons',
-        'release_channels',
-        'report_process',
-        'report_type',
-        'plugin_in',
-        'plugin_search_mode',
-        'plugin_terms',
-        'result_number',
-        'result_offset',
-        'include_raw_crash',
-        'sort',
-        'reverse',
-    )
-
-    aliases = {
-        'start_date': 'from',
-        'end_date': 'to',
-    }
-
-    API_WHITELIST = {
-        'hits': (
-            'product',
-            'os_name',
-            'uuid',
-            'hangid',
-            'last_crash',
-            'date_processed',
-            'cpu_name',
-            'uptime',
-            'process_type',
-            'cpu_info',
-            'reason',
-            'version',
-            'os_version',
-            'build',
-            'install_age',
-            'signature',
-            'install_time',
-            'duplicate_of',
-            'address',
-            'user_comments',
-            'release_channel',
-            # deliberately avoiding 'raw_crash' here
-        )
-    }
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL),
-        ('user_comments', scrubber.URL),
-    )
-
-
 class ProcessedCrash(SocorroMiddleware):
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
@@ -1268,52 +1198,6 @@ class RawCrash(SocorroMiddleware):
         return result
 
 
-class CommentsBySignature(SocorroMiddleware):
-
-    URL_PREFIX = '/crashes/comments/'
-
-    required_params = (
-        'signature',
-    )
-
-    possible_params = (
-        'products',
-        'versions',
-        'os',
-        'start_date',
-        'end_date',
-        'build_ids',
-        'reasons',
-        'report_process',
-        'report_type',
-        'plugin_in',
-        'plugin_search_mode',
-        'plugin_terms',
-        'result_number',
-        'result_offset'
-    )
-
-    aliases = {
-        'start_date': 'from',
-        'end_date': 'to'
-    }
-
-    API_WHITELIST = {
-        'hits': (
-            'user_comments',
-            'date_processed',
-            'uuid',
-        ),
-        # deliberately not including:
-        #    email
-    }
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL, 'EMAILREMOVED'),
-        ('user_comments', scrubber.URL, 'URLREMOVED'),
-    )
-
-
 class CrashesByExploitability(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/exploitability/'
@@ -1467,42 +1351,6 @@ class SignatureTrend(SocorroMiddleware):
     }
 
 
-class SignatureSummary(SocorroMiddleware):
-
-    URL_PREFIX = '/signaturesummary/'
-
-    required_params = (
-        ('report_types', list),
-        'signature',
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-    )
-
-    possible_params = (
-        ('versions', list),
-        'report_type',  # kept for legacy
-    )
-
-    API_WHITELIST = (
-        'category',
-        'percentage',
-        'product_name',
-        'version_string',
-        'reports',
-    )
-
-    def get(self, *args, **kwargs):
-        # You're not allowed to view the exploitability report if you
-        # don't have permission to do so.
-        # If the `self.api_user` is set, it means this model is called
-        # via the web API.
-        if self.api_user:
-            if not self.api_user.has_perm('crashstats.view_exploitability'):
-                if 'exploitability' in kwargs['report_types']:
-                    kwargs['report_types'].remove('exploitability')
-        return super(SignatureSummary, self).get(*args, **kwargs)
-
-
 class Status(SocorroMiddleware):
 
     # This model uses an implementation that only really reads
@@ -1578,30 +1426,6 @@ class BugzillaBugInfo(BugzillaAPI):
         return {'bugs': results}
 
 
-class SignatureURLs(SocorroMiddleware):
-
-    URL_PREFIX = '/signatureurls/'
-
-    required_params = (
-        ('products', list),
-        'signature',
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
-    )
-
-    possible_params = (
-        ('versions', list),
-    )
-
-    API_WHITELIST = {
-        'hits': (
-            'crash_count',
-            # deliberately leaving out 'url',
-            # is that correct?
-        )
-    }
-
-
 class Correlations(SocorroMiddleware):
 
     URL_PREFIX = '/correlations/'
@@ -1646,38 +1470,6 @@ class Field(SocorroMiddleware):
 
     required_params = (
         'name',
-    )
-
-
-class CrashesFrequency(SocorroMiddleware):
-
-    URL_PREFIX = '/crashes/frequency/'
-
-    required_params = (
-        'signature',
-    )
-
-    possible_params = (
-        ('products', list),
-        ('from', datetime.date),
-        ('to', datetime.date),
-        ('versions', list),
-        ('os', list),
-        ('reasons', list),
-        ('release_channels', list),
-        ('build_ids', list),
-        ('build_from', list),
-        ('build_to', list),
-        'report_process',
-        'report_type',
-        ('plugin_in', list),
-        'plugin_search_mode',
-        ('plugin_terms', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
     )
 
 
@@ -1933,3 +1725,16 @@ class Healthcheck(SocorroMiddleware):
 
     URL_PREFIX = '/healthcheck/'
     cache_seconds = 0
+
+
+# Deprecated Models
+class ReportList(SocorroMiddleware):
+    API_WHITELIST = None
+
+    def get(*args, **kwargs):
+        return {
+            'error': (
+                'This endpoint has been removed. Please consider using our '
+                'other API endpoints. '
+            )
+        }

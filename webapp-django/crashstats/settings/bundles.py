@@ -94,12 +94,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/report-pending.min.css',
     },
-    'report_list': {
-        'source_filenames': (
-            'crashstats/css/report_list.less',
-        ),
-        'output_filename': 'css/report-list.min.css',
-    },
     'api_tokens': {
         'source_filenames': (
             'manage/css/api_tokens.css',
@@ -352,22 +346,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/pending.js',
         ),
         'output_filename': 'js/report-pending.min.js',
-    },
-    'report_list': {
-        'source_filenames': (
-            'crashstats/js/jquery/plugins/jquery.cookie.js',
-            'crashstats/js/lib/awty.js',
-            'crashstats/js/socorro/report_list.js',
-            'crashstats/js/socorro/report_list_signature_summary.js',
-            'crashstats/js/socorro/report_list_graph.js',
-            'crashstats/js/socorro/report_list_reports.js',
-            'crashstats/js/socorro/report_list_comments.js',
-            'crashstats/js/socorro/report_list_correlations.js',
-            'crashstats/js/socorro/report_list_sigurls.js',
-            'crashstats/js/socorro/report_list_bugzilla.js',
-            'crashstats/js/socorro/report_list_table.js',
-        ),
-        'output_filename': 'js/report-list.min.js',
     },
     'api_tokens': {
         'source_filenames': (

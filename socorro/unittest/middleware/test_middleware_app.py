@@ -538,7 +538,9 @@ class IntegrationTestMiddlewareApp(TestCase):
             middleware_app.MiddlewareApp.SERVICES_LIST = services_list
         else:
             # the global list
-            middleware_app.MiddlewareApp.SERVICES_LIST = middleware_app.SERVICES_LIST
+            middleware_app.MiddlewareApp.SERVICES_LIST = (
+                middleware_app.SERVICES_LIST
+            )
         required_config = middleware_app.MiddlewareApp.get_required_config()
         required_config.add_option('logger', default=mock_logging)
 
@@ -704,13 +706,6 @@ class IntegrationTestMiddlewareApp(TestCase):
 
             response = self.get(
                 server,
-                '/crashes/comments/',
-                {'signature': 'xxx', 'from': '2011-05-01'}
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
-            response = self.get(
-                server,
                 '/crashes/daily/',
                 {
                     'product': 'Firefox',
@@ -720,17 +715,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 }
             )
             eq_(response.data, {'hits': {}})
-
-            response = self.get(
-                server,
-                '/crashes/frequency/',
-                {
-                    'signature': 'SocketSend',
-                    'from_date': '2011-05-01',
-                    'to_date': '2011-05-05',
-                }
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
 
             response = self.get(
                 server,
@@ -744,46 +728,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 '/crashes/exploitability/'
             )
             eq_(response.data, {'hits': [], 'total': 0})
-
-    def test_crashes_comments_with_data(self):
-        config_manager = self._setup_config_manager()
-
-        now = datetimeutil.utc_now()
-        uuid = "%%s-%s" % now.strftime("%y%m%d")
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO reports
-            (id, date_processed, uuid, signature, user_comments)
-            VALUES
-            (
-                1,
-                %s,
-                %s,
-                'sig1',
-                'crap'
-            ),
-            (
-                2,
-                %s,
-                %s,
-                'sig2',
-                'great'
-            );
-        """, (now, uuid % "a1", now, uuid % "a2"))
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/crashes/comments/',
-                {'signature': 'sig1', 'from': now, 'to': now}
-            )
-            eq_(response.data['total'], 1)
-            eq_(response.data['hits'][0]['user_comments'], 'crap')
 
     def test_field(self):
         config_manager = self._setup_config_manager()
@@ -803,59 +747,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 'transforms': None,
                 'product': None
             })
-
-    def test_priorityjobs(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/priorityjobs/',
-                {'uuid': self.uuid},
-                expect_errors=True
-            )
-            eq_(response.status, 500)
-
-            response = self.post(
-                server,
-                '/priorityjobs/',
-                {'uuid': self.uuid}
-            )
-            ok_(response.data)
-
-    def test_products(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/products/',
-                {'versions': 'Firefox:9.0a1'}
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
-    def test_releases_channels(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/releases/channels/',
-                {'products': ['Firefox', 'Fennec']}
-            )
-            eq_(response.data, {})
 
     def test_releases_featured(self):
         config_manager = self._setup_config_manager()
@@ -887,110 +778,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, False)
 
-    def test_signatureurls(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/signatureurls/',
-                {
-                    'signature': 'samplesignature',
-                    'start_date': '2012-03-01T00:00:00+00:00',
-                    'end_date': '2012-03-31T00:00:00+00:00',
-                    'products': ['Firefox', 'Fennec'],
-                    'versions': ['Firefox:4.0.1', 'Fennec:13.0'],
-                }
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
-    def test_report_list(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/report/list/',
-                {
-                    'signature': 'SocketSend',
-                    'from': '2011-05-01',
-                    'to': '2011-05-05',
-                }
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
-    def test_util_versions_info(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/util/versions_info/',
-                {'versions': ['Firefox:9.0a1', 'Fennec:7.0']}
-            )
-            eq_(response.data, {})
-
-    def test_signaturesummary(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/signaturesummary/',
-                {
-                    'report_type': 'products',
-                    'signature': 'sig+nature',
-                    'start_date': '2012-02-29T01:23:45+00:00',
-                    'end_date': '2012-02-29T01:23:45+00:00',
-                    'versions': [1, 2],
-                }
-            )
-            eq_(response.data, [])
-
-    def test_backfill(self):
-        config_manager = self._setup_config_manager()
-
-        cursor = self.conn.cursor()
-        cursor.execute("""
-        INSERT INTO raw_adi
-        (adi_count, date, product_name, product_os_platform,
-        product_os_version, product_version, build, update_channel,
-        product_guid, received_at)
-        VALUES
-        (10, '2013-08-22', 'NightTrain', 'Linux', 'Linux', '3.0a2',
-        '20130821000016', 'aurora', '{nighttrain@example.com}',
-        '2013-08-21')
-        """)
-        self.conn.commit()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/backfill/',
-                {'backfill_type': 'adu', 'update_day': '2013-08-22'}
-            )
-            eq_(response.status, 200)
-
     def test_missing_argument_yield_bad_request(self):
         config_manager = self._setup_config_manager()
 
@@ -998,14 +785,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             app = middleware_app.MiddlewareApp(config)
             app.main()
             server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/crashes/comments/',
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('signature' in response.body)
 
             response = self.get(
                 server,
@@ -1023,42 +802,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.status, 400)
             ok_('versions' in response.body)
-
-            response = self.get(
-                server,
-                '/priorityjobs/',
-                expect_errors=True
-            )
-            eq_(response.status, 500)
-
-            response = self.post(
-                server,
-                '/priorityjobs/',
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-
-            response = self.post(
-                server,
-                '/priorityjobs/',
-                {'uuid': 1234689},
-            )
-            eq_(response.status, 200)
-
-            response = self.get(
-                server,
-                '/signatureurls/',
-                {
-                    'signXXXXe': 'samplesignature',
-                    'start_date': '2012-03-01T00:00:00+00:00',
-                    'end_date': '2012-03-31T00:00:00+00:00',
-                    'products': ['Firefox', 'Fennec'],
-                    'versions': ['Firefox:4.0.1', 'Fennec:13.0'],
-                },
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-            ok_('signature' in response.body)
 
     def test_setting_up_with_lists_overridden(self):
 
@@ -1110,53 +853,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 }
             )
             eq_(response.data, {'hits': [], 'total': 0})
-
-    def test_post_product(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.post(
-                server,
-                '/products/',
-                {
-                    'product': 'KillerApp',
-                    'version': '1.0',
-                }
-            )
-            eq_(response.data, True)
-
-            # do it a second time
-            response = self.post(
-                server,
-                '/products/',
-                {
-                    'product': 'KillerApp',
-                    'version': '1.0',
-                }
-            )
-            eq_(response.data, False)
-
-    def test_post_bad_product(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.post(
-                server,
-                '/products/',
-                {
-                    'product': 'Spaces not allowed',
-                    'version': '',
-                }
-            )
-            eq_(response.data, False)
 
     def test_create_release(self):
         self._insert_release_channels()

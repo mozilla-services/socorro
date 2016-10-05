@@ -1235,14 +1235,6 @@ th.bugzilla_numbers {
         }
     }
 }
-/* Search Results */
-#reports-list {
-    .comments {
-    max-width: 138px;
-    /* Extremely long rants with no spaces break the table... */
-    word-wrap: break-word;
-    }
-}
 
 table.tablesorter {
     tbody {
@@ -1254,6 +1246,7 @@ table.tablesorter {
         }
     }
 }
+
 /* top crashers no results */
 .no-results {
     clear: both;
@@ -1264,36 +1257,6 @@ table.tablesorter {
 }
 .startup {
     margin-right: 1px;
-}
-/* signature summary */
-table.sig-dashboard-tbl {
-    /* icon-expanderArrow */
-    display: none;
-    margin: 1em auto 2.5em auto;
-    caption {
-        background: rgb(235, 235, 235) url(../../img/arrow_expanded.png) 98% 15px no-repeat;
-        padding: .9em .6em;
-        .rounded-corners(6px, 6px);
-        cursor: pointer;
-    }
-}
-.sigtbl-title {
-    display: block;
-    margin-bottom: .3em;
-    font-weight: bold;
-    font-size: 16px;
-}
-table.initially-hidden {
-    caption {
-        background: rgb(235, 235, 235) url(../../img/arrow_collapsed.png) 98% 15px no-repeat;
-        .rounded-corners(6px);
-    }
-    thead {
-        .accessibly-hidden();
-    }
-    tbody {
-        .accessibly-hidden();
-    }
 }
 
 /* hide google ssIFrame */
@@ -1311,19 +1274,6 @@ table.data-table {
             }
         }
     }
-}
-
-/* arewethereyet progress meter */
-.awty-progress {
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    background-color: #333;
-    width: 0;
-    height: 5px;
-    z-index: 9999;
-    transition: width 1s ease,
-                height .2s ease;
 }
 
 /* jQueryUI theme overrides */

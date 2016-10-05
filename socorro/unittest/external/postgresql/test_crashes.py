@@ -61,56 +61,6 @@ class TestCrashes(TestCase):
         }
         return Crashes(**args)
 
-    # -------------------------------------------------------------------------
-    def test_prepare_search_params(self):
-        """Test Crashes.prepare_search_params()."""
-        crashes = self.get_instance()
-
-        # .....................................................................
-        # Test 1: no args
-        args = {}
-        assert_raises(MissingArgumentError,
-                      crashes.prepare_search_params,
-                      **args)
-
-        # .....................................................................
-        # Test 2: a signature
-        args = {
-            "signature": "something"
-        }
-
-        params = crashes.prepare_search_params(**args)
-        ok_("signature" in params)
-        ok_("terms" in params)
-        eq_(params["signature"], "something")
-        eq_(params["signature"], params["terms"])
-
-        # .....................................................................
-        # Test 3: some OS
-        args = {
-            "signature": "something",
-            "os": ["windows", "linux"]
-        }
-
-        params = crashes.prepare_search_params(**args)
-        ok_("os" in params)
-        eq_(len(params["os"]), 2)
-        eq_(params["os"][0], "Windows NT")
-        eq_(params["os"][1], "Linux")
-
-        # .....................................................................
-        # Test 4: with a plugin
-        args = {
-            "signature": "something",
-            "report_process": "plugin",
-            "plugin_terms": ["some", "plugin"],
-            "plugin_search_mode": "contains",
-        }
-
-        params = crashes.prepare_search_params(**args)
-        ok_("plugin_terms" in params)
-        eq_(params["plugin_terms"], "%some plugin%")
-
     def test_get_signatures_with_too_big_date_range(self):
         # This can all be some fake crap because we're testing that
         # the implementation class throws out the request before
@@ -534,104 +484,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         super(IntegrationTestCrashes, cls).tearDownClass()
 
     # -------------------------------------------------------------------------
-    def test_get_comments(self):
-        crashes = Crashes(config=self.config)
-        today = datetimeutil.date_to_string(self.now)
-
-        # Test 1: results
-        params = {
-            "signature": "js",
-        }
-        res_expected = {
-            "hits": [
-                {
-                    "email": None,
-                    "date_processed": today,
-                    "uuid": "def",
-                    "user_comments": "hello"
-                },
-                {
-                    "email": None,
-                    "date_processed": today,
-                    "uuid": "hij",
-                    "user_comments": "hah"
-                }
-            ],
-            "total": 2
-        }
-
-        res = crashes.get_comments(**params)
-        eq_(res, res_expected)
-
-        # Test 2: no results
-        params = {
-            "signature": "blah",
-        }
-        res_expected = {
-            "hits": [],
-            "total": 0
-        }
-
-        res = crashes.get_comments(**params)
-        eq_(res, res_expected)
-
-        # Test 3: missing parameter
-        assert_raises(MissingArgumentError, crashes.get_comments)
-
-        # Test a valid rapid beta versions
-        params = {
-            "signature": "cool_sig",
-            "products": "Firefox",
-            "versions": "Firefox:14.0b",
-        }
-        res_expected = {
-            'hits': [
-                {
-                    'email': None,
-                    'date_processed': today,
-                    'uuid': 'nop',
-                    'user_comments': 'hi!'
-                }
-            ],
-            'total': 1
-        }
-
-        res = crashes.get_comments(**params)
-        eq_(res, res_expected)
-
-        # Test an invalid rapid beta versions
-        params = {
-            "signature": "cool_sig",
-            "versions": "WaterWolf:2.0b",
-        }
-        res_expected = {
-            'hits': [
-                {
-                    'email': None,
-                    'date_processed': today,
-                    'uuid': 'qrs',
-                    'user_comments': 'meow'
-                }
-            ],
-            'total': 1
-        }
-
-        res = crashes.get_comments(**params)
-        eq_(res, res_expected)
-
-        # use pagination
-        params = {
-            "signature": "cool_sig",
-            "result_number": 1,
-            "result_offset": 0,
-        }
-        params['result_number'] = 1
-        params['result_offset'] = 0
-        res = crashes.get_comments(**params)
-        eq_(len(res['hits']), 1)
-        eq_(res['total'], 2)
-
-    # -------------------------------------------------------------------------
     def test_get_daily(self):
         crashes = Crashes(config=self.config)
         now = self.now.date()
@@ -836,87 +688,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         eq_(res, expected)
 
     # -------------------------------------------------------------------------
-    def test_get_frequency(self):
-        self.config.webapi = util.DotDict()
-        self.config.webapi.platforms = (
-            {
-                "id": "windows",
-                "name": "Windows NT"
-            },
-            {
-                "id": "linux",
-                "name": "Linux"
-            }
-        )
-        crashes = Crashes(config=self.config)
-
-        # .....................................................................
-        # Test 1
-        params = {
-            "signature": "js"
-        }
-        res_expected = {
-            "hits": [
-                {
-                    "build_date": "2012033117",
-                    "count": 1,
-                    "frequency": 1.0,
-                    "total": 1,
-                    "count_windows": 1,
-                    "frequency_windows": 1.0,
-                    "count_linux": 0,
-                    "frequency_linux": 0
-                },
-                {
-                    "build_date": "2012033116",
-                    "count": 2,
-                    "frequency": 1.0,
-                    "total": 2,
-                    "count_windows": 1,
-                    "frequency_windows": 1.0,
-                    "count_linux": 1,
-                    "frequency_linux": 1.0
-                }
-            ],
-            "total": 2
-        }
-        res = crashes.get_frequency(**params)
-
-        eq_(res, res_expected)
-
-        # .....................................................................
-        # Test 2
-        params = {
-            "signature": "blah"
-        }
-        res_expected = {
-            "hits": [
-                {
-                    "build_date": "2012033117",
-                    "count": 1,
-                    "frequency": 1.0,
-                    "total": 1,
-                    "count_windows": 0,
-                    "frequency_windows": 0.0,
-                    "count_linux": 0,
-                    "frequency_linux": 0.0
-                }
-            ],
-            "total": 1
-        }
-        res = crashes.get_frequency(**params)
-
-        eq_(res, res_expected)
-
-        # .....................................................................
-        # Verify that it is not possible to break the query.
-        params = {
-            "signature": "sig'"
-        }
-        res = crashes.get_frequency(**params)
-        eq_(res["total"], 0)
-
-    # -------------------------------------------------------------------------
     def test_get_exploitibility(self):
         crashes = Crashes(config=self.config)
 
@@ -1033,7 +804,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         j = 100  # some number so it's not used by other tests or fixtures
 
-        rand = lambda: random.randint(0, 10)
+        def rand():
+            return random.randint(0, 10)
+
         exploit_values = []
         signature_values = []
         for day in day_before_yesterday, yesterday_date, self.now:
