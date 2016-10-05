@@ -147,7 +147,7 @@ $(document).ready(function () {
             6: { sorter: 'digit' },
             7: { sorter: 'digit' },
             8: { sorter: 'digit' },
-            9: { sorter: 'digit' },
+            9: { sorter: 'date' },  // First Appearance
             11: { sorter: false },  // Bugzilla IDs
             12: { sorter: false },  // Correlation
         },
