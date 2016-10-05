@@ -4,6 +4,7 @@ from collections import defaultdict
 from django import http
 from django.conf import settings
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
@@ -208,9 +209,9 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context['version'] = versions[0]
 
     if tcbs_mode == 'realtime':
-        end_date = datetime.datetime.utcnow().replace(microsecond=0)
+        end_date = timezone.now().replace(microsecond=0)
     elif tcbs_mode == 'byday':
-        end_date = datetime.datetime.utcnow().replace(
+        end_date = timezone.now().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
 
