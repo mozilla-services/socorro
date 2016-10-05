@@ -69,6 +69,10 @@ $(function () {
                 // will most likely be wrong now.
                 $('.date-shortcuts a').removeClass('selected');
 
+                if (!Array.isArray(dates)) {
+                    dates = [dates];
+                }
+
                 // Set date filters values.
                 dates.forEach(function (value) {
                     var date;
@@ -79,7 +83,7 @@ $(function () {
                         else {
                             date = value.slice(1);
                         }
-                        setDate('from', moment(date).toDate());
+                        setDate('from', moment.utc(date).utcOffset(date).toDate());
                     }
                     else if (value.indexOf('<') === 0) {
                         if (value.indexOf('<=') === 0) {
@@ -88,7 +92,7 @@ $(function () {
                         else {
                             date = value.slice(1);
                         }
-                        setDate('to', moment(date).toDate());
+                        setDate('to', moment.utc(date).utcOffset(date).toDate());
                     }
                 });
             },
