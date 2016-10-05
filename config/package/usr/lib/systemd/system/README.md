@@ -8,4 +8,4 @@
 
 ## Infra which does not automatically restart after a consul config value update
 * Collectors
-* Crontabber
+* Crontabbers
