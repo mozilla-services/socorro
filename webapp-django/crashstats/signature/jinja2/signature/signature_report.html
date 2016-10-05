@@ -27,6 +27,8 @@
     </div>
 
     <section id="search-form">
+        <div class="loader"></div>
+
         <form method="get" action="{{ url('signature:signature_report') }}"
             data-fields-url="{{ url('supersearch.search_fields') }}?{{ make_query_string(exclude=['signature', 'date']) }}"
             data-signature="{{ signature }}"
@@ -40,7 +42,6 @@
 
             <fieldset id="search-params-fieldset"></fieldset>
 
-            <p><em>Note: by default, the date will be a range between now and a week ago. You can override the lower bound, the upper bound, or both. </em></p>
             <div class="clear"></div>
         </form>
     </section>
