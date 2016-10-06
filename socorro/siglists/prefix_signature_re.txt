@@ -104,6 +104,7 @@ NS_ABORT_OOM.*
 nsDataHashtable<.*>::.*
 NS_DebugBreak.*
 nsDebugImpl::Abort
+nsDependentString::nsDependentString
 nsEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
