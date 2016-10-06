@@ -6,6 +6,7 @@
 saving, fetching and iterating over raw crashes, dumps and processed crashes.
 """
 
+import copy
 import sys
 import os
 import collections
@@ -591,13 +592,26 @@ class PolyCrashStorage(CrashStorageBase):
     def save_raw_and_processed(self, raw_crash, dump, processed_crash,
                                crash_id):
         storage_exception = PolyStorageError()
+
+        def make_deep_copy(crash):
+            """Return a deep copy of the SocorroDotDict.
+            It doesn't work to use `copy.deepcopy(crash)` because the
+            the SocorroDotDict doesn't support that at all.
+            So, instead we convert it to a plain dict, copy that, and
+            convert it back to SocorroDotDict in the end.
+
+            Ideally, we shouldn't be using any of this *DotDict and just
+            use plain dict objects.
+            """
+            return SocorroDotDict(copy.deepcopy(dict(crash)))
+
         for a_store in self.stores.itervalues():
             self.quit_check()
             try:
                 a_store.save_raw_and_processed(
                     raw_crash,
                     dump,
-                    processed_crash,
+                    make_deep_copy(processed_crash),
                     crash_id
                 )
             except Exception:
