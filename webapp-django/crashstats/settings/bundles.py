@@ -472,6 +472,12 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/tokens.min.js',
     },
+    'error': {
+        'source_filenames': (
+            'js/error.js',
+        ),
+        'output_filename': 'js/error.min.js',
+    },
 }
 
 # This is sanity checks, primarily for developers. It checks that
