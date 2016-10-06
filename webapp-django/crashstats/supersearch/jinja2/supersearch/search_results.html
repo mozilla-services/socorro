@@ -44,21 +44,21 @@
                             {{ crash[column] }}
                         </a>
                         &nbsp;
-                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             Add term
                         </a>
                         {% elif is_list(crash[column]) %}
                             {% for val in crash[column] %}
-                            <a href="{{ current_url }}&amp;{{ column }}=%3D{{ val }}" class="term" data-field="{{ column }}" data-content="{{ val }}" title="Add this term to the search form">
+                            <a href="{{ current_url }}&amp;{{ column }}=%3D{{ val | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ val }}" title="Add this term to the search form">
                                 {{ val }}
                             </a>
                             {% endfor %}
                         {% elif column == 'install_time' %}
-                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             {{ crash[column] | timestamp_to_date }}
                         </a>
                         {% else %}
-                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
+                        <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
                             {{ crash[column] }}
                         </a>
                         {% endif %}
@@ -94,7 +94,7 @@
                 <td>{{ loop.index }}</td>
                 <td>
                     {% if facet != 'signature' %}
-                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">{{ hit.term }}</a>
+                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">{{ hit.term }}</a>
                     {% else %}
                     <a
                         href="{{ url('signature:signature_report') }}{{ change_query_string(
@@ -109,7 +109,7 @@
                         {{ hit.term }}
                     </a>
                     &nbsp;
-                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">Add term</a>
+                    <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">Add term</a>
                     {% endif %}
                 </td>
                 <td>{{ hit.count }}</td>
