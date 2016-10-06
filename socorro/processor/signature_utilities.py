@@ -823,6 +823,8 @@ class SignatureIPCMessageName(Rule):
 
     #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        new_sig = processed_crash['signature'] + ' | IPC_Message_Name={}'.format(raw_crash['ipc_message_name'])
-        processed_crash['signature'] = new_sig
+        processed_crash['signature'] = '{} | IPC_Message_Name={}'.format(
+            processed_crash['signature'],
+            raw_crash['ipc_message_name']
+        )
         return True
