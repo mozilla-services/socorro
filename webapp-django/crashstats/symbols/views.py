@@ -253,17 +253,19 @@ def web_upload(request):
     return render(request, 'symbols/web_upload.html', context)
 
 
-@login_required
-@permission_required('crashstats.upload_symbols')
 def api_upload(request):
     """The page about doing an upload via things like curl"""
     context = {}
     has_possible_token = False
     required_permission = Permission.objects.get(codename='upload_symbols')
-    for token in Token.objects.active().filter(user=request.user):
-        if token.permissions.filter(codename='upload_symbols'):
-            has_possible_token = True
+    if request.user.is_active:
+        for token in Token.objects.active().filter(user=request.user):
+            if token.permissions.filter(codename='upload_symbols'):
+                has_possible_token = True
     context['has_possible_token'] = has_possible_token
+    context['has_necessary_permission'] = request.user.has_perm(
+        'crashstats.upload_symbols'
+    )
     context['required_permission'] = required_permission
     context['absolute_base_url'] = (
         '%s://%s' % (
