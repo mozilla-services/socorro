@@ -123,35 +123,6 @@ class ScrapersMixin(object):
 
         return results, bad_lines
 
-    def parse_b2g_file(self, url):
-        """
-          Parse the B2G manifest JSON file
-          Example: {"buildid": "20130125070201", "update_channel":
-                    "nightly", "version": "18.0"}
-          TODO handle exception if file does not exist
-        """
-        content = self.download(url)
-        if not content:
-            return
-        results = json.loads(content)
-
-        # bug 869564: Return None if update_channel is 'default'
-        if results['update_channel'] == 'default':
-            self.config.logger.warning(
-                "Found default update_channel for buildid: %s. Skipping.",
-                results['buildid']
-            )
-            return
-
-        # Default 'null' channels to nightly
-        results['build_type'] = results['update_channel'] or 'nightly'
-
-        # Default beta_number to 1 for beta releases
-        if results['update_channel'] == 'beta':
-            results['beta_number'] = results.get('beta_number', 1)
-
-        return results
-
     def get_json_release(self, candidate_url, dirname):
         version = dirname.split('-candidates')[0]
 
@@ -238,38 +209,6 @@ class ScrapersMixin(object):
             kvpairs['version_build'] = version_build
 
             yield (platform, version, kvpairs, bad_lines)
-
-    def get_b2g(self, url, backfill_date=None):
-        """
-        Last mile of B2G scraping, calls parse_b2g on .json
-        Files look like:  socorro_unagi-stable_2013-01-25-07.json
-        """
-        info_files = self.get_links(url, ends_with='.json')
-        platform = None
-        version = None
-        repository = 'b2g-release'
-        for url in info_files:
-            # Pull platform out of the filename
-
-            jsonfilename = os.path.basename(url).split('_')
-            # We only want to consider .json files that look like this:
-            #  socorro_something_YYYY-MM-DD.json
-            # So, basically it needs to be at least 3 parts split by _
-            # and the first part must be 'socorro'
-            # Skip if this file isn't for socorro!
-            if jsonfilename[0] != 'socorro' or len(jsonfilename) < 3:
-                continue
-
-            platform = jsonfilename[1]
-            kvpairs = self.parse_b2g_file(url)
-
-            # parse_b2g_file() returns None when a file is
-            #    unable to be parsed or we ignore the file
-            if kvpairs is None:
-                continue
-            version = kvpairs['version']
-
-            yield (platform, repository, version, kvpairs)
 
 
 #==============================================================================
@@ -358,18 +297,11 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                 product_name,
                 date
             )
-            if product_name == 'b2g':
-                self.database_transaction_executor(
-                    self.scrape_b2g,
-                    product_name,
-                    date
-                )
-            else:
-                self.database_transaction_executor(
-                    self._scrape_json_releases_and_nightlies,
-                    product_name,
-                    date
-                )
+            self.database_transaction_executor(
+                self._scrape_json_releases_and_nightlies,
+                product_name,
+                date
+            )
 
     def _scrape_json_releases_and_nightlies(
         self,
@@ -504,47 +436,6 @@ class FTPScraperCronApp(BaseCronApp, ScrapersMixin):
                         ignore_duplicates=True
                     )
 
-    def scrape_b2g(self, connection, product_name, date):
-        if product_name != 'b2g':
-            return
-
-        directories = (
-            product_name,
-            'manifests',
-            'nightly',
-        )
-        b2g_manifests = self.config.base_url
-        for part in directories:
-            b2g_manifests = urlparse.urljoin(b2g_manifests, part + '/')
-        dir_prefix = date.strftime('%Y-%m-%d')
-        cursor = connection.cursor()
-        version_dirs = self.get_links(b2g_manifests, ends_with='/')
-        for version_dir in version_dirs:
-            prod_url = urlparse.urljoin(
-                version_dir, date.strftime('%Y/%m/')
-            )
-            nightlies = self.get_links(prod_url, starts_with=dir_prefix)
-            for nightly in nightlies:
-                b2gs = self.get_b2g(
-                    nightly,
-                    backfill_date=None,
-                )
-                for info in b2gs:
-                    platform, repository, version, kvpairs = info
-                    build_id = kvpairs['buildid']
-                    build_type = kvpairs['build_type']
-                    self._insert_build(
-                        cursor,
-                        product_name,
-                        version,
-                        platform,
-                        build_id,
-                        build_type,
-                        kvpairs.get('beta_number', None),
-                        repository,
-                        ignore_duplicates=True
-                    )
-
 
 class FTPScraperCronAppDryRunner(App):  # pragma: no cover
     """This is a utility class that makes it easy to run the scraping
@@ -565,7 +456,7 @@ class FTPScraperCronAppDryRunner(App):  # pragma: no cover
     (see the configuration set up in the FTPScraperCronApp above). You
     can override that like this:
 
-        $ python socorro/cron/jobs/ftpscraper.py --product=mobile,b2g
+        $ python socorro/cron/jobs/ftpscraper.py --product=mobile,thunderbird
 
     """
 
