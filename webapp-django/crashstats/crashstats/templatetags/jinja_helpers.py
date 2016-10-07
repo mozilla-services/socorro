@@ -373,3 +373,8 @@ def show_filesize(bytes, unit='bytes'):
         'unit': unit,
         'humanized': humanized,
     }).strip())
+
+
+@library.global_function
+def booleanish_to_boolean(value):
+    return str(value).lower() in ('1', 'true', 'yes')

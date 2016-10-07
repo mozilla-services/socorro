@@ -252,11 +252,11 @@
 
                             {# Crash circumstances #}
 
-                            {% if raw.StartupCrash == '1' %}
+                            {% if booleanish_to_boolean(raw.StartupCrash) %}
                             <tr title="{{ fields_desc['raw_crash.StartupCrash'] }}">
                                 <th scope="row">Startup Crash</th>
                                 <td>
-                                    <pre>True</pre>
+                                    <pre>{{ booleanish_to_boolean(raw.StartupCrash) }}</pre>
                                 </td>
                             </tr>
                             {% endif %}
