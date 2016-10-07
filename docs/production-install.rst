@@ -10,6 +10,16 @@ Currently Socorro is supported on CentOS 7
 For any other platform, you must build from source. See
 :ref:`development-chapter` for more information.
 
+.. WARNING::
+
+   October 7th, 2016: The RPM contains a ``socorro-virtualenv/`` that's built
+   using a local install of Python 2.7.11, so it doesn't work on a standard
+   CentOS install.
+
+   This is covered in `bug 1308469
+   <https://bugzilla.mozilla.org/show_bug.cgi?id=1308469>`_.
+
+
 Installing services
 -------------------
 
