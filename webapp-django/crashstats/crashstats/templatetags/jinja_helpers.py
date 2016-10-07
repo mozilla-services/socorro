@@ -33,10 +33,16 @@ def truncatechars(str_, max_length):
 
 @library.filter
 def urlencode(txt):
-    """Url encode a path."""
+    """Url encode a path.
+
+    This function ensures white spaces are encoded with '%20' and not '+'.
+    """
+    if not isinstance(txt, basestring):
+        # Do nothing on non-strings.
+        return txt
     if isinstance(txt, unicode):
         txt = txt.encode('utf-8')
-    return urllib.quote_plus(txt)
+    return urllib.quote_plus(txt).replace('+', '%20')
 
 
 @library.filter
