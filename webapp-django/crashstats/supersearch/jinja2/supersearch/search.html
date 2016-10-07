@@ -11,7 +11,10 @@
 {% endblock %}
 
 {% block content %}
-<div id="mainbody">
+<div id="mainbody"
+    data-columns="{{ possible_columns | to_json }}"
+    data-facets="{{ possible_facets | to_json }}"
+    >
     <div class="page-heading">
         <h2>Super Search</h2>
 
@@ -116,11 +119,6 @@
 {% block site_js %}
     {{ super() }}
 
-<script>
-var COLUMNS = {{ possible_columns | json_dumps }};
-var FACETS = {{ possible_facets | json_dumps }};
-var BASE_URL = location.protocol + '//' + location.host;
-</script>
     {% javascript 'select2' %}
     {% javascript 'jquery_ui' %}
     {% javascript 'jquery_tablesorter' %}
