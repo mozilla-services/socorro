@@ -252,7 +252,7 @@
 
                             {# Crash circumstances #}
 
-                            {% if raw.StartupCrash %}
+                            {% if raw.StartupCrash == '1' %}
                             <tr title="{{ fields_desc['raw_crash.StartupCrash'] }}">
                                 <th scope="row">Startup Crash</th>
                                 <td>
