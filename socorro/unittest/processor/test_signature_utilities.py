@@ -24,6 +24,7 @@ from socorro.processor.signature_utilities import (
     SignatureRunWatchDog,
     SigTrunc,
     SignatureShutdownTimeout,
+    SignatureIPCMessageName,
 )
 from socorro.unittest.testbase import TestCase
 
@@ -2060,4 +2061,60 @@ class TestSignatureShutdownTimeout(TestCase):
         eq_(
             processor_meta.processor_notes[0],
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
+        )
+
+
+#==============================================================================
+class TestSignatureIPCMessageName(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = SignatureIPCMessageName(config)
+
+        raw_crash = DotDict()
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(not predicate_result)
+
+        raw_crash.ipc_message_name = ''
+        predicate_result = rule.predicate(raw_crash, {}, {}, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = SignatureIPCMessageName(config)
+
+        raw_crash = DotDict()
+        processed_crash = DotDict()
+        processed_crash.signature = 'fooo::baar'
+        raw_crash.ipc_message_name = 'foo, bar'
+
+        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = SignatureIPCMessageName(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'fooo::baar'
+
+        raw_crash = DotDict()
+        raw_crash.ipc_message_name = 'foo, bar'
+
+        action_result = rule.action(
+            raw_crash, {}, processed_crash, {}
+        )
+        ok_(action_result)
+
+        eq_(
+            processed_crash.signature,
+            'fooo::baar | IPC_Message_Name=foo, bar'
         )

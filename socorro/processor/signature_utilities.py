@@ -776,7 +776,7 @@ class SignatureJitCategory(Rule):
 
 #==============================================================================
 class SignatureIPCChannelError(Rule):
-    """replaces the signature if there is a JIT classification in the crash"""
+    """replaces the signature if there is a IPC channel error in the crash"""
 
     #--------------------------------------------------------------------------
     def version(self):
@@ -803,4 +803,28 @@ class SignatureIPCChannelError(Rule):
         )
         processed_crash['signature'] = new_sig
 
+        return True
+
+
+#==============================================================================
+class SignatureIPCMessageName(Rule):
+    """augments the signature if there is a IPC message name in the crash"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        try:
+            return bool(raw_crash['ipc_message_name'])
+        except KeyError:
+            return False
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash['signature'] = '{} | IPC_Message_Name={}'.format(
+            processed_crash['signature'],
+            raw_crash['ipc_message_name']
+        )
         return True

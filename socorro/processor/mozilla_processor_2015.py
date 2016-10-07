@@ -62,6 +62,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.signature_utilities.SignatureShutdownTimeout, "
         "socorro.processor.signature_utilities.SignatureRunWatchDog, "
         "socorro.processor.signature_utilities.SignatureIPCChannelError, "
+        "socorro.processor.signature_utilities.SignatureIPCMessageName, "
         "socorro.processor.signature_utilities.SigTrunc, "
     ],
     [   # a set of classifiers for support
