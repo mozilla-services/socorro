@@ -28,7 +28,7 @@ SignatureReport.Tab = function (tabName, config) {
 
     // Tab is not loaded until this.showTab is called.
     this.loaded = false;
-    this.dataUrl = window.SOURCE_URLS[this.tabName];
+    this.dataUrl = SignatureReport.getURL(this.tabName);
 
     // Make the HTML elements.
     this.$panelElement = $('<section>',

@@ -25,24 +25,29 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
     // For accessing this inside functions.
     var that = this;
 
+    // Pick up necessary data from the DOM
+    var columns = $('#mainbody').data('columns');
+    var fields = $('#mainbody').data('fields');
+    var sort = $('#mainbody').data('sort');
+
     // Make the control elements: an input and an update button.
     // (The hidden input is for select2.)
     var columnsInputHidden = $('<input>',  {
         'type': 'hidden',
         'name': '_columns',
-        'value': window.COLUMNS
+        'value': columns,
     });
 
     this.$columnsInput = $('<input>', {
         'type': 'text',
         'name': '_columns_fake',
-        'value': window.COLUMNS
+        'value': columns,
     });
 
     this.$sortInputHidden = $('<input>', {
         'type': 'hidden',
         'name': '_sort',
-        'value': window.SORT
+        'value': sort,
     });
 
     var updateButton = $('<button>', {
@@ -61,7 +66,7 @@ SignatureReport.ReportsTab.prototype.loadControls = function() {
 
     // Make the columns input sortable.
     this.$columnsInput.select2({
-        'data': window.FIELDS,
+        'data': fields,
         'multiple': true,
         'width': 'element',
         'sortResults': socorro.search.sortResults,

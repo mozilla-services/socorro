@@ -10,7 +10,7 @@
 {% block page_title %}Crashes per Active Daily Install for {{ product }}{% endblock %}
 
 {% block content %}
-<div id="mainbody">
+<div id="mainbody" data-graph-data="{{ graph_data | to_json }}">
 
     <div class="panel">
         <header class="title">
@@ -240,8 +240,4 @@
 {% javascript 'metricsgraphics' %}
 {% javascript 'jquery_ui' %}
 {% javascript 'daily' %}
-<script>
-    var data = {{ graph_data | json_dumps }};
-    window.socGraphByReportType = false;
-</script>
 {% endblock %}
