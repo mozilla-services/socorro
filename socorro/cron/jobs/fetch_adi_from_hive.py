@@ -41,29 +41,29 @@ class NoRowsWritten(Exception):
 _QUERY = """
     select
         ds,
-        split(request_url,'/')[5],
-        split(split(request_url,'/')[10], '%%20')[0],
-        split(split(request_url,'/')[10], '%%20')[1],
-        split(request_url,'/')[4],
         split(request_url,'/')[6],
-        split(request_url,'/')[9],
-        split(request_url,'/')[3],
+        split(split(request_url,'/')[11], '%%20')[0],
+        split(split(request_url,'/')[11], '%%20')[1],
+        split(request_url,'/')[5],
+        split(request_url,'/')[7],
+        split(request_url,'/')[10],
+        split(request_url,'/')[4],
         count(*)
     FROM v2_raw_logs
     WHERE
         (domain='addons.mozilla.org' OR domain='blocklist.addons.mozilla.org')
         and http_status_code = '200'
-        and request_url like '/blocklist/3/%%'
+        and request_url like '/v1/blocklist/3/%%'
         and ds='%s'
     GROUP BY
         ds,
-        split(request_url,'/')[5],
-        split(split(request_url,'/')[10], '%%20')[0],
-        split(split(request_url,'/')[10], '%%20')[1],
-        split(request_url,'/')[4],
         split(request_url,'/')[6],
-        split(request_url,'/')[9],
-        split(request_url,'/')[3]
+        split(split(request_url,'/')[11], '%%20')[0],
+        split(split(request_url,'/')[11], '%%20')[1],
+        split(request_url,'/')[5],
+        split(request_url,'/')[7],
+        split(request_url,'/')[10],
+        split(request_url,'/')[4]
 """
 
 _RAW_ADI_QUERY = """
