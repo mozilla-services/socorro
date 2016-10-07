@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*jslint browser:true, regexp:false, plusplus:false, jQuery:false */
-/*global window, $, SocReport, BugLinks */
+/*global window, $, BugLinks */
 
 var Correlations = (function() {
 
@@ -12,8 +12,18 @@ var Correlations = (function() {
     // the different types of correlation reports
     var correlations = ['core-counts', 'interesting-addons',
                         'interesting-modules'];
-    // a hash table where we keep all unique signatures that have correlations
-    var all_signatures = {};
+
+    // This DOM element has all the data attributes we need to transfer
+    // from the rendering into this JavaScript.
+    var $container = $('#mainbody');
+    var sig_base = $container.data('correlations-sig-base');
+    var base = $container.data('correlations-base');
+    var product = $container.data('product');
+    var version = $container.data('version');
+    var loadingImage = $('<img/>')
+        .attr('src', $container.data('loading-img'))
+        .attr('width', 16)
+        .attr('height', 17);
 
     function loadCorrelations(types, callback) {
         // If there is no osname, that means there is no results, and thus no
@@ -23,40 +33,40 @@ var Correlations = (function() {
         }
         var data = {
             correlation_report_types: types,
-            product: SocReport.product,
-            version: SocReport.version,
+            product: product,
+            version: version,
             platforms: [],
         };
         for (var platform in osnames) {
             data.platforms.push(platform);
         }
-        $.getJSON(SocReport.sig_base + '?' + Qs.stringify(data, { indices: false }))
+        $.getJSON(sig_base + '?' + Qs.stringify(data, { indices: false }))
         .done(function (json) {
-            for (var type in json) {
+            var all_signatures = {};
+            $.each(json, function(type) {
                 json[type].hits.forEach(function(sig) {
                     all_signatures[sig] = 1;
                 });
-            }
-        })
-        .always(function() {
-            if (callback) callback();
+            });
+            callback(all_signatures);
         });
     }
 
     function expandCorrelation($element) {
         var row = $element.parents('tr');
-        $('.correlation-cell .top span', row).html(SocReport.loading);
+
+        $('.correlation-cell .top span', row).empty().append(loadingImage);
         var osname = row.find('.osname').text();
         var signature = row.find('.signature').attr('title');
         var data = {
             platform: osname,
             signature: signature,
-            product: SocReport.product,
-            version: SocReport.version,
+            product: product,
+            version: version,
             correlation_report_types: correlations,
         };
 
-        $.getJSON(SocReport.base + '?' + Qs.stringify(data, { indices: false }))
+        $.getJSON(base + '?' + Qs.stringify(data, { indices: false }))
         .done(function(json) {
             for (var i in correlations) {
                 var type = correlations[i];
@@ -113,16 +123,16 @@ var Correlations = (function() {
             });
 
             // prepare for AJAX loading
-            $('.correlation-cell .top span').html(SocReport.loading);
+            $('.correlation-cell .top span').empty().append(loadingImage);
 
             // for each type of correlation start downloading all signatures that
             // have correlations
-            function correlationsTypeLoaded() {
+            function correlationsTypeLoaded(all_signatures) {
                 // all correlation types have fully called back,
                 // let's finish up things
                 $('.signature').each(function() {
                     var signature = $(this).attr('title');
-                    if (all_signatures[signature] || false ) {
+                    if (all_signatures[signature]) {
                         $(this).parents('tr')
                         .find('.correlation-toggler')
                         .show();
