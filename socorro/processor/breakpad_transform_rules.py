@@ -129,7 +129,6 @@ class BreakpadStackwalkerRule(Rule):
                     self.config.logger.warning(
                         'unable to delete %s. manual deletion is required.',
                         raw_dump_path,
-                        exc_info=True
                     )
 
     #--------------------------------------------------------------------------
@@ -689,9 +688,9 @@ class JitCrashCategorizeRule(ExternalProcessRule):
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
-            processed_crash.product != 'Firefox'
-            or not processed_crash.os_name.startswith('Windows')
-            or processed_crash.cpu_name != 'x86'
+            processed_crash.product != 'Firefox' or
+            not processed_crash.os_name.startswith('Windows') or
+            processed_crash.cpu_name != 'x86'
         ):
             # we don't want any of these
             return False
@@ -701,14 +700,14 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         ):  # there is a module at the top of the stack, we don't want this
             return False
         return (
-            processed_crash.signature.endswith('EnterBaseline')
-            or processed_crash.signature.endswith('EnterIon')
+            processed_crash.signature.endswith('EnterBaseline') or
+            processed_crash.signature.endswith('EnterIon')
         )
 
     #--------------------------------------------------------------------------
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
-            result =  fp.read()
+            result = fp.read()
         except IOError, x:
             processor_meta.processor_notes.append(
                 "%s unable to read external command output: %s" % (
