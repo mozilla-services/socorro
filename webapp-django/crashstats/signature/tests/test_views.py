@@ -8,7 +8,7 @@ from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 
 from crashstats.crashstats import models
-from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 
@@ -556,29 +556,30 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_signature_graph_data(self, rget):
-        def mocked_get(url, params, **options):
+        def mocked_get(**options):
 
             # Check the mandatory parameters are present and correct
-            ok_('signature' in params)
-            eq_(params['signature'], DUMB_SIGNATURE)
+            ok_('signature' in options)
+            eq_(options['signature'], DUMB_SIGNATURE)
 
-            ok_('product_name' in params)
-            eq_(params['product_name'], 'WaterWolf')
+            ok_('product_name' in options)
+            eq_(options['product_name'], 'WaterWolf')
 
-            ok_('channel' in params)
-            eq_(params['channel'], 'nightly')
+            ok_('channel' in options)
+            eq_(options['channel'], 'nightly')
 
-            ok_('start_date' in params)
-            eq_(params['start_date'], '2014-12-25')
+            ok_('start_date' in options)
+            eq_(options['start_date'], '2014-12-25')
 
-            ok_('end_date' in params)
-            eq_(params['end_date'], '2015-01-01')
+            ok_('end_date' in options)
+            eq_(options['end_date'], '2015-01-01')
 
-            # Return empty Response object, since the view doesn't
+            # Return empty object, since the view doesn't
             # process the data
-            return Response()
+            return {}
 
-        rget.side_effect = mocked_get
+        # rget.side_effect = mocked_get
+        models.AduBySignature.implementation().get.side_effect = mocked_get
 
         url = reverse(
             'signature:signature_graph_data',

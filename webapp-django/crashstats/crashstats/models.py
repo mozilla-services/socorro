@@ -21,6 +21,7 @@ from socorro.external.rabbitmq.crashstorage import (
 )
 import socorro.external.postgresql.platforms
 import socorro.external.postgresql.bugs
+import socorro.external.postgresql.crashes
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
@@ -1803,7 +1804,8 @@ class GraphicsDevices(SocorroMiddleware):
 
 class AduBySignature(SocorroMiddleware):
 
-    URL_PREFIX = '/crashes/adu_by_signature/'
+    implementation = socorro.external.postgresql.crashes.AduBySignature
+
     required_params = (
         'product_name',
         'signature',

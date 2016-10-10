@@ -645,7 +645,10 @@ class Crashes(PostgreSQLBase):
             "total": total_crashes_count
         }
 
-    def get_adu_by_signature(self, **kwargs):
+
+class AduBySignature(Crashes):
+
+    def get(self, **kwargs):
         """Return a list of ADUs and crash counts by signature and ADU date
         """
         now = datetimeutil.utc_now().date()
@@ -665,7 +668,7 @@ class Crashes(PostgreSQLBase):
             if not params[param]:
                 raise MissingArgumentError(param)
 
-        if (params.end_date - params.start_date) > datetime.timedelta(days=365):
+        if params.end_date - params.start_date > datetime.timedelta(days=365):
             raise BadArgumentError('Duration too long. Max 365 days.')
 
         sql_query = """
