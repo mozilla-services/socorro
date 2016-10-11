@@ -220,6 +220,8 @@ igdumd64\.dll
 igdumdim32\.dll
 igdumdim64\.dll
 nvd3dum\.dll
+nvd3dumx\.dll
 nvoglnt\.dll
 nvumdshim\.dll
 nvwgf2um\.dll
+nvwgf2umx\.dll
