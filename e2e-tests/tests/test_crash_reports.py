@@ -118,25 +118,6 @@ class TestCrashReports:
             'Signature in body did not match the signature in the '
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), [
-        'Firefox',
-        pytest.mark.xfail("'allizom.org' in config.getvalue('base_url')", reason='bug 1299916')('Thunderbird'),
-        'SeaMonkey',
-        'FennecAndroid'])
-    def test_the_product_releases_return_results(self, base_url, selenium, product):
-        csp = CrashStatsHomePage(selenium, base_url).open()
-        csp.header.select_product(product)
-
-        for i in range(len(csp.release_channels)):
-            top_crasher_page = csp.release_channels[i].click_top_crasher()
-            if top_crasher_page.no_results_text is not False:
-                assert 'Range by Report Date instead?' in top_crasher_page.no_results_text
-            else:
-                assert top_crasher_page.results_found, 'No results found'
-            selenium.back()
-            csp.wait_for_page_to_load()
-
-    @pytest.mark.nondestructive
     def test_that_7_days_is_selected_default_for_nightlies(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()
         top_crashers = csp.release_channels
