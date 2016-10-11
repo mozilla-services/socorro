@@ -6,8 +6,8 @@ import xml.etree.ElementTree as ET
 import requests
 
 _BASE = 'https://webqa-ci.mozilla.com'
-STAGE = _BASE + '/view/Socorro/job/socorro.stage.saucelabs/rssAll'
-PROD = _BASE + '/view/Socorro/job/socorro.prod.saucelabs/rssAll'
+STAGE = _BASE + '/view/Socorro/job/socorro.stage/rssAll'
+PROD = _BASE + '/view/Socorro/job/socorro.prod/rssAll'
 
 
 def run():
