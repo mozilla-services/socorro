@@ -9,6 +9,7 @@ from pages.home_page import CrashStatsHomePage
 
 class TestSuperSearch:
 
+    @pytest.mark.skip("TODO: Update to work with the new date picker")
     @pytest.mark.nondestructive
     def test_search_for_unrealistic_data(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()

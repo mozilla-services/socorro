@@ -31,6 +31,7 @@ class TestSmokeTests:
         csp.selenium.get(base_url + self._exploitability_url)
         assert 'Login Required' in csp.page_heading
 
+    @pytest.mark.skip("TODO: Persona is being deprecated - move test to Google Accounts")
     def test_non_privileged_accounts_cannot_view_exploitable_crash_reports(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.footer.login()
