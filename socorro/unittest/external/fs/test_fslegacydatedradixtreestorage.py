@@ -60,7 +60,6 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
             self.fsrts.config.dump_field: 'baz'
         }), self.CRASH_ID_3)
 
-
     def test_save_raw_crash(self):
         self._make_test_crash()
         ok_(os.path.islink(
@@ -148,39 +147,15 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
         eq_(list(self.fsrts.new_crashes()),
                          [self.CRASH_ID_1])
 
-    def test_orphaned_symlink_clean_up(self):
-        # Bug 971496 identified a problem where a second crash coming in with
-        # the same crash id would derail saving the second crash and leave
-        # an extra undeleted symbolic link in the file system.  This link
-        # would be sited as undeleted on every run of 'new_crashes'.
-        # this test shows that we can clean these extra symlinks if we
-        # encounter them.
+    def test_doesnt_raise_oserror(self):
+        # Bug 1297760 is caused by trying to create a symlink which kicks up
+        # an OSError which never gets handled which causes the collector to
+        # raise an HTTP 500 error. We want to make sure save_raw_crash()
+        # doesn't raise OSErrors.
         self.fsrts._current_slot = lambda: ['00', '00_00']
         self._make_test_crash()
         self.fsrts._current_slot = lambda: ['00', '00_01']
-        # make sure we can't create the duplicate in a different slot
-        assert_raises(OSError, self._make_test_crash)
-        # make sure the second slot exists so we can make the bogus symlink
-        self._make_test_crash_3()
-        # create bogus orphan link
-        self.fsrts._create_name_to_date_symlink(
-            self.CRASH_ID_1,
-            self.fsrts._current_slot()
-        )
-        ok_(os.path.islink(
-            './crashes/20071025/date/00/00_01/0bba929f-8721-460c-dead-'
-            'a43c20071025'
-        ))
-        # run through the new_crashes iterator which will yield each of the
-        # crashes that has been submitted since the last run of new_crashes.
-        # this should cause all the symlinks to be removed.
-        # we don't bother saving the crashes, as we don't need them.
-        for x in self.fsrts.new_crashes():
-            pass
-        ok_(not os.path.exists(
-            './crashes/20071025/date/00/00_01/0bba929f-8721-460c-dead-'
-            'a43c20071025'
-        ))
+
 
 class MyFSTemporaryStorage(FSTemporaryStorage):
     def _get_current_date(self):
@@ -333,44 +308,16 @@ class TestFSTemporaryStorage(TestCase):
         eq_(list(self.fsrts.new_crashes()),
                          [self.CRASH_ID_1])
 
-    def test_orphaned_symlink_clean_up(self):
-        # Bug 971496 identified a problem where a second crash coming in with
-        # the same crash id would derail saving the second crash and leave
-        # an extra undeleted symbolic link in the file system.  This link
-        # would be sited as undeleted on every run of 'new_crashes'.
-        # this test shows that we can clean these extra symlinks if we
-        # encounter them.
+    def test_doesnt_raise_oserror(self):
+        # Bug 1297760 is caused by trying to create a symlink which kicks up
+        # an OSError which never gets handled which causes the collector to
+        # raise an HTTP 500 error. We want to make sure save_raw_crash()
+        # doesn't raise OSErrors.
         self.fsrts._current_slot = lambda: ['00', '00_00']
         self._make_test_crash()
         self.fsrts._current_slot = lambda: ['00', '00_01']
-        # make sure we can't create the duplicate in a different slot
-        assert_raises(OSError, self._make_test_crash)
-        # make sure the second slot exists so we can make the bogus symlink
-        self._make_test_crash_3()
-        # create bogus orphan link
-        self.fsrts._create_name_to_date_symlink(
-            self.CRASH_ID_1,
-            self.fsrts._current_slot()
-        )
-        ok_(os.path.islink(
-            './crashes/25/date/00/00_01/0bba929f-8721-460c-dead-'
-            'a43c20071025'
-        ))
-        ok_(os.path.islink(
-            './crashes/25/date/00/00_01/0bba929f-8721-460c-dddd-'
-            'a43c20071025'
-        ))
-        # make sure all slots in use are traversable
-        self.fsrts._current_slot = lambda: ['00', '00_02']
-        # run through the new_crashes iterator which will yield each of the
-        # crashes that has been submitted since the last run of new_crashes.
-        # this should cause all the symlinks to be removed.
-        # we don't bother saving the crashes, as we don't need them.
-        for x in self.fsrts.new_crashes():
-            pass
-        ok_(not os.path.exists(
-            './crashes/25/date/00/00_01/0bba929f-8721-460c-dead-a43c20071025'
-        ))
+        # Make sure this second one doesn't raise an OSError
+        self._make_test_crash()
 
     def test_make_sure_days_recycle(self):
         self.fsrts._current_slot = lambda: ['00', '00_01']
