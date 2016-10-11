@@ -1,3 +1,5 @@
+/* globals ace */
+
 $(function () {
     'use strict';
 
@@ -17,7 +19,7 @@ $(function () {
     var possibleIndices = $('#mainbody').data('elasticsearch-indices');
     var defaultIndices = [
         possibleIndices[0],
-        possibleIndices[1]
+        possibleIndices[1],
     ];
 
     // Django CSRF protection
@@ -35,9 +37,9 @@ $(function () {
         crossDomain: false, // obviates need for sameOrigin test
         beforeSend: function(xhr, settings) {
             if (!csrfSafeMethod(settings.type)) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                xhr.setRequestHeader('X-CSRFToken', csrftoken);
             }
-        }
+        },
     });
 
     function showResults(query, indices) {
@@ -65,7 +67,7 @@ $(function () {
                 errorContent.append($('<p>', {text: jqXHR.responseText}));
 
                 contentElt.empty().append(errorContent);
-            }
+            },
         });
     }
 
@@ -76,7 +78,7 @@ $(function () {
         var indices = indicesElt.select2('val');
         var state = {
             'query': query,
-            'indices': indices
+            'indices': indices,
         };
 
         window.history.pushState(state, 'Search results', window.location.pathname);
@@ -116,7 +118,7 @@ $(function () {
         'data': possibleIndices,
         'closeOnSelect': false,
         'multiple': true,
-        'width': 'element'
+        'width': 'element',
     });
     if (!indicesElt.val()) {
         indicesElt.select2('data', defaultIndices);
