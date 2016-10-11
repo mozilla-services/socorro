@@ -15,7 +15,7 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
 
     _page_title = 'Search - Mozilla Crash Reports'
     _page_loaded_locator = (By.CSS_SELECTOR, '#s2id_simple-product input')
-    _advanced_search_loaded_locator = (By.CSS_SELECTOR, '#advanced-search .select2-container-active')
+    _advanced_search_loaded_locator = (By.CSS_SELECTOR, '#advanced-search .select2-container')
     _search_button_locator = (By.ID, 'search-button')
 
     # Simple Search
@@ -28,8 +28,8 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
     _new_line_button_locator = (By.CSS_SELECTOR, 'button.new-line')
     _highlighted_text_locator = (By.CSS_SELECTOR, 'li[class*="highlighted"]')
     _facet_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(2) span:first-child')
-    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .field')
-    _operator_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(4) span')
+    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search input')
+    _operator_text_locator = (By.CSS_SELECTOR, '#advanced-se    arch fieldset[id="%s"] > div:nth-child(4) span')
     _operator_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .operator')
     _match_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search-field input')
     _match_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(6) div')
@@ -76,29 +76,29 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
     def click_new_line(self):
         ''' Opens up the advanced search field options '''
         self.find_element(*self._new_line_button_locator).click()
-        self.wait.until(lambda s: self.is_element_present(*self._advanced_search_loaded_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*self._advanced_search_loaded_locator))
 
     def select_facet(self, line_id, field):
         input_locator = (self._facet_field_locator[0], self._facet_field_locator[1] % line_id)
-        self.wait.until(lambda s: self.is_element_present(*input_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
         facet_field = self.find_element(*input_locator)
         facet_field.send_keys(field)
-        self.wait.until(lambda s: self.is_element_present(*self._highlighted_text_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
         facet_field.send_keys(Keys.RETURN)
 
     def select_operator(self, line_id, operator):
         input_locator = (self._operator_field_locator[0], self._operator_field_locator[1] % line_id)
-        self.wait.until(lambda s: self.is_element_present(*input_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*input_locator))
         operator_field = self.find_element(*input_locator)
         operator_field.send_keys(operator)
-        self.wait.until(lambda s: self.is_element_present(*self._highlighted_text_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
         operator_field.send_keys(Keys.RETURN)
 
     def select_match(self, line_id, match):
         input_locator = (self._match_field_locator[0], self._match_field_locator[1] % line_id)
-        self.wait.until(lambda s: self.is_element_present(*input_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*input_locator))
         self.find_element(*input_locator).send_keys(match)
-        self.wait.until(lambda s: self.is_element_present(*self._highlighted_text_locator))
+        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
         self.find_element(*self._highlighted_text_locator).click()
 
     def field(self, line_id):
