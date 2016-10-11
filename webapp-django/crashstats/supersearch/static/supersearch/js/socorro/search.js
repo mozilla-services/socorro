@@ -260,7 +260,7 @@ $(function () {
      */
     function setParams(params) {
         // Set Simple Search parameters.
-        $('select', simpleSearchContainer).each(function (i, item) {
+        $('input', simpleSearchContainer).each(function (i, item) {
             if (item.name in params) {
                 var values = params[item.name];
                 if (!Array.isArray(values)) {
@@ -402,13 +402,13 @@ $(function () {
      * Initialize the simplified search form.
      */
     function initSimpleSearch() {
-        $('input[type=text]', simpleSearchContainer).select2({
-            'width': 'element',
-            'tags': [],
-        });
-        $('select', simpleSearchContainer).select2({
-            'width': 'element',
-            'closeOnSelect': false,
+        $('input[type=text]', simpleSearchContainer).each(function () {
+            var elt = $(this);
+            elt.select2({
+                'width': 'element',
+                'tags': elt.data('choices'),
+                'closeOnSelect': false,
+            });
         });
     }
 
