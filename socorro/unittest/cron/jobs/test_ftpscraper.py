@@ -169,12 +169,6 @@ class TestFTPScraper(TestCaseBase):
               'rev': 'http://hg.mozilla.org/123',
               'altrev': 'http://git.mozilla.org/123'}, [])
         )
-        eq_(
-            self.scrapers.parse_b2g_file('FIVE'),
-            ({"buildid": "20130309070203",
-              "update_channel": "nightly",
-              "version": "18.0",
-              'build_type': 'nightly'}))
 
     def test_parse_info_file_with_bad_lines(self):
 
@@ -244,75 +238,6 @@ class TestFTPScraper(TestCaseBase):
              {'BUILDID': '123', 'version_build': 'build-11'}, [])]
         )
 
-    def test_parse_b2g_file(self):
-
-        def mocked_get(url):
-            if 'ZERO' in url:
-                return ''
-            if 'ONE' in url:
-                return json.dumps({
-                    'update_channel': 'nightly',
-                    'version': '123.0',
-                    'buildid': '12345678',
-                })
-            if 'BETA' in url:
-                return json.dumps({
-                    'update_channel': 'beta',
-                    'version': '123.0b',
-                    'buildid': '123456789',
-                })
-            if 'DEFAULT' in url:
-                return json.dumps({
-                    'update_channel': 'default',
-                    'version': '123.0',
-                    'buildid': '12345678',
-                })
-            raise NotImplementedError(url)
-
-        self.mocked_session.get.side_effect = mocked_get
-
-        eq_(
-            self.scrapers.parse_b2g_file('ZERO'),
-            None
-        )
-        eq_(
-            self.scrapers.parse_b2g_file('ONE'),
-            {
-                'buildid': '12345678',
-                'update_channel': 'nightly',
-                'version': '123.0',
-                'build_type': 'nightly'
-            }
-        )
-        eq_(
-            self.scrapers.parse_b2g_file('DEFAULT'),
-            None  # because of bug #869564
-        )
-        eq_(
-            self.scrapers.parse_b2g_file('BETA'),
-            {
-                'buildid': '123456789',
-                'update_channel': 'beta',
-                'version': '123.0b',
-                'build_type': 'beta',
-                'beta_number': 1,
-            }
-        )
-
-    def test_parse_b2g_file_with_page_not_found(self):
-
-        def mocked_get(url):
-            response = requests.Response()
-            response.status_code = 404
-            return response
-
-        self.mocked_session.get.side_effect = mocked_get
-
-        eq_(
-            self.scrapers.parse_b2g_file('FIVE'),
-            None
-        )
-
     def test_get_json_nightly(self):
 
         def mocked_get(url):
@@ -354,47 +279,6 @@ class TestFTPScraper(TestCaseBase):
             'moz_source_repo': 'mozilla-aurora',
         }
         eq_(builds[0], ('linux-i686', 'ONE', '43.0a2', kvpairs))
-
-    def test_get_b2g(self):
-
-        def mocked_get(url):
-            html_wrap = "<html><body>\n%s\n</body></html>"
-            if '.json' in url:
-                if 'date2' in url:
-                    # deliberately empty
-                    return ''
-                else:
-                    return json.dumps({
-                        'buildid': '20130309070203',
-                        'update_channel': 'nightly',
-                        'version': '18.0',
-                    })
-            if 'ONE' in url:
-                return '{}'
-            if '/TWO/' in url:
-                return html_wrap % """
-                <a href="socorro_unagi_date_version.json">l</a>
-                <a href="socorro_unagi_date2_version.json">
-                    eventually ignored</a>
-                <a href="socorro_unagi.json">ignored</a>
-                <a href="somethingelse_unagi_date3_version.json">ignored</a>
-                """
-            raise NotImplementedError(url)
-
-        self.mocked_session.get.side_effect = mocked_get
-        eq_(
-            list(self.scrapers.get_b2g('http://x/ONE/')),
-            []
-        )
-        scrapes = list(self.scrapers.get_b2g('http://x/TWO/'))
-        assert len(scrapes) == 1, len(scrapes)
-        kvpairs = {
-            'buildid': u'20130309070203',
-            'update_channel': u'nightly',
-            'version': u'18.0',
-            'build_type': u'nightly'
-        }
-        eq_(scrapes[0], ('unagi', 'b2g-release', u'18.0', kvpairs))
 
 
 class TestIntegrationFTPScraper(IntegrationTestBase):
