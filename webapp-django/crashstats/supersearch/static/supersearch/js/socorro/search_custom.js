@@ -5,6 +5,8 @@ $(function () {
 
     // parameters
     var form = $('#search-form form');
+    form.show(); // The form is hidden by default, show it immediatly.
+
     var resultsURL = form.data('results-url');
 
     var submitButton = $('#search-button');
