@@ -416,10 +416,8 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
             try:
                 self._create_date_to_name_symlink(crash_id, slot)
                 self._create_name_to_date_symlink(crash_id, slot)
-            except OSError:
-                # We pass here, because an OSError indicates the symlink
-                # already exists and we don't need to do anything about that.
-                pass
+            except OSError as exc:
+                self.logger.info('failed to create symlink: %s', str(exc))
 
     def remove(self, crash_id):
         dated_path = os.path.realpath(
