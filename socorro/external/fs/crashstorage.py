@@ -408,10 +408,18 @@ class FSDatedRadixTreeStorage(FSRadixTreeStorage):
                 #parent_dir)
 
         with using_umask(self.config.umask):
-            # Bug 971496 reversed the order of these calls so that the one that
-            # can fail will fail first and not leave an orphan symlink behind.
-            self._create_date_to_name_symlink(crash_id, slot)
-            self._create_name_to_date_symlink(crash_id, slot)
+            # If we've saved a crash with this crash_id before, then we'll kick
+            # up an OSError when creating the name symlink, but not the date
+            # symlink. Thus it's important to have these two tied together and
+            # try creating the name symlink first so if that fails we don't end
+            # up with an extra date symlink.
+            try:
+                self._create_date_to_name_symlink(crash_id, slot)
+                self._create_name_to_date_symlink(crash_id, slot)
+            except OSError:
+                # We pass here, because an OSError indicates the symlink
+                # already exists and we don't need to do anything about that.
+                pass
 
     def remove(self, crash_id):
         dated_path = os.path.realpath(
@@ -767,4 +775,3 @@ class TarFileSequentialReadingCrashStore(CrashStorageBase):
         reconstituted_processed_crash_as_str = result_gzip_fp.read().strip()
         processed_crash = json.loads(reconstituted_processed_crash_as_str)
         return processed_crash
-
