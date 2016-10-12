@@ -108,8 +108,7 @@
             <h2>Generate a New Token</h2>
         </div>
         <div class="body">
-            {% if form %}
-            <form action="" method="post">{% csrf_token %}
+            <form method="post">{% csrf_token %}
                 <table class="data-table">
                     {{ form }}
                     <tr>
@@ -120,9 +119,6 @@
                     </tr>
                 </table>
             </form>
-            {% else %}
-            <p>You currently do not have any permissions to generate tokens for.</p>
-            {% endif %}
         </div>
     </div>
 
