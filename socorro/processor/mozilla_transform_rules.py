@@ -410,10 +410,16 @@ class OutOfMemoryBinaryRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         pathname = raw_dumps['memory_report']
         with temp_file_context(pathname):
-            processed_crash.memory_report = self._extract_memory_info(
+            memory_report = self._extract_memory_info(
                 dump_pathname=pathname,
                 processor_notes=processor_meta.processor_notes
             )
+
+            if isinstance(memory_report, dict) and memory_report.get('ERROR'):
+                processed_crash.memory_report_error = memory_report['ERROR']
+            else:
+                processed_crash.memory_report = memory_report
+
         return True
 
 
