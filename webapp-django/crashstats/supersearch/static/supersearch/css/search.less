@@ -258,24 +258,29 @@
 }
 
 /* Custom Query styles */
-#editor {
-    border: 1px solid lightgray;
-    height: 400px;
-    margin: 0;
-    width: 80%;
-}
-.json-results {
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace;
-    font-size: 12px;
-    height: 500px;
-    width: 100%;
-}
+.custom-search {
+    #editor {
+        border: 1px solid lightgray;
+        height: 400px;
+        margin: 0;
+        width: 100%;
+    }
+    fieldset.options input#search_indices {
+        width: 100%;
+    }
+    .json-results {
+        font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace;
+        font-size: 12px;
+        height: 500px;
+        width: 100%;
+    }
 
-code {
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    margin: 0 2px;
-    padding: 1px 5px;
-    white-space: nowrap;
+    code {
+        background-color: #f5f5f5;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin: 0 2px;
+        padding: 1px 5px;
+        white-space: nowrap;
+    }
 }

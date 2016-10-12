@@ -5,8 +5,6 @@ $(function () {
 
     // parameters
     var form = $('#search-form form');
-    form.show(); // The form is hidden by default, show it immediatly.
-
     var resultsURL = form.data('results-url');
 
     var submitButton = $('#search-button');
@@ -115,6 +113,10 @@ $(function () {
     editor = ace.edit('editor');
     editor.setTheme('ace/theme/monokai');
     editor.getSession().setMode('ace/mode/json');
+
+    // The form is hidden by default to avoid showing flickering while it is
+    // being loaded. Now that all loading is finished, we show it.
+    form.show();
 
     indicesElt.select2({
         'data': possibleIndices,
