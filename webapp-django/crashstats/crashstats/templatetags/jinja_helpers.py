@@ -115,10 +115,11 @@ def time_tag(dt, format='%a, %b %d %H:%M %Z', future=False):
 
 
 @library.global_function
-def datetime_picker(input_name, default_value=''):
+def datetime_picker(input_name, default_value):
     """Return a datetime picker HTML element to be powered by a JS library.
     """
-    return jinja2.Markup('''
+    return jinja2.Markup(
+        '''
         <span
             class="datetime-picker {input_name}"
             data-wrap="true"
@@ -126,6 +127,7 @@ def datetime_picker(input_name, default_value=''):
             data-utc="true"
             data-time_24hr="true"
             data-alt-input="true"
+            data-date-format="Y-n-d H:i:S\Z"
             data-alt-format="F j, Y - H:i"
             date-default-date="{default_value}"
         >
