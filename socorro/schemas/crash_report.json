@@ -51,7 +51,7 @@
             "description": "A list of the addons currently enabled at the time of the crash. This takes the form of \"addonid:version,[addonid:version...]\". This value could be empty if the crash happens during startup before the addon manager is enabled, and on products/platforms which don't support addons."
         },
         "addons_checked": {
-            "type": "boolean",
+            "type": ["boolean", "null"],
             "description": "Value of the 'extensions. checkCompatibility' preference."
         },
         "address": {
