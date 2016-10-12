@@ -2215,7 +2215,7 @@ class TestThemePrettyNameRule(TestCase):
             ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
             ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
             ('anttoolbar@ant.com', '2.4.6.4'),
-            ('{972ce4c6-7e08-4474-a285-3208198ce6fd} (default Firefox theme)',
+            ('{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme)',
              '12.0'),
             ('elemhidehelper@adblockplus.org', '1.2.1')
         ]
