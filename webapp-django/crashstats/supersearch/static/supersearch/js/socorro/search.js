@@ -200,8 +200,9 @@ $(function () {
         // Update the public API URL.
         var queryString = Qs.stringify(params, { indices: false });
         queryString = queryString.replace(/!/g, '%21');
+        var BASE_URL = location.protocol + '//' + location.host;
         $('input[name=_public_api_url]', form).val(
-            window.BASE_URL + form.data('public-api-url') + '?' + queryString
+            BASE_URL + form.data('public-api-url') + '?' + queryString
         );
     }
 
@@ -439,8 +440,10 @@ $(function () {
      * Initialize the form options fields, handling aggregations, sorting and more.
      */
     function initFormOptions() {
+        var COLUMNS = $('#mainbody').data('columns');
+        var FACETS = $('#mainbody').data('facets');
         var sortFields = [];
-        window.COLUMNS.forEach(function (item) {
+        COLUMNS.forEach(function (item) {
             sortFields.push(item);
             sortFields.push({
                 id: '-' + item.id,
@@ -455,13 +458,13 @@ $(function () {
             'sortResults': socorro.search.sortResults,
         });
         facetsInput.select2({
-            'data': window.FACETS,
+            'data': FACETS,
             'multiple': true,
             'width': 'element',
             'sortResults': socorro.search.sortResults,
         });
         columnsInput.select2({
-            'data': window.COLUMNS,
+            'data': COLUMNS,
             'multiple': true,
             'width': 'element',
             'sortResults': socorro.search.sortResults,

@@ -3,7 +3,8 @@
 
 
 {% block content %}
-<div id="mainbody">
+<div id="mainbody"
+    data-elasticsearch-indices="{{ elasticsearch_indices | to_json }}">
     <div class="page-heading">
         <h2>Super Search</h2>
 
@@ -52,10 +53,6 @@
 
 {% block site_js %}
     {{ super() }}
-
-<script>
-var ELASTICSEARCH_INDICES = {{ elasticsearch_indices | json_dumps }};
-</script>
 
     {% javascript 'select2' %}
     {% javascript 'search_custom' %}

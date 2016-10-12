@@ -14,7 +14,7 @@ $(function () {
 
     // Default UI data.
     var defaultQuery = '{"query": {"match_all": {}}}';
-    var possibleIndices = window.ELASTICSEARCH_INDICES;
+    var possibleIndices = $('#mainbody').data('elasticsearch-indices');
     var defaultIndices = [
         possibleIndices[0],
         possibleIndices[1]
