@@ -2081,7 +2081,7 @@ class TestSignatureIPCMessageName(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
-        raw_crash.ipc_message_name = ''
+        raw_crash.IPCMessageName = ''
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
@@ -2093,7 +2093,7 @@ class TestSignatureIPCMessageName(TestCase):
         raw_crash = DotDict()
         processed_crash = DotDict()
         processed_crash.signature = 'fooo::baar'
-        raw_crash.ipc_message_name = 'foo, bar'
+        raw_crash.IPCMessageName = 'foo, bar'
 
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(predicate_result)
@@ -2107,7 +2107,7 @@ class TestSignatureIPCMessageName(TestCase):
         processed_crash.signature = 'fooo::baar'
 
         raw_crash = DotDict()
-        raw_crash.ipc_message_name = 'foo, bar'
+        raw_crash.IPCMessageName = 'foo, bar'
 
         action_result = rule.action(
             raw_crash, {}, processed_crash, {}

@@ -817,7 +817,7 @@ class SignatureIPCMessageName(Rule):
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
-            return bool(raw_crash['ipc_message_name'])
+            return bool(raw_crash['IPCMessageName'])
         except KeyError:
             return False
 
@@ -825,6 +825,6 @@ class SignatureIPCMessageName(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash['signature'] = '{} | IPC_Message_Name={}'.format(
             processed_crash['signature'],
-            raw_crash['ipc_message_name']
+            raw_crash['IPCMessageName']
         )
         return True
