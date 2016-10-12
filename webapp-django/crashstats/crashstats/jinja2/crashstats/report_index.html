@@ -252,6 +252,14 @@
 
                             {# Crash circumstances #}
 
+                            {% if raw.StartupCrash %}
+                            <tr title="{{ fields_desc['raw_crash.StartupCrash'] }}">
+                                <th scope="row">Startup Crash</th>
+                                <td>
+                                    <pre>{{ booleanish_to_boolean(raw.StartupCrash) }}</pre>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% if report.process_type %}
                             <tr title="{{ fields_desc['processed_crash.process_type'] }}">
                                 <th scope="row">Process Type</th>
