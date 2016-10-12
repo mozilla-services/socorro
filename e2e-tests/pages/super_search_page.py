@@ -15,7 +15,7 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
 
     _page_title = 'Search - Mozilla Crash Reports'
     _page_loaded_locator = (By.CSS_SELECTOR, '#s2id_simple-product input')
-    _advanced_search_loaded_locator = (By.CSS_SELECTOR, '#advanced-search .select2-container')
+    _advanced_search_loaded_locator = (By.CSS_SELECTOR, '#advanced-search .select2-container-active')
     _search_button_locator = (By.ID, 'search-button')
 
     # Simple Search
@@ -28,8 +28,8 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
     _new_line_button_locator = (By.CSS_SELECTOR, 'button.new-line')
     _highlighted_text_locator = (By.CSS_SELECTOR, 'li[class*="highlighted"]')
     _facet_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(2) span:first-child')
-    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search input')
-    _operator_text_locator = (By.CSS_SELECTOR, '#advanced-se    arch fieldset[id="%s"] > div:nth-child(4) span')
+    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .field')
+    _operator_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(4) span')
     _operator_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .operator')
     _match_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search-field input')
     _match_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(6) div')
