@@ -58,6 +58,7 @@
                         {{ field | replace('_', ' ') | capitalize }}
                     </label>
                     <input name="{{ field }}" id="simple-{{ field }}"
+                        class="simple-search-input"
                         type="text"
                         placeholder="{{ ', '.join(examples) }}..."
                         data-choices="{{ field_data | to_json }}"

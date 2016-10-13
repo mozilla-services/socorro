@@ -223,7 +223,7 @@ $(function () {
         var params = form.dynamicForm('getParams');
 
         // Add Simple Search parameters.
-        $('select', simpleSearchContainer).each(function (i, item) {
+        $('.simple-search-input', simpleSearchContainer).each(function (i, item) {
             var name = item.name;
             var value = $(item).select2('val');
             if (value.length) {
