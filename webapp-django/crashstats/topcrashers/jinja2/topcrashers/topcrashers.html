@@ -6,17 +6,6 @@
 {% endblock %}
 
 {% block site_js %}
-<script type="text/javascript">//<![CDATA[
-    var SocReport = {
-        sig_base: '{{ url('crashstats:correlations_signatures_json') }}',
-        base: '{{ url('crashstats:correlations_json') }}',
-        path: 'product={{ product }}&version={{ version }}',
-        loading: 'Loading <img src="{{ static('img/loading.png') }}" width="16" height="17" />',
-        product: '{{ product }}',
-        version: '{{ version }}',
-    };
-//]]>
-</script>
     {{ super() }}
     {% javascript 'jquery_tablesorter' %}
     {% javascript 'bugzilla' %}
@@ -29,7 +18,13 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 {% endblock %}
 
 {% block content %}
-    <div id="mainbody">
+    <div id="mainbody"
+        data-correlations-base="{{ url('crashstats:correlations_json') }}"
+        data-correlations-sig-base="{{ url('crashstats:correlations_signatures_json') }}"
+        data-product="{{ product }}"
+        data-version="{{ version }}"
+        data-loading-img="{{ static('img/loading.png') }}"
+        >
         <div class="page-heading">
             <h2>
                 Top Crashers for <span id="current-product">{{ product }}</span>
