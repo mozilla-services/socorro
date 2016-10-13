@@ -1245,19 +1245,17 @@ class TestModels(DjangoTestCase):
         model = models.AduBySignature
         api = model()
 
-        def mocked_get(url, params, **options):
-            assert '/adu_by_signature/' in url
+        def mocked_get(**options):
+            ok_('product_name' in options)
+            eq_(options['product_name'], 'WaterWolf')
 
-            ok_('product_name' in params)
-            eq_(params['product_name'], 'WaterWolf')
+            ok_('signature' in options)
+            eq_(options['signature'], 'FakeSignature1')
 
-            ok_('signature' in params)
-            eq_(params['signature'], 'FakeSignature1')
+            ok_('channel' in options)
+            eq_(options['channel'], 'nightly')
 
-            ok_('channel' in params)
-            eq_(params['channel'], 'nightly')
-
-            return Response({
+            return {
                 'hits': [
                     {
                         'build_date': '2014-04-01',
@@ -1280,12 +1278,15 @@ class TestModels(DjangoTestCase):
                     },
                 ],
                 'total': 2,
-            })
+            }
 
-        rget.side_effect = mocked_get
-        r = api.get(product_name='WaterWolf',
-                    signature='FakeSignature1',
-                    channel='nightly')
+        models.AduBySignature.implementation().get.side_effect = mocked_get
+
+        r = api.get(
+            product_name='WaterWolf',
+            signature='FakeSignature1',
+            channel='nightly',
+        )
         eq_(r['total'], 2)
 
     def test_platforms(self):

@@ -12,7 +12,10 @@ from socorrolib.lib import (
     datetimeutil,
     util,
 )
-from socorro.external.postgresql.crashes import Crashes
+from socorro.external.postgresql.crashes import (
+    Crashes,
+    AduBySignature,
+)
 from socorro.unittest.testbase import TestCase
 from socorro.external.postgresql.connection_context import ConnectionContext
 
@@ -1033,7 +1036,9 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         j = 100  # some number so it's not used by other tests or fixtures
 
-        rand = lambda: random.randint(0, 10)
+        def rand():
+            return random.randint(0, 10)
+
         exploit_values = []
         signature_values = []
         for day in day_before_yesterday, yesterday_date, self.now:
@@ -1121,7 +1126,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
     # -------------------------------------------------------------------------
     def test_get_adu_by_signature(self):
-        crashes = Crashes(config=self.config)
+        adu_by_signature = AduBySignature(config=self.config)
 
         signature = "canIhaveYourSignature()"
         channel = "release"
@@ -1156,7 +1161,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             "total": 2,
         }
 
-        res = crashes.get_adu_by_signature(
+        res = adu_by_signature.get(
             product_name="WaterWolf",
             start_date=yesterday,
             end_date=yesterday,
@@ -1167,7 +1172,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         assert_raises(
             BadArgumentError,
-            crashes.get_adu_by_signature,
+            adu_by_signature.get,
             start_date=(yesterday_date - datetime.timedelta(days=366)),
             end_date=yesterday,
             signature=signature,
