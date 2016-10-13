@@ -137,6 +137,7 @@ _CONTEXT_PROCESSORS = (
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
     '%s.base.context_processors.browserid' % PROJECT_MODULE,
     '%s.status.context_processors.status_message' % PROJECT_MODULE,
+    '%s.crashstats.context_processors.help_urls' % PROJECT_MODULE,
 )
 
 TEMPLATES = [
@@ -793,3 +794,6 @@ LAST_LOGIN_MAX = config(
     default=60 * 60 * 24,
     cast=int
 )
+
+
+GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
