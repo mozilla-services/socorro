@@ -187,9 +187,9 @@ django-pipeline==1.5.4 \
 futures==3.0.4 \
     --hash=sha256:4e860d18d866ff6c5f2804ebcbb16415f4f29cf57efea919178b809cf99326b6 \
     --hash=sha256:19485d83f7bd2151c0aeaf88fbba3ee50dadfb222ffc3b66a344ef4952b782a3
-django-session-csrf==0.6 \
-    --hash=sha256:009d574590aeebff230bda3d8c1cacd9d48b204cc1a784a5d3be3638727f8d16 \
-    --hash=sha256:ccfddfbf947a51c8b095a5e63bed43005a277a5581de92ed373eb06b75ceec77
+django-session-csrf==0.7.0 \
+    --hash=sha256:98670d093c86e8f1e64a2197dda84c7aa1ff32acacb559e18c3104b56c4a0804 \
+    --hash=sha256:65791aca2c8c75b59c1e903e5bdd64d0e4fac7799367738ef96a0170ae2fd7e4
 cryptography==1.5 \
     --hash=sha256:5871f1caad62fa4af2a5f7c88d312831eb668b562dd7462c47a2bba8e9b19c26 \
     --hash=sha256:f8ce6a7e66789b07eef6eaf21407897b2ac20064567cfe920fc481dae8acd6a1 \
