@@ -21,7 +21,7 @@ $(function () {
         }
 
         function getDate(key) {
-            return moment(filters[key].input.value + 'Z').utc().toDate();
+            return moment(filters[key].input.value).utc().toDate();
         }
 
         function removeSelectedShortcut() {

@@ -127,7 +127,7 @@ def datetime_picker(input_name, default_value):
             data-utc="true"
             data-time_24hr="true"
             data-alt-input="true"
-            data-date-format="Y-n-d H:i:S\Z"
+            data-date-format="Y-m-d\TH:i:S\Z"
             data-alt-format="F j, Y - H:i"
             date-default-date="{default_value}"
         >
