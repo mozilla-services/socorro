@@ -23,6 +23,10 @@ rest of Socorro so you're not mixing requirements:
 	$ mkvirtualenv socorro-tests
 	$ pip install -r requirements.txt
 
+An additional constraint for Firefox users, with the release of Firefox 48, Webdriver support is currently broken until GeckoDriver is out of Alpha. We suggest using an older version of Firefox which can be [downloaded here][firefoxdownloads].
+
+If you have multiple versions of Firefox installed, you can specifiy a specific one by using the `--firefox-path <path to firefox binary>` flag.
+
 ___Running tests against localhost___
 
 	$ py.test --driver Firefox --base-url http://localhost:8000 tests/
@@ -181,4 +185,5 @@ This software is licensed under the [MPL] 2.0:
 [Style Guide]: https://wiki.mozilla.org/QA/Execution/Web_Testing/Docs/Automation/StyleGuide
 [MPL]: http://www.mozilla.org/MPL/2.0/
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
+[firefoxdownloads]: https://ftp.mozilla.org/pub/firefox/releases/
 [test envs]: http://pytest-selenium.readthedocs.io/en/latest/user_guide.html#specifying-a-browser
