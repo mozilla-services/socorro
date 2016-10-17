@@ -9,7 +9,7 @@ Continuous Integration
 
 This directory holds Socorro client-based end-to-end tests which is why they're different than the rest of the code in this repository.
 
-To review the specific Python packages the tests utilize, please review `e2e-tests/requirements.txt`.
+To review the specific Python packages the tests utilize, please review `requirements.txt`.
 
 Set up and run Socorro tests
 -----------------------------
@@ -21,19 +21,22 @@ We suggest using a different virtual environment for these tests than the
 rest of Socorro so you're not mixing requirements:
 
 	$ mkvirtualenv socorro-tests
+	$ # make sure you DON'T run the next command in 
+	$ # your dev virtualenv.
 	$ pip install -r requirements.txt
 
 An additional constraint for Firefox users, with the release of Firefox 48, Webdriver support is currently broken until GeckoDriver is out of Alpha. We suggest using an older version of Firefox which can be [downloaded here][firefoxdownloads].
 
 If you have multiple versions of Firefox installed, you can specifiy a specific one by using the `--firefox-path <path to firefox binary>` flag.
 
-___Running tests against localhost___
-
-	$ py.test --driver Firefox --base-url http://localhost:8000 tests/
-
 ___Running the tests on stage___
 
 	$ py.test --driver Firefox tests/
+
+___Running tests against localhost___
+
+	$ py.test --driver Firefox --base-url http://localhost:8000 tests/
+	$ py.test --driver Firefox --firefox-path /path/to/firefox/binary --base-url http://localhost:8000 tests/
 
 ___Running tests against production___
 
@@ -91,7 +94,12 @@ simply turn off the UI.
 
 __Use a different driver__
 
-[pytest-selenium] provides the ability to run tests against [many other][test envs] browser environments -- consider using a different driver executable or external provider.
+[pytest-selenium] provides the ability to run tests against [many other][test envs] browser environments -- consider using a different driver executable or external provider. 
+
+It is important to note that tests must pass with Firefox driver otherwise they will not be accepted for merging.
+
+    $ # tests must pass with Firefox driver before submitting a pull request
+    $ py.test --driver PhantomJS --driver-path `which phantomjs` ...
 
 __xvfb__
 
@@ -115,50 +123,6 @@ On Linux:
     up all the fiddly environment variables to get this working
     well. The tests will run as normal, and no windows will open, if
     all is working right.
-
-
-Getting involved as a contributor
----------------------------------
-
-We love working with contributors to improve the Selenium test coverage on
-Socorro but it does require a few skills.  You will need to be familiar
-with Python, Selenium, and have a working knowledge of GitHub.
-
-If you are comfortable with Python, it's worth having a look at the Selenium
-framework to understand the basic concepts of browser-based testing and the
-page objects pattern.
-
-If you need to brush up on programming but are eager to start contributing
-immediately, please consider helping out by doing manual testing.  You can
-help find bugs in Mozilla [Firefox][firefox] or find bugs in the Mozilla web
-sites tested by the [Firefox Test Engineering][firefoxtesteng] team.  We have many projects that would be
-thrilled to have your help!
-
-To brush up on Python skills before engaging with us, [Dive Into Python][dive]
-is an excellent resource.  MIT also has [lecture notes on Python][mit] available
-through their open courseware.  The programming concepts you will need to know
-include functions, working with classes, and the basics of object-oriented
-programming.
-
-Questions are always welcome
-----------------------------
-While we take great pains to keep our documentation updated, the best source of
-information is those of us who work on the project.  Don't be afraid to join us
-in irc.mozilla.org #fx-test to ask questions about our Selenium tests.  Mozilla
-also hosts the #breakpad chat room to answer your general questions about
-the Socorro project.
-
-Writing Tests
--------------
-
-If you want to get involved and add more tests, then there are just a few things
-we'd like to ask you to do:
-
-1. Use the [template files][GitHub Templates] for all new tests and page objects
-2. Follow our simple [style guide][Style Guide]
-3. Fork this project with your own GitHub account
-4. Make sure all tests are passing, and submit a pull request with your changes
-5. Always feel free to reach out to us and ask questions. We'll do our best to help get you started and unstuck.
 
 License
 -------
