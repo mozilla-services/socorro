@@ -6,7 +6,6 @@ import random
 from django import http
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect
 from django.core.cache import cache
 from django.views.decorators.http import require_POST
@@ -14,7 +13,6 @@ from django.contrib import auth
 from django.utils.encoding import smart_bytes
 
 from oauth2client import client, crypt
-from django_browserid.views import Verify
 
 from crashstats.crashstats.utils import json_view
 
@@ -29,21 +27,6 @@ def default_username(email):
     return base64.urlsafe_b64encode(
         hashlib.sha1(smart_bytes(email)).digest()
     ).rstrip(b'=')
-
-
-class CustomBrowserIDVerify(Verify):
-
-    @property
-    def failure_url(self):
-        # if we don't do this, upon failure it might redirect
-        # to `/?bid_login_failed=1` which will redirect to
-        # `/home/products/:defaultproduct` without the `?bid_login_failed=1`
-        # part which doesn't tell browserID that it went wrong
-        return reverse('home:home', args=(settings.DEFAULT_PRODUCT,))
-
-    @property
-    def success_url(self):
-        return reverse('home:home', args=(settings.DEFAULT_PRODUCT,))
 
 
 @json_view
@@ -63,7 +46,6 @@ def debug_login(request):
         'cache_value': cache_value,
         'cookie_value': cookie_value,
         'DEBUG': settings.DEBUG,
-        'BROWSERID_AUDIENCES': getattr(settings, 'BROWSERID_AUDIENCES', []),
     }
     response = render(request, 'auth/debug_login.html', context)
     future = datetime.datetime.utcnow() + datetime.timedelta(seconds=10)

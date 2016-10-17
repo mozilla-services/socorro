@@ -130,11 +130,6 @@ sasl==0.1.3 \
 Django==1.8.15 \
     --hash=sha256:e2e41aeb4fb757575021621dc28fceb9ad137879ae0b854067f1726d9a772807 \
     --hash=sha256:863e543ac985d5cfbce09213fa30bc7c802cbdf60d6db8b5f9dab41e1341eacd
-django-browserid==1.0.2 \
-    --hash=sha256:6e737d4f7eed3da7018a4fb09a986689600aeaf0a903abc48377668b61a7e201 \
-    --hash=sha256:9eb896c58628f5c72c067964cd25b69742c91464d85ec51f4becc62982c70401
-fancy-tag==0.2.0 \
-    --hash=sha256:6a4179f2a2accda2b273bfd86de6f7024cee203043cc9a7c040fe7b306bbe120
 django-jsonfield==0.9.15 \
     --hash=sha256:429690b1c69cbd65c6c592c66d1592f8a1cf3d5282103083731fa90ea53c17c2
 eventlog==0.8.0 \

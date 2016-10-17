@@ -49,8 +49,6 @@ RAVEN_CONFIG = {}
 SENTRY_DSN = None
 
 
-BROWSERID_AUDIENCES = ['http://testserver']
-
 # Make sure these have something but something not right
 # so the tests never accidentally manage to connect to AWS
 # for realz.

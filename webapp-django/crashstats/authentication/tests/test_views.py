@@ -12,52 +12,9 @@ from django.contrib.auth import get_user_model
 
 from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.crashstats.tests.test_views import BaseTestViews
-from ..browserid_mock import mock_browserid
 
 
 User = get_user_model()
-
-
-class TestViews(DjangoTestCase):
-
-    def _login_attempt(self, email, assertion='fakeassertion123', next=None):
-        if not next:
-            next = self._home_url
-        with mock_browserid(email):
-            post_data = {
-                'assertion': assertion,
-                'next': next
-            }
-            return self.client.post(
-                '/browserid/login/',
-                post_data
-            )
-
-    @property
-    def _home_url(self):
-        return reverse('home:home', args=(settings.DEFAULT_PRODUCT,))
-
-    def test_invalid(self):
-        """Bad BrowserID form (i.e. no assertion) -> failure."""
-        response = self._login_attempt(None, None)
-        eq_(response.status_code, 403)
-        context = json.loads(response.content)
-        eq_(context['redirect'], self._home_url)
-
-    def test_bad_verification(self):
-        """Bad verification -> failure."""
-        response = self._login_attempt(None)
-        eq_(response.status_code, 403)
-        context = json.loads(response.content)
-        eq_(context['redirect'], self._home_url)
-
-    def test_successful_redirect(self):
-        response = self._login_attempt(
-            'peter@example.com',
-        )
-        eq_(response.status_code, 200)
-        context = json.loads(response.content)
-        eq_(context['redirect'], self._home_url)
 
 
 class TestOAuth2Views(BaseTestViews):
@@ -316,19 +273,10 @@ class TestDebugLogin(DjangoTestCase):
         with self.settings(
             SESSION_COOKIE_SECURE=True,
             DEBUG=True,
-            BROWSERID_AUDIENCES=[
-                'http://socorro',
-                'http://crashstats.com'
-            ]
         ):
             response = self.client.get(url)
             eq_(response.status_code, 200)
             ok_('data-session-cookie-secure="true"' in response.content)
-            ok_('data-debug="true"' in response.content)
-            ok_(
-                'data-audiences="http://socorro,http://crashstats.com"'
-                in response.content
-            )
 
     def test_get_cache_value(self):
         url = reverse('auth:debug_login')

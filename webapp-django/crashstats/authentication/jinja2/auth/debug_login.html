@@ -38,13 +38,14 @@
             color: red;
         }
     </style>
+    <meta name="google-signin-client_id" content="{{ OAUTH2_CLIENT_ID }}">
 </head>
 
 <body>
     <h1>Debug Login</h1>
 
     <h3>
-        Trying to figure out why Persona login isn't working?
+        Trying to figure out why sign-in isn't working?
         <br> Let's see what clues we might be able to find...
     </h3>
 
@@ -76,27 +77,6 @@
         <p class="loading">Loading...</p>
     </div>
 
-    <div class="test" id="browserid-audiences" data-debug="{{ DEBUG | json_dumps }}" data-audiences="{{ ','.join(BROWSERID_AUDIENCES) }}">
-        {% if DEBUG %}
-        You're currently in <b>DEBUG</b> mode which means that if
-        <code>BROWSERID_AUDIENCES</code> does not have to be set.
-        {% if BROWSERID_AUDIENCES %} Which it is. {% else %} Which it is not. {% endif %}
-        {% else %}
-        You are <b>not</b> in <b>DEBUG</b> mode which means that the
-        <code>BROWSERID_AUDIENCES</code> needs to match the URL you're using.
-        {% endif %}
-    </div>
-
-    <div class="test" id="browserid-js">
-        <h4>BrowserID JS files</h4>
-    </div>
-
-    <div class="test" id="browserid-dom">
-        <h4>BrowserID DOM elements</h4>
-        <p class="loading">Loading...</p>
-    </div>
-
-    <script type="text/javascript" src="https://login.persona.org/include.js"></script>
     {% javascript 'crashstats_base' %}
     <script src="{{ static('auth/js/debug_login.js') }}"></script>
 

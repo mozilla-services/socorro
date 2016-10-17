@@ -46,7 +46,6 @@ urlpatterns = patterns(
     (r'^symbols/', include('crashstats.symbols.urls', namespace='symbols')),
     # if we ever use the Django admin we might want to change this URL
     (r'^admin/', include('crashstats.manage.urls', namespace='manage')),
-    (r'', include('django_browserid.urls')),
     (r'^profile/', include(
         'crashstats.profile.urls',
         namespace='profile'

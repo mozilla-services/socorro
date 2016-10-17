@@ -28,9 +28,6 @@
     </head>
 
     <body>
-    {% if request.session and not (request.session.get('signin_method') and request.user.is_authenticated()) %}
-    {{ browserid_info() }}
-    {% endif %}
     <div class="page-header">
         {% include "header_title.html" %}
 
@@ -179,9 +176,6 @@
                         <a href="{{ url('auth:oauth2_signout') }}" class="google-signout">
                             <span>Sign out</span>
                         </a>
-                    {% else %}
-                        {# legacy #}
-                        {{ browserid_logout(text='Sign out') }}
                     {% endif %}
                 {% else %}
                     {% csrf_token %}
@@ -190,8 +184,6 @@
                         class="google-signin"
                         style="float:right"
                         data-signin-url="{{ url('auth:oauth2_signin') }}"></div>
-                    {# the redirect_next function comes from the browserid context processor #}
-                    {{ browserid_login(text='Sign in', color='dark', next=redirect_next()) }}
                 {% endif %}
                 </li>
             </ul>
@@ -201,13 +193,6 @@
     {% block site_js %}
 
     {% javascript 'crashstats_base' %}
-
-    {# If the user has signed in with Google, definitely don't bother with Persona #}
-    {% if request.session and not (request.session.get('signin_method') == 'google' and request.user.is_authenticated()) %}
-        {# persona is still valid #}
-        <script type="text/javascript" src="https://login.persona.org/include.js"></script>
-        {% javascript 'browserid' %}
-    {% endif %}
 
     <script src="https://apis.google.com/js/auth2:signin2.js?onload=googleAPILoaded"></script>
     {% endblock %}

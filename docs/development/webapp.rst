@@ -108,8 +108,8 @@ certain crashes.
 If you need permissions that depend on the content you'll need to
 write it yourself with some conditionals.
 
-Trouble logging in with Persona?
---------------------------------
+Trouble signing in?
+-------------------
 
 If you have set up your webapp but you can't sign in, it could very well
 be because some configuration is wrong compared to how you're running
