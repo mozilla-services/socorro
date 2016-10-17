@@ -45,3 +45,4 @@ webapp-django/.env
 primaryCrashStore/
 processedCrashStore/
 /tags
+e2e-tests/.cache/
