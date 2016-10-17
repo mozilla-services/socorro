@@ -187,6 +187,7 @@ strstr
 __swrite
 TlsGetValue
 TouchBadMemory
+vcruntime140\.dll@0x.*
 _VEC_memcpy
 _VEC_memzero
 .*WaitFor.*
