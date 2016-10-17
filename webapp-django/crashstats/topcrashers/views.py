@@ -37,6 +37,7 @@ def get_topcrashers_results(**kwargs):
         'hang_type',
         'process_type',
         '_histogram.uptime',
+        '_cardinality.install_time',
     ]
     params['_histogram_interval.uptime'] = 60
 
@@ -112,6 +113,11 @@ def get_topcrashers_results(**kwargs):
                 if row['term'] == 0:
                     ratio = 1.0 * row['count'] / hit['count']
                     hit['startup_crash'] = ratio > 0.5
+
+            # Number of distinct installations.
+            hit['installs_count'] = (
+                hit['facets']['cardinality_install_time']['value']
+            )
 
         # Run the same query but for the previous date range, so we can
         # compare the rankings and show rank changes.
