@@ -429,12 +429,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/manage-users.min.js',
     },
-    'profile': {
-        'source_filenames': (
-            'profile/js/profile.js',
-        ),
-        'output_filename': 'js/profile.min.js',
-    },
     'signature_report': {
         'source_filenames': (
             'signature/js/signature_report.js',
