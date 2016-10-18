@@ -164,8 +164,29 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                                 <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
                             </div>
                             <div class="signature-icons">
+                                {% if crash.startup_count > 0 %}
+                                {% if crash.startup_count == crash.count %}
+                                <img src="{{ static('img/3rdparty/silk/flag_red.png') }}"
+                                    alt="Startup Crash"
+                                    title="Startup Crash, all crashes happened during startup"
+                                    class="startup" height="16" width="16"
+                                />
+                                {% else %}
+                                <img src="{{ static('img/3rdparty/silk/flag_yellow.png') }}"
+                                    alt="Startup Crash"
+                                    title="Potential Startup Crash, {{ crash.startup_count }} out of {{ crash.count }} crashes happened during startup"
+                                    class="startup" height="16" width="16"
+                                />
+                                {% endif %}
+                                {% endif %}
+
                                 {% if crash.startup_crash %}
-                                <img src="{{ static('img/icons/rocket_fly.png') }}" alt="Startup Crash" title="Startup Crash" class="startup" height="16" width="16">
+                                <img
+                                    src="{{ static('img/icons/rocket_fly.png') }}"
+                                    alt="Startup Crash"
+                                    title="Potential Startup Crash, more than half of the crashes happened during the first minute after launch"
+                                    class="startup" height="16" width="16"
+                                />
                                 {% endif %}
 
                                 {% if crash.hang_count > 0 %}

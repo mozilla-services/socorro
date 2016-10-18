@@ -36,6 +36,7 @@ def get_topcrashers_results(**kwargs):
         'is_garbage_collecting',
         'hang_type',
         'process_type',
+        'startup_crash',
         '_histogram.uptime',
     ]
     params['_histogram_interval.uptime'] = 60
@@ -104,8 +105,19 @@ def get_topcrashers_results(**kwargs):
                 if row['term'] in (1, -1):
                     hit['hang_count'] += row['count']
 
-            # Number of startup crashes.
-            hit['startup_percent'] = 0
+            # Number of crashes happening during startup. This is defined by
+            # the software, as opposed to the next methid which relies on
+            # the uptime of the software.
+            hit['startup_count'] = 0
+
+            sig_startup = hit['facets']['startup_crash']
+            for row in sig_startup:
+                if row['term'] in ('T', '1'):
+                    hit['startup_count'] = row['count']
+
+            # Is a startup crash if more than half of the crashes are happening
+            # in the first minute after launch.
+            hit['startup_crash'] = False
 
             sig_startup = hit['facets']['histogram_uptime']
             for row in sig_startup:
