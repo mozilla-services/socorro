@@ -133,6 +133,9 @@ class TestViews(BaseTestViews):
                                     'term': 0,
                                     'count': 60,
                                 }],
+                                'cardinality_install_time': {
+                                    'value': 13,
+                                },
                             }
                         }, {
                             'term': u'mozCool()',
@@ -158,6 +161,9 @@ class TestViews(BaseTestViews):
                                     'term': 0,
                                     'count': 40,
                                 }],
+                                'cardinality_install_time': {
+                                    'value': 11,
+                                },
                             }
                         }]
                     },
