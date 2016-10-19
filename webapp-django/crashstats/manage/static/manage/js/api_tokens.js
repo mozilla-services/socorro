@@ -15,7 +15,8 @@
         function deleteToken(button) {
             var id = button.data('id');
             var row = button.parents('tr');
-            if (confirm("Are you sure you want to delete this?")) {
+            var expired = button.data('expired');
+            if (expired || confirm("Are you sure you want to delete this?")) {
                 button.text('Deleting');
                 var form = $('form#tokens');
                 var data = {
@@ -124,6 +125,7 @@
                             .append($('<button>')
                                     .text('Delete')
                                     .data('id', token.id)
+                                    .data('expired', token.expired)
                                     .click(function(event) {
                                         event.preventDefault();
                                         deleteToken($(this));
