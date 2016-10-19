@@ -180,7 +180,7 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
         """)
         self.conn.commit()
 
-    def _setup_config_manager(self, api_endpoint_url='https://example.com/'):
+    def _setup_config_manager(self):
         return get_config_manager_for_crontabber(
             jobs=(
                 'socorro.cron.jobs.featured_versions_automatic'
@@ -188,7 +188,9 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
             ),
             overrides={
                 'crontabber.class-FeaturedVersionsAutomaticCronApp'
-                '.api_endpoint_url': api_endpoint_url,
+                '.api_endpoint_url': (
+                    'https://example.com/{product}_versions.json'
+                ),
             }
         )
 
