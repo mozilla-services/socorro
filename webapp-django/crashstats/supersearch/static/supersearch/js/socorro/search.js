@@ -223,7 +223,7 @@ $(function () {
         var params = form.dynamicForm('getParams');
 
         // Add Simple Search parameters.
-        $('.simple-search-input', simpleSearchContainer).each(function (i, item) {
+        $('input.simple-search-input', simpleSearchContainer).each(function (i, item) {
             var name = item.name;
             var value = $(item).select2('val');
             if (value.length) {
@@ -407,7 +407,6 @@ $(function () {
             elt.select2({
                 'width': 'element',
                 'tags': elt.data('choices'),
-                'closeOnSelect': false,
             });
         });
     }
