@@ -151,7 +151,11 @@ def search(request, default_context=None):
     form = get_supersearch_form(request)
     context['simple_search_data'] = [
         # field name, options, placeholder values
-        (x, form.fields[x].choices, [x[1] for x in form.fields[x].choices[:3]])
+        (
+            x,
+            [c[1] for c in form.fields[x].choices],
+            [c[1] for c in form.fields[x].choices[:3]]
+        )
         for x in settings.SIMPLE_SEARCH_FIELDS
     ]
 

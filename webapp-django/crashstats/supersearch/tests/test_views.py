@@ -60,15 +60,6 @@ class TestViews(BaseTestViews):
         for field in settings.SIMPLE_SEARCH_FIELDS:
             ok_(field.capitalize().replace('_', ' ') in response.content)
 
-        # Verify selects are filled with the correct options.
-        doc = pyquery.PyQuery(response.content)
-        options = doc('#simple-search select[name=product] option')
-        ok_('WaterWolf' in str(options))
-        ok_('NightTrain' in str(options))
-
-        options = doc('#simple-search select[name=process_type] option')
-        ok_('browser' in str(options))
-
     def test_search_ratelimited(self):
 
         url = reverse('supersearch.search')

@@ -60,14 +60,12 @@
                     <label for="simple-{{ field }}">
                         {{ field | replace('_', ' ') | capitalize }}
                     </label>
-                    <select name="{{ field }}" id="simple-{{ field }}"
-                        multiple="multiple"
+                    <input name="{{ field }}" id="simple-{{ field }}"
+                        class="simple-search-input"
+                        type="text"
                         placeholder="{{ ', '.join(examples) }}..."
-                    >
-                        {% for opt in field_data %}
-                        <option value="{{ opt[0] }}">{{ opt[1] }}</option>
-                        {% endfor %}
-                    </select>
+                        data-choices="{{ field_data | to_json }}"
+                    />
                 </div>
                 {% endfor %}
             </fieldset>
