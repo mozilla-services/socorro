@@ -3,6 +3,7 @@ import re
 import requests
 
 from configman import Namespace
+from configman.converters import list_converter
 from crontabber.base import BaseCronApp
 from crontabber.mixins import (
     with_postgres_transactions,
@@ -11,6 +12,15 @@ from crontabber.mixins import (
 
 
 def alias_list_to_dict(input_string):
+    """Return a dict by splitting the input string by ','
+    and splitting each item by a ':' to make it key and value.
+
+    For example::
+
+        >>> alias_list_to_dict('foo: bar, other:thing, ')
+        {'foo': 'bar', 'other': 'thing'}
+
+    """
     aliases = {}
     for item in input_string.split(','):
         if not item.strip():
@@ -37,16 +47,14 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
     required_config.add_option(
         'api_endpoint_url',
         default=(
-            'https://product-details.mozilla.org/1.0/'
+            'https://product-details.mozilla.org/1.0/{product}_versions.json'
         ),
         doc='URL from which we can download all the featured versions'
     )
     required_config.add_option(
         'products',
         default='firefox,mobile,thunderbird',
-        from_string_converter=lambda line: tuple(
-            [x.strip() for x in line.split(',') if x.strip()]
-        ),
+        from_string_converter=list_converter,
         doc='a comma-delimited list of products to recognize'
     )
     required_config.add_option(
@@ -61,18 +69,12 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
     )
 
     def run(self, connection):
-        assert isinstance(self.config.api_endpoint_url, basestring)
-        assert self.config.api_endpoint_url.endswith('/')
-
         # The @with_single_postgres_transaction decorator makes
         # sure this cursor is committed or rolled back and cleaned up.
         cursor = connection.cursor()
 
         for product in self.config.products:
-            url = '{}{}_versions.json'.format(
-                self.config.api_endpoint_url,
-                product
-            )
+            url = self.config.api_endpoint_url.format(product=product)
             response = requests.get(url)
             if response.status_code != 200:
                 raise DownloadError(
@@ -89,7 +91,7 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
             )
 
     def _set_featured_versions(self, cursor, product, versions):
-        # 'product_name' is what's it's called in our product_versions
+        # 'product_name' is what it's called in our product_versions
         # table.
         product_name = self.config.aliases.get(
             product,
