@@ -64,7 +64,6 @@ ROOT_URLCONF = '%s.urls' % PROJECT_MODULE
 
 INSTALLED_APPS = (
     'pipeline',
-    'django_browserid',
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.sessions',
@@ -119,12 +118,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 
-# BrowserID configuration
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'django_browserid.auth.BrowserIDBackend',
-)
-
 _CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
@@ -135,7 +128,6 @@ _CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
     '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
     '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
-    '%s.base.context_processors.browserid' % PROJECT_MODULE,
     '%s.status.context_processors.status_message' % PROJECT_MODULE,
     '%s.crashstats.context_processors.help_urls' % PROJECT_MODULE,
 )
@@ -165,11 +157,7 @@ TEMPLATES = [
                 'pipeline.templatetags.ext.PipelineExtension',
                 'waffle.jinja.WaffleExtension',
             ],
-            'globals': {
-                'browserid_info': 'django_browserid.helpers.browserid_info',
-                'browserid_login': 'django_browserid.helpers.browserid_login',
-                'browserid_logout': 'django_browserid.helpers.browserid_logout'
-            }
+            'globals': {}
         }
     },
     {
@@ -382,14 +370,6 @@ MIDDLEWARE_RETRIES = config(
     default=10,
     cast=int,
 )
-
-# Overridden so we can control the redirects better
-BROWSERID_VERIFY_CLASS = (
-    '%s.authentication.views.CustomBrowserIDVerify' % PROJECT_MODULE
-)
-
-# For a more friendly Persona pop-up
-BROWSERID_REQUEST_ARGS = {'siteName': 'Mozilla Crash Reports'}
 
 # Default number of days a token lasts until it expires
 TOKENS_DEFAULT_EXPIRATION_DAYS = 90
@@ -606,14 +586,6 @@ if raven_dsn:
         'dsn': raven_dsn,
         'release': SOCORRO_REVISION,
     }
-
-# If you intend to run with DEBUG=False, this must match the URL
-# you're using
-BROWSERID_AUDIENCES = config(
-    'BROWSERID_AUDIENCES',
-    'http://localhost:8000',
-    cast=Csv()
-)
 
 # Optional Google Analytics ID (UA-XXXXX-X)
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)

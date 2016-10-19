@@ -185,8 +185,6 @@ NOTE - variables surrounded by @@@ are placeholders and need to be filled in app
   # Location of your memcached server. Leave as-is for localhost.
   CACHE_LOCATION='localhost:11211'
   CACHE_KEY_PREFIX='socorro'
-  # Valid URLs for BrowserID/Persona authentication, e.g. http://crash-stats.example.com
-  BROWSERID_AUDIENCES='@@@BROWSERID_AUDIENCES@@@'
   # PostgreSQL settings for Django.
   DATABASE_ENGINE='django.db.backends.postgresql_psycopg2'
   DATABASE_NAME='@@@DATABASE_NAME@@@'

@@ -73,7 +73,6 @@ $(function() {
                 'bad'
             );
         }
-
     }).fail(function() {
         console.warn('Unable to make an AJAX request to test cookies');
         console.error(arguments);
@@ -110,121 +109,5 @@ $(function() {
         $('.loading', caching).hide();
         drawConclusionSoon();
     });
-
-    /* Check that including the browserid .js files worked */
-    var browserid_js = $('#browserid-js');
-    if (window.django_browserid) {
-        addVerdict(
-            browserid_js,
-            "The 'browserid/api.js' file appears to have loaded.",
-            'good'
-        );
-    } else {
-        addVerdict(
-            browserid_js,
-            "The 'browserid/api.js' file appears to <b>not</b> have loaded.",
-            'bad'
-        );
-    }
-
-    /* Check that the BROWSERID_AUDIENCES matches */
-    var browserid_audiences = $('#browserid-audiences');
-    var debug = browserid_audiences.data('debug');
-    var audiences = browserid_audiences.data('audiences');
-    if (audiences.length) {
-        // necessary because `"".split(',')` becomes `[""]`
-        audiences = audiences.split(',');
-    } else {
-        audiences = [];
-    }
-
-    function matchesCurrentOrigin(url) {
-        var a = document.createElement('a');
-        a.href = url;
-        var hostMatch = !a.host || window.location.host === a.host;
-        var protocolMatch = !a.protocol || window.location.protocol === a.protocol;
-        return hostMatch && protocolMatch;
-    }
-    if (audiences) {
-        // at least one of them needs to match the current protocol + hostname
-        var matched = false;
-        audiences.forEach(function(each) {
-            if (matchesCurrentOrigin(each)) {
-                matched = true;
-            }
-        });
-        if (matched) {
-            addVerdict(
-                browserid_audiences,
-                'The current URL matches one of the values in ' +
-                '<code>BROWSERID_AUDIENCES</code>. ',
-                'good'
-            );
-        } else {
-            addVerdict(
-                browserid_audiences,
-                'No value in your <code>BROWSERID_AUDIENCES</code> setting appears ' +
-                "to match the current URL you're using. ",
-                'bad'
-            );
-        }
-    } else if (!debug) {
-        addVerdict(
-            browserid_audiences,
-            "You're not in DEBUG mode but you have not set up the " +
-            "<code>BROWSERID_AUDIENCES</code> setting.",
-            'bad'
-        );
-    } else {
-        addVerdict(
-            browserid_audiences,
-            "You're in DEBUG mode so you do NOT need to set up " +
-            "<code>BROWSERID_AUDIENCES</code>",
-            'good'
-        );
-    }
-
-    /* Check that the home page has the necessary DOM elements */
-    var browserid_dom = $('#browserid-dom');
-    $.ajax({
-        url: '/',
-        dataType: 'html'
-    }).done(function(response) {
-        if (response.indexOf('id="browserid-info"') > -1) {
-            addVerdict(
-                browserid_dom,
-                'Home page has a <code>id="browserid-info"</code> element',
-                'good'
-            );
-        } else {
-            addVerdict(
-                browserid_dom,
-                'No element with <code>id="browserid-info"</code> on the home page',
-                'bad'
-            );
-        }
-        if (response.indexOf('browserid-logout') > -1 ||
-            response.indexOf('browserid-login') > -1) {
-            addVerdict(
-                browserid_dom,
-                "Found a browserid-login or browserid-logout element on the home page",
-                'good'
-            );
-        } else {
-            addVerdict(
-                browserid_dom,
-                "Can't find a browserid-login or browserid-logout element on the home page",
-                'bad'
-            );
-        }
-    }).fail(function() {
-        console.warn('Unable to make an AJAX request');
-        console.error(arguments);
-        $('#check-console').show();
-    }).always(function() {
-        $('.loading', browserid_dom).hide();
-        drawConclusionSoon();
-    });
-
 
 });
