@@ -3,7 +3,7 @@ server {
     server_name crash-stats;
 
     # crash-stats needs to accept debug symbol zips
-    client_max_body_size 1g;
+    client_max_body_size 2g;
 
     location / {
         uwsgi_pass unix:/var/run/uwsgi/socorro/socorro-webapp.sock;
