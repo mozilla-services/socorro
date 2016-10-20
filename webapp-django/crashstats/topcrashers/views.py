@@ -103,8 +103,8 @@ def get_topcrashers_results(**kwargs):
                     hit['hang_count'] += row['count']
 
             # Number of crashes happening during startup. This is defined by
-            # the software, as opposed to the next method which relies on
-            # the uptime of the software.
+            # the client, as opposed to the next method which relies on
+            # the uptime of the client.
             hit['startup_count'] = sum(
                 row['count'] for row in hit['facets']['startup_crash']
                 if row['term'] in ('T', '1')
