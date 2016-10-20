@@ -18,6 +18,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
     FileDumpsMapping,
 )
+from socorrolib.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
 from configman.dotdict import DotDict
@@ -330,6 +331,42 @@ class TestBase(TestCase):
             # This test makes sure that the dict processed_crash here
             # is NOT affected.
             eq_(processed_crash['foo'], 'bar')
+
+    def test_poly_crash_storage_immutability_deeper(self):
+        n = Namespace()
+        n.add_option(
+            'storage',
+            default=PolyCrashStorage,
+        )
+        n.add_option(
+            'logger',
+            default=mock.Mock(),
+        )
+        value = {
+            'storage_classes': (
+                'socorro.unittest.external.test_crashstorage_base'
+                '.MutatingProcessedCrashCrashStorage'
+            ),
+        }
+        cm = ConfigurationManager(n, values_source_list=[value])
+        with cm.context() as config:
+            raw_crash = {'ooid': '12345'}
+            dump = '12345'
+            processed_crash = {
+                'foo': DotDict({'other': 'thing'}),
+                'bar': SocorroDotDict({'something': 'else'}),
+            }
+
+            poly_store = config.storage(config)
+
+            poly_store.save_raw_and_processed(
+                raw_crash,
+                dump,
+                processed_crash,
+                'n'
+            )
+            eq_(processed_crash['foo']['other'], 'thing')
+            eq_(processed_crash['bar']['something'], 'else')
 
     def test_fallback_crash_storage(self):
         n = Namespace()
