@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import copy
+
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
@@ -17,6 +19,7 @@ from socorro.external.crashstorage_base import (
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
     FileDumpsMapping,
+    socorrodotdict_to_dict
 )
 from socorrolib.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
@@ -61,6 +64,76 @@ class MutatingProcessedCrashCrashStorage(CrashStorageBase):
 
 def fake_quit_check():
     return False
+
+
+class Testsocorrodotdict_to_dict(TestCase):
+    def test_primitives(self):
+        # Test all the primitives
+        eq_(socorrodotdict_to_dict(None), None)
+        eq_(socorrodotdict_to_dict([]), [])
+        eq_(socorrodotdict_to_dict(''), '')
+        eq_(socorrodotdict_to_dict(1), 1)
+        eq_(socorrodotdict_to_dict({}), {})
+
+    def test_complex(self):
+        def comp(data, expected):
+            # First socorrodotdict_to_dict the data and compare it.
+            new_dict = socorrodotdict_to_dict(data)
+            eq_(new_dict, expected)
+
+            # Now deepcopy the new dict to make sure it's ok.
+            copy.deepcopy(new_dict)
+
+        # dict -> dict
+        comp({'a': 1}, {'a': 1})
+
+        # outer socorrodotdict -> dict
+        comp(SocorroDotDict({'a': 1}), {'a': 1})
+
+        # nested socorrodotdict -> dict
+        comp(
+            SocorroDotDict({
+                'a': 1,
+                'b': SocorroDotDict({
+                    'a': 2
+                })
+            }),
+            {'a': 1, 'b': {'a': 2}}
+        )
+        # inner socorrodotdict
+        comp(
+            {
+                'a': 1,
+                'b': SocorroDotDict({
+                    'a': 2
+                })
+            },
+            {'a': 1, 'b': {'a': 2}}
+        )
+        # in a list
+        comp(
+            {
+                'a': 1,
+                'b': [
+                    SocorroDotDict({
+                        'a': 2
+                    }),
+                    3,
+                    4
+                ]
+            },
+            {'a': 1, 'b': [{'a': 2}, 3, 4]}
+        )
+        # mixed dotdicts
+        comp(
+            DotDict({
+                'a': 1,
+                'b': SocorroDotDict({
+                    'a': 2
+                })
+            }),
+            {'a': 1, 'b': {'a': 2}}
+        )
 
 
 class TestBase(TestCase):
