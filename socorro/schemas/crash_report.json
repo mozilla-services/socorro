@@ -199,6 +199,59 @@
                     "type": ["integer", "null"],
                     "description": "Index into modules."
                 },
+                "modules": {
+                    "type": "array",
+                    "description": "A list of installed modules.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "base_addr": {
+                                "type": "string",
+                                "description": "Number of frames in the thread."
+                            },
+                            "code_id": {
+                                "type": "string",
+                                "description": "Code identifier."
+                            },
+                            "debug_file": {
+                                "type": "string",
+                                "description": "File containing debug data."
+                            },
+                            "debug_id": {
+                                "type": "string",
+                                "description": "Debug identifier."
+                            },
+                            "end_addr": {
+                                "type": "string",
+                                "description": "Hexadecimal address."
+                            },
+                            "filename": {
+                                "type": "string",
+                                "description": "Name of the file of the module."
+                            },
+                            "loaded_symbols": {
+                                "type": ["boolean", "null"],
+                                "description": "Are symbols loaded?"
+                            },
+                            "missing_symbols": {
+                                "type": ["boolean", "null"],
+                                "description": "Are symbols missing?"
+                            },
+                            "symbol_disk_cache_hit": {
+                                "type": ["boolean", "null"],
+                                "description": "Did loading symbols hit disk cacke?"
+                            },
+                            "symbol_url": {
+                                "type": ["string", "null"],
+                                "description": "URL of the symbols for that module."
+                            },
+                            "version": {
+                                "type": "string",
+                                "description": "Version of the module."
+                            }
+                        }
+                    }
+                },
                 "status": {
                     "type": ["string", "null"],
                     "description": "Status of the output of the stackwalker. Can be \"OK\", \"ERROR_*\" or \"SYMBOL_SUPPLIER_INTERRUPTED\"."
