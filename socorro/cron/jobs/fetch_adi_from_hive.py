@@ -51,7 +51,10 @@ _QUERY = """
         count(*)
     FROM v2_raw_logs
     WHERE
-        (domain='addons.mozilla.org' OR domain='blocklist.addons.mozilla.org')
+        (
+            domain='addons.mozilla.org' OR
+            domain='blocklists.settings.services.mozilla.com'
+        )
         and http_status_code = '200'
         and request_url like '/v1/blocklist/3/%%'
         and ds='%s'
