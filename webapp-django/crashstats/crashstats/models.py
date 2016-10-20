@@ -959,6 +959,12 @@ class ReportList(SocorroMiddleware):
     The `start_date` and `end_date` are both required and its span
     can not be more than 30 days.
     """
+
+    deprecation_warning = (
+        "This endpoint is deprecated and will soon cease to exist.\n"
+        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
+    )
+
     URL_PREFIX = '/report/list/'
 
     required_params = (
@@ -1273,6 +1279,11 @@ class CommentsBySignature(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/comments/'
 
+    deprecation_warning = (
+        "This endpoint is deprecated and will soon cease to exist.\n"
+        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
+    )
+
     required_params = (
         'signature',
     )
@@ -1472,6 +1483,11 @@ class SignatureSummary(SocorroMiddleware):
 
     URL_PREFIX = '/signaturesummary/'
 
+    deprecation_warning = (
+        "This endpoint is deprecated and will soon cease to exist.\n"
+        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
+    )
+
     required_params = (
         ('report_types', list),
         'signature',
@@ -1583,6 +1599,11 @@ class SignatureURLs(SocorroMiddleware):
 
     URL_PREFIX = '/signatureurls/'
 
+    deprecation_warning = (
+        "This endpoint is deprecated and will soon cease to exist.\n"
+        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
+    )
+
     required_params = (
         ('products', list),
         'signature',
@@ -1653,6 +1674,11 @@ class Field(SocorroMiddleware):
 class CrashesFrequency(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/frequency/'
+
+    deprecation_warning = (
+        "This endpoint is deprecated and will soon cease to exist.\n"
+        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
+    )
 
     required_params = (
         'signature',
