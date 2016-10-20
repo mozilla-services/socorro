@@ -115,7 +115,10 @@ def get_topcrashers_results(**kwargs):
             hit['startup_crash'] = False
             sig_uptime = hit['facets']['histogram_uptime']
             for row in sig_uptime:
-                if row['term'] == 0:
+                # Aggregation buckets use the lowest value of the bucket as
+                # term. So for everything between 0 and 60 excluded, the
+                # term will be `0`.
+                if row['term'] < 60:
                     ratio = 1.0 * row['count'] / hit['count']
                     hit['startup_crash'] = ratio > 0.5
 
