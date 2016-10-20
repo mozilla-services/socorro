@@ -622,15 +622,9 @@ class PolyCrashStorage(CrashStorageBase):
             Ideally, we shouldn't be using any of this *DotDict and just
             use plain dict objects.
             """
-            def dictify(thing):
-                for key, value in thing.items():
-                    if isinstance(value, SocorroDotDict):
-                        thing[key] = dict(value)
-                    if isinstance(value, collections.Mapping):
-                        dictify(value)
-
-            dictified = socorrodotdict_to_dict(crash)
-            return SocorroDotDict(copy.deepcopy(dictified))
+            return SocorroDotDict(
+                copy.deepcopy(socorrodotdict_to_dict(crash))
+            )
 
         for a_store in self.stores.itervalues():
             self.quit_check()
