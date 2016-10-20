@@ -3,8 +3,8 @@ End-to-End Tests for Socorro
 
 Continuous Integration
 ----------------------
-[![stage](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.stage.saucelabs.svg?label=stage)](https://webqa-ci.mozilla.com/job/socorro.stage.saucelabs/)
-[![prod](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.prod.saucelabs.svg?label=prod)](https://webqa-ci.mozilla.com/job/socorro.prod.saucelabs/)
+[![stage](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.stage.svg?label=stage)](https://webqa-ci.mozilla.com/job/socorro.stage/)
+[![prod](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.prod.svg?label=prod)](https://webqa-ci.mozilla.com/job/socorro.prod/)
 
 
 This directory holds Socorro client-based end-to-end tests which is why they're different than the rest of the code in this repository.
