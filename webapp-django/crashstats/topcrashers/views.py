@@ -36,6 +36,7 @@ def get_topcrashers_results(**kwargs):
         'is_garbage_collecting',
         'hang_type',
         'process_type',
+        'startup_crash',
         '_histogram.uptime',
         '_cardinality.install_time',
     ]
@@ -81,7 +82,6 @@ def get_topcrashers_results(**kwargs):
 
             # Number of crashes happening during garbage collection.
             hit['is_gc_count'] = 0
-
             sig_gc = hit['facets']['is_garbage_collecting']
             for row in sig_gc:
                 if row['term'].lower() == 't':
@@ -89,7 +89,6 @@ def get_topcrashers_results(**kwargs):
 
             # Number of plugin crashes.
             hit['plugin_count'] = 0
-
             sig_process = hit['facets']['process_type']
             for row in sig_process:
                 if row['term'].lower() == 'plugin':
@@ -97,7 +96,6 @@ def get_topcrashers_results(**kwargs):
 
             # Number of hang crashes.
             hit['hang_count'] = 0
-
             sig_hang = hit['facets']['hang_type']
             for row in sig_hang:
                 # Hangs have weird values in the database: a value of 1 or -1
@@ -105,12 +103,23 @@ def get_topcrashers_results(**kwargs):
                 if row['term'] in (1, -1):
                     hit['hang_count'] += row['count']
 
-            # Number of startup crashes.
-            hit['startup_percent'] = 0
+            # Number of crashes happening during startup. This is defined by
+            # the client, as opposed to the next method which relies on
+            # the uptime of the client.
+            hit['startup_count'] = sum(
+                row['count'] for row in hit['facets']['startup_crash']
+                if row['term'] in ('T', '1')
+            )
 
-            sig_startup = hit['facets']['histogram_uptime']
-            for row in sig_startup:
-                if row['term'] == 0:
+            # Is a startup crash if more than half of the crashes are happening
+            # in the first minute after launch.
+            hit['startup_crash'] = False
+            sig_uptime = hit['facets']['histogram_uptime']
+            for row in sig_uptime:
+                # Aggregation buckets use the lowest value of the bucket as
+                # term. So for everything between 0 and 60 excluded, the
+                # term will be `0`.
+                if row['term'] < 60:
                     ratio = 1.0 * row['count'] / hit['count']
                     hit['startup_crash'] = ratio > 0.5
 

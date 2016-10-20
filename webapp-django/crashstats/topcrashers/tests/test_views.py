@@ -83,22 +83,6 @@ class TestViews(BaseTestViews):
                                     'term': 'WaterWolf',
                                     'count': 50,
                                 }],
-                                'is_garbage_collecting': [{
-                                    'term': 't',
-                                    'count': 50,
-                                }],
-                                'hang_type': [{
-                                    'term': 1,
-                                    'count': 50,
-                                }],
-                                'process_type': [{
-                                    'term': 'plugin',
-                                    'count': 50,
-                                }],
-                                'histogram_uptime': [{
-                                    'term': 0,
-                                    'count': 40,
-                                }],
                             }
                         }]
                     },
@@ -129,6 +113,10 @@ class TestViews(BaseTestViews):
                                     'term': 'plugin',
                                     'count': 50,
                                 }],
+                                'startup_crash': [{
+                                    'term': 'T',
+                                    'count': 100,
+                                }],
                                 'histogram_uptime': [{
                                     'term': 0,
                                     'count': 60,
@@ -155,6 +143,10 @@ class TestViews(BaseTestViews):
                                 }],
                                 'process_type': [{
                                     'term': 'browser',
+                                    'count': 50,
+                                }],
+                                'startup_crash': [{
+                                    'term': 'T',
                                     'count': 50,
                                 }],
                                 'histogram_uptime': [{
@@ -219,7 +211,14 @@ class TestViews(BaseTestViews):
         eq_(selected_count.text(), '100')
 
         # Check the startup crash icon is there.
-        ok_('Startup Crash' in response.content)
+        ok_(
+            'Potential Startup Crash, 50 out of 80 crashes happened during '
+            'startup' in response.content
+        )
+        ok_(
+            'Startup Crash, all crashes happened during startup'
+            in response.content
+        )
 
     def test_topcrashers_400_by_bad_days(self):
         response = self.client.get(self.base_url, {
