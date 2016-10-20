@@ -2023,9 +2023,6 @@ class TestViews(BaseTestViews):
         # Plus two for the standard headers
         eq_(doc('table.crash_data tr').size(), 14 + 2)
 
-        # put it back some something > 0
-        models.CurrentProducts.cache_seconds = 60
-
     def test_crashes_per_user_redirect(self):
         """At some point in 2018 we can remove this test."""
         url = reverse('crashstats:crashes_per_user_redirect')
