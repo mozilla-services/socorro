@@ -20,6 +20,25 @@ from configman.converters import classes_in_namespaces_converter, \
 from configman.dotdict import DotDict as ConfigmanDotDict
 
 
+def socorrodotdict_to_dict(sdotdict):
+    """Takes a socorrolib.lib.util.DotDict and returns a dict
+
+    This does a complete object traversal converting all instances of the
+    things named DotDict to dict so it's deep-copyable.
+
+    """
+    def _dictify(thing):
+        if isinstance(thing, collections.Mapping):
+            return dict([(key, _dictify(val)) for key, val in thing.items()])
+        elif isinstance(thing, basestring):
+            return thing
+        elif isinstance(thing, collections.Sequence):
+            return [_dictify(item) for item in thing]
+        return thing
+
+    return _dictify(sdotdict)
+
+
 #==============================================================================
 class MemoryDumpsMapping(dict):
     """there has been a bifurcation in the crash storage data throughout the
@@ -603,7 +622,9 @@ class PolyCrashStorage(CrashStorageBase):
             Ideally, we shouldn't be using any of this *DotDict and just
             use plain dict objects.
             """
-            return SocorroDotDict(copy.deepcopy(dict(crash)))
+            return SocorroDotDict(
+                copy.deepcopy(socorrodotdict_to_dict(crash))
+            )
 
         for a_store in self.stores.itervalues():
             self.quit_check()
