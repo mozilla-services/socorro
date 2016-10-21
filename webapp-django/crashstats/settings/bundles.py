@@ -464,6 +464,12 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/error.min.js',
     },
+    'google_analytics': {
+        'source_filenames': (
+            'crashstats/js/socorro/google_analytics.js',
+        ),
+        'output_filename': 'js/google-analytics.min.js',
+    },
 }
 
 # This is sanity checks, primarily for developers. It checks that

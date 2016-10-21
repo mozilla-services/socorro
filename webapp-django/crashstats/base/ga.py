@@ -62,9 +62,7 @@ def track_pageview(
         logging.debug('GOOGLE_ANALYTICS_ID not set up. No pageview tracking.')
         return
 
-    domain = settings.GOOGLE_ANALYTICS_DOMAIN
-    if not domain or domain == 'auto':
-        domain = RequestSite(request).domain
+    domain = RequestSite(request).domain
 
     params = {}
     params['v'] = 1  # version

@@ -127,7 +127,7 @@ _CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
-    '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
+    '%s.base.context_processors.debug' % PROJECT_MODULE,
     '%s.status.context_processors.status_message' % PROJECT_MODULE,
     '%s.crashstats.context_processors.help_urls' % PROJECT_MODULE,
 )
@@ -599,10 +599,11 @@ if raven_dsn:
         'release': SOCORRO_REVISION,
     }
 
-# Optional Google Analytics ID (UA-XXXXX-X)
+# Google Analytics ID (UA-XXXXX-X) used for sending
+# pings to Google Analytics about usage of the public API.
+# Note that the Mozilla Google Analytics ID is hardcoded
+# in the static file: google_analytics.js
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
-# Root domain. Required iff you're providing an analytics ID.
-GOOGLE_ANALYTICS_DOMAIN = config('GOOGLE_ANALYTICS_DOMAIN', 'auto')
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
