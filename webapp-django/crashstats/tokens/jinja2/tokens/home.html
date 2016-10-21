@@ -93,7 +93,12 @@
                         </td>
                     </tr>
                 </table>
-                <form class="delete" action="{{ url('tokens:delete_token', token.pk) }}" method="post">{% csrf_token %}
+                <form
+                    class="delete"
+                    action="{{ url('tokens:delete_token', token.pk) }}"
+                    method="post"
+                    data-expired="{{ token.is_expired | to_json }}">
+                    {% csrf_token %}
                     <button type="submit">Delete this token</button>
                 </form>
             </div>

@@ -26,6 +26,11 @@ $(function() {
     });
 
     $('form.delete').submit(function() {
-        return confirm('Are you sure you want to delete this API Token?');
+        if ($(this).data('expired')) {
+            return true;
+        } else {
+            return confirm('Are you sure you want to delete this API Token?');
+        }
+
     });
 });
