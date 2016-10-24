@@ -550,6 +550,10 @@ PIPELINE = {
     'COMPILERS': (
         'pipeline.compilers.less.LessCompiler',
     ),
+    # The pipeline.jinja2.PipelineExtension extension doesn't support
+    # automatically rendering any potentional compilation errors into
+    # the rendered HTML, so just let it raise plain python exceptions.
+    'SHOW_ERRORS_INLINE': False,
 }
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
