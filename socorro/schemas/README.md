@@ -25,17 +25,18 @@ The JSON Schema should contain a key called `$target_version`.
 Yes, if you add more keys, don't change the version.
 For example, if you want to add...:
 
-    "addons_checksum": {
-        "type": ["string", "null"],
-        "description": "Sample specimen"
-    }
-
+```json
+"addons_checksum": {
+    "type": ["string", "null"],
+    "description": "Sample specimen"
+}
+```
 ...to the root or inside an existing key. Then **don't** change the version.
 
 However, if you change the type definition, E.g.
 
 ```diff
-    "addons_checksum": {
+"addons_checksum": {
 -   "type": ["string", "null"],
 +   "type": ["integer", "null"],
     "description": "Sample specimen"
