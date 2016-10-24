@@ -57,15 +57,15 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         'companion_class',
         doc='a classname that runs a process in parallel with the processor',
         default='',
-        #default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
+        # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
         from_string_converter=class_converter
     )
 
     ###########################################################################
-    ### TODO: implement an __init__ and a waiting func.  The waiting func
-    ### will take registrations of periodic things to do over some time
-    ### interval.  the first periodic thing is the rereading of the
-    ### signature generation stuff from the database.
+    # TODO: implement an __init__ and a waiting func.  The waiting func
+    # will take registrations of periodic things to do over some time
+    # interval.  the first periodic thing is the rereading of the
+    # signature generation stuff from the database.
     ###########################################################################
 
     required_config.namespace('sentry')

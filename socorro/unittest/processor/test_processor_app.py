@@ -31,39 +31,45 @@ class TestProcessorApp(TestCase):
         mocked_source_crashstorage = mock.Mock()
         mocked_source_crashstorage.id = 'mocked_source_crashstorage'
         config.source.crashstorage_class = mock.Mock(
-          return_value=mocked_source_crashstorage
+            return_value=mocked_source_crashstorage
         )
 
         config.destination = DotDict()
         mocked_destination_crashstorage = mock.Mock()
         mocked_destination_crashstorage.id = 'mocked_destination_crashstorage'
         config.destination.crashstorage_class = mock.Mock(
-          return_value=mocked_destination_crashstorage
+            return_value=mocked_destination_crashstorage
         )
 
         config.processor = DotDict()
         mocked_processor = mock.Mock()
         mocked_processor.id = 'mocked_processor'
         config.processor.processor_class = mock.Mock(
-          return_value=mocked_processor
+            return_value=mocked_processor
         )
 
         config.number_of_submissions = 'forever'
         config.new_crash_source = DotDict()
+
         class FakedNewCrashSource(object):
+
             def __init__(self, *args, **kwargs):
                 pass
+
             def new_crashes(self):
-                return sequencer(((1,), {}),
-                                 2,  # ensure both forms acceptable
-                                 None,
-                                 ((3,), {}))()
+                return sequencer(
+                    ((1,), {}),
+                    2,  # ensure both forms acceptable
+                    None,
+                    ((3,), {})
+                )()
+
         config.new_crash_source.new_crash_source_class = FakedNewCrashSource
 
         config.companion_process = DotDict()
         mocked_companion_process = mock.Mock()
         config.companion_process.companion_class = mock.Mock(
-          return_value=mocked_companion_process
+            return_value=mocked_companion_process
         )
 
         config.logger = mock.MagicMock()
@@ -97,25 +103,30 @@ class TestProcessorApp(TestCase):
         pa.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
 
         fake_processed_crash = DotDict()
-        mocked_get_unredacted_processed = mock.Mock(return_value=fake_processed_crash)
+        mocked_get_unredacted_processed = mock.Mock(
+            return_value=fake_processed_crash
+        )
         pa.source.get_unredacted_processed = mocked_get_unredacted_processed
 
         mocked_process_crash = mock.Mock(return_value=7)
         pa.processor.process_crash = mocked_process_crash
         pa.destination.save_processed = mock.Mock()
         finished_func = mock.Mock()
-        with mock.patch('socorro.processor.processor_app.os.unlink') as mocked_unlink:
+        patch_path = 'socorro.processor.processor_app.os.unlink'
+        with mock.patch(patch_path) as mocked_unlink:
             # the call being tested
             pa.transform(17, finished_func)
         # test results
         mocked_unlink.assert_called_with('fake_dump_TEMPORARY.dump')
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.process_crash.assert_called_with(
-          fake_raw_crash,
-          fake_dump,
-          fake_processed_crash
+            fake_raw_crash,
+            fake_dump,
+            fake_processed_crash
         )
-        pa.destination.save_raw_and_processed.assert_called_with(fake_raw_crash, None, 7, 17)
+        pa.destination.save_raw_and_processed.assert_called_with(
+            fake_raw_crash, None, 7, 17
+        )
         eq_(finished_func.call_count, 1)
 
     def test_transform_crash_id_missing(self):
@@ -129,8 +140,8 @@ class TestProcessorApp(TestCase):
         pa.transform(17, finished_func)
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.reject_raw_crash.assert_called_with(
-          17,
-          'this crash cannot be found in raw crash storage'
+            17,
+            'this crash cannot be found in raw crash storage'
         )
         eq_(finished_func.call_count, 1)
 
@@ -145,8 +156,8 @@ class TestProcessorApp(TestCase):
         pa.transform(17, finished_func)
         pa.source.get_raw_crash.assert_called_with(17)
         pa.processor.reject_raw_crash.assert_called_with(
-          17,
-          'error in loading: bummer'
+            17,
+            'error in loading: bummer'
         )
         eq_(finished_func.call_count, 1)
 
