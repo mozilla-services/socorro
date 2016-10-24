@@ -9,7 +9,7 @@ from pkg_resources import resource_string
 import dj_database_url
 from decouple import config, Csv
 
-from bundles import PIPELINE_CSS, PIPELINE_JS  # NOQA
+from bundles import PIPELINE_CSS, PIPELINE_JS
 
 
 ROOT = os.path.abspath(
@@ -154,7 +154,7 @@ TEMPLATES = [
                 'django_jinja.builtins.extensions.CsrfExtension',
                 'django_jinja.builtins.extensions.StaticFilesExtension',
                 'django_jinja.builtins.extensions.DjangoFiltersExtension',
-                'pipeline.templatetags.ext.PipelineExtension',
+                'pipeline.jinja2.PipelineExtension',
                 'waffle.jinja.WaffleExtension',
             ],
             'globals': {}
@@ -525,24 +525,32 @@ STATICFILES_FINDERS = (
 
 STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
 
-# You have to run `npm install` for this to be installed in `./node_modules`
-
-PIPELINE_LESS_BINARY = path('node_modules/.bin/lessc')
-PIPELINE_JS_COMPRESSOR = 'pipeline.compressors.uglifyjs.UglifyJSCompressor'
-PIPELINE_UGLIFYJS_BINARY = path('node_modules/.bin/uglifyjs')
-PIPELINE_UGLIFYJS_ARGUMENTS = '--mangle'
-PIPELINE_CSS_COMPRESSOR = 'pipeline.compressors.cssmin.CSSMinCompressor'
-PIPELINE_CSSMIN_BINARY = path('node_modules/.bin/cssmin')
-
-
-# Don't wrap javascript code in... `(...code...)();`
-# because possibly much code has been built with the assumption that things
-# will be made available globally.
-PIPELINE_DISABLE_WRAPPER = True
-
-PIPELINE_COMPILERS = (
-    'pipeline.compilers.less.LessCompiler',
-)
+PIPELINE = {
+    'STYLESHEETS': PIPELINE_CSS,
+    'JAVASCRIPT': PIPELINE_JS,
+    'LESS_BINARY': config(
+        'LESS_BINARY',
+        path('node_modules/.bin/lessc')
+    ),
+    'JS_COMPRESSOR': 'pipeline.compressors.uglifyjs.UglifyJSCompressor',
+    'UGLIFYJS_BINARY': config(
+        'UGLIFYJS_BINARY',
+        path('node_modules/.bin/uglifyjs')
+    ),
+    'UGLIFYJS_ARGUMENTS': '--mangle',
+    'CSS_COMPRESSOR': 'pipeline.compressors.cssmin.CSSMinCompressor',
+    'CSSMIN_BINARY': config(
+        'CSSMIN_BINARY',
+        path('node_modules/.bin/cssmin')
+    ),
+    # Don't wrap javascript code in... `(...code...)();`
+    # because possibly much code has been built with the assumption that
+    # things will be made available globally.
+    'DISABLE_WRAPPER': True,
+    'COMPILERS': (
+        'pipeline.compilers.less.LessCompiler',
+    ),
+}
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
 # FIXME remove this default when we are out of PHX
