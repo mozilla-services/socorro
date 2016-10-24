@@ -103,9 +103,9 @@ python-memcached==1.57 \
     --hash=sha256:544419fd5e33300835de3b2f8462a145dda451d5e3088a69e0cd0da2b5bc0f7a
 BeautifulSoup==3.2.1 \
     --hash=sha256:6a8cb4401111e011b579c8c52a51cdab970041cc543814bbd9577a4529fe1cdb
-django-ratelimit==0.6.0 \
-    --hash=sha256:93dabcd3131a88d6fd19ff4de0a8351ed44b4ec943e8d58d27306f7faf8821af \
-    --hash=sha256:f73b53b2c4fd342cbd4b983ffc33fdcf8f8a6f595d548865ea63c839ef38293c
+django-ratelimit==1.0.1 \
+    --hash=sha256:a74f23069291441792f960b6ac662579560a7c959e2e8444ecf140bf1a9041c4 \
+    --hash=sha256:cd3fdaadd335147df20bd00a226190ea21cea52f56b867b0f7ede7beaa3bd1e1
 django-waffle==0.11 \
     --hash=sha256:9cd9e3a976849a3cd816830d7811b93543c1dc9da9f3cb1ccc2f9da831b8b025 \
     --hash=sha256:914b4b874fa6250a0897bc30b67e02034d92a7235ab72a91bf6da49b71751de4
