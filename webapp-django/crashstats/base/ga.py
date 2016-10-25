@@ -85,22 +85,21 @@ def track_pageview(
     #   generated for each particular instance of an application install.
     #   The value of this field should be a random UUID (version 4) as
     #   described in http://www.ietf.org/rfc/rfc4122.txt
-    params['cid'] = client_id or uuid.uuid4().hex
-
-    if not request.user.is_anonymous():
-        params['uid'] = str(request.user.id)
+    #
+    params['cid'] = uuid.uuid4().hex
 
     params['dp'] = request.path  # Page
     params['dl'] = request.build_absolute_uri()
-
     params['dt'] = page_title
 
-    if request.META.get('HTTP_USER_AGENT'):
-        params['ua'] = request.META['HTTP_USER_AGENT']
-
+    # NOTE(willkg): We pass in verify_ssl=False here because the version of
+    # openssl we have doesn't compute the certificate chain correctly and thus
+    # it fails to verify and then the SSL handshake fails. Because we're doing
+    # this, we removed any PII from the data ping.
     transporter = ThreadedRequestsHTTPTransport(
         urlparse.urlparse(settings.GOOGLE_ANALYTICS_API_URL),
-        timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT
+        timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT,
+        verify_ssl=False
     )
 
     def success_cb():
