@@ -278,7 +278,8 @@ class SearchBase(object):
                         msg='date must have a prefix operator'
                     )
                 today = datetimeutil.utc_now()
-                if param.value > today:
+                # We add a safety margin to not be too strict.
+                if param.value > today + datetime.timedelta(days=1):
                     raise BadArgumentError(
                         'date',
                         msg="date can't be in the future"
