@@ -17,9 +17,6 @@ date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
 os_name = r'/os_name/(?P<os_name>[\w\s]*)'
 result_count = r'/result_count/(?P<result_count>\d+)'
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
-report_list_partials = (
-    'reports|comments|sigurls|bugzilla|table|correlations|graph'
-)
 
 urlpatterns = patterns(
     '',  # prefix
@@ -72,12 +69,6 @@ urlpatterns = patterns(
         views.crashes_per_day,
         name='crashes_per_day'),
     # handle old-style urls
-    url(r'^report/list$',
-        views.report_list,
-        name='report_list'),
-    url(r'^report/list/partials/(?P<partial>%s)/$' % report_list_partials,
-        views.report_list,
-        name='report_list_partial'),
     url(r'^report/exploitability/$',
         views.exploitable_crashes,
         name='exploitable_crashes_legacy'),
@@ -103,9 +94,6 @@ urlpatterns = patterns(
         r'(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<signature>.*)',
         views.plot_signature,
         name='plot_signature'),
-    url(r'^signature_summary/$',
-        views.signature_summary,
-        name='signature_summary'),
     url(r'^rawdumps/(?P<crash_id>[\w-]{36})-(?P<name>\w+)\.'
         r'(?P<extension>json|dmp|json\.gz)$',
         views.raw_data,
@@ -134,9 +122,6 @@ urlpatterns = patterns(
     url(r'^gccrashes/json_data$',
         views.gccrashes_json,
         name='gccrashes_json'),
-    url(r'^adu_by_signature/json_data$',
-        views.adu_by_signature_json,
-        name='adu_by_signature_json'),
     url(r'^login/$',
         views.login,
         name='login'),
@@ -159,6 +144,14 @@ urlpatterns = patterns(
     url(r'^query/$',
         RedirectView.as_view(
             url='/search/',
+            query_string=True,
+            permanent=True
+        )),
+
+    # redirect deceased Report List URLs to Signature report
+    url(r'^report/list$',
+        RedirectView.as_view(
+            pattern_name='signature:signature_report',
             query_string=True,
             permanent=True
         )),
