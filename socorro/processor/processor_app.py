@@ -7,6 +7,7 @@
 
 import os
 import sys
+import collections
 
 import raven
 from configman import Namespace
@@ -19,7 +20,6 @@ from socorrolib.app.fetch_transform_save_app import (
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorrolib.lib.util import DotDict
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
-from socorro.external.crashstorage_base import PolyStorageError
 
 
 #==============================================================================
@@ -151,7 +151,7 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
             if self.config.sentry and self.config.sentry.dsn:
                 try:
-                    if isinstance(exception, PolyStorageError):
+                    if isinstance(exception, collections.Sequence):
                         # Then it's already an iterable!
                         exceptions = exception
                     else:
