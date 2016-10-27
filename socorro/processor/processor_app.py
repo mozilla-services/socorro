@@ -6,7 +6,10 @@
 """the processor_app converts raw_crashes into processed_crashes"""
 
 import os
+import sys
+import collections
 
+import raven
 from configman import Namespace
 from configman.converters import class_converter
 
@@ -54,16 +57,24 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         'companion_class',
         doc='a classname that runs a process in parallel with the processor',
         default='',
-        #default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
+        # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
         from_string_converter=class_converter
     )
 
     ###########################################################################
-    ### TODO: implement an __init__ and a waiting func.  The waiting func
-    ### will take registrations of periodic things to do over some time
-    ### interval.  the first periodic thing is the rereading of the
-    ### signature generation stuff from the database.
+    # TODO: implement an __init__ and a waiting func.  The waiting func
+    # will take registrations of periodic things to do over some time
+    # interval.  the first periodic thing is the rereading of the
+    # signature generation stuff from the database.
     ###########################################################################
+
+    required_config.namespace('sentry')
+    required_config.sentry.add_option(
+        'dsn',
+        doc='DSN for Sentry via raven',
+        default='',
+        reference_value_from='secrets.sentry',
+    )
 
     #--------------------------------------------------------------------------
     @staticmethod
@@ -131,6 +142,45 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                 crash_id
             )
             self.config.logger.info('saved - %s', crash_id)
+        except Exception as exception:
+            # Immediately capture this as local variables.
+            # During this error handling we're going to be using other
+            # try:except: constructs (e.g. swallowing raven send errors)
+            # so we can't reference `sys.exc_info()` later.
+            exc_type, exc_value, exc_tb = sys.exc_info()
+
+            if self.config.sentry and self.config.sentry.dsn:
+                try:
+                    if isinstance(exception, collections.Sequence):
+                        # Then it's already an iterable!
+                        exceptions = exception
+                    else:
+                        exceptions = [exception]
+                    client = raven.Client(dsn=self.config.sentry.dsn)
+                    for exception in exceptions:
+                        identifier = client.captureException(
+                            exception
+                        )
+                        self.config.logger.info(
+                            'Error captured in Sentry! Reference: {}'.format(
+                                identifier
+                            )
+                        )
+                except Exception:
+                    self.config.logger.error(
+                        'Unable to report error with Raven',
+                        exc_info=True,
+                    )
+            else:
+                self.config.logger.warning(
+                    'Raven DSN is not configured and an exception happened'
+                )
+
+            # Why not just do `raise exception`?
+            # Because if we don't do it this way, the eventual traceback
+            # is going to point to *this* line (right after this comment)
+            # rather than the actual error where it originally happened.
+            raise exc_type, exc_value, exc_tb
         finally:
             # earlier, we created the dumps as files on the file system,
             # we need to clean up after ourselves.
@@ -189,4 +239,3 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
 
 if __name__ == '__main__':
     main(ProcessorApp)
-
