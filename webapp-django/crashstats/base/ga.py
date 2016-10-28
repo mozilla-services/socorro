@@ -26,7 +26,6 @@ def track_api_pageview(
     request,
     page_title=None,
     data_source='api',
-    client_id=None,
     **headers
 ):
     """Convenient wrapper function geared for the API calls. This way
@@ -36,7 +35,6 @@ def track_api_pageview(
         request,
         page_title=page_title,
         data_source=data_source,
-        client_id=client_id,
         **headers
     )
 
@@ -45,7 +43,6 @@ def track_pageview(
     request,
     page_title,
     data_source='web',
-    client_id=None,
     **headers
 ):
     """Trigger a HTTP POST to Google Analytics about a particular page being
@@ -55,7 +52,6 @@ def track_pageview(
     :arg page_title: A string to act as a title for the page. Not relevant
     or particularly needed for API requests.
     :arg data_source: A string like 'web' or 'api'. See documentation.
-    :arg client_id: Some string to identify the client.
 
     """
     if not settings.GOOGLE_ANALYTICS_ID:
