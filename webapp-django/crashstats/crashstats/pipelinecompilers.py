@@ -14,10 +14,13 @@ class GoogleAnalyticsCompiler(CompilerBase):
     def compile_file(self, infile, outfile, outdated=False, force=False):
         if not outdated and not force:
             return  # No need to recompiled file
-        with open(infile) as source:
-            new_content = source.read().replace(
-                'UA-XXXXX-X',
-                settings.GOOGLE_ANALYTICS_ID
-            )
-            with open(outfile, 'w') as destination:
-                destination.write(new_content)
+
+        # It might not be set. For example, in Travis runs.
+        if settings.GOOGLE_ANALYTICS_ID:
+            with open(infile) as source:
+                new_content = source.read().replace(
+                    'UA-XXXXX-X',
+                    settings.GOOGLE_ANALYTICS_ID
+                )
+                with open(outfile, 'w') as destination:
+                    destination.write(new_content)
