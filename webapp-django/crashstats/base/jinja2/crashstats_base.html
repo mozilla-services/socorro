@@ -10,13 +10,13 @@
         {% endblock %}
 
         {% if not DEBUG %}
-        {#
-            Use the preload technique which gives a performance boost for
-            modern browsers.
-            See https://developers.google.com/analytics/devguides/collection/analyticsjs/#alternative_async_tracking_snippet
-        #}
-        {% javascript 'google_analytics' %}
-        <script async src="https://www.google-analytics.com/analytics.js"></script>
+            {#
+                Use the preload technique which gives a performance boost for
+                modern browsers.
+                See https://developers.google.com/analytics/devguides/collection/analyticsjs/#alternative_async_tracking_snippet
+            #}
+            {% javascript 'google_analytics' %}
+            <script async src="https://www.google-analytics.com/analytics.js"></script>
         {% endif %}
 
     <meta name="google-signin-client_id" content="{{ OAUTH2_CLIENT_ID }}">

@@ -600,10 +600,7 @@ if raven_dsn:
         'release': SOCORRO_REVISION,
     }
 
-# Google Analytics ID (UA-XXXXX-X) used for sending
-# pings to Google Analytics about usage of the public API.
-# Note that the Mozilla Google Analytics ID is hardcoded
-# in the static file: google_analytics.js
+# Optional Google Analytics ID (UA-XXXXX-X)
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
 
 # Set to True enable analysis of all model fetches
