@@ -127,7 +127,7 @@ _CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     '%s.authentication.context_processors.oauth2' % PROJECT_MODULE,
-    '%s.base.context_processors.google_analytics' % PROJECT_MODULE,
+    '%s.base.context_processors.debug' % PROJECT_MODULE,
     '%s.status.context_processors.status_message' % PROJECT_MODULE,
     '%s.crashstats.context_processors.help_urls' % PROJECT_MODULE,
 )
@@ -549,6 +549,7 @@ PIPELINE = {
     'DISABLE_WRAPPER': True,
     'COMPILERS': (
         'pipeline.compilers.less.LessCompiler',
+        'crashstats.crashstats.pipelinecompilers.GoogleAnalyticsCompiler',
     ),
     # The pipeline.jinja2.PipelineExtension extension doesn't support
     # automatically rendering any potentional compilation errors into
@@ -601,8 +602,6 @@ if raven_dsn:
 
 # Optional Google Analytics ID (UA-XXXXX-X)
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
-# Root domain. Required iff you're providing an analytics ID.
-GOOGLE_ANALYTICS_DOMAIN = config('GOOGLE_ANALYTICS_DOMAIN', 'auto')
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)

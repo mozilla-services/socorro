@@ -507,18 +507,6 @@ class BaseTestViews(DjangoTestCase):
         ]
 
 
-class TestAnalytics(BaseTestViews):
-
-    @override_settings(GOOGLE_ANALYTICS_ID='xyz123')
-    @override_settings(GOOGLE_ANALYTICS_DOMAIN='test.biz')
-    def test_google_analytics(self):
-        url = reverse('home:home', args=('WaterWolf',))
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('xyz123' in response.content)
-        ok_('test.biz' in response.content)
-
-
 class TestViews(BaseTestViews):
 
     def test_contribute_json(self):
