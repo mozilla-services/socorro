@@ -549,6 +549,7 @@ PIPELINE = {
     'DISABLE_WRAPPER': True,
     'COMPILERS': (
         'pipeline.compilers.less.LessCompiler',
+        'crashstats.crashstats.pipelinecompilers.GoogleAnalyticsCompiler',
     ),
     # The pipeline.jinja2.PipelineExtension extension doesn't support
     # automatically rendering any potentional compilation errors into
