@@ -26,7 +26,6 @@ def track_api_pageview(
     request,
     page_title=None,
     data_source='api',
-    client_id=None,
     **headers
 ):
     """Convenient wrapper function geared for the API calls. This way
@@ -36,7 +35,6 @@ def track_api_pageview(
         request,
         page_title=page_title,
         data_source=data_source,
-        client_id=client_id,
         **headers
     )
 
@@ -45,7 +43,6 @@ def track_pageview(
     request,
     page_title,
     data_source='web',
-    client_id=None,
     **headers
 ):
     """Trigger a HTTP POST to Google Analytics about a particular page being
@@ -55,7 +52,6 @@ def track_pageview(
     :arg page_title: A string to act as a title for the page. Not relevant
     or particularly needed for API requests.
     :arg data_source: A string like 'web' or 'api'. See documentation.
-    :arg client_id: Some string to identify the client.
 
     """
     if not settings.GOOGLE_ANALYTICS_ID:
@@ -85,22 +81,21 @@ def track_pageview(
     #   generated for each particular instance of an application install.
     #   The value of this field should be a random UUID (version 4) as
     #   described in http://www.ietf.org/rfc/rfc4122.txt
-    params['cid'] = client_id or uuid.uuid4().hex
-
-    if not request.user.is_anonymous():
-        params['uid'] = str(request.user.id)
+    #
+    params['cid'] = uuid.uuid4().hex
 
     params['dp'] = request.path  # Page
     params['dl'] = request.build_absolute_uri()
-
     params['dt'] = page_title
 
-    if request.META.get('HTTP_USER_AGENT'):
-        params['ua'] = request.META['HTTP_USER_AGENT']
-
+    # NOTE(willkg): We pass in verify_ssl=False here because the version of
+    # openssl we have doesn't compute the certificate chain correctly and thus
+    # it fails to verify and then the SSL handshake fails. Because we're doing
+    # this, we removed any PII from the data ping.
     transporter = ThreadedRequestsHTTPTransport(
         urlparse.urlparse(settings.GOOGLE_ANALYTICS_API_URL),
-        timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT
+        timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT,
+        verify_ssl=False
     )
 
     def success_cb():

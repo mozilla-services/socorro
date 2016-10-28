@@ -1,5 +1,7 @@
+from functools import wraps
+from uuid import UUID
+
 import mock
-from raven.conf import defaults
 from nose.tools import eq_
 
 from django.test.client import RequestFactory
@@ -14,16 +16,30 @@ from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.base.ga import track_api_pageview, track_pageview
 
 
+EXPECTED_CID = 'ab8f0910428745d9995da0c51a9d3b64'
+
+
+def mock_uuid4(fun):
+    """Mock uuid.uuid4() decorator that returns a real non-random UUID"""
+    @wraps(fun)
+    def _mock_uuid4(*args, **kwargs):
+        with mock.patch('uuid.uuid4') as mocked_uuid:
+            mocked_uuid.return_value = UUID(hex=EXPECTED_CID, version=4)
+            return fun(*args, **kwargs)
+
+    return _mock_uuid4
+
+
 class TestTrackingPageviews(DjangoTestCase):
     """Note, we're using DjangoTestCase so we can use `with self.settings()`
     in the tests to flip settings around.
     """
 
+    @mock_uuid4
     @mock.patch('raven.transport.threaded_requests.AsyncWorker')
     @mock.patch('requests.post')
     @mock.patch('crashstats.base.ga.logger')
     def test_basic_pageview(self, logger, rpost, aw):
-
         queues_started = []
 
         def mocked_queue(function, data, headers, success_cb, failure_cb):
@@ -39,17 +55,13 @@ class TestTrackingPageviews(DjangoTestCase):
         assert not queues_started
 
         with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
-            # The reason for setting a client_id value is because if we
-            # don't set it, it'll be a randomly generated UUID string
-            # which we can't know. Then it becomes really hard to do
-            # some_mocked_thing.assert_called_with(...)
-            track_pageview(request, 'Test page', client_id='mycid')
+            track_pageview(request, 'Test page')
             assert queues_started
 
             params = {
                 'v': 1,
                 't': 'pageview',
-                'cid': 'mycid',
+                'cid': EXPECTED_CID,
                 'dh': 'testserver',
                 'tid': 'XYZ-123',
                 'dt': 'Test page',
@@ -65,7 +77,7 @@ class TestTrackingPageviews(DjangoTestCase):
 
             rpost.assert_called_with(
                 settings.GOOGLE_ANALYTICS_API_URL,
-                verify=defaults.CA_BUNDLE,
+                verify=False,
                 data=params,
                 timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT,
                 headers={}
@@ -81,19 +93,17 @@ class TestTrackingPageviews(DjangoTestCase):
         request.user = user
 
         with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
-            track_pageview(request, 'Test page', client_id='mycid')
+            track_pageview(request, 'Test page')
 
             params = {
                 'v': 1,
                 't': 'pageview',
-                'cid': 'mycid',
+                'cid': EXPECTED_CID,
                 'dh': 'testserver',
                 'tid': 'XYZ-123',
                 'dt': 'Test page',
                 'ds': 'web',
                 'dp': '/other/page',
-                'uid': str(user.id),
-                'ua': 'testingthings 1.0',
                 'dl': 'http://testserver/other/page?foo=bar',
             }
             logger.info.assert_called_with(
@@ -104,17 +114,17 @@ class TestTrackingPageviews(DjangoTestCase):
 
             rpost.assert_called_with(
                 settings.GOOGLE_ANALYTICS_API_URL,
-                verify=defaults.CA_BUNDLE,
+                verify=False,
                 data=params,
                 timeout=settings.GOOGLE_ANALYTICS_API_TIMEOUT,
                 headers={}
             )
 
+    @mock_uuid4
     @mock.patch('raven.transport.threaded_requests.AsyncWorker')
     @mock.patch('requests.post')
     @mock.patch('crashstats.base.ga.logger')
     def test_api_pageview(self, logger, rpost, aw):
-
         def mocked_queue(function, data, headers, success_cb, failure_cb):
             function(data, headers, success_cb, failure_cb)
 
@@ -124,12 +134,12 @@ class TestTrackingPageviews(DjangoTestCase):
         request.user = AnonymousUser()
 
         with self.settings(GOOGLE_ANALYTICS_ID='XYZ-123'):
-            track_api_pageview(request, client_id='mycid')
+            track_api_pageview(request)
 
             params = {
                 'v': 1,
                 't': 'pageview',
-                'cid': 'mycid',
+                'cid': EXPECTED_CID,
                 'dh': 'testserver',
                 'tid': 'XYZ-123',
                 'dt': 'API (/api/SomeAPI/)',
