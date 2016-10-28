@@ -1,3 +1,6 @@
+from functools import wraps
+from uuid import UUID
+
 import mock
 from nose.tools import eq_
 
@@ -13,18 +16,30 @@ from crashstats.base.tests.testbase import DjangoTestCase
 from crashstats.base.ga import track_api_pageview, track_pageview
 
 
+EXPECTED_CID = 'ab8f0910428745d9995da0c51a9d3b64'
+
+
+def mock_uuid4(fun):
+    """Mock uuid.uuid4() decorator that returns a real non-random UUID"""
+    @wraps(fun)
+    def _mock_uuid4(*args, **kwargs):
+        with mock.patch('uuid.uuid4') as mocked_uuid:
+            mocked_uuid.return_value = UUID(hex=EXPECTED_CID, version=4)
+            return fun(*args, **kwargs)
+
+    return _mock_uuid4
+
+
 class TestTrackingPageviews(DjangoTestCase):
     """Note, we're using DjangoTestCase so we can use `with self.settings()`
     in the tests to flip settings around.
     """
 
-    @mock.patch('crashstats.base.ga.uuid')
+    @mock_uuid4
     @mock.patch('raven.transport.threaded_requests.AsyncWorker')
     @mock.patch('requests.post')
     @mock.patch('crashstats.base.ga.logger')
-    def test_basic_pageview(self, logger, rpost, aw, uuid):
-        cid_expected = 'ab8f0910428745d9995da0c51a9d3b64'
-
+    def test_basic_pageview(self, logger, rpost, aw):
         queues_started = []
 
         def mocked_queue(function, data, headers, success_cb, failure_cb):
@@ -32,10 +47,6 @@ class TestTrackingPageviews(DjangoTestCase):
             function(data, headers, success_cb, failure_cb)
 
         aw().queue.side_effect = mocked_queue
-
-        uuid_obj = mock.Mock()
-        uuid_obj.hex = cid_expected
-        uuid.uuid4.return_value = uuid_obj
 
         request = RequestFactory().get('/some/page')
         request.user = AnonymousUser()
@@ -50,7 +61,7 @@ class TestTrackingPageviews(DjangoTestCase):
             params = {
                 'v': 1,
                 't': 'pageview',
-                'cid': cid_expected,
+                'cid': EXPECTED_CID,
                 'dh': 'testserver',
                 'tid': 'XYZ-123',
                 'dt': 'Test page',
@@ -87,7 +98,7 @@ class TestTrackingPageviews(DjangoTestCase):
             params = {
                 'v': 1,
                 't': 'pageview',
-                'cid': cid_expected,
+                'cid': EXPECTED_CID,
                 'dh': 'testserver',
                 'tid': 'XYZ-123',
                 'dt': 'Test page',
@@ -109,21 +120,15 @@ class TestTrackingPageviews(DjangoTestCase):
                 headers={}
             )
 
-    @mock.patch('crashstats.base.ga.uuid')
+    @mock_uuid4
     @mock.patch('raven.transport.threaded_requests.AsyncWorker')
     @mock.patch('requests.post')
     @mock.patch('crashstats.base.ga.logger')
-    def test_api_pageview(self, logger, rpost, aw, uuid):
-        cid_expected = 'ab8f0910428745d9995da0c51a9d3b64'
-
+    def test_api_pageview(self, logger, rpost, aw):
         def mocked_queue(function, data, headers, success_cb, failure_cb):
             function(data, headers, success_cb, failure_cb)
 
         aw().queue.side_effect = mocked_queue
-
-        uuid_obj = mock.Mock()
-        uuid_obj.hex = cid_expected
-        uuid.uuid4.return_value = uuid_obj
 
         request = RequestFactory().get('/api/SomeAPI/')
         request.user = AnonymousUser()
@@ -134,7 +139,7 @@ class TestTrackingPageviews(DjangoTestCase):
             params = {
                 'v': 1,
                 't': 'pageview',
-                'cid': cid_expected,
+                'cid': EXPECTED_CID,
                 'dh': 'testserver',
                 'tid': 'XYZ-123',
                 'dt': 'API (/api/SomeAPI/)',
