@@ -612,19 +612,24 @@ class PolyCrashStorage(CrashStorageBase):
                                crash_id):
         storage_exception = PolyStorageError()
 
+        # Later we're going to need to clone this per every crash storage
+        # in the loop. But, to save time, before we do that, convert the
+        # processed crash which is a SocorroDotDict into a pure python
+        # dict which we can more easily copy.deepcopy() operate on.
+        processed_crash_as_dict = socorrodotdict_to_dict(processed_crash)
+
         def make_deep_copy(crash):
-            """Return a deep copy of the SocorroDotDict.
-            It doesn't work to use `copy.deepcopy(crash)` because the
-            the SocorroDotDict doesn't support that at all.
-            So, instead we convert it to a plain dict, copy that, and
-            convert it back to SocorroDotDict in the end.
+            """Return a SocorroDotDict deep copy of the crash (processed
+            crash in our case).
+
+            It's important to remember that copy.deepcopy() doesn't work
+            on a SocorroDotDict object so the crash in this context needs
+            to be pure python dict.
 
             Ideally, we shouldn't be using any of this *DotDict and just
             use plain dict objects.
             """
-            return SocorroDotDict(
-                copy.deepcopy(socorrodotdict_to_dict(crash))
-            )
+            return SocorroDotDict(copy.deepcopy(crash))
 
         for a_store in self.stores.itervalues():
             self.quit_check()
@@ -632,7 +637,7 @@ class PolyCrashStorage(CrashStorageBase):
                 a_store.save_raw_and_processed(
                     raw_crash,
                     dump,
-                    make_deep_copy(processed_crash),
+                    make_deep_copy(processed_crash_as_dict),
                     crash_id
                 )
             except Exception:
