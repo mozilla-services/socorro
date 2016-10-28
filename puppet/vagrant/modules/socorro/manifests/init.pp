@@ -72,8 +72,10 @@ class socorro::vagrant {
       require => Package['ca-certificates']
   }
 
+  # Install build requirements
   package {
     [
+      'bzip2-devel',
       'epel-release',
       'gcc-c++',
       'git',
@@ -86,6 +88,7 @@ class socorro::vagrant {
       'libxslt-devel',
       'make',
       'memcached',
+      'mercurial',
       'mod_wsgi',
       'nodejs',
       'npm',
@@ -97,12 +100,34 @@ class socorro::vagrant {
       'rsync',
       'ruby-devel',
       'rubygem-puppet-lint',
+      'sqlite-devel',
       'subversion',
       'time',
       'unzip',
     ]:
     ensure  => latest,
     require => Package['yum-plugin-fastestmirror']
+  }
+
+  # Build Python 2.7.11
+  file {
+    'copy-python-build-script':
+      ensure => 'file',
+      source => 'puppet:///modules/socorro/build_python.sh',
+      path   => '/tmp/build_python.sh',
+      mode   => '0755'
+  }
+  exec {
+    'build-python-2.7.11':
+      path    => '/usr/bin:/bin',
+      cwd     => '/tmp',
+      command => '/tmp/build_python.sh',
+      require => [
+        File['copy-python-build-script'],
+        Package['python-devel'],
+        Package['bzip2-devel'],
+        Package['sqlite-devel']
+      ]
   }
 
   package {
@@ -162,6 +187,16 @@ class socorro::vagrant {
     ]:
     ensure  => latest,
     require => Package['epel-release', 'yum-plugin-fastestmirror']
+  }
+
+  # Install editors for easier debugging/development in vagrant
+  package {
+    [
+      'emacs-nox',
+      'vim'
+    ]:
+    ensure => latest,
+    require => Package['yum-plugin-fastestmirror']
   }
 
   package {

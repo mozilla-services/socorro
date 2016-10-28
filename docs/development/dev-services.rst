@@ -11,6 +11,7 @@ Installing services
 
    You will need to `produce symbols for your application <http://code.google.com/p/google-breakpad/wiki/LinuxStarterGuide#Producing_symbols_for_your_application>`_ and make these files available to Socorro.
 
+
 Set up a VM with Vagrant
 ------------------------
 
@@ -18,43 +19,50 @@ Vagrant can be used to build a VM that supplies the basic dependency stack
 required by Socorro. This is an alternative to setting up these services
 manually in your local environment.
 
-You'll need both VirtualBox (http://www.virtualbox.org/) and
-Vagrant (http://vagrantup.com/) set up and ready to go.
+You'll need both VirtualBox (http://www.virtualbox.org/) and Vagrant
+(http://vagrantup.com/) set up and ready to go.
 
-Make sure that you don't already have a ``./socorro-virtualenv`` directory
-created with a different architecture (e.g. running ``make bootstrap`` on a Mac),
-otherwise you'll get odd errors about pip not existing, binaries being the wrong
-architecture, and so on.
+.. Note::
 
-1. Clone the Socorro repository:
-::
-  git clone git://github.com/mozilla/socorro.git
-  cd socorro
+   Make sure that you don't already have a ``./socorro-virtualenv`` directory
+   created with a different architecture (e.g. running ``make bootstrap`` on a
+   Mac), otherwise you'll get odd errors about pip not existing, binaries being
+   the wrong architecture, and so on.
 
-2. Provision the VM:
-::
- vagrant up
+1. Clone the Socorro repository::
 
-This step will:
+       git clone git://github.com/mozilla/socorro.git
+       cd socorro
 
-* Download the base image if it isn't already present.
-* Boot the VM.
-* Using Puppet, install and initialise the basic dependencies that Socorro
-  needs.
+2. Provision the VM::
 
-3. Add entries to ``/etc/hosts`` on the **HOST** machine:
-::
-  10.11.12.13 crash-stats crash-reports socorro-api
+       vagrant up
 
-You can get a shell in the VM as the user "vagrant" by running this
-in your Socorro source checkout:
-::
-  vagrant ssh
+   This step will:
+
+   * Download the base image if it isn't already present.
+   * Boot the VM.
+   * Using Puppet, install and initialise the basic dependencies that Socorro
+     needs.
+
+   .. Note::
+
+      This can take a while to run.
+
+3. Add entries to ``/etc/hosts`` on the **HOST** machine::
+
+       10.11.12.13 crash-stats crash-reports socorro-api
+
+After your Vagrant vm has been provisioned, you can get a shell in the VM as the
+user "vagrant" by running this in your Socorro source checkout::
+
+    vagrant ssh
 
 Your git checkout on the host will automatically be shared with the VM in
 ``/home/vagrant/socorro`` .
 
 .. _Vagrant: https://docs.vagrantup.com/v2/networking/forwarded_ports.html
+
 
 RHEL/CentOS 6
 -------------

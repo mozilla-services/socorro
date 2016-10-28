@@ -12,5 +12,8 @@ if [ -f $VENV ] && [ -r $VENV ]; then
     export PYTHONPATH=.
 fi
 
+# Export Python so that bootstrap builds with the right one
+export PYTHON=/usr/local/bin/python2.7
+
 # Add pg directory to path so pg-config works
 export PATH=$PATH:/usr/pgsql-9.4/bin/
