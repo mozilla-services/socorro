@@ -11,10 +11,10 @@ AS $_$
 -- 9 weeks for everything else
 select ( build_date($1) +
     case when lower($2) = 'release'
-        then interval '18 weeks'
+        then interval '36 weeks'
     when lower($2) = 'esr'
-        then interval '18 weeks'
+        then interval '36 weeks'
     else
-        interval '9 weeks'
+        interval '18 weeks'
     end ) :: date
 $_$;
