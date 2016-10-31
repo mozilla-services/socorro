@@ -16,7 +16,3 @@ down_revision = '5bafdc19756c'
 
 def upgrade():
     load_stored_proc(op, ['sunset_date.sql'])
-
-
-def downgrade():
-    load_stored_proc(op, ['sunset_date.sql'])
