@@ -195,7 +195,7 @@ class socorro::vagrant {
       'emacs-nox',
       'vim'
     ]:
-    ensure => latest,
+    ensure  => latest,
     require => Package['yum-plugin-fastestmirror']
   }
 
