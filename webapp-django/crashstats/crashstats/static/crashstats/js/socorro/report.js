@@ -1,36 +1,26 @@
 /*jslint browser:true, regexp:false */
-/*global window, $, socSortCorrelation, SocReport */
+/*global window, $ */
 
 var SignatureCorrelations = (function() {
     var container = $('#mainbody');
     return {
         showSignatureCorrelationsTab: function() {
-            if (!container.data('platform')) {
-                // Some strange crashes don't have a platform (aka OS).
-                // Then they definitely won't have correlations.
-                return;
-            }
-            // If that number is -1, we don't know if there are correlations.
-            // Find out, by ajax, and if the count is >0, then make the
-            // "Correlations" tab visible.
-            if (container.data('total-correlations') < 0) {
-                $.getJSON(container.data('correlations-signature-count-url'))
-                .then(function(response) {
-                    if (response.count) {
-                        $('li.correlations').show();
-                    }
-                    if (response.errors && response.errors.length) {
-                        console.warn(
-                            'There were some errors fetching correlations:'
-                        );
-                        console.warn.apply(console, response.errors);
-                    }
-                })
-                .fail(function() {
-                    console.warn('Failed to see if there are correlations');
-                    console.error.apply(console, arguments);
-                });
-            }
+            var signature = container.data('signature');
+            var channel = container.data('channel');
+            var product = container.data('product');
+
+            window.correlations.loadCorrelationData(signature, channel, product)
+            .then(function(data) {
+                if (!data) {
+                    return;
+                }
+
+                $('li.correlations').show();
+                $('#correlations_desc').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
+
+                window.correlations.writeResults($('#correlations_results'), signature, channel, product);
+            })
+            .catch(console.log.bind(console));
         }
     };
 })();
@@ -60,66 +50,6 @@ $(document).ready(function () {
             document.location.hash = 'tab-' + ui.newPanel.attr('id');
             Analytics.trackTabSwitch('report_index', ui.newPanel.attr('id'));
         }
-    });
-
-    var container = $('#mainbody');
-    var correlationsURL = container.data('correlations-url');
-    var correlationsParams = {
-        product: container.data('product'),
-        version: container.data('version'),
-        platform: container.data('platform'),
-        signature: container.data('signature'),
-    };
-
-    var loadCorrelationTypes = function(types) {
-        $.map(types, function(type) {
-            correlationsParams.correlation_report_types = type;
-            $.getJSON(correlationsURL, correlationsParams, function(response) {
-                var data = response[type];
-                var group = $('#' + type + '_correlation');
-                if (group.length !== 1) {
-                    console.warn('There is not exactly 1 "#' + type + '_correlation"');
-                } else {
-                    group
-                    .empty()
-                    .append(
-                        $('<h3>').text(data.reason)
-                    );
-                    if (data.load) {
-                        group.append(
-                            $('<pre>').text(data.load)
-                        );
-                    } else {
-                        group.append(
-                            $('<i>').text('none')
-                        );
-                    }
-                    socSortCorrelation('#' + type + '_correlation');
-                }
-            });
-        });
-    };
-
-    var loadDefaultCorrelationTypes = function() {
-        loadCorrelationTypes([
-            'core-counts',
-            'interesting-addons',
-            'interesting-modules',
-        ]);
-    };
-
-    var loadCorrelations = true;
-    $('a[href="#correlation"]').on('click', function () {
-        if (!loadCorrelations) {
-            return;
-        }
-        loadCorrelations = false;
-        loadDefaultCorrelationTypes();
-    });
-
-    $('button.load-version-data').on('click', function () {
-        var type = $(this).attr('name');
-        loadCorrelationTypes([type]);
     });
 
     $('a[href="#allthreads"]').on('click', function () {
@@ -170,7 +100,7 @@ $(document).ready(function () {
     $('#modules-list').tablesorter({sortList: [[1, 0]], headers: {1: {sorter : 'digit'}}});
 
     // Decide whether to show the Correlations tab if this product,
-    // version, platform and signature has correlations.
+    // channel and signature has correlations.
     SignatureCorrelations.showSignatureCorrelationsTab();
 
     // Enhance bug links.

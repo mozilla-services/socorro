@@ -677,12 +677,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
 }
 
 
-# On the report list page, we show correlations.
-# We show one set of accordions per product & OS & version combo.
-# How many combos we show (sorted by those with most # crashes) is
-# determined by this setting:
-MAX_CORRELATION_COMBOS_PER_SIGNATURE = 1
-
 CRASH_ANALYSIS_URL = 'https://crash-analysis.mozilla.com/crash_analysis/'
 
 # At what point do we consider crontabber to be stale.

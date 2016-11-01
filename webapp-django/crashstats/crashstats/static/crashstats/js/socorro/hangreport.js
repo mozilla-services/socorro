@@ -1,5 +1,5 @@
 /*jslint browser:true, regexp:false, plusplus:false */
-/*global window, $, socSortCorrelation, SocReport */
+/*global window, $, SocReport */
 $(document).ready(function () {
     $("#signature-list").tablesorter({
         headers: {

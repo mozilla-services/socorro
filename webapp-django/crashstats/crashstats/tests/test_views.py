@@ -30,7 +30,7 @@ from django.contrib.contenttypes.models import ContentType
 from socorro.external.crashstorage_base import CrashIDNotFound
 
 from crashstats.base.tests.testbase import DjangoTestCase
-from crashstats.crashstats import models, views
+from crashstats.crashstats import models
 from crashstats.crashstats.management import PERMISSIONS
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS,
@@ -2131,14 +2131,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2209,9 +2201,6 @@ class TestViews(BaseTestViews):
         ok_('&#34;sensitive&#34;' not in response.content)
         ok_('&#34;exploitability&#34;' not in response.content)
 
-        # should be a link there to crash analysis
-        ok_(settings.CRASH_ANALYSIS_URL in response.content)
-
         # The pretty platform version should appear.
         ok_('OS X 10.11' in response.content)
 
@@ -2251,15 +2240,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2375,15 +2355,6 @@ class TestViews(BaseTestViews):
         }
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2442,15 +2413,6 @@ class TestViews(BaseTestViews):
         }
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2497,15 +2459,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2566,15 +2519,6 @@ class TestViews(BaseTestViews):
         rpost.side_effect = mocked_post_threeothersigs
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2621,60 +2565,10 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
-    def test_report_index_correlations_failed(self, rget, rpost):
-        dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
-        comment0 = 'This is a comment'
-
-        rpost.side_effect = mocked_post_threeothersigs
-
-        def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                raise models.BadStatusCodeError(500)
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        def mocked_raw_crash_get(**params):
-            assert 'datatype' in params
-            if params['datatype'] == 'meta':
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
-
-        def mocked_processed_crash_get(**params):
-            assert 'datatype' in params
-            if params['datatype'] == 'unredacted':
-                return copy.deepcopy(dict(
-                    _SAMPLE_UNREDACTED,
-                    dump=dump,
-                    user_comments=comment0,
-                ))
-
-            raise NotImplementedError(params)
-
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse('crashstats:report_index',
-                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
     def test_report_index_no_dump(self, rget, rpost):
         rpost.side_effect = mocked_post_threesigs
 
         def mocked_get(url, params, **options):
-            if 'correlations/signatures' in url:
-                raise models.BadStatusCodeError(500)
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -2725,11 +2619,6 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, params, **options):
             if 'crashes/comments' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0,
-                })
-            if 'correlations/signatures' in url:
                 return Response({
                     'hits': [],
                     'total': 0,
@@ -2785,11 +2674,6 @@ class TestViews(BaseTestViews):
                     'hits': [],
                     'total': 0,
                 })
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0
-                })
 
             raise NotImplementedError(url)
 
@@ -2834,83 +2718,6 @@ class TestViews(BaseTestViews):
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     @mock.patch('requests.get')
-    def test_report_index_known_total_correlations(self, rget, rpost):
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0,
-                })
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        def mocked_raw_crash_get(**params):
-            assert 'datatype' in params
-            if params['datatype'] == 'meta':
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = (
-            mocked_raw_crash_get
-        )
-
-        def mocked_processed_crash_get(**params):
-            assert 'datatype' in params
-            if params['datatype'] == 'unredacted':
-                return {
-                    'dump': 'some dump',
-                    'signature': 'FakeSignature1',
-                    'uuid': '11cb72f5-eb28-41e1-a8e4-849982120611',
-                    'process_type': None,
-                    'os_name': 'Windows NT',
-                    'product': 'WaterWolf',
-                    'version': '1.0',
-                    'cpu_name': 'amd64',
-                }
-
-            raise NotImplementedError(params)
-
-        models.UnredactedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse(
-            'crashstats:report_index',
-            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
-        )
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        doc = pyquery.PyQuery(response.content)
-        for node in doc('#mainbody'):
-            eq_(node.attrib['data-total-correlations'], '-1')
-
-        # now, manually prime the cache so that this is set
-        cache_key = views.make_correlations_count_cache_key(
-            'WaterWolf',
-            '1.0',
-            'Windows NT',
-            'FakeSignature1',
-        )
-        cache.set(cache_key, 123)
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        doc = pyquery.PyQuery(response.content)
-        for node in doc('#mainbody'):
-            eq_(node.attrib['data-total-correlations'], '123')
-
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
     def test_report_index_empty_os_name(self, rget, rpost):
 
         rpost.side_effect = mocked_post_123
@@ -2920,11 +2727,6 @@ class TestViews(BaseTestViews):
                 return Response({
                     'hits': [],
                     'total': 0,
-                })
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0
                 })
 
             raise NotImplementedError(url)
@@ -3016,14 +2818,6 @@ class TestViews(BaseTestViews):
                     ],
                     "total": 1
                 })
-            if 'correlations/signatures' in url:
-                return Response({
-                    "hits": [
-                        "FakeSignature1",
-                        "FakeSignature2"
-                    ],
-                    "total": 2
-                })
 
             raise NotImplementedError(url)
 
@@ -3081,14 +2875,6 @@ class TestViews(BaseTestViews):
                     ],
                     'total': 1
                 })
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2'
-                    ],
-                    'total': 2
-                })
 
             raise NotImplementedError(url)
 
@@ -3145,14 +2931,6 @@ class TestViews(BaseTestViews):
                         }
                     ],
                     'total': 1
-                })
-            if '/correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2',
-                    ],
-                    'total': 2
                 })
 
             raise NotImplementedError(url)
@@ -3324,15 +3102,6 @@ class TestViews(BaseTestViews):
                     'total': 1
                 })
 
-            if 'correlations/signatures' in url:
-                return Response({
-                    'hits': [
-                        'FakeSignature1',
-                        'FakeSignature2',
-                    ],
-                    'total': 2
-                })
-
             raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
@@ -3483,74 +3252,6 @@ class TestViews(BaseTestViews):
             struct['core-counts']['reason'],
             'EXC_BAD_ACCESS / KERN_INVALID_ADDRESS'
         )
-
-    @mock.patch('requests.get')
-    def test_correlations_count_json(self, rget):
-        url = reverse('crashstats:correlations_count_json')
-
-        correlation_get_report_types = []
-
-        def mocked_get(url, params, **options):
-            correlation_get_report_types.append(params['report_type'])
-            if '/correlations/signatures/' in url:
-                return Response({
-                    'hits': ['FakeSignature1',
-                             'FakeSignature2'],
-                    'total': 2
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(
-            url,
-            {
-                'product': 'WaterWolf',
-                'version': '19.0',
-                'platform': 'Junk',  # note!
-                'signature': 'FakeSignature'
-            }
-        )
-        eq_(response.status_code, 400)
-
-        response = self.client.get(
-            url,
-            {
-                'product': 'WaterWolf',
-                'version': '19.0',
-                'platform': 'Windows NT',
-                'signature': 'FakeSignature'
-            }
-        )
-        eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        eq_(struct['count'], 0)
-
-        response = self.client.get(
-            url,
-            {
-                'product': 'WaterWolf',
-                'version': '19.0',
-                'platform': 'Windows NT',
-                'signature': 'FakeSignature1'
-            }
-        )
-        eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-        struct = json.loads(response.content)
-        eq_(struct['count'], 5)
-
-        # Having run this, we should now have that count cached
-        cache_key = views.make_correlations_count_cache_key(
-            'WaterWolf',
-            '19.0',
-            'Windows NT',
-            'FakeSignature1'
-        )
-        cached = cache.get(cache_key)
-        eq_(cached, 5)
 
     @mock.patch('requests.get')
     def test_correlations_signatures_json(self, rget):
@@ -3709,12 +3410,3 @@ class TestViews(BaseTestViews):
             reverse('crashstats:about_throttling'),
             status_code=301
         )
-
-    def test_make_correlations_count_cache_key(self):
-        cache_key = views.make_correlations_count_cache_key(
-            'Firefox',
-            '1.0',
-            'Windows',
-            u'Some 💔 Unicode'
-        )
-        eq_(cache_key, 'total_correlations-6b300d846cd52316f6107e4522864b6e')

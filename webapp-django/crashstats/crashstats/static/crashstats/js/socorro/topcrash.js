@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*jslint browser:true, regexp:false, plusplus:false, jQuery:false */
-/*global window, $, socSortCorrelation, SocReport */
+/*global window, $, SocReport */
 
 var Correlations = (function() {
 
