@@ -600,7 +600,10 @@ if raven_dsn:
         'release': SOCORRO_REVISION,
     }
 
-# Optional Google Analytics ID (UA-XXXXX-X)
+# The Mozilla Google Analytics ID is used here as a default.
+# The reason is that our deployment (when it runs `./manage.py collectstatic`)
+# runs before the environment variables have been all set.
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1314258
 GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', 'UA-35433268-50')
 
 # Set to True enable analysis of all model fetches
