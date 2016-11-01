@@ -601,7 +601,7 @@ if raven_dsn:
     }
 
 # Optional Google Analytics ID (UA-XXXXX-X)
-GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', None)
+GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', 'UA-35433268-50')
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
