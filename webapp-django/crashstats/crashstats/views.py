@@ -955,10 +955,11 @@ def crashes_per_day(request, default_context=None):
     # to be called `version`
     supersearch_params = copy.deepcopy(params)
     supersearch_params['version'] = supersearch_params.pop('versions')
+    supersearch_params['platform'] = supersearch_params.pop('platforms')
     # in SuperSearch it's called 'Mac' not 'Mac OS X'
-    if 'Mac OS X' in supersearch_params['platforms']:
-        supersearch_params['platforms'].append('Mac')
-        supersearch_params['platforms'].remove('Mac OS X')
+    if 'Mac OS X' in supersearch_params['platform']:
+        supersearch_params['platform'].append('Mac')
+        supersearch_params['platform'].remove('Mac OS X')
 
     graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
         supersearch_params,
