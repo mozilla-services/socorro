@@ -46,7 +46,6 @@ DEFAULT_SORT = (
 # Facetting on those fields doesn't provide useful information.
 EXCLUDED_FIELDS_FROM_FACETS = (
     'date',
-    'dump',
 )
 
 
