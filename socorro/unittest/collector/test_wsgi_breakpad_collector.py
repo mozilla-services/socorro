@@ -135,7 +135,7 @@ class TestWSGIBreakpadCollector(TestCase):
 
         # Verify metrics were captured and .capture_stats() was called.
         config.metrics.capture_stats.assert_called_with(
-            {'crash_report_size_accepted_uncompressed': 1000}
+            {'collector.crash_report_size_accepted_uncompressed': 1000}
         )
 
     @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
@@ -192,7 +192,7 @@ class TestWSGIBreakpadCollector(TestCase):
 
         # Verify metrics were captured and .capture_stats() was called.
         config.metrics.capture_stats.assert_called_with(
-            {'crash_report_size_rejected_uncompressed': 1000}
+            {'collector.crash_report_size_rejected_uncompressed': 1000}
         )
 
     @mock.patch('socorro.collector.wsgi_breakpad_collector.time')
@@ -519,7 +519,7 @@ aux_dump contents
             r[11:-1]
         )
         config.metrics.capture_stats.assert_called_with(
-            {'crash_report_size_accepted_compressed': 1000}
+            {'collector.crash_report_size_accepted_compressed': 1000}
         )
 
     def test_no_x00_character(self):
