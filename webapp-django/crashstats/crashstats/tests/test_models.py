@@ -438,49 +438,6 @@ class TestModels(DjangoTestCase):
             os='Win95',
         )
 
-    @mock.patch('requests.get')
-    def test_comments_by_signature(self, rget):
-        model = models.CommentsBySignature
-        api = model()
-
-        def mocked_get(url, params, **options):
-            assert '/crashes/comments' in url, url
-
-            ok_('products' in params)
-            ok_('WaterWolf' in params['products'])
-
-            ok_('versions' in params)
-            ok_('WaterWolf:19.0a1' in params['versions'])
-
-            ok_('build_ids' in params)
-            ok_('1234567890' in params['build_ids'])
-
-            ok_('reasons' in params)
-            ok_('SEG/FAULT' in params['reasons'])
-
-            return Response({
-                'hits': [
-                    {
-                        'date_processed': '2000-01-01T00:00:01',
-                        'uuid': '1234abcd',
-                        'user_comment': 'hello guys!',
-                        'email': 'hello@example.com',
-                    }
-                ],
-                'total': 1,
-            })
-
-        rget.side_effect = mocked_get
-        r = api.get(
-            signature='mysig',
-            products=['WaterWolf'],
-            versions=['WaterWolf:19.0a1'],
-            build_ids='1234567890',
-            reasons='SEG/FAULT'
-        )
-        ok_(r['hits'])
-        ok_(r['total'])
-
     def test_processed_crash(self):
         model = models.ProcessedCrash
         api = model()
