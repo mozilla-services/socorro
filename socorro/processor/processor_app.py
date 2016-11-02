@@ -157,15 +157,23 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                     else:
                         exceptions = [exception]
                     client = raven.Client(dsn=self.config.sentry.dsn)
-                    for exception in exceptions:
-                        identifier = client.captureException(
-                            exception
-                        )
-                        self.config.logger.info(
-                            'Error captured in Sentry! Reference: {}'.format(
-                                identifier
+                    client.context.activate()
+                    client.context.merge({'extra': {
+                        'crash_id': crash_id,
+                    }})
+                    try:
+                        for exception in exceptions:
+                            identifier = client.captureException(
+                                exception
                             )
-                        )
+                            self.config.logger.info(
+                                'Error captured in Sentry! '
+                                'Reference: {}'.format(
+                                    identifier
+                                )
+                            )
+                    finally:
+                        client.context.clear()
                 except Exception:
                     self.config.logger.error(
                         'Unable to report error with Raven',
