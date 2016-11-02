@@ -20,7 +20,9 @@ The JSON Schema should contain a key called `$target_version`.
   * Editing comments (content of `description` values)
 * *Do change this* if you're...
   * Changing the type definition of an *existing* key in any way
-  * Add or remove keys from a `required` sub-key
+  * Add or remove keys from a `required` sub-key. For example, if a key
+    was required but you've now removed it. This is applicable at any
+    nested level.
 
 Yes, if you add more keys, don't change the version.
 For example, if you want to add...:
@@ -31,7 +33,7 @@ For example, if you want to add...:
     "description": "Sample specimen"
 }
 ```
-...to the root or inside an existing key. Then **don't** change the version.
+...to the root or inside an existing key, then **don't** change the version.
 
 However, if you change the type definition, E.g.
 
@@ -42,5 +44,4 @@ However, if you change the type definition, E.g.
     "description": "Sample specimen"
 },
 ```
-Then you have to change the `$target_version` number to `$target_version+1`
-whatever that new number might be.
+Then you have to increment the `$target_version` number by 1.
