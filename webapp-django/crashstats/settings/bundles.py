@@ -211,6 +211,7 @@ PIPELINE_JS = {
         'source_filenames': (
             'crashstats/js/polyfill/fetch.js',
             'crashstats/js/polyfill/es6-promise.auto.min.js',
+            'crashstats/js/lib/sha1.js',
             'crashstats/js/socorro/correlation.js',
         ),
         'output_filename': 'js/correlation.min.js',
