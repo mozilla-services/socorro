@@ -91,7 +91,6 @@ class BreakpadCollectorBase(GenericCollectorBase):
         else:
             raw_crash.legacy_processing = int(raw_crash.legacy_processing)
 
-
         try:
             # We want to capture the crash report size, but need to
             # differentiate between compressed vs. uncompressed data as well as
@@ -107,7 +106,7 @@ class BreakpadCollectorBase(GenericCollectorBase):
                 'compressed' if is_compressed else 'uncompressed',
             ])
             metrics_data = {
-                size_key: crash_report_size
+                'collector.' + size_key: crash_report_size
             }
             self.metrics.capture_stats(metrics_data)
         except Exception:
