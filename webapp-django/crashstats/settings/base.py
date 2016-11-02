@@ -243,6 +243,7 @@ PROCESS_TYPES = (
     'browser',
     'plugin',
     'content',
+    'gpu',
     'all',  # alias for 'any'
 )
 
