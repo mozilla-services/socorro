@@ -25,8 +25,8 @@ SignatureReport.CorrelationsTab.prototype = SignatureReport.inherit(SignatureRep
 SignatureReport.CorrelationsTab.prototype.loadControls = function() {
     var self = this;
 
-    var defaultProduct = $('#mainbody').data('default-product');
-    var defaultChannel = $('#mainbody').data('default-channel');
+    var defaultProduct = $('#mainbody').data('default-corr-product');
+    var defaultChannel = $('#mainbody').data('default-corr-channel');
     var channels = $('#mainbody').data('channels');
 
     // Create a select box for the product.
