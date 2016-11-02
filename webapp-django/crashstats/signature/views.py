@@ -108,25 +108,6 @@ def signature_report(request, params, default_context=None):
         'end_date': end_date,
     }
 
-    context['corr_channel'] = 'release'
-    if 'version' in params and params['version']:
-        if all('b' in version for version in params['version']):
-            context['corr_channel'] = 'beta'
-        elif all('a2' in version for version in params['version']):
-            context['corr_channel'] = 'aurora'
-        elif all('a1' in version for version in params['version']):
-            context['corr_channel'] = 'nightly'
-
-    context['corr_product'] = 'Firefox'
-    if (
-        'product' in params and
-        'FennecAndroid' in params['product'] and
-        'Firefox' not in params['product']
-    ):
-        # The SuperSearch query contains Fennec, but doesn't contain Firefox.
-        # We can assume the user is looking for Fennec correlations.
-        context['corr_product'] = 'FennecAndroid'
-
     return render(request, 'signature/signature_report.html', context)
 
 
@@ -388,6 +369,25 @@ def signature_comments(request, params):
 def signature_correlations(request, params):
     '''Guess the best channel and product to use for correlations. '''
     context = {}
+
+    context['channel'] = 'release'
+    if 'version' in params and params['version']:
+        if all('b' in version for version in params['version']):
+            context['channel'] = 'beta'
+        elif all('a2' in version for version in params['version']):
+            context['channel'] = 'aurora'
+        elif all('a1' in version for version in params['version']):
+            context['channel'] = 'nightly'
+
+    context['product'] = 'Firefox'
+    if (
+        'product' in params and
+        'FennecAndroid' in params['product'] and
+        'Firefox' not in params['product']
+    ):
+        # The SuperSearch query contains Fennec, but doesn't contain Firefox.
+        # We can assume the user is looking for Fennec correlations.
+        context['product'] = 'FennecAndroid'
 
     return render(request, 'signature/signature_correlations.html', context)
 

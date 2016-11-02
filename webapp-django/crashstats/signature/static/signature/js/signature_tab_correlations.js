@@ -25,8 +25,6 @@ SignatureReport.CorrelationsTab.prototype = SignatureReport.inherit(SignatureRep
 SignatureReport.CorrelationsTab.prototype.loadControls = function() {
     var self = this;
 
-    var defaultProduct = $('#mainbody').data('default-corr-product');
-    var defaultChannel = $('#mainbody').data('default-corr-channel');
     var channels = $('#mainbody').data('channels');
 
     // Create a select box for the product.
@@ -56,12 +54,9 @@ SignatureReport.CorrelationsTab.prototype.loadControls = function() {
         $('<hr>')
     );
 
-    // Apply select2 to both select elements and give them a default value.
+    // Apply select2 to both select elements.
     this.productSelect.select2();
-    this.productSelect.select2('val', defaultProduct);
-
     this.channelSelect.select2();
-    this.channelSelect.select2('val', defaultChannel);
 
     this.productSelect.on('change', this.loadCorrelations.bind(this));
     this.channelSelect.on('change', this.loadCorrelations.bind(this));
@@ -69,6 +64,13 @@ SignatureReport.CorrelationsTab.prototype.loadControls = function() {
 
 SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function () {
     SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
+
+    var defaultProduct = $('#correlations-wrapper').data('default-product');
+    var defaultChannel = $('#correlations-wrapper').data('default-channel');
+
+    // Give the select elements a default value.
+    this.productSelect.select2('val', defaultProduct);
+    this.channelSelect.select2('val', defaultChannel);
 
     this.loadCorrelations();
 };
