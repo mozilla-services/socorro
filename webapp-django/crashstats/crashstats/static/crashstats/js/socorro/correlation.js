@@ -1,7 +1,13 @@
-/*jslint browser:true, regexp:false */
-/*global window, $*/
+/* global window, $ */
 
-window.correlations = (function(){
+window.correlations = (function () {
+    /**
+     * Handle any errors by logging them.
+     */
+    function handleError(error) {
+        console.error(error.message);
+    }
+
     function hex(buffer) {
         var hexCodes = [];
         var view = new DataView(buffer);
@@ -23,9 +29,10 @@ window.correlations = (function(){
 
     function sha1(str) {
         return crypto.subtle.digest('SHA-1', new TextEncoder('utf-8').encode(str))
-        .then(function(hash) {
-            return hex(hash)
-        });
+        .then(function (hash) {
+            return hex(hash);
+        })
+        .catch(handleError);
     }
 
     var correlationData = {};
@@ -46,50 +53,52 @@ window.correlations = (function(){
         }
 
         return fetch(getDataURL(product) + 'all.json.gz')
-        .then(function(response) {
+        .then(function (response) {
             return response.json();
         })
-        .then(function(totals) {
+        .then(function (totals) {
             correlationData[product] = {
                 'date': totals['date'],
             };
 
-            ['release', 'beta', 'aurora', 'nightly'].forEach(function(ch) {
+            ['release', 'beta', 'aurora', 'nightly'].forEach(function (ch) {
                 correlationData[product][ch] = {
                     'total': totals[ch],
                     'signatures': {},
                 };
             });
-        });
+        })
+        .catch(handleError);
     }
 
     function loadCorrelationData(signature, channel, product) {
         return loadChannelsData(product)
-        .then(function() {
+        .then(function () {
             if (signature in correlationData[product][channel]['signatures']) {
                 return;
             }
 
             return sha1(signature)
-            .then(function(sha1signature) {
+            .then(function (sha1signature) {
                 return fetch(getDataURL(product) + channel + '/' + sha1signature + '.json.gz');
             })
-            .then(function(response) {
+            .then(function (response) {
                 return response.json();
             })
-            .then(function(data) {
+            .then(function (data) {
                 correlationData[product][channel]['signatures'][signature] = data;
-            });
+            })
+            .catch(handleError);
         })
-        .catch(console.log.bind(console))
-        .then(function() {
+        .then(function () {
             return correlationData;
-        });
+        })
+        .catch(handleError);
     }
 
     function itemToLabel(item) {
         return Object.getOwnPropertyNames(item)
-        .map(function(key) {
+        .map(function (key) {
             return key + ' = ' + item[key];
         })
         .join(' ∧ ');
@@ -102,86 +111,85 @@ window.correlations = (function(){
         var result = (num * 100).toFixed(2);
 
         if (result === '100.00') {
-          return '100.0';
+            return '100.0';
         }
 
         if (num < 0.1) {
-          return '0' + result;
+            return '0' + result;
         }
 
         return result;
     }
 
-  function confidenceInterval(count1, total1, count2, total2) {
-    var prop1 = count1 / total1;
-    var prop2 = count2 / total2;
-    var diff = prop1 - prop2;
+    function confidenceInterval(count1, total1, count2, total2) {
+        var prop1 = count1 / total1;
+        var prop2 = count2 / total2;
+        var diff = prop1 - prop2;
 
-    // Wald 95% confidence interval for the difference between the proportions.
-    var standard_error = Math.sqrt(prop1 * (1 - prop1) / total1 + prop2 * (1 - prop2) / total2);
-    var ci = [diff - 1.96 * standard_error, diff + 1.96 * standard_error];
+        // Wald 95% confidence interval for the difference between the proportions.
+        var standard_error = Math.sqrt(prop1 * (1 - prop1) / total1 + prop2 * (1 - prop2) / total2);
+        var ci = [diff - 1.96 * standard_error, diff + 1.96 * standard_error];
 
-    // Yates continuity correction for the confidence interval.
-    var correction = 0.5 * (1.0 / total1 + 1.0 / total2);
+        // Yates continuity correction for the confidence interval.
+        var correction = 0.5 * (1.0 / total1 + 1.0 / total2);
 
-    return [ci[0] - correction, ci[1] + correction];
-  }
+        return [ci[0] - correction, ci[1] + correction];
+    }
 
-  function sortCorrelationData(correlationData, total_reference, total_group) {
-    return correlationData
-    .sort(function(a, b) {
-      // Sort by the number of attributes first (results with a smaller number of attributes
-      // are easier to read and are often the most interesting ones).
-      var rule_a_len = Object.keys(a.item).length;
-      var rule_b_len = Object.keys(b.item).length;
+    function sortCorrelationData(correlationData, total_reference, total_group) {
+        return correlationData
+        .sort(function (a, b) {
+            // Sort by the number of attributes first (results with a smaller number of attributes
+            // are easier to read and are often the most interesting ones).
+            var rule_a_len = Object.keys(a.item).length;
+            var rule_b_len = Object.keys(b.item).length;
 
-      if (rule_a_len < rule_b_len) {
-        return -1;
-      }
+            if (rule_a_len < rule_b_len) {
+                return -1;
+            }
 
-      if (rule_a_len > rule_b_len) {
-        return 1;
-      }
+            if (rule_a_len > rule_b_len) {
+                return 1;
+            }
 
-      // Then, sort by percentage difference between signature and overall (using the lower endpoint
-      // of the confidence interval of the difference).
-      var ciA = confidenceInterval(a.count_group, total_group, a.count_reference, total_reference);
-      var ciB = confidenceInterval(b.count_group, total_group, b.count_reference, total_reference);
+            // Then, sort by percentage difference between signature and overall (using the lower endpoint
+            // of the confidence interval of the difference).
+            var ciA = confidenceInterval(a.count_group, total_group, a.count_reference, total_reference);
+            var ciB = confidenceInterval(b.count_group, total_group, b.count_reference, total_reference);
 
-      return Math.min(Math.abs(ciB[0]), Math.abs(ciB[1])) - Math.min(Math.abs(ciA[0]), Math.abs(ciA[1]));
-    });
-  }
+            return Math.min(Math.abs(ciB[0]), Math.abs(ciB[1])) - Math.min(Math.abs(ciA[0]), Math.abs(ciA[1]));
+        });
+    }
 
-  function text(textElem, signature, channel, product) {
-    loadCorrelationData(signature, channel, product)
-    .then(function(data) {
-      textElem.text('');
+    function getResults(signature, channel, product) {
+        return loadCorrelationData(signature, channel, product)
+        .then(function (data) {
 
-      if (!(product in data)) {
-        textElem.text('No correlation data was generated for the \'' + product + '\' product.');
-        return;
-      }
+            if (!data[product]) {
+                return 'No correlation data was generated for the \'' + product + '\' product.';
+            }
 
-      if (!(signature in data[product][channel]['signatures']) || !data[product][channel]['signatures'][signature]['results']) {
-        textElem.text('No correlation data was generated for the signature "' + signature + '" on the ' + channel + ' channel, for the \'' + product + '\' product.');
-        return;
-      }
+            if (!data[product][channel]['signatures'][signature] || !data[product][channel]['signatures'][signature]['results']) {
+                return 'No correlation data was generated for the signature "' + signature + '" on the ' + channel + ' channel, for the \'' + product + '\' product.';
+            }
 
-      var correlationData = data[product][channel]['signatures'][signature]['results'];
+            var correlationData = data[product][channel]['signatures'][signature]['results'];
 
-      var total_reference = data[product][channel].total;
-      var total_group = data[product][channel]['signatures'][signature].total;
+            var total_reference = data[product][channel].total;
+            var total_group = data[product][channel]['signatures'][signature].total;
 
-      textElem.text(sortCorrelationData(correlationData, total_reference, total_group)
-      .reduce(function(prev, cur) {
-        return prev + '(' + toPercentage(cur.count_group / total_group) + '% in signature vs ' + toPercentage(cur.count_reference / total_reference) + '% overall) ' + itemToLabel(cur.item) + '\n';
-      }, ''));
-    })
-    .catch(console.log.bind(console));
-  }
+            var results = sortCorrelationData(correlationData, total_reference, total_group)
+            .map(function (line) {
+                var percentGroup = toPercentage(line.count_group / total_group);
+                var percentRef = toPercentage(line.count_reference / total_reference);
+                return '(' + percentGroup + '% in signature vs ' + percentRef + '% overall) ' + itemToLabel(line.item);
+            });
+            return results;
+        })
+        .catch(handleError);
+    }
 
-  return {
-      loadCorrelationData: loadCorrelationData,
-      writeResults: text,
-  };
+    return {
+        getCorrelations: getResults,
+    };
 })();

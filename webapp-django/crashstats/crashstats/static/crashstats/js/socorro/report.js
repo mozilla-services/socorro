@@ -1,30 +1,4 @@
-/*jslint browser:true, regexp:false */
-/*global window, $ */
-
-var SignatureCorrelations = (function() {
-    var container = $('#mainbody');
-    return {
-        showSignatureCorrelationsTab: function() {
-            var signature = container.data('signature');
-            var channel = container.data('channel');
-            var product = container.data('product');
-
-            window.correlations.loadCorrelationData(signature, channel, product)
-            .then(function(data) {
-                if (!data) {
-                    return;
-                }
-
-                $('li.correlations').show();
-                $('#correlations_desc').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
-
-                window.correlations.writeResults($('#correlations_results'), signature, channel, product);
-            })
-            .catch(console.log.bind(console));
-        }
-    };
-})();
-
+/* global window $ Analytics BugLinks */
 
 $(document).ready(function () {
 
@@ -49,7 +23,7 @@ $(document).ready(function () {
         activate: function(event, ui) {
             document.location.hash = 'tab-' + ui.newPanel.attr('id');
             Analytics.trackTabSwitch('report_index', ui.newPanel.attr('id'));
-        }
+        },
     });
 
     $('a[href="#allthreads"]').on('click', function () {
@@ -65,13 +39,13 @@ $(document).ready(function () {
         }
     });
 
-    var tbls = $("#frames").find("table");
+    var tbls = $('#frames').find('table');
     var addExpand = function(sigColumn) {
         $(sigColumn).append(' <a class="expand" href="#">[Expand]</a>');
         $('.expand').click(function(event) {
             event.preventDefault();
             // swap cell title into cell text for each cell in this column
-            $("td:nth-child(3)", $(this).parents('tbody')).each(function () {
+            $('td:nth-child(3)', $(this).parents('tbody')).each(function () {
                 $(this).text($(this).attr('title')).removeAttr('title');
             });
             $(this).remove();
@@ -80,8 +54,8 @@ $(document).ready(function () {
 
     // collect all tables inside the div with id frames
     tbls.each(function() {
-        var isExpandAdded = false,
-        cells = $(this).find("tbody tr td:nth-child(3)");
+        var isExpandAdded = false;
+        var cells = $(this).find('tbody tr td:nth-child(3)');
 
         // Loop through each 3rd cell of each row in the current table and if
         // any cell's title atribute is not of the same length as the text
@@ -90,8 +64,8 @@ $(document).ready(function () {
         // This avoids adding multiple calls to addExpand which will add multiple links to the
         // same header.
         cells.each(function() {
-            if(($(this).attr("title").length !== $(this).text().length) && (!isExpandAdded)) {
-                addExpand($(this).parents("tbody").find("th.signature-column"));
+            if (($(this).attr('title').length !== $(this).text().length) && (!isExpandAdded)) {
+                addExpand($(this).parents('tbody').find('th.signature-column'));
                 isExpandAdded = true;
             }
         });
@@ -101,7 +75,23 @@ $(document).ready(function () {
 
     // Decide whether to show the Correlations tab if this product,
     // channel and signature has correlations.
-    SignatureCorrelations.showSignatureCorrelationsTab();
+    var container = $('#mainbody');
+    var signature = container.data('signature');
+    var channel = container.data('channel');
+    var product = container.data('product');
+
+    window.correlations.getCorrelations(signature, channel, product)
+    .then(function(results) {
+        if (!Array.isArray(results)) {
+            return;
+        }
+
+        var content = results.join('\n');
+
+        $('li.correlations').show();
+        $('#correlation h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
+        $('#correlation pre').empty().append(content);
+    });
 
     // Enhance bug links.
     BugLinks.enhance();
