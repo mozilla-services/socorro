@@ -1,19 +1,4 @@
 <div id="correlations-wrapper">
-    <label for="correlations_product">Product:</label>
-    <select id="correlations_product">
-        {% for p in ['Firefox', 'FennecAndroid'] %}
-            <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="correlations_channel">Channel:</label>
-    <select id="correlations_channel">
-        <option value="release" {% if channel == 'release' %}selected{% endif %}>release</option>
-        <option value="beta" {% if channel == 'beta' %}selected{% endif %}>beta</option>
-        <option value="aurora" {% if channel == 'aurora' %}selected{% endif %}>aurora</option>
-        <option value="nightly" {% if channel == 'nightly' %}selected{% endif %}>nightly</option>
-    </select>
-
-    <h3 id="correlations_desc"></h3>
-    <pre id="correlations_results"></pre>
+    <h3></h3>
+    <pre></pre>
 </div>
