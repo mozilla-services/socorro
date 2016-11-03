@@ -1447,35 +1447,6 @@ class BugzillaBugInfo(BugzillaAPI):
         return {'bugs': results}
 
 
-class SignatureURLs(SocorroMiddleware):
-
-    URL_PREFIX = '/signatureurls/'
-
-    deprecation_warning = (
-        "This endpoint is deprecated and will soon cease to exist.\n"
-        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
-    )
-
-    required_params = (
-        ('products', list),
-        'signature',
-        ('start_date', datetime.datetime),
-        ('end_date', datetime.datetime),
-    )
-
-    possible_params = (
-        ('versions', list),
-    )
-
-    API_WHITELIST = {
-        'hits': (
-            'crash_count',
-            # deliberately leaving out 'url',
-            # is that correct?
-        )
-    }
-
-
 class Correlations(SocorroMiddleware):
 
     URL_PREFIX = '/correlations/'
