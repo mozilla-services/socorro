@@ -856,47 +856,6 @@ class TestModels(DjangoTestCase):
         )
         eq_(r['total'], 0)
 
-    @mock.patch('requests.get')
-    def test_signature_summary(self, rget):
-        model = models.SignatureSummary
-        api = model()
-
-        def mocked_get(**options):
-            assert 'signaturesummary' in options['url'], options['url']
-            return Response([
-                {
-                    'version_string': '12.0',
-                    'percentage': '48.440',
-                    'report_count': 52311,
-                    'product_name': 'WaterWolf'
-                },
-                {
-                    'version_string': '13.0b4',
-                    'percentage': '9.244',
-                    'report_count': 9983,
-                    'product_name': 'WaterWolf'
-                }
-            ])
-
-        rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        yesterday = today - datetime.timedelta(days=10)
-        r = api.get(
-            report_types=['products'],
-            signature='Pickle::ReadBytes',
-            start_date=yesterday,
-            end_date=today,
-            versions='WaterWolf:19.0',
-        )
-        ok_(r[0]['version_string'])
-        r = api.get(
-            report_types=['products'],
-            signature='Pickle::ReadBytes',
-            start_date=yesterday,
-            end_date=today,
-        )
-        ok_(r[0]['version_string'])
-
     def test_status(self):
         def mocked_get(**options):
             return {
