@@ -210,7 +210,6 @@ class ESCrashStorage(CrashStorageBase):
                 else:
                     crash_document['removed_fields'] = field_name
             except elasticsearch.exceptions.ElasticsearchException as e:
-                print 'exception'
                 self.config.logger.critical(
                     'Submission to Elasticsearch failed for %s (%s)',
                     crash_id,
