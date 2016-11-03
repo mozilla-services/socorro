@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
+    "$target_version": 1,
     "type": "object",
     "description": "schema of a processed crash from Socorro",
     "definitions": {
