@@ -70,7 +70,7 @@ do
 done
 
 #MANUAL_VERSION_OVERRIDE="47.0b1 47.0b2 47.0b3 47.0b4 47.0b5 47.0b6 47.0b7 47.0b8 47.0b9 47.0b99 48.0a2 49.0a1"
-VERSIONS=`./active-firefox-versions.py`
+VERSIONS=`/data/socorro/application/scripts/crons/active-firefox-versions.py`
 techo "Phase 2: start"
 for I in Firefox
 do
