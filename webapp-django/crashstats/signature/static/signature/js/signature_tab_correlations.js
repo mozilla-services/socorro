@@ -1,4 +1,5 @@
-/*global SignatureReport: true, Accordion: true, socSortCorrelation:true */
+/*global SignatureReport */
+
 /**
  * Tab for displaying correlations.
  * Does not have any panels.
@@ -21,167 +22,74 @@ SignatureReport.CorrelationsTab = function (tabName) {
 
 SignatureReport.CorrelationsTab.prototype = SignatureReport.inherit(SignatureReport.Tab.prototype);
 
+SignatureReport.CorrelationsTab.prototype.loadControls = function() {
+    var self = this;
+
+    var channels = $('#mainbody').data('channels');
+
+    // Create a select box for the product.
+    this.productSelect = $('<select>', {'class': 'products-list', id: 'correlations-products-list'});
+    this.productSelect.append($('<option>', { value: 'Firefox', text: 'Firefox'}));
+    this.productSelect.append($('<option>', { value: 'FennecAndroid', text: 'FennecAndroid'}));
+
+    // Create a select box for the channel.
+    this.channelSelect = $('<select>', {'class': 'channels-list', id: 'correlations-channels-list'});
+    channels.forEach(function (channel) {
+        if (channel === 'esr') {
+            // This correlations module doesn't support ESR releases.
+            return;
+        }
+        self.channelSelect.append($('<option>', {
+            'value': channel,
+            'text': channel,
+        }));
+    });
+
+    // Append the controls.
+    this.$controlsElement.append(
+        $('<label>', {for: 'correlations-products-list', text: 'Product: '}),
+        this.productSelect,
+        $('<label>', {for: 'correlations-channels-list', text: 'Channel: '}),
+        this.channelSelect,
+        $('<hr>')
+    );
+
+    // Apply select2 to both select elements.
+    this.productSelect.select2();
+    this.channelSelect.select2();
+
+    this.productSelect.on('change', this.loadCorrelations.bind(this));
+    this.channelSelect.on('change', this.loadCorrelations.bind(this));
+};
+
 SignatureReport.CorrelationsTab.prototype.onAjaxSuccess = function () {
     SignatureReport.Tab.prototype.onAjaxSuccess.apply(this, arguments);
 
-    var wrapperElt = $('#correlations-wrapper');
-    var baseUrl = wrapperElt.data('correlations-source');
+    var defaultProduct = $('#correlations-wrapper').data('default-product');
+    var defaultChannel = $('#correlations-wrapper').data('default-channel');
 
-    function urlMaker(product, version, os) {
-        var url = baseUrl;
-        url += '?product=' + product;
-        url += '&version=' + version;
-        url += '&platform=' + os;
-        url += '&signature=' + SignatureReport.signature;
-        return function makeUrl(types) {
-            for (var i in types) {
-                url += '&correlation_report_types=' + encodeURIComponent(types[i]);
-            }
-            return url;
-        };
-    }
+    // Give the select elements a default value.
+    this.productSelect.select2('val', defaultProduct);
+    this.channelSelect.select2('val', defaultChannel);
 
-    /**
-     * Populates the panel specified by type.
-     * @param {string} type - The correlation type
-     * @param {object} data - The data to populate the panel with.
-     */
-    function populatePanel(container, type, data) {
-        var contentContainer = $(
-            '.content-pane[id^=' + type +'-correlation]',
-            container
-        );
-        if (contentContainer.length !== 1) {
-            throw new Error('Can\'t find the contentContainer ' + type);
+    this.loadCorrelations();
+};
+
+SignatureReport.CorrelationsTab.prototype.loadCorrelations = function () {
+    var contentElt = $('#correlations-wrapper pre');
+    contentElt.empty().append($('<div>', {'class': 'loader'}));
+
+    var product = this.productSelect.select2('val');
+    var channel = this.channelSelect.select2('val');
+
+    $('#correlations-wrapper h3').text('Correlations for ' + product + ' ' + channel[0].toUpperCase() + channel.substr(1));
+
+    window.correlations.getCorrelations(SignatureReport.signature, channel, product)
+    .then(function (results) {
+        var content = results;
+        if (Array.isArray(results)) {
+            content = results.join('\n');
         }
-        var noData = $('<p />', {
-            text: 'No correlation data found.',
-        });
-
-        if (data) {
-            // first separate the data into individual 'rows'
-            var dataRows = data.load.split(/\n/);
-            var panelHeading = $('<h4 />', {
-                text: data.reason,
-            });
-
-            // ensure there is at least one result and that the first item is
-            // not an empty string.
-            if (dataRows.length > 0 && dataRows[0] !== '') {
-
-                var resultCountTxt = ' (' + dataRows.length + (dataRows.length > 1 ? ' results' : ' result') + ')';
-                contentContainer.prev('h3').find('a').append(resultCountTxt);
-
-                var table = $('<table />', {
-                    class: 'data-table',
-                });
-                var thead = $('<thead />');
-                var headerRow = $('<tr />');
-                // a little work left to be done on the type header
-                var headers = [
-                    'All Crashes For Signature',
-                    'All Crashes For OS',
-                    type,
-                ];
-
-                $.each(headers, function (index, header) {
-                    headerRow.append($('<th />', {
-                        text: header,
-                    }));
-                });
-                table.append(thead).append(headerRow);
-
-                // loop through the lines and remove the vs. bits and split the
-                // string into 3 'columns' per 'row'. Create the table rows and
-                // attach them to the table.
-                dataRows.forEach(function (row) {
-                    var tableRow = $('<tr>');
-                    row = row.replace(/\s+vs\.\s+/g, ' ');
-                    var columns = [];
-                    var numbers = row.match(/\d+% \([\d/]+\)/g);
-                    numbers.forEach(function (number) {
-                        columns.push(number);
-                        row = row.replace(number, '');
-                    });
-                    // "the rest"
-                    columns.push(row.trim());
-                    columns.forEach(function (column) {
-                        tableRow.append($('<td>', {
-                            text: column,
-                        }));
-                    });
-                    table.append(tableRow);
-                });
-
-                contentContainer.empty().append([panelHeading, table]);
-                socSortCorrelation('.' + type + '_correlation');
-            }
-            // guard against empty records that sometimes gets returned.
-            else if (dataRows.length === 1 && dataRows[0] === '') {
-                // there seemed to be data but alas, it was an empty promise.
-                contentContainer.empty().append(noData);
-            }
-        } else {
-            contentContainer.empty().append(noData);
-        }
-    }
-
-    // Load correlation data for various types.
-    // @types CPU, Add-On, Module
-    function loadCorrelationTabData(container, product, version, os, types) {
-        var makeUrl = urlMaker(product, version, os);
-
-        $.getJSON(makeUrl(types))
-        .done(function (data) {
-            for (var type in data) {
-                populatePanel(container, type, data[type]);
-            }
-        })
-        .fail(function (jqXHR, textStatus, errorThrown) {
-            var msg = errorThrown;
-            if (jqXHR.responseText !== '') {
-                msg += ': ' + jqXHR.responseText;
-            }
-            for (var i in types) {
-                $('.' + types[i] + '-correlation', container).html(msg);
-            }
-        });
-    }
-
-    $('.accordion').each(function () {
-        (new Accordion(this)).init();
+        contentElt.empty().append(content);
     });
-
-    $('.correlation-combo').on('click', 'button.load-version-data', function () {
-        var type = $(this).attr('name');
-        var combo = $(this).parents('.correlation-combo');
-        var product = combo.data('correlation-product');
-        var version = combo.data('correlation-version');
-        var os = combo.data('correlation-os');
-        loadCorrelationTabData(
-            combo,
-            product,
-            version,
-            os,
-            [type]
-        );
-    });
-
-    var combos = $('.correlation-combo', wrapperElt).length;
-    if (combos) {
-        $('.correlation-combo', wrapperElt).each(function () {
-            var combo = $(this);
-            var product = combo.data('correlation-product');
-            var version = combo.data('correlation-version');
-            var os = combo.data('correlation-os');
-            loadCorrelationTabData(
-                combo,
-                product,
-                version,
-                os,
-                ['core-counts', 'interesting-addons', 'interesting-modules']
-            );
-        });
-
-    }
 };

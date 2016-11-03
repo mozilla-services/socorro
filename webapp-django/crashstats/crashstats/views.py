@@ -1,7 +1,6 @@
 import copy
 import json
 import datetime
-import hashlib
 import math
 import urllib
 import gzip
@@ -71,12 +70,6 @@ GRAPHICS_REPORT_HEADER = (
     'release_channel',
     'productid',
 )
-
-
-def make_correlations_count_cache_key(product, version, platform, signature):
-    return 'total_correlations-' + hashlib.md5(
-        (product + version + platform + signature).encode('utf-8')
-    ).hexdigest()
 
 
 def ratelimit_blocked(request, exception):
@@ -1422,39 +1415,6 @@ def report_index(request, crash_id, default_context=None):
                 )
             )
 
-    # On the report_index template, we have a piece of JavaScript
-    # that triggers an AJAX query to find out if there are correlations
-    # for this particular product, version, signature, platform combo
-    # under any report type. That AJAX query takes some time and it means
-    # the "Correlations" tab initially starts hidden and if there are
-    # correlations, the tab becomes visible.
-    # If that AJAX query has been done before, let's find out early
-    # and use that fact to immediately display the "Correlations" tab.
-    if (
-        context['report']['product'] and
-        context['report']['version'] and
-        context['report']['os_name'] and
-        context['report']['signature']
-    ):
-        total_correlations_cache_key = make_correlations_count_cache_key(
-            context['report']['product'],
-            context['report']['version'],
-            context['report']['os_name'],
-            context['report']['signature'],
-        )
-        # Because it's hard to do something like `{% if foo is None %}` in
-        # Jinja we instead make the default -1. That means it's not
-        # confused with 0 it basically means "We don't know".
-        context['total_correlations'] = cache.get(
-            total_correlations_cache_key,
-            -1
-        )
-    else:
-        # Some crashes might potentially miss this. For example,
-        # some crashes unfortunately don't have a platform (aka os_name)
-        # so finding correlations on those will never work.
-        context['total_correlations'] = 0
-
     # Add descriptions to all fields.
     all_fields = SuperSearchFields().get()
     descriptions = {}
@@ -1470,7 +1430,7 @@ def report_index(request, crash_id, default_context=None):
     context['empty_desc'] = 'No description for this field. Search: unknown'
 
     context['BUG_PRODUCT_MAP'] = settings.BUG_PRODUCT_MAP
-    context['CRASH_ANALYSIS_URL'] = settings.CRASH_ANALYSIS_URL
+
     return render(request, 'crashstats/report_index.html', context)
 
 
@@ -1764,56 +1724,6 @@ def correlations_signatures_json(request, default_context=None):
             result = {'hits': [], 'total': 0}
         context[report_type] = result
     return context
-
-
-@utils.json_view
-@pass_default_context
-def correlations_count_json(request, default_context=None):
-    context = default_context or {}
-    form = forms.AnyCorrelationsJSONForm(
-        context['active_versions'],
-        models.Platforms().get(),
-        request.GET
-    )
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(
-            json.dumps({'error': str(form.errors)}),
-            content_type='application/json; charset=UTF-8'
-        )
-
-    signature = form.cleaned_data['signature']
-    product = form.cleaned_data['product']
-    version = form.cleaned_data['version']
-    platform = form.cleaned_data['platform']
-
-    api = models.CorrelationsSignatures()
-    count = 0
-    errors = []
-    for report_type in settings.CORRELATION_REPORT_TYPES:
-        try:
-            result = api.get(
-                report_type=report_type,
-                product=product,
-                version=version,
-                platforms=platform,
-            )
-            hits = result and result['hits'] or []
-            if signature in hits:
-                count += 1
-        except models.BadStatusCodeError:
-            errors.append(report_type)
-
-    cache_key = make_correlations_count_cache_key(
-        product,
-        version,
-        platform,
-        signature
-    )
-    # Save in the cache this number so we can save time, next time
-    # the report_index page is loaded.
-    cache.set(cache_key, count, 60 * 60)
-
-    return {'count': count, 'errors': errors}
 
 
 def graphics_report(request):

@@ -367,39 +367,27 @@ def signature_comments(request, params):
 
 @pass_validated_params
 def signature_correlations(request, params):
-    '''Return a list of correlations combos, to be populated by AJAX calls. '''
-    signature = params['signature'][0]
-
+    '''Guess the best channel and product to use for correlations. '''
     context = {}
 
-    params['signature'] = '=' + signature
-    params['_results_number'] = 0
-    params['_facets'] = []
-    params['_aggs.product.version'] = 'platform'
+    context['channel'] = 'release'
+    if 'version' in params and params['version']:
+        if all('b' in version for version in params['version']):
+            context['channel'] = 'beta'
+        elif all('a2' in version for version in params['version']):
+            context['channel'] = 'aurora'
+        elif all('a1' in version for version in params['version']):
+            context['channel'] = 'nightly'
 
-    api = SuperSearchUnredacted()
-    try:
-        search_results = api.get(**params)
-    except BadArgumentError as e:
-        # We need to return the error message in some HTML form for jQuery to
-        # pick it up.
-        return http.HttpResponseBadRequest(render_exception(e))
-
-    all_combos = []
-    for product in search_results['facets']['product']:
-        for version in product['facets']['version']:
-            for platform in version['facets']['platform']:
-                all_combos.append({
-                    'product': product['term'],
-                    'version': version['term'],
-                    'platform': platform['term'],
-                    'count': platform['count'],
-                })
-
-    all_combos = sorted(all_combos, key=lambda x: x['count'])
-    context['correlation_combos'] = (
-        all_combos[:settings.MAX_CORRELATION_COMBOS_PER_SIGNATURE]
-    )
+    context['product'] = 'Firefox'
+    if (
+        'product' in params and
+        'FennecAndroid' in params['product'] and
+        'Firefox' not in params['product']
+    ):
+        # The SuperSearch query contains Fennec, but doesn't contain Firefox.
+        # We can assume the user is looking for Fennec correlations.
+        context['product'] = 'FennecAndroid'
 
     return render(request, 'signature/signature_correlations.html', context)
 
