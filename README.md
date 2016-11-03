@@ -1,30 +1,36 @@
-Socorro
--------
+# Socorro
 
 A server for collecting, processing, and displaying crash reports from
 clients using the [Breakpad libraries](http://code.google.com/p/google-breakpad/)
 
-Documentation:
-https://socorro.readthedocs.io
+## Support
 
-Source code:
-https://github.com/mozilla/socorro
+This is a very Mozilla-specific product. We do not currently have the capacity
+to support external users. If you are looking to use Socorro for your product,
+maybe you want to consider alternatives like
+[electron/mini-breakpad-server](https://github.com/electron/mini-breakpad-server)?
 
-Releases:
+## Installation
+
+All documentation about installing Socorro is available on readthedocs:
+[socorro.readthedocs.io](https://socorro.readthedocs.io/en/latest)
+
+## Releases
+
+We use continuous development, so we release quite often. See our list of releases:
+
 https://github.com/mozilla/socorro/releases
 
-Installation instructions:
-https://socorro.readthedocs.io/en/latest
 
-Socorro mailing list:
+## Communication
+
+We have a mailing list for Socorro users that you can join here:
 https://lists.mozilla.org/listinfo/tools-socorro
 
-Socorro/Breakpad IRC channel:
-irc://irc.mozilla.org/breakpad
+Devs hang out in the Socorro/Breakpad IRC channel: [irc://irc.mozilla.org/breakpad](irc://irc.mozilla.org/breakpad)
 
-Deployment status:
-https://whatsdeployed.io/s-7M7
+## Development
 
-Infrastructure (AWS) code:
-https://github.com/mozilla/socorro-infra
+Current deployment status: https://whatsdeployed.io/s-7M7
 
+Infrastructure (AWS) code: https://github.com/mozilla/socorro-infra
