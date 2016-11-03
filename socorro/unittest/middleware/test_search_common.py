@@ -228,10 +228,16 @@ class TestSearchBase(TestCase):
                 config=config,
             )
 
-        # the date parameter must always have a prefix operator
-        tomorrow = (
-            datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        ).strftime('%Y-%m-%d')
+        # Test the safety margin.
+        in_a_few_hours = '<' + (
+            datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+        ).isoformat()
+        search.get_parameters(date=in_a_few_hours)
+
+        # Test a date too far in the future.
+        tomorrow = '<' + (
+            datetime.datetime.utcnow() + datetime.timedelta(hours=25)
+        ).isoformat()
         assert_raises(
             BadArgumentError,
             search.get_parameters,
