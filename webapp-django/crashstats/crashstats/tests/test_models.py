@@ -118,28 +118,6 @@ class TestModels(DjangoTestCase):
         # no interesting conversion or checks here
         eq_(result, inp)
 
-    def test_kwargs_to_params_exceptions(self):
-        """the method kwargs_to_params() can take extra care of some special
-        cases"""
-        # CrashesCountByDay takes a `signature` and a `start_date`
-        api = models.CrashesCountByDay()
-        now = datetime.datetime.utcnow()
-        result = api.kwargs_to_params({
-            'signature': 'X / Y + Z',
-            'start_date': now
-        })
-        eq_(result['signature'], 'X / Y + Z')
-        eq_(result['start_date'], now.isoformat())
-
-        # CrashesFrequency takes a list of some parameters,
-        # they get joined with a `+`
-        api = models.CrashesFrequency()
-        result = api.kwargs_to_params({
-            'signature': 'XXX',
-            'versions': [1, 2],
-        })
-        eq_(result['versions'], [1, 2])
-
     @mock.patch('requests.get')
     def test_middleware_url_building(self, rget):
         model = models.ReportList
