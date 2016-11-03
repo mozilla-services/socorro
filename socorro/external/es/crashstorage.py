@@ -18,8 +18,10 @@ from socorrolib.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 
-FIELD_NAME_STRING_ERROR_REGEX = re.compile(r'field=\"([\w.]+)\"')
-FIELD_NAME_NUMBER_ERROR_REGEX = re.compile(r'\[failed to parse \[([\w.]+)]]')
+# These regex will catch field names from Elasticsearch exceptions. They have
+# been tested with Elasticsearch 1.4.
+FIELD_NAME_STRING_ERROR_REGEX = re.compile(r'field=\"([\w\-.]+)\"')
+FIELD_NAME_NUMBER_ERROR_REGEX = re.compile(r'\[failed to parse \[([\w\-.]+)]]')
 
 
 #==============================================================================
@@ -143,11 +145,10 @@ class ESCrashStorage(CrashStorageBase):
             index_creator.create_socorro_index(es_index)
 
         # Submit the crash for indexing.
-        success = False
         # Don't retry more than 5 times. That is to avoid infinite loops in
         # case of an unhandled exception.
-        retries_pool = [True] * 5 + [False]
-        while not success and retries_pool.pop(0):
+        times = range(5)
+        while times.pop(-1):
             try:
                 connection.index(
                     index=es_index,
@@ -155,35 +156,22 @@ class ESCrashStorage(CrashStorageBase):
                     body=crash_document,
                     id=crash_id
                 )
-                success = True
+                break
             except elasticsearch.exceptions.TransportError as e:
                 field_name = None
 
                 if 'MaxBytesLengthExceededException' in e.error:
                     # This is caused by a string that is way too long for
                     # Elasticsearch.
-                    matches = re.findall(
-                        FIELD_NAME_STRING_ERROR_REGEX, e.error
-                    )
+                    matches = FIELD_NAME_STRING_ERROR_REGEX.findall(e.error)
                     if matches:
                         field_name = matches[0]
                 elif 'NumberFormatException' in e.error:
                     # This is caused by a number that is either too big for
                     # Elasticsearch or just not a number.
-                    matches = re.findall(
-                        FIELD_NAME_NUMBER_ERROR_REGEX, e.error
-                    )
+                    matches = FIELD_NAME_NUMBER_ERROR_REGEX.findall(e.error)
                     if matches:
                         field_name = matches[0]
-                else:
-                    # We don't know how to fix this exception. Let it raise.
-                    self.config.logger.critical(
-                        'Submission to Elasticsearch failed for %s (%s)',
-                        crash_id,
-                        e,
-                        exc_info=True
-                    )
-                    raise
 
                 if not field_name:
                     # We are unable to parse which field to remove, we cannot
@@ -199,7 +187,7 @@ class ESCrashStorage(CrashStorageBase):
                 if field_name.endswith('.full'):
                     # Remove the `.full` at the end, that is a special mapping
                     # construct that is not part of the real field name.
-                    field_name = field_name[:-5]
+                    field_name = field_name.rstrip('.full')
 
                 # Now remove that field from the document before trying again.
                 field_path = field_name.split('.')
@@ -221,6 +209,7 @@ class ESCrashStorage(CrashStorageBase):
                 else:
                     crash_document['removed_fields'] = field_name
             except elasticsearch.exceptions.ElasticsearchException as e:
+                print 'exception'
                 self.config.logger.critical(
                     'Submission to Elasticsearch failed for %s (%s)',
                     crash_id,

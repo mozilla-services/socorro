@@ -24,8 +24,8 @@ from socorrolib.lib.datetimeutil import string_to_datetime
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
-#import logging
-#logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 
 # A dummy crash report that is used for testing.
@@ -636,18 +636,18 @@ class TestESCrashStorage(ElasticsearchTestCase):
         raw_crash = {}
         processed_crash = {
             'date_processed': '2012-04-08 10:56:41.558922',
-            'bogus_field': 'some bogus value',
+            'bogus-field': 'some bogus value',
             'foo': 'bar',
         }
 
         def mock_index(*args, **kwargs):
-            if 'bogus_field' in kwargs['body']['processed_crash']:
+            if 'bogus-field' in kwargs['body']['processed_crash']:
                 raise elasticsearch.exceptions.TransportError(
                     400,
                     'RemoteTransportException[[i-5exxx97][inet[/172.3.9.12:'
                     '9300]][indices:data/write/index]]; nested: '
                     'IllegalArgumentException[Document contains at least one '
-                    'immense term in field="processed_crash.bogus_field.full" '
+                    'immense term in field="processed_crash.bogus-field.full" '
                     '(whose UTF8 encoding is longer than the max length 32766)'
                     ', all of which were skipped.  Please correct the analyzer'
                     ' to not produce such terms.  The prefix of the first '
@@ -673,7 +673,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         expected_doc = {
             'crash_id': crash_id,
-            'removed_fields': 'processed_crash.bogus_field',
+            'removed_fields': 'processed_crash.bogus-field',
             'processed_crash': {
                 'date_processed': string_to_datetime(
                     '2012-04-08 10:56:41.558922'
@@ -712,18 +712,18 @@ class TestESCrashStorage(ElasticsearchTestCase):
         raw_crash = {}
         processed_crash = {
             'date_processed': '2012-04-08 10:56:41.558922',
-            'bogus_field': 1234567890,
+            'bogus-field': 1234567890,
             'foo': 'bar',
         }
 
         def mock_index(*args, **kwargs):
-            if 'bogus_field' in kwargs['body']['processed_crash']:
+            if 'bogus-field' in kwargs['body']['processed_crash']:
                 raise elasticsearch.exceptions.TransportError(
                     400,
                     'RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:'
                     '9300]][indices:data/write/index]]; nested: '
                     'MapperParsingException[failed to parse '
-                    '[processed_crash.bogus_field]]; nested: '
+                    '[processed_crash.bogus-field]]; nested: '
                     'NumberFormatException[For input string: '
                     '"18446744073709480735"]; '
                 )
@@ -742,7 +742,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         expected_doc = {
             'crash_id': crash_id,
-            'removed_fields': 'processed_crash.bogus_field',
+            'removed_fields': 'processed_crash.bogus-field',
             'processed_crash': {
                 'date_processed': string_to_datetime(
                     '2012-04-08 10:56:41.558922'
