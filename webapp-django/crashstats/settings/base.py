@@ -237,13 +237,14 @@ LOGIN_URL = '/login/'
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# process types to allow in queries
+# Process types to allow in queries.
+# If tuple, the second option is human readable label.
 PROCESS_TYPES = (
     'any',
     'browser',
     'plugin',
     'content',
-    'gpu',
+    ('gpu', 'GPU'),
     'all',  # alias for 'any'
 )
 
