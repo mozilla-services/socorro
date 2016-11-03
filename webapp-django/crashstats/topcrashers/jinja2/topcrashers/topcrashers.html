@@ -82,10 +82,10 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 
             <ul class="tc-duration-type tc-filter">
                 <li class="tc-selector-heading">Type:</li>
-                {% for c in process_type_values %}
+                {% for c, label in process_type_values %}
                 <li>
                     <a href="{{ change_query_string(process_type=c) }}" {% if crash_type == c %} class="selected" {% endif %} >
-                        {{ c|capitalize }}
+                        {{ label }}
                     </a>
                 </li>
                 {% endfor %}

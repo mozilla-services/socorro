@@ -230,7 +230,15 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             hour=0, minute=0, second=0, microsecond=0
         )
 
-    if crash_type not in settings.PROCESS_TYPES:
+    # settings.PROCESS_TYPES might contain tuple to indicate that some
+    # are actual labels.
+    process_types = []
+    for option in settings.PROCESS_TYPES:
+        if isinstance(option, (list, tuple)):
+            process_types.append(option[0])
+        else:
+            process_types.append(option)
+    if crash_type not in process_types:
         crash_type = 'browser'
 
     context['crash_type'] = crash_type
@@ -346,9 +354,17 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context['possible_days'] = possible_days
     context['total_crashing_signatures'] = len(signatures)
     context['total_number_of_crashes'] = api_results['total']
-    context['process_type_values'] = (
-        x for x in settings.PROCESS_TYPES if x != 'all'
-    )
+    context['process_type_values'] = []
+    for option in settings.PROCESS_TYPES:
+        if option == 'all':
+            continue
+        if isinstance(option, (list, tuple)):
+            value, label = option
+        else:
+            value = option
+            label = option.capitalize()
+        context['process_type_values'].append((value, label))
+
     context['platform_values'] = settings.DISPLAY_OS_NAMES
 
     return render(request, 'topcrashers/topcrashers.html', context)
