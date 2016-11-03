@@ -18,12 +18,6 @@ from socorrolib.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 
-# These regex will catch field names from Elasticsearch exceptions. They have
-# been tested with Elasticsearch 1.4.
-FIELD_NAME_STRING_ERROR_REGEX = re.compile(r'field=\"([\w\-.]+)\"')
-FIELD_NAME_NUMBER_ERROR_REGEX = re.compile(r'\[failed to parse \[([\w\-.]+)]]')
-
-
 #==============================================================================
 class ESCrashStorage(CrashStorageBase):
     """This sends processed crash reports to Elasticsearch."""
@@ -48,6 +42,13 @@ class ESCrashStorage(CrashStorageBase):
     # This cache reduces attempts to create indices, thus lowering overhead
     # each time a document is indexed.
     indices_cache = set()
+
+    # These regex will catch field names from Elasticsearch exceptions. They
+    # have been tested with Elasticsearch 1.4.
+    field_name_string_error_re = re.compile(r'field=\"([\w\-.]+)\"')
+    field_name_number_error_re = re.compile(
+        r'\[failed to parse \[([\w\-.]+)]]'
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -163,13 +164,13 @@ class ESCrashStorage(CrashStorageBase):
                 if 'MaxBytesLengthExceededException' in e.error:
                     # This is caused by a string that is way too long for
                     # Elasticsearch.
-                    matches = FIELD_NAME_STRING_ERROR_REGEX.findall(e.error)
+                    matches = self.field_name_string_error_re.findall(e.error)
                     if matches:
                         field_name = matches[0]
                 elif 'NumberFormatException' in e.error:
                     # This is caused by a number that is either too big for
                     # Elasticsearch or just not a number.
-                    matches = FIELD_NAME_NUMBER_ERROR_REGEX.findall(e.error)
+                    matches = self.field_name_number_error_re.findall(e.error)
                     if matches:
                         field_name = matches[0]
 
