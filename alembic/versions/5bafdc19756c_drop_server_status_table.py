@@ -23,7 +23,7 @@ from sqlalchemy.dialects import postgresql
 
 
 def upgrade():
-    op.drop_table('server_status')
+    op.execute('DROP TABLE server_status CASCADE')
 
 
 def downgrade():
