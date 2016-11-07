@@ -1255,47 +1255,6 @@ class SignatureTrend(SocorroMiddleware):
     }
 
 
-class SignatureSummary(SocorroMiddleware):
-
-    URL_PREFIX = '/signaturesummary/'
-
-    deprecation_warning = (
-        "This endpoint is deprecated and will soon cease to exist.\n"
-        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
-    )
-
-    required_params = (
-        ('report_types', list),
-        'signature',
-        ('start_date', datetime.date),
-        ('end_date', datetime.date),
-    )
-
-    possible_params = (
-        ('versions', list),
-        'report_type',  # kept for legacy
-    )
-
-    API_WHITELIST = (
-        'category',
-        'percentage',
-        'product_name',
-        'version_string',
-        'reports',
-    )
-
-    def get(self, *args, **kwargs):
-        # You're not allowed to view the exploitability report if you
-        # don't have permission to do so.
-        # If the `self.api_user` is set, it means this model is called
-        # via the web API.
-        if self.api_user:
-            if not self.api_user.has_perm('crashstats.view_exploitability'):
-                if 'exploitability' in kwargs['report_types']:
-                    kwargs['report_types'].remove('exploitability')
-        return super(SignatureSummary, self).get(*args, **kwargs)
-
-
 class Status(SocorroMiddleware):
 
     # This model uses an implementation that only really reads
