@@ -1011,52 +1011,6 @@ class TestViews(BaseTestViews):
         ok_(dump['state'])
 
     @mock.patch('requests.get')
-    def test_SignatureURLs(self, rget):
-        def mocked_get(url, params, **options):
-            if '/signatureurls' in url:
-                ok_('products' in params)
-                eq_(['WaterWolf', 'NightTrain'], params['products'])
-
-                ok_('start_date' in params)
-                eq_('2012-01-01T10:00:00+00:00', params['start_date'])
-
-                ok_('end_date' in params)
-                eq_('2013-01-01T10:00:00+00:00', params['end_date'])
-
-                return Response({
-                    "hits": [
-                        {"url": "http://farm.ville", "crash_count": 123},
-                        {"url": "http://other.crap", "crash_count": 1},
-                    ],
-                    "total": 2
-                })
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        url = reverse('api:model_wrapper', args=('SignatureURLs',))
-        response = self.client.get(url)
-        eq_(response.status_code, 400)
-        eq_(response['Content-Type'], 'application/json; charset=UTF-8')
-        dump = json.loads(response.content)
-        ok_(dump['errors']['products'])
-        ok_(dump['errors']['signature'])
-        ok_(dump['errors']['start_date'])
-        ok_(dump['errors']['end_date'])
-
-        response = self.client.get(url, {
-            'products': ['WaterWolf', 'NightTrain'],
-            'versions': ['WaterWolf:14.0', 'NightTrain:15.0'],
-            'start_date': '2012-1-1 10:00:0',
-            'end_date': '2013-1-1 10:00:0',
-            'signature': 'one & two',
-        })
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['hits'])
-        ok_(dump['total'])
-
-    @mock.patch('requests.get')
     def test_Correlations(self, rget):
 
         def mocked_get(url, params, **options):

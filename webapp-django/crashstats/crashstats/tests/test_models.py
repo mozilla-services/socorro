@@ -78,20 +78,6 @@ class TestModels(DjangoTestCase):
         # no interesting conversion or checks here
         eq_(result, inp)
 
-        # SignatureURLs requires certain things to be datetime.datetime
-        api = models.SignatureURLs()
-        inp = {
-            'products': 'XXX',
-            'signature': 'XXX',
-            'start_date': datetime.date.today(),
-            'end_date': datetime.datetime.today(),
-        }
-        assert_raises(
-            models.ParameterTypeError,
-            api.kwargs_to_params,
-            inp
-        )
-
         # CrashesPerAdu allows from_date and end_date as datetime.date
         # but it should also allow to automatically convert datetime.datetime
         # instances to datetime.date
@@ -1216,34 +1202,6 @@ class TestModels(DjangoTestCase):
                 'vendor_hex': set(['vhex3']),
             }
         )
-
-    @mock.patch('requests.get')
-    def test_signature_urls(self, rget):
-        model = models.SignatureURLs
-        api = model()
-
-        def mocked_get(url, params, **options):
-            assert '/signatureurls' in url
-            ok_('versions' in params)
-            ok_('WaterWolf:1.0' in params['versions'])
-
-            return Response({
-                'hits': [{'url': 'http://farm.ville', 'crash_count': 123}],
-                'total': 1,
-            })
-
-        rget.side_effect = mocked_get
-        today = datetime.datetime.utcnow()
-        response = api.get(
-            signature='FakeSignature',
-            products=['WaterWolf'],
-            versions=['WaterWolf:1.0'],
-            start_date=today - datetime.timedelta(days=1),
-            end_date=today,
-        )
-        eq_(response['total'], 1)
-        eq_(response['hits'][0], {'url': 'http://farm.ville',
-                                  'crash_count': 123})
 
     @mock.patch('requests.get')
     def test_massive_querystring_caching(self, rget):
