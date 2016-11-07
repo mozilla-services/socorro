@@ -1447,43 +1447,6 @@ class Field(SocorroMiddleware):
     )
 
 
-class CrashesFrequency(SocorroMiddleware):
-
-    URL_PREFIX = '/crashes/frequency/'
-
-    deprecation_warning = (
-        "This endpoint is deprecated and will soon cease to exist.\n"
-        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
-    )
-
-    required_params = (
-        'signature',
-    )
-
-    possible_params = (
-        ('products', list),
-        ('from', datetime.date),
-        ('to', datetime.date),
-        ('versions', list),
-        ('os', list),
-        ('reasons', list),
-        ('release_channels', list),
-        ('build_ids', list),
-        ('build_from', list),
-        ('build_to', list),
-        'report_process',
-        'report_type',
-        ('plugin_in', list),
-        'plugin_search_mode',
-        ('plugin_terms', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-
 class CrashesCountByDay(SocorroMiddleware):
 
     cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.
