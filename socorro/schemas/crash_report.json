@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
-    "description": "schema of a processed crash from Socorro",
+    "description": "This is the JSON Schema of a public crash from Socorro. Its home is github.com/mozilla/socorro",
     "definitions": {
         "frames": {
             "type": "object",
