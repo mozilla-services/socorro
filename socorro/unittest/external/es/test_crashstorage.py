@@ -22,6 +22,12 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 from socorrolib.lib.datetimeutil import string_to_datetime
 
 
+# Uncomment these lines to decrease verbosity of the elasticsearch library
+# while running unit tests.
+# import logging
+# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+
+
 # A dummy crash report that is used for testing.
 a_processed_crash = {
     'addons': [['{1a5dabbd-0e74-41da-b532-a364bb552cab}', '1.0.4.1']],
@@ -119,12 +125,6 @@ a_raw_crash = {
     'foo': 'alpha',
     'bar': 42
 }
-
-
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-#import logging
-#logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 
 class IntegrationTestESCrashStorage(ElasticsearchTestCase):
@@ -313,7 +313,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Ensure that the indexing function is only called once.
         eq_(es_storage._submit_crash_to_elasticsearch.call_count, 1)
 
-    #-------------------------------------------------------------------------
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success(self, espy_mock):
         """Test a successful index of a crash report.
@@ -361,7 +360,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
             **additional
         )
 
-    #-------------------------------------------------------------------------
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success_with_no_stackwalker_class(self, espy_mock):
         """Test a successful index of a crash report.
@@ -418,7 +416,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
             **additional
         )
 
-    #-------------------------------------------------------------------------
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success_with_limited_json_dump_class(self, espy_mock):
         """Test a successful index of a crash report.
@@ -518,7 +515,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_fatal_operational_exception(self, espy_mock):
-        """Test an index attempt that experiences a operational exception that
+        """Test an index attempt that experiences an operational exception that
         it can't recover from.
         """
 
@@ -538,7 +535,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         crash_id = a_processed_crash['uuid']
 
         # It's bad but at least we expected it.
-        failure_exception = elasticsearch.exceptions.ConnectionError
+        failure_exception = elasticsearch.exceptions.ConnectionError(500, '')
         sub_mock.index.side_effect = failure_exception
 
         # Submit a crash and ensure that it failed.
@@ -553,7 +550,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
     def test_success_operational_exception(self, espy_mock):
-        """Test an index attempt that experiences a operational exception that
+        """Test an index attempt that experiences an operational exception that
         it managed to recover from.
         """
 
@@ -575,8 +572,8 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # The transaction executor will try three times, so we will fail
         # twice for the purposes of this test.
         bad_results = [
-            elasticsearch.exceptions.ConnectionError,
-            elasticsearch.exceptions.ConnectionError
+            elasticsearch.exceptions.ConnectionError(500, ''),
+            elasticsearch.exceptions.ConnectionError(500, '')
         ]
 
         # Replace the underlying index method with this function.
@@ -614,4 +611,204 @@ class TestESCrashStorage(ElasticsearchTestCase):
         sub_mock.index.assert_called_with(
             body=document,
             **additional
+        )
+
+    @mock.patch('elasticsearch.client')
+    @mock.patch('elasticsearch.Elasticsearch')
+    def test_indexing_bogus_string_field(self, es_class_mock, es_client_mock):
+        """Test an index attempt that fails because of a bogus string field.
+        Expected behavior is to remove that field and retry indexing.
+        """
+        # ESCrashStorage uses the "limited backoff" transaction executor.
+        # In real life this will retry operational exceptions over time, but
+        # in unit tests, we just want it to hurry up and fail.
+        backoff_config = self.config
+        backoff_config['backoff_delays'] = [0, 0, 0]
+        backoff_config['wait_log_interval'] = 0
+
+        es_storage = ESCrashStorage(config=self.config)
+
+        crash_id = a_processed_crash['uuid']
+        raw_crash = {}
+        processed_crash = {
+            'date_processed': '2012-04-08 10:56:41.558922',
+            'bogus-field': 'some bogus value',
+            'foo': 'bar',
+        }
+
+        def mock_index(*args, **kwargs):
+            if 'bogus-field' in kwargs['body']['processed_crash']:
+                raise elasticsearch.exceptions.TransportError(
+                    400,
+                    'RemoteTransportException[[i-5exxx97][inet[/172.3.9.12:'
+                    '9300]][indices:data/write/index]]; nested: '
+                    'IllegalArgumentException[Document contains at least one '
+                    'immense term in field="processed_crash.bogus-field.full" '
+                    '(whose UTF8 encoding is longer than the max length 32766)'
+                    ', all of which were skipped.  Please correct the analyzer'
+                    ' to not produce such terms.  The prefix of the first '
+                    'immense term is: \'[124, 91, 48, 93, 91, 71, 70, 88, 49, '
+                    '45, 93, 58, 32, 65, 116, 116, 101, 109, 112, 116, 32, '
+                    '116, 111, 32, 99, 114, 101, 97, 116, 101]...\', original '
+                    'message: bytes can be at most 32766 in length; got 98489]'
+                    '; nested: MaxBytesLengthExceededException'
+                    '[bytes can be at most 32766 in length; got 98489]; '
+                )
+
+            return True
+
+        es_class_mock().index.side_effect = mock_index
+
+        # Submit a crash and ensure that it succeeds.
+        es_storage.save_raw_and_processed(
+            raw_crash,
+            None,
+            processed_crash,
+            crash_id
+        )
+
+        expected_doc = {
+            'crash_id': crash_id,
+            'removed_fields': 'processed_crash.bogus-field',
+            'processed_crash': {
+                'date_processed': string_to_datetime(
+                    '2012-04-08 10:56:41.558922'
+                ),
+                'foo': 'bar',
+            },
+            'raw_crash': {},
+        }
+        es_class_mock().index.assert_called_with(
+            index=self.config.elasticsearch.elasticsearch_index,
+            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            body=expected_doc,
+            id=crash_id
+        )
+
+    @mock.patch('elasticsearch.client')
+    @mock.patch('elasticsearch.Elasticsearch')
+    def test_indexing_bogus_number_field(self, es_class_mock, es_client_mock):
+        """Test an index attempt that fails because of a bogus number field.
+        Expected behavior is to remove that field and retry indexing.
+        """
+        # ESCrashStorage uses the "limited backoff" transaction executor.
+        # In real life this will retry operational exceptions over time, but
+        # in unit tests, we just want it to hurry up and fail.
+        backoff_config = self.config
+        backoff_config['backoff_delays'] = [0, 0, 0]
+        backoff_config['wait_log_interval'] = 0
+
+        es_storage = ESCrashStorage(config=self.config)
+
+        crash_id = a_processed_crash['uuid']
+        raw_crash = {}
+        processed_crash = {
+            'date_processed': '2012-04-08 10:56:41.558922',
+            'bogus-field': 1234567890,
+            'foo': 'bar',
+        }
+
+        def mock_index(*args, **kwargs):
+            if 'bogus-field' in kwargs['body']['processed_crash']:
+                raise elasticsearch.exceptions.TransportError(
+                    400,
+                    'RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:'
+                    '9300]][indices:data/write/index]]; nested: '
+                    'MapperParsingException[failed to parse '
+                    '[processed_crash.bogus-field]]; nested: '
+                    'NumberFormatException[For input string: '
+                    '"18446744073709480735"]; '
+                )
+
+            return True
+
+        es_class_mock().index.side_effect = mock_index
+
+        # Submit a crash and ensure that it succeeds.
+        es_storage.save_raw_and_processed(
+            raw_crash,
+            None,
+            processed_crash,
+            crash_id
+        )
+
+        expected_doc = {
+            'crash_id': crash_id,
+            'removed_fields': 'processed_crash.bogus-field',
+            'processed_crash': {
+                'date_processed': string_to_datetime(
+                    '2012-04-08 10:56:41.558922'
+                ),
+                'foo': 'bar',
+            },
+            'raw_crash': {},
+        }
+        es_class_mock().index.assert_called_with(
+            index=self.config.elasticsearch.elasticsearch_index,
+            doc_type=self.config.elasticsearch.elasticsearch_doctype,
+            body=expected_doc,
+            id=crash_id
+        )
+
+    @mock.patch('elasticsearch.client')
+    @mock.patch('elasticsearch.Elasticsearch')
+    def test_indexing_unhandled_errors(self, es_class_mock, es_client_mock):
+        """Test an index attempt that fails because of unhandled errors.
+        Expected behavior is to fail indexing and raise the error.
+        """
+        # ESCrashStorage uses the "limited backoff" transaction executor.
+        # In real life this will retry operational exceptions over time, but
+        # in unit tests, we just want it to hurry up and fail.
+        backoff_config = self.config
+        backoff_config['backoff_delays'] = [0, 0, 0]
+        backoff_config['wait_log_interval'] = 0
+
+        es_storage = ESCrashStorage(config=self.config)
+
+        crash_id = a_processed_crash['uuid']
+        raw_crash = {}
+        processed_crash = {
+            'date_processed': '2012-04-08 10:56:41.558922',
+        }
+
+        # Test with an error from which a field name cannot be extracted.
+        def mock_index_unparsable_error(*args, **kwargs):
+            raise elasticsearch.exceptions.TransportError(
+                400,
+                'RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:'
+                '9300]][indices:data/write/index]]; nested: '
+                'MapperParsingException[BROKEN PART]; NumberFormatException'
+            )
+
+            return True
+
+        es_class_mock().index.side_effect = mock_index_unparsable_error
+
+        assert_raises(
+            elasticsearch.exceptions.TransportError,
+            es_storage.save_raw_and_processed,
+            raw_crash,
+            None,
+            processed_crash,
+            crash_id
+        )
+
+        # Test with an error that we do not handle.
+        def mock_index_unhandled_error(*args, **kwargs):
+            raise elasticsearch.exceptions.TransportError(
+                400,
+                'Something went wrong'
+            )
+
+            return True
+
+        es_class_mock().index.side_effect = mock_index_unhandled_error
+
+        assert_raises(
+            elasticsearch.exceptions.TransportError,
+            es_storage.save_raw_and_processed,
+            raw_crash,
+            None,
+            processed_crash,
+            crash_id
         )

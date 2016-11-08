@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import re
 from threading import Thread
 from Queue import Queue
 from contextlib import contextmanager
@@ -41,6 +42,13 @@ class ESCrashStorage(CrashStorageBase):
     # This cache reduces attempts to create indices, thus lowering overhead
     # each time a document is indexed.
     indices_cache = set()
+
+    # These regex will catch field names from Elasticsearch exceptions. They
+    # have been tested with Elasticsearch 1.4.
+    field_name_string_error_re = re.compile(r'field=\"([\w\-.]+)\"')
+    field_name_number_error_re = re.compile(
+        r'\[failed to parse \[([\w\-.]+)]]'
+    )
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
@@ -138,22 +146,77 @@ class ESCrashStorage(CrashStorageBase):
             index_creator.create_socorro_index(es_index)
 
         # Submit the crash for indexing.
-        try:
-            connection.index(
-                index=es_index,
-                doc_type=es_doctype,
-                body=crash_document,
-                id=crash_id
-            )
+        # Don't retry more than 5 times. That is to avoid infinite loops in
+        # case of an unhandled exception.
+        times = range(5)
+        while times.pop(-1):
+            try:
+                connection.index(
+                    index=es_index,
+                    doc_type=es_doctype,
+                    body=crash_document,
+                    id=crash_id
+                )
+                break
+            except elasticsearch.exceptions.TransportError as e:
+                field_name = None
 
-        except elasticsearch.exceptions.ElasticsearchException as e:
-            self.config.logger.critical(
-                'Submission to Elasticsearch failed for %s (%s)',
-                crash_id,
-                e,
-                exc_info=True
-            )
-            raise
+                if 'MaxBytesLengthExceededException' in e.error:
+                    # This is caused by a string that is way too long for
+                    # Elasticsearch.
+                    matches = self.field_name_string_error_re.findall(e.error)
+                    if matches:
+                        field_name = matches[0]
+                elif 'NumberFormatException' in e.error:
+                    # This is caused by a number that is either too big for
+                    # Elasticsearch or just not a number.
+                    matches = self.field_name_number_error_re.findall(e.error)
+                    if matches:
+                        field_name = matches[0]
+
+                if not field_name:
+                    # We are unable to parse which field to remove, we cannot
+                    # try to fix the document. Let it raise.
+                    self.config.logger.critical(
+                        'Submission to Elasticsearch failed for %s (%s)',
+                        crash_id,
+                        e,
+                        exc_info=True
+                    )
+                    raise
+
+                if field_name.endswith('.full'):
+                    # Remove the `.full` at the end, that is a special mapping
+                    # construct that is not part of the real field name.
+                    field_name = field_name.rstrip('.full')
+
+                # Now remove that field from the document before trying again.
+                field_path = field_name.split('.')
+                parent = crash_document
+                for i, field in enumerate(field_path):
+                    if i == len(field_path) - 1:
+                        # This is the last level, so `field` contains the name
+                        # of the field that we want to remove from `parent`.
+                        del parent[field]
+                    else:
+                        parent = parent[field]
+
+                # Add a note in the document that a field has been removed.
+                if crash_document.get('removed_fields'):
+                    crash_document['removed_fields'] = '{} {}'.format(
+                        crash_document['removed_fields'],
+                        field_name
+                    )
+                else:
+                    crash_document['removed_fields'] = field_name
+            except elasticsearch.exceptions.ElasticsearchException as e:
+                self.config.logger.critical(
+                    'Submission to Elasticsearch failed for %s (%s)',
+                    crash_id,
+                    e,
+                    exc_info=True
+                )
+                raise
 
 
 #==============================================================================
