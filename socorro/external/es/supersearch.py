@@ -73,16 +73,22 @@ class SuperSearch(SearchBase):
 
         return self.get_list_of_indices(start_date, end_date)
 
+    def get_full_field_name(self, field_data):
+        if not field_data['namespace']:
+            return field_data['in_database_name']
+
+        return '{}.{}'.format(
+            field_data['namespace'],
+            field_data['in_database_name'],
+        )
+
     def format_field_names(self, hit):
         """Return a hit with each field's database name replaced by its
         exposed name. """
         new_hit = {}
         for field_name in self.request_columns:
             field = self.all_fields[field_name]
-            database_field_name = '{}.{}'.format(
-                field['namespace'],
-                field['in_database_name'],
-            )
+            database_field_name = self.get_full_field_name(field)
             new_hit[field_name] = hit.get(database_field_name)
 
         return new_hit
@@ -121,10 +127,7 @@ class SuperSearch(SearchBase):
                 msg='Field "%s" is not allowed to be returned' % value
             )
 
-        field_name = '%s.%s' % (
-            field_['namespace'],
-            field_['in_database_name']
-        )
+        field_name = self.get_full_field_name(field_)
 
         if full and field_['has_full_version']:
             # If the param has a full version, that means what matters
@@ -237,11 +240,7 @@ class SuperSearch(SearchBase):
                     continue
 
                 field_data = self.all_fields[param.name]
-
-                name = '%s.%s' % (
-                    field_data['namespace'],
-                    field_data['in_database_name']
-                )
+                name = self.get_full_field_name(field_data)
 
                 if param.data_type in ('date', 'datetime'):
                     param.value = datetimeutil.date_to_string(param.value)

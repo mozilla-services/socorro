@@ -114,6 +114,28 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         ok_('write_combine_size' in res['hits'][0])
 
     @minimum_es_version('1.0')
+    def test_get_with_root_field(self):
+        """Verify that querying fields at the root of the crash document works.
+        """
+        self.index_crash({
+            'signature': 'js::break_your_browser',
+            'date_processed': self.now,
+        }, root_doc={
+            'removed_fields': 'foo bar',
+        })
+        self.refresh_index()
+
+        res = self.api.get(_columns=[
+            'date', 'signature', 'removed_fields'
+        ], _facets=['removed_fields'])
+
+        ok_('removed_fields' in res['hits'][0])
+        eq_(res['hits'][0]['removed_fields'], 'foo bar')
+
+        ok_('removed_fields' in res['facets'])
+        eq_(len(res['facets']['removed_fields']), 2)
+
+    @minimum_es_version('1.0')
     def test_get_with_bad_results_number(self):
         """Run a very basic test, just to see if things work. """
         with assert_raises(BadArgumentError):

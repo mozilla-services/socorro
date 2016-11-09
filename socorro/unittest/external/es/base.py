@@ -741,6 +741,24 @@ SUPERSEARCH_FIELDS = {
             'analyzer': 'semicolon_keywords',
         }
     },
+    # A field that is in the root of the crash report document.
+    'removed_fields': {
+        'data_validation_type': 'enum',
+        'default_value': None,
+        'form_field_choices': None,
+        'has_full_version': False,
+        'in_database_name': 'removed_fields',
+        'is_exposed': True,
+        'is_mandatory': False,
+        'is_returned': True,
+        'name': 'removed_fields',
+        'namespace': '',
+        'permissions_needed': [],
+        'query_type': 'string',
+        'storage_mapping': {
+            'type': 'string',
+        }
+    },
     # Add a synonym field.
     'product_2': {
         'data_validation_type': 'enum',
@@ -913,18 +931,24 @@ class ElasticsearchTestCase(TestCase):
         )
         self.index_client.refresh(index=[es_index])
 
-    def index_crash(self, processed_crash, raw_crash=None, crash_id=None):
+    def index_crash(
+        self, processed_crash, raw_crash=None, crash_id=None, root_doc=None
+    ):
         if crash_id is None:
             crash_id = str(uuid.UUID(int=random.getrandbits(128)))
 
         if raw_crash is None:
             raw_crash = {}
 
-        doc = {
+        doc = {}
+        if root_doc:
+            doc = dict(root_doc)
+
+        doc.update({
             'crash_id': crash_id,
             'processed_crash': processed_crash,
             'raw_crash': raw_crash,
-        }
+        })
         res = self.connection.index(
             index=self.config.elasticsearch.elasticsearch_index,
             doc_type=self.config.elasticsearch.elasticsearch_doctype,
