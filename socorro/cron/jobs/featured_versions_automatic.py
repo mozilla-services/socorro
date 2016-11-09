@@ -117,6 +117,7 @@ class FeaturedVersionsAutomaticCronApp(BaseCronApp):
             featured.add(versions['LATEST_THUNDERBIRD_DEVEL_VERSION'])
             featured.add(versions['LATEST_THUNDERBIRD_ALPHA_VERSION'])
             featured.add(versions['LATEST_THUNDERBIRD_VERSION'])
+            featured.add(versions['LATEST_THUNDERBIRD_NIGHTLY_VERSION'])
         else:
             raise NotImplementedError(product_name)
 
