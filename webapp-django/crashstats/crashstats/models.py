@@ -1051,57 +1051,6 @@ class RawCrash(SocorroMiddleware):
         return result
 
 
-class CommentsBySignature(SocorroMiddleware):
-
-    URL_PREFIX = '/crashes/comments/'
-
-    deprecation_warning = (
-        "This endpoint is deprecated and will soon cease to exist.\n"
-        "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1304907"
-    )
-
-    required_params = (
-        'signature',
-    )
-
-    possible_params = (
-        'products',
-        'versions',
-        'os',
-        'start_date',
-        'end_date',
-        'build_ids',
-        'reasons',
-        'report_process',
-        'report_type',
-        'plugin_in',
-        'plugin_search_mode',
-        'plugin_terms',
-        'result_number',
-        'result_offset'
-    )
-
-    aliases = {
-        'start_date': 'from',
-        'end_date': 'to'
-    }
-
-    API_WHITELIST = {
-        'hits': (
-            'user_comments',
-            'date_processed',
-            'uuid',
-        ),
-        # deliberately not including:
-        #    email
-    }
-
-    API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL, 'EMAILREMOVED'),
-        ('user_comments', scrubber.URL, 'URLREMOVED'),
-    )
-
-
 class CrashesByExploitability(SocorroMiddleware):
 
     URL_PREFIX = '/crashes/exploitability/'
