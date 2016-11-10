@@ -371,7 +371,9 @@ def signature_correlations(request, params):
     context = {}
 
     context['channel'] = 'release'
-    if 'version' in params and params['version']:
+    if 'release_channel' in params and len(params['release_channel']) == 1:
+        context['channel'] = params['release_channel'][0]
+    elif 'version' in params and params['version']:
         if all('b' in version for version in params['version']):
             context['channel'] = 'beta'
         elif all('a2' in version for version in params['version']):
