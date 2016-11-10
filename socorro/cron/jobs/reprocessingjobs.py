@@ -13,7 +13,7 @@ from socorro.external.postgresql.dbapi2_util import (
     execute_query_iter,
     execute_no_results,
 )
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 
 
 @using_postgres()

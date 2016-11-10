@@ -5,7 +5,7 @@
 import datetime
 import logging
 
-from socorrolib.lib import BadArgumentError, external_common
+from socorro.lib import BadArgumentError, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 

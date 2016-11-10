@@ -16,7 +16,7 @@ from elasticsearch.helpers import bulk
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorrolib.app import generic_app
+from socorro.app import generic_app
 
 
 class SetupSuperSearchApp(generic_app.App):

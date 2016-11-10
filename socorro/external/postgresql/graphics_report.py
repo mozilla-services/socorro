@@ -6,7 +6,7 @@ import datetime
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import external_common
+from socorro.lib import external_common
 
 
 logger = logging.getLogger("webapi")

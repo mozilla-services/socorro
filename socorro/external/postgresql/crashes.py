@@ -5,7 +5,7 @@
 import datetime
 import logging
 
-from socorrolib.lib import (
+from socorro.lib import (
     MissingArgumentError,
     BadArgumentError,
     datetimeutil,
@@ -541,7 +541,7 @@ class Crashes(PostgreSQLBase):
     def get_exploitability(self, **kwargs):
         """Return a list of exploitable crash reports.
 
-        See socorrolib.lib.external_common.parse_arguments() for all filters.
+        See socorro.lib.external_common.parse_arguments() for all filters.
         """
         now = datetimeutil.utc_now().date()
         lastweek = now - datetime.timedelta(weeks=1)

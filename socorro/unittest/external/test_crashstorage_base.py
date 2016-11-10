@@ -21,7 +21,7 @@ from socorro.external.crashstorage_base import (
     FileDumpsMapping,
     socorrodotdict_to_dict
 )
-from socorrolib.lib.util import DotDict as SocorroDotDict
+from socorro.lib.util import DotDict as SocorroDotDict
 from socorro.unittest.testbase import TestCase
 from configman import Namespace, ConfigurationManager
 from configman.dotdict import DotDict

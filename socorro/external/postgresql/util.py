@@ -6,7 +6,7 @@ import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
 
-import socorrolib.lib.external_common as external_common
+import socorro.lib.external_common as external_common
 
 logger = logging.getLogger("webapi")
 

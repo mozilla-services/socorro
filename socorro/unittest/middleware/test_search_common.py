@@ -7,11 +7,11 @@ import datetime
 from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 
-from socorrolib.lib import BadArgumentError, datetimeutil
+from socorro.lib import BadArgumentError, datetimeutil
 from socorro.middleware.search_common import (
     SearchBase, SearchParam, convert_to_type, get_parameters, restrict_fields
 )
-from socorrolib.unittest.testbase import TestCase
+from socorro.unittest.testbase import TestCase
 
 
 SUPERSEARCH_FIELDS_MOCKED_RESULTS = {

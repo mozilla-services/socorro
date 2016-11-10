@@ -4,7 +4,7 @@
 
 import logging
 
-from socorrolib.lib import (
+from socorro.lib import (
     MissingArgumentError,
     BadArgumentError,
     datetimeutil,

@@ -47,8 +47,8 @@ from socorro.external.statsd.statsd_base import (
 ##    statsd_prefix=processor
 ##    active_list=act  # <-- very important
 
-from socorrolib.lib.transform_rules import Rule
-from socorrolib.lib.converters import change_default
+from socorro.lib.transform_rules import Rule
+from socorro.lib.converters import change_default
 
 from configman import Namespace, class_converter
 

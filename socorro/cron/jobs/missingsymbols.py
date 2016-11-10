@@ -8,7 +8,7 @@ from crontabber.base import BaseCronApp
 from crontabber.mixins import with_postgres_transactions
 
 from socorro.external.postgresql.missing_symbols import MissingSymbols
-from socorrolib.app.socorro_app import App, main
+from socorro.app.socorro_app import App, main
 
 
 @with_postgres_transactions()

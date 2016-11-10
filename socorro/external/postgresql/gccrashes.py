@@ -4,7 +4,7 @@
 
 import datetime
 
-from socorrolib.lib import MissingArgumentError, datetimeutil, external_common
+from socorro.lib import MissingArgumentError, datetimeutil, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
 
 

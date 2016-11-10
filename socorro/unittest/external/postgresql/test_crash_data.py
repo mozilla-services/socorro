@@ -6,7 +6,7 @@ from nose.tools import eq_, ok_, assert_raises
 from configman import ConfigurationManager, Namespace
 from mock import Mock
 
-from socorrolib.lib import (
+from socorro.lib import (
     MissingArgumentError,
     ResourceNotFound,
     ResourceUnavailable

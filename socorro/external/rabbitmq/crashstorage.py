@@ -15,7 +15,7 @@ from configman import (
     class_converter
 )
 from configman.dotdict import DotDict
-from socorrolib.lib.converters import change_default
+from socorro.lib.converters import change_default
 from socorro.external.rabbitmq.connection_context import (
     ConnectionContext,
     ConnectionContextPooled,

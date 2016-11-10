@@ -6,7 +6,7 @@ import pika
 import logging
 
 from configman import Namespace
-from socorrolib.app.generic_app import App, main  # main not used here, but
+from socorro.app.generic_app import App, main  # main not used here, but
 
 
 # To run this script in production:

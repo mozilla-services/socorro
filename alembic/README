@@ -35,7 +35,7 @@ We use a few types not currently supported by SQLAlchemy, so you may
 need to modify the migration slightly.
 
 
-== Helper functions in socorrolib.lib.migrations
+== Helper functions in socorro.lib.migrations
 
 We have a couple helper functions for doing cleanup tasks, and adding custom
 types. These functions and classes are imported by the default template for

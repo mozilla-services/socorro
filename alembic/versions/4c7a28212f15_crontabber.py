@@ -11,7 +11,7 @@ revision = '4c7a28212f15'
 down_revision = '317e15fbf13a'
 
 from alembic import op
-from socorrolib.lib import jsontype
+from socorro.lib import jsontype
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql

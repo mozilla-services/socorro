@@ -66,7 +66,7 @@ dump into a json format.
 }
 """
 
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 
 
 #==============================================================================

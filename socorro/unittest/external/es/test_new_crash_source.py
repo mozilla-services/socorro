@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from nose.tools import eq_
 
-from socorrolib.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now
 from socorro.external.es.new_crash_source import ESNewCrashSource
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 

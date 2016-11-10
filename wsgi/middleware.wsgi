@@ -1,5 +1,5 @@
 import os
-from socorrolib.app.generic_app import main
+from socorro.app.generic_app import main
 from socorro.middleware.middleware_app import MiddlewareApp
 from socorro.webapi.servers import ApacheModWSGI
 import socorro.middleware.middleware_app

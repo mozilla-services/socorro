@@ -4,13 +4,13 @@
 
 from nose.tools import eq_, ok_, assert_raises
 
-from socorrolib.lib import DatabaseError
+from socorro.lib import DatabaseError
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.middleware import search_common
 from socorro.unittest.testbase import TestCase
 
-from socorrolib.lib import util
+from socorro.lib import util
 
 from .unittestbase import PostgreSQLTestCase
 

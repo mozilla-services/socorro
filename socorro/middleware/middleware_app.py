@@ -16,8 +16,8 @@ import time
 import web
 import ujson
 
-from socorrolib.app.generic_app import App, main
-from socorrolib.lib import (
+from socorro.app.generic_app import App, main
+from socorro.lib import (
     MissingArgumentError,
     BadArgumentError,
     ResourceNotFound,

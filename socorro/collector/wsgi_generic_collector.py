@@ -10,10 +10,10 @@ import cStringIO
 
 from contextlib import closing
 
-from socorrolib.lib.ooid import createNewOoid
-from socorrolib.lib.util import DotDict
+from socorro.lib.ooid import createNewOoid
+from socorro.lib.util import DotDict
 from socorro.collector.throttler import DISCARD, IGNORE
-from socorrolib.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now
 from socorro.external.crashstorage_base import MemoryDumpsMapping
 
 from configman import RequiredConfig, Namespace, class_converter

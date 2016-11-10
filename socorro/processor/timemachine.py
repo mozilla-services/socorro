@@ -7,9 +7,9 @@
 
 from datetime import timedelta, datetime
 
-from socorrolib.lib.transform_rules import Rule
+from socorro.lib.transform_rules import Rule
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
-from socorrolib.lib.datetimeutil import string_to_datetime, date_to_string
+from socorro.lib.datetimeutil import string_to_datetime, date_to_string
 
 from configman import Namespace, RequiredConfig, class_converter
 from configman.converters import str_to_timedelta, to_str

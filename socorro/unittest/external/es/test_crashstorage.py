@@ -19,7 +19,7 @@ from socorro.external.es.crashstorage import (
     ESBulkCrashStorage
 )
 from socorro.unittest.external.es.base import ElasticsearchTestCase
-from socorrolib.lib.datetimeutil import string_to_datetime
+from socorro.lib.datetimeutil import string_to_datetime
 
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

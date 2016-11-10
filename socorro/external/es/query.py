@@ -7,7 +7,7 @@ import elasticsearch
 import json
 import re
 
-from socorrolib.lib import (
+from socorro.lib import (
     BadArgumentError,
     DatabaseError,
     MissingArgumentError,
@@ -15,7 +15,7 @@ from socorrolib.lib import (
 )
 from socorro.external.es.base import ElasticsearchBase
 from socorro.external.es.supersearch import BAD_INDEX_REGEX
-from socorrolib.lib import datetimeutil, external_common
+from socorro.lib import datetimeutil, external_common
 
 
 class Query(ElasticsearchBase):

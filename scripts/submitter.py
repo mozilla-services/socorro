@@ -10,9 +10,9 @@ import logging.handlers
 
 import config.submitterconfig as subconf
 
-import socorrolib.lib.ConfigurationManager as configurationManager
+import socorro.lib.ConfigurationManager as configurationManager
 import socorro.collector.submitter as sub
-import socorrolib.lib.util as sutil
+import socorro.lib.util as sutil
 
 import poster
 

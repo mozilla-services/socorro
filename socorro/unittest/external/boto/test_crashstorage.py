@@ -35,7 +35,7 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 from socorro.unittest.testbase import TestCase
 
 
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.

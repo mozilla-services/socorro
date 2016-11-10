@@ -23,9 +23,9 @@ from socorro.external.crashstorage_base import (
     FileDumpsMapping,
     MemoryDumpsMapping
 )
-from socorrolib.lib.ooid import dateFromOoid, depthFromOoid
-from socorrolib.lib.datetimeutil import utc_now
-from socorrolib.lib.util import DotDict
+from socorro.lib.ooid import dateFromOoid, depthFromOoid
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.util import DotDict
 
 
 def dates_to_strings_for_json(obj):

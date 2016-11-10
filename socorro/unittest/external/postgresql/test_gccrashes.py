@@ -6,7 +6,7 @@ import datetime
 
 from nose.tools import eq_, assert_raises
 
-from socorrolib.lib import MissingArgumentError, datetimeutil, util
+from socorro.lib import MissingArgumentError, datetimeutil, util
 from socorro.external.postgresql.gccrashes import GCCrashes
 from socorro.unittest.testbase import TestCase
 from socorro.external.postgresql.connection_context import ConnectionContext

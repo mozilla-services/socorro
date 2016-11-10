@@ -15,8 +15,8 @@ To run it, pass one more more crash IDs like this::
 import logging
 
 from configman import configuration, Namespace
-from socorrolib.lib.util import DotDict
-from socorrolib.lib.converters import change_default
+from socorro.lib.util import DotDict
+from socorro.lib.converters import change_default
 from socorro.external.rabbitmq.connection_context import ConnectionContext
 from socorro.external.rabbitmq.crashstorage import RabbitMQCrashStorage
 from socorro.database.transaction_executor import TransactionExecutor

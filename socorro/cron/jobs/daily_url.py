@@ -17,7 +17,7 @@ from crontabber.mixins import (
     with_single_postgres_transaction
 )
 from socorro.database.cachedIdAccess import IdCache
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 
 SQL = """
 select

@@ -14,7 +14,7 @@ from socorro.processor.legacy_processor import (
   LegacyCrashProcessor,
   create_symbol_path_str
 )
-from socorrolib.lib.datetimeutil import datetimeFromISOdateString, UTC
+from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
 from socorro.unittest.testbase import TestCase
 
 

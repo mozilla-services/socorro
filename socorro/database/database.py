@@ -11,7 +11,7 @@ import functools as ft
 
 db_module = psycopg2
 
-import socorrolib.lib.util as util
+import socorro.lib.util as util
 
 #=================================================================================================================
 class SQLDidNotReturnSingleValue (Exception):
@@ -121,7 +121,7 @@ def transaction_execute_with_retry (database_connection_pool, sql, parameters=No
 class LoggingCursor(psycopg2.extensions.cursor):
   """Use as cursor_factory when getting cursor from connection:
   ...
-  cursor = connection.cursor(cursor_factory = socorrolib.lib.pyscopghelper.LoggingCursor)
+  cursor = connection.cursor(cursor_factory = socorro.lib.pyscopghelper.LoggingCursor)
   cursor.setLogger(someLogger)
   ...
   """

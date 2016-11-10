@@ -7,7 +7,7 @@ from socket import timeout
 from socorro.external.rabbitmq.crashstorage import (
     RabbitMQCrashStorage,
 )
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.database.transaction_executor import (
     TransactionExecutorWithInfiniteBackoff,
     TransactionExecutor

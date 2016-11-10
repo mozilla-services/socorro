@@ -5,7 +5,7 @@
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorrolib.lib import datetimeutil, external_common, BadArgumentError
+from socorro.lib import datetimeutil, external_common, BadArgumentError
 
 
 class Correlations(PostgreSQLBase):

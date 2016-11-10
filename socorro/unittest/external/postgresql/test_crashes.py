@@ -6,7 +6,7 @@ import random
 import datetime
 from nose.tools import eq_, ok_, assert_raises
 
-from socorrolib.lib import (
+from socorro.lib import (
     MissingArgumentError,
     BadArgumentError,
     datetimeutil,

@@ -9,7 +9,7 @@ from PostgreSQL to another database.
 By default, it is configured to move crashes from PostgreSQL to Elasticsearch.
 '''
 
-from socorrolib.app.fetch_transform_save_app import main
+from socorro.app.fetch_transform_save_app import main
 from socorro.collector.crashmover_app import RawAndProcessedCopierApp
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage

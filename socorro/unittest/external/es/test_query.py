@@ -8,14 +8,14 @@ import json
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
-from socorrolib.lib import (
+from socorro.lib import (
     BadArgumentError,
     DatabaseError,
     MissingArgumentError,
     ResourceNotFound,
 )
 from socorro.external.es.query import Query
-from socorrolib.lib import datetimeutil
+from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

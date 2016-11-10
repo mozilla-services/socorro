@@ -6,7 +6,7 @@ import json
 import time
 
 import json_schema_reducer
-from socorrolib.lib.converters import change_default
+from socorro.lib.converters import change_default
 
 from configman import Namespace
 from configman.converters import class_converter, py_obj_to_str
@@ -71,7 +71,7 @@ class BotoCrashStorage(CrashStorageBase):
     )
     required_config.add_option(
         'json_object_hook',
-        default='socorrolib.lib.util.DotDict',
+        default='socorro.lib.util.DotDict',
         from_string_converter=class_converter,
     )
 

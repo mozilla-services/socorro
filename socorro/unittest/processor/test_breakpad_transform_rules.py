@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from configman.dotdict import DotDict as CDotDict
 
 from socorro.unittest.testbase import TestCase
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.processor.breakpad_transform_rules import (
     BreakpadStackwalkerRule,
     BreakpadStackwalkerRule2015,

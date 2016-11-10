@@ -9,9 +9,9 @@ from nose.tools import eq_, ok_
 
 from configman.dotdict import DotDict as CDotDict
 
-import socorrolib.lib.util as sutil
+import socorro.lib.util as sutil
 
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.processor.signature_utilities import (
     AbortSignature,
     CSignatureTool,

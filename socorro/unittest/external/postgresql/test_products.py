@@ -6,7 +6,7 @@ import datetime
 from nose.tools import eq_, ok_
 
 from socorro.external.postgresql.products import ProductVersions, Products
-from socorrolib.lib import datetimeutil
+from socorro.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
 

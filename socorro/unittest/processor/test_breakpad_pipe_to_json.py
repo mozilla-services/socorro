@@ -6,7 +6,7 @@ from nose.tools import eq_, ok_
 
 import socorro.processor.breakpad_pipe_to_json as bpj
 
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.unittest.testbase import TestCase
 
 cannonical_json_dump = {

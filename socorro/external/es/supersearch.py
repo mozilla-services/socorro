@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch_dsl import A, F, Q, Search
-from socorrolib.lib import (
+from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
     datetimeutil,
