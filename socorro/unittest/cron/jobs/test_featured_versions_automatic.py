@@ -223,7 +223,8 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
                 return Response({
                     'LATEST_THUNDERBIRD_VERSION': '45.4.0',
                     'LATEST_THUNDERBIRD_DEVEL_VERSION': '50.0b1',
-                    'LATEST_THUNDERBIRD_ALPHA_VERSION': '51.0a2'
+                    'LATEST_THUNDERBIRD_ALPHA_VERSION': '51.0a2',
+                    'LATEST_THUNDERBIRD_NIGHTLY_VERSION': '52.0a1',
                 })
             else:
                 raise NotImplementedError(url)
@@ -260,7 +261,7 @@ class IntegrationTestFeaturedVersionsAutomatic(IntegrationTestBase):
 
             config.logger.info.assert_called_with(
                 'Set featured versions for Thunderbird to: '
-                '45.4.0, 50.0b1, 51.0a2'
+                '45.4.0, 50.0b1, 51.0a2, 52.0a1'
             )
 
         rows = execute_query_fetchall(
