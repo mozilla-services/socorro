@@ -16,16 +16,16 @@ from contextlib import closing, contextmanager
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorrolib.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now
 from socorro.external.postgresql.dbapi2_util import (
     execute_no_results,
     execute_query_fetchall,
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
-from socorrolib.lib.transform_rules import TransformRuleSystem
-from socorrolib.lib.datetimeutil import datetimeFromISOdateString, UTC
-from socorrolib.lib.ooid import dateFromOoid
-from socorrolib.lib.util import (
+from socorro.lib.transform_rules import TransformRuleSystem
+from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
+from socorro.lib.ooid import dateFromOoid
+from socorro.lib.util import (
     DotDict,
     emptyFilter,
     StrCachingIterator
@@ -199,7 +199,7 @@ class LegacyCrashProcessor(RequiredConfig):
     required_config.namespace('statistics')
     required_config.statistics.add_option(
         'stats_class',
-        default='socorrolib.lib.statistics.StatisticsForStatsd',
+        default='socorro.lib.statistics.StatisticsForStatsd',
         doc='name of a class that will gather statistics',
         from_string_converter=class_converter
     )

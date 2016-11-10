@@ -16,7 +16,7 @@ from django.forms.forms import DeclarativeFieldsMetaclass
 from ratelimit.decorators import ratelimit
 from waffle.decorators import waffle_switch
 
-from socorrolib.lib import BadArgumentError, MissingArgumentError
+from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
 
 import crashstats

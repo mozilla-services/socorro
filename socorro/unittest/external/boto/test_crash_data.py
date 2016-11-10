@@ -6,7 +6,7 @@ from boto.exception import StorageResponseError
 
 from configman import ConfigurationManager
 
-from socorrolib.lib import MissingArgumentError
+from socorro.lib import MissingArgumentError
 from socorro.external.boto.crash_data import SimplifiedCrashData
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.unittest.testbase import TestCase

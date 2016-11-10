@@ -14,8 +14,8 @@ import boto.exception
 from configman import Namespace, RequiredConfig, class_converter
 from configman.converters import str_to_boolean
 
-from socorrolib.lib.converters import change_default
-from socorrolib.lib.ooid import dateFromOoid
+from socorro.lib.converters import change_default
+from socorro.lib.ooid import dateFromOoid
 
 
 class KeyNotFound(Exception):

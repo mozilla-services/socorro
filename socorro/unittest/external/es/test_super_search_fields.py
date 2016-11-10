@@ -6,13 +6,13 @@ import datetime
 import elasticsearch
 from nose.tools import assert_raises, eq_, ok_
 
-from socorrolib.lib import (
+from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
     ResourceNotFound,
 )
 from socorro.external.es.super_search_fields import SuperSearchFields
-from socorrolib.lib import datetimeutil
+from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     SUPERSEARCH_FIELDS,
     ElasticsearchTestCase,

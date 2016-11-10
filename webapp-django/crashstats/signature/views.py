@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
 
-from socorrolib.lib import BadArgumentError
+from socorro.lib import BadArgumentError
 
 from crashstats.base.utils import render_exception, urlencode_obj
 from crashstats.api.views import has_permissions

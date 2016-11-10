@@ -17,11 +17,11 @@ from socorro.external.statsd.statsd_rule_benchmark import (
     CountStackWalkerFailures,
 )
 from socorro.external.statsd.statsd_base import StatsdCounter
-from socorrolib.unittest.lib.test_transform_rules import (
+from socorro.unittest.lib.test_transform_rules import (
     TestRuleTestLaughable,
     TestRuleTestDangerous
 )
-from socorrolib.lib import transform_rules
+from socorro.lib import transform_rules
 from socorro.external.statsd.dogstatsd import StatsClient
 
 #==============================================================================

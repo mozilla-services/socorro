@@ -6,7 +6,7 @@ from .unittestbase import PostgreSQLTestCase
 from nose.tools import eq_, assert_raises
 import datetime
 
-from socorrolib.lib import MissingArgumentError, datetimeutil
+from socorro.lib import MissingArgumentError, datetimeutil
 from socorro.external.postgresql.backfill import Backfill
 from socorro.external.postgresql import staticdata, fakedata
 

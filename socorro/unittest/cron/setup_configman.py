@@ -7,7 +7,7 @@ from mock import Mock
 from collections import Sequence
 
 from socorro.cron.crontabber_app import CronTabber
-from socorrolib.lib.util import SilentFakeLogger
+from socorro.lib.util import SilentFakeLogger
 from socorro.webapi.servers import WebServerBase
 
 from configman import (

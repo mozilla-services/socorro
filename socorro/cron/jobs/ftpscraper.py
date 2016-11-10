@@ -21,8 +21,8 @@ from crontabber.mixins import (
 
 from socorro.cron import buildutil
 
-from socorrolib.app.socorro_app import App, main
-from socorrolib.lib.datetimeutil import string_to_datetime
+from socorro.app.socorro_app import App, main
+from socorro.lib.datetimeutil import string_to_datetime
 
 
 class ScrapersMixin(object):

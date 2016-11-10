@@ -4,7 +4,7 @@
 
 from nose.tools import eq_, ok_
 
-from socorrolib.lib import datetimeutil
+from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,
     SuperSearchWithFields,

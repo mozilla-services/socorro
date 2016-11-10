@@ -11,7 +11,7 @@ revision = '2990eb43b269'
 down_revision = '3860644579f4'
 
 from alembic import op
-from socorrolib.lib.migrations import load_stored_proc
+from socorro.lib.migrations import load_stored_proc
 
 
 def upgrade():

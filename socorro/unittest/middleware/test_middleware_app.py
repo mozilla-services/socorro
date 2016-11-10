@@ -17,14 +17,14 @@ from configman import (
     environment
 )
 
-from socorrolib.lib.util import DotDict
-from socorrolib.lib import (
+from socorro.lib.util import DotDict
+from socorro.lib import (
     MissingArgumentError,
     BadArgumentError,
     ResourceNotFound,
     ResourceUnavailable
 )
-from socorrolib.lib import datetimeutil
+from socorro.lib import datetimeutil
 from socorro.middleware import middleware_app
 from socorro.unittest.testbase import TestCase
 from socorro.webapi.servers import CherryPy

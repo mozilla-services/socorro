@@ -5,13 +5,13 @@
 import datetime
 import elasticsearch
 
-from socorrolib.lib import (
+from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
     ResourceNotFound,
 )
 from socorro.external.es.base import ElasticsearchBase
-from socorrolib.lib import datetimeutil, external_common
+from socorro.lib import datetimeutil, external_common
 
 
 ES_CUSTOM_ANALYZERS = {

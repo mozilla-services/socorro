@@ -5,7 +5,7 @@
 import datetime
 from nose.tools import eq_, assert_raises
 
-from socorrolib.lib import (
+from socorro.lib import (
     MissingArgumentError,
     BadArgumentError,
     datetimeutil,

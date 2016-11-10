@@ -10,7 +10,7 @@ from itertools import islice
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorrolib.lib.transform_rules import Rule
+from socorro.lib.transform_rules import Rule
 
 from socorro import siglists
 

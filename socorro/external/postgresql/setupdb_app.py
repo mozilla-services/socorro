@@ -25,7 +25,7 @@ from sqlalchemy import create_engine, exc
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateTable
 
-from socorrolib.app.socorro_app import App, main
+from socorro.app.socorro_app import App, main
 from socorro.external.postgresql import staticdata, fakedata
 from socorro.external.postgresql.connection_context import (
     get_field_from_pg_database_url

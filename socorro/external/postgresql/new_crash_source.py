@@ -6,10 +6,10 @@ from datetime import timedelta
 
 from configman import Namespace, RequiredConfig, class_converter
 
-from socorrolib.lib.converters import (
+from socorro.lib.converters import (
     change_default,
 )
-from socorrolib.lib.datetimeutil import (
+from socorro.lib.datetimeutil import (
     utc_now,
     string_to_datetime,
 )

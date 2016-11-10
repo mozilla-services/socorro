@@ -83,7 +83,7 @@ the elderly json/dump pairs.
 class JsonDumpStorage
 ---------------------
 
-``socorrolib.lib.JsonDumpStorage`` holds data and implements methods for
+``socorro.lib.JsonDumpStorage`` holds data and implements methods for
 creating and accessing crash files.
 
 **public methods**

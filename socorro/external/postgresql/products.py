@@ -9,9 +9,9 @@ import itertools
 
 import psycopg2
 
-from socorrolib.lib.datetimeutil import string_to_datetime
+from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.postgresql.base import add_param_to_dict, PostgreSQLBase
-from socorrolib.lib import datetimeutil, external_common
+from socorro.lib import datetimeutil, external_common
 from .dbapi2_util import single_row_sql
 
 

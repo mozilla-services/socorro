@@ -17,7 +17,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy import types
 from sqlalchemy.sql import table, column
 
-from socorrolib.lib.migrations import fix_permissions
+from socorro.lib.migrations import fix_permissions
 
 
 class CITEXT(types.UserDefinedType):

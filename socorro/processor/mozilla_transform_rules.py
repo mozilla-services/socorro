@@ -18,14 +18,14 @@ from configman.converters import (
     str_to_python_object,
 )
 
-from socorrolib.lib.ooid import dateFromOoid
-from socorrolib.lib.transform_rules import Rule
-from socorrolib.lib.datetimeutil import (
+from socorro.lib.ooid import dateFromOoid
+from socorro.lib.transform_rules import Rule
+from socorro.lib.datetimeutil import (
     UTC,
     datetimeFromISOdateString,
     datestring_to_weekly_partition
 )
-from socorrolib.lib.context_tools import temp_file_context
+from socorro.lib.context_tools import temp_file_context
 
 from socorro.external.postgresql.dbapi2_util import (
     execute_query_fetchall,

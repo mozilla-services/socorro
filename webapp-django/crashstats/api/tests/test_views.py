@@ -10,7 +10,7 @@ import mock
 import pyquery
 from nose.tools import eq_, ok_
 
-from socorrolib.lib import BadArgumentError, MissingArgumentError
+from socorro.lib import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,

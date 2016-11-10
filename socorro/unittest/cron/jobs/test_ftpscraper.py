@@ -12,10 +12,10 @@ from nose.tools import eq_, ok_, assert_raises
 from crontabber.app import CronTabber
 from crontabber.tests.base import TestCaseBase
 
-from socorrolib.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now
 from socorro.cron.jobs import ftpscraper
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )

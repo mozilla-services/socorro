@@ -75,7 +75,7 @@
     # name: producer_consumer_class
     # doc: the class implements a threaded producer consumer queue
     # converter: configman.converters.class_converter
-    producer_consumer_class='socorrolib.lib.threaded_task_manager.ThreadedTaskManager'
+    producer_consumer_class='socorro.lib.threaded_task_manager.ThreadedTaskManager'
 
 [source]
 

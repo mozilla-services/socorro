@@ -5,14 +5,14 @@
 # XXX this is now deprecated and can be deleted.
 # See https://bugzilla.mozilla.org/show_bug.cgi?id=1299465
 
-from socorrolib.lib import (
+from socorro.lib import (
     MissingArgumentError,
     ResourceNotFound,
     ResourceUnavailable,
     ServiceUnavailable
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorrolib.lib import external_common
+from socorro.lib import external_common
 
 
 class CrashDataBase(object):

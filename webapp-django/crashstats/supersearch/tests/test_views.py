@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse
 
 from waffle.models import Switch
 
-from socorrolib.lib import BadArgumentError
+from socorro.lib import BadArgumentError
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.supersearch.models import SuperSearchUnredacted

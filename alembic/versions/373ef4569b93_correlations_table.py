@@ -9,7 +9,7 @@ Create Date: 2016-04-25 14:11:28.373859
 from alembic import op
 import sqlalchemy as sa
 
-from socorrolib.lib import jsontype
+from socorro.lib import jsontype
 
 # revision identifiers, used by Alembic.
 revision = '373ef4569b93'

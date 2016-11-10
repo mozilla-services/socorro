@@ -12,7 +12,7 @@ import time
 import ujson
 from configman import configuration, Namespace
 
-from socorrolib.lib import BadArgumentError
+from socorro.lib import BadArgumentError
 from socorro.external.es.base import ElasticsearchConfig
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.rabbitmq.crashstorage import (
@@ -33,7 +33,7 @@ import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.server_status
 import socorro.external.boto.crash_data
 
-from socorrolib.app import socorro_app
+from socorro.app import socorro_app
 
 from django.conf import settings
 from django.core.cache import cache

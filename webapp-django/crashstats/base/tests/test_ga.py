@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.core.urlresolvers import reverse
 
-from socorrolib.lib import BadArgumentError
+from socorro.lib import BadArgumentError
 
 from crashstats.crashstats.models import ProductBuildTypes
 from crashstats.base.tests.testbase import DjangoTestCase

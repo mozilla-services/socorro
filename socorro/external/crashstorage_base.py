@@ -12,7 +12,7 @@ import os
 import collections
 import datetime
 
-from socorrolib.lib.util import DotDict as SocorroDotDict
+from socorro.lib.util import DotDict as SocorroDotDict
 
 from configman import Namespace, RequiredConfig
 from configman.converters import classes_in_namespaces_converter, \
@@ -21,7 +21,7 @@ from configman.dotdict import DotDict as ConfigmanDotDict
 
 
 def socorrodotdict_to_dict(sdotdict):
-    """Takes a socorrolib.lib.util.DotDict and returns a dict
+    """Takes a socorro.lib.util.DotDict and returns a dict
 
     This does a complete object traversal converting all instances of the
     things named DotDict to dict so it's deep-copyable.

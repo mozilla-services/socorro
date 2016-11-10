@@ -13,12 +13,12 @@ import raven
 from configman import Namespace
 from configman.converters import class_converter
 
-from socorrolib.app.fetch_transform_save_app import (
+from socorro.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp,
     main
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 

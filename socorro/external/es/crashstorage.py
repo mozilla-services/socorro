@@ -13,8 +13,8 @@ from configman.converters import class_converter, list_converter
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.index_creator import IndexCreator
-from socorrolib.lib.converters import change_default
-from socorrolib.lib.datetimeutil import string_to_datetime
+from socorro.lib.converters import change_default
+from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 

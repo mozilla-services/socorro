@@ -11,10 +11,10 @@ from collections import Mapping
 from configman import Namespace
 from configman.dotdict import DotDict as ConfigmanDotDict
 
-from socorrolib.lib.converters import change_default
+from socorro.lib.converters import change_default
 
-from socorrolib.lib.util import DotDict
-from socorrolib.lib.transform_rules import Rule
+from socorro.lib.util import DotDict
+from socorro.lib.transform_rules import Rule
 
 
 #------------------------------------------------------------------------------

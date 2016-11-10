@@ -8,7 +8,7 @@ import json
 import mock
 from nose.tools import eq_
 
-from socorrolib.lib.util import DotDict
+from socorro.lib.util import DotDict
 from socorro.external.boto.connection_context import (
     DatePrefixKeyBuilder,
     SimpleDatePrefixKeyBuilder,

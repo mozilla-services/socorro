@@ -9,7 +9,7 @@ import time
 import requests_mock
 from nose.tools import assert_raises, eq_, ok_
 
-from socorrolib.lib import BadArgumentError, datetimeutil
+from socorro.lib import BadArgumentError, datetimeutil
 from socorro.middleware import search_common
 from socorro.unittest.external.es.base import (
     ElasticsearchTestCase,

@@ -3,7 +3,7 @@ import datetime
 from nose.tools import eq_
 from crontabber.app import CronTabber
 
-from socorrolib.lib.datetimeutil import utc_now
+from socorro.lib.datetimeutil import utc_now
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,

@@ -5,7 +5,7 @@
 import logging
 import psycopg2
 
-from socorrolib.lib import (
+from socorro.lib import (
     DatabaseError,
     MissingArgumentError,
     external_common,

@@ -22,9 +22,9 @@ the support classifcation rules live here.
 from configman import Namespace
 from configman.converters import to_str
 
-from socorrolib.lib.ver_tools import normalize
-from socorrolib.lib.util import DotDict
-from socorrolib.lib.transform_rules import Rule
+from socorro.lib.ver_tools import normalize
+from socorro.lib.util import DotDict
+from socorro.lib.transform_rules import Rule
 
 from sys import maxint
 

@@ -14,9 +14,9 @@ from configman.dotdict import DotDict as OrderedDotDict
 from configman.converters import (
     str_to_python_object,
 )
-from socorrolib.lib.converters import str_to_classes_in_namespaces_converter
-from socorrolib.lib.datetimeutil import utc_now
-from socorrolib.lib.util import DotDict
+from socorro.lib.converters import str_to_classes_in_namespaces_converter
+from socorro.lib.datetimeutil import utc_now
+from socorro.lib.util import DotDict
 
 
 # Rule sets are defined as lists of lists (or tuples).  As they will be loaded
@@ -37,26 +37,26 @@ from socorrolib.lib.util import DotDict
 #    rule list: a comma delimited list of fully qualified class names that
 #               implement the individual transformation rules.  The API that
 #               these classes must conform to is defined by the rule base class
-#               socorrolib.lib.transform_rules.Rule
+#               socorro.lib.transform_rules.Rule
 default_rule_set = [
     [   # rules to change the internals of the raw crash
         "raw_transform",  # name of the rule
         "processor.json_rewrite",  # a tag in a dotted-form
-        "socorrolib.lib.transform_rules.TransformRuleSystem",  # rule set class
+        "socorro.lib.transform_rules.TransformRuleSystem",  # rule set class
         "apply_all_rules",  # rule set class method to apply rules
         ""  # comma delimited list of fully qualified rule class names
     ],
     [   # rules to transform a raw crash into a processed crash
         "raw_to_processed_transform",
         "processer.raw_to_processed",
-        "socorrolib.lib.transform_rules.TransformRuleSystem",
+        "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         ""
     ],
     [   # post processing of the processed crash
         "processed_transform",
         "processer.processed",
-        "socorrolib.lib.transform_rules.TransformRuleSystem",
+        "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         ""
     ],

@@ -5,7 +5,7 @@
 import json
 import logging
 
-from socorrolib.lib import MissingArgumentError, external_common
+from socorro.lib import MissingArgumentError, external_common
 from socorro.external.postgresql.base import PostgreSQLBase
 
 

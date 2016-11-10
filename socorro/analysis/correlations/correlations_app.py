@@ -11,11 +11,11 @@ import ujson as json
 from configman import Namespace, class_converter
 from configman.dotdict import DotDict
 
-from socorrolib.app.fetch_transform_save_app import (
+from socorro.app.fetch_transform_save_app import (
     FetchTransformSaveWithSeparateNewCrashSourceApp
 )
 
-from socorrolib.lib.datetimeutil import UTC
+from socorro.lib.datetimeutil import UTC
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.postgresql.products import ProductVersions
 from socorro.processor.processor_2015 import rule_sets_from_string
@@ -26,7 +26,7 @@ correlation_rule_sets = [
     [
         "correlation_rules",
         "correlation",
-        "socorrolib.lib.transform_rules.TransformRuleSystem",
+        "socorro.lib.transform_rules.TransformRuleSystem",
         "apply_all_rules",
         "socorro.analysis.correlations.core_count_rule"
         ".CorrelationCoreCountRule, "
