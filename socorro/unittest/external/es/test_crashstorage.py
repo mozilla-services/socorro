@@ -53,6 +53,10 @@ a_processed_crash = {
         'largest_free_vm_block': '0x2F42',
         'tiny_block_size': 42,
         'write_combine_size': 43,
+        'system_info': {
+            'cpu_count': 42,
+            'os': 'Linux',
+        },
     },
     'install_age': 22385,
     'last_crash': None,
@@ -425,6 +429,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "largest_free_vm_block",
             "tiny_block_size",
             "write_combine_size",
+            "system_info",
         ]
         modified_config.es_redactor = DotDict()
         modified_config.es_redactor.redactor_class = Redactor

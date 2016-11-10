@@ -280,6 +280,7 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
             "largest_free_vm_block",
             "tiny_block_size",
             "write_combine_size",
+            "system_info",
         ],
         from_string_converter=list_converter,
     )
