@@ -21,27 +21,29 @@ window.correlations = (function () {
     }
 
     function loadChannelsData(product) {
-        if (correlationData[product]) {
-            return Promise.resolve();
-        }
+        return Promise.resolve()
+        .then(function () {
+            if (correlationData[product]) {
+                return;
+            }
 
-        return fetch(getDataURL(product) + 'all.json.gz')
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (totals) {
-            correlationData[product] = {
-                'date': totals['date'],
-            };
-
-            ['release', 'beta', 'aurora', 'nightly'].forEach(function (ch) {
-                correlationData[product][ch] = {
-                    'total': totals[ch],
-                    'signatures': {},
+            return fetch(getDataURL(product) + 'all.json.gz')
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (totals) {
+                correlationData[product] = {
+                    'date': totals['date'],
                 };
+
+                ['release', 'beta', 'aurora', 'nightly'].forEach(function (ch) {
+                    correlationData[product][ch] = {
+                        'total': totals[ch],
+                        'signatures': {},
+                    };
+                });
             });
-        })
-        .catch(handleError);
+        });
     }
 
     function loadCorrelationData(signature, channel, product) {
@@ -61,13 +63,12 @@ window.correlations = (function () {
             })
             .then(function (data) {
                 correlationData[product][channel]['signatures'][signature] = data;
-            })
-            .catch(handleError);
+            });
         })
+        .catch(handleError)
         .then(function () {
             return correlationData;
-        })
-        .catch(handleError);
+        });
     }
 
     function itemToLabel(item) {
