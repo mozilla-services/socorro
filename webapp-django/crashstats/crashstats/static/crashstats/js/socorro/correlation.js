@@ -33,7 +33,7 @@ window.correlations = (function () {
                 return null;
             }
 
-            return fetch(getDataURL(product) + 'all.json.gz')
+            return fetch(dataURL + 'all.json.gz')
             .then(function (response) {
                 return response.json();
             })
