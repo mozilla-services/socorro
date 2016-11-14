@@ -23,6 +23,7 @@ ROOT = os.path.abspath(
 def path(*dirs):
     return os.path.join(ROOT, *dirs)
 
+
 # Debugging displays nice error messages, but leaks memory. Set this to False
 # on all server instances and True only for development.
 DEBUG = config('DEBUG', False, cast=bool)
