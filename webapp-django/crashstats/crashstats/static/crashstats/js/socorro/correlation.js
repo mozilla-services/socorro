@@ -16,7 +16,7 @@ window.correlations = (function () {
         } else if (product === 'FennecAndroid') {
             return 'https://analysis-output.telemetry.mozilla.org/top-fennec-signatures-correlations/data/';
         } else {
-            return '';
+            return null;
         }
     }
 
