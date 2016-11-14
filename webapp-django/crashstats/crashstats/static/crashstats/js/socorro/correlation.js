@@ -16,7 +16,7 @@ window.correlations = (function () {
         } else if (product === 'FennecAndroid') {
             return 'https://analysis-output.telemetry.mozilla.org/top-fennec-signatures-correlations/data/';
         } else {
-            throw new Error('Unknown product: ' + product);
+            return '';
         }
     }
 
@@ -24,7 +24,13 @@ window.correlations = (function () {
         return Promise.resolve()
         .then(function () {
             if (correlationData[product]) {
-                return;
+                return correlationData[product];
+            }
+
+            var dataURL = getDataURL(product);
+            if (!dataURL) {
+                console.warn('Correlation results unavailable for the "' + product + '" product.');
+                return null;
             }
 
             return fetch(getDataURL(product) + 'all.json.gz')
@@ -42,14 +48,17 @@ window.correlations = (function () {
                         'signatures': {},
                     };
                 });
+            })
+            .then(function () {
+                return correlationData[product];
             });
         });
     }
 
     function loadCorrelationData(signature, channel, product) {
         return loadChannelsData(product)
-        .then(function () {
-            if (signature in correlationData[product][channel]['signatures']) {
+        .then(function (channelsData) {
+            if (!channelsData || signature in channelsData[channel]['signatures']) {
                 return;
             }
 
@@ -141,14 +150,17 @@ window.correlations = (function () {
         .then(function (data) {
 
             if (!data[product]) {
-                return 'No correlation data was generated for the \'' + product + '\' product.';
+                return 'No correlation data was generated for the "' + product + '" product.';
             }
 
             if (!data[product][channel]['signatures'][signature] || !data[product][channel]['signatures'][signature]['results']) {
-                return 'No correlation data was generated for the signature "' + signature + '" on the ' + channel + ' channel, for the \'' + product + '\' product.';
+                return 'No correlation data was generated for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
             }
 
             var correlationData = data[product][channel]['signatures'][signature]['results'];
+            if (correlationData.length === 0) {
+                return 'No correlations found for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
+            }
 
             var total_reference = data[product][channel].total;
             var total_group = data[product][channel]['signatures'][signature].total;
