@@ -16,38 +16,49 @@ window.correlations = (function () {
         } else if (product === 'FennecAndroid') {
             return 'https://analysis-output.telemetry.mozilla.org/top-fennec-signatures-correlations/data/';
         } else {
-            throw new Error('Unknown product: ' + product);
+            return null;
         }
     }
 
     function loadChannelsData(product) {
-        if (correlationData[product]) {
-            return Promise.resolve();
-        }
+        return Promise.resolve()
+        .then(function () {
+            if (correlationData[product]) {
+                return correlationData[product];
+            }
 
-        return fetch(getDataURL(product) + 'all.json.gz')
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (totals) {
-            correlationData[product] = {
-                'date': totals['date'],
-            };
+            var dataURL = getDataURL(product);
+            if (!dataURL) {
+                console.warn('Correlation results unavailable for the "' + product + '" product.');
+                return null;
+            }
 
-            ['release', 'beta', 'aurora', 'nightly'].forEach(function (ch) {
-                correlationData[product][ch] = {
-                    'total': totals[ch],
-                    'signatures': {},
+            return fetch(dataURL + 'all.json.gz')
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (totals) {
+                correlationData[product] = {
+                    'date': totals['date'],
                 };
+
+                ['release', 'beta', 'aurora', 'nightly'].forEach(function (ch) {
+                    correlationData[product][ch] = {
+                        'total': totals[ch],
+                        'signatures': {},
+                    };
+                });
+            })
+            .then(function () {
+                return correlationData[product];
             });
-        })
-        .catch(handleError);
+        });
     }
 
     function loadCorrelationData(signature, channel, product) {
         return loadChannelsData(product)
-        .then(function () {
-            if (signature in correlationData[product][channel]['signatures']) {
+        .then(function (channelsData) {
+            if (!channelsData || signature in channelsData[channel]['signatures']) {
                 return;
             }
 
@@ -61,13 +72,12 @@ window.correlations = (function () {
             })
             .then(function (data) {
                 correlationData[product][channel]['signatures'][signature] = data;
-            })
-            .catch(handleError);
+            });
         })
+        .catch(handleError)
         .then(function () {
             return correlationData;
-        })
-        .catch(handleError);
+        });
     }
 
     function itemToLabel(item) {
@@ -140,14 +150,17 @@ window.correlations = (function () {
         .then(function (data) {
 
             if (!data[product]) {
-                return 'No correlation data was generated for the \'' + product + '\' product.';
+                return 'No correlation data was generated for the "' + product + '" product.';
             }
 
             if (!data[product][channel]['signatures'][signature] || !data[product][channel]['signatures'][signature]['results']) {
-                return 'No correlation data was generated for the signature "' + signature + '" on the ' + channel + ' channel, for the \'' + product + '\' product.';
+                return 'No correlation data was generated for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
             }
 
             var correlationData = data[product][channel]['signatures'][signature]['results'];
+            if (correlationData.length === 0) {
+                return 'No correlations found for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
+            }
 
             var total_reference = data[product][channel].total;
             var total_group = data[product][channel]['signatures'][signature].total;
