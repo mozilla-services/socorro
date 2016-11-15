@@ -14,7 +14,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.forms.forms import DeclarativeFieldsMetaclass
 
 from ratelimit.decorators import ratelimit
-from waffle.decorators import waffle_switch
 
 from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -214,7 +213,6 @@ def is_valid_model_class(model):
 
 
 @csrf_exempt
-@waffle_switch('!app_api_all_disabled')
 @ratelimit(
     key='ip',
     method=['GET', 'POST', 'PUT'],
@@ -451,7 +449,6 @@ def model_wrapper(request, model_name):
     return result, headers
 
 
-@waffle_switch('!app_api_all_disabled')
 def documentation(request):
     endpoints = []
 
