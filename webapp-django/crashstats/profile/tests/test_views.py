@@ -16,7 +16,7 @@ class TestViews(BaseTestViews):
             assert '_columns' in params
             assert '_sort' in params
             assert 'email' in params
-            assert params['email'] == ['test@mozilla.com']
+            assert params['email'] == ['test@example.com']
 
             results = {
                 'hits': [
@@ -35,7 +35,7 @@ class TestViews(BaseTestViews):
 
         def mocked_supersearch_get_no_data(**params):
             assert 'email' in params
-            assert params['email'] == ['test@mozilla.com']
+            assert params['email'] == ['test@example.com']
 
             return {
                 'hits': [],
@@ -64,7 +64,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
         ok_('1234abcd-ef56-7890-ab12-abcdef130801' in response.content)
         ok_('1234abcd-ef56-7890-ab12-abcdef130802' in response.content)
-        ok_('test@mozilla.com' in response.content)
+        ok_('test@example.com' in response.content)
 
         SuperSearchUnredacted.implementation().get.side_effect = (
             mocked_supersearch_get_no_data
@@ -73,7 +73,7 @@ class TestViews(BaseTestViews):
         # Test with no results.
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        ok_('test@mozilla.com' in response.content)
+        ok_('test@example.com' in response.content)
         ok_('no crash report' in response.content)
 
         # Make some permissions.

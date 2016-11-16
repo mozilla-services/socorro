@@ -1,3 +1,11 @@
+{% macro sensitive_warning(your_crash) -%}
+    {% if your_crash %}
+    You can only see this because it is your crash!
+    {% else %}
+    This is super sensitive data! Be careful how you use it!
+    {% endif %}
+{%- endmacro %}
+
 {% extends "crashstats_base.html" %}
 
 {% block site_css %}
@@ -300,12 +308,12 @@
                                 </td>
                             </tr>
                             {% endif %}
-                            {% if request.user.has_perm('crashstats.view_exploitability') %}
+                            {% if request.user.has_perm('crashstats.view_exploitability') or your_crash %}
                             <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
                                 <th scope="row">Exploitability</th>
                                 <td>
                                     {% if report.exploitability %}
-                                    {{ report.exploitability }} - This is super sensitive data! Be careful how you use it!
+                                    {{ report.exploitability }} - {{ sensitive_warning(your_crash) }}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -313,12 +321,12 @@
 
                             {# Personal user info #}
 
-                            {% if request.user.has_perm('crashstats.view_pii') %}
+                            {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
                             <tr title="{{ fields_desc['processed_crash.url'] }}">
                                 <th scope="row">URL</th>
                                 <td>
                                     {% if raw.URL %}
-                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - This is super sensitive data! Be careful how you use it!
+                                    <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a> - {{ sensitive_warning(your_crash) }}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -326,7 +334,7 @@
                                 <th scope="row">Email Address</th>
                                 <td>
                                     {% if raw.Email %}
-                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - This is super sensitive data! Be careful how you use it!
+                                    <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a> - {{ sensitive_warning(your_crash) }}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -335,7 +343,7 @@
                                 <th scope="row">User Comments</th>
                                 <td>
                                     {% if report.user_comments %}
-                                    {% if request.user.has_perm('crashstats.view_pii') %}
+                                    {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
                                     {{ report.user_comments | linebreaks }}
                                     {% else %}
                                     {{ report.user_comments | scrub_pii | linebreaks }}

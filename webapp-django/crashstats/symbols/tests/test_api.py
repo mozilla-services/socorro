@@ -89,7 +89,7 @@ class TestAPI(BaseTestViews):
         results = json.loads(response.content)
         eq_(results['total'], 0)
 
-        assert user.email == 'test@mozilla.com', user.email
+        assert user.email == 'test@example.com', user.email
         response = self.client.get(url, dict(params, user_search='TEST'))
         eq_(response.status_code, 200)
         results = json.loads(response.content)
