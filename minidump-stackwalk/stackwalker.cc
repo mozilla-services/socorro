@@ -115,13 +115,13 @@ const unsigned kMaxThreadFrames = 100;
 const unsigned kTailFramesWhenTruncating = 10;
 
 static string ToHex(uint64_t value) {
-  char buffer[17];
+  char buffer[32];
   sprintf(buffer, "0x%lx", value);
   return buffer;
 }
 
 static string ToInt(uint64_t value) {
-  char buffer[17];
+  char buffer[32];
   sprintf(buffer, "%ld", value);
   return buffer;
 }
