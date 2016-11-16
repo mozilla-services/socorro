@@ -248,7 +248,7 @@ void print_frame(const StackFrame& frame, const StackFrame& last_frame)
   } else if (frame.module &&
              (!last_frame.module ||
               frame.module->code_file() != last_frame.module->code_file())) {
-    printf("%s+0x%lx\n", PathnameStripper::File(frame.module->code_file()).c_str(), frame.instruction - frame.module->base_address());
+    printf("%s+0x%llx\n", PathnameStripper::File(frame.module->code_file()).c_str(), frame.instruction - frame.module->base_address());
   }
 }
 
@@ -351,7 +351,7 @@ int main(int argc, char** argv)
           "the instruction pointer from the exception record");
   }
 
-  printf("Faulting instruction pointer: 0x%08lx\n", instruction_pointer);
+  printf("Faulting instruction pointer: 0x%08llx\n", instruction_pointer);
   const u_int8_t* bytes = region->GetMemory();
   if (disassemble) {
     curl = curl_easy_init();
@@ -385,7 +385,7 @@ int main(int argc, char** argv)
       error("Unknown CPU architecture");
     }
     char cmdline[1024];
-    sprintf(cmdline, "%s -b binary -m %s -M %s --adjust-vma=0x%lx -D \"%s\"",
+    sprintf(cmdline, "%s -b binary -m %s -M %s --adjust-vma=0x%llx -D \"%s\"",
             objdump, arch, archopts, region->GetBase(), tempfile);
     FILE* fp = popen(cmdline, "r");
     if (!fp) {
@@ -444,7 +444,7 @@ int main(int argc, char** argv)
     const int kBytesPerLine = 16;
     for (unsigned int i = 0; i < region->GetSize(); i++) {
       if ((i % kBytesPerLine) == 0) {
-        printf("\n%08lx  ", region->GetBase() + i);
+        printf("\n%08llx  ", region->GetBase() + i);
       }
       printf("%02x ", bytes[i]);
     }

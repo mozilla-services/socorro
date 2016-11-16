@@ -71,19 +71,19 @@ void print_frame(const StackFrame* frame) {
       printf("!%s", frame->function_name.c_str());
       if (!frame->source_file_name.empty()) {
         string source_file = PathnameStripper::File(frame->source_file_name);
-        printf(" [%s : %d + 0x%lx]",
+        printf(" [%s : %d + 0x%llx]",
                source_file.c_str(),
                frame->source_line,
                frame->instruction - frame->source_line_base);
       } else {
-        printf(" + 0x%lx", frame->instruction - frame->function_base);
+        printf(" + 0x%llx", frame->instruction - frame->function_base);
       }
     } else {
-      printf(" + 0x%lx",
+      printf(" + 0x%llx",
              frame->instruction - frame->module->base_address());
     }
   } else {
-    printf("0x%lx", frame->instruction);
+    printf("0x%llx", frame->instruction);
   }
   printf("\n");
 }
@@ -290,7 +290,7 @@ int main(int argc, char** argv)
       resolver.FillSourceLineInfo(frame);
       if (!frame->function_name.empty() || show_all) {
         if (wordsize == 8) {
-          printf("0x%016lx: ", addr);
+          printf("0x%016llx: ", addr);
         }
         else {
           printf("0x%08x: ", (u_int32_t)addr);
