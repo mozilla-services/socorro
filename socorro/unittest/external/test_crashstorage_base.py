@@ -51,7 +51,23 @@ class B(A):
     required_config.add_option('z', default=2)
 
 
+class NonMutatingProcessedCrashCrashStorage(CrashStorageBase):
+    def save_raw_and_processed(
+        self,
+        raw_crash,
+        dump,
+        processed_crash,
+        crash_id
+    ):
+        # This is sort of a lie, but we lie so that we can verify the code went
+        # through the right path.
+        del processed_crash['foo']
+
+
 class MutatingProcessedCrashCrashStorage(CrashStorageBase):
+    def is_mutator(self):
+        return True
+
     def save_raw_and_processed(
         self,
         raw_crash,
@@ -404,6 +420,45 @@ class TestBase(TestCase):
             # This test makes sure that the dict processed_crash here
             # is NOT affected.
             eq_(processed_crash['foo'], 'bar')
+
+    def test_polycrashstorage_processed_immutability_with_nonmutating(self):
+        """Verifies if a crash storage says it doesn't mutate the class that "
+        we don't do a deepcopy
+
+        """
+        n = Namespace()
+        n.add_option(
+            'storage',
+            default=PolyCrashStorage,
+        )
+        n.add_option(
+            'logger',
+            default=mock.Mock(),
+        )
+        value = {
+            'storage_classes': (
+                'socorro.unittest.external.test_crashstorage_base'
+                '.NonMutatingProcessedCrashCrashStorage'
+            ),
+        }
+        cm = ConfigurationManager(n, values_source_list=[value])
+        with cm.context() as config:
+            raw_crash = {'ooid': '12345'}
+            dump = '12345'
+            processed_crash = {'foo': 'bar'}
+
+            poly_store = config.storage(config)
+
+            poly_store.save_raw_and_processed(
+                raw_crash,
+                dump,
+                processed_crash,
+                'n'
+            )
+            # We have a crashstorage that says it's not mutating, but deletes a
+            # key so that we can verify that the code went down the right path
+            # in the processor.
+            assert 'foo' not in processed_crash
 
     def test_poly_crash_storage_immutability_deeper(self):
         n = Namespace()
