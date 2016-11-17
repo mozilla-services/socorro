@@ -629,11 +629,11 @@ class PolyCrashStorage(CrashStorageBase):
         for a_store in self.stores.itervalues():
             self.quit_check()
             try:
-                store_class = getattr(
-                    a_store, 'wrapped_object', a_store.__class__
+                store_instance = getattr(
+                    a_store, 'wrapped_object', a_store
                 )
 
-                if store_class.is_mutator():
+                if store_instance.is_mutator():
                     # We do this because `a_store.save_raw_and_processed`
                     # expects the processed crash to be a DotDict but
                     # you can't deepcopy those, so we deepcopy the
@@ -650,6 +650,9 @@ class PolyCrashStorage(CrashStorageBase):
                     crash_id
                 )
             except Exception:
+                store_class = getattr(
+                    a_store, 'wrapped_object', a_store.__class__
+                )
                 self.logger.error(
                     '%r failed (crash id: %s)',
                     store_class,
