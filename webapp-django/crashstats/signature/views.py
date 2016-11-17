@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
 
+from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
 from crashstats.base.utils import render_exception, urlencode_obj
@@ -65,6 +66,7 @@ def pass_validated_params(view):
     return inner
 
 
+@csp_update(CONNECT_SRC='analysis-output.telemetry.mozilla.org')
 @pass_validated_params
 @pass_default_context
 def signature_report(request, params, default_context=None):

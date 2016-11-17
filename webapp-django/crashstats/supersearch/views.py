@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 
 from ratelimit.decorators import ratelimit
-
+from csp.decorators import csp_update
 from waffle.decorators import waffle_switch
 
 from socorro.lib import BadArgumentError
@@ -276,6 +276,7 @@ def search_fields(request):
     return form.get_fields_list(exclude=exclude)
 
 
+@csp_update(IMG_SRC='data:')
 @waffle_switch('!supersearch-custom-query-disabled')
 @permission_required('crashstats.run_custom_queries')
 @pass_default_context

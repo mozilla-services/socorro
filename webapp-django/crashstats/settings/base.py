@@ -118,6 +118,7 @@ MIDDLEWARE_CLASSES = (
     # Make sure this is *before* the `RatelimitMiddleware` middleware.
     'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
 
+    'csp.middleware.CSPMiddleware',
     'waffle.middleware.WaffleMiddleware',
     'ratelimit.middleware.RatelimitMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
@@ -731,3 +732,28 @@ LAST_LOGIN_MAX = config(
 
 
 GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
+
+CSP_DEFAULT_SRC = (
+    "'self'",
+)
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "'unsafe-eval'",  # Needed because of jquery-tablesorter.min.js :(
+    'apis.google.com',
+    'www.google-analytics.com',
+)
+CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",
+)
+CSP_IMG_SRC = (
+    "'self'",
+    'https://www.google-analytics.com',
+)
+CSP_CHILD_SRC = (
+    "'self'",
+    'accounts.google.com',  # Google Sign-In uses an iframe
+)
+CSP_CONNECT_SRC = (
+    "'self'",
+)
