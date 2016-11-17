@@ -1,0 +1,174 @@
+{
+ "version": 1,
+ "hasMozMallocUsableSize": true,
+ "reports": [
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "private",
+   "kind": 2,
+   "units": 0,
+   "amount": 182346923,
+   "description": "The number of ghost windows present (the number of nodes underneath explicit/window-objects/top(none)/ghost, modulo race conditions).  A ghost window is not shown in any tab, does not share a domain with any non-detached windows, and has met these criteria for at least memory.ghost_window_timeout_seconds, or has survived a round of about:memory's minimize memory usage button.\n\nGhost windows can happen legitimately, but they are often indicative of leaks in the browser or add-ons."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "ghost-windows",
+   "kind": 2,
+   "units": 1,
+   "amount": 7,
+   "description": "The number of ghost windows present (the number of nodes underneath explicit/window-objects/top(none)/ghost, modulo race conditions).  A ghost window is not shown in any tab, does not share a domain with any non-detached windows, and has met these criteria for at least memory.ghost_window_timeout_seconds, or has survived a round of about:memory's minimize memory usage button.\n\nGhost windows can happen legitimately, but they are often indicative of leaks in the browser or add-ons."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "vsize-max-contiguous",
+   "kind": 2,
+   "units": 0,
+   "amount": 2834628,
+   "description": "description for vsize-max-contiguous..."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "vsize-max-contiguous",
+   "kind": 2,
+   "units": 0,
+   "amount": 5824618,
+   "description": "description for vsize-max-contiguous..."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "explicit/js-non-window/zones/zone(0x7f3f83a0c000)/scopes/gc-heap",
+   "kind": 0,
+   "units": 0,
+   "amount": 951328,
+   "description": "Scope information for scripts."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "ghost-windows",
+   "kind": 2,
+   "units": 1,
+   "amount": 0,
+   "description": "The number of ghost windows present (the number of nodes underneath explicit/window-objects/top(none)/ghost, modulo race conditions).  A ghost window is not shown in any tab, does not share a domain with any non-detached windows, and has met these criteria for at least memory.ghost_window_timeout_seconds, or has survived a round of about:memory's minimize memory usage button.\n\nGhost windows can happen legitimately, but they are often indicative of leaks in the browser or add-ons."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "heap-allocated",
+   "kind": 2,
+   "units": 0,
+   "amount": 216793184,
+   "description": "The same as 'heap-committed/allocated'."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "resident",
+   "kind": 2,
+   "units": 0,
+   "amount": 123518976,
+   "description": "Memory mapped by the process that is present in physical memory, also known as the resident set size (RSS).  This is the best single figure to use when considering the memory resources used by the process, but it depends both on other processes being run and details of the OS kernel and so is best used for comparing the memory usage of a single process at different points in time."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "explicit/heap-overhead/bin-unused",
+   "kind": 0,
+   "units": 0,
+   "amount": 12121776,
+   "description": "Unused bytes due to fragmentation in the bins used for 'small' (<= 2 KiB) allocations. These bytes will be used if additional allocations occur."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "explicit/window-objects/top(none)/detached/window([system])/dom/event-targets",
+   "kind": 1,
+   "units": 0,
+   "amount": 45678901,
+   "description": "Memory used by the event targets table in a window's DOM, and the objects it points to, which include XHRs."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "explicit/heap-overhead/bookkeeping",
+   "kind": 0,
+   "units": 0,
+   "amount": 2361584,
+   "description": "Committed bytes which the heap allocator uses for internal data structures."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "heap-allocated",
+   "kind": 2,
+   "units": 0,
+   "amount": 20655576,
+   "description": "The same as 'heap-committed/allocated'."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "resident",
+   "kind": 2,
+   "units": 0,
+   "amount": 330346496,
+   "description": "Memory mapped by the process that is present in physical memory, also known as the resident set size (RSS).  This is the best single figure to use when considering the memory resources used by the process, but it depends both on other processes being run and details of the OS kernel and so is best used for comparing the memory usage of a single process at different points in time."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "resident-unique",
+   "kind": 2,
+   "units": 0,
+   "amount": 253452288,
+   "description": "Memory mapped by the process that is present in physical memory and not shared with any other processes.  This is also known as the process's unique set size (USS).  This is the amount of RAM we'd expect to be freed if we closed this process."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "resident-unique",
+   "kind": 2,
+   "units": 0,
+   "amount": 56209408,
+   "description": "Memory mapped by the process that is present in physical memory and not shared with any other processes.  This is also known as the process's unique set size (USS).  This is the amount of RAM we'd expect to be freed if we closed this process."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "system-heap-allocated",
+   "kind": 2,
+   "units": 0,
+   "amount": 234567,
+   "description": "Memory used by the system allocator that is currently allocated to the application. This is distinct from the jemalloc heap that Firefox uses for most or all of its heap allocations. Ideally this number is zero, but on some platforms we cannot force every heap allocation through jemalloc."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "system-heap-allocated",
+   "kind": 2,
+   "units": 0,
+   "amount": 123456,
+   "description": "Memory used by the system allocator that is currently allocated to the application. This is distinct from the jemalloc heap that Firefox uses for most or all of its heap allocations. Ideally this number is zero, but on some platforms we cannot force every heap allocation through jemalloc."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "vsize",
+   "kind": 2,
+   "units": 0,
+   "amount": 1481437184,
+   "description": "Memory mapped by the process, including code and data segments, the heap, thread stacks, memory explicitly mapped by the process via mmap and similar operations, and memory shared with other processes. This is the vsize figure as reported by 'top' and 'ps'.  This figure is of limited use on Mac, where processes share huge amounts of memory with one another.  But even on other operating systems, 'resident' is a much better measure of the memory resources used by the process."
+  },
+  {
+   "process": "Web Content (pid 11717)",
+   "path": "vsize",
+   "kind": 2,
+   "units": 0,
+   "amount": 905883648,
+   "description": "Memory mapped by the process, including code and data segments, the heap, thread stacks, memory explicitly mapped by the process via mmap and similar operations, and memory shared with other processes. This is the vsize figure as reported by 'top' and 'ps'.  This figure is of limited use on Mac, where processes share huge amounts of memory with one another.  But even on other operating systems, 'resident' is a much better measure of the memory resources used by the process."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "gfx-surface-image",
+   "kind": 2,
+   "units": 0,
+   "amount": 7655,
+   "description": "Memory used by gfx surface of the given type."
+  },
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "decommitted/js-non-window/gc-heap/decommitted-arenas",
+   "kind": 0,
+   "units": 0,
+   "amount": 4894720,
+   "description": "GC arenas in non-empty chunks that is decommitted, i.e. it takes up address space but no physical memory or swap space."
+  }
+ ]
+}

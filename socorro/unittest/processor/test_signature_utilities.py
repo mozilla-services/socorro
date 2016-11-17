@@ -1053,7 +1053,7 @@ def create_basic_fake_processor():
     fake_processor.c_signature_tool = c_signature_tool
     fake_processor.config = DotDict()
     # need help figuring out failures? switch to FakeLogger and read stdout
-    fake_processor.config.logger = sutil.SilentFakeLogger()
+    fake_processor.config.logger = mock.MagicMock()
     #fake_processor.config.logger = sutil.FakeLogger()
     return fake_processor
 

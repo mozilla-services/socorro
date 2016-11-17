@@ -43,6 +43,13 @@ class MemoryReportExtraction(Rule):
         return True
 
     def _get_memory_measures(self, memory_report, pid):
+        if (
+            'version' not in memory_report or
+            'reports' not in memory_report or
+            'hasMozMallocUsableSize' not in memory_report
+        ):
+            raise ValueError('not a recognisable memory reports')
+
         explicit_heap = 0
         explicit_nonheap = 0
         pid_found = False
@@ -112,5 +119,14 @@ class MemoryReportExtraction(Rule):
 
         if not pid_found:
             raise ValueError('no measurements found for pid {}'.format(pid))
+
+        # Nb: sometimes heap-unclassified is negative due to bogus measurements
+        # of some kind. We just show the negative value anyway.
+        all_metrics['heap-unclassified'] = (
+            all_metrics['heap-allocated'] - explicit_heap
+        )
+        all_metrics['explicit'] = (
+            all_metrics['heap-allocated'] + explicit_nonheap
+        )
 
         return all_metrics
