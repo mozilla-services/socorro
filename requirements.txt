@@ -148,9 +148,9 @@ path.py==5.1 \
 pep8==1.7.0 \
     --hash=sha256:4fc2e478addcf17016657dff30b2d8d611e8341fac19ccf2768802f6635d7b8a \
     --hash=sha256:a113d5f5ad7a7abacef9df5ec3f2af23a20a28005921577b15dd584d099d5900
-pyflakes==1.0.0 \
-    --hash=sha256:071d121e9e7b33058aa1ba5de7bce9b97bfa3149cfe1acbb6587c21fc1c8eda1 \
-    --hash=sha256:f39e33a4c03beead8774f005bd3ecf0c3f2f264fa0201de965fce0aff1d34263
+pyflakes==1.3.0 \
+    --hash=sha256:ad89dafee8ca32282116209a0ca4dff050bdc343af958721d5517d242c1215d5 \
+    --hash=sha256:a4f93317c97a9d9ed71d6ecfe08b68e3de9fea3f4d94dcd1d9d83ccbf929bc31
 pyhs2==0.6.0 \
     --hash=sha256:16aef41cc4e3d9a4a3e3a597481451aa8b26ba3e68bda2c820b1fef708206e21
 sasl==0.1.3 \
@@ -182,12 +182,12 @@ pyasn1==0.1.9 \
 django-nose==1.4.3 \
     --hash=sha256:19b8daf4cd5e66603dc58018f0384117097de18714775338cdb76a94d48d8966 \
     --hash=sha256:92f7433367011746cc3cbd3d5e67dcc11066c8b8567b9a514948eeea11fa5843
-flake8==2.5.2 \
-    --hash=sha256:07bbc7bfb6a35fbb973851a6465f8d94768f5e73f0c4fd4789f886834055c484 \
-    --hash=sha256:3dbee9045b68ed19e35fbe9da58f3407debcad16eca38b36f78dd695eca4ca6c
-mccabe==0.3.1 \
-    --hash=sha256:bd6c080fb372aebcb0ce19e35ddac744f2abf5a7befa207db2d1097d48efe63a \
-    --hash=sha256:5f7ea6fb3aa9afe146d07fd6d5cedf788747d8b0c29e44732453c2b2db1e3d16
+flake8==3.1.1 \
+    --hash=sha256:898dd353948860c25569cc2298942d20f021021d920dc553dc35f732ee647794 \
+    --hash=sha256:941fa78f61f2524cb7aee4aa4fe9876f4b0dcf5aba9fabd3e780d24918f498b7
+mccabe==0.5.2 \
+    --hash=sha256:91cc38b2c7636aaf1903e06d96ee960fb3dff9ca3afc595627c9a638f8e86d2b \
+    --hash=sha256:3473f06c8b757bbb5cdf295099bf64032e5f7d6fe0ec2f97ee9b23cb0a435aff
 python-decouple==2.3 \
     --hash=sha256:b9fbf747fa8e711d330f2f436b9b2ecf5eed9eb67a637ca81abcd11c2abedec8
 dj-database-url==0.3.0 \
@@ -317,3 +317,8 @@ rsa==3.4.2 \
 json-schema-reducer==0.1.4 \
     --hash=sha256:b6fbe437361e0ec14f5c05daf752604834bd9abe5af9ab6bdcb05ea1f8df1df6 \
     --hash=sha256:41c674275c2650dadb7f8af1193640ca41eb863926985ecda5bfee93aef265c0
+pycodestyle==2.2.0 \
+    --hash=sha256:60c4e1c36f301ac539a550a29e9d16862069ec240472d86e5e71c4fc645829cb \
+    --hash=sha256:df81dc3293e0123e2e8d1f2aaf819600e4ae287d8b3af8b72181af50257e5d9a
+configparser==3.5.0 \
+    --hash=sha256:5308b47021bc2340965c371f0f058cc6971a04502638d4244225c49d80db273a

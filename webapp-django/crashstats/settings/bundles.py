@@ -317,12 +317,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/gccrashes.min.js',
     },
-    'daily': {
-        'source_filenames': (
-            'crashstats/js/socorro/daily.js',
-        ),
-        'output_filename': 'js/daily.min.js',
-    },
     'home': {
         'source_filenames': (
             'home/js/home.js',

@@ -590,42 +590,35 @@ class TestViews(BaseTestViews):
         self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
-            'date': '>=2014-12-25',
-            'date': '<=2015-01-01'
+            'date': ['>=2014-12-25', '<=2015-01-01'],
         })
 
         # Check the the earliest given start date becomes start_date
         self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
-            'date': '>=2014-12-25',
-            'date': '>=2014-12-28',
-            'date': '<=2015-01-01'
+            'date': ['>=2014-12-25', '>=2014-12-28', '<=2015-01-01'],
         })
 
         # Check the the latest given end date becomes end_date
         self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
-            'date': '>=2014-12-25',
-            'date': '<=2014-12-29',
-            'date': '<=2015-01-01'
+            'date': ['>=2014-12-25', '<=2014-12-29', '<=2015-01-01'],
         })
 
         # If date starts with >, check that start_date is 1 day more
         self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
-            'date': '>2014-12-24',
-            'date': '<=2015-01-01'
+            'date': ['>2014-12-24', '<=2015-01-01'],
         })
 
         # If date starts with <, check that end_date is 1 day less
         self.client.get(url, {
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
-            'date': '>=2014-12-25',
-            'date': '<2015-01-02'
+            'date': ['>=2014-12-25', '<2015-01-02'],
         })
 
         # If no start date was given, check it is 7 days less than end_date
