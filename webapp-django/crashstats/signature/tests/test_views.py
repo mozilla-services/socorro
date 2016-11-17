@@ -605,8 +605,6 @@ class TestViews(BaseTestViews):
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': ['>=2014-12-25', '<=2014-12-29', '<=2015-01-01'],
-            # 'date': '<=2014-12-29',
-            # 'date': '<=2015-01-01'
         })
 
         # If date starts with >, check that start_date is 1 day more
@@ -614,7 +612,6 @@ class TestViews(BaseTestViews):
             'signature': [DUMB_SIGNATURE],
             'product': ['WaterWolf'],
             'date': ['>2014-12-24', '<=2015-01-01'],
-            # 'date': '<=2015-01-01'
         })
 
         # If date starts with <, check that end_date is 1 day less
