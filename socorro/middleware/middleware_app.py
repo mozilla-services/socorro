@@ -43,7 +43,7 @@ SERVICES_LIST = (
     (r'/correlations/(.*)', 'correlations.Correlations'),
     (
         r'/crashes/'
-        r'(comments|count_by_day|daily|frequency|signatures|'
+        r'(count_by_day|daily|signatures|'
         r'signature_history|exploitability)/(.*)',
         'crashes.Crashes'
     ),
@@ -51,10 +51,6 @@ SERVICES_LIST = (
     (r'/products/(.*)', 'products.Products'),  # deprecated
     (r'/query/', 'query.Query'),
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
-    (r'/report/(list)/(.*)', 'report.Report'),
-    (r'/signaturesummary/(.*)', 'signature_summary.SignatureSummary'),
-    (r'/signatureurls/(.*)', 'signature_urls.SignatureURLs'),
-    (r'/util/(versions_info)/(.*)', 'util.Util'),
     (r'/healthcheck/', 'healthcheck.Healthcheck'),
 )
 
