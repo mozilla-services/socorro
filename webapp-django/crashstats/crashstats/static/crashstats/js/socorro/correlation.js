@@ -153,17 +153,19 @@ window.correlations = (function () {
                 return 'No correlation data was generated for the "' + product + '" product.';
             }
 
-            if (!data[product][channel]['signatures'][signature] || !data[product][channel]['signatures'][signature]['results']) {
+            var signatureData = data[product][channel]['signatures'][signature];
+
+            if (!signatureData || !signatureData['results']) {
                 return 'No correlation data was generated for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
             }
 
-            var correlationData = data[product][channel]['signatures'][signature]['results'];
+            var correlationData = signatureData['results'];
             if (correlationData.length === 0) {
                 return 'No correlations found for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
             }
 
             var total_reference = data[product][channel].total;
-            var total_group = data[product][channel]['signatures'][signature].total;
+            var total_group = signatureData.total;
 
             var results = sortCorrelationData(correlationData, total_reference, total_group)
             .map(function (line) {
@@ -171,6 +173,10 @@ window.correlations = (function () {
                 var percentRef = toPercentage(line.count_reference / total_reference);
                 return '(' + percentGroup + '% in signature vs ' + percentRef + '% overall) ' + itemToLabel(line.item);
             });
+
+            results.push('');
+            results.push('Top words: ' + signatureData['top_words'].join(', '));
+
             return results;
         })
         .catch(handleError);
