@@ -155,11 +155,11 @@ window.correlations = (function () {
 
             var signatureData = data[product][channel]['signatures'][signature];
 
-            if (!signatureData || !signatureData['results']) {
+            if (!signatureData || !signatureData.results) {
                 return 'No correlation data was generated for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
             }
 
-            var correlationData = signatureData['results'];
+            var correlationData = signatureData.results;
             if (correlationData.length === 0) {
                 return 'No correlations found for the signature "' + signature + '" on the "' + channel + '" channel, for the "' + product + '" product.';
             }
@@ -175,7 +175,7 @@ window.correlations = (function () {
             });
 
             results.push('');
-            results.push('Top words: ' + signatureData['top_words'].join(', '));
+            results.push('Top words: ' + signatureData.top_words.join(', '));
 
             return results;
         })
