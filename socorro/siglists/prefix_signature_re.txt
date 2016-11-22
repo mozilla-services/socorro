@@ -143,6 +143,7 @@ _RTC_Terminate
 Rtl.*
 _Rtl.*
 __Rtl.*
+__rust_start_panic
 SEC_.*Item
 seckey_.*
 SECKEY_.*
