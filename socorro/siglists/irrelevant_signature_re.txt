@@ -9,6 +9,7 @@ __aeabi_fcmpgt.*
 ashmem
 app_process@0x.*
 core\.odex@0x.*
+core::panicking::.*
 CrashStatsLogForwarder::CrashAction
 _CxxThrowException
 dalvik-heap
@@ -46,6 +47,7 @@ PR_WaitCondVar
 RaiseException
 RtlpAdjustHeapLookasideDepth
 std::_Atomic_fetch_add_4
+std::panicking::.*
 system@framework@.*\.jar@classes\.dex@0x.*
 ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
 WaitForSingleObjectExImplementation
