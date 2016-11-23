@@ -22,6 +22,7 @@ from socorro.processor.signature_utilities import (
     SignatureGenerationRule,
     SignatureJitCategory,
     SignatureRunWatchDog,
+    SigTrim,
     SigTrunc,
     SignatureShutdownTimeout,
     SignatureIPCMessageName,
@@ -1602,6 +1603,60 @@ class TestAbortSignature(TestCase):
         eq_(processed_crash.original_signature, 'hello')
         expected_sig = 'Abort | hello'
         eq_(processed_crash.signature, expected_sig)
+
+
+#==============================================================================
+class TestSigTrim(TestCase):
+
+    #--------------------------------------------------------------------------
+    def get_config(self):
+        fake_processor = create_basic_fake_processor()
+        return fake_processor.config
+
+    #--------------------------------------------------------------------------
+    def test_predicate_no_match(self):
+        config = self.get_config()
+        rule = SigTrim(config)
+
+        processed_crash = DotDict()
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+        processed_crash.signature = 42
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(not predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_predicate(self):
+        config = self.get_config()
+        rule = SigTrim(config)
+
+        processed_crash = DotDict()
+        processed_crash.signature = 'fooo::baar'
+
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        ok_(predicate_result)
+
+    #--------------------------------------------------------------------------
+    def test_action_success(self):
+        config = self.get_config()
+        rule = SigTrim(config)
+        processed_crash = DotDict()
+
+        processed_crash.signature = 'all   good'
+        action_result = rule.action({}, {}, processed_crash, {})
+        ok_(action_result)
+        eq_(processed_crash.signature, 'all   good')
+
+        processed_crash.signature = 'all   good     '
+        action_result = rule.action({}, {}, processed_crash, {})
+        ok_(action_result)
+        eq_(processed_crash.signature, 'all   good')
+
+        processed_crash.signature = '    all   good  '
+        action_result = rule.action({}, {}, processed_crash, {})
+        ok_(action_result)
+        eq_(processed_crash.signature, 'all   good')
 
 
 #==============================================================================
