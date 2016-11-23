@@ -5,7 +5,6 @@ import datetime
 import isodate
 import functools
 import json
-import time
 import re
 from collections import OrderedDict
 
@@ -21,15 +20,6 @@ class DateTimeEncoder(json.JSONEncoder):
             return obj.isoformat()
 
         return json.JSONEncoder.default(self, obj)
-
-
-def unixtime(value, millis=False, format='%Y-%m-%d'):
-    d = datetime.datetime.strptime(value, format)
-    epoch_seconds = time.mktime(d.timetuple())
-    if millis:
-        return epoch_seconds * 1000 + d.microsecond / 1000
-    else:
-        return epoch_seconds
 
 
 def parse_isodate(ds):
