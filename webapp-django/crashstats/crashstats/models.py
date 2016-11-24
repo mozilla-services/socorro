@@ -1317,15 +1317,6 @@ class CorrelationsSignatures(SocorroMiddleware):
     )
 
 
-class Field(SocorroMiddleware):
-
-    URL_PREFIX = '/field/'
-
-    required_params = (
-        'name',
-    )
-
-
 class CrashesCountByDay(SocorroMiddleware):
 
     cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.

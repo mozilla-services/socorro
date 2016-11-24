@@ -47,7 +47,6 @@ SERVICES_LIST = (
         r'signature_history|exploitability)/(.*)',
         'crashes.Crashes'
     ),
-    (r'/field/(.*)', 'field.Field'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/(.*)', 'products.Products'),  # deprecated
     (r'/query/', 'query.Query'),

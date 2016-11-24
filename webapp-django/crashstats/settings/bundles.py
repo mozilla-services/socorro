@@ -354,12 +354,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/manage-featured-versions.min.js',
     },
-    'manage:fields': {
-        'source_filenames': (
-            'manage/js/fields.js',
-        ),
-        'output_filename': 'js/manage-fields.min.js',
-    },
     'manage:graphics_devices': {
         'source_filenames': (
             'manage/js/graphics_devices.js',

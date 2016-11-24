@@ -108,7 +108,7 @@ class TestViews(BaseTestViews):
         # certain links on that page
         featured_versions_url = reverse('manage:featured_versions')
         ok_(featured_versions_url in response.content)
-        fields_url = reverse('manage:fields')
+        fields_url = reverse('manage:supersearch_fields')
         ok_(fields_url in response.content)
         users_url = reverse('manage:users')
         ok_(users_url in response.content)
@@ -215,58 +215,6 @@ class TestViews(BaseTestViews):
         eq_(event.action, 'featured_versions.update')
         eq_(event.extra['success'], True)
         eq_(event.extra['data'], {'WaterWolf': ['18.0.1']})
-
-    def test_fields(self):
-        url = reverse('manage:fields')
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-
-        self._login()
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-
-    @mock.patch('requests.get')
-    def test_field_lookup(self, rget):
-        url = reverse('manage:field_lookup')
-
-        response = self.client.get(url)
-        eq_(response.status_code, 302)
-
-        self._login()
-        response = self.client.get(url)
-        # missing 'name' parameter
-        eq_(response.status_code, 400)
-
-        def mocked_get(url, params, **options):
-            assert '/field' in url
-
-            ok_('name' in params)
-            eq_('Android_Display', params['name'])
-
-            return Response({
-                "name": "Android_Display",
-                "product": None,
-                "transforms": {
-                    "1.X processed json": "",
-                    "collector:raw json": "",
-                    "data name": "Android_Display",
-                    "database": "",
-                    "mdsw pipe dump": "",
-                    "pj transform": "",
-                    "processed json 2012": "",
-                    "processor transform": "",
-                    "ted's mdsw json": ""
-                }
-            })
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url, {'name': 'Android_Display'})
-        eq_(response.status_code, 200)
-
-        data = json.loads(response.content)
-        eq_(data['product'], None)
-        eq_(len(data['transforms']), 9)
 
     def test_users_page(self):
         url = reverse('manage:users')

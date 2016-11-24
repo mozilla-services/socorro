@@ -785,25 +785,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             eq_(response.data['total'], 1)
             eq_(response.data['hits'][0]['user_comments'], 'crap')
 
-    def test_field(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/field/',
-                {'name': 'something'}
-            )
-            eq_(response.data, {
-                'name': None,
-                'transforms': None,
-                'product': None
-            })
-
     def test_priorityjobs(self):
         config_manager = self._setup_config_manager()
 
