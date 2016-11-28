@@ -200,9 +200,9 @@ window.correlations = (function () {
 
                 // If the rule has a prior that alters its distribution significantly, print it after the rule.
                 if (line.prior) {
-                  let percentGroupGivenPrior = toPercentage(line.prior.count_group / line.prior.total_group);
-                  let percentRefGivenPrior = toPercentage(line.prior.count_reference / line.prior.total_reference);
-                  result += ' [' + percentGroupGivenPrior + '% vs ' + percentRefGivenPrior + '% if ' + itemToLabel(line.prior.item) + ']'
+                    var percentGroupGivenPrior = toPercentage(line.prior.count_group / line.prior.total_group);
+                    var percentRefGivenPrior = toPercentage(line.prior.count_reference / line.prior.total_reference);
+                    result += ' [' + percentGroupGivenPrior + '% vs ' + percentRefGivenPrior + '% if ' + itemToLabel(line.prior.item) + ']'
                 }
 
                 return result;
