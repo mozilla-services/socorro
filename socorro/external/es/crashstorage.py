@@ -303,6 +303,10 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         )
     )
 
+    def is_mutator(self):
+        # This crash storage mutates the crash, so we mark it as such.
+        return True
+
     #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):

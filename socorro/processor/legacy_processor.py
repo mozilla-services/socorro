@@ -853,7 +853,7 @@ class LegacyCrashProcessor(RequiredConfig):
         java_stack_trace,
         submitted_timestamp,
         processor_notes
-        ):
+    ):
         with closing(dump_analysis_line_iterator) as mdsw_iter:
             processed_crash_update = self._analyze_header(
                 crash_id,

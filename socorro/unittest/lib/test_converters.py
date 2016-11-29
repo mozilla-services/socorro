@@ -216,8 +216,9 @@ class TestConverters(TestCase):
         config = cm.get_config()
 
         self.assertEqual(len(config.kls_list.subordinate_namespace_names), 4)
-        for i, (a_class_name, a_class, ns_name) in \
-            enumerate(config.kls_list.class_list):
+        for i, (a_class_name, a_class, ns_name) in (
+            enumerate(config.kls_list.class_list)
+        ):
             self.assertTrue(isinstance(a_class_name, str))
             self.assertEqual(a_class_name, a_class.__name__)
             self.assertEqual(ns_name, "%s_%02d" % (a_class_name, i))

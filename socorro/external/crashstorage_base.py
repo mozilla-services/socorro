@@ -232,6 +232,14 @@ class CrashStorageBase(RequiredConfig):
         """some implementations may need explicit closing."""
         pass
 
+    def is_mutator(self):
+        """Whether this storage class mutates the crash or not
+
+        By default, crash storage classes don't mutate the crash.
+
+        """
+        return False
+
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """this method that saves  both the raw_crash and the dump, must be
@@ -621,22 +629,28 @@ class PolyCrashStorage(CrashStorageBase):
         for a_store in self.stores.itervalues():
             self.quit_check()
             try:
-                a_store.save_raw_and_processed(
-                    raw_crash,
-                    dump,
+                actual_store = getattr(a_store, 'wrapped_object', a_store)
+
+                if hasattr(actual_store, 'is_mutator') and actual_store.is_mutator():
                     # We do this because `a_store.save_raw_and_processed`
                     # expects the processed crash to be a DotDict but
                     # you can't deepcopy those, so we deepcopy the
                     # pure dict version and then dress it back up as a
                     # DotDict.
-                    SocorroDotDict(copy.deepcopy(processed_crash_as_dict)),
+                    crash = SocorroDotDict(copy.deepcopy(processed_crash_as_dict))
+                else:
+                    crash = processed_crash
+
+                a_store.save_raw_and_processed(
+                    raw_crash,
+                    dump,
+                    crash,
                     crash_id
                 )
             except Exception:
                 store_class = getattr(
                     a_store, 'wrapped_object', a_store.__class__
                 )
-
                 self.logger.error(
                     '%r failed (crash id: %s)',
                     store_class,

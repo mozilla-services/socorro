@@ -253,6 +253,10 @@
                         }
                     }
                 },
+                "pid": {
+                    "type": ["integer", "null"],
+                    "description": "Process ID of the crashing process."
+                },
                 "status": {
                     "type": ["string", "null"],
                     "description": "Status of the output of the stackwalker. Can be \"OK\", \"ERROR_*\" or \"SYMBOL_SUPPLIER_INTERRUPTED\"."

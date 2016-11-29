@@ -49,7 +49,8 @@ class IntegrationTestPriorityjobs(TestCase):
 
         # with new config
         with patch(
-            'socorro.external.rabbitmq.priorityjobs.pika') as mocked_pika:
+            'socorro.external.rabbitmq.priorityjobs.pika'
+        ) as mocked_pika:
             jobs = priorityjobs.Priorityjobs(config=self.config)
             mocked_connection =  self.config.rabbitmq.rabbitmq_class
             mocked_connection.return_value.return_value = MagicMock()

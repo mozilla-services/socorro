@@ -73,6 +73,7 @@ using google_breakpad::ExploitabilityRating;
 using google_breakpad::Minidump;
 using google_breakpad::MinidumpMemoryInfo;
 using google_breakpad::MinidumpMemoryInfoList;
+using google_breakpad::MinidumpMiscInfo;
 using google_breakpad::MinidumpModule;
 using google_breakpad::MinidumpProcessor;
 using google_breakpad::PathnameStripper;
@@ -114,13 +115,13 @@ const unsigned kMaxThreadFrames = 100;
 const unsigned kTailFramesWhenTruncating = 10;
 
 static string ToHex(uint64_t value) {
-  char buffer[17];
+  char buffer[32];
   sprintf(buffer, "0x%lx", value);
   return buffer;
 }
 
 static string ToInt(uint64_t value) {
-  char buffer[17];
+  char buffer[32];
   sprintf(buffer, "%ld", value);
   return buffer;
 }
@@ -1190,6 +1191,13 @@ int main(int argc, char** argv)
                               http_symbol_supplier, root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
+
+  // Get the PID.
+  MinidumpMiscInfo* misc_info = minidump.GetMiscInfo();
+  if (misc_info && misc_info->misc_info() &&
+      (misc_info->misc_info()->flags1 & MD_MISCINFO_FLAGS1_PROCESS_ID)) {
+    root["pid"] = misc_info->misc_info()->process_id;
+  }
 
   // See if this is a Linux dump with /proc/cpuinfo in it
   uint32_t cpuinfo_length = 0;

@@ -152,8 +152,9 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         placeholder_list = []
         # create a list of values to go into the reports table
         value_list = []
-        for pro_crash_name, report_name, length in \
-            self._reports_table_mappings:
+        for pro_crash_name, report_name, length in (
+            self._reports_table_mappings
+        ):
             column_list.append(report_name)
             placeholder_list.append('%s')
             value = processed_crash[pro_crash_name]
@@ -460,4 +461,3 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
             'uuid': crash_id
         }
         execute_no_results(connection, upsert_sql, values)
-
