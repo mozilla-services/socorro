@@ -37,6 +37,7 @@
 #include <vector>
 #include <set>
 #include <cstdlib>
+#include <stdexcept>
 
 #include <errno.h>
 #include <getopt.h>
