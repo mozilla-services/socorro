@@ -6,7 +6,7 @@ from boto.exception import StorageResponseError
 
 from configman import ConfigurationManager
 
-from socorro.lib import MissingArgumentError
+from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.external.boto.crash_data import SimplifiedCrashData
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.unittest.testbase import TestCase
@@ -153,4 +153,10 @@ class TestSimplifiedCrashData(TestCase):
             MissingArgumentError,
             boto_s3_store.get,
             uuid='0bba929f-8721-460c-dead-a43c20071027',
+        )
+        assert_raises(
+            BadArgumentError,
+            boto_s3_store.get,
+            uuid='0bba929f-8721-460c-dead-a43c20071027',
+            datatype='junk',
         )
