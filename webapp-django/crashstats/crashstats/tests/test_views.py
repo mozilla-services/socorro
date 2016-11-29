@@ -3016,6 +3016,51 @@ class TestViews(BaseTestViews):
         ok_('https://embarrassing.example.com' in response.content)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
+    def test_report_index_not_your_crash(self, rget, rpost):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        rpost.side_effect = mocked_post_123
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                copied = copy.deepcopy(_SAMPLE_META)
+                copied['Email'] = 'peterbe@example.com'
+                copied['URL'] = 'https://embarrassing.example.com'
+                return copied
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['exploitability'] = 'Unknown Exploitability'
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        url = reverse('crashstats:report_index', args=[crash_id])
+
+        # You sign in, but a different email address from that in the
+        # raw crash. Make sure that doesn't show the sensitive data
+        self._login(email='someone@example.com')
+        response = self.client.get(url)
+        ok_('Exploitability</th>' not in response.content)
+        ok_('Unknown Exploitability' not in response.content)
+        ok_('peterbe@example.com' not in response.content)
+        ok_('https://embarrassing.example.com' not in response.content)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_report_index_raw_crash_not_found(self, rpost):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
