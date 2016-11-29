@@ -790,6 +790,23 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
     @minimum_es_version('1.0')
+    def test_get_with_too_many_facets(self):
+        # Some crazy big number
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            _facets=['signature'],
+            _facets_size=999999,
+        )
+
+        # 10,000 is the max,
+        # should not raise an error
+        self.api.get(
+            _facets=['signature'],
+            _facets_size=10000,
+        )
+
+    @minimum_es_version('1.0')
     def test_get_with_no_facets(self):
         self.index_crash({
             'signature': 'js::break_your_browser',

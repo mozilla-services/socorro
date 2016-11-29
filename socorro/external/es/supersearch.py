@@ -231,6 +231,17 @@ class SuperSearch(SearchBase):
                             )
                     elif param.name == '_facets_size':
                         facets_size = param.value[0]
+                        # Why cap it?
+                        # Because if the query is covering a lot of different
+                        # things you can get a really really large query
+                        # which can hog resources excessively.
+                        # Downloading, as an example, 100k facets (and 0 hits)
+                        # when there is plenty of data yields a 11MB JSON
+                        # file.
+                        if facets_size > 10000:
+                            raise BadArgumentError(
+                                '_facets_size greater than 10,000'
+                            )
 
                     for f in self.histogram_fields:
                         if param.name == '_histogram_interval.%s' % f:
