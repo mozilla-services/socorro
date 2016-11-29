@@ -22,7 +22,6 @@ from crashstats.crashstats.models import (
     ProductVersions,
     Releases,
     ReleasesFeatured,
-    Field,
     GraphicsDevices,
     Platforms,
     Reprocessing,
@@ -138,23 +137,6 @@ def update_featured_versions(request):
 
     url = reverse('manage:featured_versions')
     return redirect(url)
-
-
-@superuser_required
-def fields(request, default_context=None):
-    context = default_context or {}
-    return render(request, 'manage/fields.html', context)
-
-
-@superuser_required
-@json_view
-def field_lookup(request):
-    name = request.GET.get('name', '').strip()
-    if not name:
-        return http.HttpResponseBadRequest("Missing 'name'")
-
-    api = Field()
-    return api.get(name=name)
 
 
 @superuser_required
