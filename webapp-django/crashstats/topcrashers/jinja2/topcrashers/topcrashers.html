@@ -19,8 +19,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 
 {% block content %}
     <div id="mainbody"
-        data-correlations-base="{{ url('crashstats:correlations_json') }}"
-        data-correlations-sig-base="{{ url('crashstats:correlations_signatures_json') }}"
         data-product="{{ product }}"
         data-version="{{ version }}"
         data-loading-img="{{ static('img/loading.png') }}"
@@ -239,12 +237,9 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                         </td>
                         <td class="correlation-cell">
                             <div class="correlation-panel">
-                                <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
+                                <div class="top"><span></span></div><a class="correlation-toggler" href="#">Load</a>
                                 <div class="complete">
-                                    <h3>Based on <span class="osname">{{ crash.correlation_os }}</span> crashes</h3>
-                                    <div class="correlation-module"><h3>CPU</h3><div class="core-counts"></div></div>
-                                    <div class="correlation-module"><h3>Add-ons</h3><div class="interesting-addons"></div></div>
-                                    <div class="correlation-module"><h3>Modules</h3><div class="interesting-modules"></div></div>
+                                    <pre></pre>
                                 </div>
                             </div>
                         </td>
