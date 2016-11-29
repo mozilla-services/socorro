@@ -4,19 +4,13 @@ from django.conf import settings
 
 from . import views
 
+
 products = r'/products/(?P<product>\w+)'
 versions = r'/versions/(?P<versions>[;\w\.()]+)'
 version = r'/versions/(?P<version>[;\w\.()]+)'
-crash_type = r'/crash_type/(?P<crash_type>\w+)'
-start_date = r'/start_date/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})'
-end_date = r'/end_date/(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})'
-date_range_type = r'/date_range_type/(?P<date_range_type>\w+)'
-# putting a * on the following regex so we allow URLs to be things like
-# `.../os_name/` without any default value which the view function will
-# take care of anyway
-os_name = r'/os_name/(?P<os_name>[\w\s]*)'
-result_count = r'/result_count/(?P<result_count>\d+)'
+
 perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
+
 
 urlpatterns = patterns(
     '',  # prefix
@@ -32,36 +26,6 @@ urlpatterns = patterns(
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
-    url('^topcrasher' + products + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + date_range_type + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + date_range_type +
-        crash_type + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + date_range_type +
-        crash_type + os_name + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + date_range_type +
-        crash_type + os_name + result_count + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + crash_type + os_name + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + crash_type + '$',
-        views.topcrasher,
-        name='topcrasher'),
-    url('^topcrasher' + products + versions + os_name + '$',
-        views.topcrasher,
-        name='topcrasher'),
     url('^daily$',
         views.daily,
         name='daily'),
@@ -89,11 +53,6 @@ urlpatterns = patterns(
         name='quick_search'),
     url(r'^buginfo/bug', views.buginfo,
         name='buginfo'),
-    url(r'^topcrasher/plot_signature/(?P<product>\w+)/(?P<versions>[;\w\.()]+)'
-        r'/(?P<start_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/'
-        r'(?P<end_date>[0-9]{4}-[0-9]{2}-[0-9]{2})/(?P<signature>.*)',
-        views.plot_signature,
-        name='plot_signature'),
     url(r'^rawdumps/(?P<crash_id>[\w-]{36})-(?P<name>\w+)\.'
         r'(?P<extension>json|dmp|json\.gz)$',
         views.raw_data,
@@ -199,16 +158,6 @@ urlpatterns = patterns(
     url(r'^products/(?P<product>\w+)/versions/(?P<versions>[;\w\.()]+)/$',
         RedirectView.as_view(
             url='/home/products/%(product)s/versions/%(versions)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^topcrasher/byversion/(?P<product>\w+)/(?P<versions>[;\w\.()]+)$',
-        RedirectView.as_view(
-            url='/topcrasher/products/%(product)s/versions/%(versions)s',
-            permanent=perm_legacy_redirect
-        )),
-    url(r'^topcrasher' + products + '/versions/$',
-        RedirectView.as_view(
-            url='/topcrasher/products/%(product)s',
             permanent=perm_legacy_redirect
         )),
     url('^home' + products + '/versions/$',

@@ -143,12 +143,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/tokens.min.css',
     },
-    'old_topcrashers': {
-        'source_filenames': (
-            'crashstats/css/topcrashers.less',
-        ),
-        'output_filename': 'css/old-topcrashers.min.css',
-    },
     'topcrashers': {
         'source_filenames': (
             'topcrashers/css/topcrashers.less',
@@ -239,12 +233,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/utils.js',
         ),
         'output_filename': 'js/socorro-utils.min.js',
-    },
-    'topcrash': {
-        'source_filenames': (
-            'crashstats/js/socorro/topcrash.js',
-        ),
-        'output_filename': 'js/topcrash.min.js',
     },
     'topcrashers': {
         'source_filenames': (

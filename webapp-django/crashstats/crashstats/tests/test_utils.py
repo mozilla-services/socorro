@@ -13,15 +13,6 @@ from crashstats.crashstats import utils
 
 class TestUtils(TestCase):
 
-    def test_unixtime(self):
-        format = '%Y-%m-%d'
-        value = datetime.datetime.strptime('2012-01-01', format)
-        actual = utils.unixtime(value.strftime(format), millis=False,
-                                format=format)
-        expected = 1325376000
-
-        eq_(actual, expected)
-
     def test_daterange(self):
         format = '%Y-%m-%d'
         start_date = datetime.datetime.strptime('2012-01-01', format)
