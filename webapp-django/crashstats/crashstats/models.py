@@ -808,6 +808,9 @@ class TCBS(SocorroMiddleware):
 
 class ProcessedCrash(SocorroMiddleware):
 
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1308218#c5
+    cache_seconds = 0
+
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
     implementation_config_namespace = 'data'
 
@@ -892,6 +895,9 @@ class ProcessedCrash(SocorroMiddleware):
 
 class UnredactedCrash(ProcessedCrash):
 
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1308218#c5
+    cache_seconds = 0
+
     defaults = {
         'datatype': 'unredacted',
     }
@@ -920,6 +926,9 @@ class RawCrash(SocorroMiddleware):
     To access any of the raw dumps (e.g. format=raw) you need an API
     token that carries the "View Raw Dumps" permission.
     """
+
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1308218#c5
+    cache_seconds = 0
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
     implementation_config_namespace = 'data'
