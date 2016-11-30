@@ -21,6 +21,7 @@ from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
 
+from socorro.lib import BadArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
 from . import forms, models, utils
 from .decorators import pass_default_context
@@ -788,13 +789,16 @@ def crashes_per_day(request, default_context=None):
         supersearch_params['platform'].append('Mac')
         supersearch_params['platform'].remove('Mac OS X')
 
-    graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
-        supersearch_params,
-        start_date,
-        end_date,
-        platforms,
-        _date_range_type
-    )
+    try:
+        graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
+            supersearch_params,
+            start_date,
+            end_date,
+            platforms,
+            _date_range_type
+        )
+    except BadArgumentError as exception:
+        return http.HttpResponseBadRequest(unicode(exception))
 
     render_csv = request.GET.get('format') == 'csv'
     data_table = {
