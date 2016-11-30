@@ -559,6 +559,11 @@ if raven_dsn:
     RAVEN_CONFIG = {
         'dsn': raven_dsn,
         'release': SOCORRO_REVISION,
+        'processors': (
+            # Note! This processor extends the default
+            # SanitizePasswordsProcessor to also scrub 'Auth-Token'.
+            'crashstats.tokens.utils.RavenSanitizeAuthTokenProcessor',
+        )
     }
 
 # The Mozilla Google Analytics ID is used here as a default.
