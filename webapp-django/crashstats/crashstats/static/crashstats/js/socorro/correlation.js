@@ -138,29 +138,14 @@ window.correlations = (function () {
 
             // If one of the two elements has a prior that alters a rule's distribution significantly, sort by the
             // percentage of the rule given the prior.
-            if (!a.prior) {
-                var count_group_a = a.count_group;
-                var total_group_a = total_group;
-                var count_reference_a = a.count_reference;
-                var total_reference_a = total_reference;
-            } else {
-                var count_group_a = a.prior.count_group;
-                var total_group_a = a.prior.total_group;
-                var count_reference_a = a.prior.count_reference;
-                var total_reference_a = a.prior.total_reference;
-            }
-
-            if (!b.prior) {
-                var count_group_b = b.count_group;
-                var total_group_b = total_group;
-                var count_reference_b = b.count_reference;
-                var total_reference_b = total_reference;
-            } else {
-                var count_group_b = b.prior.count_group;
-                var total_group_b = b.prior.total_group;
-                var count_reference_b = b.prior.count_reference;
-                var total_reference_b = b.prior.total_reference;
-            }
+            var count_group_a = a.prior ? a.prior.count_group : a.count_group;
+            var total_group_a = a.prior ? a.prior.total_group : total_group;
+            var count_reference_a = a.prior ? a.prior.count_reference : a.count_reference;
+            var total_reference_a = a.prior ? a.prior.total_reference : total_reference;
+            var count_group_b = b.prior ? b.prior.count_group : a.count_group;
+            var total_group_b = b.prior ? b.prior.total_group : total_group;
+            var count_reference_b = b.prior ? b.prior.count_reference : b.count_reference;
+            var total_reference_b = b.prior ? b.prior.total_reference : total_reference;
 
             // Then, sort by percentage difference between signature and overall (using the lower endpoint
             // of the confidence interval of the difference).
