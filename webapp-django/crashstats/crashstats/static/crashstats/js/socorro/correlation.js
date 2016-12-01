@@ -187,7 +187,7 @@ window.correlations = (function () {
                 if (line.prior) {
                     var percentGroupGivenPrior = toPercentage(line.prior.count_group / line.prior.total_group);
                     var percentRefGivenPrior = toPercentage(line.prior.count_reference / line.prior.total_reference);
-                    result += ' [' + percentGroupGivenPrior + '% vs ' + percentRefGivenPrior + '% if ' + itemToLabel(line.prior.item) + ']'
+                    result += ' [' + percentGroupGivenPrior + '% vs ' + percentRefGivenPrior + '% if ' + itemToLabel(line.prior.item) + ']';
                 }
 
                 return result;
