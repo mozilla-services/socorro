@@ -728,6 +728,7 @@ def crashes_per_day(request, default_context=None):
         params['platforms'] = [
             x['name'] for x in platforms if x.get('display')
         ]
+
     context['platforms'] = params.get('platforms')
 
     end_date = params.get('date_end') or datetime.datetime.utcnow()
@@ -788,6 +789,12 @@ def crashes_per_day(request, default_context=None):
     if 'Mac OS X' in supersearch_params['platform']:
         supersearch_params['platform'].append('Mac')
         supersearch_params['platform'].remove('Mac OS X')
+
+    if params['product'] == 'FennecAndroid':
+        # FennecAndroid only has one platform and it's "Android"
+        # so none of the options presented in the crashes_per_day.html
+        # template are applicable.
+        del supersearch_params['platform']
 
     try:
         graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
