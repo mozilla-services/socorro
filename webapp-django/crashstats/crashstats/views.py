@@ -724,6 +724,11 @@ def crashes_per_day(request, default_context=None):
     for version in context['active_versions'][params['product']]:
         context['available_versions'].append(version['version'])
 
+    if not params.get('platforms'):
+        params['platforms'] = [
+            x['name'] for x in platforms if x.get('display')
+        ]
+
     context['platforms'] = params.get('platforms')
 
     end_date = params.get('date_end') or datetime.datetime.utcnow()
@@ -779,12 +784,17 @@ def crashes_per_day(request, default_context=None):
     # to be called `version`
     supersearch_params = copy.deepcopy(params)
     supersearch_params['version'] = supersearch_params.pop('versions')
-    if 'platforms' in supersearch_params:
-        supersearch_params['platform'] = supersearch_params.pop('platforms')
-        # in SuperSearch it's called 'Mac' not 'Mac OS X'
-        if 'Mac OS X' in supersearch_params['platform']:
-            supersearch_params['platform'].append('Mac')
-            supersearch_params['platform'].remove('Mac OS X')
+    supersearch_params['platform'] = supersearch_params.pop('platforms')
+    # in SuperSearch it's called 'Mac' not 'Mac OS X'
+    if 'Mac OS X' in supersearch_params['platform']:
+        supersearch_params['platform'].append('Mac')
+        supersearch_params['platform'].remove('Mac OS X')
+
+    if params['product'] == 'FennecAndroid':
+        # FennecAndroid only has one platform and it's "Android"
+        # so none of the options presented in the crashes_per_day.html
+        # template are applicable.
+        del supersearch_params['platform']
 
     try:
         graph_data, results, adi_by_version = _get_crashes_per_day_with_adu(
