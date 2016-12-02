@@ -6,6 +6,7 @@
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
 
 from pypom import Region
 from pages.base_page import CrashStatsBasePage
@@ -28,10 +29,10 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
     _new_line_button_locator = (By.CSS_SELECTOR, 'button.new-line')
     _highlighted_text_locator = (By.CSS_SELECTOR, 'li[class*="highlighted"]')
     _facet_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(2) span:first-child')
-    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .field')
+    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] select.field')
     _operator_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(4) span')
-    _operator_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .operator')
-    _match_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search-field input')
+    _operator_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] select.operator')
+    _match_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] input.value')
     _match_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(6) div')
 
     # More options section
@@ -80,26 +81,43 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
 
     def select_facet(self, line_id, field):
         input_locator = (self._facet_field_locator[0], self._facet_field_locator[1] % line_id)
-        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
         facet_field = self.find_element(*input_locator)
-        facet_field.send_keys(field)
-        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
-        facet_field.send_keys(Keys.RETURN)
+        facet_field.click()
+        xpath = '//div[@class="select2-result-label" and' +\
+            ' text()[contains(.,"%s")]]' % (field)
+        elm = self.wait.until(
+            EC.element_to_be_clickable(
+                (
+                    By.XPATH,
+                    xpath
+                )
+            ),
+            'waiting for %s to be clickable' % (xpath)
+        )
+        elm.click()
 
     def select_operator(self, line_id, operator):
         input_locator = (self._operator_field_locator[0], self._operator_field_locator[1] % line_id)
-        self.wait.until(lambda s: self.is_element_displayed(*input_locator))
-        operator_field = self.find_element(*input_locator)
-        operator_field.send_keys(operator)
-        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
-        operator_field.send_keys(Keys.RETURN)
+        facet_field = self.find_element(*input_locator)
+        facet_field.click()
+        xpath = '//div[@class="select2-result-label" and' +\
+            ' text()[contains(.,"%s")]]' % (operator,)
+        elm = self.wait.until(
+            EC.element_to_be_clickable(
+                (
+                    By.XPATH,
+                    xpath
+                )
+            ),
+            'waiting for %s to be clickable' % (xpath)
+        )
+        elm.click()
 
     def select_match(self, line_id, match):
         input_locator = (self._match_field_locator[0], self._match_field_locator[1] % line_id)
-        self.wait.until(lambda s: self.is_element_displayed(*input_locator))
-        self.find_element(*input_locator).send_keys(match)
-        self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
-        self.find_element(*self._highlighted_text_locator).click()
+        self.wait.until(lambda s: self.is_element_present(*input_locator))
+        match_field = self.find_element(*input_locator)
+        match_field.send_keys(match)
 
     def field(self, line_id):
         return self.find_element(self._facet_text_locator[0], self._facet_text_locator[1] % line_id).text
