@@ -5,11 +5,12 @@
 from collections import defaultdict
 
 import requests
-import pytest  # noqa
+import pytest
 
 
 class TestAPI:
 
+    @pytest.mark.nondestructive
     def test_public_api_navigation(self, base_url):
         response = requests.get(base_url + '/api/ProductVersions/', {
             'active': True,
@@ -103,18 +104,21 @@ class TestAPI:
             assert response.status_code == 200
             assert response.json()['hits']
 
+    @pytest.mark.nondestructive
     def test_supersearch_fields(self, base_url):
         response = requests.get(base_url + '/api/SuperSearchFields/')
         assert response.status_code == 200
         fields = response.json()
         assert fields['uuid'], fields
 
+    @pytest.mark.nondestructive
     def test_platforms(self, base_url):
         response = requests.get(base_url + '/api/Platforms/')
         assert response.status_code == 200
         platforms = response.json()
         assert platforms
 
+    @pytest.mark.nondestructive
     def test_crontabber(self, base_url):
         response = requests.get(base_url + '/api/CrontabberState/')
         assert response.status_code == 200
