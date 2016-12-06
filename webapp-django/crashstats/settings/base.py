@@ -577,8 +577,8 @@ ANALYZE_MODEL_FETCHES = config('ANALYZE_MODEL_FETCHES', False, cast=bool)
 
 
 # Credentials for being able to make an S3 connection
-AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', '')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', '')
+AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', None)
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', None)
 
 # Information for uploading symbols to S3
 SYMBOLS_BUCKET_DEFAULT_NAME = config('SYMBOLS_BUCKET_DEFAULT_NAME', '')
@@ -641,7 +641,10 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'rabbitmq_password': config('RABBITMQ_PASSWORD', ''),
         },
         'boto': {
-            'secret_access_key': config('secrets.boto.secret_access_key', ''),
+            'secret_access_key': config(
+                'secrets.boto.secret_access_key',
+                None
+            ),
         },
     },
     'resource': {
@@ -672,7 +675,7 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
             'port': config('RABBITMQ_PORT', 5672),
         },
         'boto': {
-            'access_key': config('resource.boto.access_key', ''),
+            'access_key': config('resource.boto.access_key', None),
             'bucket_name': config(
                 'resource.boto.bucket_name', 'crashstats'),
             'prefix': config('resource.boto.prefix', ''),
