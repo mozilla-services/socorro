@@ -395,16 +395,6 @@ MANAGERS = ADMINS
 # import logging
 # LOGGING = dict(loggers=dict(playdoh={'level': logging.DEBUG}))
 
-# If you run crashstats behind a load balancer, your `REMOTE_ADDR` header
-# will be that of the load balancer instead of the actual user.
-# The solution is to instead rely on the `X-Forwarded-For` header.
-# You ONLY want this if you know you can trust `X-Forwarded-For`.
-# (Note! Make sure you uncomment the line `from . import base` at
-# the top of this file first)
-# base.MIDDLEWARE_CLASSES += (
-#     'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
-# )
-
 # When you don't have permission to upload Symbols you might be confused
 # what to do next. On the page that explains that you don't have permission
 # there's a chance to put a link
