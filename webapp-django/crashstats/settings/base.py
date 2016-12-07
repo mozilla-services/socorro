@@ -300,7 +300,7 @@ BZAPI_BASE_URL = 'https://bugzilla.mozilla.org/rest'
 ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
 
 # Number of shards per index in our Elasticsearch database.
-ES_SHARDS_PER_INDEX = 5
+ES_SHARDS_PER_INDEX = 10
 
 # Valid type for correlations reports
 CORRELATION_REPORT_TYPES = (
