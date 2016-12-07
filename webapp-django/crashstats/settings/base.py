@@ -111,6 +111,13 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
+    # If you run crashstats behind a load balancer, your `REMOTE_ADDR` header
+    # will be that of the load balancer instead of the actual user.
+    # The solution is to instead rely on the `X-Forwarded-For` header.
+    # You ONLY want this if you know you can trust `X-Forwarded-For`.
+    # Make sure this is *before* the `RatelimitMiddleware` middleware.
+    'crashstats.crashstats.middleware.SetRemoteAddrFromForwardedFor',
+
     'waffle.middleware.WaffleMiddleware',
     'ratelimit.middleware.RatelimitMiddleware',
     '%s.tokens.middleware.APIAuthenticationMiddleware' % PROJECT_MODULE,
