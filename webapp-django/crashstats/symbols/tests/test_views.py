@@ -117,7 +117,7 @@ class TestViews(BaseTestViews):
         settings.SYMBOLS_COMPRESS_EXTENSIONS = self.symbols_compress_extensions
 
     def test_unpack_and_upload_misconfigured(self):
-        with self.settings(AWS_ACCESS_KEY=''):
+        with self.settings(SYMBOLS_BUCKET_DEFAULT_LOCATION=None):
             assert_raises(
                 ImproperlyConfigured,
                 unpack_and_upload,
