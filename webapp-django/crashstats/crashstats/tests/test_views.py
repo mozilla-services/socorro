@@ -1548,7 +1548,7 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         ok_('Our database is experiencing troubles' in response.content)
-        ok_('week of 2010-01-04 is ~40% lower' in response.content)
+        ok_('week of 2010-01-04 is ~20% lower' in response.content)
 
     @mock.patch('requests.get')
     def test_crashes_per_day_bad_argument_error(self, rget):
