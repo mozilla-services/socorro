@@ -1486,6 +1486,19 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         )
 
     @minimum_es_version('1.0')
+    def test_get_with_date_histogram_with_bad_interval(self):
+        kwargs = {
+            '_histogram.date': ['product', 'platform'],
+            'signature': '!=crash_me_I_m_famous',
+            '_histogram_interval.date': 'xdays',  # Note! It's just wrong
+        }
+        assert_raises(
+            BadArgumentError,
+            self.api.get,
+            **kwargs
+        )
+
+    @minimum_es_version('1.0')
     def test_get_with_number_histogram(self):
         yesterday = self.now - datetime.timedelta(days=1)
         the_day_before = self.now - datetime.timedelta(days=2)
