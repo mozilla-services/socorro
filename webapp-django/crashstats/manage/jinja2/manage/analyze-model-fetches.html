@@ -6,14 +6,13 @@
 
 {% block site_css %}
 {{ super() }}
-<link href="{{ static('manage/tablesorter/style.css') }}" type="text/css" rel="stylesheet">
+{% stylesheet 'tablesorter' %}
 <link href="{{ static('manage/css/analyze-model-fetches.css') }}" type="text/css" rel="stylesheet">
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
-<script src="{{ static('manage/tablesorter/jquery.tablesorter.min.js') }}"></script>
-<script src="{{ static('manage/tablesorter/jquery.metadata.js') }}"></script>
+{% javascript 'tablesorter' %}
 <script src="{{ static('manage/js/analyze-model-fetches.js') }}"></script>
 {% endblock %}
 

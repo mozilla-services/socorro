@@ -6,13 +6,14 @@
 {% block site_css %}
   {{ super() }}
   {% stylesheet 'jquery_ui' %}
+  {% stylesheet 'tablesorter' %}
   {% stylesheet 'crontabber_state' %}
 {% endblock %}
 
 {% block site_js %}
   {{ super() }}
   {% javascript 'd3' %}
-  {% javascript 'jquery_tablesorter' %}
+  {% javascript 'tablesorter' %}
   {% javascript 'crontabber_state' %}
 {% endblock %}
 

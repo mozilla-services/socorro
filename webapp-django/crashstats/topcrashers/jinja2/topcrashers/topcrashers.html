@@ -2,12 +2,13 @@
 {% block site_css %}
     {{ super() }}
 
+    {% stylesheet 'tablesorter' %}
     {% stylesheet 'topcrashers' %}
 {% endblock %}
 
 {% block site_js %}
     {{ super() }}
-    {% javascript 'jquery_tablesorter' %}
+    {% javascript 'tablesorter' %}
     {% javascript 'bugzilla' %}
     {% javascript 'correlation' %}
     {% javascript 'topcrashers' %}

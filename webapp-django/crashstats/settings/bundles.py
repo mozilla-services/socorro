@@ -149,6 +149,12 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/topcrashers.min.css',
     },
+    'tablesorter': {
+        'source_filenames': (
+            'tablesorter/css/theme.default.min.css',
+        ),
+        'output_filename': 'js/tablesorter.min.css',
+    },
 
 }
 
@@ -222,9 +228,9 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/select2.min.js',
     },
-    'jquery_tablesorter': {
+    'tablesorter': {
         'source_filenames': (
-            'crashstats/js/jquery/plugins/jquery.tablesorter.js',
+            'tablesorter/js/jquery.tablesorter.js',
         ),
         'output_filename': 'js/jquery-tablesorter.min.js',
     },
