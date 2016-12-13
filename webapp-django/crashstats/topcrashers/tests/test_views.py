@@ -230,13 +230,22 @@ class TestViews(BaseTestViews):
         ok_('not a number' in response.content)
         eq_(response['Content-Type'], 'text/html; charset=utf-8')
 
+    def test_topcrashers_400_by_bad_facets_size(self):
+        response = self.client.get(self.base_url, {
+            'product': 'WaterWolf',
+            '_facets_size': 'notanumber',
+        })
+        eq_(response.status_code, 400)
+        ok_('Enter a whole number' in response.content)
+        eq_(response['Content-Type'], 'text/html; charset=utf-8')
+
     def test_topcrasher_with_product_sans_release(self):
         # SnowLion is not a product at all
         response = self.client.get(self.base_url, {
             'product': 'SnowLion',
             'version': '0.1',
         })
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 400)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_topcrasher_without_any_signatures(self, rpost):
