@@ -139,7 +139,6 @@ def get_topcrashers_results(**kwargs):
         params['_aggs.signature'] = [
             'platform',
         ]
-        assert isinstance(params['_facets_size'], int)
         params['_facets_size'] *= 2
 
         if range_type == 'build':
