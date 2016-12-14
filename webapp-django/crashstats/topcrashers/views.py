@@ -336,7 +336,6 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             key = '%s_count' % os_code
             crash_counts.append([crash[key], operating_system['name']])
 
-        crash['correlation_os'] = max(crash_counts)[1]
         sig = crash['signature']
 
         # Augment with bugs.

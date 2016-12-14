@@ -1,7 +1,6 @@
 import datetime
 
 from django import forms
-from django.conf import settings
 from . import form_fields
 
 
@@ -171,82 +170,6 @@ class DailyFormByVersion(DailyFormBase):
         self.fields['os'].choices = [
             (x['name'], x['name']) for x in self.platforms
         ]
-
-
-class CorrelationsJSONFormBase(BaseForm):
-    correlation_report_types = forms.MultipleChoiceField(
-        required=True,
-        choices=make_choices(settings.CORRELATION_REPORT_TYPES),
-    )
-    product = forms.ChoiceField(required=True)
-    version = forms.ChoiceField(required=True)
-
-    def __init__(self, active_versions, current_platforms,
-                 *args, **kwargs):
-        super(CorrelationsJSONFormBase, self).__init__(*args, **kwargs)
-
-        # Default values
-        products = []
-        versions = []
-        for product, product_versions in active_versions.items():
-            products.append((product, product))
-            for version in product_versions:
-                versions.append((version['version'], version['version']))
-        self.platforms = [(x['name'], x['name']) for x in current_platforms]
-        # add a necessary exception
-        self.platforms.append(('Windows NT', 'Windows NT'))
-        self.fields['product'].choices = products
-        self.fields['version'].choices = versions
-
-
-class CorrelationsJSONForm(CorrelationsJSONFormBase):
-    platform = forms.ChoiceField(required=True)
-    signature = form_fields.SignatureField(required=True)
-
-    def __init__(self, *args, **kwargs):
-        super(CorrelationsJSONForm, self).__init__(*args, **kwargs)
-
-        self.fields['platform'].choices = self.platforms
-
-    def clean_platform(self):
-        platform = self.cleaned_data['platform']
-        if platform == 'Windows':
-            return 'Windows NT'
-        else:
-            return platform
-
-
-class CorrelationsSignaturesJSONForm(CorrelationsJSONFormBase):
-    platforms = forms.CharField(required=True)
-
-    def __init__(self, *args, **kwargs):
-        super(CorrelationsSignaturesJSONForm, self).__init__(*args, **kwargs)
-
-        self.fields['platforms'].choices = self.platforms
-
-    def clean_platforms(self):
-        value = set(self.cleaned_data['platforms'].split(','))
-        platforms = set([x[0] for x in self.platforms])
-        if not value.issubset(platforms):
-            raise forms.ValidationError('Invalid platform(s)')
-        else:
-            new_value = []
-            for v in value:
-                if v == 'Windows':
-                    new_value.append('Windows NT')
-                else:
-                    new_value.append(v)
-            return new_value
-
-
-class AnyCorrelationsJSONForm(CorrelationsJSONForm):
-    """List CorrelationsJSONForm but not requiring a specific report type."""
-    def __init__(self, *args, **kwargs):
-        super(AnyCorrelationsJSONForm, self).__init__(
-            *args,
-            **kwargs
-        )
-        del self.fields['correlation_report_types']
 
 
 class GCCrashesForm(BaseForm):
