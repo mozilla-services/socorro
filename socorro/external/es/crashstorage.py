@@ -12,7 +12,6 @@ from configman import Namespace
 from configman.converters import class_converter, list_converter
 
 from socorro.external.crashstorage_base import CrashStorageBase
-from socorro.external.es.index_creator import IndexCreator
 from socorro.lib.converters import change_default
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
@@ -29,6 +28,12 @@ class ESCrashStorage(CrashStorageBase):
         "TransactionExecutorWithLimitedBackoff",
         doc='a class that will manage transactions',
         from_string_converter=class_converter,
+    )
+    required_config.add_option(
+        'index_creator_class',
+        doc='a class that can create Elasticsearch indices',
+        default='socorro.external.es.index_creator.IndexCreator',
+        from_string_converter=class_converter
     )
 
     required_config.elasticsearch = Namespace()
@@ -142,7 +147,7 @@ class ESCrashStorage(CrashStorageBase):
 
         # Attempt to create the index; it's OK if it already exists.
         if es_index not in self.indices_cache:
-            index_creator = IndexCreator(config=self.config)
+            index_creator = self.config.index_creator_class(config=self.config)
             index_creator.create_socorro_index(es_index)
 
         # Submit the crash for indexing.
@@ -428,7 +433,9 @@ def _create_bulk_load_crashstore(base_class):
 
             # Attempt to create the index; it's OK if it already exists.
             if es_index not in self.indices_cache:
-                index_creator = IndexCreator(config=self.config)
+                index_creator = self.config.index_creator_class(
+                    config=self.config
+                )
                 index_creator.create_socorro_index(es_index)
 
             action = {

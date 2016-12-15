@@ -39,6 +39,12 @@ class ElasticsearchConfig(App):
     )
     # shared and not specifically in the elasticsearch config
     required_config.add_option(
+        'index_creator_class',
+        doc='a class that can create Elasticsearch indices',
+        default='socorro.external.es.index_creator.IndexCreator',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
         'search_default_date_range',
         default=7,  # in days
         doc='the default date range for searches, in days'
