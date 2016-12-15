@@ -16,6 +16,7 @@ from crashstats.crashstats.decorators import (
 )
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
+from crashstats.topcrashers.forms import TopCrashersForm
 
 
 def datetime_to_build_id(date):
@@ -180,13 +181,17 @@ def get_topcrashers_results(**kwargs):
 def topcrashers(request, days=None, possible_days=None, default_context=None):
     context = default_context or {}
 
-    product = request.GET.get('product')
-    versions = request.GET.getlist('version')
-    crash_type = request.GET.get('process_type')
-    os_name = request.GET.get('platform')
-    result_count = request.GET.get('_facets_size')
-    tcbs_mode = request.GET.get('_tcbs_mode')
-    range_type = request.GET.get('_range_type')
+    form = TopCrashersForm(request.GET)
+    if not form.is_valid():
+        return http.HttpResponseBadRequest(unicode(form.errors))
+
+    product = form.cleaned_data['product']
+    versions = form.cleaned_data['version']
+    crash_type = form.cleaned_data['process_type']
+    os_name = form.cleaned_data['platform']
+    result_count = form.cleaned_data['_facets_size']
+    tcbs_mode = form.cleaned_data['_tcbs_mode']
+    range_type = form.cleaned_data['_range_type']
 
     range_type = 'build' if range_type == 'build' else 'report'
 
@@ -194,7 +199,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         tcbs_mode = 'realtime'
 
     if product not in context['active_versions']:
-        raise http.Http404('Unrecognized product')
+        return http.HttpResponseBadRequest('Unrecognized product')
 
     context['product'] = product
 

@@ -266,10 +266,10 @@ SIMPLE_SEARCH_FIELDS = (
 
 # the number of result filter on tcbs
 TCBS_RESULT_COUNTS = (
-    '50',
-    '100',
-    '200',
-    '300'
+    50,
+    100,
+    200,
+    300,
 )
 
 # channels allowed in middleware calls,
