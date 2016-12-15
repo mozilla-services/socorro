@@ -631,6 +631,25 @@ class AbortSignature(Rule):
 
 
 #==============================================================================
+class SigTrim(Rule):
+    """ensure that the signature never has any leading or trailing white
+    spaces"""
+
+    #--------------------------------------------------------------------------
+    def version(self):
+        return '1.0'
+
+    #--------------------------------------------------------------------------
+    def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+        return isinstance(processed_crash.signature, basestring)
+
+    #--------------------------------------------------------------------------
+    def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        processed_crash.signature = processed_crash.signature.strip()
+        return True
+
+
+#==============================================================================
 class SigTrunc(Rule):
     """ensure that the signature is never longer than 255 characters"""
 
