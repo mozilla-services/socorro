@@ -307,7 +307,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
                 self.index_client.delete(index=index)
 
     def test_get_mapping(self):
-        mapping = self.api.get_mapping()['mappings']
+        mapping = self.api.get_mapping()
         doctype = self.config.elasticsearch.elasticsearch_doctype
 
         ok_(doctype in mapping)
@@ -343,7 +343,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             'storage_mapping': {
                 'type': 'long'
             }
-        })['mappings']
+        })
         properties = mapping[doctype]['properties']
 
         ok_('fake_field' in properties['raw_crash']['properties'])

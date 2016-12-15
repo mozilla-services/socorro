@@ -8,10 +8,22 @@ import os
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
 
-from socorro.external.es.super_search_fields import SuperSearchFields
-
 
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
+
+# Elasticsearch indices configuration.
+ES_CUSTOM_ANALYZERS = {
+    'analyzer': {
+        'semicolon_keywords': {
+            'type': 'pattern',
+            'pattern': ';',
+        },
+    }
+}
+ES_QUERY_SETTINGS = {
+    'default_field': 'signature'
+}
 
 
 class IndexCreator(RequiredConfig):
@@ -28,6 +40,12 @@ class IndexCreator(RequiredConfig):
         from_string_converter=class_converter,
         reference_value_from='resource.elasticsearch',
     )
+    required_config.elasticsearch.add_option(
+        'shards_per_index',
+        default=10,
+        doc='number of shards to set in newly created indices. Elasticsearch '
+            'default is 5.',
+    )
 
     def __init__(self, config):
         super(IndexCreator, self).__init__()
@@ -41,9 +59,32 @@ class IndexCreator(RequiredConfig):
         """
         return self.es_context.indices_client()
 
-    def create_socorro_index(self, es_index):
+    def get_socorro_index_settings(self, mappings):
+        """Return a dictionary containing settings for an Elasticsearch index.
+        """
+        return {
+            'settings': {
+                'index': {
+                    'number_of_shards': (
+                        self.config.elasticsearch.shards_per_index
+                    ),
+                    'query': ES_QUERY_SETTINGS,
+                    'analysis': ES_CUSTOM_ANALYZERS,
+                },
+            },
+            'mappings': mappings,
+        }
+
+    def create_socorro_index(self, es_index, mappings=None):
         """Create an index that will receive crash reports. """
-        es_settings = SuperSearchFields(config=self.config).get_mapping()
+        if mappings is None:
+            # Import at runtime to avoid dependency circle.
+            from socorro.external.es.super_search_fields import (
+                SuperSearchFields
+            )
+            mappings = SuperSearchFields(config=self.config).get_mapping()
+
+        es_settings = self.get_socorro_index_settings(mappings)
         self.create_index(es_index, es_settings)
 
     def create_index(self, es_index, es_settings):

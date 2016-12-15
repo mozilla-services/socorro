@@ -14,19 +14,6 @@ from socorro.external.es.base import ElasticsearchBase
 from socorro.lib import datetimeutil, external_common
 
 
-ES_CUSTOM_ANALYZERS = {
-    'analyzer': {
-        'semicolon_keywords': {
-            'type': 'pattern',
-            'pattern': ';',
-        },
-    }
-}
-ES_QUERY_SETTINGS = {
-    'default_field': 'signature'
-}
-
-
 class SuperSearchFields(ElasticsearchBase):
 
     # Defining some filters that need to be considered as lists.
@@ -389,22 +376,14 @@ class SuperSearchFields(ElasticsearchBase):
             add_field_to_properties(properties, namespaces, field)
 
         return {
-            'settings': {
-                'index': {
-                    'query': ES_QUERY_SETTINGS,
-                    'analysis': ES_CUSTOM_ANALYZERS
+            self.config.elasticsearch.elasticsearch_doctype: {
+                '_all': {
+                    'enabled': False,
                 },
-            },
-            'mappings': {
-                self.config.elasticsearch.elasticsearch_doctype: {
-                    '_all': {
-                        'enabled': False
-                    },
-                    '_source': {
-                        'compress': True
-                    },
-                    'properties': properties
-                }
+                '_source': {
+                    'compress': True,
+                },
+                'properties': properties,
             }
         }
 
@@ -429,13 +408,13 @@ class SuperSearchFields(ElasticsearchBase):
 
         es_connection = self.get_connection()
 
-        # Import at runtime to avoid dependency circle.
-        from socorro.external.es.index_creator import IndexCreator
-        index_creator = IndexCreator(self.config)
+        index_creator = self.config.index_creator_class(
+            self.config
+        )
         try:
             index_creator.create_index(
                 temp_index,
-                mapping,
+                index_creator.get_socorro_index_settings(mapping),
             )
 
             now = datetimeutil.utc_now()
