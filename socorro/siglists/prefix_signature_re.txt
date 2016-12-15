@@ -176,6 +176,7 @@ SSL_.*
 std::_Allocate.*
 std::list<.*>::.*
 strcat
+strncmp
 ssl3_.*
 strchr
 strcmp
