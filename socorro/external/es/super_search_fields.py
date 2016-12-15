@@ -25,6 +25,8 @@ ES_CUSTOM_ANALYZERS = {
 ES_QUERY_SETTINGS = {
     'default_field': 'signature'
 }
+# increased number of shards from default 5
+ES_NUMBER_OF_SHARDS = '10'
 
 
 class SuperSearchFields(ElasticsearchBase):
@@ -391,6 +393,7 @@ class SuperSearchFields(ElasticsearchBase):
         return {
             'settings': {
                 'index': {
+                    'number_of_shards': ES_NUMBER_OF_SHARDS,
                     'query': ES_QUERY_SETTINGS,
                     'analysis': ES_CUSTOM_ANALYZERS
                 },
