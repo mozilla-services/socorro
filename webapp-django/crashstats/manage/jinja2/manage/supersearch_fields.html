@@ -93,13 +93,4 @@
   {% javascript 'jquery_tablesorter' %}
   {% javascript 'manage:supersearch_fields' %}
 <script type="text/javascript" src="{{ static('crashstats/js/jquery/plugins/jquery.tablesorter.js') }}"></script>
-<script>
-$(function () {
-    $('.tablesorter').tablesorter();
-    $('.delete').click(function (e) {
-        var field_name = $(this).data('field-name');
-        return confirm('Do you really want to delete the "'+ field_name +'" field?');
-    });
-});
-</script>
 {% endblock %}
