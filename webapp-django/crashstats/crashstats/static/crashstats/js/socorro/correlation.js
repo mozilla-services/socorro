@@ -174,8 +174,10 @@ window.correlations = (function () {
                 return '(' + percentGroup + '% in signature vs ' + percentRef + '% overall) ' + itemToLabel(line.item);
             });
 
-            results.push('');
-            results.push('Top words: ' + signatureData.top_words.join(', '));
+            if (signatureData.top_words) {
+                results.push('');
+                results.push('Top words: ' + signatureData.top_words.join(', '));
+            }
 
             return results;
         })
