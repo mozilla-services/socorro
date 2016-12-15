@@ -44,6 +44,12 @@ from crashstats import scrubber
 from crashstats.api.cleaner import Cleaner
 
 
+DEPRECATION_RAMPAGE_WARNING = (
+    'This endpoint is deprecated and will soon cease to exist.\n'
+    'Please see https://bugzilla.mozilla.org/show_bug.cgi?id=1314814'
+)
+
+
 logger = logging.getLogger('crashstats_models')
 
 
@@ -729,6 +735,8 @@ class Platforms(SocorroMiddleware):
 class CrashesPerAdu(SocorroMiddleware):
     # Fetch records for active daily installs.
 
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
+
     URL_PREFIX = '/crashes/daily/'
 
     required_params = (
@@ -761,6 +769,8 @@ class CrashesPerAdu(SocorroMiddleware):
 
 
 class TCBS(SocorroMiddleware):
+
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
 
     URL_PREFIX = '/crashes/signatures/'
 
@@ -1053,6 +1063,8 @@ class RawCrash(SocorroMiddleware):
 
 class CrashesByExploitability(SocorroMiddleware):
 
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
+
     URL_PREFIX = '/crashes/exploitability/'
 
     required_params = (
@@ -1185,6 +1197,8 @@ class SignatureFirstDate(SocorroMiddleware):
 
 class SignatureTrend(SocorroMiddleware):
 
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
+
     URL_PREFIX = '/crashes/signature_history/'
 
     required_params = (
@@ -1281,6 +1295,8 @@ class BugzillaBugInfo(BugzillaAPI):
 
 class Correlations(SocorroMiddleware):
 
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
+
     URL_PREFIX = '/correlations/'
 
     required_params = (
@@ -1300,6 +1316,8 @@ class Correlations(SocorroMiddleware):
 
 class CorrelationsSignatures(SocorroMiddleware):
 
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
+
     URL_PREFIX = '/correlations/signatures/'
 
     required_params = (
@@ -1318,6 +1336,8 @@ class CorrelationsSignatures(SocorroMiddleware):
 
 
 class CrashesCountByDay(SocorroMiddleware):
+
+    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
 
     cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.
 
