@@ -1141,6 +1141,11 @@ def report_index(request, crash_id, default_context=None):
         tmpl = 'crashstats/report_index_not_found.html'
         return render(request, tmpl, context, status=404)
 
+    context['your_crash'] = (
+        request.user.is_active and
+        context['raw'].get('Email') == request.user.email
+    )
+
     api = models.UnredactedCrash()
     try:
         context['report'] = api.get(crash_id=crash_id)

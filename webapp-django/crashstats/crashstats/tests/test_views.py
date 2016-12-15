@@ -18,7 +18,6 @@ from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils import timezone
 from django.contrib.auth.models import (
-    User,
     Group,
     Permission
 )
@@ -439,14 +438,6 @@ class BaseTestViews(DjangoTestCase):
         # it makes it impossible to test classes that are imported only
         # once like they are in unit test running.
         SocorroCommon.clear_implementations_cache()
-
-    def _login(self, username='test', password='s', email='test@mozilla.com'):
-        User.objects.create_user(username, email, password)
-        assert self.client.login(username=username, password=password)
-        return User.objects.get(username=username)
-
-    def _logout(self):
-        self.client.logout()
 
     def _add_permission(self, user, codename, group_name='Hackers'):
         group = self._create_group_with_permission(codename)
@@ -2719,6 +2710,100 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         ok_('Exploitability</th>' in response.content)
         ok_('Unknown Exploitability' in response.content)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
+    def test_report_index_your_crash(self, rget, rpost):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        rpost.side_effect = mocked_post_123
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                copied = copy.deepcopy(_SAMPLE_META)
+                copied['Email'] = 'peterbe@example.com'
+                copied['URL'] = 'https://embarrassing.example.com'
+                return copied
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['exploitability'] = 'Unknown Exploitability'
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        url = reverse('crashstats:report_index', args=[crash_id])
+
+        response = self.client.get(url)
+        ok_('Exploitability</th>' not in response.content)
+        ok_('peterbe@example.com' not in response.content)
+        ok_('https://embarrassing.example.com' not in response.content)
+
+        # you must be signed in to see exploitability
+        self._login(email='peterbe@example.com')
+        response = self.client.get(url)
+        ok_('Exploitability</th>' in response.content)
+        ok_('Unknown Exploitability' in response.content)
+        ok_('peterbe@example.com' in response.content)
+        ok_('https://embarrassing.example.com' in response.content)
+
+    @mock.patch('crashstats.crashstats.models.Bugs.get')
+    @mock.patch('requests.get')
+    def test_report_index_not_your_crash(self, rget, rpost):
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+
+        rpost.side_effect = mocked_post_123
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                copied = copy.deepcopy(_SAMPLE_META)
+                copied['Email'] = 'peterbe@example.com'
+                copied['URL'] = 'https://embarrassing.example.com'
+                return copied
+
+            raise NotImplementedError(params)
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['exploitability'] = 'Unknown Exploitability'
+                return crash
+
+            raise NotImplementedError
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        url = reverse('crashstats:report_index', args=[crash_id])
+
+        # You sign in, but a different email address from that in the
+        # raw crash. Make sure that doesn't show the sensitive data
+        self._login(email='someone@example.com')
+        response = self.client.get(url)
+        ok_('Exploitability</th>' not in response.content)
+        ok_('Unknown Exploitability' not in response.content)
+        ok_('peterbe@example.com' not in response.content)
+        ok_('https://embarrassing.example.com' not in response.content)
 
     @mock.patch('crashstats.crashstats.models.Bugs.get')
     def test_report_index_raw_crash_not_found(self, rpost):

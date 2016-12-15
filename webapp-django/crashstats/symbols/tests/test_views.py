@@ -273,9 +273,10 @@ class TestViews(BaseTestViews):
         url = reverse('symbols:web_upload')
         user = self._login()
         self._add_permission(user, 'upload_symbols')
-        assert user.email.endswith('@mozilla.com')
+        user.email = 'test@muzilla.com'
+        user.save()
         exception_names = {
-            '*@mozilla.com': 'my-special-bucket-name',
+            '*@muzilla.com': 'my-special-bucket-name',
             '*@example.com': 'other-bucket-name',
         }
         with self.settings(SYMBOLS_BUCKET_EXCEPTIONS=exception_names):
@@ -845,7 +846,7 @@ class TestViews(BaseTestViews):
         ok_(not self.uploaded_keys)
 
     def test_preview(self):
-        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        user = User.objects.create_user('test', 'test@example.com', 'secret')
 
         upload = models.SymbolsUpload.objects.create(
             user=user,

@@ -12,7 +12,7 @@ from crashstats.tokens import models
 class TestViews(BaseTestViews):
 
     def _login(self):
-        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        user = User.objects.create_user('test', 'test@example.com', 'secret')
         assert self.client.login(username='test', password='secret')
         return user
 
