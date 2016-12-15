@@ -122,12 +122,6 @@ def get_params(request):
     return params
 
 
-@ratelimit(
-    key='ip',
-    rate=utils.ratelimit_rate,
-    method=ratelimit.ALL,
-    block=True
-)
 @pass_default_context
 def search(request, default_context=None):
     allowed_fields = get_allowed_fields(request.user)

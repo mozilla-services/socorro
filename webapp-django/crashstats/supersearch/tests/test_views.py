@@ -60,19 +60,6 @@ class TestViews(BaseTestViews):
         for field in settings.SIMPLE_SEARCH_FIELDS:
             ok_(field.capitalize().replace('_', ' ') in response.content)
 
-    def test_search_ratelimited(self):
-
-        url = reverse('supersearch.search')
-        limit = int(re.findall('(\d+)', settings.RATELIMIT_SUPERSEARCH)[0])
-        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
-        for i in range(limit * 2):
-            self.client.get(url)
-        # make it realistic like a browser sends this header
-        response = self.client.get(url, HTTP_ACCEPT='text/html')
-        eq_(response.status_code, 429)
-        ok_('Hold your horses!' in response.content)
-        eq_(response['content-type'], 'text/html; charset=utf-8')
-
     def test_search_fields(self):
 
         user = self._login()
