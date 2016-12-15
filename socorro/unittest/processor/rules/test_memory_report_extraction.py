@@ -33,33 +33,30 @@ class TestMemoryReportExtraction(TestCase):
         config = self.get_config()
         rule = MemoryReportExtraction(config)
 
-        raw_crash = {}
         processed_crash = {}
 
-        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
         processed_crash['memory_report'] = {}
-        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
-        raw_crash['pid'] = None
-        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        processed_crash['json_dump'] = {
+            'pid': None,
+        }
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
     def test_predicate(self):
         config = self.get_config()
         rule = MemoryReportExtraction(config)
 
-        raw_crash = {}
-        raw_crash['pid'] = 42
-
         processed_crash = {}
-        processed_crash['memory_report'] = {
-            'reports': [],
-        }
+        processed_crash['memory_report'] = {'reports': []}
+        processed_crash['json_dump'] = {'pid': 42}
 
-        predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
+        predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(predicate_result)
 
     def test_action_success(self):
@@ -70,13 +67,9 @@ class TestMemoryReportExtraction(TestCase):
 
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
+        processed_crash['json_dump'] = {'pid': 11620}
 
-        raw_crash = {}
-        raw_crash['pid'] = 11620
-
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        action_result = rule.action({}, {}, processed_crash, {})
         ok_(action_result)
         ok_('memory_measures' in processed_crash)
 
@@ -96,11 +89,9 @@ class TestMemoryReportExtraction(TestCase):
         eq_(processed_crash['memory_measures'], expected_res)
 
         # Test with a different pid.
-        raw_crash['pid'] = 11717
+        processed_crash['json_dump']['pid'] = 11717
 
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        action_result = rule.action({}, {}, processed_crash, {})
         ok_(action_result)
         ok_('memory_measures' in processed_crash)
 
@@ -127,13 +118,9 @@ class TestMemoryReportExtraction(TestCase):
 
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
+        processed_crash['json_dump'] = {'pid': 11620}
 
-        raw_crash = {}
-        raw_crash['pid'] = 11620
-
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        action_result = rule.action({}, {}, processed_crash, {})
         ok_(not action_result)
         ok_('memory_measures' not in processed_crash)
 
@@ -150,13 +137,9 @@ class TestMemoryReportExtraction(TestCase):
 
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
+        processed_crash['json_dump'] = {'pid': 11620}
 
-        raw_crash = {}
-        raw_crash['pid'] = 11620
-
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        action_result = rule.action({}, {}, processed_crash, {})
         ok_(not action_result)
         ok_('memory_measures' not in processed_crash)
 
@@ -173,13 +156,9 @@ class TestMemoryReportExtraction(TestCase):
 
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
+        processed_crash['json_dump'] = {'pid': 11620}
 
-        raw_crash = {}
-        raw_crash['pid'] = 11620
-
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        action_result = rule.action({}, {}, processed_crash, {})
         ok_(not action_result)
         ok_('memory_measures' not in processed_crash)
 
@@ -196,13 +175,9 @@ class TestMemoryReportExtraction(TestCase):
 
         processed_crash = {}
         processed_crash['memory_report'] = memory_report
+        processed_crash['json_dump'] = {'pid': 12345}
 
-        raw_crash = {}
-        raw_crash['pid'] = 12345
-
-        action_result = rule.action(
-            raw_crash, {}, processed_crash, {}
-        )
+        action_result = rule.action({}, {}, processed_crash, {})
         ok_(not action_result)
         ok_('memory_measures' not in processed_crash)
 

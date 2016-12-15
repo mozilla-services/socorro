@@ -21,13 +21,13 @@ class MemoryReportExtraction(Rule):
         try:
             return (
                 bool(processed_crash['memory_report']) and
-                'pid' in raw_crash
+                'pid' in processed_crash['json_dump']
             )
         except KeyError:
             return False
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-        pid = raw_crash['pid']
+        pid = processed_crash['json_dump']['pid']
         memory_report = processed_crash['memory_report']
 
         try:
