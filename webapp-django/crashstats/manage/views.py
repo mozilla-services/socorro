@@ -315,6 +315,14 @@ def analyze_model_fetches(request):
             data['uses']['both'] = (
                 data['uses']['hits'] + data['uses']['misses']
             )
+            data['uses']['hits_percentage'] = (
+                data['uses']['both'] and
+                round(
+                    100.0 * data['uses']['hits'] / data['uses']['both'],
+                    1
+                ) or
+                'n/a'
+            )
             records.append((item, data))
         measurements.append([label, value_type, records])
     context['measurements'] = measurements

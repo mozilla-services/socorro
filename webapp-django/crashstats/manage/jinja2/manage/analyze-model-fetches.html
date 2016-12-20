@@ -31,11 +31,12 @@
             <thead>
                 <tr>
                     <th rowspan="2">API / URL</th>
-                    <th colspan="3" class="{sorter: false}"># Uses</th>
+                    <th colspan="4" class="{sorter: false}"># Uses</th>
                     <th colspan="3" class="{sorter: false}">Times (sec)</th>
                 </tr>
                 <tr class="sort-keys">
                     <th>Hits</th>
+                    <th>Hits%</th>
                     <th>Misses</th>
                     <th>Both</th>
                     <th>Hits</th>
@@ -46,9 +47,10 @@
             <tbody>
                 {% for label, value_type, records in measurements %}
                 {% for item, info in records %}
-                <tr class="type-{{ value_type}}">
+                <tr class="type-{{ value_type}} {{ loop.cycle('odd', 'even') }}">
                     <td>{{ truncatechars(item, 150) }}</td>
                     <td>{{ info['uses']['hits'] }}</td>
+                    <td>{{ info['uses']['hits_percentage'] }}</td>
                     <td>{{ info['uses']['misses'] }}</td>
                     <td>{{ info['uses']['both'] }}</td>
                     <td>{{ info['times']['hits'] | msec2sec }}</td>
@@ -63,9 +65,9 @@
 
         <p><b>How This Works</b></p>
         <p>
-            Every time our Django views need data from the middleware, a
+            Every time our Django views need data from the implementation classes, a
             bean counter is incremented on it being used, how long it took
-            and whether or not it was able to draw from the cache.
+            and whether or not it was able to benefit from the cache.
         </p>
     </div>
 </div>
