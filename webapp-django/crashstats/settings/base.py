@@ -309,15 +309,6 @@ ELASTICSEARCH_INDEX_SCHEMA = 'socorro%Y%W'
 # Number of shards per index in our Elasticsearch database.
 ES_SHARDS_PER_INDEX = 10
 
-# Valid type for correlations reports
-CORRELATION_REPORT_TYPES = (
-    'core-counts',
-    'interesting-addons',
-    'interesting-addons-with-versions',
-    'interesting-modules',
-    'interesting-modules-with-versions'
-)
-
 # Default number of crashes to show on the Exploitable Crashes report
 EXPLOITABILITY_BATCH_SIZE = config(
     'EXPLOITABILITY_BATCH_SIZE',

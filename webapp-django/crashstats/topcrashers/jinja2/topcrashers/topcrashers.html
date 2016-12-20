@@ -9,7 +9,6 @@
     {{ super() }}
     {% javascript 'jquery_tablesorter' %}
     {% javascript 'bugzilla' %}
-    {% javascript 'correlation' %}
     {% javascript 'topcrashers' %}
 {% endblock %}
 
@@ -18,13 +17,7 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
 {% endblock %}
 
 {% block content %}
-    <div id="mainbody"
-        data-correlations-base="{{ url('crashstats:correlations_json') }}"
-        data-correlations-sig-base="{{ url('crashstats:correlations_signatures_json') }}"
-        data-product="{{ product }}"
-        data-version="{{ version }}"
-        data-loading-img="{{ static('img/loading.png') }}"
-        >
+    <div id="mainbody">
         <div class="page-heading">
             <h2>
                 Top Crashers for <span id="current-product">{{ product }}</span>
@@ -130,7 +123,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                         <th title="Number of crashes happening during garbage collection" scope="col">Is GC</th>
                         <th title="First appearance date of the signature" scope="col">First Appearance</th>
                         <th class="bugzilla_numbers" scope="col">Bugzilla IDs</th>
-                        <th title="Does not imply Causation" scope="col">Correlation</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -235,17 +227,6 @@ Top Crashers for {{ product }} {{ ', '.join(query.versions) }}
                                     <li>{{ show_bug_link(bug) }}</li>
                                     {% endfor %}
                                 </ul>
-                            </div>
-                        </td>
-                        <td class="correlation-cell">
-                            <div class="correlation-panel">
-                                <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
-                                <div class="complete">
-                                    <h3>Based on <span class="osname">{{ crash.correlation_os }}</span> crashes</h3>
-                                    <div class="correlation-module"><h3>CPU</h3><div class="core-counts"></div></div>
-                                    <div class="correlation-module"><h3>Add-ons</h3><div class="interesting-addons"></div></div>
-                                    <div class="correlation-module"><h3>Modules</h3><div class="interesting-modules"></div></div>
-                                </div>
                             </div>
                         </td>
                     </tr>
