@@ -11,13 +11,14 @@
 {% block site_css %}
 {{ super() }}
 {% stylesheet 'jquery_ui' %}
+{% stylesheet 'tablesorter' %}
 {% stylesheet 'report_index' %}
 {% endblock %}
 
 {% block site_js %}
 {{ super() }}
 {% javascript 'jquery_ui' %}
-{% javascript 'jquery_tablesorter' %}
+{% javascript 'tablesorter' %}
 {% javascript 'bugzilla' %}
 {% javascript 'correlation' %}
 {% javascript 'report_index' %}
