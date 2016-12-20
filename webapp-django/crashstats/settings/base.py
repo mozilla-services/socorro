@@ -738,7 +738,6 @@ CSP_DEFAULT_SRC = (
 )
 CSP_SCRIPT_SRC = (
     "'self'",
-    "'unsafe-eval'",  # Needed because of jquery-tablesorter.min.js :(
     'apis.google.com',
     'www.google-analytics.com',
 )
@@ -749,6 +748,7 @@ CSP_STYLE_SRC = (
 CSP_IMG_SRC = (
     "'self'",
     'https://www.google-analytics.com',
+    'data:',  # what jquery.tablesorter.js's CSS uses
 )
 CSP_CHILD_SRC = (
     "'self'",
