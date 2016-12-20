@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.lib import external_common, MissingArgumentError
+from socorro.lib import external_common, MissingArgumentError, BadArgumentError
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
     CrashIDNotFound,
@@ -64,6 +64,8 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             'processed': 'get_processed',
             'unredacted': 'get_unredacted_processed',
         }
+        if params.datatype not in datatype_method_mapping:
+            raise BadArgumentError(params.datatype)
         get = self.__getattribute__(datatype_method_mapping[params.datatype])
         try:
             if params.datatype == 'raw':
