@@ -19,9 +19,16 @@ class MemoryReportExtraction(Rule):
 
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         try:
+            # Verify that...
             return (
+                # ... we have a pid...
+                'pid' in processed_crash['json_dump'] and
+                # ... we have a memory report...
                 bool(processed_crash['memory_report']) and
-                'pid' in processed_crash['json_dump']
+                # ... and that memory report is recognisable.
+                'version' in processed_crash['memory_report'] and
+                'reports' in processed_crash['memory_report'] and
+                'hasMozMallocUsableSize' in processed_crash['memory_report']
             )
         except KeyError:
             return False
@@ -38,18 +45,17 @@ class MemoryReportExtraction(Rule):
                 .format(e)
             )
             return False
+        except KeyError as e:
+            self.config.logger.info(
+                'Unable to extract measurements from memory report: '
+                'key {} is missing from a report'.format(e)
+            )
+            return False
 
         processed_crash['memory_measures'] = measures
         return True
 
     def _get_memory_measures(self, memory_report, pid):
-        if (
-            'version' not in memory_report or
-            'reports' not in memory_report or
-            'hasMozMallocUsableSize' not in memory_report
-        ):
-            raise ValueError('not a recognisable memory reports')
-
         explicit_heap = 0
         explicit_nonheap = 0
         pid_found = False

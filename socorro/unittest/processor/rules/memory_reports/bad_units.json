@@ -5,11 +5,10 @@
   {
    "process": "Main Process (pid 11620)",
    "path": "explicit/foo",
-   "kind": 2,
+   "kind": 1,
    "units": 1,
    "amount": 1818624,
    "description": "foo foo foo"
   }
  ]
 }
-
