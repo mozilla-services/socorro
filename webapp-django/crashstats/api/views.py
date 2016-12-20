@@ -194,6 +194,7 @@ BLACKLIST = (
     # because it's an internal thing only
     'GraphicsReport',
     'Healthcheck',
+    'Priorityjob',
 )
 
 
