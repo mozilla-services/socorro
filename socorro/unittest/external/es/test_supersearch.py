@@ -1492,11 +1492,14 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             'signature': '!=crash_me_I_m_famous',
             '_histogram_interval.date': 'xdays',  # Note! It's just wrong
         }
-        assert_raises(
-            BadArgumentError,
-            self.api.get,
-            **kwargs
-        )
+
+        # Not using assert_raises here so we can do a check on the exception
+        # object when it does raise.
+        try:
+            self.api.get(**kwargs)
+            raise AssertionError('The line above is supposed to error out')
+        except BadArgumentError as exception:
+            eq_(exception.param, '_histogram_interval.date')
 
     @minimum_es_version('1.0')
     def test_get_with_number_histogram(self):
