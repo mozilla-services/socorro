@@ -293,17 +293,11 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/documentation.min.js',
     },
-    'exploitability_report': {  # deprecated
+    'exploitability_report': {
         'source_filenames': (
             'crashstats/js/socorro/exploitability_report.js',
         ),
         'output_filename': 'js/exploitability-report.min.js',
-    },
-    'exploitability': {
-        'source_filenames': (
-            'crashstats/js/socorro/exploitability.js',
-        ),
-        'output_filename': 'js/exploitability.min.js',
     },
     'gccrashes': {
         'source_filenames': (
