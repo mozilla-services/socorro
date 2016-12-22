@@ -6,7 +6,7 @@ import datetime
 import re
 from collections import defaultdict
 
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
 from socorro.lib import (
     BadArgumentError,
@@ -18,6 +18,9 @@ from socorro.middleware.search_common import SearchBase
 
 
 BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
+ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(
+    'ElasticsearchParseException\[Failed to parse \[([^\]]+)\]\]'
+)
 
 
 class SuperSearch(SearchBase):
@@ -480,6 +483,22 @@ class SuperSearch(SearchBase):
                     aggregations = {}
                     shards = None
                     break
+            except RequestError as exception:
+                # Try to handle it gracefully if we can find out what
+                # input was bad and caused the exception.
+                try:
+                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
+                        exception.error
+                    )[-1]
+                    # Loop over the original parameters to try to figure
+                    # out which *key* had the bad input.
+                    for key, value in kwargs.items():
+                        if value == bad_input:
+                            raise BadArgumentError(key)
+                except IndexError:
+                    # Not an ElasticsearchParseException exception
+                    pass
+                raise
 
         if shards and shards.failed:
             # Some shards failed. We want to explain what happened in the
