@@ -110,8 +110,6 @@ python-dateutil==2.4.2 \
     --hash=sha256:2ae63cf475f0bd049b722fac20813d62aedc14957dd5a3bf00d120d2b5404460
 ordereddict==1.1 \
     --hash=sha256:1c35b4ac206cef2d24816c89f89cf289dd3d38cf7c449bb3fab7bf6d43f01b1f
-happybase==0.7 \
-    --hash=sha256:95865c4aebad370c538907278520fee13e760be67c71eb989a7a9fb0d266fe90
 crontabber==0.16.1 \
     --hash=sha256:250dfb9182954e767c715f2fd40658c50b28c8c5a0a4f82f12af660b86d68fdf \
     --hash=sha256:2a7b7082aa4b043ad4d66c99e1a9bc5c2c2df31b1456ced0ad1771c3cd5b3b7a
