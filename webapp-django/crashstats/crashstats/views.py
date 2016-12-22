@@ -1,7 +1,6 @@
 import copy
 import json
 import datetime
-import math
 import urllib
 import gzip
 from collections import defaultdict
@@ -715,64 +714,6 @@ def crashes_per_day(request, default_context=None):
 
 @pass_default_context
 @permission_required('crashstats.view_exploitability')
-def exploitable_crashes(
-    request,
-    product=None,
-    versions=None,
-    default_context=None
-):
-    """This function is now deprecated in favor of the new one called
-    exploitability_report"""
-    context = default_context or {}
-    if product is None:
-        return redirect(
-            'crashstats:exploitable_crashes',
-            settings.DEFAULT_PRODUCT,
-            permanent=True
-        )
-
-    try:
-        page = max(1, int(request.GET.get('page', 1)))
-    except ValueError:
-        page = 1
-
-    context['current_page'] = page
-
-    results_per_page = settings.EXPLOITABILITY_BATCH_SIZE
-
-    exploitable_crashes = models.CrashesByExploitability()
-    exploitable = exploitable_crashes.get(
-        product=product,
-        version=versions,
-        page=page,
-        batch=results_per_page
-    )
-    crashes = []
-    bugs = defaultdict(list)
-    signatures = [x['signature'] for x in exploitable['hits']]
-    if signatures:
-        api = models.Bugs()
-        for b in api.get(signatures=signatures)['hits']:
-            bugs[b['signature']].append(b['id'])
-    for crash in exploitable['hits']:
-        crash['bugs'] = sorted(bugs.get(crash['signature'], []), reverse=True)
-        crashes.append(crash)
-    context['crashes'] = crashes
-    context['pages'] = int(math.ceil(
-        1.0 * exploitable['total'] / results_per_page
-    ))
-    context['version'] = versions
-    context['report'] = 'exploitable'
-    context['new_link_url'] = reverse('crashstats:exploitability_report')
-    query_string = {'product': product}
-    if versions:
-        query_string['version'] = versions
-    context['new_link_url'] += '?' + urllib.urlencode(query_string, True)
-    return render(request, 'crashstats/exploitability.html', context)
-
-
-@pass_default_context
-@permission_required('crashstats.view_exploitability')
 def exploitability_report(request, default_context=None):
     context = default_context or {}
 
@@ -884,16 +825,6 @@ def exploitability_report(request, default_context=None):
     context['crashes'] = crashes
     context['product'] = product
     context['version'] = version
-    if context['product'] and context['version']:
-        context['old_link_url'] = reverse(
-            'crashstats:exploitable_crashes',
-            args=(context['product'], context['version'])
-        )
-    else:
-        context['old_link_url'] = reverse(
-            'crashstats:exploitable_crashes',
-            args=(context['product'],)
-        )
     context['report'] = 'exploitable'
     return render(request, 'crashstats/exploitability_report.html', context)
 
