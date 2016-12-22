@@ -105,36 +105,6 @@ def robots_txt(request):
     )
 
 
-def build_data_object_for_adu_graphs(start_date, end_date, response_items,
-                                     report_type='by_version',
-                                     code_to_name=None):
-    count = len(response_items)
-    graph_data = {
-        'startDate': start_date,
-        'endDate': end_date,
-        'count': count,
-        'labels': [],
-    }
-
-    for count, product_version in enumerate(sorted(response_items,
-                                                   reverse=True),
-                                            start=1):
-        graph_data['ratio%s' % count] = []
-        label = product_version.split(':')[-1]
-        # the `product_version` can be something like `firefox:23.0:win`
-        # so use code_to_name so we can turn it into a nice looking label
-        if code_to_name:
-            label = code_to_name.get(label, label)
-        graph_data['labels'].append(label)
-
-        for day in sorted(response_items[product_version]):
-            ratio = response_items[product_version][day]['crash_hadu']
-            t = day
-            graph_data['ratio%s' % count].append([t, ratio])
-
-    return graph_data
-
-
 def build_id_to_date(build_id):
     yyyymmdd = str(build_id)[:8]
     return '{}-{}-{}'.format(
@@ -372,20 +342,6 @@ def _get_crashes_per_day_with_adu(
     return graph_data, results, adi_by_version
 
 
-def build_data_object_for_crash_reports(response_items):
-
-    crash_reports = []
-
-    for count, product_version in enumerate(sorted(response_items,
-                                                   reverse=True)):
-        prod_ver = {}
-        prod_ver['product'] = product_version.split(':')[0]
-        prod_ver['version'] = product_version.split(':')[1]
-        crash_reports.append(prod_ver)
-
-    return crash_reports
-
-
 def get_product_versions_for_crashes_per_day(facets, product):
     versions = facets['version']
     versions = sorted(versions, key=itemgetter('term'), reverse=True)
@@ -436,168 +392,6 @@ def get_latest_nightly(context, product):
                 break
 
     return version
-
-
-@pass_default_context
-def daily(request, default_context=None):
-    context = default_context or {}
-
-    # legacy fix
-    if 'v[]' in request.GET or 'os[]' in request.GET:
-        new_url = (request.build_absolute_uri()
-                   .replace('v[]', 'v')
-                   .replace('os[]', 'os'))
-        return redirect(new_url, permanent=True)
-
-    context['products'] = context['active_versions'].keys()
-
-    platforms_api = models.Platforms()
-    platforms = platforms_api.get()
-
-    form_class = forms.DailyFormByVersion
-
-    date_range_types = ['report', 'build']
-    hang_types = ['any', 'crash', 'hang-p']
-
-    form = form_class(
-        context['active_versions'],
-        platforms,
-        data=request.GET,
-        date_range_types=date_range_types,
-        hang_types=hang_types,
-    )
-    if form.is_valid():
-        params = form.cleaned_data
-        params['product'] = params.pop('p')
-        params['versions'] = sorted(list(set(params.pop('v'))), reverse=True)
-        try:
-            params['os_names'] = params.pop('os')
-        except KeyError:
-            params['os_names'] = None
-    else:
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    if len(params['versions']) > 0:
-        context['version'] = params['versions'][0]
-
-    context['product'] = params['product']
-
-    if not params['versions']:
-        # need to pick the default featured ones
-        params['versions'] = []
-        for pv in context['active_versions'][context['product']]:
-            if pv['is_featured']:
-                params['versions'].append(pv['version'])
-
-    context['available_versions'] = []
-    for version in context['active_versions'][params['product']]:
-        context['available_versions'].append(version['version'])
-
-    if not params.get('os_names'):
-        params['os_names'] = [x['name'] for x in platforms if x.get('display')]
-
-    context['os_names'] = params.get('os_names')
-
-    end_date = params.get('date_end') or datetime.datetime.utcnow()
-    if isinstance(end_date, datetime.datetime):
-        end_date = end_date.date()
-    start_date = (params.get('date_start') or
-                  end_date - datetime.timedelta(weeks=2))
-    if isinstance(start_date, datetime.datetime):
-        start_date = start_date.date()
-
-    context['start_date'] = start_date.strftime('%Y-%m-%d')
-    context['end_date'] = end_date.strftime('%Y-%m-%d')
-
-    context['duration'] = abs((start_date - end_date).days)
-    context['dates'] = utils.daterange(start_date, end_date)
-
-    context['hang_type'] = params.get('hang_type') or 'any'
-
-    context['date_range_type'] = params.get('date_range_type') or 'report'
-
-    if params.get('hang_type') == 'any':
-        hang_type = None
-    else:
-        hang_type = params.get('hang_type')
-
-    api = models.CrashesPerAdu()
-    crashes = api.get(
-        product=params['product'],
-        versions=params['versions'],
-        from_date=start_date,
-        to_date=end_date,
-        date_range_type=params['date_range_type'],
-        os=params['os_names'],
-        report_type=hang_type
-    )
-
-    code_to_name = dict(
-        (x['code'], x['name']) for x in platforms if x.get('display')
-    )
-    cadu = {}
-    cadu = build_data_object_for_adu_graphs(
-        context['start_date'],
-        context['end_date'],
-        crashes['hits'],
-        code_to_name=code_to_name
-    )
-    cadu['product_versions'] = build_data_object_for_crash_reports(
-        crashes['hits'],
-    )
-
-    data_table = {
-        'totals': {},
-        'dates': {}
-    }
-
-    has_data_versions = set()
-    for product_version in crashes['hits']:
-        data_table['totals'][product_version] = {
-            'crashes': 0,
-            'adu': 0,
-            'throttle': 0,
-            'crash_hadu': 0,
-            'ratio': 0,
-        }
-        for date in crashes['hits'][product_version]:
-            crash_info = crashes['hits'][product_version][date]
-            has_data_versions.add(crash_info['version'])
-            if date not in data_table['dates']:
-                data_table['dates'][date] = []
-            data_table['dates'][date].append(crash_info)
-
-    if params['date_range_type'] == 'build':
-        # for the Date Range = "Build Date" report, we only want to
-        # include versions that had data.
-        context['versions'] = list(has_data_versions)
-    else:
-        context['versions'] = params['versions']
-
-    for date in data_table['dates']:
-        data_table['dates'][date] = sorted(data_table['dates'][date],
-                                           key=itemgetter('version'),
-                                           reverse=True)
-
-    if request.GET.get('format') == 'csv':
-        return _render_daily_csv(
-            request,
-            data_table,
-            params['product'],
-            params['versions'],
-            platforms,
-            context['os_names'],
-        )
-    context['data_table'] = data_table
-    context['graph_data'] = cadu
-    context['report'] = 'daily'
-
-    url = reverse('crashstats:crashes_per_day')
-    if request.META.get('QUERY_STRING'):
-        url += '?{}'.format(request.META['QUERY_STRING'])
-    context['new_daily_report_url'] = url
-
-    return render(request, 'crashstats/daily.html', context)
 
 
 def _render_daily_csv(request, data, product, versions, platforms, os_names):
@@ -915,16 +709,6 @@ def crashes_per_day(request, default_context=None):
             )
         )
     context['errors'] = errors
-
-    # This 'Crashes per User' report replaces an older version
-    # of the report that produces near identical output, but does
-    # it using reading aggregates stored in Postgresql.
-    # As a transition phase, we offer a link back to the old
-    # report using the same current parameters.
-    url = reverse('crashstats:daily')
-    if request.META.get('QUERY_STRING'):
-        url += '?{}'.format(request.META['QUERY_STRING'])
-    context['old_daily_report_url'] = url
 
     return render(request, 'crashstats/crashes_per_day.html', context)
 

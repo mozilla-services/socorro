@@ -62,12 +62,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/crontabber-state.min.css',
     },
-    'daily': {
-        'source_filenames': (
-            'crashstats/css/daily.less',
-        ),
-        'output_filename': 'css/daily.min.css',
-    },
     'documentation': {
         'source_filenames': (
             'documentation/css/documentation.less',
@@ -279,12 +273,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/crontabber_state.js',
         ),
         'output_filename': 'js/crontabber-state.min.js',
-    },
-    'daily': {  # deprecated
-        'source_filenames': (
-            'crashstats/js/socorro/daily.js',
-        ),
-        'output_filename': 'js/daily.min.js',
     },
     'documentation': {
         'source_filenames': (

@@ -26,9 +26,6 @@ urlpatterns = patterns(
     url(r'^crontabber-state/$',
         views.crontabber_state,
         name='crontabber_state'),
-    url('^daily$',
-        views.daily,
-        name='daily'),
     url('^crashes-per-day/$',
         views.crashes_per_day,
         name='crashes_per_day'),
@@ -90,7 +87,7 @@ urlpatterns = patterns(
             permanent=False  # this is not a legacy URL
         )),
 
-    # redirect deceased Advanced Search URLs to Super Search
+    # redirect deceased Advanced Search URL to Super Search
     url(r'^query/$',
         RedirectView.as_view(
             url='/search/',
@@ -98,7 +95,7 @@ urlpatterns = patterns(
             permanent=True
         )),
 
-    # redirect deceased Report List URLs to Signature report
+    # redirect deceased Report List URL to Signature report
     url(r'^report/list$',
         RedirectView.as_view(
             pattern_name='signature:signature_report',
@@ -106,20 +103,13 @@ urlpatterns = patterns(
             permanent=True
         )),
 
-    # Redirect from the old name "Crashes per User" to "Crashes per Day"
-    url(
-        r'^crashes-per-user/$',
+    # redirect deceased Daily Crashes URL to Crasher per Day
+    url(r'^daily$',
         RedirectView.as_view(
             pattern_name='crashstats:crashes_per_day',
             query_string=True,
-            # At some point in 2018, we can confidently change this to:
-            # `permanent=True` when we know the redirect is working correctly.
-            # In the transition time, it's safer to use a temporary redirect
-            # since permanent redirects tend to get very stuck in the brower.
-            permanent=not settings.DEBUG,
-        ),
-        name='crashes_per_user_redirect',
-    ),
+            permanent=True
+        )),
 
     # Redirect old independant pages to the unified Profile page.
     url(r'^your-crashes/$',
