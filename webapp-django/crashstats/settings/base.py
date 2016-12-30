@@ -107,6 +107,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'session_csrf.CsrfMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -731,3 +732,11 @@ LAST_LOGIN_MAX = config(
 
 
 GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
+
+
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1136371
+# This sets the header `strict-transport-security: max-age=31536000`
+# on every secure request.
+# The purpose is to tell browser to never accept this site under non-https
+# once it's been loaded over https.
+SECURE_HSTS_SECONDS = 31536000  # 1 year
