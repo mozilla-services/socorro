@@ -1,1 +1,2 @@
 */5 * * * * socorro /data/socorro/application/scripts/crons/crontabber.sh
+*/5 * * * * socorro /data/socorro/application/scripts/crons/crontabber-fetch-adi.sh
