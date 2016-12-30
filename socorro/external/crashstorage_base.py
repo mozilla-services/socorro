@@ -10,7 +10,7 @@ import copy
 import sys
 import os
 import collections
-import datetime
+import time
 
 from socorro.lib.util import DotDict as SocorroDotDict
 
@@ -1176,8 +1176,8 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             config,
             quit_check_callback)
         self.tag = config.benchmark_tag
-        self.start_timer = datetime.datetime.now
-        self.end_timer = datetime.datetime.now
+        self.start_timer = time.clock
+        self.end_timer = time.clock
 
     #--------------------------------------------------------------------------
     def close(self):
