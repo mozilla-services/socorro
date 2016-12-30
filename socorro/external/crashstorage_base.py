@@ -10,7 +10,7 @@ import copy
 import sys
 import os
 import collections
-import datetime
+import time
 
 from socorro.lib.util import DotDict as SocorroDotDict
 
@@ -1176,8 +1176,7 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             config,
             quit_check_callback)
         self.tag = config.benchmark_tag
-        self.start_timer = datetime.datetime.now
-        self.end_timer = datetime.datetime.now
+        self.timer = time.time
 
     #--------------------------------------------------------------------------
     def close(self):
@@ -1186,9 +1185,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        start_time = self.start_timer()
+        start_time = self.timer()
         self.wrapped_crashstore.save_raw_crash(raw_crash, dumps, crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s save_raw_crash %s',
             self.tag,
@@ -1197,9 +1196,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
-        start_time = self.start_timer()
+        start_time = self.timer()
         self.wrapped_crashstore.save_processed(processed_crash)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s save_processed %s',
             self.tag,
@@ -1225,9 +1224,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
-        start_time = self.start_timer()
+        start_time = self.timer()
         result = self.wrapped_crashstore.get_raw_crash(crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s get_raw_crash %s',
             self.tag,
@@ -1237,9 +1236,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
-        start_time = self.start_timer()
+        start_time = self.timer()
         result = self.wrapped_crashstore.get_raw_dump(crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s get_raw_dump %s',
             self.tag,
@@ -1249,9 +1248,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
-        start_time = self.start_timer()
+        start_time = self.timer()
         result = self.wrapped_crashstore.get_raw_dumps(crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s get_raw_dumps %s',
             self.tag,
@@ -1261,9 +1260,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
-        start_time = self.start_timer()
+        start_time = self.timer()
         result = self.wrapped_crashstore.get_raw_dumps_as_files(crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s get_raw_dumps_as_files %s',
             self.tag,
@@ -1273,9 +1272,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
-        start_time = self.start_timer()
+        start_time = self.timer()
         result = self.wrapped_crashstore.get_unredacted_processed(crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s get_unredacted_processed %s',
             self.tag,
@@ -1285,9 +1284,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
 
     #--------------------------------------------------------------------------
     def remove(self, crash_id):
-        start_time = self.start_timer()
+        start_time = self.timer()
         self.wrapped_crashstore.remove(crash_id)
-        end_time = self.end_timer()
+        end_time = self.timer()
         self.config.logger.debug(
             '%s remove %s',
             self.tag,
