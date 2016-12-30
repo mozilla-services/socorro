@@ -242,7 +242,7 @@ do
 done
 
 echo "Running Django syncdb"
-/data/socorro/socorro-virtualenv/bin/python \
+/data/socorro/webapp-django/virtualenv/bin/python \
     /data/socorro/webapp-django/manage.py syncdb --noinput \
     &> /var/log/socorro/django-syncdb.log
 error $? "django syncdb failed `cat /var/log/socorro/django-syncdb.log`"
