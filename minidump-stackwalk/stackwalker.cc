@@ -820,7 +820,7 @@ static void ConvertCPUInfoToJSON(const string& cpuinfo,
     }
 
     try {
-        root["system_info"]["cpu_microcode_version"] = static_cast<Json::UInt>(std::stoi(trim(bits[1]), nullptr, 0));
+        root["system_info"]["cpu_microcode_version"] = static_cast<Json::UInt>(std::stoi(trim(bits[1]), nullptr, 16));
         break;
     } catch (const std::invalid_argument& e) {}
   }
