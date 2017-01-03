@@ -37,6 +37,7 @@
 #include <vector>
 #include <set>
 #include <cstdlib>
+#include <stdexcept>
 
 #include <errno.h>
 #include <getopt.h>
@@ -796,6 +797,35 @@ static string stripquotes(const string& s) {
   return s;
 }
 
+static string trim(const string& s) {
+  size_t first = s.find_first_not_of(" \t");
+  if (first == string::npos) {
+    first = 0;
+  }
+
+  size_t last = s.find_last_not_of(" \t");
+  if (last == string::npos) {
+    last = s.length();
+  }
+
+  return s.substr(first, last);
+}
+
+static void ConvertCPUInfoToJSON(const string& cpuinfo,
+                                 Json::Value& root) {
+  for (string& line : split(cpuinfo, '\n')) {
+    vector<string> bits = split(line, ':');
+    if (bits.size() != 2 || !startswith(bits[0], "microcode")) {
+        continue;
+    }
+
+    try {
+        root["system_info"]["cpu_microcode_version"] = static_cast<Json::UInt>(std::stoi(trim(bits[1]), nullptr, 16));
+        break;
+    } catch (const std::invalid_argument& e) {}
+  }
+}
+
 static void ConvertLSBReleaseToJSON(const string& lsb_release,
                                     Json::Value& root) {
   Json::Value lsb(Json::objectValue);
@@ -1168,6 +1198,17 @@ int main(int argc, char** argv)
   if (misc_info && misc_info->misc_info() &&
       (misc_info->misc_info()->flags1 & MD_MISCINFO_FLAGS1_PROCESS_ID)) {
     root["pid"] = misc_info->misc_info()->process_id;
+  }
+
+  // See if this is a Linux dump with /proc/cpuinfo in it
+  uint32_t cpuinfo_length = 0;
+  if (process_state.system_info()->os == "Linux" &&
+      minidump.SeekToStreamType(MD_LINUX_CPU_INFO, &cpuinfo_length)) {
+    string contents;
+    contents.resize(cpuinfo_length);
+    if (minidump.ReadBytes(const_cast<char*>(contents.data()), cpuinfo_length)) {
+      ConvertCPUInfoToJSON(contents, root);
+    }
   }
 
   // See if this is a Linux dump with /etc/lsb-release in it
