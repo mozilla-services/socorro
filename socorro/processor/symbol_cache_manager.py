@@ -5,7 +5,7 @@
 import os
 import sys
 import tempfile
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from configman import Namespace, RequiredConfig
 
