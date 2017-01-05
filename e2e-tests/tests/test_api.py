@@ -109,7 +109,7 @@ class TestAPI:
         response = requests.get(base_url + '/api/SuperSearchFields/')
         assert response.status_code == 200
         fields = response.json()
-        assert fields['uuid'], fields
+        assert 'uuid' in fields
 
     @pytest.mark.nondestructive
     def test_platforms(self, base_url):
