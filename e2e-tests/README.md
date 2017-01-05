@@ -1,5 +1,5 @@
 End-to-End Tests for Socorro
-=============================
+============================
 
 Continuous Integration
 ----------------------
@@ -21,7 +21,7 @@ We suggest using a different virtual environment for these tests than the
 rest of Socorro so you're not mixing requirements:
 
 	$ mkvirtualenv socorro-tests
-	$ # make sure you DON'T run the next command in 
+	$ # make sure you DON'T run the next command in
 	$ # your dev virtualenv.
 	$ pip install -r requirements.txt
 
@@ -94,7 +94,7 @@ simply turn off the UI.
 
 __Use a different driver__
 
-[pytest-selenium] provides the ability to run tests against [many other][test envs] browser environments -- consider using a different driver executable or external provider. 
+[pytest-selenium] provides the ability to run tests against [many other][test envs] browser environments -- consider using a different driver executable or external provider.
 
 It is important to note that tests must pass with Firefox driver otherwise they will not be accepted for merging.
 
@@ -149,5 +149,5 @@ This software is licensed under the [MPL] 2.0:
 [Style Guide]: https://wiki.mozilla.org/QA/Execution/Web_Testing/Docs/Automation/StyleGuide
 [MPL]: http://www.mozilla.org/MPL/2.0/
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
-[firefoxdownloads]: https://ftp.mozilla.org/pub/firefox/releases/
+[firefoxdownloads]: https://ftp.mozilla.org/pub/firefox/releases/44.0.2/
 [test envs]: http://pytest-selenium.readthedocs.io/en/latest/user_guide.html#specifying-a-browser
