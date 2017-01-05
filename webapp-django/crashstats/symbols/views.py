@@ -57,8 +57,6 @@ def check_symbols_archive_content(content):
 
 def unpack_and_upload(iterator, symbols_upload, bucket_name, bucket_location):
     necessary_setting_keys = (
-        'AWS_ACCESS_KEY',
-        'AWS_SECRET_ACCESS_KEY',
         'SYMBOLS_BUCKET_DEFAULT_LOCATION',
         'SYMBOLS_BUCKET_DEFAULT_NAME',
         'SYMBOLS_FILE_PREFIX',

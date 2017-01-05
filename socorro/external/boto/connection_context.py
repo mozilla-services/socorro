@@ -124,13 +124,13 @@ class ConnectionContextBase(RequiredConfig):
     required_config.add_option(
         'access_key',
         doc="access key",
-        default="",
+        default=None,
         reference_value_from='resource.boto',
     )
     required_config.add_option(
         'secret_access_key',
         doc="secret access key",
-        default="",
+        default=None,
         secret=True,
         reference_value_from='secrets.boto',
         likely_to_be_changed=True,
