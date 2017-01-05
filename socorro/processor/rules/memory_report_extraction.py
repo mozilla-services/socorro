@@ -5,9 +5,13 @@
 from socorro.lib.transform_rules import Rule
 
 
-UNITS_BYTES = 0
+# Kinds of memory reporters.
 KIND_NONHEAP = 0
 KIND_HEAP = 1
+# Type of units used by memory reporters.
+UNITS_BYTES = 0
+# For more information on those values, see:
+# https://dxr.mozilla.org/mozilla-central/source/xpcom/base/nsIMemoryReporter.idl#27-125
 
 
 class MemoryReportExtraction(Rule):
