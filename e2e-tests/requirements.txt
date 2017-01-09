@@ -1,4 +1,3 @@
-bidpom==2.0.1
 PyPOM==1.1.1
 pytest==3.0.4
 pytest-base-url==1.2.0
