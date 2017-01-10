@@ -1,4 +1,4 @@
-/* global window, $ */
+/* global window, $, jsSHA, Promise */
 
 window.correlations = (function () {
     /**
@@ -136,10 +136,41 @@ window.correlations = (function () {
                 return 1;
             }
 
-            // Then, sort by percentage difference between signature and overall (using the lower endpoint
-            // of the confidence interval of the difference).
-            var ciA = confidenceInterval(a.count_group, total_group, a.count_reference, total_reference);
-            var ciB = confidenceInterval(b.count_group, total_group, b.count_reference, total_reference);
+            // Then, sort by percentage difference between signature and
+            // overall (using the lower endpoint of the confidence interval
+            // of the difference).
+            var ciA = null;
+            if (a.prior) {
+                // If one of the two elements has a prior that alters a rule's
+                // distribution significantly, sort by the percentage of the rule
+                // given the prior.
+                ciA = confidenceInterval(
+                    a.prior.count_group,
+                    a.prior.total_group,
+                    a.prior.count_reference,
+                    a.prior.total_reference
+                );
+            }
+            else {
+                ciA = confidenceInterval(
+                    a.count_group, total_group, a.count_reference, total_reference
+                );
+            }
+
+            var ciB = null;
+            if (b.prior) {
+                ciB = confidenceInterval(
+                    b.prior.count_group,
+                    b.prior.total_group,
+                    b.prior.count_reference,
+                    b.prior.total_reference
+                );
+            }
+            else {
+                ciB = confidenceInterval(
+                    b.count_group, total_group, b.count_reference, total_reference
+                );
+            }
 
             return Math.min(Math.abs(ciB[0]), Math.abs(ciB[1])) - Math.min(Math.abs(ciA[0]), Math.abs(ciA[1]));
         });
@@ -171,7 +202,17 @@ window.correlations = (function () {
             .map(function (line) {
                 var percentGroup = toPercentage(line.count_group / total_group);
                 var percentRef = toPercentage(line.count_reference / total_reference);
-                return '(' + percentGroup + '% in signature vs ' + percentRef + '% overall) ' + itemToLabel(line.item);
+
+                var result = '(' + percentGroup + '% in signature vs ' + percentRef + '% overall) ' + itemToLabel(line.item);
+
+                // If the rule has a prior that alters its distribution significantly, print it after the rule.
+                if (line.prior && line.prior.total_group && line.prior.total_reference) {
+                    var percentGroupGivenPrior = toPercentage(line.prior.count_group / line.prior.total_group);
+                    var percentRefGivenPrior = toPercentage(line.prior.count_reference / line.prior.total_reference);
+                    result += ' [' + percentGroupGivenPrior + '% vs ' + percentRefGivenPrior + '% if ' + itemToLabel(line.prior.item) + ']';
+                }
+
+                return result;
             });
 
             if (signatureData.top_words) {
