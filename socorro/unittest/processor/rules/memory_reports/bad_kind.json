@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "hasMozMallocUsableSize": true,
+ "reports": [
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "explicit/foo",
+   "kind": 2,
+   "units": 0,
+   "amount": 1818624,
+   "description": "foo foo foo"
+  }
+ ]
+}

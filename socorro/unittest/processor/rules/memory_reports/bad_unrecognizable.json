@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "hasMozMallocUsableSize": true,
+ "reportz": [
+  {
+   "process": "Main Process (pid 11620)",
+   "path": "js-main-runtime-temporary-peak",
+   "kind": 0,
+   "units": 0,
+   "amount": 1818624,
+   "description": "Peak transient data size in the main JSRuntime (the current size of which is reported as 'explicit/js-non-window/runtime/temporary')."
+  }
+ ]
+}
