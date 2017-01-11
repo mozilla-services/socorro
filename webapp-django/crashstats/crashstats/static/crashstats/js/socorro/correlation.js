@@ -98,7 +98,7 @@ window.correlations = (function () {
             return '100.0';
         }
 
-        if (result.length < 4) {
+        if (result.length < 5) {
             return '0' + result;
         }
 
