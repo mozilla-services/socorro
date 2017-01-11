@@ -19,6 +19,7 @@ from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.utils.http import urlquote
 
+from csp.decorators import csp_update
 from session_csrf import anonymous_csrf
 
 from socorro.lib import BadArgumentError
@@ -1114,6 +1115,7 @@ def exploitability_report(request, default_context=None):
     return render(request, 'crashstats/exploitability_report.html', context)
 
 
+@csp_update(CONNECT_SRC='analysis-output.telemetry.mozilla.org')
 @pass_default_context
 def report_index(request, crash_id, default_context=None):
     valid_crash_id = utils.find_crash_id(crash_id)
