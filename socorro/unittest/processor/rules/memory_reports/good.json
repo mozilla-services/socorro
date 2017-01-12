@@ -67,6 +67,22 @@
    "description": "Memory mapped by the process that is present in physical memory, also known as the resident set size (RSS).  This is the best single figure to use when considering the memory resources used by the process, but it depends both on other processes being run and details of the OS kernel and so is best used for comparing the memory usage of a single process at different points in time."
   },
   {
+    "kind": 2,
+    "description": "Memory used for storing GL textures.",
+    "process": "Web Content (pid 11717)",
+    "amount": 123456,
+    "units": 0,
+    "path": "gfx-textures"
+  },
+  {
+    "kind": 2,
+    "description": "The number of host objects stored for access via URLs (e.g. blobs passed to URL.createObjectURL).",
+    "process": "Web Content (pid 11717)",
+    "amount": 5,
+    "units": 1,
+    "path": "host-object-urls"
+  },
+  {
    "process": "Main Process (pid 11620)",
    "path": "explicit/heap-overhead/bin-unused",
    "kind": 0,
@@ -153,6 +169,86 @@
    "units": 0,
    "amount": 905883648,
    "description": "Memory mapped by the process, including code and data segments, the heap, thread stacks, memory explicitly mapped by the process via mmap and similar operations, and memory shared with other processes. This is the vsize figure as reported by 'top' and 'ps'.  This figure is of limited use on Mac, where processes share huge amounts of memory with one another.  But even on other operating systems, 'resident' is a much better measure of the memory resources used by the process."
+  },
+  {
+    "kind": 0,
+    "description": "Objects, including fixed slots.",
+    "process": "Web Content (pid 11717)",
+    "amount": 100000,
+    "units": 0,
+    "path": "js-main-runtime/compartments/classes/objects/gc-heap"
+  },
+  {
+    "kind": 1,
+    "description": "Non-fixed object slots.",
+    "process": "Web Content (pid 11717)",
+    "amount": 100000,
+    "units": 0,
+    "path": "js-main-runtime/compartments/classes/objects/malloc-heap/slots"
+  },
+  {
+    "kind": 1,
+    "description": "Normal (non-asm.js) indexed elements.",
+    "process": "Web Content (pid 11717)",
+    "amount": 100000,
+    "units": 0,
+    "path": "js-main-runtime/compartments/classes/objects/malloc-heap/elements/normal"
+  },
+  {
+    "kind": 1,
+    "description": "Miscellaneous object data.",
+    "process": "Web Content (pid 11717)",
+    "amount": 100000,
+    "units": 0,
+    "path": "js-main-runtime/compartments/classes/objects/malloc-heap/misc"
+  },
+  {
+    "kind": 0,
+    "description": "Shapes in a property tree.",
+    "process": "Web Content (pid 11717)",
+    "amount": 100000,
+    "units": 0,
+    "path": "js-main-runtime/compartments/classes/shapes/gc-heap/tree"
+  },
+  {
+    "kind": 0,
+    "description": "Shapes in dictionary mode.",
+    "process": "Web Content (pid 11717)",
+    "amount": 100000,
+    "units": 0,
+    "path": "js-main-runtime/compartments/classes/shapes/gc-heap/dict"
+  },
+  {
+    "kind": 1,
+    "description": "Decoded image data which is stored on the heap.",
+    "process": "Web Content (pid 11717)",
+    "amount": 48,
+    "units": 0,
+    "path": "explicit/images/chrome/vector/used/image(24x24, chrome:\\\\browser\\skin\\search-indicator-magnifying-glass.svg)/locked/surface(24x24@0)/decoded-heap"
+  },
+  {
+    "kind": 1,
+    "description": "Raster image source data and vector image documents.",
+    "process": "Web Content (pid 11717)",
+    "amount": 22088,
+    "units": 0,
+    "path": "explicit/images/chrome/vector/used/image(24x24, chrome:\\\\browser\\skin\\search-indicator-magnifying-glass.svg)/source"
+  },
+  {
+    "kind": 1,
+    "description": "Decoded image data which is stored on the heap.",
+    "process": "Web Content (pid 11717)",
+    "amount": 48,
+    "units": 0,
+    "path": "explicit/images/chrome/vector/used/image(30x31, chrome:\\\\browser\\skin\\tabbrowser\\tab-selected-end.svg)/locked/surface(30x31@0)/decoded-heap"
+  },
+  {
+    "kind": 1,
+    "description": "Raster image source data and vector image documents.",
+    "process": "Web Content (pid 11717)",
+    "amount": 40392,
+    "units": 0,
+    "path": "explicit/images/chrome/vector/used/image(30x31, chrome:\\\\browser\\skin\\tabbrowser\\tab-selected-end.svg)/source"
   },
   {
    "process": "Main Process (pid 11620)",

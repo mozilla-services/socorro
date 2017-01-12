@@ -67,8 +67,10 @@ class MemoryReportExtraction(Rule):
 
         # These ones are in the memory report.
         metrics_measured = {
+            'gfx-textures': 0,
             'ghost-windows': 0,
             'heap-allocated': 0,
+            'host-object-urls': 0,
             'private': 0,
             'resident': 0,
             'resident-unique': 0,
@@ -79,8 +81,11 @@ class MemoryReportExtraction(Rule):
 
         # These ones are derived from the memory report.
         metrics_derived = {
-            'heap-unclassified': 0,
             'explicit': 0,
+            'heap-overhead': 0,
+            'heap-unclassified': 0,
+            'images': 0,
+            'js-main-runtime': 0,
             'top-non-detached': 0,
         }
 
@@ -121,8 +126,15 @@ class MemoryReportExtraction(Rule):
                         )
                     )
 
-                if 'top(none)/detached' in path:
+                if path.startswith('explicit/images/'):
+                    all_metrics['images'] += amount
+                elif 'top(none)/detached' in path:
                     all_metrics['top-non-detached'] += amount
+                elif path.startswith('explicit/heap-overhead/'):
+                    all_metrics['heap-overhead'] += amount
+
+            elif path.startswith('js-main-runtime/'):
+                all_metrics['js-main-runtime'] += amount
 
             elif path in metrics_measured:
                 all_metrics[path] += amount
