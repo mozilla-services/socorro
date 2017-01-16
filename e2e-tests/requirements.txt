@@ -6,5 +6,5 @@ pytest-html==1.13.0
 pytest-selenium==1.7.0
 pytest-variables==1.4
 pytest-xdist==1.15.0
-selenium==2.53.6
+selenium==3.0.2
 requests==2.12.4
