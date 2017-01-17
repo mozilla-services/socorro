@@ -346,7 +346,7 @@ class SuperSearchFields(ElasticsearchBase):
                 all_fields[field] = overwrite_mapping
 
         def add_field_to_properties(properties, namespaces, field):
-            if not namespaces:
+            if not namespaces or not namespaces[0]:
                 properties[field['in_database_name']] = (
                     field['storage_mapping']
                 )
@@ -379,9 +379,6 @@ class SuperSearchFields(ElasticsearchBase):
             self.config.elasticsearch.elasticsearch_doctype: {
                 '_all': {
                     'enabled': False,
-                },
-                '_source': {
-                    'compress': True,
                 },
                 'properties': properties,
             }
