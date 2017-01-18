@@ -92,9 +92,14 @@ class TestMemoryReportExtraction(TestCase):
 
         expected_res = {
             'explicit': 232227872,
+            'gfx-textures': 0,
             'ghost-windows': 7,
             'heap-allocated': 216793184,
+            'heap-overhead': 14483360,
             'heap-unclassified': 171114283,
+            'host-object-urls': 0,
+            'images': 0,
+            'js-main-runtime': 0,
             'private': 182346923,
             'resident': 330346496,
             'resident-unique': 253452288,
@@ -114,9 +119,14 @@ class TestMemoryReportExtraction(TestCase):
 
         expected_res = {
             'explicit': 20655576,
+            'gfx-textures': 123456,
             'ghost-windows': 0,
             'heap-allocated': 20655576,
-            'heap-unclassified': 20655576,
+            'heap-overhead': 0,
+            'heap-unclassified': 20593000,
+            'host-object-urls': 5,
+            'images': 62576,
+            'js-main-runtime': 600000,
             'private': 0,
             'resident': 123518976,
             'resident-unique': 56209408,
