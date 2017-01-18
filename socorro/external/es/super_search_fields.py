@@ -380,6 +380,9 @@ class SuperSearchFields(ElasticsearchBase):
                 '_all': {
                     'enabled': False,
                 },
+                '_source': {
+                    'compress': True,
+                },
                 'properties': properties,
             }
         }
