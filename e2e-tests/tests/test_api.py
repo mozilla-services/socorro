@@ -10,7 +10,7 @@ import pytest
 
 class TestAPI:
 
-    @pytest.skip(reason='Bug 1331726 -  test_public_api_navigation is sporadically failing')
+    @pytest.mark.skip('Bug 1331726 - test_public_api_navigation is sporadically failing')
     @pytest.mark.nondestructive
     def test_public_api_navigation(self, base_url):
         response = requests.get(base_url + '/api/ProductVersions/', {
