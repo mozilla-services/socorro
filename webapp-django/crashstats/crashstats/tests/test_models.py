@@ -94,16 +94,6 @@ class TestModels(DjangoTestCase):
         eq_(result['from_date'], datetime.date.today().strftime('%Y-%m-%d'))
         ok_('os' not in result)
 
-        # The value `0` is a perfectly fine value and should be kept in the
-        # parameters, and not ignored as a "falsy" value.
-        api = models.CrashesByExploitability()
-        inp = {
-            'batch': 0,
-        }
-        result = api.kwargs_to_params(inp)
-        # no interesting conversion or checks here
-        eq_(result, inp)
-
     @mock.patch('requests.get')
     def test_bugzilla_api(self, rget):
         model = models.BugzillaBugInfo
@@ -674,71 +664,6 @@ class TestModels(DjangoTestCase):
         response = models.Status().get('3')
         ok_(response['breakpad_revision'])
         ok_(response['socorro_revision'])
-
-    @mock.patch('requests.get')
-    def test_exploitable_crashes(self, rget):
-        model = models.CrashesByExploitability
-        api = model()
-
-        def mocked_get(**options):
-            assert '/crashes/exploitability' in options['url']
-            return Response([
-                {
-                    'signature': 'FakeSignature',
-                    'report_date': '2013-06-06',
-                    'null_count': 0,
-                    'none_count': 1,
-                    'low_count': 2,
-                    'medium_count': 3,
-                    'high_count': 4
-                }
-            ])
-
-        rget.side_effect = mocked_get
-        r = api.get(batch=250, page=1)
-        eq_(r[0]['signature'], 'FakeSignature')
-        eq_(r[0]['report_date'], '2013-06-06')
-        eq_(r[0]['null_count'], 0)
-        eq_(r[0]['none_count'], 1)
-        eq_(r[0]['low_count'], 2)
-        eq_(r[0]['medium_count'], 3)
-        eq_(r[0]['high_count'], 4)
-
-    @mock.patch('requests.get')
-    def test_exploitable_crashes_parameter_type_errors(self, rget):
-        model = models.CrashesByExploitability
-        api = model()
-
-        def mocked_get(**options):
-            assert '/crashes/exploitability' in options['url']
-            return Response([
-                {
-                    'signature': 'FakeSignature',
-                    'report_date': '2013-06-06',
-                    'null_count': 0,
-                    'none_count': 1,
-                    'low_count': 2,
-                    'medium_count': 3,
-                    'high_count': 4
-                }
-            ])
-
-        rget.side_effect = mocked_get
-        assert_raises(
-            models.ParameterTypeError,
-            api.get,
-            batch='xxx',
-            page=1
-        )
-        assert_raises(
-            models.ParameterTypeError,
-            api.get,
-            batch=250,
-            page='xxx'
-        )
-
-        # but this should work
-        api.get(batch='250', page='1')
 
     def test_raw_crash(self):
         model = models.RawCrash
