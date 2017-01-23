@@ -58,7 +58,7 @@ window.correlations = (function () {
     function loadCorrelationData(signature, channel, product) {
         return loadChannelsData(product)
         .then(function (channelsData) {
-            if (!channelsData || signature in channelsData[channel]['signatures']) {
+            if (!channelsData || !channelsData[channel] || signature in channelsData[channel]['signatures']) {
                 return;
             }
 
@@ -182,6 +182,10 @@ window.correlations = (function () {
 
             if (!data[product]) {
                 return 'No correlation data was generated for the "' + product + '" product.';
+            }
+
+            if (!data[product][channel]) {
+                return 'No correlation data was generated for the "' + channel + '" channel and the "' + product + '" product.';
             }
 
             var signatureData = data[product][channel]['signatures'][signature];
