@@ -42,7 +42,12 @@ window.correlations = (function () {
                     'date': totals['date'],
                 };
 
-                ['release', 'beta', 'aurora', 'nightly'].forEach(function (ch) {
+                var channels = ['release', 'beta', 'aurora', 'nightly'];
+                if (product === 'Firefox') {
+                    channels.push('esr');
+                }
+
+                channels.forEach(function (ch) {
                     correlationData[product][ch] = {
                         'total': totals[ch],
                         'signatures': {},

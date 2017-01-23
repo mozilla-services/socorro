@@ -380,6 +380,8 @@ def signature_correlations(request, params):
             context['channel'] = 'aurora'
         elif all('a1' in version for version in params['version']):
             context['channel'] = 'nightly'
+        elif all('esr' in version for version in params['version']):
+            context['channel'] = 'esr'
 
     context['product'] = 'Firefox'
     if (
