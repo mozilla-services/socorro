@@ -10,9 +10,9 @@ import pytest
 
 class TestAPI:
 
-    @pytest.mark.skip('Bug 1331726 - test_public_api_navigation is sporadically failing')
     @pytest.mark.nondestructive
     def test_public_api_navigation(self, base_url):
+        # Request a list of all the products and versions
         response = requests.get(base_url + '/api/ProductVersions/', {
             'active': True,
         })
@@ -22,7 +22,9 @@ class TestAPI:
         for hit in response.json()['hits']:
             product_versions[hit['product']].append(hit['version'])
 
-        uuids = {}
+        # For each product, do a supersearch for all versions getting the uuid
+        # for a single crash for that product
+        product_to_uuid = {}
         for product, versions in product_versions.items():
             response = requests.get(base_url + '/api/SuperSearch/', {
                 '_columns': ['uuid'],
@@ -37,7 +39,7 @@ class TestAPI:
             assert not results['errors'], results['errors']
             assert results['facets']
             for hit in results['hits']:
-                uuids[product] = hit['uuid']
+                product_to_uuid[product] = hit['uuid']
 
             response = requests.get(base_url + '/api/ProductBuildTypes/', {
                 'product': product,
@@ -45,12 +47,13 @@ class TestAPI:
             assert response.status_code == 200
             assert response.json()['hits']
 
-        assert len(uuids) == len(product_versions)
+        # Assert we have at least one crash for every product
+        assert len(product_to_uuid) == len(product_versions)
 
-        # Look up each raw crashh and processed crash and record all
-        # found signatures.
-        signatures = {}
-        for uuid in uuids.values():
+        # Fetch the raw crash and processed crash for each uuid and verify we
+        # can't get the unredacted processed crash
+        uuid_to_signature = {}
+        for uuid in product_to_uuid.values():
             response = requests.get(base_url + '/api/RawCrash/', {
                 'crash_id': uuid,
             })
@@ -62,7 +65,7 @@ class TestAPI:
             assert response.status_code == 200
             processed_crash = response.json()
             assert processed_crash
-            signatures[uuid] = processed_crash['signature']
+            uuid_to_signature[uuid] = processed_crash['signature']
 
             # UnredactedProcessedCrash should not be allowed
             response = requests.get(
@@ -73,32 +76,33 @@ class TestAPI:
             )
             assert response.status_code == 403
 
-        assert len(signatures) == len(product_versions)
+        assert len(uuid_to_signature) == len(product_versions)
 
         # Check that we can fetch the "signature first date" for each
-        # signature.
+        # signature--some don't have one, so we try to roll with that
         response = requests.get(base_url + '/api/SignatureFirstDate/', {
-            'signatures': signatures.values(),
+            'signatures': uuid_to_signature.values(),
         })
         assert response.status_code == 200
         results = response.json()
-        first_dates = {}
-        for hit in results['hits']:
-            first_dates[hit['signature']] = hit['first_date']
 
-        assert len(first_dates) == len(signatures)
+        signature_to_first_date = {}
+        for hit in results['hits']:
+            signature_to_first_date[hit['signature']] = hit['first_date']
+
+        assert 0 < len(signature_to_first_date) <= len(uuid_to_signature)
 
         # Find all bug IDs for these signatures
         response = requests.get(base_url + '/api/Bugs/', {
-            'signatures': signatures.values(),
+            'signatures': uuid_to_signature.values(),
         })
         assert response.status_code == 200
         results = response.json()
-        bug_ids = defaultdict(list)
+        signature_to_bug_ids = defaultdict(list)
         for hit in results['hits']:
-            bug_ids[hit['signature']].append(hit['id'])
+            signature_to_bug_ids[hit['signature']].append(hit['id'])
 
-        for signature, ids in bug_ids.items():
+        for signature, ids in signature_to_bug_ids.items():
             response = requests.get(base_url + '/api/SignaturesByBugs/', {
                 'bug_ids': ids,
             })
