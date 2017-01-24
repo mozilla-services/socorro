@@ -53,14 +53,11 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'multi_field',
+            'type': 'string',
             'fields': {
-                'signature': {
-                    'type': 'string'
-                },
                 'full': {
                     'type': 'string',
-                    'index': 'not_analyzed'
+                    'index': 'not_analyzed',
                 }
             }
         },
@@ -79,14 +76,11 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'multi_field',
+            'type': 'string',
             'fields': {
-                'product': {
-                    'type': 'string'
-                },
                 'full': {
                     'type': 'string',
-                    'index': 'not_analyzed'
+                    'index': 'not_analyzed',
                 }
             }
         },
@@ -123,14 +117,11 @@ SUPERSEARCH_FIELDS = {
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'multi_field',
+            'type': 'string',
             'fields': {
-                'os_name': {
-                    'type': 'string'
-                },
                 'full': {
                     'type': 'string',
-                    'index': 'not_analyzed'
+                    'index': 'not_analyzed',
                 }
             }
         },
@@ -310,16 +301,13 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
+            'type': 'string',
             'fields': {
                 'full': {
+                    'type': 'string',
                     'index': 'not_analyzed',
-                    'type': 'string'
-                },
-                'user_comments': {
-                    'type': 'string'
                 }
-            },
-            'type': 'multi_field'
+            }
         }
     },
     'accessibility': {
@@ -475,17 +463,13 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
+            'type': 'string',
             'fields': {
-                'PluginFilename': {
-                    'index': 'analyzed',
-                    'type': 'string'
-                },
                 'full': {
+                    'type': 'string',
                     'index': 'not_analyzed',
-                    'type': 'string'
                 }
-            },
-            'type': 'multi_field'
+            }
         }
     },
     'plugin_name': {
@@ -502,17 +486,13 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
+            'type': 'string',
             'fields': {
-                'PluginName': {
-                    'index': 'analyzed',
-                    'type': 'string'
-                },
                 'full': {
+                    'type': 'string',
                     'index': 'not_analyzed',
-                    'type': 'string'
                 }
-            },
-            'type': 'multi_field'
+            }
         }
     },
     'plugin_version': {
@@ -529,17 +509,13 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
+            'type': 'string',
             'fields': {
-                'PluginVersion': {
-                    'index': 'analyzed',
-                    'type': 'string'
-                },
                 'full': {
+                    'type': 'string',
                     'index': 'not_analyzed',
-                    'type': 'string'
                 }
-            },
-            'type': 'multi_field'
+            }
         }
     },
     'android_model': {
@@ -556,16 +532,13 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
+            'type': 'string',
             'fields': {
-                'Android_Model': {
-                    'type': 'string'
-                },
                 'full': {
+                    'type': 'string',
                     'index': 'not_analyzed',
-                    'type': 'string'
                 }
-            },
-            'type': 'multi_field'
+            }
         }
     },
     'dump': {
@@ -600,18 +573,13 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'string',
         'storage_mapping': {
+            'type': 'string',
             'fields': {
-                'cpu_info': {
-                    'analyzer': 'standard',
-                    'index': 'analyzed',
-                    'type': 'string'
-                },
                 'full': {
+                    'type': 'string',
                     'index': 'not_analyzed',
-                    'type': 'string'
                 }
-            },
-            'type': 'multi_field'
+            }
         }
     },
     'dom_ipc_enabled': {
