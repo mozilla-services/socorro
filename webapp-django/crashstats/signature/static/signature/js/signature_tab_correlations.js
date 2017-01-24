@@ -35,10 +35,6 @@ SignatureReport.CorrelationsTab.prototype.loadControls = function() {
     // Create a select box for the channel.
     this.channelSelect = $('<select>', {'class': 'channels-list', id: 'correlations-channels-list'});
     channels.forEach(function (channel) {
-        if (channel === 'esr') {
-            // This correlations module doesn't support ESR releases.
-            return;
-        }
         self.channelSelect.append($('<option>', {
             'value': channel,
             'text': channel,
