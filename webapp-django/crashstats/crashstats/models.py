@@ -1013,35 +1013,6 @@ class RawCrash(SocorroMiddleware):
         return result
 
 
-class CrashesByExploitability(SocorroMiddleware):
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    URL_PREFIX = '/crashes/exploitability/'
-
-    required_params = (
-        ('batch', int),
-    )
-
-    possible_params = (
-        'start_date',
-        'end_date',
-        ('page', int),
-        'product',
-        'version',
-    )
-
-    defaults = {
-        'page': 1
-    }
-
-    API_REQUIRED_PERMISSIONS = (
-        'crashstats.view_exploitability',
-    )
-
-    API_WHITELIST = None
-
-
 class Bugs(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.bugs.Bugs
