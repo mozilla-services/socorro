@@ -92,6 +92,12 @@ Because Selenium opens real browser windows, it will steal focus and switch
 workspaces. Firefox doesn't have a headless mode of operation, so we can't
 simply turn off the UI.
 
+__Generate HTML report__
+
+If you add `--html /tmp/selenium/index.html` to the `py.test` command it
+generates a useful report that has the HTML and a screenshot of the page
+right before an exception happened.
+
 __Use a different driver__
 
 [pytest-selenium] provides the ability to run tests against [many other][test envs] browser environments -- consider using a different driver executable or external provider.
