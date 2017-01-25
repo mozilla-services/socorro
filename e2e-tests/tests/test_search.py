@@ -31,6 +31,7 @@ class TestSuperSearch:
         assert cs_super.are_search_results_found
         assert 'Firefox' == cs_super.selected_products
 
+    @pytest.mark.skip("Bug 1333577 failing consistently due to an incorrect locator")
     @pytest.mark.nondestructive
     def test_search_with_multiple_lines(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()
