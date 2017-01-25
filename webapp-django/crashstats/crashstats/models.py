@@ -768,54 +768,6 @@ class CrashesPerAdu(SocorroMiddleware):
     }
 
 
-class TCBS(SocorroMiddleware):
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    URL_PREFIX = '/crashes/signatures/'
-
-    required_params = (
-        'product',
-        'version',
-    )
-    possible_params = (
-        'crash_type',
-        ('end_date', datetime.date),
-        'date_range_type',
-        ('duration', int),
-        ('limit', int),
-        'os',
-    )
-    defaults = {
-        'limit': 300,
-    }
-
-    API_WHITELIST = {
-        'crashes': (
-            'changeInPercentOfTotal',
-            'changeInRank',
-            'content_count',
-            'count',
-            'currentRank',
-            'first_report',
-            'first_report_exact',
-            'hang_count',
-            'linux_count',
-            'mac_count',
-            'percentOfTotal',
-            'plugin_count',
-            'previousPercentOfTotal',
-            'previousRank',
-            'signature',
-            'startup_percent',
-            'versions',
-            'versions_count',
-            'win_count',
-            'is_gc_count',
-        )
-    }
-
-
 class ProcessedCrash(SocorroMiddleware):
 
     implementation = socorro.external.boto.crash_data.SimplifiedCrashData
@@ -1193,29 +1145,6 @@ class SignatureFirstDate(SocorroMiddleware):
                 )
                 dates[signature] = hit
         return dates
-
-
-class SignatureTrend(SocorroMiddleware):
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    URL_PREFIX = '/crashes/signature_history/'
-
-    required_params = (
-        'product',
-        'version',
-        'signature',
-        ('end_date', datetime.date),
-        ('start_date', datetime.date),
-    )
-
-    API_WHITELIST = {
-        'hits': (
-            'date',
-            'count',
-            'percent_of_total',
-        )
-    }
 
 
 class Status(SocorroMiddleware):
