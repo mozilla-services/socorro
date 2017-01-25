@@ -41,7 +41,6 @@ from django.utils.encoding import iri_to_uri
 from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
-from crashstats.api.cleaner import Cleaner
 
 
 DEPRECATION_RAMPAGE_WARNING = (
@@ -730,42 +729,6 @@ class Platforms(SocorroMiddleware):
         """Return all platforms without reducing them to a pre-configured list.
         """
         return super(Platforms, self).get()
-
-
-class CrashesPerAdu(SocorroMiddleware):
-    # Fetch records for active daily installs.
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    URL_PREFIX = '/crashes/daily/'
-
-    required_params = (
-        'product',
-        ('versions', list),
-    )
-
-    possible_params = (
-        ('from_date', datetime.date),
-        ('to_date', datetime.date),
-        'date_range_type',
-        'os',
-        'report_type',
-    )
-
-    API_WHITELIST = {
-        'hits': {
-            Cleaner.ANY: {
-                Cleaner.ANY: (
-                    'adu',
-                    'date',
-                    'crash_hadu',
-                    'product',
-                    'report_count',
-                    'version',
-                )
-            }
-        }
-    }
 
 
 class ProcessedCrash(SocorroMiddleware):
