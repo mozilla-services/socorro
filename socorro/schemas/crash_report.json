@@ -83,6 +83,42 @@
             "type": ["string", "null"],
             "description": "The crashing address. This value is only meaningful for crashes involving bad memory accesses. "
         },
+        "android_board": {
+            "type": ["string", "null"],
+            "description": "The board used by the Android device."
+        },
+        "android_brand": {
+            "type": ["string", "null"],
+            "description": "The Android device brand."
+        },
+        "android_cpu_abi": {
+            "type": ["string", "null"],
+            "description": "The Android primary CPU ABI being used."
+        },
+        "android_cpu_abi2": {
+            "type": ["string", "null"],
+            "description": "The Android secondary CPU ABI being used."
+        },
+        "android_device": {
+            "type": ["string", "null"],
+            "description": "The android device name."
+        },
+        "android_hardware": {
+            "type": ["string", "null"],
+            "description": "The android device hardware."
+        },
+        "android_manufacturer": {
+            "type": ["string", "null"],
+            "description": "The Android device manufacturer."
+        },
+        "android_model": {
+            "type": ["string", "null"],
+            "description": "The android device model name."
+        },
+        "android_version": {
+            "type": ["string", "null"],
+            "description": "The Android version."
+        },
         "app_init_dlls": {
             "type": ["string", "null"],
             "description": "DLLs injected through the AppInit_DLLs registry key."
