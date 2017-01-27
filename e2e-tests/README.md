@@ -7,9 +7,9 @@ Continuous Integration
 [![prod](https://img.shields.io/jenkins/s/https/webqa-ci.mozilla.com/socorro.prod.svg?label=prod)](https://webqa-ci.mozilla.com/job/socorro.prod/)
 
 
-This directory holds Socorro client-based end-to-end tests which is why they're different than the rest of the code in this repository.
+This directory holds Socorro client-based end-to-end tests, which is why they're different than the rest of the code in this repository.
 
-To review the specific Python packages the tests utilize, please review `requirements.txt`.
+To review the specific-Python packages the tests use, please review `tox.ini`.
 
 Set up and run Socorro tests
 -----------------------------
@@ -17,44 +17,44 @@ Set up and run Socorro tests
 Review the documentation for [pytest-selenium][pytest-selenium] and decide which browser
 environment you wish to target.
 
-We suggest using a different virtual environment for these tests than the
-rest of Socorro so you're not mixing requirements:
+* [Install Tox](https://tox.readthedocs.io/en/latest/install.html)
+* Run `tox`
 
-	$ mkvirtualenv socorro-tests
-	$ # make sure you DON'T run the next command in
-	$ # your dev virtualenv.
-	$ pip install -r requirements.txt
+An additional constraint for Firefox users: since version 48, Firefox now uses GeckoDriver and the Marionette-backed WebDriver, which currently lacks feature parity with WebDriver.  In the interim (while those are being brought up to WebDriver specification), we recommend using Firefox 47.0.2 which can be [downloaded here][firefoxdownloads].
 
-An additional constraint for Firefox users, with the release of Firefox 48, Webdriver support is currently broken until GeckoDriver is out of Alpha. We suggest using Firefox 47.0.2 which can be [downloaded here][firefoxdownloads].
-
-If you have multiple versions of Firefox installed, you can specifiy a specific one by using the `--firefox-path <path to firefox binary>` flag.
+If you have multiple versions of Firefox installed, you can specify one by using the `--firefox-path <path to firefox binary>` flag.
 
 ___Running the tests on stage___
 
-	$ py.test --driver Firefox tests/
+	$ tox
 
 ___Running tests against localhost___
 
-	$ py.test --driver Firefox --base-url http://localhost:8000 tests/
-	$ py.test --driver Firefox --firefox-path /path/to/firefox/binary --base-url http://localhost:8000 tests/
+	$ export PYTEST_BASE_URL="http://localhost:8000"
+	$ tox -e tests
+
+	$ export PYTEST_BASE_URL="http://localhost:8000"
+	$ export PYTEST_ADDOPTS="--firefox-path=/path/to/firefox/binary"
+	$ tox -e tests
 
 ___Running tests against production___
 
-	$ py.test --driver Firefox --base-url https://crash-stats.mozilla.com tests/
+	$ export PYTEST_BASE_URL="https://crash-stats.mozilla.com"
+	$ tox -e tests
 
 ___Running specific tests___
 
 You can run tests in a given file::
 
-    $ py.test --driver Firefox tests/desktop/test_search.py
+    $ tox -e tests -- tests/test_search.py
 
 You can run tests that match a specific name:
 
-    $ py.test --driver Firefox -k test_search_for_unrealistic_data
+    $ tox -e tests -- -k test_search_for_unrealistic_data
 
 You can run tests whose names match a specific pattern:
 
-    $ py.test --driver Firefox -k test_search
+    $ tox -e tests -- -k test_search
 
 __Output__
 
@@ -75,14 +75,14 @@ __Note__
 "~" will not resolve to the home directory when used in the py.test command line.
 
 The pytest plugin that we use for running tests has a number of advanced
-command line options available. To see the options available, run
+command-line options available. To see the options available, run
 `py.test --help`. The full documentation for the plugin can be found
 [here][pytest-selenium].
 
 __Troubleshooting__
 
 If the test run hangs with Firefox open but no URL gets entered in the address
-box, some combinations of the Firefox version, and the python Selenium bindings
+box, some combinations of the Firefox version, and the Python Selenium bindings
 version may not be compatible. Upgrading each of them to latest often fixes it.
 
 Tips and tricks
@@ -108,7 +108,7 @@ Xvfb provides a fairly easily work around on Linux.
 
 On Linux:
 
-    Install Xvfb and run the tests with it's xvfb-run binary. For
+    Install Xvfb and run the tests with its xvfb-run binary. For
     example, if you run tests like::
 
         $ py.test ...
@@ -138,7 +138,7 @@ This software is licensed under the [MPL] 2.0:
 [firefoxtesteng]: https://quality.mozilla.org/teams/test-engineering/
 [firefox]: http://quality.mozilla.org/teams/desktop-firefox/
 [webdriver]: http://seleniumhq.org/docs/03_webdriver.html
-[mozwebqa]:http://02.chat.mibbit.com/?server=irc.mozilla.org&channel=#mozwebqa
+[fxtest]:http://02.chat.mibbit.com/?server=irc.mozilla.org&channel=#fx-test
 [GitWin]: http://help.github.com/win-set-up-git/
 [GitMacOSX]: http://help.github.com/mac-set-up-git/
 [GitLinux]: http://help.github.com/linux-set-up-git/
