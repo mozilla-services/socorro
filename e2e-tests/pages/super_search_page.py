@@ -28,9 +28,8 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
     _new_line_button_locator = (By.CSS_SELECTOR, 'button.new-line')
     _highlighted_text_locator = (By.CSS_SELECTOR, 'li[class*="highlighted"]')
     _facet_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(2) span:first-child')
-    _facet_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .field')
+    _input_locator = (By.CSS_SELECTOR, '#select2-drop.select2-drop-active input')
     _operator_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(4) span')
-    _operator_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .operator')
     _match_field_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] .select2-search-field input')
     _match_text_locator = (By.CSS_SELECTOR, '#advanced-search fieldset[id="%s"] > div:nth-child(6) div')
 
@@ -79,7 +78,7 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
         self.wait.until(lambda s: self.is_element_displayed(*self._advanced_search_loaded_locator))
 
     def select_facet(self, line_id, field):
-        input_locator = (self._facet_field_locator[0], self._facet_field_locator[1] % line_id)
+        input_locator = (self._input_locator[0], self._input_locator[1])
         self.wait.until(lambda s: self.is_element_displayed(*self._highlighted_text_locator))
         facet_field = self.find_element(*input_locator)
         facet_field.send_keys(field)
@@ -87,7 +86,7 @@ class CrashStatsSuperSearch(CrashStatsBasePage):
         facet_field.send_keys(Keys.RETURN)
 
     def select_operator(self, line_id, operator):
-        input_locator = (self._operator_field_locator[0], self._operator_field_locator[1] % line_id)
+        input_locator = (self._input_locator[0], self._input_locator[1])
         self.wait.until(lambda s: self.is_element_displayed(*input_locator))
         operator_field = self.find_element(*input_locator)
         operator_field.send_keys(operator)
