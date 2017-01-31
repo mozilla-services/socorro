@@ -457,6 +457,76 @@
             "type": ["integer", "null"],
             "description": "Length of time between the previous crash submission and this one. Low values indicate repeated crashes."
         },
+        "memory_measures": {
+            "type": "object",
+            "description": "Memory measurements collected or computed from the memory_report.",
+            "properties": {
+                "explicit": {
+                    "type": ["integer", "null"],
+                    "description": "The 'explicit' measurement from about:memory."
+                },
+                "gfx_textures": {
+                    "type": ["integer", "null"],
+                    "description": "The 'gfx-textures' measurement from about:memory."
+                },
+                "ghost_windows": {
+                    "type": ["integer", "null"],
+                    "description": "The 'ghost-windows' measurement from about:memory."
+                },
+                "heap_allocated": {
+                    "type": ["integer", "null"],
+                    "description": "The 'heap-allocated' measurement from about:memory."
+                },
+                "heap_overhead": {
+                    "type": ["integer", "null"],
+                    "description": "The 'heap-overhead' measurement from about:memory."
+                },
+                "heap_unclassified": {
+                    "type": ["integer", "null"],
+                    "description": "The 'heap-unclassified' measurement from about:memory."
+                },
+                "host_object_urls": {
+                    "type": ["integer", "null"],
+                    "description": "The 'host-object-urls' measurement from about:memory."
+                },
+                "images": {
+                    "type": ["integer", "null"],
+                    "description": "The 'images' measurement from about:memory."
+                },
+                "js_main_runtime": {
+                    "type": ["integer", "null"],
+                    "description": "The 'js-main-runtime' measurement from about:memory."
+                },
+                "private": {
+                    "type": ["integer", "null"],
+                    "description": "The 'private' measurement from about:memory."
+                },
+                "resident": {
+                    "type": ["integer", "null"],
+                    "description": "The 'resident' measurement from about:memory."
+                },
+                "resident_unique": {
+                    "type": ["integer", "null"],
+                    "description": "The 'resident-unique' measurement from about:memory."
+                },
+                "system_heap_allocated": {
+                    "type": ["integer", "null"],
+                    "description": "The 'system-heap-allocated' measurement from about:memory."
+                },
+                "top_non_detached": {
+                    "type": ["integer", "null"],
+                    "description": "The 'top-non-detached' measurement from about:memory."
+                },
+                "vsize": {
+                    "type": ["integer", "null"],
+                    "description": "The 'vsize' measurement from about:memory."
+                },
+                "vsize_max_contiguous": {
+                    "type": ["integer", "null"],
+                    "description": "The 'vsize-max-contiguous' measurement from about:memory."
+                }
+            }
+        },
         "memory_report": {
             "type": "object",
             "description": "Anonymized data about the memory usage of the software, generated client-side when a crash report happens because of a memory issue.",
