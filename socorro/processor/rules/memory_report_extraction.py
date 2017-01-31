@@ -66,6 +66,10 @@ class MemoryReportExtraction(Rule):
         pid_str = '(pid {})'.format(pid)
 
         # These ones are in the memory report.
+        # Note: theses keys use dashes instead of underscores because that's
+        # how they appear in the paths of the memory report. For the sake of
+        # consistent naming in our documents, we will rewrite them before
+        # adding them to the processed_crash.
         metrics_measured = {
             'gfx-textures': 0,
             'ghost-windows': 0,
@@ -82,15 +86,21 @@ class MemoryReportExtraction(Rule):
         # These ones are derived from the memory report.
         metrics_derived = {
             'explicit': 0,
-            'heap-overhead': 0,
-            'heap-unclassified': 0,
+            'heap_overhead': 0,
+            'heap_unclassified': 0,
             'images': 0,
-            'js-main-runtime': 0,
-            'top-non-detached': 0,
+            'js_main_runtime': 0,
+            'top_non_detached': 0,
         }
 
         all_metrics = {}
-        all_metrics.update(metrics_measured)
+        # Replace the dashes in keys with underscores for consistency.
+        all_metrics.update(
+            dict(
+                (key.replace('-', '_'), val)
+                for key, val in metrics_measured.items()
+            )
+        )
         all_metrics.update(metrics_derived)
 
         # Process reports
@@ -129,26 +139,26 @@ class MemoryReportExtraction(Rule):
                 if path.startswith('explicit/images/'):
                     all_metrics['images'] += amount
                 elif 'top(none)/detached' in path:
-                    all_metrics['top-non-detached'] += amount
+                    all_metrics['top_non_detached'] += amount
                 elif path.startswith('explicit/heap-overhead/'):
-                    all_metrics['heap-overhead'] += amount
+                    all_metrics['heap_overhead'] += amount
 
             elif path.startswith('js-main-runtime/'):
-                all_metrics['js-main-runtime'] += amount
+                all_metrics['js_main_runtime'] += amount
 
             elif path in metrics_measured:
-                all_metrics[path] += amount
+                all_metrics[path.replace('-', '_')] += amount
 
         if not pid_found:
             raise ValueError('no measurements found for pid {}'.format(pid))
 
         # Nb: sometimes heap-unclassified is negative due to bogus measurements
         # of some kind. We just show the negative value anyway.
-        all_metrics['heap-unclassified'] = (
-            all_metrics['heap-allocated'] - explicit_heap
+        all_metrics['heap_unclassified'] = (
+            all_metrics['heap_allocated'] - explicit_heap
         )
         all_metrics['explicit'] = (
-            all_metrics['heap-allocated'] + explicit_nonheap
+            all_metrics['heap_allocated'] + explicit_nonheap
         )
 
         return all_metrics
