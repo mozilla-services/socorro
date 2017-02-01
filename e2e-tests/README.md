@@ -25,7 +25,7 @@ rest of Socorro so you're not mixing requirements:
 	$ # your dev virtualenv.
 	$ pip install -r requirements.txt
 
-An additional constraint for Firefox users, with the release of Firefox 48, Webdriver support is currently broken until GeckoDriver is out of Alpha. We suggest using an older version of Firefox which can be [downloaded here][firefoxdownloads].
+An additional constraint for Firefox users, with the release of Firefox 48, Webdriver support is currently broken until GeckoDriver is out of Alpha. We suggest using Firefox 47.0.2 which can be [downloaded here][firefoxdownloads].
 
 If you have multiple versions of Firefox installed, you can specifiy a specific one by using the `--firefox-path <path to firefox binary>` flag.
 
@@ -149,5 +149,5 @@ This software is licensed under the [MPL] 2.0:
 [Style Guide]: https://wiki.mozilla.org/QA/Execution/Web_Testing/Docs/Automation/StyleGuide
 [MPL]: http://www.mozilla.org/MPL/2.0/
 [pytest-selenium]: http://pytest-selenium.readthedocs.org/
-[firefoxdownloads]: https://ftp.mozilla.org/pub/firefox/releases/44.0.2/
+[firefoxdownloads]: https://ftp.mozilla.org/pub/firefox/releases/47.0.2/
 [test envs]: http://pytest-selenium.readthedocs.io/en/latest/user_guide.html#specifying-a-browser
