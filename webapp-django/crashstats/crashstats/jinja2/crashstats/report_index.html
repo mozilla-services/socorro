@@ -403,13 +403,136 @@
                                 </td>
                             </tr>
                             {% endif %}
-                            {% if raw.ContainsMemoryReport %}
-                            <tr title="{{ fields_desc['raw_crash.ContainsMemoryReport'] }}">
-                                <th scope="row">Contains Memory Report</th>
-                                <td>
-                                    <pre>{{ raw.ContainsMemoryReport }}</pre>
-                                </td>
-                            </tr>
+
+                            {% if 'memory_measures' in report %}
+                                {% if 'explicit' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.explicit'] }}">
+                                    <th scope="row">MR: explicit</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.explicit) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'gfx_textures' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.gfx_textures'] }}">
+                                    <th scope="row">MR: gfx-textures</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.gfx_textures) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'ghost_windows' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.ghost_windows'] }}">
+                                    <th scope="row">MR: ghost-windows</th>
+                                    <td>
+                                        <pre>{{ report.memory_measures.ghost_windows }}</pre>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'heap_allocated' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.heap_allocated'] }}">
+                                    <th scope="row">MR: heap-allocated</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.heap_allocated) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'heap_overhead' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.heap_overhead'] }}">
+                                    <th scope="row">MR: heap-overhead</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.heap_overhead) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'heap_unclassified' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.heap_unclassified'] }}">
+                                    <th scope="row">MR: heap-unclassified</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.heap_unclassified) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'host_object_urls' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.host_object_urls'] }}">
+                                    <th scope="row">MR: host-object-urls</th>
+                                    <td>
+                                        <pre>{{ report.memory_measures.host_object_urls }}</pre>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'images' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.images'] }}">
+                                    <th scope="row">MR: images</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.images) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'js_main_runtime' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.js_main_runtime'] }}">
+                                    <th scope="row">MR: js-main-runtime</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.js_main_runtime) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'private' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.private'] }}">
+                                    <th scope="row">MR: private</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.private) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'resident' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.resident'] }}">
+                                    <th scope="row">MR: resident</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.resident) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'resident_unique' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.resident_unique'] }}">
+                                    <th scope="row">MR: resident-unique</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.resident_unique) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'system_heap_allocated' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.system_heap_allocated'] }}">
+                                    <th scope="row">MR: system-heap-allocated</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.system_heap_allocated) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'top_none_detached' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.top_none_detached'] }}">
+                                    <th scope="row">MR: top(none)/detached</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.top_none_detached) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'vsize' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.vsize'] }}">
+                                    <th scope="row">MR: vsize</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.vsize) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if 'vsize_max_contiguous' in report.memory_measures %}
+                                <tr title="{{ fields_desc['processed_crash.memory_measures.vsize_max_contiguous'] }}">
+                                    <th scope="row">MR: vsize-max-contiguous</th>
+                                    <td>
+                                        {{ show_filesize(report.memory_measures.vsize_max_contiguous) }}
+                                    </td>
+                                </tr>
+                                {% endif %}
                             {% endif %}
 
                             {# Miscellaneous #}
