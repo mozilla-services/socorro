@@ -86,21 +86,15 @@ class MemoryReportExtraction(Rule):
         # These ones are derived from the memory report.
         metrics_derived = {
             'explicit': 0,
-            'heap_overhead': 0,
-            'heap_unclassified': 0,
+            'heap-overhead': 0,
+            'heap-unclassified': 0,
             'images': 0,
-            'js_main_runtime': 0,
-            'top_non_detached': 0,
+            'js-main-runtime': 0,
+            'top-none-detached': 0,
         }
 
         all_metrics = {}
-        # Replace the dashes in keys with underscores for consistency.
-        all_metrics.update(
-            dict(
-                (key.replace('-', '_'), val)
-                for key, val in metrics_measured.items()
-            )
-        )
+        all_metrics.update(metrics_measured)
         all_metrics.update(metrics_derived)
 
         # Process reports
@@ -139,26 +133,33 @@ class MemoryReportExtraction(Rule):
                 if path.startswith('explicit/images/'):
                     all_metrics['images'] += amount
                 elif 'top(none)/detached' in path:
-                    all_metrics['top_non_detached'] += amount
+                    all_metrics['top-none-detached'] += amount
                 elif path.startswith('explicit/heap-overhead/'):
-                    all_metrics['heap_overhead'] += amount
+                    all_metrics['heap-overhead'] += amount
 
             elif path.startswith('js-main-runtime/'):
-                all_metrics['js_main_runtime'] += amount
+                all_metrics['js-main-runtime'] += amount
 
             elif path in metrics_measured:
-                all_metrics[path.replace('-', '_')] += amount
+                all_metrics[path] += amount
 
         if not pid_found:
             raise ValueError('no measurements found for pid {}'.format(pid))
 
         # Nb: sometimes heap-unclassified is negative due to bogus measurements
         # of some kind. We just show the negative value anyway.
-        all_metrics['heap_unclassified'] = (
-            all_metrics['heap_allocated'] - explicit_heap
+        all_metrics['heap-unclassified'] = (
+            all_metrics['heap-allocated'] - explicit_heap
         )
         all_metrics['explicit'] = (
-            all_metrics['heap_allocated'] + explicit_nonheap
+            all_metrics['heap-allocated'] + explicit_nonheap
         )
 
-        return all_metrics
+        # Replace all dashes in keys with underscores to fit our crash
+        # documents' naming conventions.
+        memory_measures = dict(
+            (key.replace('-', '_'), val)
+            for key, val in all_metrics.items()
+        )
+
+        return memory_measures

@@ -104,7 +104,7 @@ class TestMemoryReportExtraction(TestCase):
             'resident': 330346496,
             'resident_unique': 253452288,
             'system_heap_allocated': 123456,
-            'top_non_detached': 45678901,
+            'top_none_detached': 45678901,
             'vsize': 1481437184,
             'vsize_max_contiguous': 2834628,
         }
@@ -131,7 +131,7 @@ class TestMemoryReportExtraction(TestCase):
             'resident': 123518976,
             'resident_unique': 56209408,
             'system_heap_allocated': 234567,
-            'top_non_detached': 0,
+            'top_none_detached': 0,
             'vsize': 905883648,
             'vsize_max_contiguous': 5824618,
         }
