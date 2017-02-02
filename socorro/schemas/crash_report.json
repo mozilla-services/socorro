@@ -513,9 +513,9 @@
                     "type": ["integer", "null"],
                     "description": "The 'system-heap-allocated' measurement from about:memory."
                 },
-                "top_non_detached": {
+                "top_none_detached": {
                     "type": ["integer", "null"],
-                    "description": "The 'top-non-detached' measurement from about:memory."
+                    "description": "The 'top(none)/detached' measurement from about:memory."
                 },
                 "vsize": {
                     "type": ["integer", "null"],
