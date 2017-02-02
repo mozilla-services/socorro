@@ -66,6 +66,10 @@ class MemoryReportExtraction(Rule):
         pid_str = '(pid {})'.format(pid)
 
         # These ones are in the memory report.
+        # Note: theses keys use dashes instead of underscores because that's
+        # how they appear in the paths of the memory report. For the sake of
+        # consistent naming in our documents, we will rewrite them before
+        # adding them to the processed_crash.
         metrics_measured = {
             'gfx-textures': 0,
             'ghost-windows': 0,
@@ -86,7 +90,7 @@ class MemoryReportExtraction(Rule):
             'heap-unclassified': 0,
             'images': 0,
             'js-main-runtime': 0,
-            'top-non-detached': 0,
+            'top-none-detached': 0,
         }
 
         all_metrics = {}
@@ -129,7 +133,7 @@ class MemoryReportExtraction(Rule):
                 if path.startswith('explicit/images/'):
                     all_metrics['images'] += amount
                 elif 'top(none)/detached' in path:
-                    all_metrics['top-non-detached'] += amount
+                    all_metrics['top-none-detached'] += amount
                 elif path.startswith('explicit/heap-overhead/'):
                     all_metrics['heap-overhead'] += amount
 
@@ -151,4 +155,11 @@ class MemoryReportExtraction(Rule):
             all_metrics['heap-allocated'] + explicit_nonheap
         )
 
-        return all_metrics
+        # Replace all dashes in keys with underscores to fit our crash
+        # documents' naming conventions.
+        memory_measures = dict(
+            (key.replace('-', '_'), val)
+            for key, val in all_metrics.items()
+        )
+
+        return memory_measures
