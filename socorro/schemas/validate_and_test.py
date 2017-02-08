@@ -22,6 +22,7 @@ def main():
         params={
             'product': 'Firefox',
             '_columns': ['uuid'],
+            '_facets_size': 0
         }
     )
     search = r.json()
