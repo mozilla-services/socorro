@@ -98,6 +98,7 @@ nsAString_internal::Assign.*
 nsACString_internal::BeginWriting
 nsAString_internal::BeginWriting
 nsACString_internal::SetCapacity
+NS_strcmp
 nsBaseHashtable<.*>::.*
 nsClassHashtable<.*>::.*
 nsCOMPtr.*
