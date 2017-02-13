@@ -1,4 +1,4 @@
-import groovy.json.JsonOutput
+@Library('fxtest@1.1') _
 
 /** Desired capabilities */
 def capabilities = [
@@ -6,41 +6,6 @@ def capabilities = [
   version: '47.0',
   platform: 'Windows 10'
 ]
-
-/** Write capabilities to JSON file
- *
- * @param desiredCapabilities capabilities to include in the file
-*/
-def writeCapabilities(desiredCapabilities) {
-    def defaultCapabilities = [
-        build: env.BUILD_TAG,
-        public: 'public restricted'
-    ]
-    def capabilities = defaultCapabilities.clone()
-    capabilities.putAll(desiredCapabilities)
-    def json = JsonOutput.toJson([capabilities: capabilities])
-    writeFile file: 'e2e-tests/capabilities.json', text: json
-}
-
-/** Send a notice to #fxtest-alerts on irc.mozilla.org with the build result */
-def ircNotification() {
-  def nick = "fxtest${BUILD_NUMBER}"
-  def channel = '#fx-test-alerts'
-  def result = currentBuild.result ?: 'SUCCESS'
-  def message = "Project ${JOB_NAME} build #${BUILD_NUMBER}: ${result}: ${BUILD_URL}"
-  node {
-    sh """
-        (
-        echo NICK ${nick}
-        echo USER ${nick} 8 * : ${nick}
-        sleep 5
-        echo "JOIN ${channel}"
-        echo "NOTICE ${channel} :${message}"
-        echo QUIT
-        ) | openssl s_client -connect irc.mozilla.org:6697
-    """
-  }
-}
 
 pipeline {
   agent any
@@ -65,7 +30,7 @@ pipeline {
     }
     stage('Test') {
       steps {
-        writeCapabilities(capabilities)
+        writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
         sh "tox -c e2e-tests/tox.ini -e tests"
       }
       post {
@@ -93,7 +58,8 @@ pipeline {
         to: "fte-ci@mozilla.com")
     }
     changed {
-      ircNotification()
+      ircNotification('#breakpad')
+      ircNotification('#fx-test-alerts')
     }
   }
 }
