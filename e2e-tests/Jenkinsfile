@@ -1,0 +1,65 @@
+@Library('fxtest@1.1') _
+
+/** Desired capabilities */
+def capabilities = [
+  browserName: 'Firefox',
+  version: '47.0',
+  platform: 'Windows 10'
+]
+
+pipeline {
+  agent any
+  options {
+    ansiColor()
+    timestamps()
+    timeout(time: 1, unit: 'HOURS')
+  }
+  environment {
+    PYTEST_ADDOPTS =
+      "-n=10 " +
+      "--color=yes " +
+      "--driver=SauceLabs " +
+      "--variables=capabilities.json"
+    SAUCELABS_API_KEY = credentials('SAUCELABS_API_KEY')
+  }
+  stages {
+    stage('Lint') {
+      steps {
+        sh "tox -c e2e-tests/tox.ini -e flake8"
+      }
+    }
+    stage('Test') {
+      steps {
+        writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
+        sh "tox -c e2e-tests/tox.ini -e tests"
+      }
+      post {
+        always {
+          junit 'e2e-tests/results/*.xml'
+          archiveArtifacts 'e2e-tests/results/*'
+          publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: 'e2e-tests/results',
+            reportFiles: "tests.html",
+            reportName: 'HTML Report'])
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      mail(
+        body: "${BUILD_URL}",
+        from: "firefox-test-engineering@mozilla.com",
+        replyTo: "firefox-test-engineering@mozilla.com",
+        subject: "Build failed in Jenkins: ${JOB_NAME} #${BUILD_NUMBER}",
+        to: "fte-ci@mozilla.com")
+    }
+    changed {
+      ircNotification('#breakpad')
+      ircNotification('#fx-test-alerts')
+    }
+  }
+}
