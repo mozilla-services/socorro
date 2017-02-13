@@ -1,10 +1,6 @@
 import groovy.json.JsonOutput
 
-/** Tox environment */
-def config = 'e2e-tests/tox.ini'
-def environment = 'tests'
-
-/** Map of desired capabilities */
+/** Desired capabilities */
 def capabilities = [
   browserName: 'Firefox',
   version: '47.0',
@@ -26,44 +22,11 @@ def writeCapabilities(desiredCapabilities) {
     writeFile file: 'e2e-tests/capabilities.json', text: json
 }
 
-/** Run Tox
- *
- * @param environment test environment to run
-*/
-def runTox(config, environment) {
-  def options = env.PYTEST_ADDOPTS ?: ''
-  def processes = env.PYTEST_PROCESSES ?: 'auto'
-  try {
-    wrap([$class: 'AnsiColorBuildWrapper']) {
-      withCredentials([[
-        $class: 'StringBinding',
-        credentialsId: 'SAUCELABS_API_KEY',
-        variable: 'SAUCELABS_API_KEY']]) {
-        withEnv(["PYTEST_ADDOPTS=${options} " +
-          "-n=${processes} " +
-          "--driver=SauceLabs " +
-          "--variables=capabilities.json " +
-          "--color=yes"]) {
-          sh "tox -c ${config} -e ${environment}"
-        }
-      }
-    }
-  } catch(err) {
-    currentBuild.result = 'FAILURE'
-    throw err
-  } finally {
-    stash name: environment, includes: 'e2e-tests/results/**'
-  }
-}
-
-/** Send a notice to #fxtest-alerts on irc.mozilla.org with the build result
- *
- * @param result outcome of build
-*/
-def ircNotification(result) {
+/** Send a notice to #fxtest-alerts on irc.mozilla.org with the build result */
+def ircNotification() {
   def nick = "fxtest${BUILD_NUMBER}"
   def channel = '#fx-test-alerts'
-  result = result.toUpperCase()
+  def result = currentBuild.result ?: 'SUCCESS'
   def message = "Project ${JOB_NAME} build #${BUILD_NUMBER}: ${result}: ${BUILD_URL}"
   node {
     sh """
@@ -79,70 +42,58 @@ def ircNotification(result) {
   }
 }
 
-stage('Checkout') {
-  node {
-    timestamps {
-      deleteDir()
-      checkout scm
-      stash name: 'workspace'
-    }
+pipeline {
+  agent any
+  options {
+    ansiColor()
+    timestamps()
+    timeout(time: 1, unit: 'HOURS')
   }
-}
-
-stage('Lint') {
-  node {
-    timestamps {
-      deleteDir()
-      unstash 'workspace'
-      sh "tox -c ${config} -e flake8"
-    }
+  environment {
+    PYTEST_ADDOPTS =
+      "-n=10 " +
+      "--color=yes " +
+      "--driver=SauceLabs " +
+      "--variables=capabilities.json"
+    SAUCELABS_API_KEY = credentials('SAUCELABS_API_KEY')
   }
-}
-
-try {
-  stage('Test') {
-    node {
-      timeout(time: 1, unit: 'HOURS') {
-        timestamps {
-          deleteDir()
-          unstash 'workspace'
-          try {
-            writeCapabilities(capabilities)
-            runTox(config, environment)
-          } catch(err) {
-            currentBuild.result = 'FAILURE'
-            throw err
-          } finally {
-            stash name: environment, includes: 'e2e-tests/results/**'
-          }
+  stages {
+    stage('Lint') {
+      steps {
+        sh "tox -c e2e-tests/tox.ini -e flake8"
+      }
+    }
+    stage('Test') {
+      steps {
+        writeCapabilities(capabilities)
+        sh "tox -c e2e-tests/tox.ini -e tests"
+      }
+      post {
+        always {
+          junit 'e2e-tests/results/*.xml'
+          archiveArtifacts 'e2e-tests/results/*'
+          publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: 'e2e-tests/results',
+            reportFiles: "tests.html",
+            reportName: 'HTML Report'])
         }
       }
     }
   }
-} catch(err) {
-  currentBuild.result = 'FAILURE'
-  ircNotification(currentBuild.result)
-  mail(
-    body: "${BUILD_URL}",
-    from: "firefox-test-engineering@mozilla.com",
-    replyTo: "firefox-test-engineering@mozilla.com",
-    subject: "Build failed in Jenkins: ${JOB_NAME} #${BUILD_NUMBER}",
-    to: "fte-ci@mozilla.com")
-  throw err
-} finally {
-  stage('Results') {
-    node {
-      deleteDir()
-      unstash environment
-      publishHTML(target: [
-        allowMissing: false,
-        alwaysLinkToLastBuild: true,
-        keepAll: true,
-        reportDir: 'e2e-tests/results',
-        reportFiles: "${environment}.html",
-        reportName: 'HTML Report'])
-      junit 'e2e-tests/results/*.xml'
-      archiveArtifacts 'e2e-tests/results/*'
+  post {
+    failure {
+      mail(
+        body: "${BUILD_URL}",
+        from: "firefox-test-engineering@mozilla.com",
+        replyTo: "firefox-test-engineering@mozilla.com",
+        subject: "Build failed in Jenkins: ${JOB_NAME} #${BUILD_NUMBER}",
+        to: "fte-ci@mozilla.com")
+    }
+    changed {
+      ircNotification()
     }
   }
 }
