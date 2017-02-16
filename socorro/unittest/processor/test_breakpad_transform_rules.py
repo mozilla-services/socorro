@@ -766,16 +766,15 @@ class TestJitCrashCategorizeRule(TestCase):
         eq_(processed_crash.classifications.jit.category_return_code, 0)
 
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
-    def test_everything_we_hoped_for_2(self, mocked_subprocess_module):
+    def test_success_all_types_of_signatures(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
-        processed_crash = CDotDict()
-        processed_crash.product = 'Firefox'
-        processed_crash.os_name = 'Windows 386'
-        processed_crash.cpu_name = 'x86'
-        processed_crash.signature = 'EnterIon'
-        processed_crash['json_dump.crashing_thread.frames'] = [
+        base_processed_crash = CDotDict()
+        base_processed_crash.product = 'Firefox'
+        base_processed_crash.os_name = 'Windows 386'
+        base_processed_crash.cpu_name = 'x86'
+        base_processed_crash['json_dump.crashing_thread.frames'] = [
             DotDict({'not_module': 'not-a-module'}),
             DotDict({'module': 'a-module'})
         ]
@@ -791,12 +790,24 @@ class TestJitCrashCategorizeRule(TestCase):
 
         rule = JitCrashCategorizeRule(config)
 
-        # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        signatures = [
+            'EnterBaseline',
+            'moz::something | EnterBaseline',
+            'EnterIon',
+            'js::jit::FastInvoke',
+            'Foo::Bar__js::jit::IonCannon',
+            'Small | js::irregexp::ExecuteCode<T>',
+        ]
+        for signature in signatures:
+            processed_crash = CDotDict(base_processed_crash)
+            processed_crash.signature = signature
 
-        eq_(processor_meta.processor_notes, [])
-        eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
-        eq_(processed_crash.classifications.jit.category_return_code, 0)
+            # the call to be tested
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+            eq_(processor_meta.processor_notes, [])
+            eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
+            eq_(processed_crash.classifications.jit.category_return_code, 0)
 
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_subprocess_fail(self, mocked_subprocess_module):
