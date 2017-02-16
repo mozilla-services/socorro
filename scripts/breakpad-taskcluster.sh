@@ -16,6 +16,9 @@
 #
 # You must be a member of the `socorro` project in Taskcluster for this
 # task to work properly.
+#
+# NOTE: If you build a snapshot against a newer revision of Breakpad,
+#  update BREAKPAD_REV in build-breakpad.sh to match!
 : <<'EOF'
 {
 	"created": "2016-04-09T00:49:49.410Z",
