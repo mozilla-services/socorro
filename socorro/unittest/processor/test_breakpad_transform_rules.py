@@ -105,7 +105,7 @@ cannonical_stackwalker_output = {
         u'frames': [
             {
                 u'file': u'hg:hg.mozilla.org/releases/mozilla-release:'
-                           'memory/mozjemalloc/jemalloc.c:44234f451065',
+                         'memory/mozjemalloc/jemalloc.c:44234f451065',
                 u'frame': 0,
                 u'function': u'arena_malloc',
                 u'function_offset': u'0x1e3',
@@ -136,7 +136,7 @@ cannonical_stackwalker_output = {
             },
             {
                 u'file': u'hg:hg.mozilla.org/releases/mozilla-release:'
-                          'memory/mozjemalloc/jemalloc.c:44234f451065',
+                         'memory/mozjemalloc/jemalloc.c:44234f451065',
                 u'frame': 1,
                 u'function': u'je_realloc',
                 u'function_offset': u'0x5a1',
@@ -157,7 +157,7 @@ cannonical_stackwalker_output = {
             },
             {
                 u'file': u'hg:hg.mozilla.org/releases/mozilla-release'
-                          ':memory/mozjemalloc/jemalloc.c:44234f451065',
+                         ':memory/mozjemalloc/jemalloc.c:44234f451065',
                 u'frame': 1,
                 u'function': u'je_realloc',
                 u'function_offset': u'0x5a1',
@@ -192,24 +192,20 @@ cannonical_stackwalker_output = {
 cannonical_stackwalker_output_str = ujson.dumps(cannonical_stackwalker_output)
 
 
-#==============================================================================
 class MyBreakpadStackwalkerRule(BreakpadStackwalkerRule):
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         yield "%s.json" % raw_crash.uuid
 
 
-#==============================================================================
 class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         yield "%s.json" % raw_crash.uuid
 
 
-#==============================================================================
 class TestBreakpadTransformRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
@@ -231,7 +227,6 @@ class TestBreakpadTransformRule(TestCase):
         config.symbol_cache_path = '/mnt/socorro/symbols'
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
@@ -239,7 +234,6 @@ class TestBreakpadTransformRule(TestCase):
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -267,7 +261,6 @@ class TestBreakpadTransformRule(TestCase):
         eq_(processed_crash.mdsw_status_string, "OK")
         ok_(processed_crash.success)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_stackwalker_fails(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -296,7 +289,6 @@ class TestBreakpadTransformRule(TestCase):
             ["MDSW terminated with SIGKILL due to timeout", ]
         )
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_stackwalker_fails_2(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -329,7 +321,6 @@ class TestBreakpadTransformRule(TestCase):
             ]
         )
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.os.unlink')
     def test_temp_file_context(self, mocked_unlink):
         config = self.get_basic_config()
@@ -361,17 +352,14 @@ class TestBreakpadTransformRule(TestCase):
         eq_(mocked_unlink.call_count, 0)
 
 
-#==============================================================================
 class TestCrashingThreadRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
         config.chatty = True
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
@@ -379,7 +367,6 @@ class TestCrashingThreadRule(TestCase):
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     def test_everything_we_hoped_for(self):
         config = self.get_basic_config()
 
@@ -396,7 +383,6 @@ class TestCrashingThreadRule(TestCase):
 
         eq_(processed_crash.crashedThread, 0)
 
-    #--------------------------------------------------------------------------
     def test_stuff_missing(self):
         config = self.get_basic_config()
 
@@ -423,10 +409,9 @@ cannonical_external_output = {
 }
 cannonical_external_output_str = ujson.dumps(cannonical_external_output)
 
-#==============================================================================
+
 class TestExternalProcessRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
@@ -450,7 +435,6 @@ class TestExternalProcessRule(TestCase):
         config.return_code_key = 'bogus_command_return_code'
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
@@ -458,7 +442,6 @@ class TestExternalProcessRule(TestCase):
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     def test_dot_save(self):
         d = {}
         ExternalProcessRule.dot_save(d, 'x', 1)
@@ -476,7 +459,6 @@ class TestExternalProcessRule(TestCase):
         ExternalProcessRule.dot_save(dd, 'a.b.c.d.e.f', 1000)
         ok_(dd.a.b.c.d.e.f, 1000)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -514,7 +496,6 @@ class TestExternalProcessRule(TestCase):
         )
         eq_(processed_crash.bogus_command_return_code, 0)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_external_fails(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -538,7 +519,6 @@ class TestExternalProcessRule(TestCase):
         eq_(processed_crash.bogus_command_return_code, 124)
         eq_(processor_meta.processor_notes, [])
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_external_fails_2(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -570,10 +550,8 @@ class TestExternalProcessRule(TestCase):
         )
 
 
-#==============================================================================
 class TestDumpLookupExternalRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_default_parameters(self):
         eq_(
             DumpLookupExternalRule.required_config.dump_field.default,
@@ -609,10 +587,8 @@ class TestDumpLookupExternalRule(TestCase):
         )
 
 
-#==============================================================================
 class TestBreakpadTransformRule2015(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
@@ -628,7 +604,6 @@ class TestBreakpadTransformRule2015(TestCase):
         config.temporary_file_system_storage_path = '/tmp'
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
@@ -636,7 +611,6 @@ class TestBreakpadTransformRule2015(TestCase):
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -664,7 +638,6 @@ class TestBreakpadTransformRule2015(TestCase):
         eq_(processed_crash.mdsw_status_string, "OK")
         ok_(processed_crash.success)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_stackwalker_fails(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -693,7 +666,6 @@ class TestBreakpadTransformRule2015(TestCase):
             ["MDSW terminated with SIGKILL due to timeout", ]
         )
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_stackwalker_fails_2(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -734,10 +706,9 @@ class TestBreakpadTransformRule2015(TestCase):
             ]
         )
 
-#==============================================================================
+
 class TestJitCrashCategorizeRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
@@ -754,7 +725,6 @@ class TestJitCrashCategorizeRule(TestCase):
         config.threshold = 8
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
@@ -762,7 +732,6 @@ class TestJitCrashCategorizeRule(TestCase):
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_everything_we_hoped_for(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -774,8 +743,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'x86'
         processed_crash.signature = 'EnterBaseline'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -796,20 +765,18 @@ class TestJitCrashCategorizeRule(TestCase):
         eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
         eq_(processed_crash.classifications.jit.category_return_code, 0)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
-    def test_everything_we_hoped_for_2(self, mocked_subprocess_module):
+    def test_success_all_types_of_signatures(self, mocked_subprocess_module):
         config = self.get_basic_config()
         raw_crash = copy.copy(canonical_standard_raw_crash)
         raw_dumps = {config.dump_field: 'a_fake_dump.dump'}
-        processed_crash = CDotDict()
-        processed_crash.product = 'Firefox'
-        processed_crash.os_name = 'Windows 386'
-        processed_crash.cpu_name = 'x86'
-        processed_crash.signature = 'EnterIon'
-        processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+        base_processed_crash = CDotDict()
+        base_processed_crash.product = 'Firefox'
+        base_processed_crash.os_name = 'Windows 386'
+        base_processed_crash.cpu_name = 'x86'
+        base_processed_crash['json_dump.crashing_thread.frames'] = [
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -823,15 +790,25 @@ class TestJitCrashCategorizeRule(TestCase):
 
         rule = JitCrashCategorizeRule(config)
 
-        # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        signatures = [
+            'EnterBaseline',
+            'moz::something | EnterBaseline',
+            'EnterIon',
+            'js::jit::FastInvoke',
+            'Foo::Bar__js::jit::IonCannon',
+            'Small | js::irregexp::ExecuteCode<T>',
+        ]
+        for signature in signatures:
+            processed_crash = CDotDict(base_processed_crash)
+            processed_crash.signature = signature
 
-        eq_(processor_meta.processor_notes, [])
-        eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
-        eq_(processed_crash.classifications.jit.category_return_code, 0)
+            # the call to be tested
+            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
+            eq_(processor_meta.processor_notes, [])
+            eq_(processed_crash.classifications.jit.category, 'EXTRA-SPECIAL')
+            eq_(processed_crash.classifications.jit.category_return_code, 0)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_subprocess_fail(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -843,8 +820,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'x86'
         processed_crash.signature = 'EnterBaseline'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -865,7 +842,6 @@ class TestJitCrashCategorizeRule(TestCase):
         ok_(processed_crash.classifications.jit.category is None)
         eq_(processed_crash.classifications.jit.category_return_code, -1)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_wrong_os(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -877,8 +853,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'x86'
         processed_crash.signature = 'EnterBaseline'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -898,7 +874,6 @@ class TestJitCrashCategorizeRule(TestCase):
         ok_('classifications.jit.category' not in processed_crash)
         ok_('classifications.jit.category_return_code' not in processed_crash)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_wrong_product(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -910,8 +885,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'x86'
         processed_crash.signature = 'EnterBaseline'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -931,7 +906,6 @@ class TestJitCrashCategorizeRule(TestCase):
         ok_('classifications.jit.category' not in processed_crash)
         ok_('classifications.jit.category_return_code' not in processed_crash)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_wrong_cpu(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -943,8 +917,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'VAX 750'
         processed_crash.signature = 'EnterBaseline'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -964,7 +938,6 @@ class TestJitCrashCategorizeRule(TestCase):
         ok_('classifications.jit.category' not in processed_crash)
         ok_('classifications.jit.category_return_code' not in processed_crash)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_wrong_signature(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -976,8 +949,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'x86'
         processed_crash.signature = 'this-is-not-a-JIT-signature'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'not_module': 'not-a-module',}),
-            DotDict({'module': 'a-module',})
+            DotDict({'not_module': 'not-a-module'}),
+            DotDict({'module': 'a-module'})
         ]
         processor_meta = self.get_basic_processor_meta()
 
@@ -997,7 +970,6 @@ class TestJitCrashCategorizeRule(TestCase):
         ok_('classifications.jit.category' not in processed_crash)
         ok_('classifications.jit.category_return_code' not in processed_crash)
 
-    #--------------------------------------------------------------------------
     @patch('socorro.processor.breakpad_transform_rules.subprocess')
     def test_module_on_stack_top(self, mocked_subprocess_module):
         config = self.get_basic_config()
@@ -1009,8 +981,8 @@ class TestJitCrashCategorizeRule(TestCase):
         processed_crash.cpu_name = 'x86'
         processed_crash.signature = 'EnterBaseline'
         processed_crash['json_dump.crashing_thread.frames'] = [
-            DotDict({'module': 'a-module',}),
-            DotDict({'not_module': 'not-a-module',}),
+            DotDict({'module': 'a-module'}),
+            DotDict({'not_module': 'not-a-module'}),
         ]
         processor_meta = self.get_basic_processor_meta()
 

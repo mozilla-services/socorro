@@ -694,14 +694,19 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         ):
             # we don't want any of these
             return False
+
         if processed_crash.json_dump['crashing_thread']['frames'][0].get(
             'module',
             False
         ):  # there is a module at the top of the stack, we don't want this
             return False
+
         return (
             processed_crash.signature.endswith('EnterBaseline') or
-            processed_crash.signature.endswith('EnterIon')
+            processed_crash.signature.endswith('EnterIon') or
+            processed_crash.signature.endswith('js::jit::FastInvoke') or
+            processed_crash.signature.endswith('js::jit::IonCannon') or
+            processed_crash.signature.endswith('js::irregexp::ExecuteCode<T>')
         )
 
     #--------------------------------------------------------------------------
