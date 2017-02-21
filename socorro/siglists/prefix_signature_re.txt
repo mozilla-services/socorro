@@ -89,6 +89,8 @@ mozilla::layers::CompositorD3D11::HandleError
 mozilla.*FatalError
 moz_xmalloc
 moz_xrealloc
+MOZ_CrashOOL
+MOZ_CrashPrintf
 msvcr120\.dll@0x.*
 \<name omitted\>
 NP_Shutdown
