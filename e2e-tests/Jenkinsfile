@@ -1,4 +1,4 @@
-@Library('fxtest@1.1') _
+@Library('fxtest@1.3') _
 
 /** Desired capabilities */
 def capabilities = [
@@ -36,8 +36,9 @@ pipeline {
       }
       post {
         always {
-          junit 'e2e-tests/results/*.xml'
           archiveArtifacts 'e2e-tests/results/*'
+          junit 'e2e-tests/results/*.xml'
+          submitToActiveData('e2e-tests/results/py27.log')
           publishHTML(target: [
             allowMissing: false,
             alwaysLinkToLastBuild: true,
