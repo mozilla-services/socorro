@@ -2,12 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import collections
 import datetime
 import re
 from collections import defaultdict
 
 from elasticsearch.exceptions import NotFoundError, RequestError
-from elasticsearch_dsl import A, F, Q, Search
+from elasticsearch_dsl import A, Q, Search
 from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
@@ -17,9 +18,8 @@ from socorro.lib import (
 from socorro.lib.search_common import SearchBase
 
 
-BAD_INDEX_REGEX = re.compile('\[\[(.*)\] missing\]')
-ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(
-    'ElasticsearchParseException\[Failed to parse \[([^\]]+)\]\]'
+ES_PARSE_EXCEPTION_REGEX = re.compile(
+    'failed to parse \[([^\]]+)\]'
 )
 
 
@@ -99,19 +99,20 @@ class SuperSearch(SearchBase):
     def format_fields(self, hit):
         """Return a well formatted document.
 
-        Elasticsearch returns values as lists when using the `fields` option.
-        This function removes the list when it contains zero or one element.
-        It also calls `format_field_names` to correct all the field names.
+        Elasticsearch returns a nested document, just like it is stored in
+        the database. We want to flatten that out.
         """
-        hit = self.format_field_names(hit)
+        def flatten(d, parent_key='', sep='.'):
+            items = []
+            for k, v in d.items():
+                new_key = parent_key + sep + k if parent_key else k
+                if isinstance(v, collections.MutableMapping):
+                    items.extend(flatten(v, new_key, sep=sep).items())
+                else:
+                    items.append((new_key, v))
+            return dict(items)
 
-        for field in hit:
-            if isinstance(hit[field], (list, tuple)):
-                if len(hit[field]) == 0:
-                    hit[field] = None
-                elif len(hit[field]) == 1:
-                    hit[field] = hit[field][0]
-
+        hit = self.format_field_names(flatten(hit))
         return hit
 
     def get_field_name(self, value, full=True):
@@ -144,8 +145,21 @@ class SuperSearch(SearchBase):
 
         We used to expose the Elasticsearch facets directly. This is thus
         needed for backwards compatibility.
+
+        Expected output format:
+            {
+                'term_field_name': [
+                    {
+                        'term': 'foo',
+                        'count': 42,
+                    },
+                ],
+                'cardinality_field_name': {
+                    'count': 43,
+                }
+            }
         """
-        aggs = aggregations.to_dict()
+        new_aggs = {}
 
         def _format(aggregation):
             if 'buckets' not in aggregation:
@@ -174,10 +188,10 @@ class SuperSearch(SearchBase):
 
             return aggregation['buckets']
 
-        for agg in aggs:
-            aggs[agg] = _format(aggs[agg])
+        for key, agg in aggregations.to_dict().items():
+            new_aggs[key] = _format(agg)
 
-        return aggs
+        return new_aggs
 
     def get(self, **kwargs):
         """Return a list of results and aggregations based on parameters.
@@ -243,7 +257,11 @@ class SuperSearch(SearchBase):
                         # file.
                         if facets_size > 10000:
                             raise BadArgumentError(
-                                '_facets_size greater than 10,000'
+                                '_facets_size',
+                                msg=(
+                                    '_facets_size cannot be greater '
+                                    'than 10,000'
+                                )
                             )
 
                     for f in self.histogram_fields:
@@ -258,9 +276,10 @@ class SuperSearch(SearchBase):
 
                 if param.data_type in ('date', 'datetime'):
                     param.value = datetimeutil.date_to_string(param.value)
-                elif param.data_type == 'enum':
-                    param.value = [x.lower() for x in param.value]
-                elif param.data_type == 'str' and not param.operator:
+                elif (
+                    param.data_type == 'enum' or
+                    (param.data_type == 'str' and not param.operator)
+                ):
                     param.value = [x.lower() for x in param.value]
 
                 # Operators needing wildcards, and the associated value
@@ -295,13 +314,10 @@ class SuperSearch(SearchBase):
                         else:
                             # If the term contains white spaces, we want to
                             # perform a phrase query.
-                            filter_type = 'query'
-                            args = Q(
-                                'simple_query_string',
-                                query=param.value[0],
-                                fields=[name],
-                                default_operator='and',
-                            ).to_dict()
+                            filter_type = 'simple_query_string'
+                            args['query'] = param.value[0]
+                            args['fields'] = [name]
+                            args['default_operator'] = 'and'
                     else:
                         # There are several terms, this is a terms filter.
                         filter_type = 'terms'
@@ -328,25 +344,22 @@ class SuperSearch(SearchBase):
                         name = '%s.full' % name
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
-                    filter_type = 'query'
+                    filter_type = 'wildcard'
 
                     # Wildcard operations are better applied to a non-analyzed
                     # field (called "full") if there is one.
                     if field_data['has_full_version']:
                         name = '%s.full' % name
 
-                    q_args = {}
-                    q_args[name] = (
+                    filter_value = (
                         operator_wildcards[param.operator] % param.value
                     )
-                    query = Q('wildcard', **q_args)
-                    args = query.to_dict()
 
                 if filter_value is not None:
                     args[name] = filter_value
 
                 if args:
-                    new_filter = F(filter_type, **args)
+                    new_filter = Q(filter_type, **args)
                     if param.operator_not:
                         new_filter = ~new_filter
 
@@ -362,7 +375,7 @@ class SuperSearch(SearchBase):
             if sub_filters is not None:
                 filters.append(sub_filters)
 
-        search = search.filter(F('bool', must=filters))
+        search = search.filter(Q('bool', must=filters))
 
         # Restricting returned fields.
         fields = []
@@ -379,7 +392,7 @@ class SuperSearch(SearchBase):
                 field_name = self.get_field_name(value, full=False)
                 fields.append(field_name)
 
-        search = search.fields(fields)
+        search = search.source(fields)
 
         # Sorting.
         sort_fields = []
@@ -455,7 +468,7 @@ class SuperSearch(SearchBase):
 
                 break  # Yay! Results!
             except NotFoundError as e:
-                missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
+                missing_index = e.info['error']['index']
                 if missing_index in indices:
                     del indices[indices.index(missing_index)]
                 else:
@@ -483,21 +496,30 @@ class SuperSearch(SearchBase):
                     aggregations = {}
                     shards = None
                     break
-            except RequestError as exception:
+            except RequestError as e:
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 try:
-                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
-                        exception.error
-                    )[-1]
-                    # Loop over the original parameters to try to figure
-                    # out which *key* had the bad input.
-                    for key, value in kwargs.items():
-                        if value == bad_input:
-                            raise BadArgumentError(key)
-                except IndexError:
-                    # Not an ElasticsearchParseException exception
-                    pass
+                    cause = e.info['error']['caused_by']['type']
+                except KeyError:
+                    cause = None
+
+                if cause == 'parse_exception':
+                    try:
+                        bad_input = ES_PARSE_EXCEPTION_REGEX.findall(
+                            e.info['error']['caused_by']['reason']
+                        )[-1]
+                        # Loop over the original parameters to try to figure
+                        # out which *key* had the bad input.
+                        for key, value in kwargs.items():
+                            if value == bad_input:
+                                raise BadArgumentError(key)
+                    except KeyError:
+                        # The reason cannot be found in the exception info.
+                        pass
+                    except IndexError:
+                        # Cannot find anything while parsing the exception.
+                        pass
                 raise
 
         if shards and shards.failed:

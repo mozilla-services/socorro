@@ -109,8 +109,9 @@ class ConnectionContext(RequiredConfig):
             elasticsearch.Elasticsearch(
                 hosts=self.config.elasticsearch_urls,
                 timeout=timeout,
-                connection_class=\
+                connection_class=(
                     elasticsearch.connection.RequestsHttpConnection
+                )
             )
         )
 
@@ -123,6 +124,12 @@ class ConnectionContext(RequiredConfig):
         return Connection(
             self.config,
             elasticsearch.client.IndicesClient(self.connection())
+        )
+
+    def cat_client(self):
+        return Connection(
+            self.config,
+            elasticsearch.client.CatClient(self.connection())
         )
 
     def force_reconnect(self):

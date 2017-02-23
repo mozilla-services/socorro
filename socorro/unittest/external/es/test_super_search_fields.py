@@ -16,7 +16,6 @@ from socorro.lib import datetimeutil
 from socorro.unittest.external.es.base import (
     SUPERSEARCH_FIELDS,
     ElasticsearchTestCase,
-    minimum_es_version,
 )
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -47,7 +46,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             'default_value': None,
             'description': 'a plotfarm like Lunix or Wondiws',
             'form_field_choices': ['lun', 'won', 'cam'],
-            'has_full_version': True,
+            'has_full_version': False,
             'in_database_name': 'os_name',
             'is_exposed': True,
             'is_returned': True,
@@ -55,7 +54,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             'query_type': 'str',
             'namespace': 'processed_crash',
             'permissions_needed': ['view_plotfarm'],
-            'storage_mapping': {"type": "multi_field"},
+            'storage_mapping': {"type": "keyword"},
         }
         res = self.api.create_field(**params)
         ok_(res)
@@ -138,7 +137,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         res = self.api.update_field(
             name='super_field',
             description='very accurate description',
-            storage_mapping={'type': 'long', 'analyzer': 'keyword'},
+            storage_mapping={'type': 'long'},
         )
         ok_(res)
 
@@ -148,7 +147,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             'was "%s", now "%s"',
             'super_field',
             {'type': 'boolean', 'null_value': False},
-            {'type': 'long', 'analyzer': 'keyword'},
+            {'type': 'long'},
         )
 
         field = self.connection.get(
@@ -160,7 +159,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
 
         # Verify the changes were taken into account.
         eq_(field['description'], 'very accurate description')
-        eq_(field['storage_mapping'], {'type': 'long', 'analyzer': 'keyword'})
+        eq_(field['storage_mapping'], {'type': 'long'})
 
         # Verify other values did not change.
         eq_(field['permissions_needed'], ['view_nothing'])
@@ -197,7 +196,6 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
             id='product',
         )
 
-    @minimum_es_version('1.0')
     def test_get_missing_fields(self):
         config = self.get_base_config(
             es_index='socorro_integration_test_%W'
@@ -326,7 +324,14 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         ok_('fake_field' not in properties['raw_crash']['properties'])
 
         # Those fields have a `storage_mapping`.
-        eq_(processed_crash['release_channel'], {'type': 'string'})
+        eq_(processed_crash['release_channel'], {
+            'type': 'text',
+            'fields': {
+                'full': {
+                    'type': 'keyword',
+                }
+            }
+        })
 
         # Test nested objects.
         ok_('json_dump' in processed_crash)

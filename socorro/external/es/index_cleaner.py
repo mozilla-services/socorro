@@ -46,21 +46,22 @@ class IndexCleaner(RequiredConfig):
             self.config.elasticsearch
         )
         index_client = es_class.indices_client()
+        cat_client = es_class.cat_client()
 
-        status = index_client.status()
-        indices = status['indices'].keys()
+        # Get the list of all indices in the cluster, as well as all
+        # existing aliases.
+        indices = [x['index'] for x in cat_client.indices(format='json')]
+        aliases = dict(
+            (x['alias'], x['index'])
+            for x in cat_client.aliases(format='json')
+        )
 
-        aliases = index_client.get_aliases()
+        # Some indices look like 'socorro%Y%W_%Y%M%d', but they are
+        # aliased to the expected format of 'socorro%Y%W'. To cover such
+        # cases, we add all aliases to the list of indices we loop over.
+        indices += aliases.keys()
 
         for index in indices:
-            # Some indices look like 'socorro%Y%W_%Y%M%d', but they are
-            # aliased to the expected format of 'socorro%Y%W'. In such cases,
-            # replace the index with the alias.
-            if index in aliases and 'aliases' in aliases[index]:
-                index_aliases = aliases[index]['aliases'].keys()
-                if index_aliases:
-                    index = index_aliases[0]
-
             if not re.match(
                 self.config.elasticsearch.elasticsearch_index_regex,
                 index
@@ -77,4 +78,10 @@ class IndexCleaner(RequiredConfig):
             index_date += datetime.timedelta(weeks=int(index[-2:]))
 
             if index_date < time_limit:
+                # In the case of an alias, we want to first delete that alias,
+                # then make sure we delete the associated index.
+                if index in aliases:
+                    index_client.delete_alias(name=index, index=aliases[index])
+                    index = aliases[index]
+
                 index_client.delete(index)  # Bad index! Go away!
