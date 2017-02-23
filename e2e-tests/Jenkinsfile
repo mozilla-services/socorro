@@ -18,6 +18,7 @@ pipeline {
     PYTEST_ADDOPTS =
       "-n=10 " +
       "--color=yes " +
+      "--tb=short " +
       "--driver=SauceLabs " +
       "--variables=capabilities.json"
     SAUCELABS_API_KEY = credentials('SAUCELABS_API_KEY')
