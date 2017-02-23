@@ -6,7 +6,7 @@ set -ex
 # Two reasons
 #  - predictable version (5.1.x) is what we use in production
 #  - running it as a service would require sudo which we don't want to use
-wget --no-check-certificate 'https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-5.1.1.tar.gz'
+wget --no-check-certificate 'https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.1.1.tar.gz'
 tar zxf elasticsearch-5.1.1.tar.gz
 echo "script.disable_dynamic: false" > elasticsearch.yml
 echo "index.number_of_shards: 1" >> elasticsearch.yml
