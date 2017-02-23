@@ -32,7 +32,7 @@ pipeline {
     stage('Test') {
       steps {
         writeCapabilities(capabilities, 'e2e-tests/capabilities.json')
-        sh "tox -c e2e-tests/tox.ini -e tests"
+        sh "tox -c e2e-tests/tox.ini -e py27"
       }
       post {
         always {
@@ -43,7 +43,7 @@ pipeline {
             alwaysLinkToLastBuild: true,
             keepAll: true,
             reportDir: 'e2e-tests/results',
-            reportFiles: "tests.html",
+            reportFiles: "py27.html",
             reportName: 'HTML Report'])
         }
       }
