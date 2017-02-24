@@ -11,7 +11,7 @@ tar zxf elasticsearch-5.1.1.tar.gz
 
 # Increase the limit of mmap counts in virtual memory. See:
 # https://www.elastic.co/guide/en/elasticsearch/reference/5.1/vm-max-map-count.html
-sudo sysctl -w vm.max_map_count=262144
+# sudo sysctl -w vm.max_map_count=262144
 
 # the -d flag starts it as a daemon in the background
 ./elasticsearch-5.1.1/bin/elasticsearch -d
