@@ -1,4 +1,4 @@
-sudo: no
+sudo: required
 cache:
   directories:
     - $HOME/.cache/pip
