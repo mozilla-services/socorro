@@ -11,7 +11,6 @@ from socorro.lib import (
     datetimeutil,
     external_common,
 )
-from socorro.external.postgresql import tcbs
 from socorro.external.postgresql.base import PostgreSQLBase
 
 
