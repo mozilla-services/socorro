@@ -1156,48 +1156,6 @@ class BugzillaBugInfo(BugzillaAPI):
         return {'bugs': results}
 
 
-class Correlations(SocorroMiddleware):
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    URL_PREFIX = '/correlations/'
-
-    required_params = (
-        'report_type',
-        'product',
-        'version',
-        'signature',
-        'platform',
-    )
-
-    API_WHITELIST = (
-        'count',
-        'load',
-        'reason',
-    )
-
-
-class CorrelationsSignatures(SocorroMiddleware):
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    URL_PREFIX = '/correlations/signatures/'
-
-    required_params = (
-        'report_type',
-        'product',
-        'version',
-    )
-    possible_params = (
-        ('platforms', list),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
-
-
 class GCCrashes(SocorroMiddleware):
 
     cache_seconds = 60
