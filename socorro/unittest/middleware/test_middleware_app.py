@@ -714,13 +714,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data, {'hits': {}})
 
-            response = self.get(
-                server,
-                '/crashes/signatures/',
-                {'product': 'Firefox', 'version': '9.0a1'}
-            )
-            eq_(response.data['crashes'], [])
-
     def test_priorityjobs(self):
         config_manager = self._setup_config_manager()
 
