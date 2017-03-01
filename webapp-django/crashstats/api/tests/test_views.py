@@ -11,10 +11,7 @@ from nose.tools import eq_, ok_
 
 from socorro.lib import BadArgumentError, MissingArgumentError
 from crashstats.base.tests.testbase import TestCase
-from crashstats.crashstats.tests.test_views import (
-    BaseTestViews,
-    Response,
-)
+from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.tests.common import (
     SUPERSEARCH_FIELDS_MOCKED_RESULTS
 )
