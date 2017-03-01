@@ -43,30 +43,6 @@
         }
     },
     "properties": {
-        "abort_message": {
-            "type": ["string", "null"],
-            "description": "The abort message."
-        },
-        "accessibility": {
-            "type": ["boolean", "null"],
-            "description": "The presence of this field indicates that accessibility services were accessed."
-        },
-        "adapter_device_id": {
-            "type": ["string", "null"],
-            "description": "The graphics adapter device identifier."
-        },
-        "adapter_driver_version": {
-            "type": ["string", "null"],
-            "description": "The graphics adapter driver version."
-        },
-        "adapter_subsys_id": {
-            "type": ["string", "null"],
-            "description": "The graphics adapter subsystem identifier."
-        },
-        "adapter_vendor_id": {
-            "type": ["string", "null"],
-            "description": "The graphics adapter vendor. This value is sometimes a name, and sometimes a hexidecimal identifier. Common identifiers include: 0x8086 (Intel), 0x1002 (AMD), 0x10de (NVIDIA)."
-        },
         "additional_minidumps": {
             "type": "array",
             "description": "List the prefixes of the additionnal minidumps, when there are dumps from multiple processes."
@@ -77,71 +53,19 @@
         },
         "addons_checked": {
             "type": ["boolean", "null"],
-            "description": "Value of the 'extensions.checkCompatibility' preference."
+            "description": "Value of the 'extensions. checkCompatibility' preference."
         },
         "address": {
             "type": ["string", "null"],
             "description": "The crashing address. This value is only meaningful for crashes involving bad memory accesses. "
         },
-        "android_board": {
-            "type": ["string", "null"],
-            "description": "The board used by the Android device."
-        },
-        "android_brand": {
-            "type": ["string", "null"],
-            "description": "The Android device brand."
-        },
-        "android_cpu_abi": {
-            "type": ["string", "null"],
-            "description": "The Android primary CPU ABI being used."
-        },
-        "android_cpu_abi2": {
-            "type": ["string", "null"],
-            "description": "The Android secondary CPU ABI being used."
-        },
-        "android_device": {
-            "type": ["string", "null"],
-            "description": "The android device name."
-        },
-        "android_hardware": {
-            "type": ["string", "null"],
-            "description": "The android device hardware."
-        },
-        "android_manufacturer": {
-            "type": ["string", "null"],
-            "description": "The Android device manufacturer."
-        },
-        "android_model": {
-            "type": ["string", "null"],
-            "description": "The android device model name."
-        },
-        "android_version": {
-            "type": ["string", "null"],
-            "description": "The Android version."
-        },
-        "app_init_dlls": {
-            "type": ["string", "null"],
-            "description": "DLLs injected through the AppInit_DLLs registry key."
-        },
         "app_notes": {
             "type": ["string", "null"],
             "description": "Notes from the application that crashed. Mostly contains graphics-related annotations."
         },
-        "available_virtual_memory": {
-            "type": ["integer", "null"],
-            "description": "The amount of unreserved and uncommited (i.e. available) memory in the process's address space. Note that this memory may be fragmented into many separate segments, so an allocation attempt may fail even when this value is substantially greater than zero."
-        },
-        "available_physical_memory": {
-            "type": ["integer", "null"],
-            "description": "The amount of physical memory currently available. This is the amount of physical memory that can be immediately reused without having to write its contents to disk first."
-        },
-        "bios_manufacturer": {
-            "type": ["string", "null"],
-            "description": "The BIOS manufacturer."
-        },
         "build_id": {
             "type": ["string", "null"],
-            "description": "The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS."
+            "description": "The unique build identifier of this version, which is a timestamp of the form YYYYMMDDHHMMSS. "
         },
         "classifications": {
             "type": "object",
@@ -195,21 +119,13 @@
                 }
             }
         },
-        "contains_memory_report": {
-            "type": ["boolean", "null"],
-            "description": "Has content for processed_crash.memory_report or not."
-        },
-        "cpu_arch": {
-            "type": ["string", "null"],
-            "description": "The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'."
-        },
         "cpu_info": {
             "type": ["string", "null"],
             "description": "Detailed processor info. Usually contains information such as the family, model, and stepping number. "
         },
-        "cpu_microcode_version": {
+        "cpu_arch": {
             "type": ["string", "null"],
-            "description": "Microcode version of the CPU."
+            "description": "The build architecture. Usually one of: 'x86', 'amd64' (a.k.a. x86-64), 'arm', 'arm64'."
         },
         "crash_id": {
             "type": ["string", "null"],
@@ -219,30 +135,9 @@
             "type": ["string", "null"],
             "description": "Date at which the crash report was received by Socorro."
         },
-        "dom_ipc_enabled": {
-            "type": "boolean",
-            "default": false,
-            "description": "The value of the 'dom.ipc.enabled' preference (in other terms, whether e10s is enabled)."
-        },
-        "e10s_cohort": {
-            "type": ["string", "null"],
-            "description": "The e10s cohort."
-        },
         "flash_version": {
             "type": ["string", "null"],
             "description": "Version of the Flash Player plugin."
-        },
-        "gmp_plugin": {
-            "type": ["boolean", "null"],
-            "description": "Whether it is a GMP plugin crash."
-        },
-        "graphics_critical_error": {
-            "type": ["string", "null"],
-            "description": "Log of graphics-related errors."
-        },
-        "graphics_startup_test": {
-            "type": ["boolean", "null"],
-            "description": "Whether the crash occured in the DriverCrashGuard."
         },
         "hang_type": {
             "type": ["integer", "null"],
@@ -252,37 +147,9 @@
             "type": ["integer", "null"],
             "description": "Length of time since this version was installed. "
         },
-        "ipc_channel_error": {
-            "type": ["string", "null"],
-            "description": "The IPC channel error."
-        },
-        "ipc_fatal_error_msg": {
-            "type": ["string", "null"],
-            "description": "The message linked to an IPC fatal error."
-        },
-        "ipc_fatal_error_protocol": {
-            "type": ["string", "null"],
-            "description": "The protocol linked to an IPC fatal error."
-        },
-        "ipc_message_name": {
-            "type": ["string", "null"],
-            "description": "The name of the IPC message."
-        },
-        "ipc_system_error": {
-            "type": ["integer", "null"],
-            "description": "A replacement of `system_error`. https://bugzilla.mozilla.org/show_bug.cgi?id=1267222"
-        },
-        "is_garbage_collecting": {
-            "type": ["boolean", "null"],
-            "description": "Whether there was a garbage collection in progress."
-        },
         "java_stack_trace": {
             "type": ["string", "null"],
-            "description": "When Java code crashes due to an unhandled exception, this is the Java Stack Trace. It is usually more useful than the system stack trace given for the crashing thread."
-        },
-        "jit_category": {
-            "type": ["string", "null"],
-            "description": "JIT classification."
+            "description": "When Java code crashes due to an unhandled exception, this is the Java Stack Trace. It is usually more useful than the system stack trace given for the crashing thread. "
         },
         "json_dump": {
             "type": "object",
@@ -457,76 +324,6 @@
             "type": ["integer", "null"],
             "description": "Length of time between the previous crash submission and this one. Low values indicate repeated crashes."
         },
-        "memory_measures": {
-            "type": "object",
-            "description": "Memory measurements collected or computed from the memory_report.",
-            "properties": {
-                "explicit": {
-                    "type": ["integer", "null"],
-                    "description": "The 'explicit' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "gfx_textures": {
-                    "type": ["integer", "null"],
-                    "description": "The 'gfx-textures' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "ghost_windows": {
-                    "type": ["integer", "null"],
-                    "description": "The 'ghost-windows' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "heap_allocated": {
-                    "type": ["integer", "null"],
-                    "description": "The 'heap-allocated' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "heap_overhead": {
-                    "type": ["integer", "null"],
-                    "description": "The 'heap-overhead' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "heap_unclassified": {
-                    "type": ["integer", "null"],
-                    "description": "The 'heap-unclassified' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "host_object_urls": {
-                    "type": ["integer", "null"],
-                    "description": "The 'host-object-urls' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "images": {
-                    "type": ["integer", "null"],
-                    "description": "The 'images' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "js_main_runtime": {
-                    "type": ["integer", "null"],
-                    "description": "The 'js-main-runtime' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "private": {
-                    "type": ["integer", "null"],
-                    "description": "The 'private' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "resident": {
-                    "type": ["integer", "null"],
-                    "description": "The 'resident' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "resident_unique": {
-                    "type": ["integer", "null"],
-                    "description": "The 'resident-unique' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "system_heap_allocated": {
-                    "type": ["integer", "null"],
-                    "description": "The 'system-heap-allocated' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "top_none_detached": {
-                    "type": ["integer", "null"],
-                    "description": "The 'top(none)/detached' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "vsize": {
-                    "type": ["integer", "null"],
-                    "description": "The 'vsize' measurement from the memory report. See about:memory for a fuller description."
-                },
-                "vsize_max_contiguous": {
-                    "type": ["integer", "null"],
-                    "description": "The 'vsize-max-contiguous' measurement from the memory report. See about:memory for a fuller description."
-                }
-            }
-        },
         "memory_report": {
             "type": "object",
             "description": "Anonymized data about the memory usage of the software, generated client-side when a crash report happens because of a memory issue.",
@@ -573,14 +370,6 @@
                     }
                 }
             }
-        },
-        "moz_crash_reason": {
-            "type": ["string", "null"],
-            "description": "For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the accompanying description."
-        },
-        "oom_allocation_size": {
-            "type": ["integer", "null"],
-            "description": "The size of the allocation that caused the OOM crash."
         },
         "platform": {
             "type": ["string", "null"],
@@ -634,49 +423,17 @@
             "type": ["string", "null"],
             "description": "The update channel that the user is on. Typically \"nightly\", \"aurora\", \"beta\", or \"release\", but this may also be other values like \"release-cck-partner\"."
         },
-        "safe_mode": {
-            "type": ["boolean", "null"],
-            "description": "Whether Firefox was running in Safe Mode."
-        },
         "signature": {
             "type": ["string", "null"],
             "description": "This is the field most commonly used for aggregating individual crash reports into a group. It usually contains one or more stack frames from the crashing thread. The stack frames may also be augmented or replaced with other tokens such as 'OOM | small' or 'shutdownhang' that further identify the crash kind. "
-        },
-        "shutdown_progress": {
-            "type": ["string", "null"],
-            "description": "See https://bugzilla.mozilla.org/show_bug.cgi?id=1038342"
-        },
-        "startup_crash": {
-            "type": ["boolean", "null"],
-            "description": "Annotation that tells whether the crash happened before the startup phase was finished or not."
-        },
-        "submitted_from_infobar": {
-            "type": ["boolean", "null"],
-            "description": "Whether the crash report was submitted through the infobar."
-        },
-        "theme": {
-            "type": ["string", "null"],
-            "description": "The current theme."
         },
         "topmost_filenames": {
             "type": ["string", "null"],
             "description": "Paths of the files at the top of the stack."
         },
-        "total_physical_memory": {
-            "type": ["integer", "null"],
-            "description": "The total amount of physical memory."
-        },
-        "total_virtual_memory": {
-            "type": ["integer", "null"],
-            "description": "The size of the user-mode portion of the virtual address space of the calling process. This value depends on the type of process, the type of processor, and the configuration of the operating system. 32-bit processes usually have values in the range 2--4 GiB. 64-bit processes usually have *much* larger values."
-        },
         "uptime": {
             "type": ["integer", "null"],
             "description": "Length of time the process was running before it crashed. Small values (from 0 to 5 or so) usually indicate start-up crashes."
-        },
-        "useragent_locale": {
-            "type": ["string", "null"],
-            "description": "The locale of the Firefox installation."
         },
         "user_comments": {
             "type": ["string", "null"],
