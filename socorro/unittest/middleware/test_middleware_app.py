@@ -721,12 +721,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             eq_(response.data['crashes'], [])
 
-            response = self.get(
-                server,
-                '/crashes/exploitability/'
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
     def test_priorityjobs(self):
         config_manager = self._setup_config_manager()
 

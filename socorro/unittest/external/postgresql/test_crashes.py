@@ -2,9 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import random
 import datetime
-from nose.tools import eq_, ok_, assert_raises
+from nose.tools import eq_, assert_raises
 
 from socorro.lib import (
     MissingArgumentError,
@@ -402,22 +401,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             (2, 'ofCourseYouCan()', 2008120122, '%(now)s')
         """ % {"now": cls.now.date()})
 
-        # Remember your product versions...
-        #   1) Firefox:11.0
-        #   2) Firefox:12.0
-        #   4) Firefox:14.0b
-        #   6) WaterWolf:2.0b
-        cursor.execute("""
-            INSERT INTO exploitability_reports
-            (signature_id, product_version_id, signature, report_date,
-             null_count, none_count, low_count, medium_count, high_count)
-            VALUES
-            (1, 1, 'canIhaveYourSignature()', '%(now)s', 0, 1, 2, 3, 4),
-            (2, 1, 'ofCourseYouCan()', '%(yesterday)s', 4, 3, 2, 1, 0),
-            (2, 4, 'ofCourseYouCan()', '%(now)s', 1, 4, 0, 1, 0),
-            (2, 6, 'canIhaveYourSignature()', '%(yesterday)s', 2, 2, 2, 2, 2)
-        """ % {"now": cls.now, "yesterday": yesterday})
-
         cursor.execute("""
             INSERT INTO signatures
             (signature_id, signature)
@@ -478,7 +461,7 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                      crashes_by_user, crashes_by_user_build, crash_types,
                      process_types, os_names, signatures,
                      product_versions, product_release_channels,
-                     release_channels, products, exploitability_reports,
+                     release_channels, products,
                      reports_clean, crash_adu_by_build_signature
             CASCADE
         """)
@@ -690,211 +673,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         res = crashes.get_count_by_day(**params)
         eq_(res, expected)
 
-    def test_get_exploitibility(self):
-        crashes = Crashes(config=self.config)
-
-        res_expected = {
-            "hits": [
-                {
-                    "signature": "canIhaveYourSignature()",
-                    "null_count": 2,
-                    "none_count": 3,
-                    "low_count": 4,
-                    "medium_count": 5,
-                    "high_count": 6
-                },
-                {
-                    "signature": "ofCourseYouCan()",
-                    "null_count": 5,
-                    "none_count": 7,
-                    "low_count": 2,
-                    "medium_count": 2,
-                    "high_count": 0
-                }
-            ],
-            "total": 2,
-        }
-
-        res = crashes.get_exploitability()
-        eq_(res, res_expected)
-
-    def test_get_exploitibility_by_report_date(self):
-        crashes = Crashes(config=self.config)
-        yesterday_date = (self.now - datetime.timedelta(days=1)).date()
-        yesterday = datetimeutil.date_to_string(yesterday_date)
-
-        res_expected = {
-            "hits": [
-                {
-                    "signature": "canIhaveYourSignature()",
-                    "null_count": 2,
-                    "none_count": 2,
-                    "low_count": 2,
-                    "medium_count": 2,
-                    "high_count": 2
-                },
-                {
-                    "signature": "ofCourseYouCan()",
-                    "null_count": 4,
-                    "none_count": 3,
-                    "low_count": 2,
-                    "medium_count": 1,
-                    "high_count": 0
-                }
-            ],
-            "total": 2,
-        }
-
-        res = crashes.get_exploitability(
-            start_date=yesterday,
-            end_date=yesterday
-        )
-        eq_(res, res_expected)
-
-    def test_get_exploitibility_by_product(self):
-        crashes = Crashes(config=self.config)
-
-        res_expected = {
-            "hits": [
-                {
-                    "signature": "canIhaveYourSignature()",
-                    "null_count": 0,
-                    "none_count": 1,
-                    "low_count": 2,
-                    "medium_count": 3,
-                    "high_count": 4
-                },
-                {
-                    "signature": "ofCourseYouCan()",
-                    "null_count": 5,
-                    "none_count": 7,
-                    "low_count": 2,
-                    "medium_count": 2,
-                    "high_count": 0
-                },
-
-            ],
-            "total": 2,
-        }
-        res = crashes.get_exploitability(product='Firefox')
-        eq_(res, res_expected)
-
-    def test_get_exploitibility_by_product_and_version(self):
-        crashes = Crashes(config=self.config)
-
-        res_expected = {
-            "hits": [
-                {
-                    "signature": "ofCourseYouCan()",
-                    "null_count": 1,
-                    "none_count": 4,
-                    "low_count": 0,
-                    "medium_count": 1,
-                    "high_count": 0
-                }
-            ],
-            "total": 1,
-        }
-
-        res = crashes.get_exploitability(product='Firefox', version='14.0b')
-        eq_(res, res_expected)
-
-    def test_get_exploitibility_with_pagination(self):
-        crashes = Crashes(config=self.config)
-        yesterday_date = (self.now - datetime.timedelta(days=1)).date()
-        day_before_yesterday = (self.now - datetime.timedelta(days=2)).date()
-
-        j = 100  # some number so it's not used by other tests or fixtures
-
-        def rand():
-            return random.randint(0, 10)
-
-        exploit_values = []
-        signature_values = []
-        for day in day_before_yesterday, yesterday_date, self.now:
-            for i in range(10):
-                exploit_values.append(
-                    "(%s, 3, 'Signature%s%s', '%s', %s, %s, %s, %s, %s)" % (
-                        j + 1, j, i, day,
-                        rand(), rand(), rand(), rand(), rand()
-                    )
-                )
-                signature_values.append(
-                    "(%s, 'Signature%s%s', %s, '%s')" % (
-                        j + 1, j, i, day.strftime('%Y%m%d%H'), day
-                    )
-                )
-                j += 1
-        cursor = self.connection.cursor()
-
-        insert = """
-        INSERT INTO signatures
-            (signature_id, signature, first_build, first_report)
-        VALUES
-        """
-        insert += ',\n'.join(signature_values)
-        cursor.execute(insert)
-
-        insert = """
-        INSERT INTO exploitability_reports
-           (signature_id, product_version_id, signature, report_date,
-            null_count, none_count, low_count, medium_count, high_count)
-        VALUES
-        """
-        insert += ',\n'.join(exploit_values)
-        cursor.execute(insert)
-        self.connection.commit()
-
-        res = crashes.get_exploitability()
-        eq_(len(res['hits']), res['total'])
-        ok_(res['total'] >= 3 * 10)
-
-        res = crashes.get_exploitability(
-            start_date=yesterday_date,
-            end_date=self.now
-        )
-        eq_(len(res['hits']), res['total'])
-        ok_(res['total'] >= 2 * 10)
-        ok_(res['total'] < 3 * 10)
-
-        # passing a `page` without `batch` will yield an error
-        assert_raises(
-            MissingArgumentError,
-            crashes.get_exploitability,
-            page=2
-        )
-        # `page` starts on one so anything smaller is bad
-        assert_raises(
-            BadArgumentError,
-            crashes.get_exploitability,
-            page=0,
-            batch=15
-        )
-
-        # Note, `page=1` is on number line starting on 1
-        res = crashes.get_exploitability(
-            page=1,
-            batch=15
-        )
-        self.assertNotEqual(len(res['hits']), res['total'])
-        eq_(len(res['hits']), 15)
-        ok_(res['total'] >= 3 * 10)
-        # since it's ordered by "medium + high"...
-
-        med_or_highs = [
-            x['medium_count'] + x['high_count']
-            for x in res['hits']
-        ]
-        eq_(
-            med_or_highs[0],
-            max(med_or_highs)
-        )
-        eq_(
-            med_or_highs[-1],
-            min(med_or_highs)
-        )
-
-    # -------------------------------------------------------------------------
     def test_get_adu_by_signature(self):
         adu_by_signature = AduBySignature(config=self.config)
 

@@ -43,8 +43,7 @@ SERVICES_LIST = (
     (r'/correlations/(.*)', 'correlations.Correlations'),
     (
         r'/crashes/'
-        r'(count_by_day|daily|signatures|'
-        r'signature_history|exploitability)/(.*)',
+        r'(count_by_day|daily|signatures|signature_history)/(.*)',
         'crashes.Crashes'
     ),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),

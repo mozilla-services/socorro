@@ -29,7 +29,6 @@ Documented services
     * `/crashes/paireduuid <#crashes-paireduuid-service>`_
     * `/crashes/signatures <#crashes-signatures-service>`_
     * `/crashes/signature_history <#crashes-signature-history-service>`_
-    * `/crashes/exploitability <#crashes-exploitability-service>`_
     * `/crashes/adu_by_signature <#crashes-per-adu-by-signature-service>`_
 * `/crashtrends/ <#crash-trends-service>`_
 * `/crontabber_state/ <#crontabber-state-service>`_
@@ -1057,83 +1056,6 @@ Return an object like the following::
         "total": 2
     }
 
-
-.. ############################################################################
-   Crashes Exploitability API
-   ############################################################################
-
-Crashes Exploitability service
-------------------------------
-
-Return a list of exploitable crash reports.
-
-API specifications
-^^^^^^^^^^^^^^^^^^
-
-+----------------+--------------------------+
-| HTTP method    | GET                      |
-+----------------+--------------------------+
-| URL            | /crashes/exploitability/ |
-+----------------+--------------------------+
-
-Mandatory parameters
-^^^^^^^^^^^^^^^^^^^^
-
-None
-
-Optional parameters
-^^^^^^^^^^^^^^^^^^^
-
-+-----------------+---------------+---------------+----------------------------------+
-| Name            | Type of value | Default value | Description                      |
-+=================+===============+===============+==================================+
-| start_date      | Date          | 1 week ago    | Start date of query range        |
-+-----------------+---------------+---------------+----------------------------------+
-| end_date        | Date          | Today         | End date of query range          |
-+-----------------+---------------+---------------+----------------------------------+
-| product         | String        | None          | The product we are interested in |
-+-----------------+---------------+---------------+----------------------------------+
-| version         | String        | None          | The version we are interested in |
-+-----------------+---------------+---------------+----------------------------------+
-| batch           | Int           | None          | Number of signatures to return   |
-|                 |               |               | per page.                        |
-+-----------------+---------------+---------------+----------------------------------+
-| page            | Int           | 0             | Multiple of batch size for       |
-|                 |               |               | paginating query.                |
-+-----------------+---------------+---------------+----------------------------------+
-
-Return value
-^^^^^^^^^^^^
-
-Return an object like the following::
-
-    {
-      "hits": [
-        {
-          "low_count": 2,
-          "high_count": 1,
-          "null_count": 0,
-          "none_count": 0,
-          "report_date": "2013-06-29",
-          "signature": "lockBtree",
-          "medium_count": 5,
-          "product_name": "Firefox",
-          "version_string": "29.0"
-        },
-        {
-          "low_count": 0,
-          "high_count": 0,
-          "null_count": 0,
-          "none_count": 1,
-          "report_date": "2013-06-29",
-          "signature": "nvwgf2um.dll@0x15cfb0",
-          "medium_count": 0,
-          "product_name": "Firefox",
-          "version_string": "28.0"
-        },
-      ],
-      "total": 2
-    }
 
 Crashes per ADU By Signature service
 ------------------------------
