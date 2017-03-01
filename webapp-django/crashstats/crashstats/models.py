@@ -1198,26 +1198,6 @@ class CorrelationsSignatures(SocorroMiddleware):
     )
 
 
-class CrashesCountByDay(SocorroMiddleware):
-
-    deprecation_warning = DEPRECATION_RAMPAGE_WARNING
-
-    cache_seconds = 60 * 60 * 18  # 18 hours of cache should be good.
-
-    URL_PREFIX = '/crashes/count_by_day/'
-
-    required_params = (
-        'signature',
-        'start_date'
-    )
-
-    possible_params = (
-        'end_date',
-    )
-
-    API_WHITELIST = None
-
-
 class GCCrashes(SocorroMiddleware):
 
     cache_seconds = 60
