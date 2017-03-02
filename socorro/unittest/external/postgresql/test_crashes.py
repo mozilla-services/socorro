@@ -63,27 +63,6 @@ class TestCrashes(TestCase):
         }
         return Crashes(**args)
 
-    def test_get_signatures_with_too_big_date_range(self):
-        # This can all be some fake crap because we're testing that
-        # the implementation class throws out the request before
-        # it gets to doing any queries.
-        config = util.DotDict({
-            'database_class': ConnectionContext,
-            'database_hostname': None,
-            'database_port': None,
-            'database_name': None,
-            'database_username': None,
-            'database_password': None,
-        })
-        crashes = Crashes(config=config)
-        params = {}
-        params['duration'] = 31 * 24  # 31 days
-        assert_raises(
-            BadArgumentError,
-            crashes.get_signatures,
-            **params
-        )
-
 
 # =============================================================================
 class IntegrationTestCrashes(PostgreSQLTestCase):
