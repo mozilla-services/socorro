@@ -45,3 +45,27 @@ However, if you change the type definition, E.g.
 },
 ```
 Then you have to increment the `$target_version` number by 1.
+
+## Testing Schema Changes
+
+If you desire to edit the `crash_report.json` file, it's recommended that
+you test that it still validates. For example, if you add a change
+like this:
+
+```diff
++"memory_max_length": {
++   "type": ["integer", "null"],
++   "description": "Max. amount of memory length for a crash"
++},
+```
+Then, you should test that at least 100 randomly picked crashes have a
+type on that field that is either `integer` or `null`. To do that,
+from a checkout of `socorro` run:
+
+```
+cd socorro/schemas
+python validate_and_test.py
+```
+
+That will download 100 crashes, run the JSON Schema validator against
+those crashes with your local `crash_report.json` file.
