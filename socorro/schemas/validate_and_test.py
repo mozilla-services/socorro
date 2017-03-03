@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+from urlparse import urlparse
 import json
 import os
 
@@ -32,7 +33,7 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         self.combined = crash
 
 
-def main():
+def main(*urls):
     file_path = os.path.join(HERE, 'crash_report.json')
     with open(file_path) as f:
         schema = json.load(f)
@@ -40,29 +41,60 @@ def main():
     print('{} is a valid JSON schema'.format(file_path))
 
     print('Fetching data...')
-    r = requests.get(
-        API_BASE.format('SuperSearch'),
-        params={
-            'product': 'Firefox',
-            '_columns': ['uuid'],
-            '_facets_size': 0
-        }
-    )
-    search = r.json()
+    uuids = []
+    for url in urls:
+        assert '://' in url, url
+
+        # To make it easy for people, if someone pastes the URL
+        # of a regular SuperSearch page (and not the API URL), then
+        # automatically convert it for them.
+        parsed = urlparse(url)
+        if parsed.path == '/search/':
+            parsed = parsed._replace(path='/api/SuperSearch/')
+            parsed = parsed._replace(fragment=None)
+            url = parsed.geturl()
+        r = requests.get(
+            url,
+            params={
+                '_columns': ['uuid'],
+                '_facets_size': 0
+            }
+        )
+        search = r.json()
+        if not search['total']:
+            print('Warning! {} returned 0 UUIDs'.format(
+                url
+            ))
+        uuids.extend(
+            [x['uuid'] for x in search['hits'] if x['uuid'] not in uuids]
+        )
+    if not urls:
+        r = requests.get(
+            API_BASE.format('SuperSearch'),
+            params={
+                'product': 'Firefox',
+                '_columns': ['uuid'],
+                '_facets_size': 0
+            }
+        )
+        search = r.json()
+        uuids = [x['uuid'] for x in search['hits']]
+
+    assert len(uuids) == len(set(uuids))
 
     processor = MockedTelemetryBotoS3CrashStorage()
 
-    print('Testing {} random recent crash reports'.format(len(search['hits'])))
-    for hit in search['hits']:
+    print('Testing {} random recent crash reports'.format(len(uuids)))
+    for uuid in uuids:
         r = requests.get(
             API_BASE.format('RawCrash'),
-            params={'crash_id': hit['uuid']}
+            params={'crash_id': uuid}
         )
         print(r.url)
         raw_crash = r.json()
         r = requests.get(
             API_BASE.format('ProcessedCrash'),
-            params={'crash_id': hit['uuid']}
+            params={'crash_id': uuid}
         )
         print(r.url)
         processed_crash = r.json()
@@ -70,7 +102,7 @@ def main():
             raw_crash,
             (),  # dumps
             processed_crash,
-            hit['uuid'],
+            uuid,
         )
         jsonschema.validate(processor.combined, schema)
 
@@ -78,4 +110,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    sys.exit(main(*sys.argv[1:]))

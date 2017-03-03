@@ -63,9 +63,22 @@ type on that field that is either `integer` or `null`. To do that,
 from a checkout of `socorro` run:
 
 ```
-cd socorro/schemas
-python validate_and_test.py
+python socorro/schemas/validate_and_test.py
 ```
 
 That will download 100 crashes, run the JSON Schema validator against
 those crashes with your local `crash_report.json` file.
+
+**Note!** The `validate_and_test.py`, by default, does a Super Search
+query for basically `product=Firefox` and takes the 100 most recent crash
+IDs. This might miss out on some more "rare" crashes whose additional
+values might better test your JSON Schema changes. To remedy that,
+go to Super Search in your browser, make a search that you know includes
+good crash IDs to test and paste that URL like this:
+
+```
+python socorro/schemas/validate_and_test.py \
+ https://crash-stats.mozilla.com/search/?dom_ipc_enabled=%21__null__&memory_images=%3E10&version=54.0a1 \
+ https://crash-stats.mozilla.com/api/SuperSearch/?memory_private=%3E100&product=Firefox&date=%3E%3D2017-02-24T16%3A14%3A00.000Z&date=%3C2017-03-03T16%3A14%3A00.000Z
+ ...etc...
+```
