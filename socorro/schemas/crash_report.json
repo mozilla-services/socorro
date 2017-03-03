@@ -48,7 +48,7 @@
             "description": "The abort message."
         },
         "accessibility": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "The presence of this field indicates that accessibility services were accessed."
         },
         "adapter_device_id": {
@@ -128,11 +128,11 @@
             "description": "Notes from the application that crashed. Mostly contains graphics-related annotations."
         },
         "available_virtual_memory": {
-            "type": ["integer", "null"],
+            "type": ["string", "null"],
             "description": "The amount of unreserved and uncommited (i.e. available) memory in the process's address space. Note that this memory may be fragmented into many separate segments, so an allocation attempt may fail even when this value is substantially greater than zero."
         },
         "available_physical_memory": {
-            "type": ["integer", "null"],
+            "type": ["string", "null"],
             "description": "The amount of physical memory currently available. This is the amount of physical memory that can be immediately reused without having to write its contents to disk first."
         },
         "bios_manufacturer": {
@@ -196,7 +196,7 @@
             }
         },
         "contains_memory_report": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Has content for processed_crash.memory_report or not."
         },
         "cpu_arch": {
@@ -220,8 +220,7 @@
             "description": "Date at which the crash report was received by Socorro."
         },
         "dom_ipc_enabled": {
-            "type": "boolean",
-            "default": false,
+            "type": ["string", "null"],
             "description": "The value of the 'dom.ipc.enabled' preference (in other terms, whether e10s is enabled)."
         },
         "e10s_cohort": {
@@ -233,7 +232,7 @@
             "description": "Version of the Flash Player plugin."
         },
         "gmp_plugin": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Whether it is a GMP plugin crash."
         },
         "graphics_critical_error": {
@@ -241,7 +240,7 @@
             "description": "Log of graphics-related errors."
         },
         "graphics_startup_test": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Whether the crash occured in the DriverCrashGuard."
         },
         "hang_type": {
@@ -269,11 +268,11 @@
             "description": "The name of the IPC message."
         },
         "ipc_system_error": {
-            "type": ["integer", "null"],
+            "type": ["string", "null"],
             "description": "A replacement of `system_error`. https://bugzilla.mozilla.org/show_bug.cgi?id=1267222"
         },
         "is_garbage_collecting": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Whether there was a garbage collection in progress."
         },
         "java_stack_trace": {
@@ -579,7 +578,7 @@
             "description": "For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the accompanying description."
         },
         "oom_allocation_size": {
-            "type": ["integer", "null"],
+            "type": ["string", "null"],
             "description": "The size of the allocation that caused the OOM crash."
         },
         "platform": {
@@ -635,7 +634,7 @@
             "description": "The update channel that the user is on. Typically \"nightly\", \"aurora\", \"beta\", or \"release\", but this may also be other values like \"release-cck-partner\"."
         },
         "safe_mode": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Whether Firefox was running in Safe Mode."
         },
         "signature": {
@@ -647,11 +646,11 @@
             "description": "See https://bugzilla.mozilla.org/show_bug.cgi?id=1038342"
         },
         "startup_crash": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Annotation that tells whether the crash happened before the startup phase was finished or not."
         },
         "submitted_from_infobar": {
-            "type": ["boolean", "null"],
+            "type": ["string", "null"],
             "description": "Whether the crash report was submitted through the infobar."
         },
         "theme": {
@@ -663,11 +662,11 @@
             "description": "Paths of the files at the top of the stack."
         },
         "total_physical_memory": {
-            "type": ["integer", "null"],
+            "type": ["string", "null"],
             "description": "The total amount of physical memory."
         },
         "total_virtual_memory": {
-            "type": ["integer", "null"],
+            "type": ["string", "null"],
             "description": "The size of the user-mode portion of the virtual address space of the calling process. This value depends on the type of process, the type of processor, and the configuration of the operating system. 32-bit processes usually have values in the range 2--4 GiB. 64-bit processes usually have *much* larger values."
         },
         "uptime": {
