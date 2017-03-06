@@ -14,14 +14,17 @@ from socorro.unittest.cron.setup_configman import (
 #==============================================================================
 class TestWeeklyReportsPartitions(IntegrationTestBase):
 
-    def get_standard_config(self):
+    @classmethod
+    def get_standard_config(cls):
         return get_config_manager_for_crontabber().get_config()
 
     def _setup_config_manager(self):
-        _super = super(TestWeeklyReportsPartitions, self)._setup_config_manager
+        super(TestWeeklyReportsPartitions, self)._setup_config_manager
         return get_config_manager_for_crontabber(
-            jobs='socorro.cron.jobs.weekly_reports_partitions.'
-                'WeeklyReportsPartitionsCronApp|1d',
+            jobs=(
+                'socorro.cron.jobs.weekly_reports_partitions.'
+                'WeeklyReportsPartitionsCronApp|1d'
+            ),
         )
 
     def test_run_weekly_reports_partitions(self):

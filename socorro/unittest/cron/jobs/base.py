@@ -8,9 +8,11 @@ from socorro.unittest.cron.setup_configman import (
 
 from crontabber.tests import base
 
+
 class IntegrationTestBase(base.IntegrationTestCaseBase):
 
-    def get_standard_config(self):
+    @classmethod
+    def get_standard_config(cls):
         """this method overrides the crontabber version of the same name.
         It is not used by Socorro clients directly, but the base crontabber
         class uses this method during setup.  By overriding the implementation
@@ -22,5 +24,3 @@ class IntegrationTestBase(base.IntegrationTestCaseBase):
         Makefiles and shell scripts offers"""
         config = get_config_manager_for_crontabber().get_config()
         return config
-
-
