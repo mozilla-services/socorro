@@ -23,6 +23,11 @@ class IntegrationTestDailyURL(IntegrationTestBase):
         self.Popen_patcher = mock.patch('subprocess.Popen')
         self.Popen = self.Popen_patcher.start()
 
+        # Empty self.tempdir before every test because some tests
+        # depend on checking that certain files where NOT created.
+        for fp in os.listdir(self.tempdir):
+            os.remove(os.path.join(self.tempdir, fp))
+
     def tearDown(self):
         self.conn.cursor().execute("""
         TRUNCATE TABLE reports CASCADE;
