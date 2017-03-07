@@ -1552,17 +1552,17 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 'term': day_before_int,
                 'count': 1,
                 'facets': {
-                    'platform': [
-                        {
-                            'term': 'Linux',
-                            'count': 1
-                        }
-                    ],
                     'product': [
                         {
                             'term': 'NightTrain',
                             'count': 1
                         },
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
+                            'count': 1
+                        }
                     ],
                 }
             },
@@ -1570,15 +1570,15 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
                 'term': yesterday_int,
                 'count': 1,
                 'facets': {
-                    'platform': [
-                        {
-                            'term': 'Linux',
-                            'count': 1
-                        }
-                    ],
                     'product': [
                         {
                             'term': 'WaterWolf',
+                            'count': 1
+                        }
+                    ],
+                    'platform': [
+                        {
+                            'term': 'Linux',
                             'count': 1
                         }
                     ],

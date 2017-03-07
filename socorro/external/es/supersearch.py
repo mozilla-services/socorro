@@ -23,6 +23,17 @@ ES_PARSE_EXCEPTION_REGEX = re.compile(
 )
 
 
+def flatten(d, parent_key='', sep='.'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
 class SuperSearch(SearchBase):
 
     def __init__(self, *args, **kwargs):
@@ -102,15 +113,6 @@ class SuperSearch(SearchBase):
         Elasticsearch returns a nested document, just like it is stored in
         the database. We want to flatten that out.
         """
-        def flatten(d, parent_key='', sep='.'):
-            items = []
-            for k, v in d.items():
-                new_key = parent_key + sep + k if parent_key else k
-                if isinstance(v, collections.MutableMapping):
-                    items.extend(flatten(v, new_key, sep=sep).items())
-                else:
-                    items.append((new_key, v))
-            return dict(items)
 
         hit = self.format_field_names(flatten(hit))
         return hit
@@ -514,11 +516,9 @@ class SuperSearch(SearchBase):
                         for key, value in kwargs.items():
                             if value == bad_input:
                                 raise BadArgumentError(key)
-                    except KeyError:
-                        # The reason cannot be found in the exception info.
-                        pass
-                    except IndexError:
-                        # Cannot find anything while parsing the exception.
+                    except (IndexError, KeyError):
+                        # The reason cannot be found in the exception info, or
+                        # we cannot find anything while parsing the exception.
                         pass
                 raise
 

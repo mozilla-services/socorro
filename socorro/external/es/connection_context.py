@@ -99,7 +99,7 @@ class ConnectionContext(RequiredConfig):
     def connection(self, name=None, timeout=None):
         """Returns an instance of elasticsearch-py's Elasticsearch class as
         encapsulated by the Connection class above.
-        Documentation: http://elasticsearch-py.readthedocs.org
+        Documentation: http://elasticsearch-py.readthedocs.io
         """
         if timeout is None:
             timeout = self.config.elasticsearch_timeout
@@ -118,15 +118,24 @@ class ConnectionContext(RequiredConfig):
     def indices_client(self, name=None):
         """Returns an instance of elasticsearch-py's Index client class as
         encapsulated by the Connection class above.
-        http://elasticsearch-py.readthedocs.org/en/master/api.html#indices
-        """
+        http://elasticsearch-py.readthedocs.io/en/master/api.html#indices
 
+        The Indices client is used to interact with Elasticsearch indices,
+        to create or delete them for example.
+        """
         return Connection(
             self.config,
             elasticsearch.client.IndicesClient(self.connection())
         )
 
     def cat_client(self):
+        """Returns an instance of elasticsearch-py's Cat client class as
+        encapsulated by the Connection class above.
+        http://elasticsearch-py.readthedocs.io/en/master/api.html#cat
+
+        The Cat client is used to show data about an Elasticsearch cluster,
+        like indices, aliases, nodes...
+        """
         return Connection(
             self.config,
             elasticsearch.client.CatClient(self.connection())
