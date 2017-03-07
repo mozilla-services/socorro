@@ -196,3 +196,35 @@ class StrCachingIterator(CachingIterator):
             else:
                 self.cache.append(y)
             yield y
+
+
+def flatten(d, parent_key='', sep='.'):
+    """Return a dictionary with only top-level keys. The sub-level fields
+    are moved to a top-level key named by concatenating the keys of each level.
+
+    For example:
+        IN:
+        {
+            "a": 1,
+            "b": {
+                "c": 2,
+                "d": {
+                    "e": 3
+                }
+            }
+        }
+        OUT:
+        {
+            "a": 1,
+            "b.c": 2,
+            "b.d.e": 3
+        }
+    """
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)

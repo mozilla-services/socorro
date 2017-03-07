@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import collections
 import datetime
 import re
 from collections import defaultdict
@@ -13,6 +12,7 @@ from socorro.lib import (
     BadArgumentError,
     MissingArgumentError,
     datetimeutil,
+    util,
 )
 
 from socorro.lib.search_common import SearchBase
@@ -21,17 +21,6 @@ from socorro.lib.search_common import SearchBase
 ES_PARSE_EXCEPTION_REGEX = re.compile(
     'failed to parse \[([^\]]+)\]'
 )
-
-
-def flatten(d, parent_key='', sep='.'):
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flatten(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
 
 
 class SuperSearch(SearchBase):
@@ -114,7 +103,7 @@ class SuperSearch(SearchBase):
         the database. We want to flatten that out.
         """
 
-        hit = self.format_field_names(flatten(hit))
+        hit = self.format_field_names(util.flatten(hit))
         return hit
 
     def get_field_name(self, value, full=True):
