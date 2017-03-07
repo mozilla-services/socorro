@@ -41,7 +41,6 @@ SERVICES_LIST = (
     (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
     (r'/correlations/(.*)', 'correlations.Correlations'),
-    (r'/crashes/(count_by_day|daily)/(.*)', 'crashes.Crashes'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/(.*)', 'products.Products'),  # deprecated
     (r'/query/', 'query.Query'),
