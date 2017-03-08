@@ -128,17 +128,12 @@ SUPERSEARCH_FIELDS = {
         'form_field_choices': None,
         'permissions_needed': [],
         'default_value': None,
-        'has_full_version': True,
+        'has_full_version': False,
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'keyword',
         },
     },
     'date': {
@@ -170,17 +165,12 @@ SUPERSEARCH_FIELDS = {
         'form_field_choices': None,
         'permissions_needed': [],
         'default_value': None,
-        'has_full_version': True,
+        'has_full_version': False,
         'is_exposed': True,
         'is_returned': True,
         'is_mandatory': False,
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'keyword',
         },
     },
     'build_id': {
@@ -279,7 +269,7 @@ SUPERSEARCH_FIELDS = {
         'form_field_choices': [
             'any', 'browser', 'plugin', 'content', 'all'
         ],
-        'has_full_version': True,
+        'has_full_version': False,
         'in_database_name': 'process_type',
         'is_exposed': True,
         'is_mandatory': False,
@@ -289,12 +279,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'keyword',
         }
     },
     'user_comments': {
@@ -374,7 +359,7 @@ SUPERSEARCH_FIELDS = {
         'data_validation_type': 'enum',
         'default_value': None,
         'form_field_choices': None,
-        'has_full_version': True,
+        'has_full_version': False,
         'in_database_name': 'Vendor',
         'is_exposed': True,
         'is_mandatory': False,
@@ -384,12 +369,7 @@ SUPERSEARCH_FIELDS = {
         'permissions_needed': [],
         'query_type': 'enum',
         'storage_mapping': {
-            'type': 'text',
-            'fields': {
-                'full': {
-                    'type': 'keyword',
-                }
-            }
+            'type': 'keyword',
         }
     },
     'useragent_locale': {

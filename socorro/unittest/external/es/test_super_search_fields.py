@@ -324,7 +324,7 @@ class IntegrationTestSuperSearchFields(ElasticsearchTestCase):
         ok_('fake_field' not in properties['raw_crash']['properties'])
 
         # Those fields have a `storage_mapping`.
-        eq_(processed_crash['release_channel'], {
+        eq_(processed_crash['signature'], {
             'type': 'text',
             'fields': {
                 'full': {
