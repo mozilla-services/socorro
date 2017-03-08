@@ -35,6 +35,7 @@ DEFAULT_COLUMNS = (
     'platform',
     'reason',
     'address',
+    'install_time',
 )
 
 DEFAULT_SORT = (
