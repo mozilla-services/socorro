@@ -110,6 +110,7 @@ NS_DebugBreak.*
 nsDebugImpl::Abort
 nsDependentString::nsDependentString
 nsEventQueue::GetEvent
+nsThread::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
