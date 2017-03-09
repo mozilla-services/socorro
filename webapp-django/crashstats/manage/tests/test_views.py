@@ -1692,6 +1692,40 @@ class TestViews(BaseTestViews):
         first, = data['items']
         eq_(first['filename'], 'file.zip')
 
+    def test_symbols_uploads_data_content_search(self):
+        url = reverse('manage:symbols_uploads_data')
+        response = self.client.get(url)
+        eq_(response.status_code, 302)
+        self._login()
+
+        other = User.objects.create(username='o', email='other@mozilla.com')
+        for i in range(3):
+            SymbolsUpload.objects.create(
+                user=other,
+                filename='file-%d.zip' % i,
+                size=1000 + i,
+                content='Some Content {}'.format(i)
+            )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 3)
+
+        response = self.client.get(url, {'content': 'Some Content'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 3)
+
+        response = self.client.get(url, {'content': 'Some Content 1'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 1)
+
+        response = self.client.get(url, {'content': 'Some Content X'})
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['count'], 0)
+
     def test_symbols_uploads_data_pagination_bad_request(self):
         url = reverse('manage:symbols_uploads_data')
         self._login()

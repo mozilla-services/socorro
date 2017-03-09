@@ -435,6 +435,10 @@ def symbols_uploads_data(request):
         uploads = uploads.filter(
             filename__icontains=form.cleaned_data['filename']
         )
+    if form.cleaned_data['content']:
+        uploads = uploads.filter(
+            content__contains=form.cleaned_data['content']
+        )
 
     count = uploads.count()
     items = []

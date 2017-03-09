@@ -26,6 +26,10 @@
         margin: 0 10px;
     }
 
+    tfoot input[type="text"] {
+        width: 100%;
+    }
+
     form#filter {
         margin-top: 30px;
     }
@@ -82,7 +86,9 @@
                         <td>
                             <input type="text" name="filename" placeholder="Search by filename">
                         </td>
-                        <td>&nbsp;</td>
+                        <td>
+                            <input type="text" name="content" placeholder="Search by content (case sensitive)">
+                        </td>
                         <td>&nbsp;</td>
                         <td>
                             <input type="submit" value="Filter">
