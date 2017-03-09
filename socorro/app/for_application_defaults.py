@@ -62,8 +62,6 @@ class ApplicationDefaultsProxy(object):
                 'socorro.external.rabbitmq.reprocess_crashlist.ReprocessCrashlistApp',
             'purge_rmq':
             'socorro.external.rabbitmq.purge_queue_app.PurgeRabbitMQQueueApp',
-            'correlations':
-            'socorro.analysis.correlations.correlations_app.CorrelationsApp',
         }
 
 
