@@ -1,3 +1,5 @@
+/* global SignatureReport socorro */
+
 /**
  * Tab for displaying aggregations tables.
  * Has panels.
@@ -10,9 +12,9 @@ SignatureReport.AggregationsTab = function(tabName) {
 
     var config = {
         'panels': true,
-        'defaultOptions': ['product', 'platform', 'build_id'],
+        'defaultOptions': ['product', 'platform', 'build_id', 'install_time'],
         'dataDisplayType': 'table',
-        'pagination': false
+        'pagination': false,
     };
 
     SignatureReport.Tab.call(this, tabName, config);
@@ -37,7 +39,7 @@ SignatureReport.AggregationsTab.prototype.loadControls = function() {
     $.each(fields, function(i, field) {
         that.$selectElement.append($('<option>', {
             'value': field.id,
-            'text': field.text
+            'text': field.text,
         }));
     });
 
