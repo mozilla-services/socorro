@@ -1,3 +1,5 @@
+/* global SignatureReport Qs */
+
 /**
  * Abstract class for a tab to show information on the signature report page.
  *
@@ -123,6 +125,7 @@ SignatureReport.Tab.prototype.buildUrl = function (params, option) {
 // Extend this if anything different should be done with the returned data.
 SignatureReport.Tab.prototype.onAjaxSuccess = function (contentElement, data) {
     contentElement.empty().append($(data));
+    contentElement.addClass('loaded');
     if (this.dataDisplayType === 'table') {
         $('.tablesorter').tablesorter();
     }
@@ -145,6 +148,7 @@ SignatureReport.Tab.prototype.loadPanel = function (option) {
 
     // Append the new panel.
     this.$contentElement.append(panel.$panelElement);
+    this.$contentElement.addClass('loaded');
 
     // Disable the currently selected option.
     $('option[value=' + option + ']', this.$selectElement).prop('disabled', true);
@@ -169,7 +173,7 @@ SignatureReport.Tab.prototype.loadContent = function (contentElement, option) {
         // table or a graph.
         var dataTypes = {
             'table': 'html',
-            'graph': 'json'
+            'graph': 'json',
         };
 
         // Empty the content element and append a loader.
@@ -182,7 +186,7 @@ SignatureReport.Tab.prototype.loadContent = function (contentElement, option) {
             error: function(jqXHR, textStatus, errorThrown) {
                 SignatureReport.handleError(contentElement, jqXHR, textStatus, errorThrown);
             },
-            dataType: dataTypes[this.dataDisplayType]
+            dataType: dataTypes[this.dataDisplayType],
         });
 
     }
