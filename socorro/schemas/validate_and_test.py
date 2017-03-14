@@ -138,9 +138,9 @@ def run(no_crashes, *urls):
             len(keys_not_in_crashes),
             'keys in JSON Schema, but never in any of the tested crashes:'
         )
-        print('  ', 'KEY'.ljust(70), 'TYPE(S)')
+        print('  ', 'KEY'.ljust(60), 'TYPE(S)')
         for k in sorted(keys_not_in_crashes):
-            print('  ', k.ljust(70), all_schema_types[k])
+            print('  ', k.ljust(60), all_schema_types[k])
 
 
 def main():
