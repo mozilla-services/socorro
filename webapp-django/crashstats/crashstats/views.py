@@ -946,7 +946,7 @@ def report_index(request, crash_id, default_context=None):
     else:
         context['raw_keys'] = [
             x for x in context['raw']
-            if x in models.RawCrash.API_WHITELIST
+            if x in models.RawCrash.API_WHITELIST()
         ]
     # Sort keys case-insensitively
     context['raw_keys'].sort(key=lambda s: s.lower())
