@@ -36,6 +36,7 @@ class FilterSymbolsUploadsForm(BaseForm):
 
     email = forms.CharField(required=False)
     filename = forms.CharField(required=False)
+    content = forms.CharField(required=False)
 
 
 class FilterEventsForm(BaseForm):
