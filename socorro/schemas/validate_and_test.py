@@ -82,8 +82,6 @@ def run(no_crashes, *urls):
         search = r.json()
         uuids = [x['uuid'] for x in search['hits']]
 
-    assert len(uuids) == len(set(uuids))
-
     processor = MockedTelemetryBotoS3CrashStorage()
 
     all_keys = set()
