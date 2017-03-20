@@ -126,7 +126,6 @@ function cleanup() {
   rm -rf ./primaryCrashStore/ ./processedCrashStore/
   rm -rf ./crashes/
   rm -rf ./submissions
-  rm -rf ./correlations
 
   echo "INFO: Terminating background jobs"
   echo "  any kill usage errors below may be ignored"
@@ -459,53 +458,6 @@ do
   cleanup
 
 done
-
-# start correlations integration tests
-echo "INFO: starting up *** correlations test *** "
-echo "      * in this test, we ensure the correlations reports app produces the correct output in json form"
-
-mkdir ./correlations
-
-socorro correlations \
---source.crashstorage_class=socorro.collector.submitter_app.SubmitterFileSystemWalkerSource \
---source.search_root=testcrash/processed \
---new_crash_source.new_crash_source_class=""  \
---global.correlations.path=./correlations \
---global.correlations.core.output_class=socorro.analysis.correlations.core_count_rule.JsonFileOutputForCoreCounts \
---global.correlations.interesting.output_class=socorro.analysis.correlations.interesting_rule.JsonFileOutputForInterestingModules  \
---producer_consumer.number_of_threads=2 \
---destination.crashstorage_class=socorro.external.crashstorage_base.NullCrashStorage \
---global.correlation.min_count_for_inclusion=1 \
-> correlations.log 2>&1
-
-if [ $? = 1 ]
-then
-    echo "ERROR: correlations logged errors"
-    echo "***** BEGIN correlation log *****"
-    cat correlations.log
-    echo "***** END correlation log *****"
-    fatal 1 "ERROR: correlations produced unexpected output"
-fi
-
-check_for_logged_fatal_errors $? correlations
-
-diff -w ./correlations/20151130 ./testcrash/correlations-integration-correct-output >correlation.diff
-if [ $? = 1 ]
-then
-    echo "CONTENT OF ./correlations/20151130"
-    ls -ltr ./correlations/20151130
-    echo "CONTENT of ./testcrash/correlations-integration-correct-output"
-    ls -ltr ./testcrash/correlations-integration-correct-output
-    # something went wrong
-    echo "ERROR: correlations produced unexpected output"
-    echo "***** BEGIN correlation log *****"
-    cat correlations.log
-    echo "***** BEGIN correlation diff *****"
-    cat correlation.diff
-    echo "***** END correlation diff *****"
-    fatal 1 "ERROR: correlations produced unexpected output"
-fi
-echo "*** correlations *** PASSES INTEGRATION TESTS"
 
 echo "If you are reading this, then ALL the integration tests passed!"
 exit 0

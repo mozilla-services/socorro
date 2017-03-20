@@ -39,8 +39,6 @@ from configman.converters import class_converter
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
     (r'/backfill/(.*)', 'backfill.Backfill'),
-    (r'/correlations/signatures/(.*)', 'correlations.CorrelationsSignatures'),
-    (r'/correlations/(.*)', 'correlations.Correlations'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/products/(.*)', 'products.Products'),  # deprecated
     (r'/query/', 'query.Query'),
@@ -114,7 +112,6 @@ class MiddlewareApp(App):
         default='psql:socorro.external.postgresql, '
                 'es:socorro.external.es, '
                 'fs:socorro.external.fs, '
-                'http:socorro.external.http, '
                 'rabbitmq:socorro.external.rabbitmq',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
@@ -123,10 +120,7 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Query: es`',
-        default='Correlations: http, '
-                'CorrelationsSignatures: http, '
-                'SuperSearch: es, '
-                'Priorityjobs: rabbitmq, '
+        default='Priorityjobs: rabbitmq, '
                 'Query: es',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
@@ -245,36 +239,6 @@ class MiddlewareApp(App):
         doc='a class implementing a wsgi web server',
         default='socorro.webapi.servers.CherryPy',
         from_string_converter=class_converter
-    )
-
-    #--------------------------------------------------------------------------
-    # http namespace
-    #     the namespace is for config parameters the http modules
-    #--------------------------------------------------------------------------
-    required_config.namespace('http')
-    required_config.http.namespace('correlations')
-    required_config.http.correlations.add_option(
-        'base_url',
-        doc='Base URL where correlations text files are',
-        default='https://crash-analysis.mozilla.com/crash_analysis/',
-    )
-    required_config.http.correlations.add_option(
-        'save_download',
-        doc='Whether files downloaded for correlations should be '
-            'temporary stored on disk',
-        default=True,
-    )
-    required_config.http.correlations.add_option(
-        'save_seconds',
-        doc='Number of seconds that the downloaded .txt file is stored '
-            'in a temporary place',
-        default=60 * 10,
-    )
-    required_config.http.correlations.add_option(
-        'save_root',
-        doc='Directory where the temporary downloads are stored '
-            '(if left empty will become the systems tmp directory)',
-        default='',
     )
 
     #--------------------------------------------------------------------------
