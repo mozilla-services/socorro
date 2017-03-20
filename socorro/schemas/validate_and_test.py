@@ -33,7 +33,7 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         self.combined = crash
 
 
-def main(*urls):
+def run(no_crashes, *urls):
     file_path = os.path.join(HERE, 'crash_report.json')
     with open(file_path) as f:
         schema = json.load(f)
@@ -57,7 +57,8 @@ def main(*urls):
             url,
             params={
                 '_columns': ['uuid'],
-                '_facets_size': 0
+                '_facets_size': 0,
+                '_results_number': no_crashes,
             }
         )
         search = r.json()
@@ -74,15 +75,33 @@ def main(*urls):
             params={
                 'product': 'Firefox',
                 '_columns': ['uuid'],
-                '_facets_size': 0
+                '_facets_size': 0,
+                '_results_number': no_crashes,
             }
         )
         search = r.json()
         uuids = [x['uuid'] for x in search['hits']]
 
-    assert len(uuids) == len(set(uuids))
-
     processor = MockedTelemetryBotoS3CrashStorage()
+
+    all_keys = set()
+
+    def log_all_keys(crash, prefix=''):
+        for key, value in crash.items():
+            if isinstance(value, dict):
+                log_all_keys(value, prefix=prefix + '{}.'.format(key))
+            else:
+                all_keys.add(prefix + key)
+
+    all_schema_types = {}
+
+    def log_all_schema_keys(schema, prefix=''):
+        for key, value in schema['properties'].items():
+            if isinstance(value, dict) and 'properties' in value:
+                log_all_schema_keys(value, prefix=prefix + '{}.'.format(key))
+            else:
+                all_schema_types[prefix + key] = value['type']
+    log_all_schema_keys(schema)
 
     print('Testing {} random recent crash reports'.format(len(uuids)))
     for uuid in uuids:
@@ -98,17 +117,47 @@ def main(*urls):
         )
         print(r.url)
         processed_crash = r.json()
+
         processor.save_raw_and_processed(
             raw_crash,
             (),  # dumps
             processed_crash,
             uuid,
         )
+        log_all_keys(processor.combined)
+
         jsonschema.validate(processor.combined, schema)
 
-    print('Done testing, all crash reports passed.')
+    print('\nDone testing, all crash reports passed.\n')
+
+    keys_not_in_crashes = set(all_schema_types.keys()) - all_keys
+    if keys_not_in_crashes:
+        print(
+            len(keys_not_in_crashes),
+            'keys in JSON Schema, but never in any of the tested crashes:'
+        )
+        print('  ', 'KEY'.ljust(60), 'TYPE(S)')
+        for k in sorted(keys_not_in_crashes):
+            print('  ', k.ljust(60), all_schema_types[k])
+
+
+def main():
+    import argparse
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument(
+        '--crashes-per-url', '-n',
+        help='Number of crashes to download per SuperSearch URL',
+        default=20,
+    )
+    argparser.add_argument(
+        'urls',
+        help='SuperSearch API URL(s) to use instead of the default',
+        nargs='*',
+    )
+    args = argparser.parse_args()
+    run(args.crashes_per_url, *args.urls)
 
 
 if __name__ == '__main__':
     import sys
-    sys.exit(main(*sys.argv[1:]))
+    sys.exit(main())
