@@ -394,15 +394,14 @@ def model_wrapper(request, model_name):
         elif not request.user.has_perm('crashstats.view_pii'):
             clean_scrub = getattr(model, 'API_CLEAN_SCRUB', None)
 
-            if isinstance(model.API_WHITELIST, models.Lazy):
-                # This is necessary because in Cleaner() we're going to
-                # rely on asking `isinstance(whitelist, dict)` and there's
-                # no easy or convenient way to be lazy about that.
-                model.API_WHITELIST = model.API_WHITELIST.materialize()
+            if callable(model.API_WHITELIST):
+                whitelist = model.API_WHITELIST()
+            else:
+                whitelist = model.API_WHITELIST
 
-            if result and model.API_WHITELIST:
+            if result and whitelist:
                 cleaner = Cleaner(
-                    model.API_WHITELIST,
+                    whitelist,
                     clean_scrub=clean_scrub,
                     # if True, uses warnings.warn() to show fields
                     # not whitelisted

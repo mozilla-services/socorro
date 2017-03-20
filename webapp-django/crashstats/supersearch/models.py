@@ -54,11 +54,9 @@ def get_api_whitelist(include_all_fields=False):
 
             # Cache for 1 hour.
             cache.set(cache_key, fields, 60 * 60)
-        return fields
+        return {'hits': fields}
 
-    return models.Lazy(
-        functools.partial(get_from_es, include_all_fields)
-    )
+    return functools.partial(get_from_es, include_all_fields)
 
 
 class ESSocorroMiddleware(models.SocorroMiddleware):
@@ -70,9 +68,7 @@ class SuperSearch(ESSocorroMiddleware):
 
     implementation = supersearch.SuperSearch
 
-    API_WHITELIST = {
-        'hits': get_api_whitelist()
-    }
+    API_WHITELIST = get_api_whitelist()
 
     API_CLEAN_SCRUB = (
         ('user_comments', scrubber.EMAIL),
@@ -182,9 +178,7 @@ class SuperSearch(ESSocorroMiddleware):
 
 class SuperSearchUnredacted(SuperSearch):
 
-    API_WHITELIST = {
-        'hits': get_api_whitelist(include_all_fields=True)
-    }
+    API_WHITELIST = get_api_whitelist(include_all_fields=True)
 
     API_CLEAN_SCRUB = None
 

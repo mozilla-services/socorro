@@ -525,6 +525,14 @@ def _get_supersearch_field_data(source):
     return form.cleaned_data
 
 
+def _delete_supersearch_fields_api_cache(namespace=None):
+    # The API is using cache to get all fields by a specific namespace
+    # for the whitelist lookup, clear that cache too.
+    if namespace:
+        cache.delete('api_supersearch_fields_{}'.format(namespace))
+    cache.delete('api_supersearch_fields')
+
+
 @superuser_required
 @require_POST
 def supersearch_field_create(request):
@@ -536,15 +544,13 @@ def supersearch_field_create(request):
     api = SuperSearchField()
     api.create_field(**field_data)
 
+    _delete_supersearch_fields_api_cache(namespace=field_data['namespace'])
+
     log(request.user, 'supersearch_field.post', field_data)
 
     # Refresh the cache for the fields service.
     SuperSearchFields().get(refresh_cache=True)
     SuperSearch.clear_implementations_cache()
-
-    # The API is using cache to get all fields by a specific namespace
-    # for the whitelist lookup, clear that cache too.
-    cache.delete('api_supersearch_fields_%s' % field_data['namespace'])
 
     return redirect(reverse('manage:supersearch_fields'))
 
@@ -559,6 +565,8 @@ def supersearch_field_update(request):
 
     api = SuperSearchField()
     api.update_field(**field_data)
+
+    _delete_supersearch_fields_api_cache(namespace=field_data['namespace'])
 
     SuperSearch.clear_implementations_cache()
 
@@ -579,6 +587,8 @@ def supersearch_field_delete(request):
 
     api = SuperSearchField()
     api.delete_field(name=field_name)
+
+    _delete_supersearch_fields_api_cache()
 
     SuperSearch.clear_implementations_cache()
 

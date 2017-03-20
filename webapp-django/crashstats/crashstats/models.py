@@ -102,27 +102,6 @@ def config_from_configman():
     return config
 
 
-class Lazy(object):
-
-    # used because None can be an actual result
-    _marker = object()
-
-    def __init__(self, func):
-        self.func = func
-        self.materialized = self._marker
-
-    def materialize(self):
-        if self.materialized is self._marker:
-            self.materialized = self.func()
-        return self.materialized
-
-    def __iter__(self):
-        return self.materialize().__iter__()
-
-    def __add__(self, other):
-        return self.materialize().__add__(other)
-
-
 def get_api_whitelist(*args, **kwargs):
 
     def get_from_es(namespace, baseline=None):
@@ -155,9 +134,7 @@ def get_api_whitelist(*args, **kwargs):
             cache.set(cache_key, fields, 60 * 60)
         return fields
 
-    return Lazy(
-        functools.partial(get_from_es, *args, **kwargs)
-    )
+    return functools.partial(get_from_es, *args, **kwargs)
 
 
 class BadStatusCodeError(Exception):
