@@ -15,12 +15,8 @@ pipeline {
     timeout(time: 1, unit: 'HOURS')
   }
   environment {
-    PYTEST_ADDOPTS =
-      "-n=10 " +
-      "--color=yes " +
-      "--tb=short " +
-      "--driver=SauceLabs " +
-      "--variables=capabilities.json"
+    /** See https://issues.jenkins-ci.org/browse/JENKINS-42771 - we'd like to expand this out into multi-line concatenations */
+    PYTEST_ADDOPTS = "-n=10 --tb=short --color=yes --driver=SauceLabs --variables=capabilities.json"
     SAUCELABS_API_KEY = credentials('SAUCELABS_API_KEY')
   }
   stages {
