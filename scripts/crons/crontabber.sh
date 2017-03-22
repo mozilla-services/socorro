@@ -8,7 +8,6 @@
 
 NAME=`basename $0 .sh`
 CT_INI="/etc/socorro/crontabber.ini"
-lock --ignore-existing $NAME
 export CMD="${PYTHON} ${APPDIR}/socorro/cron/crontabber_app.py"
 LOG=/var/log/socorro/crontabber.log
 if [ -f $CT_INI ] && [ -r $CT_INI ]; then
@@ -17,6 +16,5 @@ else
     envconsul -once -prefix socorro/common -prefix socorro/crontabber bash -c "$CMD" >> $LOG 2>&1
 fi
 EXIT_CODE=$?
-unlock $NAME
 
 exit $EXIT_CODE
