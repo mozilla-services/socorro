@@ -207,6 +207,7 @@ _ZdaPvRKSt9nothrow_t"
 zzz_AsmCodeRange_.*
 .*DebugAbort.*
 mozilla::ipc::MessageChannel::~MessageChannel.*
+mozilla::MakeUnique<.*>
 
 # List of DLLs to add. At some point, should be replaced by one generic rule
 # for all DLLs.
