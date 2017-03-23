@@ -80,7 +80,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -215,8 +215,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "b2g_os_version",
@@ -301,8 +300,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "not_analyzed",
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "uuid",
@@ -338,9 +336,7 @@
         "is_returned": false,
         "query_type": "enum",
         "permissions_needed": [],
-        "storage_mapping": {
-            "type": "string"
-        },
+        "storage_mapping": null,
         "namespace": "processed_crash",
         "has_full_version": false,
         "data_validation_type": "enum",
@@ -390,7 +386,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -482,8 +478,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "theme",
@@ -502,7 +497,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -520,12 +515,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -631,12 +624,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -675,7 +666,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -728,9 +719,7 @@
         "is_returned": false,
         "query_type": "enum",
         "permissions_needed": [],
-        "storage_mapping": {
-            "type": "string"
-        },
+        "storage_mapping": null,
         "namespace": "raw_crash",
         "has_full_version": false,
         "data_validation_type": "enum",
@@ -765,7 +754,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -801,12 +790,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -826,7 +813,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_brand",
@@ -845,7 +832,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "adapter_vendor_id",
@@ -864,7 +851,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -882,8 +870,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "productid",
@@ -920,7 +907,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -980,7 +967,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -1018,8 +1006,7 @@
             "crashstats.view_pii"
         ],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "email",
@@ -1130,7 +1117,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -1148,7 +1135,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -1207,26 +1195,6 @@
         "form_field_choices": null,
         "name": "startup_time"
     },
-    "dump": {
-        "default_value": null,
-        "is_mandatory": false,
-        "form_field_type": "StringField",
-        "is_returned": false,
-        "query_type": "string",
-        "permissions_needed": [],
-        "storage_mapping": {
-            "index": "not_analyzed",
-            "type": "string"
-        },
-        "namespace": "processed_crash",
-        "name": "dump",
-        "has_full_version": false,
-        "data_validation_type": "str",
-        "in_database_name": "dump",
-        "is_exposed": false,
-        "form_field_choices": [],
-        "description": ""
-    },
     "truncated": {
         "default_value": null,
         "is_mandatory": false,
@@ -1235,7 +1203,8 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "processed_crash",
         "has_full_version": false,
@@ -1272,7 +1241,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "processed_crash.json_dump",
         "has_full_version": false,
@@ -1324,7 +1293,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "distributor",
@@ -1391,7 +1360,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "adapter_device_id",
@@ -1445,8 +1414,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "release_channel",
@@ -1516,8 +1484,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "distributor_version",
@@ -1536,7 +1503,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -1554,8 +1521,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "has_full_version": false,
@@ -1591,8 +1557,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_device",
@@ -1644,7 +1609,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "is_returned": true,
@@ -1695,8 +1660,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "bios_manufacturer",
@@ -1768,8 +1732,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "cpu_name",
@@ -1854,7 +1817,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -1872,8 +1836,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "address",
@@ -1909,10 +1872,7 @@
         "is_returned": false,
         "query_type": "enum",
         "permissions_needed": [],
-        "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
-        },
+        "storage_mapping": null,
         "namespace": "raw_crash",
         "has_full_version": false,
         "data_validation_type": "enum",
@@ -1978,12 +1938,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2018,8 +1976,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_version",
@@ -2038,7 +1995,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_board",
@@ -2057,7 +2014,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "name": "accessibility",
@@ -2120,12 +2078,10 @@
             "crashstats.view_exploitability"
         ],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2200,7 +2156,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -2254,12 +2211,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2279,12 +2234,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2323,12 +2276,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2387,7 +2338,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -2445,8 +2397,9 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "semicolon_keywords"
+            "type": "text",
+            "analyzer": "semicolon_keywords",
+            "fielddata": true
         },
         "namespace": "processed_crash",
         "description": "Paths of the files at the top of the stack.",
@@ -2484,7 +2437,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_hardware",
@@ -2523,7 +2476,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "description": "",
@@ -2546,7 +2499,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "is_returned": true,
@@ -2564,8 +2517,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "flash_version",
@@ -2601,9 +2553,7 @@
         "is_returned": false,
         "query_type": "enum",
         "permissions_needed": [],
-        "storage_mapping": {
-            "type": "boolean"
-        },
+        "storage_mapping": null,
         "namespace": "raw_crash",
         "has_full_version": false,
         "data_validation_type": "enum",
@@ -2635,12 +2585,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2679,12 +2627,10 @@
             "crashstats.view_pii"
         ],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2721,7 +2667,8 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "processed_crash",
         "name": "addons_checked",
@@ -2758,8 +2705,9 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "semicolon_keywords"
+            "type": "text",
+            "analyzer": "semicolon_keywords",
+            "fielddata": true
         },
         "namespace": "raw_crash",
         "is_returned": true,
@@ -2777,12 +2725,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -2821,7 +2767,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_manufacturer",
@@ -2865,14 +2811,13 @@
                     "dynamic": "true",
                     "properties": {
                         "classification_version": {
-                            "type": "string",
-                            "analyzer": "keyword"
+                            "type": "keyword"
                         },
                         "classification_data": {
-                            "type": "string"
+                            "type": "text"
                         },
                         "classification": {
-                            "type": "string"
+                            "type": "keyword"
                         }
                     }
                 },
@@ -2880,14 +2825,13 @@
                     "dynamic": "true",
                     "properties": {
                         "classification_version": {
-                            "type": "string",
-                            "analyzer": "keyword"
+                            "type": "keyword"
                         },
                         "classification_data": {
-                            "type": "string"
+                            "type": "text"
                         },
                         "classification": {
-                            "type": "string"
+                            "type": "keyword"
                         }
                     }
                 }
@@ -2986,7 +2930,8 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -3004,8 +2949,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -3095,12 +3039,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -3121,7 +3063,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
+            "type": "text",
             "analyzer": "semicolon_keywords"
         },
         "namespace": "raw_crash",
@@ -3227,12 +3169,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -3309,7 +3249,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "process_type",
@@ -3350,12 +3290,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -3424,12 +3362,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -3450,7 +3386,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "integer"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -3468,7 +3404,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "has_full_version": false,
@@ -3587,8 +3523,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_cpu_abi2",
@@ -3641,12 +3576,10 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
             "fields": {
                 "full": {
-                    "index": "not_analyzed",
-                    "type": "string"
+                    "type": "keyword"
                 }
             }
         },
@@ -3666,7 +3599,8 @@
         "query_type": "bool",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "boolean"
+            "type": "boolean",
+            "null_value": false
         },
         "namespace": "raw_crash",
         "has_full_version": false,
@@ -3684,8 +3618,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "description": "A list of the addons currently enabled at the time of the crash. This takes the form of \"addonid:version,[addonid:version...]\". This value could be empty if the crash happens during startup before the addon manager is enabled, and on products/platforms which don't support addons.",
@@ -3719,8 +3652,7 @@
         "query_type": "enum",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "name": "android_cpu_abi",
@@ -3756,8 +3688,7 @@
             "crashstats.view_pii"
         ],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "processed_crash",
         "name": "url",
@@ -3829,8 +3760,7 @@
         "query_type": "string",
         "permissions_needed": [],
         "storage_mapping": {
-            "type": "string",
-            "analyzer": "keyword"
+            "type": "keyword"
         },
         "namespace": "raw_crash",
         "has_full_version": false,
