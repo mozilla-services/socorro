@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "$target_version": 1,
+    "$target_version": 2,
     "type": "object",
     "description": "This is the JSON Schema of a public crash from Socorro. Its home is github.com/mozilla/socorro",
     "definitions": {
