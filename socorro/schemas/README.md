@@ -16,9 +16,10 @@ The JSON Schema should contain a key called `$target_version`.
 
 * It's important this is an integer that goes up
 * *Don't change this* if you're...
-  * Adding more keys
+  * Adding more keys at the **root level**
   * Editing comments (content of `description` values)
 * *Do change this* if you're...
+  * Adding more keys **inside a nested object**
   * Changing the type definition of an *existing* key in any way
   * Add or remove keys from a `required` sub-key. For example, if a key
     was required but you've now removed it. This is applicable at any
@@ -33,9 +34,28 @@ For example, if you want to add...:
     "description": "Sample specimen"
 }
 ```
-...to the root or inside an existing key, then **don't** change the version.
+...to the root, then **don't** change the version.
 
-However, if you change the type definition, E.g.
+However, if you add a key inside a nested structure, you have to bump
+the `$target_version` number by 1. For example:
+
+```diff
+@@ -286,8 +286,12 @@
+     "json_dump": {
+         "type": "object",
+         "description": "The dump as a JSON object.",
+         "properties": {
++            "for_example": {
++                "type": ["string", "null"],
++                "description": "Brand spanking new field inside json_dump"
++            },
+             "crash_info": {
+                 "type": "object",
+                 "properties": {
+                     "address": {
+```
+
+Also, if you change the type definition, E.g.
 
 ```diff
 "addons_checksum": {
