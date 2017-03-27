@@ -213,6 +213,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             'signature': 'foo(bar)',
             'date_processed': self.now,
         })
+        self.index_crash({
+            'date_processed': self.now,
+        })
         self.refresh_index()
 
         # Test the "contains" operator.
@@ -235,10 +238,10 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='!~js'  # does not contain
         )
 
-        eq_(res['total'], 2)
-        eq_(len(res['hits']), 2)
+        eq_(res['total'], 3)
+        eq_(len(res['hits']), 3)
         for hit in res['hits']:
-            ok_('js' not in hit['signature'])
+            ok_(hit['signature'] is None or 'js' not in hit['signature'])
 
         ok_('signature' in res['facets'])
         eq_(len(res['facets']['signature']), 2)
@@ -266,10 +269,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='!^js'  # does not start with
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        eq_(res['total'], 4)
+        eq_(len(res['hits']), 4)
         for hit in res['hits']:
-            ok_(not hit['signature'].startswith('js'))
+            ok_(
+                hit['signature'] is None or
+                not hit['signature'].startswith('js')
+            )
 
         ok_('signature' in res['facets'])
         eq_(len(res['facets']['signature']), 3)
@@ -313,10 +319,13 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
             signature='!$rowser'  # does not end with
         )
 
-        eq_(res['total'], 3)
-        eq_(len(res['hits']), 3)
+        eq_(res['total'], 4)
+        eq_(len(res['hits']), 4)
         for hit in res['hits']:
-            ok_(not hit['signature'].endswith('rowser'))
+            ok_(
+                hit['signature'] is None or
+                not hit['signature'].endswith('rowser')
+            )
 
         ok_('signature' in res['facets'])
         eq_(len(res['facets']['signature']), 3)
@@ -342,10 +351,26 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         res = self.api.get(
             signature='!@mozilla::.*::function'  # regex
         )
-        eq_(res['total'], 4)
-        eq_(len(res['hits']), 4)
+        eq_(res['total'], 5)
+        eq_(len(res['hits']), 5)
         for hit in res['hits']:
             ok_(hit['signature'] != 'mozilla::js::function')
+
+        # Test the "missing" operator.
+        res = self.api.get(
+            signature='__null__'  # missing
+        )
+        eq_(res['total'], 1)
+        eq_(len(res['hits']), 1)
+        eq_(res['hits'][0]['signature'], None)
+
+        res = self.api.get(
+            signature='!__null__'  # exists
+        )
+        eq_(res['total'], 5)
+        eq_(len(res['hits']), 5)
+        for hit in res['hits']:
+            ok_(hit['signature'] is not None)
 
     def test_get_with_range_operators(self):
         self.index_crash({

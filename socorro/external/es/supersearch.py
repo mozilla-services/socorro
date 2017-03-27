@@ -324,7 +324,9 @@ class SuperSearch(SearchBase):
                         operator_range[param.operator]: param.value
                     }
                 elif param.operator == '__null__':
-                    filter_type = 'missing'
+                    filter_type = 'exists'
+                    # Need to reverse the 'not' operator.
+                    param.operator_not = not param.operator_not
                     args['field'] = name
                 elif param.operator == '__true__':
                     filter_type = 'term'
