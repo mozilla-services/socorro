@@ -12,15 +12,10 @@ class TestCrashReports:
     _expected_products = [
         'Firefox',
         'Thunderbird',
-        'SeaMonkey',
         'FennecAndroid']
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), [
-        'Firefox',
-        'Thunderbird',
-        'SeaMonkey',
-        'FennecAndroid'])
+    @pytest.mark.parametrize('product', _expected_products)
     def test_that_reports_form_has_same_product(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.header.select_product(product)
@@ -31,11 +26,7 @@ class TestCrashReports:
         assert crash_per_day.header.current_product == crash_per_day.product_select
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), [
-        'Firefox',
-        'Thunderbird',
-        'SeaMonkey',
-        'FennecAndroid'])
+    @pytest.mark.parametrize('product', _expected_products)
     def test_that_current_version_selected_in_top_crashers_header(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.header.select_product(product)
@@ -79,7 +70,7 @@ class TestCrashReports:
         assert cstc.results_count > 0
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), _expected_products)
+    @pytest.mark.parametrize('product', _expected_products)
     def test_that_top_crashers_reports_links_work(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.header.select_product(product)
