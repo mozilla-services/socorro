@@ -9,20 +9,6 @@ from pages.home_page import CrashStatsHomePage
 
 class TestSuperSearch:
 
-    @pytest.mark.skip("TODO: Update to work with the new date picker")
-    @pytest.mark.nondestructive
-    def test_search_for_unrealistic_data(self, base_url, selenium):
-        csp = CrashStatsHomePage(selenium, base_url).open()
-        cs_super = csp.header.click_super_search()
-        cs_super.select_platform('Windows')
-        # Do an advanced search
-        cs_super.click_new_line()
-        cs_super.select_facet('0', 'date')
-        cs_super.select_operator('0', '>')
-        cs_super.select_match('0', '2000:01:01 00-00')
-        cs_super.click_search()
-        assert 'Enter a valid date/time.' == cs_super.error
-
     @pytest.mark.nondestructive
     def test_search_with_one_line(self, base_url, selenium):
         csp = CrashStatsHomePage(selenium, base_url).open()

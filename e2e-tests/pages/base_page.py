@@ -3,9 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
-import urllib2
-
 from pypom import Page, Region
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -44,10 +41,6 @@ class CrashStatsBasePage(Page):
     @property
     def header(self):
         return self.Header(self)
-
-    @property
-    def footer(self):
-        return self.Footer(self)
 
     class Header(Region):
 
@@ -172,50 +165,3 @@ class CrashStatsBasePage(Page):
             self.find_element(*self._super_search_locator).click()
             from pages.super_search_page import CrashStatsSuperSearch
             return CrashStatsSuperSearch(self.selenium, self.page.base_url).wait_for_page_to_load()
-
-    class Footer(Region):
-
-        _browserid_login_locator = (By.CSS_SELECTOR, 'div.login a.browserid-login')
-        _browserid_logout_locator = (By.CSS_SELECTOR, 'div.login a.browserid-logout')
-
-        @property
-        def is_logged_out(self):
-            return self.find_element(*self._browserid_login_locator).is_displayed()
-
-        @property
-        def is_logged_in(self):
-            return self.find_element(*self._browserid_logout_locator).is_displayed()
-
-        def login(self, email=None, password=None):
-            '''
-                Login using persona - if no email is specified a one time set of
-                verified persona credentials, email and password, are generated
-                and used.
-                :param email: verified BrowserID email
-                :param password: BrowserID password
-            '''
-            if email is None:
-                credentials = self.get_new_persona_credentials()
-                email = credentials['email']
-                password = credentials['password']
-
-            self.find_element(*self._browserid_login_locator).click()
-
-            from bidpom import BIDPOM
-            pop_up = BIDPOM(self.selenium, self.timeout)
-            pop_up.sign_in(email, password)
-            self.wait.until(lambda s: self.is_logged_in, message='Could not log in within %s seconds.' % self.timeout)
-
-        def logout(self):
-            self.find_element(*self._browserid_logout_locator).click()
-            self.wait.until(lambda s: self.is_logged_out, message='Could not log out within %s seconds.' % self.timeout)
-
-        def get_new_persona_credentials(self):
-            url = "http://personatestuser.org/email/"
-            response = urllib2.urlopen(url).read()
-            decode = json.loads(response)
-            credentials = {
-                'email': decode['email'],
-                'password': decode['pass']
-            }
-            return credentials
