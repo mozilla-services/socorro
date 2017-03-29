@@ -40,7 +40,6 @@ from configman.converters import class_converter
 SERVICES_LIST = (
     (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
-    (r'/products/(.*)', 'products.Products'),  # deprecated
     (r'/query/', 'query.Query'),
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
     (r'/healthcheck/', 'healthcheck.Healthcheck'),

@@ -717,21 +717,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             ok_(response.data)
 
-    def test_products(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/products/',
-                {'versions': 'Firefox:9.0a1'}
-            )
-            eq_(response.data, {'hits': [], 'total': 0})
-
     def test_releases_channels(self):
         config_manager = self._setup_config_manager()
 
@@ -864,53 +849,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 app.config.webapi.platforms,
                 platforms
             )
-
-    def test_post_product(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.post(
-                server,
-                '/products/',
-                {
-                    'product': 'KillerApp',
-                    'version': '1.0',
-                }
-            )
-            eq_(response.data, True)
-
-            # do it a second time
-            response = self.post(
-                server,
-                '/products/',
-                {
-                    'product': 'KillerApp',
-                    'version': '1.0',
-                }
-            )
-            eq_(response.data, False)
-
-    def test_post_bad_product(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.post(
-                server,
-                '/products/',
-                {
-                    'product': 'Spaces not allowed',
-                    'version': '',
-                }
-            )
-            eq_(response.data, False)
 
     def test_create_release(self):
         self._insert_release_channels()

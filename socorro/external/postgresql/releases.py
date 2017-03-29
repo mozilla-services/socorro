@@ -11,7 +11,7 @@ from socorro.lib import (
     external_common,
 )
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external.postgresql.products import Products
+from socorro.external.postgresql.products import ProductVersions
 from .dbapi2_util import execute_no_results, single_row_sql
 
 logger = logging.getLogger("webapi")
@@ -96,7 +96,8 @@ class Releases(PostgreSQLBase):
 
     def update_featured(self, **kwargs):
         """Update lists of featured versions. """
-        products_list = Products(config=self.context).get()['products']
+        product_versions = ProductVersions(config=self.context).get()['hits']
+        products_list = set(x['product'] for x in product_versions)
         releases = {}
 
         for p in kwargs:
