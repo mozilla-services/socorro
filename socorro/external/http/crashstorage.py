@@ -8,21 +8,9 @@ from socorro.external.crashstorage_base import CrashStorageBase
 import urllib2
 import poster
 import socket
+from StringIO import StringIO
 import contextlib
 poster.streaminghttp.register_openers()
-
-
-#==============================================================================
-class DumpReader(object):
-    """this class wraps a dump object to embue it with a read method.  This
-    allows the dump to be streamed out as "file" upload."""
-    #--------------------------------------------------------------------------
-    def __init__(self, the_dump):
-        self.dump = the_dump
-
-    #--------------------------------------------------------------------------
-    def read(self):
-        return self.dump
 
 
 #==============================================================================
@@ -91,7 +79,7 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
             raw_crash[dump_name] = poster.encode.MultipartParam(
                 name=dump_name,
                 filename=dump_name,
-                fileobj=DumpReader(dump)
+                fileobj=StringIO(dump)
             )
         datagen, headers = poster.encode.multipart_encode(raw_crash)
         request = urllib2.Request(
