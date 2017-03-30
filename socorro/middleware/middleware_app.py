@@ -38,7 +38,6 @@ from configman.converters import class_converter
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
-    (r'/backfill/(.*)', 'backfill.Backfill'),
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/query/', 'query.Query'),
     (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
