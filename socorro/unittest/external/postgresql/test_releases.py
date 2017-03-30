@@ -11,11 +11,9 @@ from socorro.external.postgresql.releases import Releases
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestReleases(PostgreSQLTestCase):
     """Test socorro.external.postgresql.releases.Releases class. """
 
-    #--------------------------------------------------------------------------
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
@@ -144,7 +142,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
 
         self.connection.commit()
 
-    #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
@@ -196,61 +193,11 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         """)
         self.connection.commit()
 
-    #--------------------------------------------------------------------------
-    def test_get_channels(self):
-        self._insert_release_channels()
-        self._insert_product_release_channels()
-        service = Releases(config=self.config)
-
-        #......................................................................
-        # Test 1: one product
-        params = {
-            "products": ["Firefox"]
-        }
-        res = service.get_channels(**params)
-        res_expected = {
-            "Firefox": ["Beta", "Aurora", "Nightly", "ESR"]
-        }
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 2: several products
-        params = {
-            "products": ["Firefox", "FennecAndroid"]
-        }
-        res = service.get_channels(**params)
-        res_expected = {
-            "FennecAndroid": ["Aurora", "Nightly"],
-            "Firefox": ["Beta", "Aurora", "Nightly", "ESR"]
-        }
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 3: an unknown product
-        params = {
-            "products": ["Unknown"]
-        }
-        res = service.get_channels(**params)
-        res_expected = {}
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 4: all products
-        res = service.get_channels()
-        res_expected = {
-            "Thunderbird": ["Nightly"],
-            "FennecAndroid": ["Aurora", "Nightly"],
-            "Firefox": ["Beta", "Aurora", "Nightly", "ESR"]
-        }
-        eq_(res, res_expected)
-
-    #--------------------------------------------------------------------------
     def test_get_featured(self):
         self._insert_release_channels()
         self._insert_product_release_channels()
         service = Releases(config=self.config)
 
-        #......................................................................
         # Test 1: one product
         params = {
             "products": ["Firefox"]
@@ -264,7 +211,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 2: several products, several versions
         params = {
             "products": ["Firefox", "FennecAndroid", "Thunderbird"]
@@ -280,7 +226,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 3: an unknown product
         params = {
             "products": ["Unknown"]
@@ -292,7 +237,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 4: all products
         res = service.get_featured()
         res_expected = {
@@ -305,14 +249,12 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-    #--------------------------------------------------------------------------
     def test_update_featured(self):
         self._insert_release_channels()
         self._insert_product_release_channels()
 
         service = Releases(config=self.config)
 
-        #......................................................................
         # Test 1: one product, several versions
         params = {
             "Firefox": [
@@ -335,7 +277,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 2: several products, several versions
         params = {
             "Firefox": [
@@ -359,7 +300,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 3: an unknown product
         params = {
             "Unknown": [
@@ -380,7 +320,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 4: an unknown product and an existing product
         params = {
             "Firefox": [
@@ -404,7 +343,6 @@ class IntegrationTestReleases(PostgreSQLTestCase):
         }
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 4: an unknown version
         params = {
             "Firefox": [
