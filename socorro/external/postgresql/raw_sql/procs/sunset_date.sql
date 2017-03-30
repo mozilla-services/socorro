@@ -5,10 +5,10 @@ CREATE OR REPLACE FUNCTION sunset_date(
     RETURNS date
     LANGUAGE sql IMMUTABLE
 AS $_$
--- sets a sunset date for visibility
--- based on a build number
--- current spec is 18 weeks for releases
--- 9 weeks for everything else
+-- Sets a sunset date for visibility
+-- based on a build ID.
+-- Current spec is 36 weeks for releases, 36 weeks for ESR
+-- and 18 weeks for everything else.
 select ( build_date($1) +
     case when lower($2) = 'release'
         then interval '36 weeks'
