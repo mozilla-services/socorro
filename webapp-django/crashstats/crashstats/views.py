@@ -466,8 +466,14 @@ def crashes_per_day(request, default_context=None):
     if not params['versions']:
         # need to pick the default featured ones
         params['versions'] = []
-        for pv in context['active_versions'][context['product']]:
+        active_versions = context['active_versions'][context['product']]
+        for pv in active_versions:
             if pv['is_featured']:
+                params['versions'].append(pv['version'])
+        if not params['versions'] and active_versions:
+            # There were no featured versions, but there were active
+            # versions. Use the top 4 active versions instead.
+            for pv in active_versions[:4]:
                 params['versions'].append(pv['version'])
 
     context['available_versions'] = []

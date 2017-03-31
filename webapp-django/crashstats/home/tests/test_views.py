@@ -26,6 +26,20 @@ class TestViews(BaseTestViews):
         ok_('WaterWolf 4.0.1' in response.content)
         ok_('WaterWolf 19.0' not in response.content)
 
+    def test_home_product_without_featued_versions(self):
+        url = reverse('home:home', args=('SeaMonkey',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        ok_('SeaMonkey Crash Data' in response.content)
+        ok_('SeaMonkey 10.5' in response.content)
+        ok_('SeaMonkey 9.5' in response.content)
+
+        # Test with a different version.
+        response = self.client.get(url, {'version': '10.5'})
+        eq_(response.status_code, 200)
+        ok_('SeaMonkey 10.5' in response.content)
+        ok_('SeaMonkey 9.5' not in response.content)
+
     def test_homepage_redirect(self):
         response = self.client.get('/')
         eq_(response.status_code, 302)
