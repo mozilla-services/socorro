@@ -374,15 +374,9 @@ class TestViews(BaseTestViews):
         ok_('<script>' not in response.content)
         ok_('&lt;script&gt;' in response.content)
 
-    @mock.patch('requests.post')
-    def test_search_results_admin_mode(self, rpost):
+    def test_search_results_admin_mode(self):
         """Test that an admin can see more fields, and that a non-admin cannot.
         """
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
-            return Response({"hits": [], "total": 0})
-
-        rpost.side_effect = mocked_post
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -524,16 +518,7 @@ class TestViews(BaseTestViews):
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
 
-    @mock.patch('requests.post')
-    def test_search_results_parameters(self, rpost):
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
-            return Response({
-                "hits": [],
-                "total": 0
-            })
-
-        rpost.side_effect = mocked_post
+    def test_search_results_parameters(self):
 
         def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
@@ -574,17 +559,9 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.post')
-    def test_search_results_pagination(self, rpost):
+    def test_search_results_pagination(self):
         """Test that the pagination of results works as expected.
         """
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
-            return Response("""
-                {"hits": [], "total": 0}
-            """)
-
-        rpost.side_effect = mocked_post
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params

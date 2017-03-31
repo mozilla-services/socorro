@@ -25,6 +25,8 @@ from crashstats.crashstats.models import (
     ProcessedCrash,
     RawCrash,
     UnredactedCrash,
+    Bugs,
+    SignaturesByBugs,
 )
 from crashstats.tokens.models import Token
 
@@ -418,8 +420,7 @@ class TestViews(BaseTestViews):
         eq_(response['Content-Disposition'], 'attachment; filename="abc.dmp"')
         eq_(response['Content-Type'], 'application/octet-stream')
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_Bugs(self, rpost):
+    def test_Bugs(self):
         url = reverse('api:model_wrapper', args=('Bugs',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -427,10 +428,16 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['errors']['signatures'])
 
-        def mocked_get(**options):
-            return {"hits": [{"id": "123456789",
-                    "signature": "Something"}]}
-        rpost.side_effect = mocked_get
+        def mocked_get_bugs(**options):
+            return {
+                "hits": [
+                    {
+                        "id": "123456789",
+                        "signature": "Something"
+                    }
+                ]
+            }
+        Bugs.implementation().get.side_effect = mocked_get_bugs
 
         response = self.client.get(url, {
             'signatures': 'one & two',
@@ -439,22 +446,22 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
 
-    @mock.patch('crashstats.crashstats.models.SignaturesByBugs.get')
-    def test_SignaturesForBugs(self, rpost):
+    def test_SignaturesForBugs(self):
+
+        def mocked_get_bugs(**options):
+            return {
+                "hits": [
+                    {"id": "123456789", "signature": "Something"}
+                ]
+            }
+        SignaturesByBugs.implementation().get.side_effect = mocked_get_bugs
+
         url = reverse('api:model_wrapper', args=('SignaturesByBugs',))
         response = self.client.get(url)
         eq_(response.status_code, 400)
         eq_(response['Content-Type'], 'application/json; charset=UTF-8')
         dump = json.loads(response.content)
         ok_(dump['errors']['bug_ids'])
-
-        def mocked_post(**options):
-            return {
-                "hits": [
-                    {"id": "123456789", "signature": "Something"}
-                ]
-            }
-        rpost.side_effect = mocked_post
 
         response = self.client.get(url, {
             'bug_ids': '123456789',

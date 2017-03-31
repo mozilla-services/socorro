@@ -1,26 +1,21 @@
 import datetime
 
 import freezegun
-import mock
 import pyquery
 from nose.tools import eq_, ok_
 
 from django.core.urlresolvers import reverse
 from django.utils.timezone import utc
 
-from crashstats.crashstats.models import SignatureFirstDate
-from crashstats.crashstats.tests.test_views import (
-    BaseTestViews, mocked_post_123
-)
+from crashstats.crashstats.models import SignatureFirstDate, Bugs
+from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):
     base_url = reverse('topcrashers:topcrashers')
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.post')
-    def test_topcrashers(self, rpost, bugs_get):
+    def test_topcrashers(self):
 
         def mocked_bugs(**options):
             return {
@@ -33,7 +28,7 @@ class TestViews(BaseTestViews):
                      "signature": u"FakeSignature1 \u7684 Japanese"}
                 ]
             }
-        bugs_get.side_effect = mocked_bugs
+        Bugs.implementation().get.side_effect = mocked_bugs
 
         def mocked_signature_first_date_get(**options):
             return {
@@ -247,15 +242,12 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 400)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_topcrasher_without_any_signatures(self, rpost):
+    def test_topcrasher_without_any_signatures(self):
         url = self.base_url + '?product=WaterWolf&version=19.0'
         response = self.client.get(self.base_url, {
             'product': 'WaterWolf',
         })
         ok_(url in response['Location'])
-
-        rpost.side_effect = mocked_post_123
 
         def mocked_supersearch_get(**params):
             return {
@@ -275,9 +267,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_topcrasher_modes(self, rpost):
-        rpost.side_effect = mocked_post_123
+    def test_topcrasher_modes(self):
 
         def mocked_supersearch_get(**params):
             return {
@@ -317,9 +307,7 @@ class TestViews(BaseTestViews):
             ok_(today in response.content)
             ok_(now not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_topcrasher_by_build(self, rpost):
-        rpost.side_effect = mocked_post_123
+    def test_topcrasher_by_build(self):
 
         def mocked_supersearch_get(**params):
             ok_('build_id' in params)
