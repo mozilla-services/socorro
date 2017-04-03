@@ -14,7 +14,7 @@ from waffle.models import Switch
 from socorro.lib import BadArgumentError
 
 from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.supersearch.models import SuperSearchUnredacted
+from crashstats.supersearch.models import Query, SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):
@@ -714,18 +714,17 @@ class TestViews(BaseTestViews):
         ok_('socorro200000' in response.content)
         ok_('socorro200001' in response.content)
 
-    @mock.patch('requests.post')
-    def test_search_query(self, rpost):
+    def test_search_query(self):
         self.create_custom_query_perm()
 
-        def mocked_post(url, data, **options):
-            ok_('/query' in url)
-            ok_('query' in data)
-            ok_('indices' in data)
+        def mocked_query_get(**params):
+            ok_('query' in params)
 
-            return Response({"hits": []})
+            return {"hits": []}
 
-        rpost.side_effect = mocked_post
+        Query.implementation().get.side_effect = (
+            mocked_query_get
+        )
 
         url = reverse('supersearch.search_query')
         response = self.client.post(url, {'query': '{"query": {}}'})

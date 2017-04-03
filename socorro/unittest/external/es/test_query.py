@@ -4,12 +4,10 @@
 
 import datetime
 import elasticsearch
-import json
 import mock
 from nose.tools import eq_, ok_, assert_raises
 
 from socorro.lib import (
-    BadArgumentError,
     DatabaseError,
     MissingArgumentError,
     ResourceNotFound,
@@ -43,7 +41,7 @@ class IntegrationTestQuery(ElasticsearchTestCase):
                 'match_all': {}
             }
         }
-        res = self.api.post(query=json.dumps(query))
+        res = self.api.get(query=query)
         ok_(res)
         ok_('hits' in res)
         eq_(res['hits']['total'], 2)
@@ -62,7 +60,7 @@ class IntegrationTestQuery(ElasticsearchTestCase):
                 }
             }
         }
-        res = self.api.post(query=json.dumps(query))
+        res = self.api.get(query=query)
         ok_(res)
         ok_('hits' in res)
         eq_(res['hits']['total'], 1)
@@ -71,15 +69,8 @@ class IntegrationTestQuery(ElasticsearchTestCase):
     def test_get_with_errors(self, mocked_es):
         # Test missing argument.
         assert_raises(
-            BadArgumentError,
-            self.api.post,
-            query='hello!',
-        )
-
-        # Test invalid JSON argument.
-        assert_raises(
             MissingArgumentError,
-            self.api.post,
+            self.api.get,
         )
 
         # Test missing index in elasticsearch.
@@ -93,8 +84,8 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         )
         assert_raises(
             ResourceNotFound,
-            self.api.post,
-            query='{}',
+            self.api.get,
+            query={'query': {}},
         )
 
         # Test a generic error response from elasticsearch.
@@ -103,8 +94,8 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         )
         assert_raises(
             DatabaseError,
-            self.api.post,
-            query='{}',
+            self.api.get,
+            query={'query': {}},
         )
 
     @mock.patch('socorro.external.es.connection_context.elasticsearch')
@@ -113,31 +104,31 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         mocked_es.Elasticsearch.return_value = mocked_connection
 
         # Test default indices.
-        self.api.post(
-            query='{}'
+        self.api.get(
+            query={'query': {}}
         )
         mocked_connection.search.assert_called_with(
-            body={},
+            body='{"query": {}}',
             index=[self.api.config.elasticsearch.elasticsearch_index],
             doc_type=self.api.config.elasticsearch.elasticsearch_doctype
         )
 
         # Test all indices.
-        self.api.post(
-            query='{}',
+        self.api.get(
+            query={'query': {}},
             indices=['ALL']
         )
         mocked_connection.search.assert_called_with(
-            body={}
+            body='{"query": {}}'
         )
 
         # Test forcing indices.
-        self.api.post(
-            query='{}',
+        self.api.get(
+            query={'query': {}},
             indices=['socorro_201801', 'socorro_200047', 'not_an_index']
         )
         mocked_connection.search.assert_called_with(
-            body={},
+            body='{"query": {}}',
             index=['socorro_201801', 'socorro_200047', 'not_an_index'],
             doc_type=self.api.config.elasticsearch.elasticsearch_doctype
         )
@@ -151,11 +142,11 @@ class IntegrationTestQuery(ElasticsearchTestCase):
         last_week = now - datetime.timedelta(days=7)
         indices = api.generate_list_of_indexes(last_week, now)
 
-        api.post(
-            query='{}'
+        api.get(
+            query={'query': {}}
         )
         mocked_connection.search.assert_called_with(
-            body={},
+            body='{"query": {}}',
             index=indices,
             doc_type=api.config.elasticsearch.elasticsearch_doctype
         )
