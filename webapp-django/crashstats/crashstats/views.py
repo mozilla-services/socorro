@@ -19,7 +19,6 @@ from django.shortcuts import redirect, render
 from django.utils.http import urlquote
 
 from csp.decorators import csp_update
-from session_csrf import anonymous_csrf
 
 from socorro.lib import BadArgumentError
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -349,49 +348,6 @@ def get_product_versions_for_crashes_per_day(facets, product):
         {'product': product, 'version': group['term']}
         for group in versions
     ]
-
-
-def get_all_nightlies(context):
-    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
-
-    versions = {}
-    for product, product_versions in context['active_versions'].items():
-        versions[product] = []
-        for version in product_versions:
-            rel_release = version['build_type'].lower()
-            if rel_release in [x.lower() for x in nightlies_only]:
-                versions[product].append(version['version'])
-
-    return versions
-
-
-def get_all_nightlies_for_product(context, product):
-    nightlies_only = settings.NIGHTLY_RELEASE_TYPES
-    versions = []
-    for version in context['active_versions'].get(product, []):
-        rel_release = version['build_type'].lower()
-        if rel_release in [x.lower() for x in nightlies_only]:
-            versions.append(version['version'])
-
-    return versions
-
-
-def get_latest_nightly(context, product):
-    version = None
-    for version in context['active_versions'][product]:
-        build_type = version['build_type']
-        if build_type.lower() == 'nightly' and version['is_featured']:
-            version = version['version']
-            break
-
-    if version is None:
-        # We did not find a featured Nightly, let's simply use the latest
-        for version in context['active_versions'].get(product, []):
-            if version['build_type'].lower() == 'nightly':
-                version = version['version']
-                break
-
-    return version
 
 
 def _render_daily_csv(request, data, product, versions, platforms, os_names):
@@ -1063,91 +1019,6 @@ def buginfo(request, signatures=None):
     bzapi = models.BugzillaBugInfo()
     result = bzapi.get(bug_ids)
     return result
-
-
-@pass_default_context
-@anonymous_csrf
-def gccrashes(request, product, version=None, default_context=None):
-    context = default_context or {}
-    versions = get_all_nightlies_for_product(context, product)
-
-    if version is None:
-        # No version was passed get the latest nightly
-        version = get_latest_nightly(context, product)
-
-    current_products = context['active_versions'].keys()
-
-    context['report'] = 'gccrashes'
-    context['version'] = version
-    context['versions'] = versions
-    context['products'] = current_products
-    context['selected_version'] = version
-    context['selected_product'] = product
-
-    start_date = None
-    end_date = None
-    date_today = datetime.datetime.utcnow()
-    week_ago = date_today - datetime.timedelta(days=7)
-
-    # Check whether dates were passed but, only use these if both
-    # the start and end date was provided else, fallback to the defaults.
-    if 'start_date' in request.GET and 'end_date' in request.GET:
-        start_date = request.GET['start_date']
-        end_date = request.GET['end_date']
-
-    context['start_date'] = start_date if start_date else week_ago
-    context['end_date'] = end_date if end_date else date_today
-
-    nightly_versions = get_all_nightlies(context)
-
-    data = {
-        'product': product,
-        'version': version,
-        'start_date': context['start_date'],
-        'end_date': context['end_date']
-    }
-    context['form'] = forms.GCCrashesForm(
-        data,
-        nightly_versions=nightly_versions,
-        auto_id=True
-    )
-
-    return render(request, 'crashstats/gccrashes.html', context)
-
-
-@utils.json_view
-@pass_default_context
-def gccrashes_json(request, default_context=None):
-
-    nightly_versions = get_all_nightlies(default_context)
-
-    form = forms.GCCrashesForm(request.GET, nightly_versions=nightly_versions)
-    if not form.is_valid():
-        return http.HttpResponseBadRequest(str(form.errors))
-
-    product = form.cleaned_data['product']
-    version = form.cleaned_data['version']
-    start_date = form.cleaned_data['start_date']
-    end_date = form.cleaned_data['end_date']
-
-    api = models.GCCrashes()
-    result = api.get(
-        product=product,
-        version=version,
-        from_date=start_date,
-        to=end_date,
-    )
-
-    return result
-
-
-@utils.json_view
-@pass_default_context
-def get_nightlies_for_product_json(request, default_context=None):
-    return get_all_nightlies_for_product(
-        default_context,
-        request.GET.get('product')
-    )
 
 
 @permission_required('crashstats.view_rawdump')

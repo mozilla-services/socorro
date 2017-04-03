@@ -224,12 +224,6 @@ VCS_MAPPINGS = {
     }
 }
 
-# Identifies nightly releases
-NIGHTLY_RELEASE_TYPES = (
-    'Aurora',
-    'Nightly',
-)
-
 
 # No need to load it because we don't do i18n in this project
 USE_I18N = False
