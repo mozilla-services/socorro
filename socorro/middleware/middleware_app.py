@@ -40,7 +40,7 @@ from configman.converters import class_converter
 SERVICES_LIST = (
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
     (r'/query/', 'query.Query'),
-    (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
+    (r'/releases/(featured|release)/(.*)', 'releases.Releases'),
     (r'/healthcheck/', 'healthcheck.Healthcheck'),
 )
 

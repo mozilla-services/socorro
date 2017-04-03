@@ -23,38 +23,6 @@ class Releases(PostgreSQLBase):
     Implement the /releases service with PostgreSQL.
     """
 
-    def get_channels(self, **kwargs):
-        """Return a list of release channels for one, several or all products.
-        """
-        filters = [
-            ("products", None, ["list", "str"]),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        sql = """
-            SELECT
-                build_type AS channel,
-                product_name AS product
-            FROM product_info
-        """
-        sql_params = {}
-
-        if params.products and params.products[0]:
-            sql += " WHERE product_name IN %(products)s"
-            sql_params['products'] = tuple(params.products)
-
-        error_message = "Failed to retrieve release channels from PostgreSQL"
-        sql_results = self.query(sql, sql_params, error_message=error_message)
-
-        channels = {}
-        for res in sql_results.zipped():
-            if res['product'] not in channels:
-                channels[res['product']] = [res['channel']]
-            else:
-                channels[res['product']].append(res['channel'])
-
-        return channels
-
     def get_featured(self, **kwargs):
         """Return a list of featured versions for one, several or all products.
         """
