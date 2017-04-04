@@ -46,6 +46,10 @@ class APIAuthenticationMiddleware(object):
             return json_forbidden_response('API Token not matched')
 
         user = token.user
+
+        if not user.is_active:
+            return json_forbidden_response('User of API token not active')
+
         # it actually doesn't matter so much which backend
         # we use as long as it's something
         user.backend = 'django.contrib.auth.backends.ModelBackend'

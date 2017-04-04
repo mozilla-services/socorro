@@ -104,3 +104,17 @@ class TestMiddleware(DjangoTestCase):
         eq_(request.user, user)
         ok_(request.user.has_perm('crashstats.play'))
         ok_(not request.user.has_perm('crashstats.fire'))
+
+    def test_token_on_inactive_user(self):
+        user = User.objects.create(username='peterbe')
+        user.is_active = False
+        user.save()
+        token = models.Token.objects.create(
+            user=user,
+        )
+        request = self._get_request(HTTP_AUTH_TOKEN=token.key)
+
+        response = self.middleware.process_request(request)
+        eq_(response.status_code, 403)
+        result = json.loads(response.content)
+        eq_(result['error'], 'User of API token not active')
