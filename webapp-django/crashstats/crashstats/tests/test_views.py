@@ -617,7 +617,7 @@ class TestViews(BaseTestViews):
         cache_key = 'buginfo:987'
         eq_(cache.get(cache_key), struct['bugs'][0])
 
-    def test_exploitability_report(self, rpost):
+    def test_exploitability_report(self):
         url = reverse('crashstats:exploitability_report')
 
         def mocked_bugs_threesigs(**options):
