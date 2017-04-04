@@ -31,6 +31,7 @@ import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
 import socorro.external.postgresql.signature_first_date
 import socorro.external.postgresql.server_status
+import socorro.external.postgresql.releases
 import socorro.external.boto.crash_data
 
 from socorro.app import socorro_app
@@ -637,7 +638,7 @@ class ProductVersions(SocorroMiddleware):
 
 class Releases(SocorroMiddleware):
 
-    URL_PREFIX = '/releases/release/'
+    implementation = socorro.external.postgresql.releases.Releases
 
     possible_params = (
         ('beta_number', int),
@@ -654,13 +655,12 @@ class Releases(SocorroMiddleware):
     )
 
     def post(self, **data):
-        # why does this feel so clunky?!
-        return super(Releases, self).post(self.URL_PREFIX, data)
+        return self.get_implementation().post(**data)
 
 
 class ReleasesFeatured(SocorroMiddleware):
 
-    URL_PREFIX = '/releases/featured/'
+    implementation = socorro.external.postgresql.releases.ReleasesFeatured
 
     possible_params = (
         'products',
@@ -676,7 +676,7 @@ class ReleasesFeatured(SocorroMiddleware):
             if isinstance(value, list):
                 value = ','.join(value)
             payload[key] = value
-        return super(ReleasesFeatured, self).put(self.URL_PREFIX, payload)
+        return self.get_implementation().put(**payload)
 
 
 class Platforms(SocorroMiddleware):
