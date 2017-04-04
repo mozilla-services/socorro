@@ -24,7 +24,6 @@ from socorro.lib import (
     ResourceNotFound,
     ResourceUnavailable
 )
-from socorro.lib import datetimeutil
 from socorro.middleware import middleware_app
 from socorro.unittest.testbase import TestCase
 from socorro.webapi.servers import CherryPy
@@ -717,36 +716,6 @@ class IntegrationTestMiddlewareApp(TestCase):
             )
             ok_(response.data)
 
-    def test_releases_featured(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/releases/featured/',
-                {'products': ['Firefox', 'Fennec']}
-            )
-            eq_(response.data, {'hits': {}, 'total': 0})
-
-    def test_releases_featured_put(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.put(
-                server,
-                '/releases/featured/',
-                {'Firefox': '15.0a1,14.0b1'},
-            )
-            eq_(response.data, False)
-
     def test_missing_argument_yield_bad_request(self):
         config_manager = self._setup_config_manager()
 
@@ -806,33 +775,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 app.config.webapi.platforms,
                 platforms
             )
-
-    def test_create_release(self):
-        self._insert_release_channels()
-        self._insert_products()
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            now = datetimeutil.utc_now()
-            response = self.post(
-                server,
-                '/releases/release/',
-                {
-                    'product': 'Firefox',
-                    'version': '1.0',
-                    'update_channel': 'beta',
-                    'build_id': now.strftime('%Y%m%d%H%M'),
-                    'platform': 'Windows',
-                    'beta_number': '1',
-                    'release_channel': 'Beta',
-                    'throttle': '1'
-                }
-            )
-            eq_(response.data, True)
 
     def test_healthcheck(self):
         config_manager = self._setup_config_manager()

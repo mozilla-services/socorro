@@ -24,7 +24,6 @@ from crashstats.supersearch.models import (
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.test_views import (
     BaseTestViews,
-    Response
 )
 
 
@@ -123,21 +122,19 @@ class TestViews(BaseTestViews):
         response = self.client.get(home_url)
         eq_(response.status_code, 302)
 
-    @mock.patch('requests.put')
-    @mock.patch('requests.get')
-    def test_featured_versions(self, rget, rput):
+    def test_featured_versions(self):
         user = self._login()
         url = reverse('manage:featured_versions')
 
         put_calls = []  # some mutable
 
-        def mocked_put(url, **options):
-            assert '/releases/featured' in url
-            data = options['data']
-            put_calls.append(data)
-            return Response(True)
+        def mocked_releases_featured_put(**params):
+            put_calls.append(params)
+            return True
 
-        rput.side_effect = mocked_put
+        models.ReleasesFeatured.implementation().put.side_effect = (
+            mocked_releases_featured_put
+        )
 
         def mocked_product_versions(**params):
             today = datetime.date.today()
@@ -1033,19 +1030,16 @@ class TestViews(BaseTestViews):
         eq_(event.action, 'product.add')
         eq_(event.extra['product'], 'WaterCat')
 
-    @mock.patch('requests.post')
-    def test_create_release(self, rpost):
+    def test_create_release(self):
 
-        def mocked_post(url, **options):
-            assert '/releases/release/' in url, url
-            data = options['data']
-            eq_(data['product'], 'WaterCat')
-            eq_(data['version'], '19.0')
-            eq_(data['beta_number'], 1)
-            eq_(data['throttle'], 0)
-            return Response(True)
+        def mocked_release_post(**params):
+            eq_(params['product'], 'WaterCat')
+            eq_(params['version'], '19.0')
+            eq_(params['beta_number'], 1)
+            eq_(params['throttle'], 0)
+            return True
 
-        rpost.side_effect = mocked_post
+        models.Releases.implementation().post.side_effect = mocked_release_post
 
         user = self._login()
         url = reverse('manage:releases')
@@ -1099,14 +1093,12 @@ class TestViews(BaseTestViews):
     def test_create_release_with_null_beta_number(self, rpost):
         mock_calls = []
 
-        def mocked_post(url, **options):
-            assert '/releases/release/' in url, url
-            mock_calls.append(url)
-            data = options['data']
-            eq_(data['beta_number'], None)
-            return Response(True)
+        def mocked_release_post(**params):
+            mock_calls.append(True)
+            eq_(params['beta_number'], None)
+            return True
 
-        rpost.side_effect = mocked_post
+        models.Releases.implementation().post.side_effect = mocked_release_post
 
         self._login()
 

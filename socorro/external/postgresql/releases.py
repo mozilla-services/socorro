@@ -17,13 +17,13 @@ from .dbapi2_util import execute_no_results, single_row_sql
 logger = logging.getLogger("webapi")
 
 
-class Releases(PostgreSQLBase):
+class ReleasesFeatured(PostgreSQLBase):
 
     """
     Implement the /releases service with PostgreSQL.
     """
 
-    def get_featured(self, **kwargs):
+    def get(self, **kwargs):
         """Return a list of featured versions for one, several or all products.
         """
         filters = [
@@ -62,7 +62,7 @@ class Releases(PostgreSQLBase):
             "hits": hits
         }
 
-    def update_featured(self, **kwargs):
+    def put(self, **kwargs):
         """Update lists of featured versions. """
         product_versions = ProductVersions(config=self.context).get()['hits']
         products_list = set(x['product'] for x in product_versions)
@@ -104,7 +104,9 @@ class Releases(PostgreSQLBase):
 
         return True
 
-    def create_release(self, **kwargs):
+
+class Releases(PostgreSQLBase):
+    def post(self, **kwargs):
         filters = [
             ('product', None, 'str'),
             ('version', None, 'str'),
