@@ -9,7 +9,6 @@ from socorro.lib import (
     MissingArgumentError,
     ResourceNotFound,
     ResourceUnavailable,
-    ServiceUnavailable
 )
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import external_common
@@ -28,7 +27,6 @@ class CrashDataBase(object):
     def __init__(self, *args, **kwargs):
         super(CrashDataBase, self).__init__()
         self.config = kwargs['config']
-        self.all_services = kwargs['all_services']
 
     def get_storage(self):
         """derived classes must implement this method to return an instance
@@ -80,20 +78,5 @@ class CrashDataBase(object):
                     store.get_raw_crash(params.uuid)
                 except CrashIDNotFound:
                     raise ResourceNotFound(params.uuid)
-                # search through the existing other services to find the
-                # Priorityjob service.
-                try:
-                    priorityjob_service_impl = self.all_services[
-                        'Priorityjobs'
-                    ]
-                except KeyError:
-                    raise ServiceUnavailable('Priorityjobs')
-                # get the underlying implementation of the Priorityjob
-                # service and instantiate it.
-                priority_job_service = priorityjob_service_impl.cls(
-                    config=self.config
-                )
-                # create the priority job for this crash_ids
-                priority_job_service.create(uuid=params.uuid)
                 raise ResourceUnavailable(params.uuid)
             raise ResourceNotFound(params.uuid)
