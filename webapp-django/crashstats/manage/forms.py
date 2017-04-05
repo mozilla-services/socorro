@@ -69,6 +69,7 @@ class APITokenForm(BaseModelForm):
         self.possible_permissions = kwargs.pop('possible_permissions', [])
         expires_choices = kwargs.pop('expires_choices', [])
         super(APITokenForm, self).__init__(*args, **kwargs)
+        self.fields['permissions'].required = False
         self.fields['permissions'].choices = (
             (x.pk, x.name) for x in self.possible_permissions
         )

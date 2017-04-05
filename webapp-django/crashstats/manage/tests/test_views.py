@@ -1311,6 +1311,44 @@ class TestViews(BaseTestViews):
         eq_(event.extra['expires_days'], 7)
         eq_(event.extra['permissions'], permission.name)
 
+    def test_create_api_token_with_no_permissions(self):
+        superuser = self._login()
+        user = User.objects.create_user(
+            'user',
+            'user@example.com',
+            'secret'
+        )
+        permission = self._create_permission()
+        # the user must belong to a group that has this permission
+        wackos = Group.objects.create(name='Wackos')
+        wackos.permissions.add(permission)
+        user.groups.add(wackos)
+        assert user.has_perm('crashstats.' + permission.codename)
+
+        url = reverse('manage:api_tokens')
+        response = self.client.post(url, {
+            'user': user.email.upper(),
+            'notes': 'Some notes',
+            'expires': 7
+        })
+        eq_(response.status_code, 302)
+        token = Token.objects.get(
+            user=user,
+            notes='Some notes',
+        )
+        eq_(list(token.permissions.all()), [])
+        lasting = (timezone.now() - token.expires).days * -1
+        eq_(lasting, 7)
+
+        event, = Log.objects.all()
+
+        eq_(event.user, superuser)
+        eq_(event.action, 'api_token.create')
+        eq_(event.extra['notes'], 'Some notes')
+        ok_(event.extra['expires'])
+        eq_(event.extra['expires_days'], 7)
+        eq_(event.extra['permissions'], '')
+
     def test_create_api_token_rejected(self):
         self._login()
         user = User.objects.create_user(
