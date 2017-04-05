@@ -34,7 +34,7 @@ def home(request, product, default_context=None):
             context['versions'] = [
                 x['version']
                 for x in context['active_versions'][product]
-            ][:4]
+            ][:settings.NUMBER_OF_FEATURED_VERSIONS]
 
     # Set selected version for the navigation bar.
     if len(context['versions']) == 1:

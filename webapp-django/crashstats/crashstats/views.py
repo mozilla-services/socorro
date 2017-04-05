@@ -472,8 +472,8 @@ def crashes_per_day(request, default_context=None):
                 params['versions'].append(pv['version'])
         if not params['versions'] and active_versions:
             # There were no featured versions, but there were active
-            # versions. Use the top 4 active versions instead.
-            for pv in active_versions[:4]:
+            # versions. Use the top X active versions instead.
+            for pv in active_versions[:settings.NUMBER_OF_FEATURED_VERSIONS]:
                 params['versions'].append(pv['version'])
 
     context['available_versions'] = []

@@ -754,3 +754,9 @@ CSP_CHILD_SRC = (
 CSP_CONNECT_SRC = (
     "'self'",
 )
+
+
+# This is the number of versions to display if a particular product
+# has no 'featured versions'. Then we use the active versions, but capped
+# up to this number.
+NUMBER_OF_FEATURED_VERSIONS = config('NUMBER_OF_FEATURED_VERSIONS', 4)

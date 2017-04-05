@@ -937,7 +937,7 @@ class TestViews(BaseTestViews):
         ok_(is_percentage(first_row[3]))  # throttle
         ok_(is_percentage(first_row[4]))  # ratio
 
-    def test_crashes_per_day_product_sans_featued_versions(self):
+    def test_crashes_per_day_product_sans_featured_versions(self):
         url = reverse('crashstats:crashes_per_day')
 
         def mocked_adi_get(**options):
@@ -947,6 +947,8 @@ class TestViews(BaseTestViews):
                 'hits': []
             }
             return response
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
 
         def mocked_product_build_types_get(**options):
             return {
@@ -959,8 +961,6 @@ class TestViews(BaseTestViews):
         models.ProductBuildTypes.implementation().get.side_effect = (
             mocked_product_build_types_get
         )
-
-        models.ADI.implementation().get.side_effect = mocked_adi_get
 
         def mocked_supersearch_get(**params):
             eq_(params['product'], ['SeaMonkey'])
