@@ -1,6 +1,6 @@
 import functools
-import json
 
+from socorro.external.es import query
 from socorro.external.es import supersearch
 from socorro.external.es import super_search_fields
 
@@ -277,10 +277,10 @@ class SuperSearchField(ESSocorroMiddleware):
         raise NotImplementedError('Use update_field')
 
 
-class Query(models.SocorroMiddleware):
+class Query(ESSocorroMiddleware):
     # No API_WHITELIST because this can't be accessed through the public API.
 
-    URL_PREFIX = '/query/'
+    implementation = query.Query
 
     required_params = (
         'query',
@@ -289,11 +289,3 @@ class Query(models.SocorroMiddleware):
     possible_params = (
         'indices',
     )
-
-    def get(self, **kwargs):
-        params = self.kwargs_to_params(kwargs)
-        payload = {
-            'query': json.dumps(params['query']),
-            'indices': params.get('indices'),
-        }
-        return self.post(self.URL_PREFIX, payload)

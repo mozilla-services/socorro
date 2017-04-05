@@ -39,7 +39,6 @@ from configman.converters import class_converter
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
     (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
-    (r'/query/', 'query.Query'),
     (r'/healthcheck/', 'healthcheck.Healthcheck'),
 )
 
@@ -117,8 +116,7 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Query: es`',
-        default='Priorityjobs: rabbitmq, '
-                'Query: es',
+        default='Priorityjobs: rabbitmq',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )
