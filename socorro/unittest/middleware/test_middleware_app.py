@@ -693,58 +693,6 @@ class IntegrationTestMiddlewareApp(TestCase):
                 }
             )
 
-    def test_priorityjobs(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/priorityjobs/',
-                {'uuid': self.uuid},
-                expect_errors=True
-            )
-            eq_(response.status, 500)
-
-            response = self.post(
-                server,
-                '/priorityjobs/',
-                {'uuid': self.uuid}
-            )
-            ok_(response.data)
-
-    def test_missing_argument_yield_bad_request(self):
-        config_manager = self._setup_config_manager()
-
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/priorityjobs/',
-                expect_errors=True
-            )
-            eq_(response.status, 500)
-
-            response = self.post(
-                server,
-                '/priorityjobs/',
-                expect_errors=True
-            )
-            eq_(response.status, 400)
-
-            response = self.post(
-                server,
-                '/priorityjobs/',
-                {'uuid': 1234689},
-            )
-            eq_(response.status, 200)
-
     def test_setting_up_with_lists_overridden(self):
 
         platforms = [
