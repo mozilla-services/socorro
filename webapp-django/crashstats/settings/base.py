@@ -733,6 +733,9 @@ GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
 CSP_DEFAULT_SRC = (
     "'self'",
 )
+CSP_OBJECT_SRC = (
+    "'none'",
+)
 CSP_SCRIPT_SRC = (
     "'self'",
     'apis.google.com',
