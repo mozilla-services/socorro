@@ -65,8 +65,8 @@ class IntegrationTestQuery(ElasticsearchTestCase):
     def test_get_with_missing_index(self):
         assert_raises(
             ResourceNotFound,
-            self.api.post,
-            query='{}',
+            self.api.get,
+            query={'query': {}},
             indices=['unknown'],
         )
 
