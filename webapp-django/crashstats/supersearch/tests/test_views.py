@@ -13,7 +13,7 @@ from waffle.models import Switch
 
 from socorro.lib import BadArgumentError
 
-from crashstats.crashstats.tests.test_views import BaseTestViews, Response
+from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import Query, SuperSearchUnredacted
 
 
