@@ -323,7 +323,7 @@ class BaseTestViews(DjangoTestCase):
                     'throttle': '99.00',
                     'end_date': yesterday,
                     'start_date': '2012-03-08',
-                    'is_featured': True,
+                    'is_featured': False,
                     'version': '9.5',
                     'build_type': 'Alpha',
                     'has_builds': True,
@@ -333,7 +333,7 @@ class BaseTestViews(DjangoTestCase):
                     'throttle': '99.00',
                     'end_date': end_date,
                     'start_date': '2012-03-08',
-                    'is_featured': True,
+                    'is_featured': False,
                     'version': '10.5',
                     'build_type': 'nightly',
                     'has_builds': True,
@@ -936,6 +936,59 @@ class TestViews(BaseTestViews):
         ok_(first_row[2].isdigit())  # adi
         ok_(is_percentage(first_row[3]))  # throttle
         ok_(is_percentage(first_row[4]))  # ratio
+
+    def test_crashes_per_day_product_sans_featured_versions(self):
+        url = reverse('crashstats:crashes_per_day')
+
+        def mocked_adi_get(**options):
+            eq_(options['versions'], ['9.5', '10.5'])
+            response = {
+                'total': 0,
+                'hits': []
+            }
+            return response
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
+
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
+
+        def mocked_supersearch_get(**params):
+            eq_(params['product'], ['SeaMonkey'])
+            eq_(params['version'], ['9.5', '10.5'])
+            response = {
+                'facets': {
+                    'histogram_date': [],
+                    'signature': [],
+                    'version': []
+                },
+                'hits': [],
+                'total': 0
+            }
+            return response
+
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        response = self.client.get(url, {
+            'p': 'SeaMonkey',
+            # Note that no version is passed explicitly
+        })
+        eq_(response.status_code, 200)
+        # Not going to do more testing of the response content. That's
+        # what test_crashes_per_day() does.
+        # This tests' mocking methods checks that the right versions
+        # (9.5 and 10.5) are pulled out for the various data queries.
 
     def test_crashes_per_day_failing_shards(self):
         url = reverse('crashstats:crashes_per_day')

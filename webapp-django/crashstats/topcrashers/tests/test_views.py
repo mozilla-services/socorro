@@ -215,6 +215,58 @@ class TestViews(BaseTestViews):
             in response.content
         )
 
+    def test_topcrashers_product_sans_featured_version(self):
+
+        def mocked_supersearch_get(**params):
+            if '_columns' not in params:
+                params['_columns'] = []
+
+            # By default we range by date, so there should be no filter on
+            # the build id.
+            ok_('build_id' not in params)
+
+            if 'hang_type' not in params['_aggs.signature']:
+                # Return results for the previous week.
+                results = {
+                    'hits': [],
+                    'facets': {
+                        'signature': []
+                    },
+                    'total': 0
+                }
+            else:
+                # Return results for the current week.
+                results = {
+                    'hits': [],
+                    'facets': {
+                        'signature': []
+                    },
+                    'total': 0
+                }
+
+            results['hits'] = self.only_certain_columns(
+                results['hits'],
+                params['_columns']
+            )
+            return results
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        response = self.client.get(self.base_url, {'product': 'SeaMonkey'})
+        eq_(response.status_code, 302)
+        actual_url = self.base_url + '?product=SeaMonkey&version=9.5'
+        ok_(actual_url in response['Location'])
+
+        response = self.client.get(self.base_url, {
+            'product': 'SeaMonkey',
+            'version': '9.5',
+        })
+        eq_(response.status_code, 200)
+        # Not testing the response content.
+        # See test_topcrashers() above instead. Here we just want to make
+        # sure it renders at all when the product has no featured versions.
+
     def test_topcrashers_400_by_bad_days(self):
         response = self.client.get(self.base_url, {
             'product': 'SnowLion',
