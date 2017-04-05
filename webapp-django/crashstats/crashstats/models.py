@@ -1355,16 +1355,3 @@ class Priorityjob(SocorroMiddleware):
 
     def post(self, **kwargs):
         return self.get_implementation().process(**kwargs)
-
-
-class Healthcheck(SocorroMiddleware):
-    """Return a sign of life from the middleware.
-
-    This model can be removed (and its only user which is the monitoring)
-    once https://bugzilla.mozilla.org/show_bug.cgi?id=1188083 finishes.
-
-    See https://bugzilla.mozilla.org/show_bug.cgi?id=1292227
-    """
-
-    URL_PREFIX = '/healthcheck/'
-    cache_seconds = 0
