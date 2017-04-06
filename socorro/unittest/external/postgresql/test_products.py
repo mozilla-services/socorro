@@ -5,16 +5,14 @@
 import datetime
 from nose.tools import eq_, ok_
 
-from socorro.external.postgresql.products import ProductVersions, Products
+from socorro.external.postgresql.products import ProductVersions
 from socorro.lib import datetimeutil
 
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestProductVersionsBase(PostgreSQLTestCase):
 
-    #--------------------------------------------------------------------------
     @classmethod
     def setUpClass(cls):
         """ Populate product_info table with fake data """
@@ -166,14 +164,12 @@ class IntegrationTestProductVersionsBase(PostgreSQLTestCase):
 
         cls.connection.commit()
 
-    #--------------------------------------------------------------------------
     @classmethod
     def tearDownClass(cls):
         """ Cleanup the database, delete tables and functions """
         cls.truncate()
         super(IntegrationTestProductVersionsBase, cls).tearDownClass()
 
-    #--------------------------------------------------------------------------
     @classmethod
     def truncate(cls):
         cursor = cls.connection.cursor()
@@ -186,11 +182,9 @@ class IntegrationTestProductVersionsBase(PostgreSQLTestCase):
         cls.connection.commit()
 
 
-#==============================================================================
 class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
     """Test socorro.external.postgresql.products.ProductVersions class. """
 
-    #--------------------------------------------------------------------------
     def test_get_basic(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
@@ -224,7 +218,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         )
         eq_(res['hits'], res_expected['hits'])
 
-    #--------------------------------------------------------------------------
     def test_get_with_one_product_multiple_versions(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
@@ -271,7 +264,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         eq_(res['hits'][0], res_expected['hits'][0])
         eq_(res['hits'][1], res_expected['hits'][1])
 
-    #--------------------------------------------------------------------------
     def test_get_no_parameter_returning_all(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
@@ -353,7 +345,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         eq_(len(res['hits']), len(res_expected['hits']))
         eq_(res['hits'], res_expected['hits'])
 
-    #--------------------------------------------------------------------------
     def test_filter_by_featured(self):
         productversions = ProductVersions(config=self.config)
 
@@ -366,7 +357,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         eq_(len(res['hits']), 4)
         ok_(all(not x['is_featured'] for x in res['hits']))
 
-    #--------------------------------------------------------------------------
     def test_filter_by_start_date(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
@@ -376,7 +366,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         res = productversions.get(start_date='<' + now.isoformat())
         eq_(res['total'], 1)
 
-    #--------------------------------------------------------------------------
     def test_filter_by_end_date(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
@@ -387,7 +376,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         for hit in res['hits']:
             eq_(hit['end_date'], nextweek)
 
-    #--------------------------------------------------------------------------
     def test_filter_by_active(self):
         productversions = ProductVersions(config=self.config)
         now = self.now.date()
@@ -461,7 +449,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
             active_results['total'] + not_active_results['total']
         )
 
-    #--------------------------------------------------------------------------
     def test_filter_by_is_rapid_beta(self):
         productversions = ProductVersions(config=self.config)
 
@@ -481,7 +468,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
             true_results['total'] + false_results['total']
         )
 
-    #--------------------------------------------------------------------------
     def test_filter_by_build_type(self):
         productversions = ProductVersions(config=self.config)
 
@@ -497,7 +483,6 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
         )
         eq_(res['total'], 0)
 
-    #--------------------------------------------------------------------------
     def test_post(self):
         products = ProductVersions(config=self.config)
 
@@ -521,264 +506,7 @@ class IntegrationTestProductVersions(IntegrationTestProductVersionsBase):
             self.connection.rollback()
 
     def test_post_bad_product_name(self):
-        products = Products(config=self.config)
-
-        ok_(not products.post(
-            product='Spaces not allowed',
-            version='',
-        ))
-
-
-#==============================================================================
-class IntegrationTestProducts(IntegrationTestProductVersionsBase):
-    """
-    NOTE! This class is deprecated. All usage of
-    socorro.external.postgresql.products.Products is deprecated in favor
-    of socorro.external.postgresql.products.ProductVersions.
-    """
-    #--------------------------------------------------------------------------
-    def test_get(self):
-        products = Products(config=self.config)
-        now = self.now.date()
-        lastweek = now - datetime.timedelta(days=7)
-        nextweek = now + datetime.timedelta(days=7)
-        now_str = datetimeutil.date_to_string(now)
-        lastweek_str = datetimeutil.date_to_string(lastweek)
-        nextweek_str = datetimeutil.date_to_string(nextweek)
-
-        #......................................................................
-        # Test 1: find one exact match for one product and one version
-        params = {
-            "versions": "Firefox:8.0"
-        }
-        res = products.get(**params)
-        res_expected = {
-            "hits": [
-                {
-                    "is_featured": False,
-                    "version": "8.0",
-                    "throttle": 10.0,
-                    "start_date": now_str,
-                    "end_date": now_str,
-                    "has_builds": False,
-                    "product": "Firefox",
-                    "build_type": "Release"
-                }
-            ],
-            "total": 1
-        }
-        # make sure the 'throttle' is a floating point number
-        ok_(isinstance(res['hits'][0]['throttle'], float))
-        eq_(
-            sorted(res['hits'][0]),
-            sorted(res_expected['hits'][0])
-        )
-
-        #......................................................................
-        # Test 2: Find two different products with their correct verions
-        params = {
-            "versions": ["Firefox:8.0", "Thunderbird:10.0.2b"]
-        }
-        res = products.get(**params)
-        res_expected = {
-            "hits": [
-                {
-                    "product": "Firefox",
-                    "version": "8.0",
-                    "start_date": now_str,
-                    "end_date": now_str,
-                    "is_featured": False,
-                    "build_type": "Release",
-                    "throttle": 10.0,
-                    "has_builds": True
-                },
-                {
-                    "product": "Thunderbird",
-                    "version": "10.0.2b",
-                    "start_date": now_str,
-                    "end_date": now_str,
-                    "is_featured": False,
-                    "build_type": "Release",
-                    "throttle": 10.0,
-                    "has_builds": False
-                }
-            ],
-            "total": 2
-        }
-
-        eq_(
-            sorted(res['hits'][0]),
-            sorted(res_expected['hits'][0])
-        )
-
-        #......................................................................
-        # Test 3: empty result, no products:version found
-        params = {
-            "versions": "Firefox:14.0"
-        }
-        res = products.get(**params)
-        res_expected = {
-            "hits": [],
-            "total": 0
-        }
-
-        eq_(res, res_expected)
-
-        #......................................................................
-        # Test 4: Test products list is returned with no parameters
-        params = {}
-        res = products.get(**params)
-        res_expected = {
-            "products": ["Firefox", "Thunderbird", "Fennec"],
-            "hits": {
-                "Firefox": [
-                    {
-                        "product": "Firefox",
-                        "version": "9.0",
-                        "start_date": now_str,
-                        "end_date": nextweek_str,
-                        "throttle": 100.00,
-                        "featured": True,
-                        "release": "Nightly",
-                        "has_builds": True
-                    },
-                    {
-                        "product": "Firefox",
-                        "version": "8.0",
-                        "start_date": lastweek_str,
-                        "end_date": lastweek_str,
-                        "throttle": 10.00,
-                        "featured": False,
-                        "release": "Release",
-                        "has_builds": False
-                    }
-                ],
-                "Thunderbird": [
-                    {
-                        "product": "Thunderbird",
-                        "version": "10.0.2b",
-                        "start_date": now_str,
-                        "end_date": nextweek_str,
-                        "throttle": 10.00,
-                        "featured": False,
-                        "release": "Release",
-                        "has_builds": False,
-                    }
-                ],
-                "Fennec": [
-                    {
-                        "product": "Fennec",
-                        "version": "12.0b1",
-                        "start_date": now_str,
-                        "end_date": nextweek_str,
-                        "throttle": 100.00,
-                        "featured": False,
-                        "release": "Beta",
-                        "has_builds": True
-                    },
-                    {
-                        "product": "Fennec",
-                        "version": "11.0.1",
-                        "start_date": now_str,
-                        "end_date": now_str,
-                        "throttle": 10.00,
-                        "featured": False,
-                        "release": "Release",
-                        "has_builds": False
-                    }
-                ]
-            },
-            "total": 5
-        }
-
-        eq_(res['total'], res_expected['total'])
-        eq_(
-            sorted(res['products']),
-            sorted(res_expected['products'])
-        )
-        eq_(sorted(res['hits']), sorted(res_expected['hits']))
-        for product in sorted(res['hits'].keys()):
-            eq_(
-                sorted(res['hits'][product][0]),
-                sorted(res_expected['hits'][product][0])
-            )
-            eq_(res['hits'][product], res_expected['hits'][product])
-
-        # test returned order of versions
-        assert len(res['hits']['Fennec']) == 2
-        eq_(res['hits']['Fennec'][0]['version'], '12.0b1')
-        eq_(res['hits']['Fennec'][1]['version'], '11.0.1')
-
-        #......................................................................
-        # Test 5: An invalid versions list is passed, all versions are returned
-        params = {
-            'versions': [1]
-        }
-        res = products.get(**params)
-        eq_(res['total'], 5)
-
-    def test_get_default_version(self):
-        products = Products(config=self.config)
-
-        # Test 1: default versions for all existing products
-        res = products.get_default_version()
-        res_expected = {
-            "hits": {
-                "Firefox": "9.0",
-                "Thunderbird": "10.0.2b",
-                "Fennec": "11.0.1",
-            }
-        }
-
-        eq_(res, res_expected)
-
-        # Test 2: default version for one product
-        params = {"products": "Firefox"}
-        res = products.get_default_version(**params)
-        res_expected = {
-            "hits": {
-                "Firefox": "9.0"
-            }
-        }
-
-        eq_(res, res_expected)
-
-        # Test 3: default version for two products
-        params = {"products": ["Firefox", "Thunderbird"]}
-        res = products.get_default_version(**params)
-        res_expected = {
-            "hits": {
-                "Firefox": "9.0",
-                "Thunderbird": "10.0.2b"
-            }
-        }
-
-        eq_(res, res_expected)
-
-    def test_post(self):
-        products = Products(config=self.config)
-
-        ok_(products.post(
-            product='KillerApp',
-            version='1.0',
-        ))
-
-        # let's check certain things got written to certain tables
-        cursor = self.connection.cursor()
-        try:
-            # expect there to be a new product
-            cursor.execute(
-                'select product_name from products '
-                "where product_name=%s",
-                ('KillerApp',)
-            )
-            product_name, = cursor.fetchone()
-            eq_(product_name, 'KillerApp')
-        finally:
-            self.connection.rollback()
-
-    def test_post_bad_product_name(self):
-        products = Products(config=self.config)
+        products = ProductVersions(config=self.config)
 
         ok_(not products.post(
             product='Spaces not allowed',

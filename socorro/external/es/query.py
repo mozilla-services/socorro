@@ -8,7 +8,6 @@ import json
 import re
 
 from socorro.lib import (
-    BadArgumentError,
     DatabaseError,
     MissingArgumentError,
     ResourceNotFound,
@@ -22,7 +21,7 @@ class Query(ElasticsearchBase):
     '''Implement the /query service with ElasticSearch. '''
 
     filters = [
-        ('query', None, 'str'),
+        ('query', None, 'json'),
         ('indices', None, ['list', 'str']),
     ]
 
@@ -32,20 +31,12 @@ class Query(ElasticsearchBase):
         ) as conn:
             return conn
 
-    def post(self, **kwargs):
+    def get(self, **kwargs):
         '''Return the result of a custom query. '''
         params = external_common.parse_arguments(self.filters, kwargs)
 
         if not params.query:
             raise MissingArgumentError('query')
-
-        try:
-            query = json.loads(params.query)
-        except ValueError:
-            raise BadArgumentError(
-                'query',
-                msg="Invalid JSON value for parameter 'query'"
-            )
 
         # Set indices.
         indices = []
@@ -72,7 +63,7 @@ class Query(ElasticsearchBase):
 
         try:
             results = connection.search(
-                body=query,
+                body=json.dumps(params.query),
                 **search_args
             )
         except elasticsearch.exceptions.NotFoundError, e:

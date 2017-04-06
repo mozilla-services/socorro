@@ -364,33 +364,32 @@ class TestModels(DjangoTestCase):
         r = api.get(crash_id='some-crash-id', format='raw', name='other')
         eq_(r, '\xe0\xe0')
 
-    @mock.patch('requests.put')
-    def test_put_featured_versions(self, rput):
+    def test_put_featured_versions(self):
         model = models.ReleasesFeatured
         api = model()
 
-        def mocked_put(url, **options):
-            assert '/releases/featured/' in url
-            data = options['data']
-            eq_(data['WaterWolf'], '18.0,19.0')
-            eq_(data['NightTrain'], '1,2')
-            return Response(True)
+        def mocked_put(**params):
+            eq_(params['WaterWolf'], '18.0,19.0')
+            eq_(params['NightTrain'], '1,2')
+            return True
 
-        rput.side_effect = mocked_put
-        r = api.put(**{'WaterWolf': ['18.0', '19.0'],
-                       'NightTrain': ['1', '2']})
+        model.implementation().put.side_effect = mocked_put
+
+        r = api.put(**{
+            'WaterWolf': ['18.0', '19.0'],
+            'NightTrain': ['1', '2']
+        })
         eq_(r, True)
 
-    @mock.patch('requests.post')
-    def test_create_release(self, rpost):
+    def test_create_release(self):
         model = models.Releases
         api = model()
 
-        def mocked_post(url, **options):
-            assert '/releases/release/' in url
-            return Response(True)
+        def mocked_post(**params):
+            return True
 
-        rpost.side_effect = mocked_post
+        model.implementation().post.side_effect = mocked_post
+
         now = datetime.datetime.utcnow()
         r = api.post(**{
             'product': 'Firefox',

@@ -38,11 +38,6 @@ from configman.converters import class_converter
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
 SERVICES_LIST = (
-    (r'/backfill/(.*)', 'backfill.Backfill'),
-    (r'/priorityjobs/(.*)', 'priorityjobs.Priorityjobs'),
-    (r'/products/(.*)', 'products.Products'),  # deprecated
-    (r'/query/', 'query.Query'),
-    (r'/releases/(channels|featured|release)/(.*)', 'releases.Releases'),
     (r'/healthcheck/', 'healthcheck.Healthcheck'),
 )
 
@@ -120,8 +115,7 @@ class MiddlewareApp(App):
     required_config.implementations.add_option(
         'service_overrides',
         doc='comma separated list of class overrides, e.g `Query: es`',
-        default='Priorityjobs: rabbitmq, '
-                'Query: es',
+        default='Priorityjobs: rabbitmq',
         from_string_converter=items_list_decode,
         to_string_converter=items_list_encode
     )

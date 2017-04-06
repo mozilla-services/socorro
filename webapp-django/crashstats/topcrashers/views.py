@@ -213,6 +213,15 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
                     request.build_absolute_uri(), urlquote(pv['version'])
                 )
                 return redirect(url)
+        if context['active_versions'][product]:
+            # Not a single version was featured, but there were active
+            # versions. In this case, use the first available
+            # *active* version.
+            for pv in context['active_versions'][product]:
+                url = '%s&version=%s' % (
+                    request.build_absolute_uri(), urlquote(pv['version'])
+                )
+                return redirect(url)
 
     # See if all versions support builds. If not, refuse to show the "by build"
     # range option in the UI.

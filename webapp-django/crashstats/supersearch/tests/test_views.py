@@ -13,8 +13,8 @@ from waffle.models import Switch
 
 from socorro.lib import BadArgumentError
 
-from crashstats.crashstats.tests.test_views import BaseTestViews, Response
-from crashstats.supersearch.models import SuperSearchUnredacted
+from crashstats.crashstats.tests.test_views import BaseTestViews
+from crashstats.supersearch.models import Query, SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):
@@ -374,15 +374,9 @@ class TestViews(BaseTestViews):
         ok_('<script>' not in response.content)
         ok_('&lt;script&gt;' in response.content)
 
-    @mock.patch('requests.post')
-    def test_search_results_admin_mode(self, rpost):
+    def test_search_results_admin_mode(self):
         """Test that an admin can see more fields, and that a non-admin cannot.
         """
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
-            return Response({"hits": [], "total": 0})
-
-        rpost.side_effect = mocked_post
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -524,16 +518,7 @@ class TestViews(BaseTestViews):
         ok_('Version' in response.content)
         ok_('1.0' in response.content)
 
-    @mock.patch('requests.post')
-    def test_search_results_parameters(self, rpost):
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
-            return Response({
-                "hits": [],
-                "total": 0
-            })
-
-        rpost.side_effect = mocked_post
+    def test_search_results_parameters(self):
 
         def mocked_supersearch_get(**params):
             # Verify that all expected parameters are in the URL.
@@ -574,17 +559,9 @@ class TestViews(BaseTestViews):
         )
         eq_(response.status_code, 200)
 
-    @mock.patch('requests.post')
-    def test_search_results_pagination(self, rpost):
+    def test_search_results_pagination(self):
         """Test that the pagination of results works as expected.
         """
-        def mocked_post(**options):
-            assert 'bugs' in options['url'], options['url']
-            return Response("""
-                {"hits": [], "total": 0}
-            """)
-
-        rpost.side_effect = mocked_post
 
         def mocked_supersearch_get(**params):
             assert '_columns' in params
@@ -714,18 +691,17 @@ class TestViews(BaseTestViews):
         ok_('socorro200000' in response.content)
         ok_('socorro200001' in response.content)
 
-    @mock.patch('requests.post')
-    def test_search_query(self, rpost):
+    def test_search_query(self):
         self.create_custom_query_perm()
 
-        def mocked_post(url, data, **options):
-            ok_('/query' in url)
-            ok_('query' in data)
-            ok_('indices' in data)
+        def mocked_query_get(**params):
+            ok_('query' in params)
 
-            return Response({"hits": []})
+            return {"hits": []}
 
-        rpost.side_effect = mocked_post
+        Query.implementation().get.side_effect = (
+            mocked_query_get
+        )
 
         url = reverse('supersearch.search_query')
         response = self.client.post(url, {'query': '{"query": {}}'})

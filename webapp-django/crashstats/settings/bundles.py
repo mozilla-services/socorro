@@ -69,12 +69,6 @@ PIPELINE_CSS = {
         ),
         'output_filename': 'css/documentation.min.css',
     },
-    'gccrashes': {
-        'source_filenames': (
-            'crashstats/css/gccrashes.less',
-        ),
-        'output_filename': 'css/gccrashes.min.css',
-    },
     'report_index': {
         'source_filenames': (
             'crashstats/css/report_index.css',
@@ -286,12 +280,6 @@ PIPELINE_JS = {
             'crashstats/js/socorro/exploitability_report.js',
         ),
         'output_filename': 'js/exploitability-report.min.js',
-    },
-    'gccrashes': {
-        'source_filenames': (
-            'crashstats/js/socorro/gccrashes.js',
-        ),
-        'output_filename': 'js/gccrashes.min.js',
     },
     'home': {
         'source_filenames': (

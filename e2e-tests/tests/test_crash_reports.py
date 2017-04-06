@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import urllib
+
 import pytest
 
 from pages.home_page import CrashStatsHomePage
@@ -9,18 +11,37 @@ from pages.home_page import CrashStatsHomePage
 
 class TestCrashReports:
 
+    _exploitability_url = '/exploitability/?product=Firefox'
     _expected_products = [
         'Firefox',
         'Thunderbird',
-        'SeaMonkey',
         'FennecAndroid']
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), [
-        'Firefox',
-        'Thunderbird',
-        'SeaMonkey',
-        'FennecAndroid'])
+    def test_that_bugzilla_link_contain_current_site(self, base_url, selenium):
+        csp = CrashStatsHomePage(selenium, base_url).open()
+        path = '/invalidpath'
+        csp.selenium.get(base_url + path)
+
+        assert 'bug_file_loc=%s%s' % (base_url, path) in urllib.unquote(csp.link_to_bugzilla)
+
+    @pytest.mark.nondestructive
+    def test_that_exploitable_crash_report_not_displayed_for_not_logged_in_users(self, base_url, selenium):
+        csp = CrashStatsHomePage(selenium, base_url).open()
+        assert 'Exploitable Crashes' not in csp.header.report_list
+        csp.selenium.get(base_url + self._exploitability_url)
+        assert 'Login Required' in csp.page_heading
+
+    @pytest.mark.nondestructive
+    @pytest.mark.xfail(reason="bug 1351757: Cease exposing SeaMonkey and bug 1292594: Fennec shouldn't be an option")
+    def test_that_products_are_sorted_correctly(self, base_url, selenium):
+        csp = CrashStatsHomePage(selenium, base_url).open()
+        products = csp.header.product_list
+
+        assert self._expected_products == products, 'Expected products not in the product dropdown'
+
+    @pytest.mark.nondestructive
+    @pytest.mark.parametrize('product', _expected_products)
     def test_that_reports_form_has_same_product(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.header.select_product(product)
@@ -31,11 +52,7 @@ class TestCrashReports:
         assert crash_per_day.header.current_product == crash_per_day.product_select
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), [
-        'Firefox',
-        'Thunderbird',
-        'SeaMonkey',
-        'FennecAndroid'])
+    @pytest.mark.parametrize('product', _expected_products)
     def test_that_current_version_selected_in_top_crashers_header(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.header.select_product(product)
@@ -79,7 +96,7 @@ class TestCrashReports:
         assert cstc.results_count > 0
 
     @pytest.mark.nondestructive
-    @pytest.mark.parametrize(('product'), _expected_products)
+    @pytest.mark.parametrize('product', _expected_products)
     def test_that_top_crashers_reports_links_work(self, base_url, selenium, product):
         csp = CrashStatsHomePage(selenium, base_url).open()
         csp.header.select_product(product)

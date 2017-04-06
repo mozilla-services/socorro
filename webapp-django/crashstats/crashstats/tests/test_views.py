@@ -95,13 +95,6 @@ _SAMPLE_UNREDACTED = {
     }
 }
 
-BUG_STATUS = {
-    'hits': [
-        {'id': '222222', 'signature': 'FakeSignature1'},
-        {'id': '333333', 'signature': 'FakeSignature1'},
-        {'id': '444444', 'signature': 'Other FakeSignature'}
-    ]
-}
 
 SAMPLE_SIGNATURE_SUMMARY = {
     'reports': {
@@ -190,34 +183,6 @@ SAMPLE_SIGNATURE_SUMMARY = {
 }
 
 
-# Helper mocks for several tests
-def mocked_post_123(**options):
-    return {
-        'hits': [{
-            'id': '123456789',
-            'signature': 'Something'
-        }]
-    }
-
-
-def mocked_post_threesigs(**options):
-    return {
-        'hits': [
-            {'id': '111111111', 'signature': 'FakeSignature 1'},
-            {'id': '222222222', 'signature': 'FakeSignature 3'},
-            {'id': '101010101', 'signature': 'FakeSignature'}
-        ]
-    }
-
-
-def mocked_post_nohits(**options):
-    return {'hits': [], 'total': 0}
-
-
-def mocked_post_threeothersigs(**options):
-    return BUG_STATUS
-
-
 class RobotsTestViews(DjangoTestCase):
 
     @override_settings(ENGAGE_ROBOTS=True)
@@ -253,8 +218,7 @@ class FaviconTestViews(DjangoTestCase):
 
 class BaseTestViews(DjangoTestCase):
 
-    @mock.patch('requests.get')
-    def setUp(self, rget):
+    def setUp(self):
         super(BaseTestViews, self).setUp()
 
         # Tests assume and require a non-persistent cache backend
@@ -359,7 +323,7 @@ class BaseTestViews(DjangoTestCase):
                     'throttle': '99.00',
                     'end_date': yesterday,
                     'start_date': '2012-03-08',
-                    'is_featured': True,
+                    'is_featured': False,
                     'version': '9.5',
                     'build_type': 'Alpha',
                     'has_builds': True,
@@ -369,7 +333,7 @@ class BaseTestViews(DjangoTestCase):
                     'throttle': '99.00',
                     'end_date': end_date,
                     'start_date': '2012-03-08',
-                    'is_featured': True,
+                    'is_featured': False,
                     'version': '10.5',
                     'build_type': 'nightly',
                     'has_builds': True,
@@ -426,6 +390,17 @@ class BaseTestViews(DjangoTestCase):
 
         models.ProductVersions().get(active=True)
         models.Platforms().get()
+
+        def mocked_bugs_get(**options):
+            return {
+                'hits': [{
+                    'id': '123456789',
+                    'signature': 'Something'
+                }]
+            }
+
+        # The default mocking of Bugs.get
+        models.Bugs.implementation().get.side_effect = mocked_bugs_get
 
     def tearDown(self):
         super(BaseTestViews, self).tearDown()
@@ -642,158 +617,19 @@ class TestViews(BaseTestViews):
         cache_key = 'buginfo:987'
         eq_(cache.get(cache_key), struct['bugs'][0])
 
-    def test_gccrashes(self):
-        url = reverse('crashstats:gccrashes', args=('WaterWolf',))
-        unknown_product_url = reverse('crashstats:gccrashes',
-                                      args=('NotKnown',))
-        invalid_version_url = reverse('crashstats:gccrashes',
-                                      args=('WaterWolf', '99'))
+    def test_exploitability_report(self):
+        url = reverse('crashstats:exploitability_report')
 
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('Total Volume of GC Crashes for WaterWolf 19.1'
-            in response.content)
-
-        response = self.client.get(invalid_version_url)
-        eq_(response.status_code, 200)
-        doc = pyquery.PyQuery(response.content)
-        eq_(doc('.django-form-error li b')[0].text, 'Version:')
-
-        response = self.client.get(unknown_product_url)
-        eq_(response.status_code, 404)
-
-    def test_gccrashes_json(self):
-        url = reverse('crashstats:gccrashes_json')
-
-        def mocked_get(**options):
+        def mocked_bugs_threesigs(**options):
             return {
                 'hits': [
-                    ['20140203000001', 366]
-                ],
-                'total': 1,
+                    {'id': '111111111', 'signature': 'FakeSignature 1'},
+                    {'id': '222222222', 'signature': 'FakeSignature 3'},
+                    {'id': '101010101', 'signature': 'FakeSignature'}
+                ]
             }
 
-        models.GCCrashes.implementation().get.side_effect = (
-            mocked_get
-        )
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0',
-            'start_date': '2014-01-27',
-            'end_date': '2014-02-04'
-        })
-
-        eq_(response.status_code, 200)
-        ok_('application/json' in response['content-type'])
-
-    def test_gccrashes_json_bad_request(self):
-        url = reverse('crashstats:gccrashes_json')
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0',
-            'start_date': 'XXXXXX',  # not even close
-            'end_date': '2014-02-04'
-        })
-        eq_(response.status_code, 400)
-
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0',
-            'start_date': '2014-02-33',  # crazy date
-            'end_date': '2014-02-04'
-        })
-        eq_(response.status_code, 400)
-
-        # same but on the end_date
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0',
-            'start_date': '2014-02-13',
-            'end_date': '2014-02-44'  # crazy date
-        })
-        eq_(response.status_code, 400)
-
-        # start_date > end_date
-        response = self.client.get(url, {
-            'product': 'WaterWolf',
-            'version': '20.0',
-            'start_date': '2014-02-02',
-            'end_date': '2014-01-01'  # crazy date
-        })
-        eq_(response.status_code, 400)
-
-    def test_get_nightlies_for_product_json(self):
-        url = reverse('crashstats:get_nightlies_for_product_json')
-
-        def mocked_product_versions(**options):
-            end_date = timezone.now().strftime('%Y-%m-%d')
-            hits = [
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '19.0',
-                    'build_type': 'Beta',
-                },
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '18.0b1',
-                    'build_type': 'Beta',
-                },
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '18.0b',
-                    'build_type': 'Beta',
-                },
-                {
-                    'product': 'WaterWolf',
-                    'throttle': '100.00',
-                    'end_date': end_date,
-                    'start_date': '2012-03-08',
-                    'is_featured': True,
-                    'version': '18.0b2',
-                    'build_type': 'Beta',
-                }
-            ]
-            return {
-                'hits': hits,
-                'total': len(hits),
-            }
-
-        models.ProductVersions.cache_seconds = 0
-
-        models.ProductVersions.implementation().get.side_effect = (
-            mocked_product_versions
-        )
-
-        response = self.client.get(url, {'product': 'WaterWolf'})
-        ok_('application/json' in response['content-type'])
-        eq_(response.status_code, 200)
-        ok_(response.content, ['20.0'])
-
-        response = self.client.get(url, {'product': 'NightTrain'})
-        eq_(response.status_code, 200)
-        ok_(response.content, ['18.0', '19.0'])
-
-        response = self.client.get(url, {'product': 'Unknown'})
-        ok_(response.content, [])
-
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_exploitability_report(self, rpost):
-        url = reverse('crashstats:exploitability_report')
-        rpost.side_effect = mocked_post_threesigs
+        models.Bugs.implementation().get.side_effect = mocked_bugs_threesigs
 
         queried_versions = []
 
@@ -934,8 +770,7 @@ class TestViews(BaseTestViews):
 
         assert queried_versions == [['19.0'], None]
 
-    @mock.patch('requests.get')
-    def test_crashes_per_day(self, rget):
+    def test_crashes_per_day(self):
         url = reverse('crashstats:crashes_per_day')
 
         def mocked_adi_get(**options):
@@ -1102,8 +937,60 @@ class TestViews(BaseTestViews):
         ok_(is_percentage(first_row[3]))  # throttle
         ok_(is_percentage(first_row[4]))  # ratio
 
-    @mock.patch('requests.get')
-    def test_crashes_per_day_failing_shards(self, rget):
+    def test_crashes_per_day_product_sans_featured_versions(self):
+        url = reverse('crashstats:crashes_per_day')
+
+        def mocked_adi_get(**options):
+            eq_(options['versions'], ['9.5', '10.5'])
+            response = {
+                'total': 0,
+                'hits': []
+            }
+            return response
+
+        models.ADI.implementation().get.side_effect = mocked_adi_get
+
+        def mocked_product_build_types_get(**options):
+            return {
+                'hits': {
+                    'release': 0.1,
+                    'beta': 1.0,
+                }
+            }
+
+        models.ProductBuildTypes.implementation().get.side_effect = (
+            mocked_product_build_types_get
+        )
+
+        def mocked_supersearch_get(**params):
+            eq_(params['product'], ['SeaMonkey'])
+            eq_(params['version'], ['9.5', '10.5'])
+            response = {
+                'facets': {
+                    'histogram_date': [],
+                    'signature': [],
+                    'version': []
+                },
+                'hits': [],
+                'total': 0
+            }
+            return response
+
+        SuperSearchUnredacted.implementation().get.side_effect = (
+            mocked_supersearch_get
+        )
+
+        response = self.client.get(url, {
+            'p': 'SeaMonkey',
+            # Note that no version is passed explicitly
+        })
+        eq_(response.status_code, 200)
+        # Not going to do more testing of the response content. That's
+        # what test_crashes_per_day() does.
+        # This tests' mocking methods checks that the right versions
+        # (9.5 and 10.5) are pulled out for the various data queries.
+
+    def test_crashes_per_day_failing_shards(self):
         url = reverse('crashstats:crashes_per_day')
 
         def mocked_adi_get(**options):
@@ -1157,8 +1044,7 @@ class TestViews(BaseTestViews):
         ok_('Our database is experiencing troubles' in response.content)
         ok_('week of 2010-01-04 is ~20% lower' in response.content)
 
-    @mock.patch('requests.get')
-    def test_crashes_per_day_bad_argument_error(self, rget):
+    def test_crashes_per_day_bad_argument_error(self):
         url = reverse('crashstats:crashes_per_day')
 
         def mocked_adi_get(**options):
@@ -1214,8 +1100,7 @@ class TestViews(BaseTestViews):
         ok_('date_range_type=build' not in parsed.query)
         ok_('date_range_type=' not in parsed.query)
 
-    @mock.patch('requests.get')
-    def test_crashes_per_day_with_beta_versions(self, rget):
+    def test_crashes_per_day_with_beta_versions(self):
         """This is a variation on test_crashes_per_day() (above)
         but with fewer basic assertions. The point of this
         test is to request it for '18.0b' and '19.0'. The '18.0b'
@@ -1458,20 +1343,21 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index(self, rget, rpost):
+    def test_report_index(self):
         dump = 'OS|Mac OS X|10.6.8 10K549\nCPU|amd64|family 6 mod|1'
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@example.com'
         comment0 += '\nwww.p0rn.com'
 
-        rpost.side_effect = mocked_post_threeothersigs
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+        def mocked_bugs_get(**options):
+            return {
+                'hits': [
+                    {'id': '222222', 'signature': 'FakeSignature1'},
+                    {'id': '333333', 'signature': 'FakeSignature1'},
+                    {'id': '444444', 'signature': 'Other FakeSignature'}
+                ]
+            }
+        models.Bugs.implementation().get.side_effect = mocked_bugs_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -1569,18 +1455,9 @@ class TestViews(BaseTestViews):
         ok_(_SAMPLE_META['Email'] not in response.content)
         ok_(_SAMPLE_META['URL'] not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_additional_raw_dump_links(self, rget, rpost):
+    def test_report_index_with_additional_raw_dump_links(self):
         # using \\n because it goes into the JSON string
         dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'
-
-        rpost.side_effect = mocked_post_threeothersigs
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_processed_crash_get(**params):
             assert 'datatype' in params
@@ -1657,10 +1534,7 @@ class TestViews(BaseTestViews):
         )
         ok_(bar_dmp_url in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_symbol_url_in_modules(self, rget, rpost):
-        rpost.side_effect = mocked_post_threeothersigs
+    def test_report_index_with_symbol_url_in_modules(self):
         json_dump = {
             'status': 'OK',
             'sensitive': {
@@ -1691,11 +1565,6 @@ class TestViews(BaseTestViews):
                 },
             ]
         }
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -1733,10 +1602,7 @@ class TestViews(BaseTestViews):
             response.content
         )
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_shutdownhang_signature(self, rget, rpost):
-        rpost.side_effect = mocked_post_threeothersigs
+    def test_report_index_with_shutdownhang_signature(self):
         json_dump = {
             'crash_info': {
                 'crashing_thread': 2,
@@ -1749,11 +1615,6 @@ class TestViews(BaseTestViews):
             ],
             'modules': [],
         }
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -1787,19 +1648,10 @@ class TestViews(BaseTestViews):
         ok_('Crashing Thread (2)' not in response.content)
         ok_('Crashing Thread (0)' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_fennecandroid_report(self, rget, rpost):
+    def test_report_index_fennecandroid_report(self):
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'
         comment0 += '\nwww.p0rn.com'
-
-        rpost.side_effect = mocked_post_threeothersigs
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -1844,22 +1696,13 @@ class TestViews(BaseTestViews):
             link = doc('a.sig-overview').eq(0)
             ok_('product=WinterSun' in link.attr('href'))
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_odd_product_and_version(self, rget, rpost):
+    def test_report_index_odd_product_and_version(self):
         """If the processed JSON references an unfamiliar product and
         version it should not use that to make links in the nav to
         reports for that unfamiliar product and version."""
         comment0 = 'This is a comment\nOn multiple lines'
         comment0 += '\npeterbe@mozilla.com'
         comment0 += '\nwww.p0rn.com'
-
-        rpost.side_effect = mocked_post_threeothersigs
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -1901,15 +1744,7 @@ class TestViews(BaseTestViews):
         bad_url = reverse('home:home', args=('SummerWolf',))
         ok_(bad_url not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_no_dump(self, rget, rpost):
-        rpost.side_effect = mocked_post_threesigs
-
-        def mocked_get(url, params, **options):
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_report_index_no_dump(self):
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -1950,21 +1785,7 @@ class TestViews(BaseTestViews):
         ok_('Invalid crash ID' in response.content)
         eq_(response['Content-Type'], 'text/html; charset=utf-8')
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_valid_install_time(self, rget, rpost):
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0,
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_report_index_with_valid_install_time(self):
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2000,22 +1821,7 @@ class TestViews(BaseTestViews):
         # This is what 1461170304 is in human friendly format.
         ok_('2016-04-20 16:38:24' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_invalid_install_time(self, rget, rpost):
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0,
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_report_index_with_invalid_install_time(self):
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2054,22 +1860,7 @@ class TestViews(BaseTestViews):
             if pyquery.PyQuery(row).find('th').text() == 'Install Time':
                 eq_(pyquery.PyQuery(row).find('td').text(), '')
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_empty_os_name(self, rget, rpost):
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    'hits': [],
-                    'total': 0,
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_report_index_empty_os_name(self):
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2107,9 +1898,7 @@ class TestViews(BaseTestViews):
         for node in doc('#mainbody'):
             eq_(node.attrib['data-platform'], '')
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_invalid_parsed_dump(self, rget, rpost):
+    def test_report_index_with_invalid_parsed_dump(self):
         json_dump = {
             'crash_info': {
                 'address': '0x88',
@@ -2137,29 +1926,6 @@ class TestViews(BaseTestViews):
             'thread_count': 1,
             'threads': [{'frame_count': 0, 'frames': []}]
         }
-
-        comment0 = "This is a comment"
-        email1 = "some@otheremailaddress.com"
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    "hits": [
-                        {
-                            "user_comments": comment0,
-                            "date_processed": "2012-08-21T11:17:28-07:00",
-                            "email": email1,
-                            "uuid": "469bde48-0e8f-3586-d486-b98810120830"
-                        }
-                    ],
-                    "total": 1
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2190,33 +1956,8 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         ok_('<th>Install Time</th>' not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_sparse_json_dump(self, rget, rpost):
+    def test_report_index_with_sparse_json_dump(self):
         json_dump = {'status': 'ERROR_NO_MINIDUMP_HEADER', 'sensitive': {}}
-
-        comment0 = 'This is a comment'
-        email1 = 'some@otheremailaddress.com'
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    'hits': [
-                        {
-                            'user_comments': comment0,
-                            'date_processed': '2012-08-21T11:17:28-07:00',
-                            'email': email1,
-                            'uuid': '469bde48-0e8f-3586-d486-b98810120830',
-                        }
-                    ],
-                    'total': 1
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2247,33 +1988,8 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_with_crash_exploitability(self, rget, rpost):
-        comment0 = 'This is a comment'
-        email1 = 'some@otheremailaddress.com'
-
+    def test_report_index_with_crash_exploitability(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if '/crashes/comments' in url:
-                return Response({
-                    'hits': [
-                        {
-                            'user_comments': comment0,
-                            'date_processed': '2012-08-21T11:17:28-07:00',
-                            'email': email1,
-                            'uuid': '469bde48-0e8f-3586-d486-b98810120830',
-                        }
-                    ],
-                    'total': 1
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2313,12 +2029,8 @@ class TestViews(BaseTestViews):
         ok_('Exploitability</th>' in response.content)
         ok_('Unknown Exploitability' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_your_crash(self, rget, rpost):
+    def test_report_index_your_crash(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        rpost.side_effect = mocked_post_123
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2362,12 +2074,8 @@ class TestViews(BaseTestViews):
         ok_('peterbe@example.com' in response.content)
         ok_('https://embarrassing.example.com' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_not_your_crash(self, rget, rpost):
+    def test_report_index_not_your_crash(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        rpost.side_effect = mocked_post_123
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2407,11 +2115,8 @@ class TestViews(BaseTestViews):
         ok_('peterbe@example.com' not in response.content)
         ok_('https://embarrassing.example.com' not in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_report_index_raw_crash_not_found(self, rpost):
+    def test_report_index_raw_crash_not_found(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        rpost.side_effect = mocked_post_123
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2431,11 +2136,8 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 404)
         ok_('Crash Not Found' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_report_index_processed_crash_not_found(self, rpost):
+    def test_report_index_processed_crash_not_found(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
-
-        rpost.side_effect = mocked_post_123
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params
@@ -2477,8 +2179,7 @@ class TestViews(BaseTestViews):
             response.content
         )
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    def test_report_index_with_invalid_date_processed(self, rpost):
+    def test_report_index_with_invalid_date_processed(self):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_raw_crash_get(**params):
@@ -2512,31 +2213,7 @@ class TestViews(BaseTestViews):
         # to a more human format.
         ok_('2015-10-10 15:32:07.620535' in response.content)
 
-    @mock.patch('crashstats.crashstats.models.Bugs.get')
-    @mock.patch('requests.get')
-    def test_report_index_redirect_by_prefix(self, rget, rpost):
-        comment0 = "This is a comment"
-        email1 = "some@otheremailaddress.com"
-
-        rpost.side_effect = mocked_post_123
-
-        def mocked_get(url, params, **options):
-            if 'crashes/comments' in url:
-                return Response({
-                    'hits': [
-                        {
-                            'user_comments': comment0,
-                            'date_processed': '2012-08-21T11:17:28-07:00',
-                            'email': email1,
-                            'uuid': '469bde48-0e8f-3586-d486-b98810120830'
-                        }
-                    ],
-                    'total': 1
-                })
-
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
+    def test_report_index_redirect_by_prefix(self):
 
         def mocked_raw_crash_get(**params):
             assert 'datatype' in params

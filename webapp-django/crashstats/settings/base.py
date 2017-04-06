@@ -224,12 +224,6 @@ VCS_MAPPINGS = {
     }
 }
 
-# Identifies nightly releases
-NIGHTLY_RELEASE_TYPES = (
-    'Aurora',
-    'Nightly',
-)
-
 
 # No need to load it because we don't do i18n in this project
 USE_I18N = False
@@ -739,6 +733,9 @@ GOOGLE_AUTH_HELP_URL = 'https://wiki.mozilla.org/Socorro/GoogleAuth'
 CSP_DEFAULT_SRC = (
     "'self'",
 )
+CSP_OBJECT_SRC = (
+    "'none'",
+)
 CSP_SCRIPT_SRC = (
     "'self'",
     'apis.google.com',
@@ -760,3 +757,9 @@ CSP_CHILD_SRC = (
 CSP_CONNECT_SRC = (
     "'self'",
 )
+
+
+# This is the number of versions to display if a particular product
+# has no 'featured versions'. Then we use the active versions, but capped
+# up to this number.
+NUMBER_OF_FEATURED_VERSIONS = config('NUMBER_OF_FEATURED_VERSIONS', 4)

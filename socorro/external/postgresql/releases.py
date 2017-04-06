@@ -11,51 +11,19 @@ from socorro.lib import (
     external_common,
 )
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external.postgresql.products import Products
+from socorro.external.postgresql.products import ProductVersions
 from .dbapi2_util import execute_no_results, single_row_sql
 
 logger = logging.getLogger("webapi")
 
 
-class Releases(PostgreSQLBase):
+class ReleasesFeatured(PostgreSQLBase):
 
     """
     Implement the /releases service with PostgreSQL.
     """
 
-    def get_channels(self, **kwargs):
-        """Return a list of release channels for one, several or all products.
-        """
-        filters = [
-            ("products", None, ["list", "str"]),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        sql = """
-            SELECT
-                build_type AS channel,
-                product_name AS product
-            FROM product_info
-        """
-        sql_params = {}
-
-        if params.products and params.products[0]:
-            sql += " WHERE product_name IN %(products)s"
-            sql_params['products'] = tuple(params.products)
-
-        error_message = "Failed to retrieve release channels from PostgreSQL"
-        sql_results = self.query(sql, sql_params, error_message=error_message)
-
-        channels = {}
-        for res in sql_results.zipped():
-            if res['product'] not in channels:
-                channels[res['product']] = [res['channel']]
-            else:
-                channels[res['product']].append(res['channel'])
-
-        return channels
-
-    def get_featured(self, **kwargs):
+    def get(self, **kwargs):
         """Return a list of featured versions for one, several or all products.
         """
         filters = [
@@ -94,9 +62,10 @@ class Releases(PostgreSQLBase):
             "hits": hits
         }
 
-    def update_featured(self, **kwargs):
+    def put(self, **kwargs):
         """Update lists of featured versions. """
-        products_list = Products(config=self.context).get()['products']
+        product_versions = ProductVersions(config=self.context).get()['hits']
+        products_list = set(x['product'] for x in product_versions)
         releases = {}
 
         for p in kwargs:
@@ -135,7 +104,9 @@ class Releases(PostgreSQLBase):
 
         return True
 
-    def create_release(self, **kwargs):
+
+class Releases(PostgreSQLBase):
+    def post(self, **kwargs):
         filters = [
             ('product', None, 'str'),
             ('version', None, 'str'),

@@ -59,26 +59,30 @@
                     <optgroup label=" ">
                         <option value="Current Versions">Current Versions</option>
                     </optgroup>
+
+                    {% set pvs = filter_featured_versions(active_versions[product]) %}
+                    {% if pvs %}
                     <optgroup label=" ">
-                    {% for pv in active_versions[product] %}
-                        {% if pv.is_featured %}
+                    {% for pv in pvs %}
                         <option
                             value="{{ pv.version }}"
                             {% if pv.version == version %}selected{% endif %}
                         >{{ pv.version }}</option>
-                        {% endif %}
-                    {% endfor  %}
+                    {% endfor %}
                     </optgroup>
+                    {% endif %}
+
+                    {% set pvs = filter_not_featured_versions(active_versions[product]) %}
+                    {% if pvs %}
                     <optgroup label=" ">
-                    {% for pv in active_versions[product] %}
-                        {% if not pv.is_featured %}
+                    {% for pv in pvs %}
                         <option
                             value="{{ pv.version }}"
                             {% if pv.version == version %}selected{% endif %}
                         >{{ pv.version }}</option>
-                        {% endif %}
-                    {% endfor  %}
+                    {% endfor %}
                     </optgroup>
+                    {% endif %}
                 </select>
             </li>
             <li>
@@ -105,12 +109,6 @@
                             data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"
                             {% if report == 'topcrasher' %}selected{% endif %}
                         >Top Crashers</option>
-                        <option
-                            value="gccrashes"
-                            data-url-product="{{ url('crashstats:gccrashes', '__PRODUCT__') }}"
-                            data-url-version="{{ url('crashstats:gccrashes', '__PRODUCT__', '__VERSION__') }}"
-                            {% if report == 'gccrashes' %}selected{% endif %}
-                        >GC Crashes</option>
                         {% if request.user.has_perm('crashstats.view_exploitability') %}
                         <option
                             value="exploitable"

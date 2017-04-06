@@ -26,6 +26,15 @@ def home(request, product, default_context=None):
             for x in context['active_versions'][product]
             if x['is_featured']
         ]
+        # If there are no featured versions but there are active
+        # versions, then fall back to use that instead.
+        if not context['versions'] and context['active_versions'][product]:
+            # But when we do that, we have to make a manual cut-off of
+            # the number of versions to return. So make it max 4.
+            context['versions'] = [
+                x['version']
+                for x in context['active_versions'][product]
+            ][:settings.NUMBER_OF_FEATURED_VERSIONS]
 
     # Set selected version for the navigation bar.
     if len(context['versions']) == 1:

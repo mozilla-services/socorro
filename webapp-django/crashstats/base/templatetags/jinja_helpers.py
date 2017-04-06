@@ -109,3 +109,13 @@ def is_dangerous_cpu(cpu_info):
         cpu_info.startswith('AuthenticAMD family 20 model 1') or
         cpu_info.startswith('AuthenticAMD family 20 model 2')
     )
+
+
+@library.global_function
+def filter_featured_versions(product_versions):
+    return [pv for pv in product_versions if pv['is_featured']]
+
+
+@library.global_function
+def filter_not_featured_versions(product_versions):
+    return [pv for pv in product_versions if not pv['is_featured']]

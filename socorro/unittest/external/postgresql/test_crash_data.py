@@ -122,28 +122,24 @@ class TestIntegrationPostgresCrashData(TestCase):
             crashstorage.PostgreSQLCrashStorage
         required_config.database.add_option('logger', default=mock_logging)
         config_manager = ConfigurationManager(
-          [required_config],
-          app_name='testapp',
-          app_version='1.0',
-          app_description='app description',
-          values_source_list=[{'database': {
-            'logger': mock_logging,
-            'database_name': 'socorro_integration_test',
-            'database_hostname': 'localhost',
-            'database_username': 'test',
-            'database_password': 'aPassword',
-          }}]
+            [required_config],
+            app_name='testapp',
+            app_version='1.0',
+            app_description='app description',
+            values_source_list=[{'database': {
+                'logger': mock_logging,
+                'database_name': 'socorro_integration_test',
+                'database_hostname': 'localhost',
+                'database_username': 'test',
+                'database_password': 'aPassword',
+            }}]
         )
         return config_manager
 
     def test_get(self):
         with self.config_manager.context() as config:
 
-            priorityjobs_mock = Mock()
-            service = crash_data.CrashData(
-                config=config,
-                all_services={'Priorityjobs': priorityjobs_mock}
-            )
+            service = crash_data.CrashData(config=config)
             params = {
                 'datatype': 'raw',
                 'uuid': '114559a5-d8e6-428c-8b88-1c1f22120314'
@@ -227,10 +223,6 @@ class TestIntegrationPostgresCrashData(TestCase):
                     'datatype': 'processed'
                 }
             )
-            priorityjobs_mock.cls.return_value.create.assert_called_once_with(
-                uuid='58727744-12f5-454a-bcf5-f688a2120821'
-            )
-            priorityjobs_mock.cls.return_value.create.reset_mock()
 
             # not yet available crash
             assert_raises(
@@ -240,7 +232,4 @@ class TestIntegrationPostgresCrashData(TestCase):
                     'uuid': '58727744-12f5-454a-bcf5-f688a2120821',
                     'datatype': 'unredacted'
                 }
-            )
-            priorityjobs_mock.cls.return_value.create.assert_called_once_with(
-                uuid='58727744-12f5-454a-bcf5-f688a2120821'
             )
