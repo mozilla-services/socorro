@@ -723,16 +723,3 @@ class IntegrationTestMiddlewareApp(TestCase):
                 app.config.webapi.platforms,
                 platforms
             )
-
-    def test_healthcheck(self):
-        config_manager = self._setup_config_manager()
-        with config_manager.context() as config:
-            app = middleware_app.MiddlewareApp(config)
-            app.main()
-            server = middleware_app.application
-
-            response = self.get(
-                server,
-                '/healthcheck/',
-            )
-            eq_(response.data, True)

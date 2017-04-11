@@ -37,9 +37,7 @@ from configman.converters import class_converter
 #------------------------------------------------------------------------------
 # Here's the list of URIs mapping to classes and the files they belong to.
 # The final lookup depends on the `implementation_list` option inside the app.
-SERVICES_LIST = (
-    (r'/healthcheck/', 'healthcheck.Healthcheck'),
-)
+SERVICES_LIST = ()
 
 # certain items in a URL path should NOT be split by `+`
 DONT_TERM_SPLIT = re.compile("""
