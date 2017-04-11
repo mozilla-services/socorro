@@ -20,41 +20,35 @@
 # NOTE: If you build a snapshot against a newer revision of Breakpad,
 #  update BREAKPAD_REV in build-breakpad.sh to match!
 : <<'EOF'
-{
-	"created": "2016-04-09T00:49:49.410Z",
-	"deadline": "2016-04-09T01:49:49.410Z",
-	"provisionerId": "aws-provisioner-v1",
-	"workerType": "emulator-jb",
-	"retries": 0,
-	"expires": "2017-04-08T22:33:21.202Z",
-        "routes": [
-            "index.project.socorro.breakpad.v1.builds.linux64.latest",
-        ],
-        "scopes": [
-            "queue:route:index.project.socorro.breakpad.v1.builds.linux64.latest"
-        ],
-	"payload": {
-		"image": "taskcluster/desktop-build:0.1.11",
-		"command": [
-			"/bin/sh",
-			"-c",
-			"curl \"https://raw.githubusercontent.com/${SOCORRO_FORK:=mozilla/socorro}/${SOCORRO_BRANCH:=master}/scripts/breakpad-taskcluster.sh\" | bash"
-		],
-		"artifacts": {
-			"public/breakpad.tar.gz": {
-				"type": "file",
-				"path": "/home/worker/breakpad.tar.gz",
-			}
-		},
-		"maxRunTime": 7200
-	},
-	"metadata": {
-		"name": "Build Breakpad",
-		"description": "Build Breakpad for Socorro consumption",
-		"owner": "ted@mielczarek.org",
-		"source": "http://tools.taskcluster.net/task-creator/"
-	}
-}
+created: '2017-04-11T14:17:56.960Z'
+deadline: '2017-04-11T15:17:56.960Z'
+provisionerId: aws-provisioner-v1
+workerType: gecko-misc
+retries: 0
+expires: '2020-01-01T00:00:00.000Z'
+routes:
+  - index.project.socorro.breakpad.v1.builds.linux64.latest
+scopes:
+  - 'queue:route:index.project.socorro.breakpad.v1.builds.linux64.latest'
+payload:
+  image: 'taskcluster/desktop-build:0.1.11'
+  command:
+    - /bin/sh
+    - '-c'
+    - >-
+      curl
+      "https://raw.githubusercontent.com/${SOCORRO_FORK:=mozilla/socorro}/${SOCORRO_BRANCH:=master}/scripts/breakpad-taskcluster.sh"
+      | bash
+  artifacts:
+    public/breakpad.tar.gz:
+      type: file
+      path: /home/worker/breakpad.tar.gz
+  maxRunTime: 7200
+metadata:
+  name: Build Breakpad
+  description: Build Breakpad for Socorro consumption
+  owner: ted@mielczarek.org
+  source: 'http://tools.taskcluster.net/task-creator/'
 EOF
 
 set -v -e -x
@@ -69,7 +63,7 @@ fi
 
 # Its GCC is also ancient, use the tooltool GCC that Firefox uses.
 wget https://raw.githubusercontent.com/mozilla/build-tooltool/master/tooltool.py
-wget https://hg.mozilla.org/mozilla-central/raw-file/default/browser/config/tooltool-manifests/linux64/releng.manifest
+wget https://hg.mozilla.org/mozilla-central/raw-file/2d59367c985a/browser/config/tooltool-manifests/linux64/releng.manifest
 python tooltool.py -m releng.manifest fetch gcc.tar.xz
 export CC=`pwd`/gcc/bin/gcc
 export CXX=`pwd`/gcc/bin/g++
