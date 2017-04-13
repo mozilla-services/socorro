@@ -25,7 +25,6 @@ import socorro.external.postgresql.crashes
 import socorro.external.postgresql.products
 import socorro.external.postgresql.graphics_report
 import socorro.external.postgresql.graphics_devices
-import socorro.external.postgresql.gccrashes
 import socorro.external.postgresql.crontabber_state
 import socorro.external.postgresql.adi
 import socorro.external.postgresql.product_build_types
@@ -1131,30 +1130,6 @@ class BugzillaBugInfo(BugzillaAPI):
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
         return {'bugs': results}
-
-
-class GCCrashes(SocorroMiddleware):
-
-    cache_seconds = 60
-
-    implementation = (
-        socorro.external.postgresql.gccrashes.GCCrashes
-    )
-
-    required_params = (
-        'product',
-        'version',
-    )
-
-    possible_params = (
-        ('from_date', datetime.date),
-        ('to_date', datetime.date),
-    )
-
-    API_WHITELIST = (
-        'hits',
-        'total',
-    )
 
 
 class GraphicsDevices(SocorroMiddleware):
