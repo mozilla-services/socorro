@@ -8,6 +8,12 @@ import requests
 import pytest
 
 
+# Because there are so few crashes for these product, instead of
+# looking for crashes from the *active* versions, we'll for any
+# any recent crashes for these.
+ANY_VERSION_PRODUCTS = ('SeaMonkey',)
+
+
 class TestAPI:
 
     @pytest.mark.nondestructive
@@ -26,6 +32,9 @@ class TestAPI:
         # for a single crash for that product
         product_to_uuid = {}
         for product, versions in product_versions.items():
+            if product == ANY_VERSION_PRODUCTS:
+                # Effectively, don't filter by any particular version
+                versions = None
             response = requests.get(base_url + '/api/SuperSearch/', {
                 '_columns': ['uuid'],
                 'product': product,
