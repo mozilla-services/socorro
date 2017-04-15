@@ -36,7 +36,7 @@ pipeline {
           archiveArtifacts 'e2e-tests/results/*'
           junit 'e2e-tests/results/*.xml'
           submitToActiveData('e2e-tests/results/py27_raw.txt')
-          submitToTreeherder('socorro-tests', 'e2e', 'End-to-end integration tests', 'e2e-tests/results/*', 'e2e-tests/results/py27_tbpl.txt')
+          submitToTreeherder('socorro', 'e2e', 'End-to-end integration tests', 'e2e-tests/results/*', 'e2e-tests/results/py27_tbpl.txt')
           publishHTML(target: [
             allowMissing: false,
             alwaysLinkToLastBuild: true,
