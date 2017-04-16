@@ -177,8 +177,7 @@ class DailyURLCronApp(BaseCronApp):
         if public_out_pathname:
             self.scp_file(public_out_pathname, day, public=True)
 
-    def scp_file(self, file_path, day, public=False):
-
+    def create_command(self, file_path, day, public):
         if public:
             user = self.config.public_user
             server = self.config.public_server
@@ -190,18 +189,34 @@ class DailyURLCronApp(BaseCronApp):
             location = self.config.private_location
             ssh_command = self.config.private_ssh_command
 
+        # re-wrap the ssh command using the user and server
         if '%' in location:
             location = day.strftime(location)
 
-        if not server:
-            return
+        # if not server:
+        #     return None, ssh_command
 
         if user:
             user += '@'
 
-        command = 'scp "%s" "%s%s:%s"' % (file_path, user, server, location)
+        if server:
+            copy_command = (
+                'scp "%s" "%s%s:%s"' % (file_path, user, server, location)
+            )
+        else:
+            copy_command = 'cp "%s" "%s"' % (file_path, location)
+        if ssh_command:
+            ssh_command = 'ssh "%s%s" "%s"' % (user, server, ssh_command)
+        return copy_command, ssh_command
+
+    def scp_file(self, file_path, day, public=False):
+
+        copy_command, ssh_command = self.create_command(file_path, day, public)
+        if not copy_command:
+            return
+
         proc = subprocess.Popen(
-            command,
+            copy_command,
             shell=True,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -214,9 +229,8 @@ class DailyURLCronApp(BaseCronApp):
             )
 
         if ssh_command:
-            command = 'ssh "%s%s" "%s"' % (user, server, ssh_command)
             proc = subprocess.Popen(
-                command,
+                ssh_command,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,

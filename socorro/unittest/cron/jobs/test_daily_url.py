@@ -9,10 +9,80 @@ from subprocess import PIPE
 import mock
 from nose.tools import eq_, ok_
 from crontabber.app import CronTabber
+from crontabber.tests.base import TestCaseBase
+from configman.dotdict import DotDict
 from socorro.unittest.cron.setup_configman import (
     get_config_manager_for_crontabber,
 )
 from socorro.unittest.cron.jobs.base import IntegrationTestBase
+from socorro.cron.jobs.daily_url import DailyURLCronApp
+
+
+#==============================================================================
+class TestDailyURL(TestCaseBase):
+
+    @mock.patch('socorro.cron.jobs.daily_url.subprocess.Popen')
+    def test_create_command(self, mocked_popen):
+        cases = [
+            (
+                DotDict({
+                    "public_user": "me",
+                    "private_user": "wilma",
+                    "public_server": "some_host",
+                    "private_server": "dwight",
+                    "public_location": "overthere_%Y%m%d",
+                    "private_location": "missoula",
+                    "public_ssh_command": "",
+                    "private_ssh_command": "",
+                    "public": True,
+                }),
+                'scp "here" "me@some_host:overthere_20151031"',
+                ''
+            ),
+            (
+                DotDict({
+                    "public_user": "me",
+                    "private_user": "wilma",
+                    "public_server": "some_host",
+                    "private_server": "dwight",
+                    "public_location": "overthere_%Y%m%d",
+                    "private_location": "missoula",
+                    "public_ssh_command": "",
+                    "private_ssh_command": "",
+                    "public": False,
+                }),
+                'scp "here" "wilma@dwight:missoula"',
+                ''
+            ),
+            (
+                DotDict({
+                    "public_user": "me",
+                    "private_user": "",
+                    "public_server": "some_host",
+                    "private_server": "",
+                    "public_location": "overthere_%Y%m%d",
+                    "private_location": "missoula",
+                    "public_ssh_command": "",
+                    "private_ssh_command": "",
+                    "public": False,
+                }),
+                'cp "here" "missoula"',
+                ''
+            ),
+        ]
+
+        class MyDailyURLCronApp(DailyURLCronApp):
+            def __init__(self, config):
+                self.config = config
+
+        day = datetime.datetime(2015, 10, 31)
+
+        for i, case in enumerate(cases):
+            test_data, expected_scp_command, expected_ssh_command = case
+            daily_url_app = MyDailyURLCronApp(test_data)
+            scp, ssh = daily_url_app.create_command('here', day, test_data.public)
+            eq_(scp, expected_scp_command)
+            eq_(ssh, expected_ssh_command)
 
 
 #==============================================================================
@@ -70,6 +140,12 @@ class IntegrationTestDailyURL(IntegrationTestBase):
     def test_basic_run_job_no_data(self):
         config_manager = self._setup_config_manager()
 
+        def comm():
+            # no errors
+            return '', ''
+
+        self.Popen().communicate.side_effect = comm
+
         with config_manager.context() as config:
             tab = CronTabber(config)
             tab.run_all()
@@ -100,6 +176,23 @@ class IntegrationTestDailyURL(IntegrationTestBase):
                 eq_(f.read(), '')
             finally:
                 f.close()
+
+        cp_command = 'cp "%s" "/tmp/"' % private_path
+        self.Popen.assert_any_call(
+          cp_command,
+          stdin=PIPE, stderr=PIPE, stdout=PIPE,
+          shell=True
+        )
+
+        cp_command = 'cp "%s" "/tmp/%s/"' % (
+            public_path,
+            now.strftime('%Y-%m-%d')
+        )
+        self.Popen.assert_any_call(
+          cp_command,
+          stdin=PIPE, stderr=PIPE, stdout=PIPE,
+          shell=True
+        )
 
     def test_run_job_no_data_but_scped(self):
         config_manager = self._setup_config_manager(
@@ -133,13 +226,13 @@ class IntegrationTestDailyURL(IntegrationTestBase):
         private_path = os.path.join(self.tempdir, private)
         assert os.path.isfile(private_path)
         scp_command = 'scp "%s" "peter@secure.mozilla.org:/var/data/"' % private_path
-        ssh_command = 'ssh "peter@secure.mozilla.org" "chmod 0640 /var/data/*"'
         self.Popen.assert_any_call(
           scp_command,
           stdin=PIPE, stderr=PIPE, stdout=PIPE,
           shell=True
         )
 
+        ssh_command = 'ssh "peter@secure.mozilla.org" "chmod 0640 /var/data/*"'
         self.Popen.assert_any_call(
           ssh_command,
           stdin=PIPE, stderr=PIPE, stdout=PIPE,
@@ -180,6 +273,12 @@ class IntegrationTestDailyURL(IntegrationTestBase):
     def test_run_job_with_mocked_data(self):
         config_manager = self._setup_config_manager()
         self._insert_waterwolf_mock_data()
+
+        def comm():
+            # no errors
+            return '', ''
+
+        self.Popen().communicate.side_effect = comm
 
         with config_manager.context() as config:
             tab = CronTabber(config)
@@ -307,6 +406,12 @@ class IntegrationTestDailyURL(IntegrationTestBase):
             public_output_path=False
         )
         self._insert_waterwolf_mock_data()
+
+        def comm():
+            # no errors
+            return '', ''
+
+        self.Popen().communicate.side_effect = comm
 
         with config_manager.context() as config:
             tab = CronTabber(config)
