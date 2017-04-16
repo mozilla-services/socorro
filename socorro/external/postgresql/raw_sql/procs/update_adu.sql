@@ -56,9 +56,9 @@ FROM product_versions
         ) as prod_adu
         ON product_versions.product_name = prod_adu.product_name
         AND product_versions.version_string = prod_adu.product_version
-        AND product_versions.build_type_enum::text = prod_adu.update_channel
+        AND (prod_adu.update_channel ILIKE 'release%' OR
+             prod_adu.update_channel IN ('release', 'nightly', 'aurora'))
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type_enum IN ('release','nightly','aurora')
 GROUP BY product_version_id, os;
 
 -- insert ESRs
