@@ -4,7 +4,6 @@ import random
 import urlparse
 
 import mock
-import requests
 from nose.tools import eq_, ok_, assert_raises
 
 from django.core.cache import cache
@@ -17,6 +16,7 @@ from crashstats.crashstats import models
 
 class Response(object):
     def __init__(self, content=None, status_code=200):
+        self.raw = content
         if not isinstance(content, basestring):
             content = json.dumps(content)
         self.content = content.strip()
@@ -26,6 +26,9 @@ class Response(object):
     def text(self):
         # similar to content but with the right encoding
         return unicode(self.content, 'utf-8')
+
+    def json(self):
+        return self.raw
 
 
 class TestExceptions(TestCase):
@@ -56,14 +59,14 @@ class TestModels(DjangoTestCase):
         # once like they are in unit test running.
         models.SocorroCommon.clear_implementations_cache()
 
-    @mock.patch('requests.get')
-    def test_bugzilla_api(self, rget):
+    @mock.patch('requests.Session')
+    def test_bugzilla_api(self, rsession):
         model = models.BugzillaBugInfo
 
         api = model()
 
         def mocked_get(url, **options):
-            assert url.startswith(models.BugzillaAPI.base_url)
+            assert url.startswith(settings.BZAPI_BASE_URL)
             parsed = urlparse.urlparse(url)
             query = urlparse.parse_qs(parsed.query)
             assert query['include_fields'] == ['summary,status,id,resolution']
@@ -78,7 +81,7 @@ class TestModels(DjangoTestCase):
                 ]
             })
 
-        rget.side_effect = mocked_get
+        rsession().get.side_effect = mocked_get
         info = api.get('123456789')
         eq_(info['bugs'], [{
             'status': 'NEW',
@@ -100,7 +103,7 @@ class TestModels(DjangoTestCase):
                 ]
             })
 
-        rget.side_effect = new_mocked_get
+        rsession().get.side_effect = new_mocked_get
         info = api.get('123456789')
         eq_(info['bugs'], [{
             'status': 'NEW',
@@ -661,15 +664,15 @@ class TestModels(DjangoTestCase):
             }
         )
 
-    @mock.patch('requests.get')
-    def test_massive_querystring_caching(self, rget):
+    @mock.patch('requests.Session')
+    def test_massive_querystring_caching(self, rsession):
         # doesn't actually matter so much what API model we use
         # see https://bugzilla.mozilla.org/show_bug.cgi?id=803696
         model = models.BugzillaBugInfo
         api = model()
 
         def mocked_get(url, **options):
-            assert url.startswith(models.BugzillaAPI.base_url)
+            assert url.startswith(settings.BZAPI_BASE_URL)
             return Response({
                 'bugs': [{
                     'id': 123456789,
@@ -679,75 +682,10 @@ class TestModels(DjangoTestCase):
                 }],
             })
 
-        rget.side_effect = mocked_get
+        rsession().get.side_effect = mocked_get
         bugnumbers = [str(random.randint(10000, 100000)) for __ in range(100)]
         info = api.get(bugnumbers)
         ok_(info)
-
-    @mock.patch('crashstats.crashstats.models.time')
-    @mock.patch('requests.get')
-    def test_retry_on_connectionerror_success(self, rget, mocked_time):
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        # doesn't really matter which api we use
-        model = models.BugzillaBugInfo
-        api = model()
-
-        calls = []
-
-        def mocked_get(url, params, **options):
-            calls.append(url)
-            if len(calls) < 3:
-                raise requests.ConnectionError('unable to connect')
-            return Response({
-                'bugs': [{
-                    'id': 123456789,
-                    'status': 'NEW',
-                    'resolution': '',
-                    'summary': 'Some Summary',
-                }],
-            })
-
-        rget.side_effect = mocked_get
-        info = api.get(['987654'])
-        ok_(info['bugs'])
-
-        eq_(len(calls), 3)  # had to attempt 3 times
-        eq_(len(sleeps), 2)  # had to sleep 2 times
-
-    @mock.patch('crashstats.crashstats.models.time')
-    @mock.patch('requests.get')
-    def test_retry_on_connectionerror_failing(self, rget, mocked_time):
-        sleeps = []
-
-        def mocked_sleeper(seconds):
-            sleeps.append(seconds)
-
-        mocked_time.sleep = mocked_sleeper
-
-        # doesn't really matter which api we use
-        model = models.BugzillaBugInfo
-        api = model()
-
-        calls = []
-
-        def mocked_get(url, params, **options):
-            calls.append(url)
-            raise requests.ConnectionError('unable to connect')
-
-        rget.side_effect = mocked_get
-        assert_raises(
-            requests.ConnectionError,
-            api.get,
-            ['987654'],
-        )
-        ok_(len(calls) > 3)  # had to attempt more than 3 times
-        ok_(len(sleeps) > 2)  # had to sleep more than 2 times
 
     def test_Reprocessing(self):
         api = models.Reprocessing()

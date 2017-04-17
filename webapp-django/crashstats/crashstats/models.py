@@ -42,6 +42,7 @@ from django.utils.encoding import iri_to_uri
 from django.template.defaultfilters import slugify
 
 from crashstats import scrubber
+from crashstats.base.utils import requests_retry_session
 
 
 DEPRECATION_RAMPAGE_WARNING = (
@@ -193,6 +194,7 @@ def measure_fetches(method):
         self = args[0]
         url_or_implementation = args[1]
         if isinstance(url_or_implementation, basestring):
+            raise NotImplementedError(url_or_implementation)
             url = url_or_implementation
         else:
             url = url_or_implementation.__class__.__name__
@@ -1085,18 +1087,13 @@ class CrontabberState(SocorroMiddleware):
     API_WHITELIST = None
 
 
-class BugzillaAPI(SocorroCommon):
-    base_url = settings.BZAPI_BASE_URL
-    username = password = None
-
-
-class BugzillaBugInfo(BugzillaAPI):
-
-    # This is for the whole model.
-    cache_seconds = 0
+class BugzillaBugInfo(SocorroCommon):
 
     # This is for how long we cache the metadata of each individual bug.
     BUG_CACHE_SECONDS = 60 * 60
+
+    # How patient we are with the Bugzilla REST API
+    BUGZILLA_REST_TIMEOUT = 5  # seconds
 
     @staticmethod
     def make_cache_key(bug_id):
@@ -1122,11 +1119,19 @@ class BugzillaBugInfo(BugzillaAPI):
                 'bugs': ','.join(missing),
                 'fields': ','.join(fields),
             }
-            headers = {'Accept': 'application/json',
-                       'Content-Type': 'application/json'}
-            url = ('/bug?id=%(bugs)s&include_fields=%(fields)s' % params)
-            fetched = self.fetch(url, headers)
-            for each in fetched['bugs']:
+            headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            url = settings.BZAPI_BASE_URL + (
+                '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
+            )
+            response = requests_retry_session().get(
+                url,
+                headers=headers,
+                timeout=self.BUGZILLA_REST_TIMEOUT,
+            )
+            for each in response.json()['bugs']:
                 cache_key = self.make_cache_key(each['id'])
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
