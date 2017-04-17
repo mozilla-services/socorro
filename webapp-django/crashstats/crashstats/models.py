@@ -194,7 +194,6 @@ def measure_fetches(method):
         self = args[0]
         url_or_implementation = args[1]
         if isinstance(url_or_implementation, basestring):
-            raise NotImplementedError(url_or_implementation)
             url = url_or_implementation
         else:
             url = url_or_implementation.__class__.__name__
