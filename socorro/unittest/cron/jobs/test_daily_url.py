@@ -38,18 +38,20 @@ class IntegrationTestDailyURL(IntegrationTestBase):
         self.Popen_patcher.stop()
         super(IntegrationTestDailyURL, self).tearDown()
 
-    def _setup_config_manager(self, product='WaterWolf',
-                              output_path=None,
-                              public_output_path=None,
-                              **kwargs
-                              #version=None,
-                              #private_user='ted',
-                              #private_server='secure.mozilla.org',
-                              #private_location='/var/logs/',
-                              #public_user='bill',
-                              #public_server='ftp.mozilla.org',
-                              #public_location='/tmp/%Y%m%d/',
-                              ):
+    def _setup_config_manager(
+        self,
+        product='WaterWolf',
+        output_path=None,
+        public_output_path=None,
+        **kwargs
+        #version=None,
+        #private_user='ted',
+        #private_server='secure.mozilla.org',
+        #private_location='/var/logs/',
+        #public_user='bill',
+        #public_server='ftp.mozilla.org',
+        #public_location='/tmp/%Y%m%d/',
+    ):
         if output_path is None:
             output_path = self.tempdir
         if public_output_path is None:
@@ -85,6 +87,7 @@ class IntegrationTestDailyURL(IntegrationTestBase):
             private = now.strftime('%Y%m%d-crashdata.csv.gz')
             public = now.strftime('%Y%m%d-pub-crashdata.csv.gz')
             ok_(private in os.listdir(self.tempdir))
+            print "DDDDDDD",  os.listdir(self.tempdir)
             ok_(public in os.listdir(self.tempdir))
 
             private_path = os.path.join(self.tempdir, private)
@@ -110,9 +113,11 @@ class IntegrationTestDailyURL(IntegrationTestBase):
           private_ssh_command='chmod 0640 /var/data/*',
         )
 
-        def comm():
+        def comm(*args, **kwargs):
             # no errors
             return '', ''
+
+        print self.Popen
 
         self.Popen().communicate.side_effect = comm
 
@@ -136,13 +141,13 @@ class IntegrationTestDailyURL(IntegrationTestBase):
         ssh_command = 'ssh "peter@secure.mozilla.org" "chmod 0640 /var/data/*"'
         self.Popen.assert_any_call(
           scp_command,
-          stdin=PIPE, stderr=PIPE, stdout=PIPE,
+          stderr=PIPE, stdout=PIPE,
           shell=True
         )
 
         self.Popen.assert_any_call(
           ssh_command,
-          stdin=PIPE, stderr=PIPE, stdout=PIPE,
+          stderr=PIPE, stdout=PIPE,
           shell=True
         )
 
@@ -249,7 +254,7 @@ class IntegrationTestDailyURL(IntegrationTestBase):
         )
         self._insert_waterwolf_mock_data()
 
-        def comm():
+        def comm(*args, **kwargs):
             # some errors
             return '', "CRAP!"
 
@@ -279,7 +284,7 @@ class IntegrationTestDailyURL(IntegrationTestBase):
         # the side_effect function is called
         calls = []
 
-        def comm():
+        def comm(*args, **kwargs):
             if calls:
                 # some errors
                 return '', "CRAP!"
