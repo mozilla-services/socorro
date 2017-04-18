@@ -262,6 +262,11 @@ class TestBase(TestCase):
             [eq_(a[0], b) for a, b in zip(x, types)]
             ok_(1 not in x)
             ok_(str(x[0][1]), 'dwight')
+            ok_(
+                all(sample in str(x) for sample in
+                    ['hell', 'NameError', 'KeyError', 'AttributeError']),
+                x
+            )
 
             x[0] = x[1]
             eq_(x[0], x[1])
