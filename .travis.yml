@@ -18,16 +18,26 @@ before_install:
   - gem install puppet puppet-lint
   - ./scripts/start-travis-elasticsearch.sh
 
-install: true
+install:
+  - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
+  - psql -c 'create database socorro_test;' -U postgres
+  - psql -c 'create database socorro_integration_test;' -U postgres
+  - psql -c 'create database socorro_migration_test;' -U postgres
+  - ./scripts/clean.sh
+  - ./scripts/bootstrap.sh
 
-before_script:
-    - psql -c "create user test with encrypted password 'aPassword' superuser;" -U postgres
-    - psql -c 'create database socorro_test;' -U postgres
-    - psql -c 'create database socorro_integration_test;' -U postgres
-    - psql -c 'create database socorro_migration_test;' -U postgres
+env:
+  - TEST_SUITE=webapp
+  - TEST_SUITE=socorro
+  - TEST_SUITE=end-to-end
+  - TEST_SUITE=puppet
 
 script:
-  - ./scripts/build.sh
+  - ./scripts/build-smarter.sh $TEST_SUITE
+
+after_success:
+  - ./scripts/install.sh
+  - ./scripts/package.sh
 
 notifications:
   webhooks: http://leeroybot.lonnen.com/hubot/travis?room=%23breakpad
