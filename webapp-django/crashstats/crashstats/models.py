@@ -916,6 +916,7 @@ class RawCrash(SocorroMiddleware):
         'AdapterDriverVersion',
         'ShutdownProgress',
         'DOMIPCEnabled',
+        'TextureUsage',
     )
 
     # The reason we use the old list and pass it into the more dynamic wrapper
