@@ -177,7 +177,7 @@ NOTE - variables surrounded by @@@ are placeholders and need to be filled in app
   # You probably don't need to change these.
   MWARE_BASE_URL='http://localhost'
   MWARE_HTTP_HOST='socorro-middleware'
-  CACHE_MIDDLEWARE=True
+  CACHE_IMPLEMENTATION_FETCHES=True
   # Your default product name, e.g. "Firefox"
   DEFAULT_PRODUCT='@@@DEFAULT_PRODUCT@@@'
   # You most likely want to use memcached

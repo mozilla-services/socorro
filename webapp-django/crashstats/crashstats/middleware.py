@@ -34,7 +34,7 @@ class SetRemoteAddrFromForwardedFor(object):
 class Propagate400Errors(object):
 
     def __init__(self):
-        if not settings.PROPAGATE_MIDDLEWARE_400_ERRORS:
+        if not settings.PROPAGATE_IMPLEMENTATION_400_ERRORS:
             raise MiddlewareNotUsed
 
     def process_exception(self, request, exception):

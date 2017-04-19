@@ -311,20 +311,6 @@ EXPLOITABILITY_BATCH_SIZE = config(
     cast=int
 )
 
-# how many seconds to sleep when getting a ConnectionError
-MIDDLEWARE_RETRY_SLEEPTIME = config(
-    'MIDDLEWARE_RETRY_SLEEPTIME',
-    default=3,
-    cast=int,
-)
-
-# how many times to re-attempt on ConnectionError after some sleep
-MIDDLEWARE_RETRIES = config(
-    'MIDDLEWARE_RETRIES',
-    default=10,
-    cast=int,
-)
-
 # Default number of days a token lasts until it expires
 TOKENS_DEFAULT_EXPIRATION_DAYS = 90
 
@@ -362,7 +348,7 @@ DISPLAY_OS_NAMES = ['Windows', 'Mac OS X', 'Linux']
 
 # When this is true, every 400 Bad Request error we get from the middleware
 # is propagated onto the client who caused the request in the webapp.
-PROPAGATE_MIDDLEWARE_400_ERRORS = True
+PROPAGATE_IMPLEMENTATION_400_ERRORS = True
 
 # We don't want to test the migrations when we run tests.
 # We trust that syncdb matches what you'd get if you install
@@ -405,14 +391,9 @@ SYMBOLS_COMPRESS_EXTENSIONS = config(
 # Below are settings that can be overridden using
 # environment variables.
 
-CACHE_MIDDLEWARE = config('CACHE_MIDDLEWARE', True, cast=bool)
-
-# Socorro middleware instance to use
-MWARE_BASE_URL = config('MWARE_BASE_URL', 'http://localhost:5200')
-MWARE_USERNAME = config('MWARE_USERNAME', None)
-MWARE_PASSWORD = config('MWARE_PASSWORD', None)
-# HTTP/1.1 Host header to pass - in case this is a VHost
-MWARE_HTTP_HOST = config('MWARE_HTTP_HOST', None)
+CACHE_IMPLEMENTATION_FETCHES = config(
+    'CACHE_IMPLEMENTATION_FETCHES', True, cast=bool
+)
 
 DEFAULT_PRODUCT = config('DEFAULT_PRODUCT', 'WaterWolf')
 
