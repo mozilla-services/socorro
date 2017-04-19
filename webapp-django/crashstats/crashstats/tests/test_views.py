@@ -537,12 +537,12 @@ class TestViews(BaseTestViews):
         eq_(result['path'], url)
         eq_(result['query_string'], 'foo=bar')
 
-    @mock.patch('requests.get')
-    def test_buginfo(self, rget):
+    @mock.patch('requests.Session')
+    def test_buginfo(self, rsession):
         url = reverse('crashstats:buginfo')
 
-        def mocked_get(url, params, **options):
-            if 'bug?id=' in url:
+        def mocked_get(url, **options):
+            if 'bug?id=123,456' in url:
                 return Response({
                     'bugs': [{
                         'id': 123,
@@ -559,7 +559,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
 
-        rget.side_effect = mocked_get
+        rsession().get.side_effect = mocked_get
 
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -574,12 +574,12 @@ class TestViews(BaseTestViews):
         ok_(struct['bugs'])
         eq_(struct['bugs'][0]['summary'], 'Some Summary')
 
-    @mock.patch('requests.get')
-    def test_buginfo_with_caching(self, rget):
+    @mock.patch('requests.Session')
+    def test_buginfo_with_caching(self, rsession):
         url = reverse('crashstats:buginfo')
 
-        def mocked_get(url, params, **options):
-            if 'bug?id=' in url:
+        def mocked_get(url, **options):
+            if 'bug?id=987,654' in url:
                 return Response({
                     'bugs': [
                         {
@@ -597,7 +597,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(url)
 
-        rget.side_effect = mocked_get
+        rsession().get.side_effect = mocked_get
 
         response = self.client.get(url, {
             'bug_ids': '987,654',
