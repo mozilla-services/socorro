@@ -6,10 +6,8 @@ import datetime
 import functools
 import hashlib
 import logging
-import requests
 import time
 
-import ujson
 from configman import configuration, Namespace
 
 from socorro.lib import BadArgumentError
@@ -246,7 +244,7 @@ class SocorroCommon(object):
     @measure_fetches
     def fetch(
         self,
-        url_or_implementation,
+        implementation,
         headers=None,
         method='get',
         params=None,
@@ -257,120 +255,28 @@ class SocorroCommon(object):
         retries=None,
         retry_sleeptime=None
     ):
-        url = implementation = None
-        if isinstance(url_or_implementation, basestring):
-            url = url_or_implementation
-
-            if retries is None:
-                retries = settings.MIDDLEWARE_RETRIES
-            if retry_sleeptime is None:
-                retry_sleeptime = settings.MIDDLEWARE_RETRY_SLEEPTIME
-
-            if url.startswith('/'):
-                url = self._complete_url(url)
-
-            if not headers:
-                if self.http_host:
-                    headers = {'Host': self.http_host}
-                else:
-                    headers = {}
-
-            if self.username and self.password:
-                auth = self.username, self.password
-            else:
-                auth = ()
-
-        else:
-            implementation = url_or_implementation
-
         cache_key = None
 
-        if settings.CACHE_MIDDLEWARE and not dont_cache and self.cache_seconds:
-            if url:
-                # Prepare a fake Request object to use it to get the full URL
-                # that will be used. Needed for caching.
-                req = requests.Request(
-                    method=method.upper(),
-                    url=url,
-                    auth=auth,
-                    headers=headers,
-                    data=data,
-                    params=params,
-                ).prepare()
-                cache_key = hashlib.md5(iri_to_uri(req.url)).hexdigest()
-            else:
-                name = implementation.__class__.__name__
-                cache_key = hashlib.md5(
-                    name + unicode(params)
-                ).hexdigest()
+        if (
+            settings.CACHE_IMPLEMENTATION_FETCHES and
+            not dont_cache and
+            self.cache_seconds
+        ):
+            name = implementation.__class__.__name__
+            cache_key = hashlib.md5(
+                name + unicode(params)
+            ).hexdigest()
 
             if not refresh_cache:
                 result = cache.get(cache_key)
                 if result is not None:
-                    if url:
-                        logger.debug("CACHE HIT %s" % url)
-                    else:
-                        logger.debug(
-                            "CACHE HIT %s" % implementation.__class__.__name__
-                        )
+                    logger.debug(
+                        "CACHE HIT %s" % implementation.__class__.__name__
+                    )
                     return result, True
 
-        if url:
-            if method == 'post':
-                request_method = requests.post
-                logger.info("POSTING TO %s" % url)
-            elif method == 'get':
-                request_method = requests.get
-                logger.info("FETCHING %s" % url)
-            elif method == 'put':
-                request_method = requests.put
-                logger.info("PUTTING TO %s" % url)
-            elif method == 'delete':
-                request_method = requests.delete
-                logger.info("DELETING ON %s" % url)
-            else:
-                raise ValueError(method)
-
-            try:
-                resp = request_method(
-                    url=url,
-                    auth=auth,
-                    headers=headers,
-                    data=data,
-                    params=params,
-                )
-            except requests.ConnectionError:
-                if not retries:
-                    raise
-                # https://bugzilla.mozilla.org/show_bug.cgi?id=916886
-                time.sleep(retry_sleeptime)
-                return self.fetch(
-                    url,
-                    headers=headers,
-                    method=method,
-                    data=data,
-                    params=params,
-                    expect_json=expect_json,
-                    dont_cache=dont_cache,
-                    retry_sleeptime=retry_sleeptime,
-                    retries=retries - 1
-                )
-
-            if resp.status_code >= 400 and resp.status_code < 500:
-                raise BadStatusCodeError(resp.status_code, resp.content)
-            elif not resp.status_code == 200:
-                raise BadStatusCodeError(
-                    resp.status_code,
-                    '%s (%s)' % (resp.content, url)
-                )
-
-            result = resp.content
-            if expect_json:
-                result = ujson.loads(result)
-        else:
-            # e.g. the .get() method on that class instance
-            implementation_method = getattr(implementation, method)
-            result = implementation_method(**params)
+        implementation_method = getattr(implementation, method)
+        result = implementation_method(**params)
 
         if cache_key:
             cache.set(cache_key, result, self.cache_seconds)
@@ -424,11 +330,6 @@ class SocorroMiddleware(SocorroCommon):
     # to a PostgreSQL based implementation.
     implementation_config_namespace = 'database'
 
-    base_url = settings.MWARE_BASE_URL
-    http_host = settings.MWARE_HTTP_HOST
-    username = settings.MWARE_USERNAME
-    password = settings.MWARE_PASSWORD
-
     default_date_format = '%Y-%m-%d'
     default_datetime_format = '%Y-%m-%dT%H:%M:%S'
 
@@ -480,20 +381,9 @@ class SocorroMiddleware(SocorroCommon):
         """
         This is the generic `get` method that will take
         `self.required_params` and `self.possible_params` and construct
-        a URL using only a known prefix.
-        ALl classes that don't need to do any particular hacks, just need
-        to define a `URL_PREFIX` and (`required_params` and/or
-        `possible_params`)
+        a call to the parent `fetch` method.
         """
         implementation = self.get_implementation()
-        if implementation is not None:
-            url_or_implementation = implementation
-        else:
-            # the old-fashioned way of doing a regular middleware HTTP query
-            url = self.URL_PREFIX
-            assert url.startswith('/'), 'URL_PREFIX must start with a /'
-            assert url.endswith('/'), 'URL_PREFIX must end with a /'
-            url_or_implementation = url
 
         defaults = getattr(self, 'defaults', {})
         aliases = getattr(self, 'aliases', {})
@@ -508,7 +398,7 @@ class SocorroMiddleware(SocorroCommon):
                 del params[param]
 
         return self.fetch(
-            url_or_implementation,
+            implementation,
             params=params,
             method=method,
             dont_cache=dont_cache,

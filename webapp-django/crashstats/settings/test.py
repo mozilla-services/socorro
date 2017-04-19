@@ -11,7 +11,7 @@ example, if a test incorrectly doesn't mock `requests.get()` for
 example, it shouldn't actually try to reach out to a real valid URL.
 """
 
-CACHE_MIDDLEWARE = True
+CACHE_IMPLEMENTATION_FETCHES = True
 
 DEFAULT_PRODUCT = 'WaterWolf'
 
@@ -73,9 +73,6 @@ SOCORRO_IMPLEMENTATIONS_CONFIG = {
 # Crash-analysis monitoring.
 CRASH_ANALYSIS_URL = 'https://crashanalysis.m.c/something/'
 CRASH_ANALYSIS_MONITOR_DAYS_BACK = 2
-
-MIDDLEWARE_RETRIES = 10
-MIDDLEWARE_MIDDLEWARE_RETRY_SLEEPTIME = 3
 
 # During testing, if mocking isn't done right, we never want to
 # accidentally send data to Google Analytics.

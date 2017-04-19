@@ -46,7 +46,7 @@ class TestModels(DjangoTestCase):
     def setUp(self):
         super(TestModels, self).setUp()
         # thanks to crashstats.settings.test
-        assert settings.CACHE_MIDDLEWARE
+        assert settings.CACHE_IMPLEMENTATION_FETCHES
         cache.clear()
 
     def tearDown(self):
