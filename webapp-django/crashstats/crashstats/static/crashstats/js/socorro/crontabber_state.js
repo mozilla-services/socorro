@@ -1,7 +1,9 @@
-var margin = {top: 1, right: 20, bottom: 6, left: 10},
-    width = d3.select('#crontabber-chart').property('scrollWidth')
-            - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+var margin = {top: 1, right: 20, bottom: 6, left: 10};
+var width = d3.select('#crontabber-chart').property('scrollWidth') - margin.left - margin.right;
+var height = 500 - margin.top - margin.bottom;
+// To be obsolete it means that your next_run was more than
+// 24 hours ago.
+var longAgo = new Date(new Date() - 24 * 3600 * 1000);
 
 var format = d3.format(",.0f"),
     color = function(node) {
@@ -13,6 +15,9 @@ var format = d3.format(",.0f"),
         }
         if (node.ongoing) {
             return "#9f3774"; // pinkish
+        }
+        if (node._obsolete) {
+            return "#cfcfcf"; // light grey
         }
         return "#4DAF4A"; // green
     },
@@ -32,6 +37,9 @@ var format = d3.format(",.0f"),
         }
         if (d.ongoing) {
             return name + " is ongoing for " + moment(d.ongoing).fromNow(true);
+        }
+        if (d._obsolete) {
+            return name + " is obsolete. Last run " + moment(d.last_run).fromNow(false);
         }
         return name + " is working normally.";
     };
@@ -69,6 +77,8 @@ d3.json("/api/CrontabberState/", function(data) {
      */
     var nodes = _.map(data.state, function(v, k, l) {
         v.name = k;
+        // prefix with a _ because it's not native to the source data
+        v._obsolete = new Date(v.next_run) < longAgo;
         return v;
     });
 
@@ -131,7 +141,8 @@ d3.json("/api/CrontabberState/", function(data) {
 
     var node = svg.append('g').selectAll(".node")
         .data(nodes)
-      .enter().append('g')
+        .enter()
+        .append('g')
         .attr('class', 'node')
         .attr('transform', function(d) {
             return "translate(" + d.x + "," + d.y + ")";
@@ -149,11 +160,15 @@ d3.json("/api/CrontabberState/", function(data) {
         .style("fill", function(d) {
             return d.color = color(d);
         })
+        .style("opacity", function(d) {
+            return d.opacity = d._obsolete && 0.3 || 1.0;
+        })
         .style("stroke", function(d) {
             return d3.rgb(d.color).darker(2);
         })
       .append("title")
-        .text(title);
+        .text(title)
+        .style(color);
 
     node.append('text')
         .attr('x', -6)
@@ -205,6 +220,9 @@ d3.json("/api/CrontabberState/", function(data) {
     var tr = tbody.selectAll("tr")
         .data(nodes)
       .enter().append("tr")
+        .filter(function(node) {
+            return !node._obsolete;
+        })
         .selectAll("td")
         .data(function(d) {
             // get only the tableFields
@@ -287,6 +305,60 @@ d3.json("/api/CrontabberState/", function(data) {
     if (anyOngoing) {
         // if there are any ongoing rows, only they display the ongoing panel
         $('div.ongoing').show();
+    }
+
+
+    // now do only the obsolete jobs
+    table = d3.select('.obsolete .body').append('table');
+    thead = table.append('thead');
+    tbody = table.append('tbody');
+    tableFields = [
+        'name',
+        'last_run',
+    ];
+    var anyObsolete = false;
+
+    table.classed('data-table tablesorter', true);
+    thead.append("tr").selectAll("th")
+        .data(tableFields)
+      .enter()
+        .append("th")
+
+        .text(function capitalize(s) {
+            return s[0].toUpperCase() + s.slice(1).replace('_', ' ');
+        })
+        .classed("header", true);
+
+    tr = tbody.selectAll("tr")
+        .data(nodes)
+      .enter().append("tr")
+        .filter(function(node) {
+            if (node._obsolete) {
+                anyObsolete = true;
+                return true;
+            }
+            return false;
+        })
+        .selectAll("td")
+        .data(function(d) {
+            // get only the tableFields
+            var scrubbed = _.map(tableFields, function(field) {
+                return d[field];
+            });
+            return scrubbed;
+        })
+      .enter().append("td")
+        .text(function(d, i) {
+            field = tableFields[i];
+            if (field === 'last_run') {
+                return moment(d).fromNow(false);
+            }
+            return d;
+        });
+
+    if (anyObsolete) {
+        // if there are any ongoing rows, only they display the ongoing panel
+        $('div.obsolete').show();
     }
 
     table = d3.select('#failing').append('table');
