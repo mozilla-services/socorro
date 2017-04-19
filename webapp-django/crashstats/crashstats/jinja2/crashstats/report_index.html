@@ -686,7 +686,7 @@
                     <table class="record data-table vertical">
                         <tbody>
                             {% for key in raw_keys %}
-                            <tr title="{{ fields_desc.get('raw_crash.{}'.format(key), empty_desc) }}">
+                            <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
                                 <th scope="row">{{ key }}</th>
                                 {% if key == 'Comments' %}
                                 <td><pre>{{ raw[key] | scrub_pii }}</pre></td>

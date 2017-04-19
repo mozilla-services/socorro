@@ -1455,6 +1455,45 @@ class TestViews(BaseTestViews):
         ok_(_SAMPLE_META['Email'] not in response.content)
         ok_(_SAMPLE_META['URL'] not in response.content)
 
+    def test_report_index_with_raw_crash_unicode_key(self):
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                raw = copy.deepcopy(_SAMPLE_META)
+                raw[u'Prénom'] = 'Peter'
+                return raw
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                return copy.deepcopy(_SAMPLE_UNREDACTED)
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        # Be signed in with view_pii to avoid whitelisting
+        user = self._login()
+        group = self._create_group_with_permission('view_pii')
+        user.groups.add(group)
+        assert user.has_perm('crashstats.view_pii')
+
+        url = reverse('crashstats:report_index',
+                      args=['11cb72f5-eb28-41e1-a8e4-849982120611'])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
+        # the client output.
+        ok_(u'Prénom'.encode('utf-8') in response.content)
+
     def test_report_index_with_additional_raw_dump_links(self):
         # using \\n because it goes into the JSON string
         dump = 'OS|Mac OS X|10.6.8 10K549\\nCPU|amd64|family 6 mod|1'

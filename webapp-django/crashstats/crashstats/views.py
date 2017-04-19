@@ -955,6 +955,20 @@ def report_index(request, crash_id, default_context=None):
             field['is_exposed'] and field['name'] or 'N/A',
         )
 
+    def make_raw_crash_key(key):
+        """In the report_index.html template we need to create a key
+        that we can use to look up against the 'fields_desc' dict.
+        Because you can't do something like this in jinja::
+
+            {{ fields_desc.get(u'raw_crash.{}'.format(key), empty_desc) }}
+
+        we do it here in the function instead.
+        The trick is that the lookup key has to be a unicode object or
+        else you get UnicodeEncodeErrors in the template rendering.
+        """
+        return u'raw_crash.{}'.format(key)
+
+    context['make_raw_crash_key'] = make_raw_crash_key
     context['fields_desc'] = descriptions
     context['empty_desc'] = 'No description for this field. Search: unknown'
 
