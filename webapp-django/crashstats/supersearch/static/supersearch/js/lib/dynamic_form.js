@@ -117,6 +117,8 @@
                     setParams(initialParams);
                 }
 
+                $('.loader', container).remove();
+
                 if (onReadyCallback) {
                     onReadyCallback();
                 }
