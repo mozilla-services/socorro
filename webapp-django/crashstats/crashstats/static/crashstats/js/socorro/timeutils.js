@@ -11,10 +11,9 @@ $(function() {
     }
 
     function updateTimes() {
-        $('time.ago').each(replaceTimeTag(false));
-        $('time.in').each(replaceTimeTag(true));
+        $('time-tag.ago').each(replaceTimeTag(false));
+        $('time-tag.in').each(replaceTimeTag(true));
     }
-
     updateTimes();
     setInterval(updateTimes, 60 * 1000);
 });

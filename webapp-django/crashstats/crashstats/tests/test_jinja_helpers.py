@@ -44,7 +44,7 @@ class TestTimeTag(TestCase):
         date = datetime.datetime(2000, 1, 2, 3, 4, 5)
         output = time_tag(date)
 
-        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+        eq_(output, '<time-tag datetime="{}" class="ago">{}</time-tag>'.format(
             date.isoformat(),
             date.strftime('%a, %b %d %H:%M %Z')
         ))
@@ -53,7 +53,7 @@ class TestTimeTag(TestCase):
         date = datetime.date(2000, 1, 2)
         output = time_tag(date)
 
-        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+        eq_(output, '<time-tag datetime="{}" class="ago">{}</time-tag>'.format(
             date.isoformat(),
             date.strftime('%a, %b %d %H:%M %Z')
         ))
@@ -62,7 +62,7 @@ class TestTimeTag(TestCase):
         date = datetime.datetime(2000, 1, 2, 3, 4, 5)
         output = time_tag(date, future=True)
 
-        eq_(output, '<time datetime="{}" class="in">{}</time>'.format(
+        eq_(output, '<time-tag datetime="{}" class="in">{}</time-tag>'.format(
             date.isoformat(),
             date.strftime('%a, %b %d %H:%M %Z')
         ))
@@ -76,7 +76,7 @@ class TestTimeTag(TestCase):
         date = u'2016-09-07T00:38:42.630775+00:00'
         output = time_tag(date)
 
-        eq_(output, '<time datetime="{}" class="ago">{}</time>'.format(
+        eq_(output, '<time-tag datetime="{}" class="ago">{}</time-tag>'.format(
             '2016-09-07T00:38:42.630775+00:00',
             'Wed, Sep 07 00:38 +00:00'
         ))
