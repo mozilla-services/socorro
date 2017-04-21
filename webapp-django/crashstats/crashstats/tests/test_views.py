@@ -2324,17 +2324,6 @@ class TestViews(BaseTestViews):
         eq_(response['Content-Type'], 'application/octet-stream')
         ok_('bla bla bla' in response.content, response.content)
 
-        # dump files are cached.
-        # check the mock function and expect no change
-        def different_mocked_get(**params):
-            raise AssertionError("shouldn't be used due to caching")
-
-        models.RawCrash.implementation().get.side_effect = different_mocked_get
-
-        response = self.client.get(dump_url)
-        eq_(response.status_code, 200)
-        ok_('bla bla bla' in response.content)  # still. good.
-
     def test_raw_data_memory_report(self):
 
         crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'

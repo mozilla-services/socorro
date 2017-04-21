@@ -66,6 +66,9 @@ class ESSocorroMiddleware(models.SocorroMiddleware):
 
 class SuperSearch(ESSocorroMiddleware):
 
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1308218#c5
+    cache_seconds = 0
+
     implementation = supersearch.SuperSearch
 
     API_WHITELIST = get_api_whitelist()
