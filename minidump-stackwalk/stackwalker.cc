@@ -138,6 +138,7 @@ public:
                                               StackFrame* stack_frame) {
     SymbolizerResult res =
       StackFrameSymbolizer::FillSourceLineInfo(modules,
+                       /* unloaded_modules= */ NULL,
                                                system_info,
                                                stack_frame);
     RecordResult(stack_frame->module, res);
