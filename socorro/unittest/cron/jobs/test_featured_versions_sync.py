@@ -171,16 +171,6 @@ class IntegrationTestFeaturedVersionsSync(IntegrationTestBase):
             sorted(rows),
             [('Firefox', '15.0a1', True), ('Firefox', '24.5.0', False)]
         )
-        # and the view `product_info`...
-        rows = execute_query_fetchall(
-            self.conn,
-            'select product_name, version_string, is_featured '
-            'from product_info'
-        )
-        eq_(
-            sorted(rows),
-            [('Firefox', '15.0a1', True), ('Firefox', '24.5.0', False)]
-        )
         # This is necessary so we get a new cursor when we do other
         # selects after the crontabber app has run.
         self.conn.commit()
@@ -204,16 +194,6 @@ class IntegrationTestFeaturedVersionsSync(IntegrationTestBase):
             self.conn,
             'select product_name, version_string, featured_version '
             'from product_versions'
-        )
-        eq_(
-            sorted(rows),
-            [('Firefox', '15.0a1', False), ('Firefox', '24.5.0', True)]
-        )
-        # and the view `product_info`...
-        rows = execute_query_fetchall(
-            self.conn,
-            'select product_name, version_string, is_featured '
-            'from product_info'
         )
         eq_(
             sorted(rows),

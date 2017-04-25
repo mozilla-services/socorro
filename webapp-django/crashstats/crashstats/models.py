@@ -548,27 +548,6 @@ class Releases(SocorroMiddleware):
         return self.get_implementation().post(**data)
 
 
-class ReleasesFeatured(SocorroMiddleware):
-
-    implementation = socorro.external.postgresql.releases.ReleasesFeatured
-
-    possible_params = (
-        'products',
-    )
-
-    def put(self, **data):
-        """@data here is expected to be something like
-        {'Firefox': ['19.0', '20.0', '21.0'],
-         ...
-        """
-        payload = {}
-        for key, value in data.items():
-            if isinstance(value, list):
-                value = ','.join(value)
-            payload[key] = value
-        return self.get_implementation().put(**payload)
-
-
 class Platforms(SocorroMiddleware):
 
     implementation = socorro.external.postgresql.platforms.Platforms
