@@ -246,37 +246,34 @@ def group(request, id):
 @superuser_required
 def analyze_model_fetches(request):
     context = {}
-    measurements = []
-    for label, value_type in (('API', 'classes'), ('URLS', 'urls')):
-        all = cache.get('all_%s' % value_type) or []
-        records = []
-        for item in all:
-            itemkey = hashlib.md5(item.encode('utf-8')).hexdigest()
+    all_ = cache.get('all_classes') or []
+    records = []
+    for item in all_:
+        itemkey = hashlib.md5(item.encode('utf-8')).hexdigest()
 
-            data = {}
-            data['times'] = {}
-            data['times']['hits'] = cache.get('times_HIT_%s' % itemkey, 0)
-            data['times']['misses'] = cache.get('times_MISS_%s' % itemkey, 0)
-            data['times']['both'] = (
-                data['times']['hits'] + data['times']['misses']
-            )
-            data['uses'] = {}
-            data['uses']['hits'] = cache.get('uses_HIT_%s' % itemkey, 0)
-            data['uses']['misses'] = cache.get('uses_MISS_%s' % itemkey, 0)
-            data['uses']['both'] = (
-                data['uses']['hits'] + data['uses']['misses']
-            )
-            data['uses']['hits_percentage'] = (
-                data['uses']['both'] and
-                round(
-                    100.0 * data['uses']['hits'] / data['uses']['both'],
-                    1
-                ) or
-                'n/a'
-            )
-            records.append((item, data))
-        measurements.append([label, value_type, records])
-    context['measurements'] = measurements
+        data = {}
+        data['times'] = {}
+        data['times']['hits'] = cache.get('times_HIT_%s' % itemkey, 0)
+        data['times']['misses'] = cache.get('times_MISS_%s' % itemkey, 0)
+        data['times']['both'] = (
+            data['times']['hits'] + data['times']['misses']
+        )
+        data['uses'] = {}
+        data['uses']['hits'] = cache.get('uses_HIT_%s' % itemkey, 0)
+        data['uses']['misses'] = cache.get('uses_MISS_%s' % itemkey, 0)
+        data['uses']['both'] = (
+            data['uses']['hits'] + data['uses']['misses']
+        )
+        data['uses']['hits_percentage'] = (
+            data['uses']['both'] and
+            round(
+                100.0 * data['uses']['hits'] / data['uses']['both'],
+                1
+            ) or
+            'n/a'
+        )
+        records.append((item, data))
+    context['records'] = records
     return render(request, 'manage/analyze-model-fetches.html', context)
 
 
