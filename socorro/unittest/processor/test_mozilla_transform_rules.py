@@ -433,33 +433,6 @@ class TestAddonsRule(TestCase):
         return processor_meta
 
     #--------------------------------------------------------------------------
-    def test_addon_split_or_warn(self):
-        config = self.get_basic_config()
-
-        test_list = (
-            "part1:part2",
-            "part1-with-no-part2"
-        )
-        expected_output = (
-            (('part1', 'part2'), []),
-            (
-                ('part1-with-no-part2', ''),
-                ['add-on "part1-with-no-part2" is a bad name and/or version']
-            )
-        )
-        an_addon_rule_instance = AddonsRule(config)
-        for test_input, (expected_result, expected_notes) in zip(
-            test_list, expected_output
-        ):
-            processor_notes = []
-            result = an_addon_rule_instance._addon_split_or_warn(
-                test_input,
-                processor_notes
-            )
-            eq_(result, expected_result)
-            eq_(processor_notes, expected_notes)
-
-    #--------------------------------------------------------------------------
     def test_action_nothing_unexpected(self):
         config = self.get_basic_config()
 
@@ -478,17 +451,17 @@ class TestAddonsRule(TestCase):
         eq_(raw_dumps, {})
 
         expected_addon_list = [
-            ('adblockpopups@jessehakanen.net', '0.3'),
-            ('dmpluginff@westbyte.com', '1,4.8'),
-            ('firebug@software.joehewitt.com', '1.9.1'),
-            ('killjasmin@pierros14.com', '2.4'),
-            ('support@surfanonymous-free.com', '1.0'),
-            ('uploader@adblockfilters.mozdev.org', '2.1'),
-            ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
-            ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
-            ('anttoolbar@ant.com', '2.4.6.4'),
-            ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
-            ('elemhidehelper@adblockplus.org', '1.2.1')
+            'adblockpopups@jessehakanen.net:0.3',
+            'dmpluginff@westbyte.com:1,4.8',
+            'firebug@software.joehewitt.com:1.9.1',
+            'killjasmin@pierros14.com:2.4',
+            'support@surfanonymous-free.com:1.0',
+            'uploader@adblockfilters.mozdev.org:2.1',
+            '{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107',
+            '{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3',
+            'anttoolbar@ant.com:2.4.6.4',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0',
+            'elemhidehelper@adblockplus.org:1.2.1',
         ]
         eq_(processed_crash.addons, expected_addon_list)
         ok_(processed_crash.addons_checked)
@@ -509,7 +482,7 @@ class TestAddonsRule(TestCase):
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = [
-            ('adblockpopups@jessehakanen.net', '0:3:1'),
+            'adblockpopups@jessehakanen.net:0:3:1',
         ]
         eq_(processed_crash.addons, expected_addon_list)
         ok_(not processed_crash.addons_checked)
@@ -529,7 +502,7 @@ class TestAddonsRule(TestCase):
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = [
-            ('naoenut813teq;mz;<[`19ntaotannn8999anxse `', ''),
+            'naoenut813teq;mz;<[`19ntaotannn8999anxse `',
         ]
         eq_(processed_crash.addons, expected_addon_list)
         ok_(processed_crash.addons_checked)
