@@ -366,11 +366,6 @@ All products must have one or more releases:
 
 http://crash-stats/admin/releases/
 
-The new releases should be "featured" so they are
-used as defaults and show up in all reports:
-
-http://crash-stats/admin/featured-versions/
-
 Make sure to restart memcached so you see your changes right away:
 ::
   sudo systemctl restart memcached

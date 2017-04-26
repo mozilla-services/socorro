@@ -312,12 +312,6 @@ PIPELINE_JS = {
         ),
         'output_filename': 'js/manage-events.min.js',
     },
-    'manage:featured_versions': {
-        'source_filenames': (
-            'manage/js/featured-versions.js',
-        ),
-        'output_filename': 'js/manage-featured-versions.min.js',
-    },
     'manage:graphics_devices': {
         'source_filenames': (
             'manage/js/graphics_devices.js',
