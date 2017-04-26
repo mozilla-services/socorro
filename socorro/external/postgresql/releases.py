@@ -6,103 +6,13 @@ import logging
 import psycopg2
 
 from socorro.lib import (
-    DatabaseError,
     MissingArgumentError,
     external_common,
 )
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.external.postgresql.products import ProductVersions
 from .dbapi2_util import execute_no_results, single_row_sql
 
 logger = logging.getLogger("webapi")
-
-
-class ReleasesFeatured(PostgreSQLBase):
-
-    """
-    Implement the /releases service with PostgreSQL.
-    """
-
-    def get(self, **kwargs):
-        """Return a list of featured versions for one, several or all products.
-        """
-        filters = [
-            ("products", None, ["list", "str"]),
-        ]
-        params = external_common.parse_arguments(filters, kwargs)
-
-        sql = """
-            SELECT
-                product_name AS product,
-                version_string AS version
-            FROM product_info
-            WHERE is_featured = true
-        """
-        sql_params = {}
-
-        if params.products and params.products[0]:
-            sql += " AND product_name IN %(product)s"
-            sql_params['product'] = tuple(params.products)
-
-        error_message = "Failed to retrieve featured versions from PostgreSQL"
-        sql_results = self.query(sql, sql_params, error_message=error_message)
-
-        hits = {}
-        total = 0
-
-        for version in sql_results.zipped():
-            total += 1
-            if version['product'] not in hits:
-                hits[version['product']] = [version['version']]
-            else:
-                hits[version['product']].append(version['version'])
-
-        return {
-            "total": total,
-            "hits": hits
-        }
-
-    def put(self, **kwargs):
-        """Update lists of featured versions. """
-        product_versions = ProductVersions(config=self.context).get()['hits']
-        products_list = set(x['product'] for x in product_versions)
-        releases = {}
-
-        for p in kwargs:
-            if p in products_list:
-                if isinstance(kwargs[p], basestring):
-                    # Assuming `,` for now, see
-                    # https://bugzilla.mozilla.org/show_bug.cgi?id=787233
-                    releases[p] = kwargs[p].split(',')
-                else:
-                    releases[p] = kwargs[p]
-
-        if len(releases) == 0:
-            return False
-
-        sql = """/* socorro.external.postgresql.releases.update_featured */
-            SELECT edit_featured_versions(%%s, %s)
-        """
-        error_message = "Failed updating featured versions in PostgreSQL"
-
-        with self.get_connection() as connection:
-            try:
-                with connection.cursor() as cursor:
-                    for p in releases:
-                        query = sql % ", ".join(
-                            "%s" for i in xrange(len(releases[p]))
-                        )
-                        sql_params = [p] + releases[p]
-                        # logger.debug(cursor.mogrify(query, sql_params))
-                        cursor.execute(query, sql_params)
-
-                connection.commit()
-            except psycopg2.Error:
-                connection.rollback()
-                logger.error(error_message)
-                raise DatabaseError(error_message)
-
-        return True
 
 
 class Releases(PostgreSQLBase):

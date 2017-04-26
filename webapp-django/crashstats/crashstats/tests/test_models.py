@@ -367,23 +367,6 @@ class TestModels(DjangoTestCase):
         r = api.get(crash_id='some-crash-id', format='raw', name='other')
         eq_(r, '\xe0\xe0')
 
-    def test_put_featured_versions(self):
-        model = models.ReleasesFeatured
-        api = model()
-
-        def mocked_put(**params):
-            eq_(params['WaterWolf'], '18.0,19.0')
-            eq_(params['NightTrain'], '1,2')
-            return True
-
-        model.implementation().put.side_effect = mocked_put
-
-        r = api.put(**{
-            'WaterWolf': ['18.0', '19.0'],
-            'NightTrain': ['1', '2']
-        })
-        eq_(r, True)
-
     def test_create_release(self):
         model = models.Releases
         api = model()

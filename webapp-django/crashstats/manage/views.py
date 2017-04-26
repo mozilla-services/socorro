@@ -21,7 +21,6 @@ from eventlog.models import log, Log
 from crashstats.crashstats.models import (
     ProductVersions,
     Releases,
-    ReleasesFeatured,
     GraphicsDevices,
     Platforms,
     Reprocessing,
@@ -89,54 +88,6 @@ def notice_change(before, after):
 def home(request, default_context=None):
     context = default_context or {}
     return render(request, 'manage/home.html', context)
-
-
-@superuser_required
-def featured_versions(request, default_context=None):
-    context = default_context or {}
-
-    api = ProductVersions()
-    api.cache_seconds = 0
-    product_versions = api.get(active=True)['hits']
-
-    releases = collections.OrderedDict()
-    for pv in product_versions:
-        if pv['product'] not in releases:
-            releases[pv['product']] = []
-        releases[pv['product']].append(pv)
-    context['releases'] = releases
-    return render(request, 'manage/featured_versions.html', context)
-
-
-@superuser_required
-@require_POST
-def update_featured_versions(request):
-    api = ProductVersions()
-    products = set(
-        x['product'] for x in api.get()['hits']
-    )
-
-    data = {}
-    for product in request.POST:
-        if product in products:
-            data[product] = request.POST.getlist(product)
-
-    featured_api = ReleasesFeatured()
-    success = featured_api.put(**data)
-    if success:
-        messages.success(
-            request,
-            'Featured versions successfully updated. '
-            'Cache might take some time to update.'
-        )
-
-    log(request.user, 'featured_versions.update', {
-        'data': data,
-        'success': success
-    })
-
-    url = reverse('manage:featured_versions')
-    return redirect(url)
 
 
 @superuser_required

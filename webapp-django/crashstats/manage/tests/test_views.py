@@ -1,7 +1,6 @@
 import json
 import datetime
 import os
-import re
 import urlparse
 
 from django.core.urlresolvers import reverse
@@ -105,8 +104,6 @@ class TestViews(BaseTestViews):
         eq_(response.status_code, 200)
 
         # certain links on that page
-        featured_versions_url = reverse('manage:featured_versions')
-        ok_(featured_versions_url in response.content)
         fields_url = reverse('manage:supersearch_fields')
         ok_(fields_url in response.content)
         users_url = reverse('manage:users')
@@ -121,97 +118,6 @@ class TestViews(BaseTestViews):
         home_url = reverse('manage:home')
         response = self.client.get(home_url)
         eq_(response.status_code, 302)
-
-    def test_featured_versions(self):
-        user = self._login()
-        url = reverse('manage:featured_versions')
-
-        put_calls = []  # some mutable
-
-        def mocked_releases_featured_put(**params):
-            put_calls.append(params)
-            return True
-
-        models.ReleasesFeatured.implementation().put.side_effect = (
-            mocked_releases_featured_put
-        )
-
-        def mocked_product_versions(**params):
-            today = datetime.date.today()
-            tomorrow = today + datetime.timedelta(days=1)
-
-            hits = [
-                {
-                    'product': 'WaterWolf',
-                    'is_featured': True,
-                    'throttle': 90.0,
-                    'end_date': tomorrow,
-                    'product': 'WaterWolf',
-                    'release': 'Nightly',
-                    'version': '19.0.1',
-                    'has_builds': True,
-                    'start_date': today,
-                },
-                {
-                    'product': 'WaterWolf',
-                    'is_featured': False,
-                    'throttle': 33.333,
-                    'end_date': today,
-                    'product': 'WaterWolf',
-                    'release': 'Nightly',
-                    'version': '18.0.1',
-                    'has_builds': True,
-                    'start_date': today,
-                },
-            ]
-            return {
-                'hits': hits,
-                'total': len(hits),
-            }
-
-        models.ProductVersions.implementation().get.side_effect = (
-            mocked_product_versions
-        )
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('19.0.1' in response.content)
-        ok_('18.0.1' in response.content)
-
-        # also, note how the percentages are written out
-        # (know thy fixtures)
-        ok_('90%' in response.content)
-        ok_('33.3%' in response.content)
-
-        input_regex = re.compile('<input .*?>', re.M | re.DOTALL)
-        checkboxes = [
-            x for x in
-            input_regex.findall(response.content)
-            if 'type="checkbox"' in x
-        ]
-        eq_(len(checkboxes), 2)
-        checkboxes_by_value = dict(
-            (re.findall('value="(.*)"', x)[0], x)
-            for x in checkboxes
-        )
-        ok_('checked' in checkboxes_by_value['19.0.1'])
-        ok_('checked' not in checkboxes_by_value['18.0.1'])
-
-        # post in a change
-        update_url = reverse('manage:update_featured_versions')
-        response = self.client.post(update_url, {
-            'WaterWolf': '18.0.1'
-        })
-        eq_(response.status_code, 302)
-        put_call = put_calls[0]
-        eq_(put_call['WaterWolf'], '18.0.1')
-
-        # check that it got logged
-        event, = Log.objects.all()
-        eq_(event.user, user)
-        eq_(event.action, 'featured_versions.update')
-        eq_(event.extra['success'], True)
-        eq_(event.extra['data'], {'WaterWolf': ['18.0.1']})
 
     def test_users_page(self):
         url = reverse('manage:users')
