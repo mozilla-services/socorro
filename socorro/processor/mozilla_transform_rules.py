@@ -166,18 +166,6 @@ class AddonsRule(Rule):
         return '1.0'
 
     #--------------------------------------------------------------------------
-    @staticmethod
-    def _addon_split_or_warn(addon_pair, processor_notes):
-        addon_splits = addon_pair.split(':', 1)
-        if len(addon_splits) == 1:
-            processor_notes.append(
-                'add-on "%s" is a bad name and/or version' %
-                addon_pair
-            )
-            addon_splits.append('')
-        return tuple(unquote_plus(x) for x in addon_splits)
-
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.addons_checked = None
@@ -212,11 +200,7 @@ class AddonsRule(Rule):
                         'AddonsRule: trying to split addons'
                     )
                 processed_crash.addons = [
-                    self._addon_split_or_warn(
-                        x,
-                        processor_meta.processor_notes
-                    )
-                    for x in original_addon_str.split(',')
+                    unquote_plus(x) for x in original_addon_str.split(',')
                 ]
             if self.config.chatty:
                 self.config.logger.debug(
