@@ -33,7 +33,9 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <ostream>
+#include <regex>
 #include <vector>
 #include <set>
 #include <cstdlib>
@@ -97,6 +99,9 @@ using google_breakpad::SymbolSupplier;
 using google_breakpad::SystemInfo;
 using breakpad_extra::HTTPSymbolSupplier;
 
+using std::map;
+using std::regex;
+using std::sregex_iterator;
 using std::string;
 using std::vector;
 using std::ifstream;
@@ -634,10 +639,37 @@ static string ExploitabilityString(ExploitabilityRating exploitability) {
   return str;
 }
 
+// Parse crash annotation "ThreadIdNameMapping" and return a map of
+// thread id -> thread name.
+static map<uint32_t, string> GetThreadIdNameMap(const Json::Value& raw_root)
+{
+  map<uint32_t, string> result {};
+
+  string input = raw_root.get("ThreadIdNameMapping", "").asString();
+  if (input.empty()) {
+    return result;
+  }
+
+  // Sample input: 23534:"Timer",23535:"Link Monitor",
+  auto pat = R"str((\d+):"([^"]+?)",)str"; // Raw string: (\d+):"([^"]+?)",
+  regex matcher{pat};
+
+  for (sregex_iterator i{input.begin(), input.end(), matcher};
+       i != sregex_iterator{};
+       ++i) {
+    const string threadIdStr = (*i)[1];
+    uint32_t threadId = strtoul(threadIdStr.c_str(), NULL, 10);
+    result[threadId] = (*i)[2];
+  }
+
+  return result;
+}
+
 static void ConvertProcessStateToJSON(const ProcessState& process_state,
                                       const StackFrameSymbolizerForward& symbolizer,
                                       const HTTPSymbolSupplier* supplier,
-                                      Json::Value& root) {
+                                      Json::Value& root,
+                                      const Json::Value& raw_root) {
   // OS and CPU information.
   Json::Value system_info;
   system_info["os"] = process_state.system_info()->os;
@@ -673,6 +705,8 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     root["main_module"] = main_module;
   root["modules"] = modules;
 
+  auto threadIdNameMap = std::move(GetThreadIdNameMap(raw_root));
+
   Json::Value threads(Json::arrayValue);
   int thread_count = process_state.threads()->size();
   root["thread_count"] = thread_count;
@@ -687,6 +721,10 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     }
     thread["frames"] = stack;
     thread["frame_count"] = stack.size();
+    auto thread_name = threadIdNameMap[raw_stack->tid()];
+    if (!thread_name.empty()) {
+      thread["thread_name"] = thread_name;
+    }
     threads.append(thread);
   }
   root["threads"] = threads;
@@ -704,6 +742,10 @@ static void ConvertProcessStateToJSON(const ProcessState& process_state,
     crashing_thread["frames"] = stack;
     crashing_thread["total_frames"] =
       static_cast<Json::UInt>(crashing_stack->frames()->size());
+    auto thread_name = threadIdNameMap[crashing_stack->tid()];
+    if (!thread_name.empty()) {
+      crashing_thread["thread_name"] = thread_name;
+    }
     root["crashing_thread"] = crashing_thread;
   }
 
@@ -1189,7 +1231,7 @@ int main(int argc, char** argv)
   root["sensitive"] = Json::Value(Json::objectValue);
   if (result == google_breakpad::PROCESS_OK) {
     ConvertProcessStateToJSON(process_state, symbolizer,
-                              http_symbol_supplier, root);
+                              http_symbol_supplier, root, raw_root);
   }
   ConvertMemoryInfoToJSON(minidump, raw_root, root);
 
