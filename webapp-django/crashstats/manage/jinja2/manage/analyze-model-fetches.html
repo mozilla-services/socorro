@@ -19,17 +19,10 @@
 {% block mainbody %}
 <div class="panel">
     <div class="body">
-
-        <ul class="only-filter">
-            <li><a href="#" class="only-classes">Only API Classes</a></li>
-            <li><a href="#" class="only-urls">Only URLs</a></li>
-            <li><a href="#" class="selected both">Both</a></li>
-        </ul>
-
         <table class="data-table vertical analysis tablesorter">
             <thead>
                 <tr>
-                    <th rowspan="2">API / URL</th>
+                    <th rowspan="2">API Class</th>
                     <th colspan="4" class="{sorter: false}"># Uses</th>
                     <th colspan="3" class="{sorter: false}">Times (sec)</th>
                 </tr>
@@ -44,9 +37,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for label, value_type, records in measurements %}
                 {% for item, info in records %}
-                <tr class="type-{{ value_type}} {{ loop.cycle('odd', 'even') }}">
+                <tr class="{{ loop.cycle('odd', 'even') }}">
                     <td>{{ truncatechars(item, 150) }}</td>
                     <td>{{ info['uses']['hits'] }}</td>
                     <td>{{ info['uses']['hits_percentage'] }}</td>
@@ -56,7 +48,6 @@
                     <td>{{ info['times']['misses'] | msec2sec }}</td>
                     <td>{{ info['times']['both'] | msec2sec }}</td>
                 </tr>
-                {% endfor %}
                 {% endfor %}
             </tbody>
         </table>

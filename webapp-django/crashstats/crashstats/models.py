@@ -189,30 +189,24 @@ def measure_fetches(method):
             return result
         t1 = time.time()
         self = args[0]
-        url_or_implementation = args[1]
-        if isinstance(url_or_implementation, basestring):
-            url = url_or_implementation
-        else:
-            url = url_or_implementation.__class__.__name__
         msecs = int((t1 - t0) * 1000)
         hit_or_miss = 'HIT' if hit_or_miss else 'MISS'
 
         try:
-            groups = (('classes', self.__class__.__name__), ('urls', url))
-            for value_type, value in groups:
-                key = 'all_%s' % value_type
-                all = cache.get(key) or []
-                if value not in all:
-                    all.append(value)
-                    cache.set(key, all, 60 * 60 * 24)
+            value = self.__class__.__name__
+            key = 'all_classes'
+            all_ = cache.get(key) or []
+            if value not in all_:
+                all_.append(value)
+                cache.set(key, all_, 60 * 60 * 24)
 
-                valuekey = hashlib.md5(value.encode('utf-8')).hexdigest()
-                for prefix, incr in (('times', msecs), ('uses', 1)):
-                    key = '%s_%s_%s' % (prefix, hit_or_miss, valuekey)
-                    try:
-                        cache.incr(key, incr)
-                    except ValueError:
-                        cache.set(key, incr, 60 * 60 * 24)
+            valuekey = hashlib.md5(value.encode('utf-8')).hexdigest()
+            for prefix, incr in (('times', msecs), ('uses', 1)):
+                key = '%s_%s_%s' % (prefix, hit_or_miss, valuekey)
+                try:
+                    cache.incr(key, incr)
+                except ValueError:
+                    cache.set(key, incr, 60 * 60 * 24)
         except Exception:
             logger.error('Unable to collect model fetches data', exc_info=True)
         finally:
