@@ -599,7 +599,7 @@
 
                     {% if parsed_dump.threads %}
                     <div id="frames">
-                        <h2>Crashing Thread ({{ crashing_thread }})</h2>
+                        <h2>Crashing Thread ({{ crashing_thread }}){% if parsed_dump.threads[crashing_thread].thread_name %}, Name: {{ parsed_dump.threads[crashing_thread].thread_name }}{% endif %}</h2>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -641,7 +641,7 @@
                         <div id="allthreads">
                             {% for thread in parsed_dump.threads %}
                             {% if thread.thread != crashing_thread %}
-                            <h2>Thread {{ thread.thread }}</h2>
+                            <h2>Thread {{ thread.thread }}{% if thread.thread_name %}, Name: {{ thread.thread_name }}{% endif %}</h2>
                             <table class="data-table">
                                 <thead>
                                     <tr>
