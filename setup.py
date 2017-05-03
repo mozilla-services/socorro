@@ -24,7 +24,7 @@ setup(
     version='master',
     description=('Socorro is a server to accept and process Breakpad'
                  ' crash reports.'),
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     author='Mozilla',
     author_email='socorro-dev@mozilla.com',
     license='MPL',
