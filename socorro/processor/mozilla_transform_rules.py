@@ -1113,5 +1113,5 @@ class ThemePrettyNameRule(Rule):
                         (self.conversions[extension], version)
                     )
             elif addon in self.conversions:
-                addons[index] = self.conversions[addons]
+                addons[index] = self.conversions[addon]
         return True

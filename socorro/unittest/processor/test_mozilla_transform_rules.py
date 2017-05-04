@@ -2229,12 +2229,14 @@ class TestThemePrettyNameRule(TestCase):
 
         processed_crash.addons = [
             'addon_with_no_version',
-            '{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd}',
+            'elemhidehelper@adblockplus.org:1.2.1',
         ]
         rule.act({}, {}, processed_crash, processor_meta)
 
         expected_addon_list = [
             'addon_with_no_version',
-            '{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme):12.0',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme)',
+            'elemhidehelper@adblockplus.org:1.2.1',
         ]
         eq_(processed_crash.addons, expected_addon_list)

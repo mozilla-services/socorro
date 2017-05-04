@@ -99,13 +99,13 @@ class Rule(RequiredConfig):
                 to_str(self.__class__),
                 x,
             )
-        except Exception, x:
-            self.config.logger.debug(
-                'Rule %s action failed because of "%s"',
-                to_str(self.__class__),
-                x,
-                exc_info=True
-            )
+        # except Exception, x:
+        #     self.config.logger.debug(
+        #         'Rule %s action failed because of "%s"',
+        #         to_str(self.__class__),
+        #         x,
+        #         exc_info=True
+        #     )
         return False
 
     #--------------------------------------------------------------------------
