@@ -1089,11 +1089,11 @@ class ThemePrettyNameRule(Rule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        '''addons is a list of tuples containing (extension, version)'''
+        '''addons is a list of string like 'extension:version'. '''
         addons = processed_crash.get('addons', [])
 
         for addon in addons:
-            extension, version = addon.split(':', 1)
+            extension = addon.split(':')[0]
             if extension in self.conversions:
                 return True
         return False
@@ -1103,9 +1103,12 @@ class ThemePrettyNameRule(Rule):
         addons = processed_crash.addons
 
         for index, addon in enumerate(addons):
-            extension, version = addon.split(':', 1)
-            if extension in self.conversions:
-                addons[index] = ':'.join(
-                    (self.conversions[extension], version)
-                )
+            if ':' in addon:
+                extension, version = addon.split(':', 1)
+                if extension in self.conversions:
+                    addons[index] = ':'.join(
+                        (self.conversions[extension], version)
+                    )
+            elif addon in self.conversions:
+                addons[index] = self.conversions[addons]
         return True

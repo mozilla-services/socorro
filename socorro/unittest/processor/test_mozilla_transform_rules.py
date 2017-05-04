@@ -2218,3 +2218,23 @@ class TestThemePrettyNameRule(TestCase):
         ]
         res = rule._predicate({}, {}, processed_crash, processor_meta)
         ok_(not res)
+
+    #--------------------------------------------------------------------------
+    def test_with_malformed_addons_field(self):
+        config = self.get_basic_config()
+        rule = ThemePrettyNameRule(config)
+
+        processed_crash = DotDict()
+        processor_meta = self.get_basic_processor_meta()
+
+        processed_crash.addons = [
+            'addon_with_no_version',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0',
+        ]
+        rule.act({}, {}, processed_crash, processor_meta)
+
+        expected_addon_list = [
+            'addon_with_no_version',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme):12.0',
+        ]
+        eq_(processed_crash.addons, expected_addon_list)
