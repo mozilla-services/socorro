@@ -113,6 +113,7 @@ nsEventQueue::GetEvent
 nsThread::nsChainedEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::.*
+nsINode::Slots
 nsJSThingHashtable<.*>::.*
 nsObjCExceptionLogAbort
 nsRefPtr.*
