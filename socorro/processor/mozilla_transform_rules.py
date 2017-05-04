@@ -1089,7 +1089,10 @@ class ThemePrettyNameRule(Rule):
 
     #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
-        '''addons is a list of string like 'extension:version'. '''
+        '''addons is expected to be a list of strings like 'extension:version',
+        but we are being overly cautious and consider the case where they
+        lack the ':version' part, because user inputs are never reliable.
+        '''
         addons = processed_crash.get('addons', [])
 
         for addon in addons:
