@@ -1,0 +1,5 @@
+.git
+**/*.swp
+**/*.pyc
+.vagrant
+Vagrantfile

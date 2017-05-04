@@ -46,3 +46,6 @@ primaryCrashStore/
 processedCrashStore/
 /tags
 e2e-tests/.cache/
+
+# docker things
+.docker-build

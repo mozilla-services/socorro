@@ -32,3 +32,23 @@ breakpad:
 
 json_enhancements_pg_extension: bootstrap
 	./scripts/json-enhancements.sh
+
+
+# Docker related rules
+
+.PHONY: dockerbuild dockershell dockerclean
+
+DC := $(shell which docker-compose)
+
+.docker-build:
+	make dockerbuild
+
+dockerbuild:
+	${DC} build base
+	touch .docker-build
+
+dockershell: .docker-build
+	${DC} run base bash
+
+dockerclean:
+	rm .docker-build

@@ -1,0 +1,11 @@
+# docker-compose for Socorro development.
+#
+# Note: Requires docker XXX and docker-comopse 1.10+.
+version: "2"
+services:
+  # This builds the base image that service images extend.
+  base:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    image: local/socorro_base
