@@ -2158,17 +2158,17 @@ class TestThemePrettyNameRule(TestCase):
         rule = ThemePrettyNameRule(config)
 
         processed_crash.addons = [
-            ('adblockpopups@jessehakanen.net', '0.3'),
-            ('dmpluginff@westbyte.com', '1,4.8'),
-            ('firebug@software.joehewitt.com', '1.9.1'),
-            ('killjasmin@pierros14.com', '2.4'),
-            ('support@surfanonymous-free.com', '1.0'),
-            ('uploader@adblockfilters.mozdev.org', '2.1'),
-            ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
-            ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
-            ('anttoolbar@ant.com', '2.4.6.4'),
-            ('{972ce4c6-7e08-4474-a285-3208198ce6fd}', '12.0'),
-            ('elemhidehelper@adblockplus.org', '1.2.1')
+            'adblockpopups@jessehakanen.net:0.3',
+            'dmpluginff@westbyte.com:1,4.8',
+            'firebug@software.joehewitt.com:1.9.1',
+            'killjasmin@pierros14.com:2.4',
+            'support@surfanonymous-free.com:1.0',
+            'uploader@adblockfilters.mozdev.org:2.1',
+            '{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107',
+            '{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3',
+            'anttoolbar@ant.com:2.4.6.4',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0',
+            'elemhidehelper@adblockplus.org:1.2.1',
         ]
 
         # the call to be tested
@@ -2179,18 +2179,17 @@ class TestThemePrettyNameRule(TestCase):
         eq_(raw_dumps, {})
 
         expected_addon_list = [
-            ('adblockpopups@jessehakanen.net', '0.3'),
-            ('dmpluginff@westbyte.com', '1,4.8'),
-            ('firebug@software.joehewitt.com', '1.9.1'),
-            ('killjasmin@pierros14.com', '2.4'),
-            ('support@surfanonymous-free.com', '1.0'),
-            ('uploader@adblockfilters.mozdev.org', '2.1'),
-            ('{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}', '20111107'),
-            ('{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}', '2.0.3'),
-            ('anttoolbar@ant.com', '2.4.6.4'),
-            ('{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme)',
-             '12.0'),
-            ('elemhidehelper@adblockplus.org', '1.2.1')
+            'adblockpopups@jessehakanen.net:0.3',
+            'dmpluginff@westbyte.com:1,4.8',
+            'firebug@software.joehewitt.com:1.9.1',
+            'killjasmin@pierros14.com:2.4',
+            'support@surfanonymous-free.com:1.0',
+            'uploader@adblockfilters.mozdev.org:2.1',
+            '{a0d7ccb3-214d-498b-b4aa-0e8fda9a7bf7}:20111107',
+            '{d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d}:2.0.3',
+            'anttoolbar@ant.com:2.4.6.4',
+            '{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme):12.0',
+            'elemhidehelper@adblockplus.org:1.2.1',
         ]
         eq_(processed_crash.addons, expected_addon_list)
 
@@ -2214,8 +2213,8 @@ class TestThemePrettyNameRule(TestCase):
 
         # Test with key missing from list.
         processed_crash.addons = [
-            ('adblockpopups@jessehakanen.net', '0.3'),
-            ('dmpluginff@westbyte.com', '1,4.8'),
+            'adblockpopups@jessehakanen.net:0.3',
+            'dmpluginff@westbyte.com:1,4.8',
         ]
         res = rule._predicate({}, {}, processed_crash, processor_meta)
         ok_(not res)

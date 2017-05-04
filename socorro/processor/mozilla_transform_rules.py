@@ -1092,7 +1092,8 @@ class ThemePrettyNameRule(Rule):
         '''addons is a list of tuples containing (extension, version)'''
         addons = processed_crash.get('addons', [])
 
-        for extension, version in addons:
+        for addon in addons:
+            extension, version = addon.split(':', 1)
             if extension in self.conversions:
                 return True
         return False
@@ -1101,7 +1102,10 @@ class ThemePrettyNameRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         addons = processed_crash.addons
 
-        for index, (extension, version) in enumerate(addons):
+        for index, addon in enumerate(addons):
+            extension, version = addon.split(':', 1)
             if extension in self.conversions:
-                addons[index] = (self.conversions[extension], version)
+                addons[index] = ':'.join(
+                    (self.conversions[extension], version)
+                )
         return True
