@@ -32,7 +32,11 @@ def urlencode_obj(thing):
     return res.replace('+', '%20')
 
 
-def requests_retry_session(retries=3, backoff_factor=0.3):
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=None,
+):
     """Opinionated wrapper that creates a requests session with a
     HTTPAdapter that sets up a Retry policy that includes connection
     retries.
@@ -51,6 +55,15 @@ def requests_retry_session(retries=3, backoff_factor=0.3):
     A default of retries=3 and backoff_factor=0.3 means it will sleep like::
 
         [0.3, 0.6, 1.2]
+
+    Optionally you can pass in a list of status codes that you consider
+    worthy of retries (just like a ConnectionError). For example::
+
+        session = requests_retry_session(status_forcelist=(500, 502))
+        session.get(...)
+
+    Now, if the server responds with one of these errors, the session
+    will just try again.
     """  # noqa
     session = requests.Session()
     retry = Retry(
@@ -58,6 +71,7 @@ def requests_retry_session(retries=3, backoff_factor=0.3):
         read=retries,
         connect=retries,
         backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)

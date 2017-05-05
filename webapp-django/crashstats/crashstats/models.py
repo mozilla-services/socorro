@@ -55,6 +55,10 @@ class DeprecatedModelError(DeprecationWarning):
     """Used when a deprecated model is being used in debug mode"""
 
 
+class BugzillaRestHTTPUnexpectedError(Exception):
+    """Happens Bugzilla's REST API doesn't give us a HTTP error we expect"""
+
+
 def config_from_configman():
     definition_source = Namespace()
     definition_source.namespace('logging')
@@ -987,11 +991,20 @@ class BugzillaBugInfo(SocorroCommon):
             url = settings.BZAPI_BASE_URL + (
                 '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
             )
-            response = requests_retry_session().get(
+            response = requests_retry_session(
+                # BZAPI isn't super reliable, so be extra patient
+                retries=5,
+                # 502 = Bad Gateway
+                # 504 = Gateway Time-out
+                status_forcelist=(500, 502, 504),
+            ).get(
                 url,
                 headers=headers,
                 timeout=self.BUGZILLA_REST_TIMEOUT,
             )
+            if response.status_code != 200:
+                raise BugzillaRestHTTPUnexpectedError(response.status_code)
+
             for each in response.json()['bugs']:
                 cache_key = self.make_cache_key(each['id'])
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
