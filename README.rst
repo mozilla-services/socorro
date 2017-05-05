@@ -2,8 +2,8 @@
 Socorro
 =======
 
-Socorro is a set of services for collecting, processing, and displaying crash
-reports from clients using the `Breakpad libraries
+Socorro is a Mozilla-centric set of services for collecting, processing, and
+displaying crash reports from clients using the `Breakpad libraries
 <http://code.google.com/p/google-breakpad/>`_.
 
 
@@ -11,9 +11,13 @@ Support
 =======
 
 This is a very Mozilla-specific product. We do not currently have the capacity
-to support external users. If you are looking to use Socorro for your product,
-maybe you want to consider alternatives like `electron/mini-breakpad-server
-<https://github.com/electron/mini-breakpad-server>`_.
+to support external users.
+
+If you are looking to use Socorro for your product, maybe you want to consider
+alternatives:
+
+* `electron/mini-breakpad-server <https://github.com/electron/mini-breakpad-server>`_
+* `wk8/sentry_breakpad <https://github.com/wk8/sentry_breakpad>`_
 
 
 May 3rd, 2017 Update
@@ -70,4 +74,4 @@ Development
 
 Current deployment status: https://whatsdeployed.io/s-7M7
 
-Infrastructure (AWS) code: https://github.com/mozilla/socorro-infra
+Mozilla-centric Infrastructure (AWS) code: https://github.com/mozilla/socorro-infra
