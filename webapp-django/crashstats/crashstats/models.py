@@ -987,11 +987,19 @@ class BugzillaBugInfo(SocorroCommon):
             url = settings.BZAPI_BASE_URL + (
                 '/bug?id=%(bugs)s&include_fields=%(fields)s' % params
             )
-            response = requests_retry_session().get(
+            response = requests_retry_session(
+                # BZAPI isn't super reliable, so be extra patient
+                retries=5,
+                # 502 = Bad Gateway
+                # 504 = Gateway Time-out
+                status_forcelist=(500, 502, 504),
+            ).get(
                 url,
                 headers=headers,
                 timeout=self.BUGZILLA_REST_TIMEOUT,
             )
+            # Better fail here than getting a JsonDecodeError on the next line.
+            assert response.status_code == 200, response.status_code
             for each in response.json()['bugs']:
                 cache_key = self.make_cache_key(each['id'])
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
