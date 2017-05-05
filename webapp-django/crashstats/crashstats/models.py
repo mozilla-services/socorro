@@ -55,6 +55,10 @@ class DeprecatedModelError(DeprecationWarning):
     """Used when a deprecated model is being used in debug mode"""
 
 
+class BugzillaRestHTTPUnexpectedError(Exception):
+    """Happens Bugzilla's REST API doesn't give us a HTTP error we expect"""
+
+
 def config_from_configman():
     definition_source = Namespace()
     definition_source.namespace('logging')
@@ -998,8 +1002,9 @@ class BugzillaBugInfo(SocorroCommon):
                 headers=headers,
                 timeout=self.BUGZILLA_REST_TIMEOUT,
             )
-            # Better fail here than getting a JsonDecodeError on the next line.
-            assert response.status_code == 200, response.status_code
+            if response.status_code != 200:
+                raise BugzillaRestHTTPUnexpectedError(response.status_code)
+
             for each in response.json()['bugs']:
                 cache_key = self.make_cache_key(each['id'])
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)

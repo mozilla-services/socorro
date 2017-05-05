@@ -112,6 +112,22 @@ class TestModels(DjangoTestCase):
             'summary': 'Some summary'
         }])
 
+    @mock.patch('requests.Session')
+    def test_bugzilla_api_bad_status_code(self, rsession):
+        model = models.BugzillaBugInfo
+
+        api = model()
+
+        def mocked_get(url, **options):
+            return Response("I'm a teapot", status_code=418)
+
+        rsession().get.side_effect = mocked_get
+        assert_raises(
+            models.BugzillaRestHTTPUnexpectedError,
+            api.get,
+            '123456789'
+        )
+
     def test_processed_crash(self):
         model = models.ProcessedCrash
         api = model()
