@@ -48,7 +48,13 @@ dockerbuild:
 	touch .docker-build
 
 dockershell: .docker-build
-	${DC} run base bash
+	${DC} run --service-ports --entrypoint bash base
 
 dockerclean:
 	rm .docker-build
+
+dockertest:
+	${DC} run test /app/docker/run_test.sh
+
+dockerrun:
+	${DC} up processor

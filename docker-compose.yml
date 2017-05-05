@@ -1,11 +1,89 @@
 # docker-compose for Socorro development.
 #
-# Note: Requires docker XXX and docker-comopse 1.10+.
+# Note: Requires docker-comopse 1.10+.
 version: "2"
 services:
-  # This builds the base image that service images extend.
+  # This builds the base image that service images extend
   base:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
     image: local/socorro_base
+    volumes:
+      - .:/app
+
+  test:
+    image: local/socorro_base
+    environment:
+      # postgres things for tests
+      - database_url=postgres://postgres:aPassword@postgresql:5432/socorro_integration_test
+      - database_hostname=postgresql
+      - database_port=5432
+      - database_username=postgres
+      - database_password=aPassword
+      - database_superusername=postgres
+      - database_superuserpassword=aPassword
+
+      # postgres things for alembic
+      - sqlalchemy.url=postgresql://postgres:aPassword@postgresql:5432/socorro_migration_test
+
+      # rabbitmq things
+      - resource.rabbitmq.host=rabbitmq
+      - resource.rabbitmq.virtual_host=rabbitvhost
+      - secrets.rabbitmq.rabbitmq_user=rabbituser
+      - secrets.rabbitmq.rabbitmq_password=rabbitpwd
+
+      # elasticsearch things
+      - elasticsearch_url=http://elasticsearch:9200
+      - resource.elasticsearch.elasticsearch_urls=http://elasticsearch:9200
+      - resource.elasticsearch.elasticSearchHostname=elasticsearch
+    depends_on:
+      # - statsd -- FIXME(willkg): broken for some reason
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+    volumes:
+      - .:/app
+
+  # Build a processor image
+  processor:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.processor
+    image: local/socorro_processor
+
+  # -----------------------------
+  # External services
+  # -----------------------------
+
+  # https://hub.docker.com/r/kamon/grafana_graphite/
+  # username: admin, password: admin
+  statsd:
+    image: kamon/grafana_graphite
+    ports:
+      - "8080:3000"  # grafana port
+
+  # https://hub.docker.com/_/elasticsearch/
+  # Note: This image is deprecated, but the new one requires fiddling.
+  elasticsearch:
+    image: elasticsearch:1.4.5
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  # https://hub.docker.com/_/rabbitmq/
+  rabbitmq:
+    image: rabbitmq:3.6.9
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbituser
+      - RABBITMQ_DEFAULT_PASS=rabbitpwd
+      - RABBITMQ_DEFAULT_VHOST=rabbitvhost
+
+  # https://hub.docker.com/_/postgres/
+  postgresql:
+    image: postgres:9.4
+    environment:
+      # Create the superuser account
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=aPassword
+      - POSTGRES_DB=breakpad

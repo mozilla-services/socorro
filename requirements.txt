@@ -315,3 +315,6 @@ configparser==3.5.0 \
 django_csp==3.1 \
     --hash=sha256:9208219c341ddbe371b5fd217ced0c916a5e2f7184bc603415074afcace6b51c \
     --hash=sha256:b3fed21f5cae56763119abc93c0ee43d897e39a597ed99b2ca617ff6e4b595fc
+urlwait==0.4 \
+    --hash=sha256:fc39ff2c8abbcaad5043e1f79699dcb15a036cc4b0ff4d1aa825ea105d4889ff \
+    --hash=sha256:395fc0c2a7f9736858a2c2f449aa20c6e9da1f86bfc2d1fda4f2f5b78a5c115a

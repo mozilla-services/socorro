@@ -21,9 +21,6 @@ RUN pip install -U 'pip>=8' && \
 # This is relative to docker/base/Dockerfile
 COPY . /app/
 
-# Install Socorro in the container so we pick up the console script
-RUN cd /app/ && pip install -e .
-
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 
