@@ -21,7 +21,7 @@ else:
 main(
     # we use the generic Socorro App class. We'll rely on configuration to set
     # the 'application' class object to the appropriate collector_app class
-    # for example, it could be "CollectorApp" or "Collector2015App"
+    # for example, it could be "CollectorApp"
     SocorroWelcomeApp,
     config_path=config_path,
     values_source_list=[
