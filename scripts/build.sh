@@ -14,8 +14,6 @@ echo "this is build.sh"
 
 ./scripts/test.sh
 
-./scripts/integration-test.sh --destroy
-
 ./scripts/install.sh
 
 ./scripts/package.sh

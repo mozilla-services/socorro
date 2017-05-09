@@ -205,8 +205,8 @@ Transactions.
 socorro.external.postgresql.setupdb_app
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This is used by the `Makefile`, ``\*-integration-test.sh`` and ``build.sh`` to
-create a test database from scratch.
+This is used by the `Makefile` and ``build.sh`` to create a test database
+from scratch.
 
 socorro.external.postgresql.models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
