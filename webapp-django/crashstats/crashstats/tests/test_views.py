@@ -2284,6 +2284,60 @@ class TestViews(BaseTestViews):
         correct_url = reverse('crashstats:report_index', args=[base_crash_id])
         self.assertRedirects(response, correct_url)
 
+    def test_report_index_with_thread_name(self):
+        """Some threads now have a name. If there is one, verify that name is
+        displayed next to that thread's number.
+        """
+        crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
+        json_dump = {
+            'crash_info': {
+                'crashing_thread': 1,
+            },
+            'thread_count': 2,
+            'threads': [{
+                'frame_count': 0,
+                'frames': [],
+                'thread_name': 'I am a Regular Thread',
+            }, {
+                'frame_count': 0,
+                'frames': [],
+                'thread_name': 'I am a Crashing Thread',
+            }],
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                return copy.deepcopy(_SAMPLE_META)
+
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash['json_dump'] = json_dump
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        url = reverse('crashstats:report_index', args=[crash_id])
+
+        response = self.client.get(url)
+        ok_(
+            'Crashing Thread (1), Name: I am a Crashing Thread' in
+            response.content
+        )
+        ok_('Thread 0, Name: I am a Regular Thread' in response.content)
+
     def test_raw_data(self):
 
         def mocked_get(**params):
