@@ -771,14 +771,15 @@
                         </thead>
                         <tbody>
                             {% for addon in report.addons %}
+                            {% set split = addon.split(':') %}
                             <tr>
                                 <td>
                                     <a href=""></a>
                                 </td>
-                                <td>{{ addon[0] }}</td>
-                                <td>{{ addon[1] }}</td>
+                                <td>{{ split[0] }}</td>
+                                <td>{{ split[1] }}</td>
                                 <td>
-                                    <strong>{{ addon[2] }}</strong>
+                                    <strong>{{ split[2] }}</strong>
                                 </td>
                             </tr>
                             {% endfor %}
