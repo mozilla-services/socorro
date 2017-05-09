@@ -14,8 +14,12 @@ echo "this is build.sh"
 
 ./scripts/test.sh
 
-./scripts/integration-test.sh --destroy
+time ./scripts/integration-test.sh --destroy
 
-./scripts/install.sh
+echo ""
+echo "THE INTEGRATION TEST HAS FINISHED"
+echo ""
 
-./scripts/package.sh
+#./scripts/install.sh
+
+#./scripts/package.sh
