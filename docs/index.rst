@@ -45,18 +45,18 @@ backwards compatible. A couple of weeks ago, we (Mozilla) extracted the
 collector out of Socorro into a separate repository. Because of that, we're
 going to start removing code.
 
-If you rely on that collector, the last good commit sha is `55beaf1
-<https://github.com/mozilla/socorro/commit/55beaf1281e7b522e0526b2aa2bf74d15f6c1263>`_.
+If you rely on that collector, the last good release is `270
+<https://github.com/mozilla/socorro/releases/tag/270>`_.
 
 You can get it with something like this::
 
     git clone https://github.com/mozilla/socorro
-    git checkout 55beaf1
+    git checkout 270
 
 
  Or get the tarball::
 
-    wget https://github.com/mozilla/socorro/archive/55beaf1.tar.gz
+    wget https://github.com/mozilla/socorro/archive/270.tar.gz
 
 
 Contents
