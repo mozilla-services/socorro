@@ -337,7 +337,11 @@ class SearchBase(object):
         marked_for_deletion = []
         for index, process_type in enumerate(parameters['process_type']):
             if 'browser' in process_type.value:
-                process_type.value.remove('browser')
+                # `process_type.value` can be a string or a list of strings.
+                try:
+                    process_type.value.remove('browser')
+                except AttributeError:
+                    process_type.value = ''
 
                 if not process_type.value:
                     marked_for_deletion.append(process_type)

@@ -72,8 +72,8 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
     },
     'process_type': {
         'name': 'process_type',
-        'data_validation_type': 'enum',
-        'query_type': 'enum',
+        'data_validation_type': 'str',
+        'query_type': 'string',
         'namespace': 'processed_crash',
         'permissions_needed': [],
         'default_value': None,
@@ -152,7 +152,7 @@ class TestSearchBase(TestCase):
         args = {
             'signature': '~js',
             'product': ['WaterWolf', 'NightTrain'],
-            'process_type': '=crash',
+            'hang_type': '=hang',
         }
         params = search.get_parameters(**args)
         eq_(params['signature'][0].operator, '~')
@@ -163,7 +163,7 @@ class TestSearchBase(TestCase):
             params['product'][0].value,
             ['WaterWolf', 'NightTrain']
         )
-        eq_(params['process_type'][0].operator, '')
+        eq_(params['hang_type'][0].operator, '')
 
         args = {
             'signature': ['~Mark', '$js'],
@@ -299,6 +299,16 @@ class TestSearchBase(TestCase):
 
         args = {
             'process_type': 'browser'
+        }
+        params = search.get_parameters(**args)
+        ok_('process_type' in params)
+        eq_(len(params['process_type']), 1)
+        eq_(params['process_type'][0].value, [''])
+        eq_(params['process_type'][0].operator, '__null__')
+        eq_(params['process_type'][0].operator_not, False)
+
+        args = {
+            'process_type': '=browser'
         }
         params = search.get_parameters(**args)
         ok_('process_type' in params)
