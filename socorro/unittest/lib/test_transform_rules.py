@@ -2,8 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
+
 from nose.tools import eq_, ok_, assert_raises
-from mock import Mock
+from mock import Mock, MagicMock, patch
 
 from configman.dotdict import DotDict
 from configman import Namespace
@@ -586,6 +588,74 @@ class TestTransformRules(TestCase):
         eq_(r3.act(), (True, False))
         ok_(fake_config.logger.debug.called)
         fake_config.logger.debug.reset_mock()
+
+    @patch('socorro.lib.transform_rules.raven')
+    def test_rule_exceptions_send_to_sentry(self, mock_raven):
+
+        captured_exceptions = []  # a global
+
+        def mock_capture_exception():
+            exc_info = sys.exc_info()
+            captured_exceptions.append(exc_info[1])
+            return 'someidentifier'
+
+        client = MagicMock()
+
+        def mock_Client(**config):
+            if config['dsn'] == 'Not a valid DSN but truish':
+                raise Exception('Bad DSN!')
+            client.config = config
+            client.captureException.side_effect = mock_capture_exception
+            return client
+
+        mock_raven.Client.side_effect = mock_Client
+
+        fake_config = DotDict()
+        fake_config.logger = Mock()
+        fake_config.chatty_rules = False
+        fake_config.chatty = False
+        fake_config.sentry = DotDict()
+
+        class SomeError(Exception):
+            pass
+
+        class BadPredicate(transform_rules.Rule):
+            def _predicate(self, *args, **kwargs):
+                raise SomeError("highwater")
+
+        eq_(BadPredicate(fake_config).predicate(), False)
+        fake_config.logger.warning.assert_called_with(
+            'Raven DSN is not configured and an exception happened'
+        )
+
+        fake_config.sentry.dsn = 'Not a valid DSN but truish'
+        eq_(BadPredicate(fake_config).predicate(), False)
+        # This happens because the DSN is not valid, so raven
+        # immediately rejects it.
+        fake_config.logger.error.assert_called_with(
+            'Unable to report error with Raven',
+            exc_info=True,
+        )
+
+        fake_config.sentry.dsn = (
+            'https://6e48583:e484@sentry.example.com/01'
+        )
+        eq_(BadPredicate(fake_config).predicate(), False)
+        fake_config.logger.info.assert_called_with(
+            'Error captured in Sentry! Reference: someidentifier'
+        )
+        assert len(captured_exceptions) == 1
+        exc = captured_exceptions[0]
+        ok_(isinstance(exc, SomeError))
+
+        class BadAction(transform_rules.Rule):
+            def _action(self, *args, **kwargs):
+                raise SomeError("highwater")
+
+        eq_(BadAction(fake_config).action(), False)
+        assert len(captured_exceptions) == 2
+        exc = captured_exceptions[1]
+        ok_(isinstance(exc, SomeError))
 
     def test_rules_in_config(self):
         config = DotDict()
