@@ -4,7 +4,6 @@
 
 import datetime
 import json
-import time
 
 import requests_mock
 from nose.tools import assert_raises, eq_, ok_
@@ -1886,9 +1885,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
 
     @minimum_es_version('1.0')
     def test_get_with_zero(self):
-        # !FIXME Wait for Elasticsearch to be ready.
-        time.sleep(0.1)
-
         res = self.api.get(
             _results_number=0,
         )
@@ -1905,9 +1901,6 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
     @minimum_es_version('1.0')
     @requests_mock.Mocker(real_http=True)
     def test_get_with_failing_shards(self, mock_requests):
-        # !FIXME Wait for Elasticsearch to be ready.
-        time.sleep(0.1)
-
         # Test with one failing shard.
         es_results = {
             'hits': {
