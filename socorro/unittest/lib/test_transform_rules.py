@@ -657,6 +657,52 @@ class TestTransformRules(TestCase):
         exc = captured_exceptions[1]
         ok_(isinstance(exc, SomeError))
 
+    @patch('socorro.lib.transform_rules.raven')
+    def test_rule_exceptions_send_to_sentry_with_crash_id(self, mock_raven):
+
+        def mock_capture_exception():
+            return 'someidentifier'
+
+        client = MagicMock()
+        extras = []
+
+        def mock_context_merge(context):
+            extras.append(context['extra'])
+
+        def mock_Client(**config):
+            client.config = config
+            client.context.merge.side_effect = mock_context_merge
+            client.captureException.side_effect = mock_capture_exception
+            return client
+
+        mock_raven.Client.side_effect = mock_Client
+
+        fake_config = DotDict()
+        fake_config.logger = Mock()
+        fake_config.chatty_rules = False
+        fake_config.chatty = False
+        fake_config.sentry = DotDict()
+        fake_config.sentry.dsn = (
+            'https://6e48583:e484@sentry.example.com/01'
+        )
+
+        class BadPredicate(transform_rules.Rule):
+            def _predicate(self, *args, **kwargs):
+                raise NameError("highwater")
+
+        p = BadPredicate(fake_config)
+        raw_crash = {'uuid': 'ABC123'}
+        eq_(p.predicate(raw_crash), False)
+        fake_config.logger.info.assert_called_with(
+            'Error captured in Sentry! Reference: someidentifier'
+        )
+
+        # When the client was created and the extra context
+        # merged, we can expect that it included a tag and a crash_id
+        assert len(extras) == 1
+        eq_(extras[0]['tag'], 'predicate')
+        eq_(extras[0]['crash_id'], 'ABC123')
+
     def test_rules_in_config(self):
         config = DotDict()
         config.chatty_rules = False

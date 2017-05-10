@@ -54,7 +54,7 @@ class Rule(RequiredConfig):
         self.config = config
         self.quit_check_callback = quit_check_callback
 
-    def _send_to_sentry(self, tag, *args, **kwargs):
+    def _send_to_sentry(self, tag, func, *args, **kwargs):
         """Execute this when an exception has happened only.
         If self.config.sentry.dsn is set up, it will try to send it
         to Sentry. If not configured, nothing happens.
@@ -70,6 +70,7 @@ class Rule(RequiredConfig):
                 'tag': tag,  # this can 'predicate' or 'action'
             }
 
+            args = inspect.getcallargs(func, *args, **kwargs)['args']
             # For every crash acted on, it's always
             # act(raw_crash, ...) etc.
             # But be defensive in case the first argument isn't there,
@@ -115,7 +116,12 @@ class Rule(RequiredConfig):
         try:
             return self._predicate(*args, **kwargs)
         except Exception as exception:
-            if not self._send_to_sentry('predicate', *args, **kwargs):
+            if not self._send_to_sentry(
+                'predicate',
+                self.predicate,
+                *args,
+                **kwargs
+            ):
                 # Only log if it couldn't be sent to Sentry
                 self.config.logger.debug(
                     'Rule %s predicicate failed because of "%s"',
@@ -146,21 +152,18 @@ class Rule(RequiredConfig):
         classification system itself."""
         try:
             return self._action(*args, **kwargs)
-        except KeyError, x:
-            if not self._send_to_sentry('action', *args, **kwargs):
-                # Only log if it couldn't be sent to Sentry
-                self.config.logger.debug(
-                    'Rule %s action failed because of missing key "%s"',
-                    to_str(self.__class__),
-                    x,
-                )
-        except Exception, x:
-            if not self._send_to_sentry('action', *args, **kwargs):
+        except Exception as exception:
+            if not self._send_to_sentry(
+                'action',
+                self.action,
+                *args,
+                **kwargs
+            ):
                 # Only log if it couldn't be sent to Sentry
                 self.config.logger.debug(
                     'Rule %s action failed because of "%s"',
                     to_str(self.__class__),
-                    x,
+                    exception,
                     exc_info=True
                 )
         return False
