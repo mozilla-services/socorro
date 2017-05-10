@@ -8,11 +8,9 @@ from collections import Sequence
 
 from socorro.cron.crontabber_app import CronTabber
 from socorro.lib.util import SilentFakeLogger
-from socorro.webapi.servers import WebServerBase
 
 from configman import (
     Namespace,
-    class_converter,
     ConfigurationManager,
     environment
 )
