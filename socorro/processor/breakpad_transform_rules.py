@@ -695,9 +695,12 @@ class JitCrashCategorizeRule(ExternalProcessRule):
             # we don't want any of these
             return False
 
-        if processed_crash.json_dump['crashing_thread']['frames'][0].get(
-            'module',
-            False
+        if (
+            'crashing_thread' in processed_crash.json_dump and
+            processed_crash.json_dump['crashing_thread']['frames'][0].get(
+                'module',
+                False
+            )
         ):  # there is a module at the top of the stack, we don't want this
             return False
 
