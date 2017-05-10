@@ -100,10 +100,8 @@ class FetchTransformSaveApp(App):
         'set_default' method with 'force=True'"""
 
         return {
-            'source.crashstorage_class':
-            'socorro.external.fs.crashstorage.FSPermanentStorage',
-            'destination.crashstorage_class':
-            'socorro.external.fs.crashstorage.FSPermanentStorage',
+            'source.crashstorage_class': 'socorro.external.fs.crashstorage.FSRadixTreeStorage',
+            'destination.crashstorage_class': 'socorro.external.fs.crashstorage.FSRadixTreeStorage',
         }
 
     #--------------------------------------------------------------------------

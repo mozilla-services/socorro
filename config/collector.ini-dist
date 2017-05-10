@@ -183,12 +183,12 @@
     #redactor_class=socorro.external.crashstorage_base.Redactor
 
     # a comma delimited list of storage classes
-    storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
+    storage_classes='socorro.external.fs.crashstorage.FSTemporaryStorage, socorro.external.rabbitmq.crashstorage.RabbitMQCrashStorage'
 
     [[storage0]]
 
         # None
-        crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage
+        crashstorage_class=socorro.external.fs.crashstorage.FSTemporaryStorage
 
         # the default dump field
         # see "resource.fs.dump_field" for the default or override it here

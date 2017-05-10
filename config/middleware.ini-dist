@@ -199,7 +199,7 @@
     #dump_file_suffix=.dump
 
     # None
-    #filesystem_class=socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage
+    #filesystem_class=socorro.external.fs.crashstorage.FSRadixTreeStorage
 
     # a list of keys not allowed in a redacted processed crash
     # see "resource.redactor.forbidden_keys" for the default or override it here

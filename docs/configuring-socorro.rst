@@ -50,7 +50,7 @@ Now, configure processor:
 .. code-block:: bash
 
     new_crash_source__crashstorage_class='socorro.external.fs.crashstorage.FSDatedPermanentStorage'
-    source__crashstorage_class='socorro.external.fs.crashstorage.FSPermanentStorage'
+    source__crashstorage_class='socorro.external.fs.crashstorage.FSRadixTreeStorage'
     new_crash_source__new_crash_source_class='socorro.external.fs.fs_new_crash_source.FSNewCrashSource'
 
 Put this into a file named "processor.conf" in your socorro-config folder.
@@ -198,9 +198,9 @@ ElasticSearch:
   # Store the crash in multiple locations
   destination__crashstorage_class='socorro.external.crashstorage_base.PolyCrashStorage'
   # Specify crash storage types which will be used
-  destination__storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.es.crashstorage.ESCrashStorage'
+  destination__storage_classes='socorro.external.fs.crashstorage.FSRadixTreeStorage, socorro.external.es.crashstorage.ESCrashStorage'
   # Store in the filesystem first (by default this is ~socorro/crashes/)
-  destination__storage0__crashstorage_class='socorro.external.fs.crashstorage.FSPermanentStorage'
+  destination__storage0__crashstorage_class='socorro.external.fs.crashstorage.FSRadixTreeStorage'
   # Store in Elasticsearch second
   destination__storage1__crashstorage_class='socorro.external.es.crashstorage.ESCrashStorage'
 

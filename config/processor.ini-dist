@@ -181,12 +181,12 @@
     #redactor_class=socorro.external.crashstorage_base.Redactor
 
     # a comma delimited list of storage classes
-    storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
+    storage_classes='socorro.external.fs.crashstorage.FSRadixTreeStorage, socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
 
     [[storage0]]
 
         # None
-        crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage
+        crashstorage_class=socorro.external.fs.crashstorage.FSRadixTreeStorage
 
         # the default dump field
         # see "resource.fs.dump_field" for the default or override it here
@@ -512,7 +512,7 @@
 [source]
 
     # the source storage class
-    crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage
+    crashstorage_class=socorro.external.fs.crashstorage.FSRadixTreeStorage
 
     # the default dump field
     # see "resource.fs.dump_field" for the default or override it here

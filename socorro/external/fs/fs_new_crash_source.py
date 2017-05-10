@@ -16,8 +16,7 @@ class FSNewCrashSource(RequiredConfig):
     required_config.add_option(
         'crashstorage_class',
         doc='the source storage class',
-        default='socorro.external.fs.crashstorage'
-                '.FSLegacyDatedRadixTreeStorage',
+        default='socorro.external.fs.crashstorage.FSRadixTreeStorage',
         from_string_converter=class_converter
     )
 

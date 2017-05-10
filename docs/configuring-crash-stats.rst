@@ -104,13 +104,13 @@ as well as PostgreSQL:
   # Store the crash in multiple locations
   destination__crashstorage_class='socorro.external.crashstorage_base.PolyCrashStorage'
   # Specify crash storage types which will be used
-  destination__storage_classes='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.fs.crashstorage.FSPermanentStorage'
+  destination__storage_classes='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage, socorro.external.es.crashstorage.ESCrashStorage, socorro.external.fs.crashstorage.FSRadixTreeStorage'
   # Store in PostgreSQL first
   destination__storage0__crashstorage_class='socorro.external.postgresql.crashstorage.PostgreSQLCrashStorage'
   # Store in Elasticsearch second
   destination__storage1__crashstorage_class='socorro.external.es.crashstorage.ESCrashStorage'
   # Store in filesystem third (by default this is ~socorro/crashes/)
-  destination__storage2__crashstorage_class='socorro.external.fs.crashstorage.FSPermanentStorage'
+  destination__storage2__crashstorage_class='socorro.external.fs.crashstorage.FSRadixTreeStorage'
 
 Put this into a file named "processor.conf" in your socorro-config folder.
 
