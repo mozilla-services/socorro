@@ -232,7 +232,7 @@ class Processor2015(RequiredConfig):
                     raw_crash,
                     raw_dumps,
                     processed_crash,
-                    processor_meta_data
+                    processor_meta_data,
                 )
                 self.quit_check()
 
@@ -240,15 +240,15 @@ class Processor2015(RequiredConfig):
             # raised, call it a success.
             processed_crash.success = True
 
-        except Exception, x:
+        except Exception as exception:
             self.config.logger.warning(
                 'Error while processing %s: %s',
                 crash_id,
-                str(x),
+                str(exception),
                 exc_info=True
             )
             processor_meta_data.processor_notes.append(
-                'unrecoverable processor error: %s' % x
+                'unrecoverable processor error: %s' % exception
             )
 
         # the processor notes are in the form of a list.  Join them all
@@ -296,4 +296,3 @@ class Processor2015(RequiredConfig):
                 # guess we don't need to close that rule
                 pass
         self.config.logger.debug('done closing rules')
-

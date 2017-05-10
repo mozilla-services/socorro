@@ -3,9 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import re
-import configman
 import collections
 import inspect
+
+import raven
+import configman
 
 from configman import RequiredConfig, Namespace
 from configman.dotdict import DotDict
@@ -47,11 +49,61 @@ class Rule(RequiredConfig):
         default=False,
     )
 
-
     #--------------------------------------------------------------------------
     def __init__(self, config=None, quit_check_callback=None):
         self.config = config
         self.quit_check_callback = quit_check_callback
+
+    def _send_to_sentry(self, tag, func, *args, **kwargs):
+        """Execute this when an exception has happened only.
+        If self.config.sentry.dsn is set up, it will try to send it
+        to Sentry. If not configured, nothing happens.
+        """
+        try:
+            dsn = self.config.sentry.dsn
+        except KeyError:
+            # if self.config is not a DotDict, we can't access the sentry.dsn
+            dsn = None
+        if dsn:
+            extra = {
+                'class': self.__class__.__name__,
+                'tag': tag,  # this can 'predicate' or 'action'
+            }
+
+            args = inspect.getcallargs(func, *args, **kwargs)['args']
+            # For every crash acted on, it's always
+            # act(raw_crash, ...) etc.
+            # But be defensive in case the first argument isn't there,
+            # isn't a dict or doesn't have a 'uuid'.
+            if args and isinstance(args[0], collections.Mapping):
+                crash_id = args[0].get('uuid')
+                if crash_id:
+                    extra['crash_id'] = crash_id
+
+            try:
+                client = raven.Client(dsn=dsn)
+                client.context.activate()
+                client.context.merge({'extra': extra})
+                try:
+                    identifier = client.captureException()
+                    self.config.logger.info(
+                        'Error captured in Sentry! '
+                        'Reference: {}'.format(
+                            identifier
+                        )
+                    )
+                    return True  # it worked!
+                finally:
+                    client.context.clear()
+            except Exception:
+                self.config.logger.error(
+                    'Unable to report error with Raven',
+                    exc_info=True,
+                )
+        else:
+            self.config.logger.warning(
+                'Raven DSN is not configured and an exception happened'
+            )
 
     #--------------------------------------------------------------------------
     def predicate(self, *args, **kwargs):
@@ -63,13 +115,20 @@ class Rule(RequiredConfig):
         """
         try:
             return self._predicate(*args, **kwargs)
-        except Exception, x:
-            self.config.logger.debug(
-                'Rule %s predicicate failed because of "%s"',
-                to_str(self.__class__),
-                x,
-                exc_info=True
-            )
+        except Exception as exception:
+            if not self._send_to_sentry(
+                'predicate',
+                self.predicate,
+                *args,
+                **kwargs
+            ):
+                # Only log if it couldn't be sent to Sentry
+                self.config.logger.debug(
+                    'Rule %s predicicate failed because of "%s"',
+                    to_str(self.__class__),
+                    exception,
+                    exc_info=True
+                )
             return False
 
     #--------------------------------------------------------------------------
@@ -93,19 +152,20 @@ class Rule(RequiredConfig):
         classification system itself."""
         try:
             return self._action(*args, **kwargs)
-        except KeyError, x:
-            self.config.logger.debug(
-                'Rule %s action failed because of missing key "%s"',
-                to_str(self.__class__),
-                x,
-            )
-        except Exception, x:
-            self.config.logger.debug(
-                'Rule %s action failed because of "%s"',
-                to_str(self.__class__),
-                x,
-                exc_info=True
-            )
+        except Exception as exception:
+            if not self._send_to_sentry(
+                'action',
+                self.action,
+                *args,
+                **kwargs
+            ):
+                # Only log if it couldn't be sent to Sentry
+                self.config.logger.debug(
+                    'Rule %s action failed because of "%s"',
+                    to_str(self.__class__),
+                    exception,
+                    exc_info=True
+                )
         return False
 
     #--------------------------------------------------------------------------
