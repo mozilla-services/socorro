@@ -140,6 +140,7 @@ PR_.*
 __psynch_cvwait
 _pthread_cond_wait
 pthread_mutex_lock
+__pthread_kill
 _purecall
 raise
 realloc
