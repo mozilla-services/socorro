@@ -34,6 +34,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         self.api = SuperSearchWithFields(config=self.config)
         self.now = datetimeutil.utc_now()
 
+        # Wait until the cluster is yellow before proceeding.
+        self.health_check()
+
     def test_get_indices(self):
         now = datetime.datetime(2001, 1, 2, 0, 0)
         lastweek = now - datetime.timedelta(weeks=1)
@@ -1930,8 +1933,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         mock_requests.get(
-            'http://localhost:9200/{}/crash_reports/_search'.format(
-                self.config.elasticsearch.elasticsearch_index
+            '{url}/{index}/crash_reports/_search'.format(
+                url=self.get_url(),
+                index=self.config.elasticsearch.elasticsearch_index
             ),
             text=json.dumps(es_results)
         )
@@ -1985,8 +1989,9 @@ class IntegrationTestSuperSearch(ElasticsearchTestCase):
         }
 
         mock_requests.get(
-            'http://localhost:9200/{}/crash_reports/_search'.format(
-                self.config.elasticsearch.elasticsearch_index
+            '{url}/{index}/crash_reports/_search'.format(
+                url=self.get_url(),
+                index=self.config.elasticsearch.elasticsearch_index
             ),
             text=json.dumps(es_results)
         )
