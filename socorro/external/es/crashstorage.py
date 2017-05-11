@@ -17,8 +17,27 @@ from socorro.lib.datetimeutil import string_to_datetime
 from socorro.external.crashstorage_base import Redactor
 
 
+class RawCrashRedactor(Redactor):
+    """Remove some specific keys from a dict. The dict is modified.
+
+    This is a special Redactor used on raw crashes before we send them
+    to our Elasticsearch database. It is used to remove fields that we don't
+    need to store, in order mostly to save some disk space and memory.
+
+    Not that this overwrites the list of forbidden_keys that would be defined
+    through configuration. That list is hard-coded in the __init__ function.
+    """
+    def __init__(self, config):
+        super(RawCrashRedactor, self).__init__(config)
+
+        # Overwrite the list of fields to redact away.
+        self.forbidden_keys = [
+            'StackTraces',
+        ]
+
+
 class ESCrashStorage(CrashStorageBase):
-    """This sends processed crash reports to Elasticsearch."""
+    """This sends raw and processed crash reports to Elasticsearch."""
 
     required_config = Namespace()
     required_config.add_option(
@@ -236,17 +255,32 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         "upload_file_minidump_browser.json_dump"
     )
 
+    required_config.namespace('raw_crash_es_redactor')
+    required_config.raw_crash_es_redactor.add_option(
+        name="redactor_class",
+        doc="the redactor class to use on the raw_crash",
+        default='socorro.external.es.crashstorage.RawCrashRedactor',
+        from_string_converter=class_converter,
+    )
+
     def __init__(self, config, quit_check_callback=None):
         super(ESCrashStorageRedactedSave, self).__init__(
             config,
             quit_check_callback
         )
         self.redactor = config.es_redactor.redactor_class(config.es_redactor)
+        self.raw_crash_redactor = config.raw_crash_es_redactor.redactor_class(
+            config.raw_crash_es_redactor
+        )
         self.config.logger.warning(
             "Beware, this crashstorage class is destructive to the "
             "processed crash - if you're using a polycrashstore you may "
             "find the modified processed crash saved to the other crashstores."
         )
+
+    def is_mutator(self):
+        # This crash storage mutates the crash, so we mark it as such.
+        return True
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
@@ -254,6 +288,7 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
         usage.
         """
         self.redactor.redact(processed_crash)
+        self.raw_crash_redactor.redact(raw_crash)
 
         super(ESCrashStorageRedactedSave, self).save_raw_and_processed(
             raw_crash,
@@ -297,10 +332,6 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
             "upload_file_minidump_browser.json_dump"
         )
     )
-
-    def is_mutator(self):
-        # This crash storage mutates the crash, so we mark it as such.
-        return True
 
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):

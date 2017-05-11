@@ -791,7 +791,39 @@ class SuperSearchWithFields(SuperSearch):
         return super(SuperSearchWithFields, self).get(**kwargs)
 
 
-class ElasticsearchTestCase(TestCase):
+class TestCaseWithConfig(TestCase):
+    """A simple TestCase class that can create configuration objects.
+    """
+
+    def get_tuned_config(self, sources, extra_values=None):
+        if not isinstance(sources, (list, tuple)):
+            sources = [sources]
+
+        mock_logging = mock.Mock()
+
+        config_definitions = []
+        for source in sources:
+            conf = source.get_required_config()
+            conf.add_option('logger', default=mock_logging)
+            config_definitions.append(conf)
+
+        values_source = {'logger': mock_logging}
+        if extra_values:
+            values_source.update(extra_values)
+
+        config_manager = ConfigurationManager(
+            config_definitions,
+            app_name='testapp',
+            app_version='1.0',
+            app_description='Elasticsearch integration tests',
+            values_source_list=[environment, values_source],
+            argv_source=[],
+        )
+
+        return config_manager.get_config()
+
+
+class ElasticsearchTestCase(TestCaseWithConfig):
     """Base class for Elastic Search related unit tests. """
 
     def __init__(self, *args, **kwargs):
@@ -842,32 +874,13 @@ class ElasticsearchTestCase(TestCase):
         return self.config.elasticsearch.elasticsearch_urls[0]
 
     def get_tuned_config(self, sources, extra_values=None):
-        if not isinstance(sources, (list, tuple)):
-            sources = [sources]
-
-        mock_logging = mock.Mock()
-
-        config_definitions = []
-        for source in sources:
-            conf = source.get_required_config()
-            conf.add_option('logger', default=mock_logging)
-            config_definitions.append(conf)
-
         values_source = DEFAULT_VALUES.copy()
-        values_source.update({'logger': mock_logging})
         if extra_values:
             values_source.update(extra_values)
 
-        config_manager = ConfigurationManager(
-            config_definitions,
-            app_name='testapp',
-            app_version='1.0',
-            app_description='Elasticsearch integration tests',
-            values_source_list=[environment, values_source],
-            argv_source=[],
+        return super(ElasticsearchTestCase, self).get_tuned_config(
+            sources, values_source
         )
-
-        return config_manager.get_config()
 
     def get_base_config(self, es_index=None):
         extra_values = None
