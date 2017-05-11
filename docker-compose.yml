@@ -15,6 +15,9 @@ services:
   test:
     image: local/socorro_base
     environment:
+      # filesystem things
+      - resource.fs.fs_root=/tmp/test_crashes
+
       # postgres things for tests
       - database_url=postgres://postgres:aPassword@postgresql:5432/socorro_integration_test
       - database_hostname=postgresql
