@@ -12,6 +12,9 @@ from socorro.external.crashstorage_base import (
 from socorro.unittest.testbase import TestCase
 
 
+FS_ROOT = os.environ['resource.fs.fs_root']
+
+
 class TestFSRadixTreeStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
@@ -36,7 +39,8 @@ class TestFSRadixTreeStorage(TestCase):
           app_version='1.0',
           app_description='app description',
           values_source_list=[{
-            'logger': mock_logging
+            'logger': mock_logging,
+            'fs_root': FS_ROOT,
           }],
           argv_source=[]
         )

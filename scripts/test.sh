@@ -12,6 +12,11 @@ ENV=env
 
 PYTHONPATH=.
 
+FS_RESOURCES=""
+if [ -n "$fs_root" ]; then
+    FS_RESOURCES="$FS_RESOURCES resource.fs.fs_root=$fs_root"
+fi
+
 PG_RESOURCES=""
 if [ -n "$database_url" ]; then
     echo database_url is present, specifying parameters on the command line is not necessary \( $database_url \)
@@ -95,7 +100,7 @@ PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrad
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade heads
 
 # run tests
-$ENV $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
+$ENV $FS_RESOURCES $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
 
 # test webapp
 pushd webapp-django
