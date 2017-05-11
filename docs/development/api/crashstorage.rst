@@ -131,12 +131,9 @@ socorro.external.fs
 socorro.external.fs.crashstorage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Implements Radix Tree storage of crashes in a filesystem. Regular and Legacy
-classes need to be used like-with-like, but Dated and non-dated classes should
-be compatible.
-
-If you need on-disk queue for crashmovers or processors, use the Dated variety
-of the classes.  If you are starting fresh, use the non-Legacy modules.
+Implements Radix Tree storage of crashes in a filesystem and a temporary
+storage that uses the day of the month for directories and thus cycles
+every month.
 
 Use cases:
 
@@ -157,16 +154,12 @@ Classes:
 * `FSRadixTreeStorage` - Doesn't have a queueing mechanism. Processors can use
   these for local storage that doesn't require any knowledge of queueing.
 
-* `FSDatedRadixTreeStorage` - Use in-filesystem queueing techniques so that we
-  know which crashes are new.
+* `FSTemporaryStorage` - Temporary crash storage that uses only the day of the
+  month as the root of the daily directories
 
-* `FSLegacyRadixTreeStorage` - Doesn't have a queueing mechanism. Processors
-  can use these for local storage that doesn't require any knowledge of queueing.
-  Backwards compatible with `socorro.external.filesystem` (aka the 2009 system).
+  This means that it will recycle directories starting at the beginning of
+  each month. This is good for temporary crash storage.
 
-* `FSLegacyDatedRadixTreeStorage` - In production use on collectors. Use
-  in-filesystem queueing techniques so that we know which crashes are new.
-  Backwards compatible with `socorro.external.filesystem` (aka the 2009 system).
 
 socorro.external.postgresql
 ---------------------------

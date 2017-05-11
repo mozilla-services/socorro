@@ -137,7 +137,7 @@ class MiddlewareApp(App):
     required_config.namespace('filesystem')
     required_config.filesystem.add_option(
         'filesystem_class',
-        default='socorro.external.fs.crashstorage.FSLegacyRadixTreeStorage',
+        default='socorro.external.fs.crashstorage.FSRadixTreeStorage',
         from_string_converter=class_converter
     )
 

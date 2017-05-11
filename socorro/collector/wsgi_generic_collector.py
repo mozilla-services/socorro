@@ -144,8 +144,7 @@ class GenericCollector(GenericCollectorBase):
     required_config.storage.add_option(
         'crashstorage_class',
         doc='the source storage class',
-        default='socorro.external.fs.crashstorage'
-                '.FSLegacyDatedRadixTreeStorage',
+        default='socorro.external.fs.crashstorage.FSTemporaryStorage',
         from_string_converter=class_converter
     )
 
