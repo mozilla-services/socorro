@@ -3,15 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
-import tempfile
 
 from nose.tools import eq_
 
 from socorro.external.postgresql import server_status
 
 from unittestbase import PostgreSQLTestCase
-
-TEMP_DIR = tempfile.gettempdir()
 
 
 @contextlib.contextmanager
