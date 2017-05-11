@@ -15,6 +15,9 @@ from socorro.external.crashstorage_base import (
 from socorro.unittest.testbase import TestCase
 
 
+FS_ROOT = os.environ['resource.fs.fs_root']
+
+
 class TestFSLegacyDatedRadixTreeStorage(TestCase):
     CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
     CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
@@ -38,7 +41,8 @@ class TestFSLegacyDatedRadixTreeStorage(TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'minute_slice_interval': 1
+            'minute_slice_interval': 1,
+            'fs_root': FS_ROOT,
           }],
           argv_source=[]
         )
@@ -185,7 +189,8 @@ class TestFSTemporaryStorage(TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'minute_slice_interval': 1
+            'minute_slice_interval': 1,
+            'fs_root': FS_ROOT,
           }],
           argv_source=[]
         )
@@ -325,13 +330,13 @@ class TestFSTemporaryStorage(TestCase):
         self._make_test_crash_3()
         self._make_test_crash_4()
         ok_(os.path.exists(
-            './crashes/25/date/00/00_01/0bba929f-8721-460c-dead-a43c20071025'
+            FS_ROOT + '/25/date/00/00_01/0bba929f-8721-460c-dead-a43c20071025'
         ))
         ok_(os.path.exists(
-            './crashes/25/date/00/00_01/0bba929f-8721-460c-dddd-a43c20071025'
+            FS_ROOT + '/25/date/00/00_01/0bba929f-8721-460c-dddd-a43c20071025'
         ))
         ok_(os.path.exists(
-            './crashes/25/date/00/00_01/0bba929f-8721-460c-dddd-a43c20071125'
+            FS_ROOT + '/25/date/00/00_01/0bba929f-8721-460c-dddd-a43c20071125'
         ))
         for x in self.fsrts.new_crashes():
             pass
@@ -347,7 +352,8 @@ class TestFSTemporaryStorage(TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-            'minute_slice_interval': 1
+            'minute_slice_interval': 1,
+            'fs_root': FS_ROOT
           }],
           argv_source=[]
         )
@@ -365,8 +371,7 @@ class TestFSTemporaryStorage(TestCase):
             self.fsrts.config.dump_field: 'baz'
         }), self.CRASH_ID_1)
         ok_(os.path.exists(
-            './crashes/20071025/date/00/00_00/0bba929f-8721-460c-dead-'
-            'a43c20071025'
+            FS_ROOT + '/20071025/date/00/00_00/0bba929f-8721-460c-dead-a43c20071025'
         ))
 
         self.fsrts._current_slot = lambda: ['00', '00_00']
@@ -374,7 +379,7 @@ class TestFSTemporaryStorage(TestCase):
         self._make_test_crash_3()
 
         ok_(os.path.exists(
-            './crashes/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
+            FS_ROOT + '/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
         ))
 
         # consume crashes
@@ -383,13 +388,12 @@ class TestFSTemporaryStorage(TestCase):
 
         # should be consumed because it isn't in our working tree or slot
         ok_(not os.path.exists(
-            './crashes/20071025/date/00/00_00/0bba929f-8721-460c-dead-'
-            'a43c20071025'
+            FS_ROOT + '/20071025/date/00/00_00/0bba929f-8721-460c-dead-a43c20071025'
         ))
 
         # should not be consumed, while in working tree, it is in active slot
         ok_(os.path.exists(
-            './crashes/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
+            FS_ROOT + '/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
         ))
 
         # switch to next active slot
@@ -401,5 +405,5 @@ class TestFSTemporaryStorage(TestCase):
 
         # should be consumed because it is in working tree and inactive slot
         ok_( not os.path.exists(
-            './crashes/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
+            FS_ROOT + '/25/date/00/00_00/0bba929f-8721-460c-dddd-a43c20071025'
         ))
