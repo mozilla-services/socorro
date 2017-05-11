@@ -12,14 +12,13 @@ services:
     volumes:
       - .:/app
 
-  test:
-    image: local/socorro_base
-    environment:
-      # filesystem things
-      - resource.fs.fs_root=/tmp/test_crashes
+  # Development base which sets the Docker-related environment things
+  devbase:
+    extends:
+      service: base
 
-      # postgres things for tests
-      - database_url=postgres://postgres:aPassword@postgresql:5432/socorro_integration_test
+    environment:
+      # postgres
       - database_hostname=postgresql
       - database_port=5432
       - database_username=postgres
@@ -28,7 +27,7 @@ services:
       - database_superuserpassword=aPassword
 
       # postgres things for alembic
-      - sqlalchemy.url=postgresql://postgres:aPassword@postgresql:5432/socorro_migration_test
+      # FIXME - sqlalchemy.url=postgresql://postgres:aPassword@postgresql:5432/socorro_migration_test
 
       # rabbitmq things
       - resource.rabbitmq.host=rabbitmq
@@ -40,6 +39,19 @@ services:
       - elasticsearch_url=http://elasticsearch:9200
       - resource.elasticsearch.elasticsearch_urls=http://elasticsearch:9200
       - resource.elasticsearch.elasticSearchHostname=elasticsearch
+
+  # Container for running unittests and webapp tests
+  test:
+    extends:
+      service: devbase
+    environment:
+      # put filesystem crashstorage stuff in /tmp/test_crashes
+      - resource.fs.fs_root=/tmp/test_crashes
+
+      # use socorro_integration_test for postgres and alembic
+      - database_url=postgres://postgres:aPassword@postgresql:5432/socorro_integration_test
+      - sqlalchemy.url=postgresql://postgres:aPassword@postgresql:5432/socorro_migration_test
+
     depends_on:
       # - statsd -- FIXME(willkg): broken for some reason
       - postgresql
