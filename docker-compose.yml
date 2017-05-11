@@ -12,60 +12,34 @@ services:
     volumes:
       - .:/app
 
-  # Development base which sets the Docker-related environment things
-  devbase:
-    extends:
-      service: base
-
-    environment:
-      # postgres
-      - database_hostname=postgresql
-      - database_port=5432
-      - database_username=postgres
-      - database_password=aPassword
-      - database_superusername=postgres
-      - database_superuserpassword=aPassword
-
-      # postgres things for alembic
-      # FIXME - sqlalchemy.url=postgresql://postgres:aPassword@postgresql:5432/socorro_migration_test
-
-      # rabbitmq things
-      - resource.rabbitmq.host=rabbitmq
-      - resource.rabbitmq.virtual_host=rabbitvhost
-      - secrets.rabbitmq.rabbitmq_user=rabbituser
-      - secrets.rabbitmq.rabbitmq_password=rabbitpwd
-
-      # elasticsearch things
-      - elasticsearch_url=http://elasticsearch:9200
-      - resource.elasticsearch.elasticsearch_urls=http://elasticsearch:9200
-      - resource.elasticsearch.elasticSearchHostname=elasticsearch
-
   # Container for running unittests and webapp tests
   test:
     extends:
-      service: devbase
-    environment:
-      # put filesystem crashstorage stuff in /tmp/test_crashes
-      - resource.fs.fs_root=/tmp/test_crashes
-
-      # use socorro_integration_test for postgres and alembic
-      - database_url=postgres://postgres:aPassword@postgresql:5432/socorro_integration_test
-      - sqlalchemy.url=postgresql://postgres:aPassword@postgresql:5432/socorro_migration_test
-
+      service: base
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/test.env
     depends_on:
       # - statsd -- FIXME(willkg): broken for some reason
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+
+  # Processor app
+  processor:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.processor
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/processor.env
+    depends_on:
       - postgresql
       - elasticsearch
       - rabbitmq
     volumes:
       - .:/app
 
-  # Build a processor image
-  processor:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.processor
-    image: local/socorro_processor
 
   # -----------------------------
   # External services
