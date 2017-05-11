@@ -837,6 +837,10 @@ class ElasticsearchTestCase(TestCase):
             request_timeout=1
         )
 
+    def get_url(self):
+        """Returns the first url in the elasticsearch_urls list"""
+        return self.config.elasticsearch.elasticsearch_urls[0]
+
     def get_tuned_config(self, sources, extra_values=None):
         if not isinstance(sources, (list, tuple)):
             sources = [sources]
