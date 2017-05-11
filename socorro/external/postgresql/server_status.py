@@ -11,6 +11,19 @@ from socorro.external.postgresql.base import PostgreSQLBase
 logger = logging.getLogger("webapi")
 
 
+def get_file(fn):
+    """Retrieves the contents of the specified resource file
+
+    Doing this as a separate function makes it easier to mock in the tests.
+
+    :arg str fn: the file name to retrieve
+
+    :returns: the contents as a string
+
+    """
+    return resource_string('socorro', fn)
+
+
 class ServerStatus(PostgreSQLBase):
     """Implement the /server_status service with PostgreSQL. """
 
@@ -33,8 +46,8 @@ class ServerStatus(PostgreSQLBase):
             schema_revision = "Unknown"
 
         # Find the current breakpad and socorro revisions
-        socorro_revision = resource_string('socorro', 'socorro_revision.txt')
-        breakpad_revision = resource_string('socorro', 'breakpad_revision.txt')
+        socorro_revision = get_file('socorro_revision.txt')
+        breakpad_revision = get_file('breakpad_revision.txt')
 
         return {
             "socorro_revision": socorro_revision.strip(),

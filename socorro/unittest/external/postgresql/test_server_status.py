@@ -2,13 +2,28 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
-import socorro
+import contextlib
+
 from nose.tools import eq_
 
 from socorro.external.postgresql import server_status
 
 from unittestbase import PostgreSQLTestCase
+
+
+@contextlib.contextmanager
+def mock_get_file():
+    def mock_get_file(fn):
+        vals = {
+            'socorro_revision.txt': '42',
+            'breakpad_revision.txt': '43'
+        }
+        return vals[fn]
+
+    old_get_file = server_status.get_file
+    server_status.get_file = mock_get_file
+    yield
+    server_status.get_file = old_get_file
 
 
 class IntegrationTestServerStatus(PostgreSQLTestCase):
@@ -18,15 +33,6 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
         """Set up this test class by populating the database with fake data.
         """
         super(IntegrationTestServerStatus, self).setUp()
-
-        # Create fake revision files
-        self.basedir = os.path.dirname(socorro.__file__)
-        open(os.path.join(
-            self.basedir, 'socorro_revision.txt'
-        ), 'w').write('42')
-        open(os.path.join(
-            self.basedir, 'breakpad_revision.txt'
-        ), 'w').write('43')
 
         cursor = self.connection.cursor()
 
@@ -47,19 +53,18 @@ class IntegrationTestServerStatus(PostgreSQLTestCase):
 
     def tearDown(self):
         """Clean up the database. """
-        # Delete fake revision files
-        os.remove(os.path.join(self.basedir, 'socorro_revision.txt'))
-        os.remove(os.path.join(self.basedir, 'breakpad_revision.txt'))
-
         cursor = self.connection.cursor()
         cursor.execute("TRUNCATE alembic_version CASCADE;")
         self.connection.commit()
         super(IntegrationTestServerStatus, self).tearDown()
 
     def test_get(self):
-        status = server_status.ServerStatus(config=self.config)
+        # NOTE(willkg): This mocks out the pkg_resources code that gets the
+        # files, so this test doesn't test that aspect of server_status.
+        with mock_get_file():
+            status = server_status.ServerStatus(config=self.config)
+            res = status.get()
 
-        res = status.get()
         res_expected = {
             "socorro_revision": "42",
             "breakpad_revision": "43",
