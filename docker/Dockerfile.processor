@@ -1,8 +1,5 @@
+# Dockerfile for the processor
+
 FROM local/socorro_base
 
-# This uses a .ini file for behavior configuration and environment variables for
-# environment and secret configuration.
-
-ENV PYTHONPATH /app
-
-ENTRYPOINT ["python", "/app/socorro/processor/processor_app.py"]
+ENTRYPOINT ["/app/docker/run_processor.sh"]

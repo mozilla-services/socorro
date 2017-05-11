@@ -1,0 +1,7 @@
+# Dockerfile for the webapp
+
+FROM local/socorro_base
+
+ENV PYTHONPATH /app:/app/webapp-django
+
+ENTRYPOINT ["/app/docker/run_webapp.sh"]

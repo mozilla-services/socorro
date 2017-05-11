@@ -34,12 +34,32 @@ services:
       - docker/config/docker_common.env
       - docker/config/processor.env
     depends_on:
+      # - statsd -- FIXME(willkg): broken for some reason
+      - localstack-s3
       - postgresql
       - elasticsearch
       - rabbitmq
     volumes:
       - .:/app
 
+  # Webapp app
+  webapp:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.webapp
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/webapp.env
+    depends_on:
+      # - statsd -- FIXME(willkg): broken for some reason
+      - localstack-s3
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
 
   # -----------------------------
   # External services
@@ -76,3 +96,14 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=aPassword
       - POSTGRES_DB=breakpad
+
+  # https://hub.docker.com/r/atlassianlabs/localstack/
+  # localstack running a fake S3
+  localstack-s3:
+    image: atlassianlabs/localstack:0.4.0
+    environment:
+      - SERVICES=s3:5000
+      - DEFAULT_REGION=us-east-1
+      - HOSTNAME=localstack-s3
+    ports:
+      - "5000:5000"

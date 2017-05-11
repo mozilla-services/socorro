@@ -45,6 +45,7 @@ DC := $(shell which docker-compose)
 
 dockerbuild:
 	${DC} build base
+	${DC} build processor
 	touch .docker-build
 
 dockershell: .docker-build
