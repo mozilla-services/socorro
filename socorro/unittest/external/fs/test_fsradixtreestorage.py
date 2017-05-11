@@ -40,7 +40,7 @@ class TestFSRadixTreeStorage(TestCase):
           app_description='app description',
           values_source_list=[{
             'logger': mock_logging,
-           'fs_root': FS_ROOT,
+            'fs_root': FS_ROOT,
           }],
           argv_source=[]
         )
