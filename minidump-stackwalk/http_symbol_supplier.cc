@@ -236,6 +236,20 @@ namespace {
   string JoinURL(CURL* curl, const string& url, const string& sub) {
     return url + "/" + URLEncode(curl, sub);
   }
+
+  string GetCodeIDAndFileQueryString(CURL* curl, const CodeModule* module) {
+      string code_file = PathnameStripper::File(module->code_file());
+      if (code_file.empty()) {
+        return "";
+      }
+
+      string code_id = PathnameStripper::File(module->code_identifier());
+      if (code_id.empty()) {
+        return "";
+      }
+
+      return "?code_file=" + URLEncode(curl, code_file) + "&code_id=" + URLEncode(curl, code_id);
+  }
 }
 
 bool
@@ -290,6 +304,8 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
     return false;
   }
 
+  string query = GetCodeIDAndFileQueryString(curl_, module);
+
   string full_path = JoinPath(cache_path_, path);
 
   bool result = false;
@@ -297,8 +313,12 @@ bool HTTPSymbolSupplier::FetchSymbolFile(const CodeModule* module,
        server_url < server_urls_.end();
        ++server_url) {
     string full_url = *server_url + url;
+    string url_with_query = full_url;
+    if (!query.empty()) {
+      url_with_query += query;
+    }
     float fetch_time;
-    if (FetchURLToFile(curl_, full_url, full_path, &fetch_time)) {
+    if (FetchURLToFile(curl_, url_with_query, full_path, &fetch_time)) {
       StoreCacheMiss(module, fetch_time, full_url);
       result = true;
       break;
