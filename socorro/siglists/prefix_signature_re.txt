@@ -18,6 +18,7 @@ CERT_.*
 CFRelease
 _chkstk
 CleanupPerAppKey
+core::result::unwrap_failed<T>
 CrashInJS
 __delayLoadHelper2
 dlmalloc
