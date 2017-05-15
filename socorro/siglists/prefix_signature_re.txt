@@ -76,6 +76,8 @@ mozalloc_handle_oom
 moz_free
 mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CondVar::.*
+mozilla::detail::nsStringRepr::First
+mozilla::detail::nsStringRepr::Last
 mozilla::ipc::LogicError
 mozilla::ipc::MessageChannel::AssertWorkerThread
 mozilla::ipc::MessageChannel::Call
