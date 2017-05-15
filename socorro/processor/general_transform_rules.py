@@ -5,13 +5,10 @@
 from socorro.lib.transform_rules import Rule
 
 
-#==============================================================================
 class IdentifierRule(Rule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.crash_id = raw_crash.uuid
@@ -20,15 +17,11 @@ class IdentifierRule(Rule):
         return True
 
 
-#==============================================================================
 class CPUInfoRule(Rule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
-
         processed_crash.cpu_info = ''
         processed_crash.cpu_name = ''
         try:
@@ -50,13 +43,10 @@ class CPUInfoRule(Rule):
         return True
 
 
-#==============================================================================
 class OSInfoRule(Rule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.os_name = ''
         processed_crash.os_version = ''
@@ -68,5 +58,3 @@ class OSInfoRule(Rule):
         )
 
         return True
-
-

@@ -16,7 +16,6 @@ from configman import (
 )
 
 
-#------------------------------------------------------------------------------
 def get_standard_config_manager(
     more_definitions=None,
     overrides=None,
@@ -71,7 +70,6 @@ def get_standard_config_manager(
     return config_manager
 
 
-#------------------------------------------------------------------------------
 def get_config_manager_for_crontabber(
     more_definitions=None,
     jobs=None,

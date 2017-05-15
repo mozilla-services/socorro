@@ -36,7 +36,6 @@ from socorro.external.postgresql.postgresqlalchemymanager import (
 )
 
 
-#==============================================================================
 class SocorroDBApp(App):
     """
     SocorroDBApp
@@ -170,7 +169,6 @@ class SocorroDBApp(App):
         exclude_from_dump_conf=True
     )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         """since this app is more of an interactive app than the others, the
@@ -180,7 +178,6 @@ class SocorroDBApp(App):
             'logging.stderr_error_logging_level': 40  # only ERROR or worse
         }
 
-    #--------------------------------------------------------------------------
     def bulk_load_table(self, db, table):
         io = cStringIO.StringIO()
         for line in table.generate_rows():
@@ -189,13 +186,11 @@ class SocorroDBApp(App):
         io.seek(0)
         db.bulk_load(io, table.table, table.columns, '\t')
 
-    #--------------------------------------------------------------------------
     def import_staticdata(self, db):
         for table in staticdata.tables:
             table = table()
             self.bulk_load_table(db, table)
 
-    #--------------------------------------------------------------------------
     def generate_fakedata(self, db, fakedata_days):
         # Set up partitions before loading report data
         db.session.execute("""
@@ -232,7 +227,6 @@ class SocorroDBApp(App):
             """, dict(zip(["one", "two", "three", "four"],
                       list(fakedata.featured_versions))))
 
-    #--------------------------------------------------------------------------
     def create_connection_url(self, database_name, username, password):
         """Takes a URL to connect to Postgres and updates database name
             or superuser name/password as indicated
@@ -257,7 +251,6 @@ class SocorroDBApp(App):
             url += '/%s' % database_name
         return url
 
-    #--------------------------------------------------------------------------
     def main(self):
 
         database_name = self.config.database_name
@@ -297,9 +290,7 @@ class SocorroDBApp(App):
             )
             return 1
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # table logging section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if self.config.unlogged:
             @compiles(CreateTable)
             def create_table(element, compiler, **kw):
@@ -309,9 +300,7 @@ class SocorroDBApp(App):
                               m.group(1), text)
                 return text
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Postgres version check section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         self.config.logger.info(
             'Postgres version check section with %s',
             superuser_pg_url
@@ -329,9 +318,8 @@ class SocorroDBApp(App):
                 self.config.logger.error('Only 9.2+ is supported at this time')
                 return 1
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # drop database section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
         # We can only do the following if the DB is not Heroku
         # XXX Might add the heroku commands for resetting a DB here
         if self.config.dropdb and not self.config.on_heroku:
@@ -353,9 +341,7 @@ class SocorroDBApp(App):
                 db.drop_database(database_name)
                 db.commit()
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # create database section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if self.config.createdb:
             self.config.logger.info(
                 'create database section with %s',
@@ -373,9 +359,7 @@ class SocorroDBApp(App):
                     db.create_roles(self.config)
                 db.commit()
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # database extensions section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         self.config.logger.info(
             'database extensions section with %s',
             superuser_normaldb_pg_url
@@ -390,9 +374,7 @@ class SocorroDBApp(App):
             db.grant_public_schema_ownership(self.config.database_username)
             db.commit()
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # database schema section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if self.config.no_schema:
             self.config.logger.info("not adding a schema")
             return 0
@@ -429,9 +411,7 @@ class SocorroDBApp(App):
             command.stamp(alembic_cfg, "heads")
             db.session.close()
 
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # database owner section
-        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         self.config.logger.info(
             'database extensions section with %s',
             superuser_normaldb_pg_url
@@ -447,6 +427,7 @@ class SocorroDBApp(App):
             db.set_grants(self.config)  # config has user lists
 
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(SocorroDBApp))

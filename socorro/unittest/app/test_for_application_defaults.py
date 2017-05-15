@@ -15,7 +15,6 @@ from socorro.app.for_application_defaults import (
 from socorro.app.socorro_app import App
 
 
-#==============================================================================
 # for use in a later test
 class SomeApp(App):
     @classmethod
@@ -26,7 +25,6 @@ class SomeApp(App):
         return defaults
 
 
-#==============================================================================
 class TestApplicationDefaultsProxy(TestCase):
 
     def setUp(self):
@@ -83,7 +81,6 @@ class TestApplicationDefaultsProxy(TestCase):
         )
 
 
-#==============================================================================
 class TestValueSource(TestCase):
 
     def test_get_values(self):

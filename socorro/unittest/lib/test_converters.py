@@ -14,7 +14,7 @@ from socorro.lib.converters import (
 )
 from socorro.unittest.testbase import TestCase
 
-#==============================================================================
+
 # the following two classes are used in test_classes_in_namespaces_converter1
 # and need to be declared at module level scope
 class Foo(RequiredConfig):
@@ -23,7 +23,6 @@ class Foo(RequiredConfig):
     required_config.add_option('y', default=23)
 
 
-#==============================================================================
 class Bar(RequiredConfig):
     required_config = Namespace()
     required_config.add_option('x', default=227)
@@ -33,47 +32,37 @@ class Bar(RequiredConfig):
 # the following two classes are used in test_classes_in_namespaces_converter2
 # and test_classes_in_namespaces_converter_3.  They need to be declared at
 #module level scope
-#==============================================================================
 class Alpha(RequiredConfig):
     required_config = Namespace()
     required_config.add_option('a', doc='a', default=17)
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         self.a = config.a
 
-    #--------------------------------------------------------------------------
     def to_str(self):
         return "I am an instance of an Alpha object"
 
 
-#==============================================================================
 class AlphaBad1(Alpha):
     def __init__(self, config):
         super(AlphaBad1, self).__init__(config)
         self.a_type = int
 
-    #--------------------------------------------------------------------------
     def to_str(self):
         raise AttributeError
 
 
-#==============================================================================
 class AlphaBad2(AlphaBad1):
-    #--------------------------------------------------------------------------
     def to_str(self):
         raise KeyError
 
 
-#==============================================================================
 class AlphaBad3(AlphaBad1):
-    #--------------------------------------------------------------------------
     def to_str(self):
         raise TypeError
 
 
-#==============================================================================
 class Beta(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
@@ -82,16 +71,13 @@ class Beta(RequiredConfig):
         default=23
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         self.b = config.b
 
 
-#==============================================================================
 class TestConverters(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_classes_in_namespaces_converter_1(self):
         converter_fn = str_to_classes_in_namespaces_converter(
             'class_%(name)s'
@@ -116,7 +102,6 @@ class TestConverters(TestCase):
             ])
         )
 
-    #--------------------------------------------------------------------------
     def test_classes_in_namespaces_converter_2(self):
         converter_fn = str_to_classes_in_namespaces_converter(
             'class_%(name)s'
@@ -125,7 +110,6 @@ class TestConverters(TestCase):
         # ought to raise TypeError because 'class_sequence' is not a string
         self.assertRaises(TypeError, converter_fn, class_sequence)
 
-    #--------------------------------------------------------------------------
     def test_classes_in_namespaces_converter_3(self):
         n = Namespace()
         n.add_option(
@@ -148,7 +132,6 @@ class TestConverters(TestCase):
         self.assertTrue('Foo_01' in config)
         self.assertTrue('Foo_02' in config)
 
-    #--------------------------------------------------------------------------
     def test_classes_in_namespaces_converter_4(self):
         n = Namespace()
         n.add_option(
@@ -185,7 +168,6 @@ class TestConverters(TestCase):
         self.assertEqual(config.Alpha_00.a, 21)
         self.assertEqual(config.Beta_01.b, 38)
 
-    #--------------------------------------------------------------------------
     def test_classes_in_namespaces_converter_5(self):
         n = Namespace()
         n.add_option(
@@ -223,7 +205,6 @@ class TestConverters(TestCase):
             self.assertEqual(a_class_name, a_class.__name__)
             self.assertEqual(ns_name, "%s_%02d" % (a_class_name, i))
 
-    #--------------------------------------------------------------------------
     def test_change_default(self):
         class Alpha(RequiredConfig):
             required_config = Namespace()
@@ -252,7 +233,6 @@ class TestConverters(TestCase):
             19
         )
 
-    #--------------------------------------------------------------------------
     def test_web_services_from_str(self):
         some_services_as_string = """[
             {

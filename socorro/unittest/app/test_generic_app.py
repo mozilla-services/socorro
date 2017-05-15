@@ -15,7 +15,6 @@ from socorro.app.socorro_app import SocorroApp
 from socorro.app.socorro_app import App as SApp
 
 
-#==============================================================================
 class TestGenericAppModule(TestCase):
 
     def test_exsistance(self):

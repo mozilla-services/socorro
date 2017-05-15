@@ -11,12 +11,12 @@ import socorro.lib.util as sutil
 
 import config.collectorconfig as collectorConfig
 
-#-------------------------------------------------------------------------------
+
 config = \
     cm.newConfiguration(configurationModule=collectorConfig,
                                         applicationName="Socorro Collector 3.0")
 
-#-------------------------------------------------------------------------------
+
 import logging
 import logging.handlers
 
@@ -36,7 +36,7 @@ sutil.echoConfig(logger, config)
 
 config.logger = logger
 
-#-------------------------------------------------------------------------------
+
 import socorro.storage.crashstorage as cstore
 crashStoragePool = cstore.CrashStoragePool(config,
                                     config.primaryStorageClass)
@@ -45,7 +45,7 @@ config.crashStoragePool = crashStoragePool
 legacyThrottler = cstore.LegacyThrottler(config)
 config.legacyThrottler = legacyThrottler
 
-#-------------------------------------------------------------------------------
+
 web.webapi.internalerror = web.debugerror
 web.config.debug = False
 servicesList = (wscol.Collector,

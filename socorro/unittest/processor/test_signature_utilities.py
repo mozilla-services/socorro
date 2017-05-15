@@ -33,7 +33,6 @@ import re
 import copy
 
 
-#==============================================================================
 class BaseTestClass(TestCase):
 
     def assert_equal_with_nicer_output(self, expected, received):
@@ -44,10 +43,8 @@ class BaseTestClass(TestCase):
         )
 
 
-#==============================================================================
 class TestCSignatureTool(BaseTestClass):
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def setup_config_c_sig_tool(
         ig=['ignored1'],
@@ -72,7 +69,6 @@ class TestCSignatureTool(BaseTestClass):
 
         return s, config
 
-    #--------------------------------------------------------------------------
     def test_c_config_tool_init(self):
         """test_C_config_tool_init: constructor test"""
         expected_regex = sutil.DotDict()
@@ -102,7 +98,6 @@ class TestCSignatureTool(BaseTestClass):
         eq_(fixup_space.pattern, s.fixup_space.pattern)
         eq_(fixup_comma.pattern, s.fixup_comma.pattern)
 
-    #--------------------------------------------------------------------------
     def test_normalize_with_collapse_args(self):
         """test_normalize: bunch of variations"""
         s, c = self.setup_config_c_sig_tool()
@@ -162,7 +157,6 @@ class TestCSignatureTool(BaseTestClass):
             r = s.normalize_signature(*args)
             self.assert_equal_with_nicer_output(e, r)
 
-    #--------------------------------------------------------------------------
     def test_generate_1(self):
         """test_generate_1: simple"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
@@ -176,7 +170,6 @@ class TestCSignatureTool(BaseTestClass):
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-    #--------------------------------------------------------------------------
     def test_generate_2(self):
         """test_generate_2: hang"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
@@ -200,7 +193,6 @@ class TestCSignatureTool(BaseTestClass):
         sig, notes = s.generate(a, hang_type=1)
         self.assert_equal_with_nicer_output(e, sig)
 
-    #--------------------------------------------------------------------------
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
@@ -227,7 +219,6 @@ class TestCSignatureTool(BaseTestClass):
         sig, notes = s.generate(a, hang_type=-1)
         self.assert_equal_with_nicer_output(e, sig)
 
-    #--------------------------------------------------------------------------
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
@@ -245,7 +236,6 @@ class TestCSignatureTool(BaseTestClass):
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-    #--------------------------------------------------------------------------
     def test_generate_4(self):
         """test_generate_4: tuple sentinel"""
         s, c = self.setup_config_c_sig_tool(['a', 'b', 'c'], ['d', 'e', 'f'])
@@ -274,7 +264,6 @@ class TestCSignatureTool(BaseTestClass):
         sig, notes = s.generate(a)
         self.assert_equal_with_nicer_output(e, sig)
 
-    #--------------------------------------------------------------------------
     def test_generate_with_merged_dll(self):
         generator, config = self.setup_config_c_sig_tool(
             ['a', 'b', 'c'],
@@ -302,9 +291,7 @@ class TestCSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(e, sig)
 
 
-#==============================================================================
 class TestJavaSignatureTool(BaseTestClass):
-    #--------------------------------------------------------------------------
     def test_generate_signature_1(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -316,7 +303,6 @@ class TestJavaSignatureTool(BaseTestClass):
              'in expected format']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_2(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -331,7 +317,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_3(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -346,7 +331,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_4(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -362,7 +346,6 @@ class TestJavaSignatureTool(BaseTestClass):
              'length']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_4_2(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -378,7 +361,6 @@ class TestJavaSignatureTool(BaseTestClass):
              'length']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_5(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -394,7 +376,6 @@ class TestJavaSignatureTool(BaseTestClass):
              'not in the expected format']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_6(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -406,7 +387,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_7(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -417,7 +397,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_8(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -428,7 +407,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = ['JavaSignatureTool: stack trace line 2 is missing']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_9(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -445,7 +423,6 @@ class TestJavaSignatureTool(BaseTestClass):
              'SignatureTool: signature truncated due to length']
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_10_no_interference(self):
         """In general addresses of the form @xxxxxxxx are to be replaced with
         the literal "<addr>", however in this case, the hex address is not in
@@ -462,7 +439,6 @@ class TestJavaSignatureTool(BaseTestClass):
         self.assert_equal_with_nicer_output(e, sig)
         self.assert_equal_with_nicer_output([], notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_11_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -492,7 +468,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_12_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -522,7 +497,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_13_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -558,7 +532,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_14_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -589,7 +562,6 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-    #--------------------------------------------------------------------------
     def test_generate_signature_15_replace_address(self):
         config = DotDict()
         j = JavaSignatureTool(config)
@@ -628,7 +600,7 @@ class TestJavaSignatureTool(BaseTestClass):
         e = []
         self.assert_equal_with_nicer_output(e, notes)
 
-#==============================================================================
+
 #  rules testing section
 
 frames_from_json_dump = {
@@ -1047,7 +1019,6 @@ csig_config.collapse_arguments = True
 c_signature_tool = CSignatureTool(csig_config)
 
 
-#------------------------------------------------------------------------------
 def create_basic_fake_processor():
     fake_processor = DotDict()
     fake_processor.c_signature_tool = c_signature_tool
@@ -1058,7 +1029,6 @@ def create_basic_fake_processor():
     return fake_processor
 
 
-#==============================================================================
 class TestSignatureGeneration(TestCase):
 
     def get_config(self):
@@ -1074,7 +1044,6 @@ class TestSignatureGeneration(TestCase):
         }
         return CDotDict(config)
 
-    #--------------------------------------------------------------------------
     def test_instantiation(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1082,7 +1051,6 @@ class TestSignatureGeneration(TestCase):
         ok_(isinstance(sgr.c_signature_tool, CSignatureTool))
         ok_(isinstance(sgr.java_signature_tool, JavaSignatureTool))
 
-    #--------------------------------------------------------------------------
     def test_create_frame_list_1(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1103,7 +1071,6 @@ class TestSignatureGeneration(TestCase):
         ok_('normalized' in frames_from_json_dump['frames'][0])
         eq_(frames_from_json_dump['frames'][0]['normalized'], expected[0])
 
-    #--------------------------------------------------------------------------
     def test_create_frame_list_2(self):
         config = self.get_config()
         config.c_signature.maximum_frames_to_consider = 3
@@ -1118,7 +1085,6 @@ class TestSignatureGeneration(TestCase):
         ok_('normalized' in frames_from_json_dump['frames'][0])
         eq_(frames_from_json_dump['frames'][0]['normalized'], expected[0])
 
-    #--------------------------------------------------------------------------
     def test_action_1(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1154,7 +1120,6 @@ class TestSignatureGeneration(TestCase):
         )
         ok_('proto_signature' not in processed_crash)
 
-    #--------------------------------------------------------------------------
     def test_action_2(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1187,7 +1152,6 @@ class TestSignatureGeneration(TestCase):
         )
         eq_(processor_meta.processor_notes, [])
 
-    #--------------------------------------------------------------------------
     def test_action_2_with_templates(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1220,7 +1184,6 @@ class TestSignatureGeneration(TestCase):
         )
         eq_(processor_meta.processor_notes, [])
 
-    #--------------------------------------------------------------------------
     def test_action_2_with_templates_and_special_case(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1257,7 +1220,6 @@ class TestSignatureGeneration(TestCase):
         )
         eq_(processor_meta.processor_notes, [])
 
-    #--------------------------------------------------------------------------
     def test_action_3(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1295,7 +1257,6 @@ class TestSignatureGeneration(TestCase):
             ]
         )
 
-    #--------------------------------------------------------------------------
     def test_lower_case_modules(self):
         config = self.get_config()
         sgr = SignatureGenerationRule(config)
@@ -1346,10 +1307,8 @@ class TestSignatureGeneration(TestCase):
         eq_(processor_meta.processor_notes, [])
 
 
-#==============================================================================
 class TestOOMSignature(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         pc = DotDict()
         pc.signature = 'hello'
@@ -1360,7 +1319,6 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         pc = DotDict()
         pc.signature = 'hello'
@@ -1372,7 +1330,6 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate_signature_fragment_1(self):
         pc = DotDict()
         pc.signature = 'this | is | a | NS_ABORT_OOM | signature'
@@ -1383,7 +1340,6 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate_signature_fragment_2(self):
         pc = DotDict()
         pc.signature = 'mozalloc_handle_oom | this | is | bad'
@@ -1394,7 +1350,6 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate_signature_fragment_3(self):
         pc = DotDict()
         pc.signature = 'CrashAtUnhandlableOOM'
@@ -1405,7 +1360,6 @@ class TestOOMSignature(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         pc = DotDict()
         pc.signature = 'hello'
@@ -1422,7 +1376,6 @@ class TestOOMSignature(TestCase):
         eq_(pc.original_signature, 'hello')
         eq_(pc.signature, 'OOM | unknown | hello')
 
-    #--------------------------------------------------------------------------
     def test_action_small(self):
         pc = DotDict()
         pc.signature = 'hello'
@@ -1440,7 +1393,6 @@ class TestOOMSignature(TestCase):
         eq_(pc.original_signature, 'hello')
         eq_(pc.signature, 'OOM | small')
 
-    #--------------------------------------------------------------------------
     def test_action_large(self):
         pc = DotDict()
         pc.signature = 'hello'
@@ -1459,15 +1411,12 @@ class TestOOMSignature(TestCase):
         eq_(pc.signature, 'OOM | large | hello')
 
 
-#==============================================================================
 class TestAbortSignature(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         return fake_processor.config
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         rule = AbortSignature(config)
@@ -1481,7 +1430,6 @@ class TestAbortSignature(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = AbortSignature(config)
@@ -1495,7 +1443,6 @@ class TestAbortSignature(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate_empty_message(self):
         config = self.get_config()
         rule = AbortSignature(config)
@@ -1509,7 +1456,6 @@ class TestAbortSignature(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         config = self.get_config()
         rule = AbortSignature(config)
@@ -1526,7 +1472,6 @@ class TestAbortSignature(TestCase):
         eq_(processed_crash.original_signature, 'hello')
         eq_(processed_crash.signature, 'Abort | unknown | hello')
 
-    #--------------------------------------------------------------------------
     def test_action_success_long_message(self):
         config = self.get_config()
         rule = AbortSignature(config)
@@ -1544,7 +1489,6 @@ class TestAbortSignature(TestCase):
         expected_sig = 'Abort | {}... | hello'.format('a' * 77)
         eq_(processed_crash.signature, expected_sig)
 
-    #--------------------------------------------------------------------------
     def test_action_success_remove_unwanted_parts(self):
         config = self.get_config()
         rule = AbortSignature(config)
@@ -1605,15 +1549,12 @@ class TestAbortSignature(TestCase):
         eq_(processed_crash.signature, expected_sig)
 
 
-#==============================================================================
 class TestSigTrim(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         return fake_processor.config
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = SigTrim(config)
@@ -1626,7 +1567,6 @@ class TestSigTrim(TestCase):
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         rule = SigTrim(config)
@@ -1637,7 +1577,6 @@ class TestSigTrim(TestCase):
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         config = self.get_config()
         rule = SigTrim(config)
@@ -1659,10 +1598,8 @@ class TestSigTrim(TestCase):
         eq_(processed_crash.signature, 'all   good')
 
 
-#==============================================================================
 class TestSigTrunc(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         pc = DotDict()
         pc.signature = '0' * 100
@@ -1673,7 +1610,6 @@ class TestSigTrunc(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         pc = DotDict()
         pc.signature = '9' * 256
@@ -1684,7 +1620,6 @@ class TestSigTrunc(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         pc = DotDict()
         pc.signature = '9' * 256
@@ -1698,10 +1633,8 @@ class TestSigTrunc(TestCase):
         ok_(pc.signature.endswith('9...'))
 
 
-#==============================================================================
 class TestStackwalkerErrorSignatureRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         pc = DotDict()
         pc.signature = '0' * 100
@@ -1712,7 +1645,6 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         pc = DotDict()
         pc.signature = "EMPTY: like my soul"
@@ -1723,7 +1655,6 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         predicate_result = rule.predicate(rc, rd, pc, fake_processor)
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         pc = DotDict()
         pc.signature = "EMPTY: like my soul"
@@ -1740,10 +1671,8 @@ class TestStackwalkerErrorSignatureRule(TestCase):
         )
 
 
-#==============================================================================
 class TestSignatureWatchDogRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         config = DotDict({
             'c_signature': {
@@ -1759,7 +1688,6 @@ class TestSignatureWatchDogRule(TestCase):
 
         return CDotDict(config)
 
-    #--------------------------------------------------------------------------
     def test_instantiation(self):
         config = self.get_config()
         srwd = SignatureRunWatchDog(config)
@@ -1769,7 +1697,6 @@ class TestSignatureWatchDogRule(TestCase):
 
         eq_(srwd._get_crashing_thread({}), 0)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         srwd = SignatureRunWatchDog(config)
@@ -1789,7 +1716,6 @@ class TestSignatureWatchDogRule(TestCase):
         }
         ok_(srwd.predicate({}, {}, fake_processed_crash, {}))
 
-    #--------------------------------------------------------------------------
     def test_action(self):
         config = self.get_config()
         sgr = SignatureRunWatchDog(config)
@@ -1814,15 +1740,12 @@ class TestSignatureWatchDogRule(TestCase):
         eq_(processor_meta.processor_notes, [])
 
 
-#==============================================================================
 class TestSignatureJitCategory(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         return fake_processor.config
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = SignatureJitCategory(config)
@@ -1841,7 +1764,6 @@ class TestSignatureJitCategory(TestCase):
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         rule = SignatureJitCategory(config)
@@ -1856,7 +1778,6 @@ class TestSignatureJitCategory(TestCase):
         predicate_result = rule.predicate({}, {}, processed_crash, {})
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         config = self.get_config()
         rule = SignatureJitCategory(config)
@@ -1881,15 +1802,12 @@ class TestSignatureJitCategory(TestCase):
         )
 
 
-#==============================================================================
 class TestSignatureIPCChannelError(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         return fake_processor.config
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = SignatureIPCChannelError(config)
@@ -1902,7 +1820,6 @@ class TestSignatureIPCChannelError(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         rule = SignatureIPCChannelError(config)
@@ -1913,7 +1830,6 @@ class TestSignatureIPCChannelError(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         config = self.get_config()
         rule = SignatureIPCChannelError(config)
@@ -1964,15 +1880,12 @@ class TestSignatureIPCChannelError(TestCase):
         )
 
 
-#==============================================================================
 class TestSignatureShutdownTimeout(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         return fake_processor.config
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
@@ -1981,7 +1894,6 @@ class TestSignatureShutdownTimeout(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
@@ -1992,7 +1904,6 @@ class TestSignatureShutdownTimeout(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_missing_valueerror(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
@@ -2023,7 +1934,6 @@ class TestSignatureShutdownTimeout(TestCase):
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
-    #--------------------------------------------------------------------------
     def test_action_missing_keyerror(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
@@ -2055,7 +1965,6 @@ class TestSignatureShutdownTimeout(TestCase):
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
@@ -2088,7 +1997,6 @@ class TestSignatureShutdownTimeout(TestCase):
             'Signature replaced with a Shutdown Timeout signature, was: "foo"'
         )
 
-    #--------------------------------------------------------------------------
     def test_action_success_empty_conditions_key(self):
         config = self.get_config()
         rule = SignatureShutdownTimeout(config)
@@ -2119,15 +2027,12 @@ class TestSignatureShutdownTimeout(TestCase):
         )
 
 
-#==============================================================================
 class TestSignatureIPCMessageName(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_config(self):
         fake_processor = create_basic_fake_processor()
         return fake_processor.config
 
-    #--------------------------------------------------------------------------
     def test_predicate_no_match(self):
         config = self.get_config()
         rule = SignatureIPCMessageName(config)
@@ -2140,7 +2045,6 @@ class TestSignatureIPCMessageName(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, {}, {})
         ok_(not predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_predicate(self):
         config = self.get_config()
         rule = SignatureIPCMessageName(config)
@@ -2153,7 +2057,6 @@ class TestSignatureIPCMessageName(TestCase):
         predicate_result = rule.predicate(raw_crash, {}, processed_crash, {})
         ok_(predicate_result)
 
-    #--------------------------------------------------------------------------
     def test_action_success(self):
         config = self.get_config()
         rule = SignatureIPCMessageName(config)

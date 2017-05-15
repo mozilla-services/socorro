@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-#------------------------------------------------------------------------------
 def class_with_partial_init(C, config_local, config_global=None):
     """
     Return a new subclass of C.
@@ -14,7 +13,6 @@ def class_with_partial_init(C, config_local, config_global=None):
 
     """
 
-    #==========================================================================
     class W(C):
         wrapped_partial = True
 
@@ -24,7 +22,6 @@ def class_with_partial_init(C, config_local, config_global=None):
         # object enabling it to live for the entire run of the server process.
         global_config = config_global
 
-        #----------------------------------------------------------------------
         def __init__(self):
             super(W, self).__init__(config_local)
 

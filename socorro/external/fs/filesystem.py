@@ -7,7 +7,6 @@ from os.path import curdir
 import errno
 
 
-#------------------------------------------------------------------------------
 def cleanEmptySubdirectories(topLimit, leafPath, osModule=os):
     """cleanEmptySubdirectories(topLimit,leafPath)
 
@@ -39,7 +38,6 @@ def cleanEmptySubdirectories(topLimit, leafPath, osModule=os):
         opath = path
 
 
-#------------------------------------------------------------------------------
 def visitPath(rootDir, fullPath, visit, osModule=os):
     """
     Visit for each directory:
@@ -71,7 +69,6 @@ def visitPath(rootDir, fullPath, visit, osModule=os):
             raise OSError(errno.ENOENT, '%s does not exist' % (root))
 
 
-#------------------------------------------------------------------------------
 def makedirs(name, mode=0777, osModule=os):
     """makedirs(path [, mode=0777])
 
@@ -101,9 +98,6 @@ def makedirs(name, mode=0777, osModule=os):
                 raise OSError(errno.ENOTDIR, "Not a directory: '%s'" % name)
 
 
-#------------------------------------------------------------------------------
-#!/usr/bin/python
-#
 # Copyright 2005 by Centaur Software Engineering, Inc.
 #
 #    This file is part of The CSE Python Library.
@@ -121,13 +115,10 @@ def makedirs(name, mode=0777, osModule=os):
 #    You should have received a copy of the GNU General Public License
 #    along with The CSE Python Library; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
-#------------------------------------------------------------------------------
 def defaultAcceptanceFunction(dummy):
     return True
 
 
-#------------------------------------------------------------------------------
 def findFileGenerator(
   rootDirectory,
   acceptanceFunction=defaultAcceptanceFunction,
@@ -162,7 +153,7 @@ def findFileGenerator(
         if acceptanceFunction(aCurrentDirectoryItem):
             yield aCurrentDirectoryItem
 
-#==============================================================================
+
 if __name__ == "__main__":
     for path, name, pathname in findFileGenerator("."):
         print pathname

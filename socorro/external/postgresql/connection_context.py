@@ -12,7 +12,6 @@ from urlparse import urlparse
 from configman import RequiredConfig, Namespace
 
 
-#------------------------------------------------------------------------------
 def get_field_from_pg_database_url(field, default):
     database_url_from_enviroment = os.environ.get('database_url')
     if not database_url_from_enviroment:
@@ -25,10 +24,8 @@ def get_field_from_pg_database_url(field, default):
     return default
 
 
-#==============================================================================
 class ConnectionContext(RequiredConfig):
     """a configman compliant class for setup of Postgres connections"""
-    #--------------------------------------------------------------------------
     # configman parameter definition section
     # here we're setting up the minimal parameters required for connecting
     # to a database.
@@ -72,7 +69,6 @@ class ConnectionContext(RequiredConfig):
     IntegrityError = psycopg2.IntegrityError
     ProgrammingError = psycopg2.ProgrammingError
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making database connections
 
@@ -103,7 +99,6 @@ class ConnectionContext(RequiredConfig):
             psycopg2.ProgrammingError,
         )
 
-    #--------------------------------------------------------------------------
     def connection(self, name_unused=None):
         """return a new database connection
 
@@ -113,7 +108,6 @@ class ConnectionContext(RequiredConfig):
         """
         return psycopg2.connect(self.dsn)
 
-    #--------------------------------------------------------------------------
     @contextlib.contextmanager
     def __call__(self, name=None):
         """returns a database connection wrapped in a contextmanager.
@@ -132,7 +126,6 @@ class ConnectionContext(RequiredConfig):
             #self.config.logger.debug('connection closed')
             self.close_connection(conn)
 
-    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         """close the connection passed in.
 
@@ -145,14 +138,12 @@ class ConnectionContext(RequiredConfig):
         """
         connection.close()
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close any pooled or cached connections.  Since this base class
         object does no caching, there is no implementation required.  Derived
         classes may implement it."""
         pass
 
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, exp):
         """return True if a conditional exception is actually an operational
         error. Return False if it's a genuine error that should probably be
@@ -180,22 +171,18 @@ class ConnectionContext(RequiredConfig):
 
         return False
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
         pass
 
 
-#==============================================================================
 class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
     """a configman compliant class that pools Postgres database connections"""
-    #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
         super(ConnectionContextPooled, self).__init__(config, local_config)
         #self.config.logger.debug("PostgresPooled - "
         #                         "setting up connection pool")
         self.pool = {}
 
-    #--------------------------------------------------------------------------
     def connection(self, name=None):
         """return a named connection.
 
@@ -216,7 +203,6 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
             super(ConnectionContextPooled, self).connection(name)
         return self.pool[name]
 
-    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         """overriding the baseclass function, this routine will decline to
         close a connection at the end of a transaction context.  This allows
@@ -234,7 +220,6 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         else:
             pass
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close all pooled connections"""
         self.config.logger.debug("PostgresPooled - "
@@ -244,7 +229,6 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
             self.config.logger.debug("PostgresPooled - connection %s closed"
                                      % name)
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
         name = self.config.executor_identity()
         if name in self.pool:

@@ -14,7 +14,6 @@ from socorro.lib.datetimeutil import string_to_datetime, date_to_string
 from configman import Namespace, RequiredConfig, class_converter
 from configman.converters import str_to_timedelta, to_str
 
-#==============================================================================
 class DateProcessedTimeMachine(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -30,12 +29,10 @@ class DateProcessedTimeMachine(Rule):
         from_string_converter=str_to_timedelta
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(DateProcessedTimeMachine, self).__init__(config)
         self.crashstore = config.crashstorage_class(config)
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         crash_id = raw_crash.uuid
         old_processed_crash = self.crashstore.get_unredacted_processed(crash_id)
@@ -62,7 +59,7 @@ class DateProcessedTimeMachine(Rule):
         )
         return True
 
-#==============================================================================
+
 # this class was relocated to a more appropriate module.  This import is
 # offered for backwards compatibility
 from socorro.external.postgresql.new_crash_source import PGQueryNewCrashSource

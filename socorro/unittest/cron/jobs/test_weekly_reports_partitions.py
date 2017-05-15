@@ -11,7 +11,6 @@ from socorro.unittest.cron.setup_configman import (
 )
 
 
-#==============================================================================
 class TestWeeklyReportsPartitions(IntegrationTestBase):
 
     @classmethod

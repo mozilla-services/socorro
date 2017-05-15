@@ -11,11 +11,9 @@ from socorro.lib import datetimeutil
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestCrashAduByBuildSignature(PostgreSQLTestCase):
     """Test of Crash ADU By Build Signature stored procedures"""
 
-    #--------------------------------------------------------------------------
     def setUp(self):
         """ Populate product_info table with fake data """
         super(IntegrationTestCrashAduByBuildSignature, self).setUp()

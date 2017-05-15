@@ -15,7 +15,6 @@ from socorro.lib import external_common
 
 
 class CrashDataBase(object):
-
     """
     Common implementation of the crash data service for all crashstorage
     schemes.  Any external service that wants to implement a CrashData service

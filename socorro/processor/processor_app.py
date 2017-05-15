@@ -22,7 +22,6 @@ from socorro.lib.util import DotDict
 from socorro.external.fs.crashstorage import FSDatedPermanentStorage
 
 
-#==============================================================================
 class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     """the Socorro processor converts raw_crashes into processed_crashes"""
     app_name = 'processor'
@@ -32,13 +31,12 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     required_config = Namespace()
     # configuration is broken into three namespaces: processor,
     # new_crash_source, and companion_process
-    #--------------------------------------------------------------------------
+ 
     # processor namespace
     #     this namespace is for config parameter having to do with the
     #     implementation of the algorithm of converting raw crashes into
     #     processed crashes.  This algorithm can be swapped out for alternate
     #     algorithms.
-    #--------------------------------------------------------------------------
     required_config.namespace('processor')
     required_config.processor.add_option(
         'processor_class',
@@ -47,11 +45,10 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         '.SocorroLiteProcessorAlgorithm2015',
         from_string_converter=class_converter
     )
-    #--------------------------------------------------------------------------
+
     # companion_process namespace
     #     this namespace is for config parameters having to do with registering
     #     a companion process that runs alongside processor
-    #--------------------------------------------------------------------------
     required_config.namespace('companion_process')
     required_config.companion_process.add_option(
         'companion_class',
@@ -76,7 +73,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         reference_value_from='secrets.sentry',
     )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         return {
@@ -84,7 +80,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             "destination.crashstorage_class": FSDatedPermanentStorage,
         }
 
-    #--------------------------------------------------------------------------
     def _transform(self, crash_id):
         """this implementation is the framework on how a raw crash is
         converted into a processed crash.  The 'crash_id' passed in is used as
@@ -203,7 +198,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
                         x,
                     )
 
-    #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
         """this method simply instatiates the source, destination,
         new_crash_source, and the processor algorithm implementation."""
@@ -228,7 +222,6 @@ class ProcessorApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             self.quit_check
         )
 
-    #--------------------------------------------------------------------------
     def close(self):
         """when  the processor shutsdown, this function cleans up"""
         try:

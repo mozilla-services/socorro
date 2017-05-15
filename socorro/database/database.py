@@ -13,19 +13,18 @@ db_module = psycopg2
 
 import socorro.lib.util as util
 
-#=================================================================================================================
+
 class SQLDidNotReturnSingleValue (Exception):
   pass
 
-#=================================================================================================================
+
 class SQLDidNotReturnSingleRow (Exception):
   pass
 
-#=================================================================================================================
+
 class CannotConnectToDatabase(Exception):
   pass
 
-#-----------------------------------------------------------------------------------------------------------------
 
 # this are the exceptions that can be raised during database transactions
 # that mean trouble in the database server or that the server is offline.
@@ -33,7 +32,7 @@ exceptions_eligible_for_retry = (psycopg2.OperationalError,
                                  psycopg2.InterfaceError,
                                  CannotConnectToDatabase)
 
-#-----------------------------------------------------------------------------------------------------------------
+
 def db_transaction_retry_wrapper(fn):
   """a decorator to add backing off retry symantics to any a method that does
   a database transaction.  When using this decorator, it is vital that any
@@ -68,7 +67,7 @@ def db_transaction_retry_wrapper(fn):
       return
   return f
 
-#-----------------------------------------------------------------------------------------------------------------
+
 def singleValueSql (aCursor, sql, parameters=None):
   aCursor.execute(sql, parameters)
   result = aCursor.fetchall()
@@ -77,7 +76,7 @@ def singleValueSql (aCursor, sql, parameters=None):
   except Exception, x:
     raise SQLDidNotReturnSingleValue("%s: %s" % (str(x), sql))
 
-#-----------------------------------------------------------------------------------------------------------------
+
 def singleRowSql (aCursor, sql, parameters=None):
   aCursor.execute(sql, parameters)
   result = aCursor.fetchall()
@@ -86,7 +85,7 @@ def singleRowSql (aCursor, sql, parameters=None):
   except Exception, x:
     raise SQLDidNotReturnSingleRow("%s: %s" % (str(x), sql))
 
-#-----------------------------------------------------------------------------------------------------------------
+
 def execute (aCursor, sql, parameters=None):
   aCursor.execute(sql, parameters)
   while True:
@@ -96,7 +95,7 @@ def execute (aCursor, sql, parameters=None):
     else:
       break
 
-#-----------------------------------------------------------------------------------------------------------------
+
 @db_transaction_retry_wrapper
 def transaction_execute_with_retry (database_connection_pool, sql, parameters=None):
   connection = database_connection_pool.connection()
@@ -116,8 +115,6 @@ def transaction_execute_with_retry (database_connection_pool, sql, parameters=No
   return result
 
 
-
-#=================================================================================================================
 class LoggingCursor(psycopg2.extensions.cursor):
   """Use as cursor_factory when getting cursor from connection:
   ...
@@ -125,18 +122,17 @@ class LoggingCursor(psycopg2.extensions.cursor):
   cursor.setLogger(someLogger)
   ...
   """
-  #-----------------------------------------------------------------------------------------------------------------
   def setLogger(self, logger):
     self.logger = logger
     self.logger.info("Now logging cursor")
-  #-----------------------------------------------------------------------------------------------------------------
+
   def execute(self, sql, args=None):
     try:
       self.logger.info(self.mogrify(sql,args))
     except AttributeError:
       pass
     super(LoggingCursor, self).execute(sql,args)
-  #-----------------------------------------------------------------------------------------------------------------
+
   def executemany(self,sql,args=None):
     try:
       try:
@@ -148,10 +144,8 @@ class LoggingCursor(psycopg2.extensions.cursor):
     super(LoggingCursor,self).executemany(sql,args)
 
 
-#=================================================================================================================
 class Database(object):
   """a simple factory for creating connections for a database.  It doesn't track what it gives out"""
-  #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config, logger=None):
     super(Database, self).__init__()
     if 'database_port' not in config or config.get('database_port') == '':
@@ -163,7 +157,6 @@ class Database(object):
     if not self.logger:
       self.logger = util.FakeLogger()
 
-  #-----------------------------------------------------------------------------------------------------------------
   def connection (self, databaseModule=psycopg2):
     threadName = threading.currentThread().getName()
     #self.logger.debug("%s - connecting to database", threadName)
@@ -174,15 +167,13 @@ class Database(object):
       self.logger.critical("%s - cannot connect to the database", threadName)
       raise CannotConnectToDatabase(x)
 
-#=================================================================================================================
+
 class DatabaseConnectionPool(dict):
-  #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, parameters, logger=None):
     super(DatabaseConnectionPool, self).__init__()
     self.database = Database(parameters, logger)
     self.logger = self.database.logger
 
-  #-----------------------------------------------------------------------------------------------------------------
   def connection(self, name=None):
     """Try to re-use this named connection, else create one and use that"""
     if not name:
@@ -192,13 +183,11 @@ class DatabaseConnectionPool(dict):
     self[name] = self.database.connection()
     return self[name]
 
-  #-----------------------------------------------------------------------------------------------------------------
   def connectionCursorPair(self, name=None):
     """Just like connection, but returns a tuple with a connection and a cursor"""
     connection = self.connection(name)
     return (connection, connection.cursor())
 
-  #-----------------------------------------------------------------------------------------------------------------
   def cleanup (self):
     self.logger.debug("%s - killing database connections", threading.currentThread().getName())
     for name, aConnection in self.iteritems():
@@ -209,4 +198,3 @@ class DatabaseConnectionPool(dict):
         self.logger.debug("%s - connection %s already closed", threading.currentThread().getName(), name)
       except:
         util.reportExceptionAndContinue(self.logger)
-

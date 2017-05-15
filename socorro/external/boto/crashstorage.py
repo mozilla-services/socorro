@@ -391,7 +391,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         )
 
 
-#==============================================================================
 class SupportReasonAPIStorage(BotoS3CrashStorage):
     """Used to send a small subset of processed crash data the Support Reason
        API back-end. This is effectively a highly lossy S3 storage mechanism.

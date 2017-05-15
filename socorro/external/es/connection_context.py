@@ -9,7 +9,6 @@ from configman import Namespace, RequiredConfig
 from configman.converters import list_converter
 
 
-#==============================================================================
 class Connection(object):
     """A facade in front of the ES class that standardises certain gross
     elements of its API with those of other database connection types.
@@ -18,7 +17,6 @@ class Connection(object):
     rollback, and close mechanisms cannot have any useful meaning.
     """
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, connection):
         self.config = config
         self._connection = connection
@@ -36,7 +34,6 @@ class Connection(object):
         return getattr(self._connection, name)
 
 
-#==============================================================================
 class ConnectionContext(RequiredConfig):
     """This class represents a connection to Elasticsearch. """
 
@@ -95,7 +92,6 @@ class ConnectionContext(RequiredConfig):
     )
     conditional_exceptions = ()
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ConnectionContext, self).__init__()
         self.config = config

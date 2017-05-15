@@ -10,11 +10,9 @@ from socorro.external.postgresql.bugs import Bugs
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestBugs(PostgreSQLTestCase):
     """Test socorro.external.postgresql.bugs.Bugs class. """
 
-    #--------------------------------------------------------------------------
     def setUp(self):
         """Set up this test class by populating the reports table with fake
         data. """
@@ -55,7 +53,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
 
         self.connection.commit()
 
-    #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
@@ -66,11 +63,9 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         self.connection.commit()
         super(IntegrationTestBugs, self).tearDown()
 
-    #--------------------------------------------------------------------------
     def test_get(self):
         bugs = Bugs(config=self.config)
 
-        #......................................................................
         # Test 1: a valid signature with 2 bugs
         params = {
             "signatures": "mysignature"
@@ -96,7 +91,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             set([(x['id'], x['signature']) for x in res_expected['hits']])
         )
 
-        #......................................................................
         # Test 2: several signatures with bugs
         params = {
             "signatures": ["mysignature", "js"]
@@ -130,7 +124,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             set([(x['id'], x['signature']) for x in res_expected['hits']])
         )
 
-        #......................................................................
         # Test 3: a signature without bugs
         params = {
             "signatures": "unknown"
@@ -143,12 +136,10 @@ class IntegrationTestBugs(PostgreSQLTestCase):
 
         eq_(res, res_expected)
 
-        #......................................................................
         # Test 4: missing argument
         params = {}
         assert_raises(MissingArgumentError, bugs.get, **params)
 
-        #......................................................................
         # Test 5: search by bug_ids argument
         params = {
             "bug_ids": ["1", "2"]

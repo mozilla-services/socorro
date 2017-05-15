@@ -16,10 +16,9 @@ from socorro.external.statsd.crashstorage import (
 )
 from socorro.external.statsd.dogstatsd import StatsClient
 
-#==============================================================================
+
 class TestStatsdCrashStorage(TestCase):
 
-    #--------------------------------------------------------------------------
     def setup_config(self, prefix=None):
         config =  DotDict()
         config.statsd_class =  StatsClient
@@ -30,7 +29,6 @@ class TestStatsdCrashStorage(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def test_save_processed(self):
         config = self.setup_config()
         number_of_calls =  10
@@ -44,7 +42,6 @@ class TestStatsdCrashStorage(TestCase):
                 [call('save_processed') for x in range(number_of_calls)]
             )
 
-    #--------------------------------------------------------------------------
     def test_save_processed_with_prefix(self):
         config = self.setup_config()
         config.statsd_prefix = 'processor'
@@ -59,7 +56,6 @@ class TestStatsdCrashStorage(TestCase):
                 [call('processor.save_processed') for x in range(number_of_calls)]
             )
 
-    #--------------------------------------------------------------------------
     def test_arbitrary_with_prefix(self):
         config = self.setup_config()
         config.statsd_prefix = 'processor'
@@ -74,10 +70,8 @@ class TestStatsdCrashStorage(TestCase):
             statsd_obj.increment.assert_has_calls([])
 
 
-#==============================================================================
 class TestStatsdBenchmarkingCrashStorage(TestCase):
 
-    #--------------------------------------------------------------------------
     def setup_config(self, prefix=None):
         config =  DotDict()
         config.statsd_class =  StatsClient
@@ -89,7 +83,6 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     @patch('socorro.external.statsd.dogstatsd.statsd')
     def test_save(self, statsd_obj):
         config = self.setup_config('timing')
@@ -120,7 +113,6 @@ class TestStatsdBenchmarkingCrashStorage(TestCase):
                 [call({}, [], 'some_id')]
             )
 
-    #--------------------------------------------------------------------------
     @patch('socorro.external.statsd.dogstatsd.statsd')
     def test_get(self, statsd_obj):
         config = self.setup_config('timing')

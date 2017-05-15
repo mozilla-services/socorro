@@ -17,7 +17,7 @@ from socorro.lib.converters import (
     str_to_classes_in_namespaces_converter,
 )
 
-#------------------------------------------------------------------------------
+
 # support methods
 
 # a regular expression that will parse out all pairs in the form:
@@ -25,7 +25,6 @@ from socorro.lib.converters import (
 kw_list_re = re.compile('([^ =]+) *= *("[^"]*"|[^ ]*)')
 
 
-#------------------------------------------------------------------------------
 def kw_str_parse(a_string):
     """convert a string in the form 'a=b, c=d, e=f' to a dict"""
     try:
@@ -37,7 +36,6 @@ def kw_str_parse(a_string):
         return {}
 
 
-#==============================================================================
 class Rule(RequiredConfig):
     """the base class for Support Rules.  It provides the framework for the
     rules 'predicate', 'action', and 'version' as well as utilites to help
@@ -49,7 +47,6 @@ class Rule(RequiredConfig):
         default=False,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config=None, quit_check_callback=None):
         self.config = config
         self.quit_check_callback = quit_check_callback
@@ -105,7 +102,6 @@ class Rule(RequiredConfig):
                 'Raven DSN is not configured and an exception happened'
             )
 
-    #--------------------------------------------------------------------------
     def predicate(self, *args, **kwargs):
         """the default predicate for Support Classifiers invokes any derivied
         _predicate function, trapping any exceptions raised in the process.  We
@@ -131,7 +127,6 @@ class Rule(RequiredConfig):
                 )
             return False
 
-    #--------------------------------------------------------------------------
     def _predicate(self, *args, **kwargs):
         """"The default support classifier predicate just returns True.  We
         want all the support classifiers run.
@@ -142,7 +137,6 @@ class Rule(RequiredConfig):
         """
         return True
 
-    #--------------------------------------------------------------------------
     def action(self, *args, **kwargs):
         """the default action for Support Classifiers invokes any derivied
         _action function, trapping any exceptions raised in the process.  We
@@ -168,7 +162,6 @@ class Rule(RequiredConfig):
                 )
         return False
 
-    #--------------------------------------------------------------------------
     def _action(self, *args, **kwargs):
         """Rules derived from this base class ought to override this method
         with an actual classification rule.  Successful application of this
@@ -182,12 +175,10 @@ class Rule(RequiredConfig):
         """
         return True
 
-    #--------------------------------------------------------------------------
     def version(self):
         """This method should be overridden in a derived class."""
         return '0.0'
 
-    #--------------------------------------------------------------------------
     def act(self, *args, **kwargs):
         """gather a rules parameters together and run the predicate. If that
         returns True, then go on and run the action function
@@ -206,11 +197,9 @@ class Rule(RequiredConfig):
             return (False, None)
 
 
-#==============================================================================
 class TransformRule(Rule):
     """a pairing of two functions with default parameters to be used as
     transformation rule."""
-    #--------------------------------------------------------------------------
     def __init__(self, predicate,
                        predicate_args,
                        predicate_kwargs,
@@ -296,7 +285,6 @@ class TransformRule(Rule):
             self.action_args = ()
         self.action_kwargs = kw_str_parse(action_kwargs)
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def function_invocation_proxy(fn, proxy_args, proxy_kwargs):
         """execute the fuction if it is one, else evaluate the fn as a boolean
@@ -310,7 +298,6 @@ class TransformRule(Rule):
         except TypeError:
             return bool(fn)
 
-    #--------------------------------------------------------------------------
     def act(self, *args, **kwargs):
         """gather a rules parameters together and run the predicate. If that
         returns True, then go on and run the action function
@@ -337,19 +324,17 @@ class TransformRule(Rule):
         else:
             return (False, None)
 
-    #--------------------------------------------------------------------------
     def __eq__(self, another):
         if isinstance(another, TransformRule):
             return self.__dict__ == another.__dict__
         else:
             return False
 
-    #--------------------------------------------------------------------------
     def close(self):
         self.config.logger.debug('null close on rule %s', self.__class__)
         pass
 
-#==============================================================================
+
 class TransformRuleSystem(RequiredConfig):
     """A collection of TransformRules that can be applied together"""
     required_config = Namespace()
@@ -364,7 +349,6 @@ class TransformRuleSystem(RequiredConfig):
         default=False,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config=None, quit_check=None):
         if quit_check:
             self._quit_check = quit_check
@@ -391,12 +375,10 @@ class TransformRuleSystem(RequiredConfig):
                         a_rule_class(config)
                     )
 
-    #--------------------------------------------------------------------------
     def _null_quit_check(self):
         "a no-op method to do nothing if no quit check method has been defined"
         pass
 
-    #--------------------------------------------------------------------------
     def load_rules(self, an_iterable):
         """cycle through a collection of Transform rule tuples loading them
         into the TransformRuleSystem"""
@@ -404,14 +386,12 @@ class TransformRuleSystem(RequiredConfig):
             TransformRule(*x, config=self.config) for x in an_iterable
         ]
 
-    #--------------------------------------------------------------------------
     def append_rules(self, an_iterable):
         """add rules to the TransformRuleSystem"""
         self.rules.extend(
             TransformRule(*x, config=self.config) for x in an_iterable
         )
 
-    #--------------------------------------------------------------------------
     def apply_all_rules(self, *args, **kwargs):
         """cycle through all rules and apply them all without regard to
         success or failure
@@ -434,7 +414,6 @@ class TransformRuleSystem(RequiredConfig):
                 )
         return True
 
-    #--------------------------------------------------------------------------
     def apply_until_action_succeeds(self, *args, **kwargs):
         """cycle through all rules until an action is run and succeeds
 
@@ -459,7 +438,6 @@ class TransformRuleSystem(RequiredConfig):
                 return True
         return False
 
-    #--------------------------------------------------------------------------
     def apply_until_action_fails(self, *args, **kwargs):
         """cycle through all rules until an action is run and fails
 
@@ -484,7 +462,6 @@ class TransformRuleSystem(RequiredConfig):
                 return True
         return False
 
-    #--------------------------------------------------------------------------
     def apply_until_predicate_succeeds(self, *args, **kwargs):
         """cycle through all rules until a predicate returns True
 
@@ -510,7 +487,6 @@ class TransformRuleSystem(RequiredConfig):
                 return action_result
         return None
 
-    #--------------------------------------------------------------------------
     def apply_until_predicate_fails(self, *args, **kwargs):
         """cycle through all rules until a predicate returns False
 
@@ -535,7 +511,6 @@ class TransformRuleSystem(RequiredConfig):
                 return False
         return None
 
-    #--------------------------------------------------------------------------
     def close(self):
         for a_rule in self.rules:
             try:
@@ -548,9 +523,8 @@ class TransformRuleSystem(RequiredConfig):
             close_method()
 
 
-#------------------------------------------------------------------------------
 # Useful rule predicates and actions
-#------------------------------------------------------------------------------
+
 # (True, '', '', copy_key_value, '', 'source_key=sally, destination_key=fred')
 def copy_value_action(source, destination,
                       source_key=None, destination_key=None):
@@ -558,7 +532,6 @@ def copy_value_action(source, destination,
     destination[destination_key] = source[source_key]
 
 
-#------------------------------------------------------------------------------
 # (True, '', '',
 #  format_new_value, '', 'destination_key='Version', format_str=%(Version)sesr'
 #  )
@@ -576,7 +549,6 @@ def format_new_value_action(source, destination, destination_key='',
 
 
 # (eq_constant_predicate, '', 'source_key="fred", value="wilma"', ...)
-#------------------------------------------------------------------------------
 def eq_constant_predicate(source, destination, source_key='', value=''):
     """a predicate to test equality between a source key and a constant
 
@@ -590,7 +562,6 @@ def eq_constant_predicate(source, destination, source_key='', value=''):
 
 # (eq_key_predicate, '', 'left_mapping_key="fred", right_mapping_key="wilma"',
 # ...)
-#------------------------------------------------------------------------------
 def eq_key_predicate(
     left_mapping,
     right_mapping,
@@ -610,7 +581,6 @@ def eq_key_predicate(
 
 # (is_not_null_predicate, '', 'key="fred",
 # ...)
-#------------------------------------------------------------------------------
 def is_not_null_predicate(
     raw_crash, dumps, processed_crash, processor, key=''
 ):

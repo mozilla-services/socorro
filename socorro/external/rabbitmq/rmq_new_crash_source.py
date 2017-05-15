@@ -8,7 +8,6 @@ from configman.converters import class_converter
 from functools import partial
 
 
-#==============================================================================
 class RMQNewCrashSource(RequiredConfig):
     """An iterable of crashes from RabbitMQ"""
 
@@ -20,18 +19,15 @@ class RMQNewCrashSource(RequiredConfig):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, name=None, quit_check_callback=None):
         self.crash_store = config.crashstorage_class(
             config,
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def close(self):
         pass
 
-    #--------------------------------------------------------------------------
     def __iter__(self):
         """Return an iterator over crashes from RabbitMQ.
 
@@ -50,10 +46,8 @@ class RMQNewCrashSource(RequiredConfig):
                 )}
             )
 
-    #--------------------------------------------------------------------------
     def new_crashes(self):
         return self.__iter__()
 
-    #--------------------------------------------------------------------------
     def __call__(self):
         return self.__iter__()

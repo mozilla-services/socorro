@@ -17,7 +17,6 @@ from socorro.lib.task_manager import (
 )
 
 
-#==============================================================================
 class ThreadedTaskManager(TaskManager):
     """Given an iterator over a sequence of job parameters and a function,
     this class will execute the function in a set of threads."""
@@ -50,7 +49,6 @@ class ThreadedTaskManager(TaskManager):
       doc='the maximum size of the internal queue'
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config,
                  job_source_iterator=default_iterator,
                  task_func=default_task_func):
@@ -80,7 +78,6 @@ class ThreadedTaskManager(TaskManager):
         self.number_of_threads = config.number_of_threads
         self.task_queue = Queue.Queue(config.maximum_queue_size)
 
-    #--------------------------------------------------------------------------
     def start(self):
         """this function will start the queing thread that executes the
         iterator and feeds jobs into the queue.  It also starts the worker
@@ -102,7 +99,6 @@ class ThreadedTaskManager(TaskManager):
         )
         self.queuing_thread.start()
 
-    #--------------------------------------------------------------------------
     def wait_for_completion(self, waiting_func=None):
         """This is a blocking function call that will wait for the queuing
         thread to complete.
@@ -114,7 +110,6 @@ class ThreadedTaskManager(TaskManager):
         self.logger.debug("waiting to join queuingThread")
         self._responsive_join(self.queuing_thread, waiting_func)
 
-    #--------------------------------------------------------------------------
     def stop(self):
         """This function will tell all threads to quit.  All threads
         periodically look at the value of quit.  If they detect quit is True,
@@ -123,7 +118,6 @@ class ThreadedTaskManager(TaskManager):
         self.quit = True
         self.wait_for_completion()
 
-    #--------------------------------------------------------------------------
     def blocking_start(self, waiting_func=None):
         """this function is just a wrapper around the start and
         wait_for_completion methods.  It starts the queuing thread and then
@@ -148,7 +142,6 @@ class ThreadedTaskManager(TaskManager):
                                    'does not halt soon, you may have to send '
                                    'SIGKILL (kill -9)')
 
-    #--------------------------------------------------------------------------
     def wait_for_empty_queue(self, wait_log_interval=0, wait_reason=''):
         """Sit around and wait for the queue to become empty
 
@@ -173,7 +166,6 @@ class ThreadedTaskManager(TaskManager):
             seconds += 1
             time.sleep(1.0)
 
-    #--------------------------------------------------------------------------
     def _responsive_join(self, thread, waiting_func=None):
         """similar to the responsive sleep, a join function blocks a thread
         until some other thread dies.  If that takes a long time, we'd like to
@@ -197,7 +189,6 @@ class ThreadedTaskManager(TaskManager):
                 self.logger.debug('quit detected by _responsive_join')
                 self.quit = True
 
-    #--------------------------------------------------------------------------
     def _kill_worker_threads(self):
         """This function coerces the consumer/worker threads to kill
         themselves.  When called by the queuing thread, one death token will
@@ -213,7 +204,6 @@ class ThreadedTaskManager(TaskManager):
         for t in self.thread_list:
             t.join()
 
-    #--------------------------------------------------------------------------
     def _queuing_thread_func(self):
         """This is the function responsible for reading the iterator and
         putting contents into the queue.  It loops as long as there are items
@@ -259,7 +249,6 @@ class ThreadedTaskManager(TaskManager):
             # workers to finish and then the app shuts down.
             self.quit = True
 
-    #--------------------------------------------------------------------------
     def executor_identity(self):
         """this function is likely to be called via the configuration parameter
         'executor_identity' at the root of the self.config attribute of the
@@ -271,7 +260,6 @@ class ThreadedTaskManager(TaskManager):
         return threading.currentThread().getName()
 
 
-#==============================================================================
 class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
     """Given an iterator over a sequence of job parameters and a function,
     this class will execute the the function in a set of threads.
@@ -295,7 +283,6 @@ class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
       from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         """Create the ThreadedTaskManager with config options rather than
         functions passed into the constructor."""
@@ -305,11 +292,9 @@ class ThreadedTaskManagerWithConfigSetup(ThreadedTaskManager):
           task_func=config.task_func)
 
 
-#==============================================================================
 class TaskThread(threading.Thread):
     """This class represents a worker thread for the TaskManager class"""
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, task_queue):
         """Initialize a new thread.
 
@@ -321,11 +306,9 @@ class TaskThread(threading.Thread):
         self.task_queue = task_queue
         self.config = config
 
-    #--------------------------------------------------------------------------
     def _get_name(self):
         return threading.currentThread().getName()
 
-    #--------------------------------------------------------------------------
     def run(self):
         """The main routine for a thread's work.
 

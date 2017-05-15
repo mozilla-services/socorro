@@ -32,7 +32,7 @@ from socorro.lib.util import (
 )
 from socorro.processor.breakpad_pipe_to_json import pipe_dump_to_json_dump
 
-#------------------------------------------------------------------------------
+
 def create_symbol_path_str(input_str):
     symbols_sans_commas = input_str.replace(',', ' ')
     quoted_symbols_list = ['"%s"' % x.strip()
@@ -40,7 +40,6 @@ def create_symbol_path_str(input_str):
     return ' '.join(quoted_symbols_list)
 
 
-#==============================================================================
 class LegacyCrashProcessor(RequiredConfig):
     """this class is a refactoring of the original processor algorithm into
     a single class.  This class is suitable for use in the 'processor_app'
@@ -204,8 +203,6 @@ class LegacyCrashProcessor(RequiredConfig):
         from_string_converter=class_converter
     )
 
-
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(LegacyCrashProcessor, self).__init__()
         self.config = config
@@ -277,14 +274,11 @@ class LegacyCrashProcessor(RequiredConfig):
         )
         self._statistics.incr('restarts')
 
-
-    #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
         self._log_job_start(crash_id)
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
         self._log_job_end(utc_now(), False, crash_id)
 
-    #--------------------------------------------------------------------------
     def process_crash(self, raw_crash, raw_dumps, ignored_processed_crash):
         """ This function is run only by a worker thread.
             Given a job, fetch a thread local database connection and the json
@@ -459,7 +453,6 @@ class LegacyCrashProcessor(RequiredConfig):
         processed_crash.Winsock_LSP = None
         return processed_crash
 
-    #--------------------------------------------------------------------------
     def _create_basic_processed_crash(self,
                                       uuid,
                                       raw_crash,
@@ -672,7 +665,6 @@ class LegacyCrashProcessor(RequiredConfig):
 
         return processed_crash
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _addon_split_or_warn(addon_pair, processor_notes):
         addon_splits = addon_pair.split(':', 1)
@@ -684,7 +676,6 @@ class LegacyCrashProcessor(RequiredConfig):
             addon_splits.append('')
         return tuple(unquote_plus(x) for x in addon_splits)
 
-    #--------------------------------------------------------------------------
     def _process_list_of_addons(self, raw_crash,
                                 processor_notes):
         original_addon_str = self._get_truncate_or_warn(
@@ -701,7 +692,6 @@ class LegacyCrashProcessor(RequiredConfig):
         ]
         return addon_list
 
-    #--------------------------------------------------------------------------
     def _add_process_type_to_processed_crash(self, raw_crash):
         """ Electrolysis Support - Optional - raw_crash may contain a
         ProcessType of plugin. In the future this value would be default,
@@ -732,7 +722,6 @@ class LegacyCrashProcessor(RequiredConfig):
 
         return process_type_additions_dict
 
-    #--------------------------------------------------------------------------
     def _invoke_minidump_stackwalk(self, dump_pathname):
         """ This function invokes breakpad_stackdump as an external process
         capturing and returning the text output of stdout.  This version
@@ -752,7 +741,6 @@ class LegacyCrashProcessor(RequiredConfig):
         return (StrCachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
-    #--------------------------------------------------------------------------
     def _invoke_exploitability(self, dump_pathname):
         """ This function invokes breakpad_stackdump as an external process
         capturing and returning the text output of stdout.  This version
@@ -774,7 +762,6 @@ class LegacyCrashProcessor(RequiredConfig):
         return (StrCachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
-    #--------------------------------------------------------------------------
     def _do_breakpad_stack_dump_analysis(self, crash_id, dump_pathname,
                                          is_hang, java_stack_trace,
                                          submitted_timestamp,
@@ -820,7 +807,6 @@ class LegacyCrashProcessor(RequiredConfig):
             )
         return processed_crash_update
 
-    #--------------------------------------------------------------------------
     def _exploitability_analysis(self,
                                  exploitability_line_iterator,
                                  exploitability_subprocess_handle,
@@ -843,7 +829,6 @@ class LegacyCrashProcessor(RequiredConfig):
             )
         return exploitability
 
-    #--------------------------------------------------------------------------
     def _stackwalk_analysis(
         self,
         dump_analysis_line_iterator,
@@ -897,7 +882,6 @@ class LegacyCrashProcessor(RequiredConfig):
                 processed_crash_update.signature += "; corrupt dump"
         return processed_crash_update
 
-    #--------------------------------------------------------------------------
     def _analyze_header(self, crash_id, dump_analysis_line_iterator,
                         submitted_timestamp, processor_notes):
         """ Scan through the lines of the dump header:
@@ -985,13 +969,11 @@ class LegacyCrashProcessor(RequiredConfig):
         #)
         return processed_crash_update
 
-    #--------------------------------------------------------------------------
     flash_re = re.compile(r'NPSWF32_?(.*)\.dll|'
                           'FlashPlayerPlugin_?(.*)\.exe|'
                           'libflashplayer(.*)\.(.*)|'
                           'Flash ?Player-?(.*)')
 
-    #--------------------------------------------------------------------------
     def _get_flash_version(self, moduleData):
         """If (we recognize this module as Flash and figure out a version):
         Returns version; else (None or '')"""
@@ -1021,7 +1003,6 @@ class LegacyCrashProcessor(RequiredConfig):
             version = None
         return version
 
-    #--------------------------------------------------------------------------
     def _analyze_frames(self, hang_type, java_stack_trace,
                         make_modules_lower_case,
                         dump_analysis_line_iterator, submitted_timestamp,
@@ -1121,7 +1102,6 @@ class LegacyCrashProcessor(RequiredConfig):
             "topmost_filenames": topmost_sourcefiles,
         })
 
-    #--------------------------------------------------------------------------
     def _generate_signature(self,
                             signature_list,
                             java_stack_trace,
@@ -1148,7 +1128,6 @@ class LegacyCrashProcessor(RequiredConfig):
 
         return signature
 
-    #--------------------------------------------------------------------------
     def _load_transform_rules(self, rule_category):
         sql = (
             "select predicate, predicate_args, predicate_kwargs, "
@@ -1194,7 +1173,6 @@ class LegacyCrashProcessor(RequiredConfig):
         )
         return rule_system
 
-    #--------------------------------------------------------------------------
     @contextmanager
     def _temp_file_context(self, raw_dump_path):
         """this contextmanager implements conditionally deleting a pathname
@@ -1211,11 +1189,9 @@ class LegacyCrashProcessor(RequiredConfig):
                     exc_info=True
                 )
 
-    #--------------------------------------------------------------------------
     def __call__(self, raw_crash, raw_dumps, processed_crash):
         self.process_crash(raw_crash, raw_dumps, processed_crash)
 
-    #--------------------------------------------------------------------------
     def _log_job_start(self, crash_id):
         self.config.logger.info("starting job: %s", crash_id)
         started_datetime = utc_now()
@@ -1227,7 +1203,6 @@ class LegacyCrashProcessor(RequiredConfig):
             )
         return started_datetime
 
-    #--------------------------------------------------------------------------
     def _log_job_end(self, completed_datetime, success, crash_id):
         self.config.logger.info(
             "finishing %s job: %s",
@@ -1244,7 +1219,6 @@ class LegacyCrashProcessor(RequiredConfig):
                 (crash_id,)
             )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_truncate_or_warn(a_mapping, key, notes_list,
                               default=None, max_length=10000):
@@ -1260,7 +1234,6 @@ class LegacyCrashProcessor(RequiredConfig):
             )
             return default
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_truncate_or_none(a_mapping, key, maxLength=10000):
         try:
@@ -1268,7 +1241,6 @@ class LegacyCrashProcessor(RequiredConfig):
         except (KeyError, AttributeError, IndexError, TypeError):
             return None
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _truncate_or_none(a_string, maxLength=10000):
         try:
@@ -1276,7 +1248,6 @@ class LegacyCrashProcessor(RequiredConfig):
         except TypeError:
             return None
 
-    #--------------------------------------------------------------------------
     def _load_product_id_map(self):
         try:
             self.config.logger.debug("get product_productid_map")
@@ -1300,12 +1271,10 @@ class LegacyCrashProcessor(RequiredConfig):
                                  str(self._product_id_map))
 
 
-#==============================================================================
 # TransformRules predicate and action function section
 #    * these function are used for the rewriting of the json file before it is
 #          put into Postgres.
 #    * these functions are used in the processor.json_rewrite category
-#------------------------------------------------------------------------------
 def json_equal_predicate(raw_crash, processor, key, value):
     """a TransformRule predicate function that tests if a key in the json
     is equal to a certain value.  In a rule definition, use of this function
@@ -1328,7 +1297,6 @@ def json_equal_predicate(raw_crash, processor, key, value):
         return False
 
 
-#------------------------------------------------------------------------------
 def json_reformat_action(raw_crash, processor, key, format_str):
     """a TransformRule action function that allows a single key in the target
     json file to be rewritten using a format string.  The json itself is used
@@ -1359,7 +1327,6 @@ def json_reformat_action(raw_crash, processor, key, format_str):
     raw_crash[key] = format_str % raw_crash
 
 
-#------------------------------------------------------------------------------
 def json_ProductID_predicate(raw_crash, processor):
     """a TransformRule predicate that tests if the value of the json field,
     'ProductID' is present in the processor's _product_id_map.  If it is, then
@@ -1375,7 +1342,6 @@ def json_ProductID_predicate(raw_crash, processor):
         return False
 
 
-#------------------------------------------------------------------------------
 def json_Product_rewrite_action(raw_crash, processor):
     """a TransformRule action function that will change the name of a product.
     It finds the new name in by looking up the 'ProductID' in the processor's

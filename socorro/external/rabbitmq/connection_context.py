@@ -10,7 +10,6 @@ from configman.config_manager import RequiredConfig
 from configman import Namespace
 
 
-#==============================================================================
 class Connection(object):
     """A facade in front of a RabbitMQ channel that standardizes certain gross
     elements of its API with those of other connection types.  Clients of this
@@ -24,7 +23,6 @@ class Connection(object):
     that means not thread safe.
     """
 
-    #--------------------------------------------------------------------------
     def __init__(self, config,  connection,
                  standard_queue_name='socorro.normal',
                  priority_queue_name='socorro.priority',
@@ -57,27 +55,22 @@ class Connection(object):
         # adding some common semantics to aid the implementation of the fully
         # abstracted RabbitMQCrashStorage class.
 
-    #--------------------------------------------------------------------------
     def commit(self):
         pass
 
-    #--------------------------------------------------------------------------
     def rollback(self):
         pass
 
-    #--------------------------------------------------------------------------
     def close(self):
         self.connection.close()
 
 
-#==============================================================================
 class ConnectionContext(RequiredConfig):
     """A factory object in the form of a functor.  It returns connections
     to RabbitMQ wrapped in the minimal Connection class above.  Suitable for
     use in a "with" statment this class will handle opening a connection to
     RabbitMQ and its subsequent closure.  Use this class only when connections
     are never reused outside of the context for which they were created."""
-    #--------------------------------------------------------------------------
     # configman parameter definition section
     # here we're setting up the minimal parameters required for connecting
     # to a RabbitMQ server.
@@ -137,7 +130,6 @@ class ConnectionContext(RequiredConfig):
         reference_value_from='resource.rabbitmq',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making RabbitMQ connections
 
@@ -173,7 +165,6 @@ class ConnectionContext(RequiredConfig):
         # be entered here.
         self.conditional_exceptions = ()
 
-    #--------------------------------------------------------------------------
     def connection(self, name=None):
         """create a new RabbitMQ connection, set it up for our queues, then
         return it wrapped with our connection class.
@@ -202,7 +193,6 @@ class ConnectionContext(RequiredConfig):
             )
         return wrapped_connection
 
-    #--------------------------------------------------------------------------
     @contextlib.contextmanager
     def __call__(self, name=None):
         """returns a RabbitMQ connection wrapped in a contextmanager.
@@ -218,7 +208,6 @@ class ConnectionContext(RequiredConfig):
         finally:
             self.close_connection(wrapped_rabbitmq_connection)
 
-    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         """close the connection passed in.
 
@@ -231,21 +220,18 @@ class ConnectionContext(RequiredConfig):
         """
         connection.close()
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close any pooled or cached connections.  Since this base class
         object does no caching, there is no implementation required.  Derived
         classes may implement it."""
         pass
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
         """since this class uses a model where connections are opened and
         closed within the bounds of a context manager, this method is a
         No Op.  Derived classes may choose to do otherwise."""
         pass
 
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         """Sometimes a resource connection can raise an ambiguous exception.
         The exception could either be an OperationalException (therefore
@@ -255,7 +241,6 @@ class ConnectionContext(RequiredConfig):
         return False
 
 
-#==============================================================================
 class ConnectionContextPooled(ConnectionContext):
     """A factory object in the form of a functor.  It returns connections
     to RabbitMQ wrapped in the minimal Connection class above.  It implements
@@ -266,12 +251,10 @@ class ConnectionContextPooled(ConnectionContext):
     by this functor.  This ensures thread safety for RabbitMQ's unsafe
     connections.
     """
-    #--------------------------------------------------------------------------
     def __init__(self, config, local_config=None):
         super(ConnectionContextPooled, self).__init__(config, local_config)
         self.pool = {}
 
-    #--------------------------------------------------------------------------
     def connection(self, name=None):
         """return a named connection.
 
@@ -293,7 +276,6 @@ class ConnectionContextPooled(ConnectionContext):
             super(ConnectionContextPooled, self).connection(name)
         return self.pool[name]
 
-    #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         """overriding the baseclass function, this routine will decline to
         close a connection at the end of a connection context.  This allows
@@ -309,7 +291,6 @@ class ConnectionContextPooled(ConnectionContext):
                     break
             del self.pool[name]
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close all pooled connections"""
         self.config.logger.debug(
@@ -322,7 +303,6 @@ class ConnectionContextPooled(ConnectionContext):
                 name
             )
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self, name=None):
         """tell this functor that the next time it gives out a connection
         under the given name, it had better make sure it is brand new clean

@@ -25,11 +25,11 @@ def assert_expected_same(actual, expected):
 def foo(s, d):
     pass
 
+
 def bar(s, d):
     pass
 
 
-#==============================================================================
 class TestRuleTestLaughable(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('laughable', default='fred')
@@ -44,8 +44,6 @@ class TestRuleTestLaughable(transform_rules.Rule):
             self.close_counter = 1
 
 
-
-#==============================================================================
 class TestRuleTestDangerous(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('dangerous', default='sally')
@@ -60,14 +58,12 @@ class TestRuleTestDangerous(transform_rules.Rule):
             self.close_counter = 1
 
 
-#==============================================================================
 class TestRuleTestNoCloseMethod(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
         return True
 
 
-#==============================================================================
 class TestRuleTestBrokenCloseMethod(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
@@ -78,7 +74,6 @@ class TestRuleTestBrokenCloseMethod(transform_rules.Rule):
         raise AttributeError("We're human")
 
 
-#==============================================================================
 class TestTransformRules(TestCase):
 
     def test_kw_str_parse(self):
