@@ -137,14 +137,8 @@ class TestMatviews(IntegrationTestBase):
           ''
           'socorro.cron.jobs.matviews.ProductVersionsCronApp|1d\n'
           'socorro.cron.jobs.matviews.SignaturesCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.TCBSCronApp|1d\n'
           'socorro.cron.jobs.matviews.ADUCronApp|1d\n'
           'socorro.cron.jobs.matviews.BuildADUCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.CrashesByUserCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.CrashesByUserBuildCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.HomePageGraphCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.HomePageGraphBuildCronApp|1d|02:00\n'
-          'socorro.cron.jobs.matviews.TCBSBuildCronApp|1d|02:00\n'
           'socorro.cron.jobs.matviews.GraphicsDeviceCronApp|1d|02:00\n'
         )
 
@@ -156,14 +150,8 @@ class TestMatviews(IntegrationTestBase):
 
             for app_name in ('product-versions-matview',
                              'signatures-matview',
-                             'tcbs-matview',
                              'adu-matview',
                              'build-adu-matview',
-                             'crashes-by-user-matview',
-                             'crashes-by-user-build-matview',
-                             'home-page-graph-matview',
-                             'home-page-graph-matview-build',
-                             'tcbs-build-matview',
                              'graphics-device-matview',):
 
                 ok_(app_name in information, app_name)
