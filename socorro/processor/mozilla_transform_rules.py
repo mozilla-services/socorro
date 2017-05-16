@@ -622,12 +622,14 @@ class FlashVersionRule(Rule):
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash.flash_version = ''
         flash_version = None
-        for index, a_module in enumerate(
-            processed_crash['json_dump'].get('modules', [])
-        ):
-            flash_version = self._get_flash_version(**a_module)
-            if flash_version:
-                break
+
+        modules = processed_crash['json_dump'].get('modules', [])
+        if isinstance(modules, (tuple, list)):
+            for index, a_module in enumerate(modules):
+                flash_version = self._get_flash_version(**a_module)
+                if flash_version:
+                    break
+
         if flash_version:
             processed_crash.flash_version = flash_version
         else:
