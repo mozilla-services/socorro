@@ -29,13 +29,11 @@ from socorro.lib.transform_rules import Rule
 from sys import maxint
 
 
-#==============================================================================
 class SupportClassificationRule(Rule):
     """the base class for Support Rules.  It provides the framework for the
     rules 'predicate', 'action', and 'version' as well as utilites to help
     rules do their jobs."""
 
-    #--------------------------------------------------------------------------
     def predicate(self, *args, **kwargs):
         """the default predicate for Support Classifiers invokes any derivied
         _predicate function, trapping any exceptions raised in the process.  We
@@ -59,7 +57,6 @@ class SupportClassificationRule(Rule):
             )
             return False
 
-    #--------------------------------------------------------------------------
     def action(self, *args, **kwargs):
         """the default action for Support Classifiers invokes any derivied
         _action function, trapping any exceptions raised in the process.  We
@@ -93,7 +90,6 @@ class SupportClassificationRule(Rule):
             )
         return False
 
-    #--------------------------------------------------------------------------
     def _add_classification(
         self,
         processed_crash,
@@ -126,16 +122,13 @@ class SupportClassificationRule(Rule):
         return True
 
 
-#==============================================================================
 class BitguardClassifier(SupportClassificationRule):
     """To satisfy Bug 931907, this rule will detect 'bitguard.dll' in the
     modules list.  If present, it will add the classification,
     classifications.support.classification.bitguard to the processed crash"""
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         for a_module in processed_crash['json_dump']['modules']:
             if a_module['filename'] == 'bitguard.dll':
@@ -150,7 +143,6 @@ class BitguardClassifier(SupportClassificationRule):
         return False
 
 
-#==============================================================================
 class OutOfDateClassifier(SupportClassificationRule):
     """To satisfy Bug 956879, this rule will detect classify crashes as out
     of date if the version is less than the threshold
@@ -164,11 +156,9 @@ class OutOfDateClassifier(SupportClassificationRule):
         default='17',
     )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         try:
             return (
@@ -191,7 +181,6 @@ class OutOfDateClassifier(SupportClassificationRule):
                 processor
             )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _normalize_windows_version(version_str):
         ver_list = version_str.split('.')[:2]
@@ -212,7 +201,6 @@ class OutOfDateClassifier(SupportClassificationRule):
                 ver_list_normalized.append(0)
         return tuple(ver_list_normalized)
 
-    #--------------------------------------------------------------------------
     def _windows_action(
         self,
         raw_crash,
@@ -244,7 +232,6 @@ class OutOfDateClassifier(SupportClassificationRule):
             processor.config.logger
         )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _normalize_osx_version(version_str):
         ver_list = version_str.split('.')[:2]
@@ -256,7 +243,6 @@ class OutOfDateClassifier(SupportClassificationRule):
                 return maxint
         return tuple(as_int(x) for x in ver_list)
 
-    #--------------------------------------------------------------------------
     def _osx_action(self, raw_crash, raw_dumps, processed_crash, processor):
         osx_version_normalized = self._normalize_osx_version(
             processed_crash["json_dump"]["system_info"]["os_ver"]
@@ -285,7 +271,6 @@ class OutOfDateClassifier(SupportClassificationRule):
             processor.config.logger
         )
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         crashed_version = normalize(raw_crash.Version)
         if "Win" in processed_crash["json_dump"]["system_info"]['os']:
@@ -310,7 +295,7 @@ class OutOfDateClassifier(SupportClassificationRule):
                 processor.config.logger
             )
 
-#------------------------------------------------------------------------------
+
 # the following tuple of tuples is a structure for loading rules into the
 # TransformRules system. The tuples take the form:
 #   predicate_function, predicate_args, predicate_kwargs,

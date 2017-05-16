@@ -17,7 +17,6 @@ from socorro.unittest.testbase import TestCase
 from configman.dotdict import DotDict
 
 
-#==============================================================================
 class TestReprocessing(TestCase):
 
     def setUp(self):

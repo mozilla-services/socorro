@@ -21,20 +21,16 @@ from configman.converters import class_converter
 application = None
 
 
-#==============================================================================
 class BaseCollectorApp(App):
     app_name = 'collector'
     app_version = '5.0'
     app_description = __doc__
 
-    #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     # web_server namespace
     #     the namespace is for config parameters the web server
-    #--------------------------------------------------------------------------
     required_config.namespace('web_server')
     required_config.web_server.add_option(
         'wsgi_server_class',
@@ -44,21 +40,17 @@ class BaseCollectorApp(App):
     )
 
 
-#==============================================================================
 class CollectorApp(BaseCollectorApp):
     app_name = 'collector'
     app_version = '4.0'
     app_description = __doc__
 
-    #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     # collector namespace
     #     the namespace is for config parameters about how to interpret
     #     crash submissions
-    #--------------------------------------------------------------------------
     required_config.namespace('collector')
     required_config.collector.add_option(
         'collector_class',
@@ -67,10 +59,8 @@ class CollectorApp(BaseCollectorApp):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     # throttler namespace
     #     the namespace is for config parameters for the throttler system
-    #--------------------------------------------------------------------------
     required_config.namespace('throttler')
     required_config.throttler.add_option(
         'throttler_class',
@@ -78,10 +68,8 @@ class CollectorApp(BaseCollectorApp):
         doc='the class that implements the throttling action',
         from_string_converter=class_converter
     )
-    #--------------------------------------------------------------------------
     # metrics namespace
     #     the namespace is for config parameters for the metrics system
-    #--------------------------------------------------------------------------
     required_config.namespace('metrics')
     required_config.metrics.add_option(
         'metrics_class',
@@ -89,10 +77,8 @@ class CollectorApp(BaseCollectorApp):
         doc='the class that implements metrics; no value means no metrics',
         from_string_converter=class_converter
     )
-    #--------------------------------------------------------------------------
     # storage namespace
     #     the namespace is for config parameters crash storage
-    #--------------------------------------------------------------------------
     required_config.namespace('storage')
     required_config.storage.add_option(
         'crashstorage_class',
@@ -102,7 +88,6 @@ class CollectorApp(BaseCollectorApp):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def main(self):
         # modwsgi requires a module level name 'application'
         global application

@@ -52,7 +52,7 @@ from socorro.lib.converters import change_default
 
 from configman import Namespace, class_converter
 
-#==============================================================================
+
 class CountAnythingRuleBase(Rule):
     required_config = Namespace()
     required_config.add_option(
@@ -67,23 +67,19 @@ class CountAnythingRuleBase(Rule):
         doc="the name to be used for this rule",
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(CountAnythingRuleBase, self).__init__(config)
         self.counter =  self.config.counter_class(self.config)
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # override me to check any condition within a raw, processed crash
         # or even the state of the processor itself from the proc_meta
         raise NotImplementedError()
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         self.counter._incr(self.config.rule_name)
 
 
-#==============================================================================
 class CountStackWalkerTimeoutKills(CountAnythingRuleBase):
     required_config = Namespace()
     required_config.rule_name = change_default(
@@ -92,7 +88,6 @@ class CountStackWalkerTimeoutKills(CountAnythingRuleBase):
         'stackwalker_timeout_kills'
     )
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # override me to check any condition within a raw, processed crash
         # or even the state of the processor itself from the proc_meta
@@ -103,7 +98,6 @@ class CountStackWalkerTimeoutKills(CountAnythingRuleBase):
         )
 
 
-#==============================================================================
 class CountStackWalkerFailures(CountAnythingRuleBase):
     required_config = Namespace()
     required_config.rule_name = change_default(
@@ -112,7 +106,6 @@ class CountStackWalkerFailures(CountAnythingRuleBase):
         'stackwalker_failures'
     )
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         # override me to check any condition within a raw, processed crash
         # or even the state of the processor itself from the proc_meta
@@ -121,5 +114,3 @@ class CountStackWalkerFailures(CountAnythingRuleBase):
             proc_meta.processor_notes,
             False
         )
-
-

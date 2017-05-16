@@ -16,7 +16,6 @@ from socorro.lib.datetimeutil import (
 from socorro.external.postgresql.dbapi2_util import execute_query_fetchall
 
 
-#==============================================================================
 class PGQueryNewCrashSource(RequiredConfig):
     """This class is an iterator that will yield a stream of crash_ids based
     on a query to the PG database."""
@@ -46,7 +45,6 @@ class PGQueryNewCrashSource(RequiredConfig):
         likely_to_be_changed=True,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, name, quit_check_callback=None):
         self.database = config.database_class(
             config
@@ -61,7 +59,6 @@ class PGQueryNewCrashSource(RequiredConfig):
         self.data = ()
         self.crash_id_query = config.crash_id_query
 
-    #--------------------------------------------------------------------------
     def __iter__(self):
         crash_ids = self.transaction(
             execute_query_fetchall,
@@ -72,19 +69,15 @@ class PGQueryNewCrashSource(RequiredConfig):
         for a_crash_id in crash_ids:
             yield a_crash_id
 
-    #--------------------------------------------------------------------------
     def close(self):
         self.database.close()
 
-    #--------------------------------------------------------------------------
     new_crashes = __iter__
 
-    #--------------------------------------------------------------------------
     def __call__(self):
         return self.__iter__()
 
 
-#==============================================================================
 class PGPVNewCrashSource(PGQueryNewCrashSource):
     required_config = Namespace()
     required_config.crash_id_query = change_default(
@@ -104,7 +97,6 @@ class PGPVNewCrashSource(PGQueryNewCrashSource):
         from_string_converter=string_to_datetime
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, name, quit_check_callback=None):
         super(PGPVNewCrashSource, self).__init__(
             config,
@@ -118,7 +110,6 @@ class PGPVNewCrashSource(PGQueryNewCrashSource):
         )
 
 
-#==============================================================================
 class DBCrashStorageWrapperNewCrashSource(PGQueryNewCrashSource):
     """This class is both a crashstorage system and a new_crash_source
     iterator.  The base FTSApp classes ties the iteration of new crashes
@@ -134,7 +125,6 @@ class DBCrashStorageWrapperNewCrashSource(PGQueryNewCrashSource):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, name=None, quit_check_callback=None):
         super(DBCrashStorageWrapperNewCrashSource, self).__init__(
             config,
@@ -146,12 +136,10 @@ class DBCrashStorageWrapperNewCrashSource(PGQueryNewCrashSource):
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def close(self):
         super(DBCrashStorageWrapperNewCrashSource, self).close()
         self._implementation.close()
 
-    #--------------------------------------------------------------------------
     def __getattr__(self, method):
         def inner(*args, **kwargs):
             return getattr(self._implementation, method)(*args, **kwargs)

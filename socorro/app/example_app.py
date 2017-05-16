@@ -17,13 +17,11 @@ from socorro.app.generic_app import App, main
 from configman import Namespace
 
 
-#==============================================================================
 class ExampleApp(App):
     app_name = 'example'
     app_version = '0.1'
     app_description = __doc__
 
-    #--------------------------------------------------------------------------
     # in this section, define any configuration requirements
     required_config = Namespace()
     required_config.add_option('name',
@@ -33,13 +31,11 @@ class ExampleApp(App):
                                default=datetime.datetime.now(),
                                doc='the time of day')
 
-    #--------------------------------------------------------------------------
     # implementing this constructor is only necessary when there is more
     # initialization to be done before main can be called
     #def __init__(self, config):
         #super(ExampleApp,self).__init__(config)
 
-    #--------------------------------------------------------------------------
     def main(self):
         # this is where we'd implement the app
         # the configuraton is already setup as self.config

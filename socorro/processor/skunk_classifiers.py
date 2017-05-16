@@ -59,13 +59,11 @@ from socorro.lib.util import DotDict
 from socorro.lib.transform_rules import Rule
 
 
-#==============================================================================
 class SkunkClassificationRule(Rule):
     """the base class for Skunk Rules.  It provides the framework for the rules
     'predicate', 'action', and 'version' as well as utilites to help rules do
     their jobs."""
 
-    #--------------------------------------------------------------------------
     def predicate(self, *args, **kwargs):
         """the default predicate for Support Classifiers invokes any derivied
         _predicate function, trapping any exceptions raised in the process.  We
@@ -89,7 +87,6 @@ class SkunkClassificationRule(Rule):
             )
             return False
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         """"The default predicate is too look into the processed crash to see
         if the 'skunk_works' classification has already been applied.
@@ -122,7 +119,6 @@ class SkunkClassificationRule(Rule):
         except KeyError:
             return True
 
-    #--------------------------------------------------------------------------
     def action(self, *args, **kwargs):
         """the default action for Support Classifiers invokes any derivied
         _action function, trapping any exceptions raised in the process.  We
@@ -162,7 +158,6 @@ class SkunkClassificationRule(Rule):
             )
         return False
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         """Rules derived from this base class ought to override this method
         with an actual classification rule.  Successful application of this
@@ -194,12 +189,10 @@ class SkunkClassificationRule(Rule):
         """
         return True
 
-    #--------------------------------------------------------------------------
     def version(self):
         """This method should be overridden in a base class."""
         return '0.0'
 
-    #--------------------------------------------------------------------------
     def _add_classification(
         self,
         processed_crash,
@@ -230,7 +223,6 @@ class SkunkClassificationRule(Rule):
                 classification
             )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_stack(processed_crash, dump_name='upload_file_minidump_plugin'):
         """This utility method offers derived classes a way to fetch the stack
@@ -283,7 +275,6 @@ class SkunkClassificationRule(Rule):
             return False
         return stack
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _stack_contains(
         stack,
@@ -323,7 +314,6 @@ class SkunkClassificationRule(Rule):
         return False
 
 
-#==============================================================================
 class DontConsiderTheseFilter(SkunkClassificationRule):
     """This classifier is meant to match every crash that is of no interest.
     Once identified by the predicate, these uninteresting crashes are passed
@@ -333,7 +323,6 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
     first19 = datetime.date(2012, 10, 17)
     first18 = datetime.date(2012, 10, 23)
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, processor):
         """this predicate matches all crashes that are NOT Firefox Plugin
         crashes of a certain vintage.  This prediciate was adapted from
@@ -474,11 +463,9 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         # classification process will continue by applying further rules.
         return False
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         """the predicate has determined that the crash is uninteresting to
         the SkunkClassifiers.  Don't do anything but return true to stop any
@@ -486,16 +473,12 @@ class DontConsiderTheseFilter(SkunkClassificationRule):
         return True
 
 
-#==============================================================================
 # this rule is no longer in use.  It remains in the codebase for reference
 # for anticipated future resurrection
 class UpdateWindowAttributes(SkunkClassificationRule):
-    """"""
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         try:
             stack = self._get_stack(processed_crash, 'upload_file_minidump_plugin')
@@ -539,7 +522,6 @@ class UpdateWindowAttributes(SkunkClassificationRule):
         return True
 
 
-#==============================================================================
 class SetWindowPos(SkunkClassificationRule):
     required_config = Namespace()
     required_config.add_option(
@@ -549,7 +531,6 @@ class SetWindowPos(SkunkClassificationRule):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config=None):
         super(SetWindowPos, self).__init__(config)
         self.signature_tool = None
@@ -561,12 +542,9 @@ class SetWindowPos(SkunkClassificationRule):
                 # old processor algorithm
                 pass
 
-
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         if not self.signature_tool:
             # for backwards compatiblity, get one from the processor
@@ -588,7 +566,6 @@ class SetWindowPos(SkunkClassificationRule):
             )
         return found
 
-    #--------------------------------------------------------------------------
     def _do_set_window_pos_classification(
         self,
         processed_crash,
@@ -632,15 +609,12 @@ class SetWindowPos(SkunkClassificationRule):
         return False
 
 
-#==============================================================================
 # this rule is no longer in use.  It remains in the codebase for reference
 # for anticipated future resurrection
 class SendWaitReceivePort(SkunkClassificationRule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
 
         stack = self._get_stack(processed_crash, 'upload_file_minidump_flash2')
@@ -663,15 +637,12 @@ class SendWaitReceivePort(SkunkClassificationRule):
         return False
 
 
-#==============================================================================
 # this rule is no longer in use.  It remains in the codebase for reference
 # for anticipated future resurrection
 class Bug811804(SkunkClassificationRule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
 
         try:
@@ -691,15 +662,12 @@ class Bug811804(SkunkClassificationRule):
         return False
 
 
-#==============================================================================
 # this rule is no longer in use.  It remains in the codebase for reference
 # for anticipated future resurrection
 class Bug812318(SkunkClassificationRule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         stack = self._get_stack(processed_crash, 'upload_file_minidump_flash2')
         if stack is False:
@@ -731,13 +699,10 @@ class Bug812318(SkunkClassificationRule):
         return True
 
 
-#==============================================================================
 class NullClassification(SkunkClassificationRule):
-    #--------------------------------------------------------------------------
     def version(self):
         return '0.1'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor):
         self._add_classification(
             processed_crash,

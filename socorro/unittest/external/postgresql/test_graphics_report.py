@@ -11,7 +11,6 @@ from socorro.external.postgresql.graphics_report import GraphicsReport
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestGraphicsReport(PostgreSQLTestCase):
     """Test socorro.external.postgresql.graphics_report.GraphicsReport
      class. """
@@ -88,7 +87,6 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
 
         cls.connection.commit()
 
-    #--------------------------------------------------------------------------
     @classmethod
     def tearDownClass(cls):
         """ Cleanup the database, delete tables and functions """
@@ -100,7 +98,6 @@ class IntegrationTestGraphicsReport(PostgreSQLTestCase):
         cls.connection.commit()
         super(IntegrationTestGraphicsReport, cls).tearDownClass()
 
-    #--------------------------------------------------------------------------
     def test_get(self):
         api = GraphicsReport(config=self.config)
         yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)

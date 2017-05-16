@@ -9,11 +9,9 @@ from socorro.external.postgresql.platforms import Platforms
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestPlatforms(PostgreSQLTestCase):
     """Test socorro.external.postgresql.platforms.Platforms class. """
 
-    #--------------------------------------------------------------------------
     def setUp(self):
         """Set up this test class by populating the os_names table with fake
         data. """
@@ -42,7 +40,6 @@ class IntegrationTestPlatforms(PostgreSQLTestCase):
 
         self.connection.commit()
 
-    #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
@@ -52,7 +49,6 @@ class IntegrationTestPlatforms(PostgreSQLTestCase):
         self.connection.commit()
         super(IntegrationTestPlatforms, self).tearDown()
 
-    #--------------------------------------------------------------------------
     def test_get(self):
         platforms = Platforms(config=self.config)
 

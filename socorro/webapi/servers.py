@@ -10,11 +10,9 @@ from socorro.webapi.class_partial import class_with_partial_init
 from configman import Namespace, RequiredConfig
 
 
-#==============================================================================
 class WebServerBase(RequiredConfig):
     required_config = Namespace()
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, services_list):
         self.config = config
 
@@ -64,16 +62,13 @@ class WebServerBase(RequiredConfig):
         self._identify()
         self._wsgi_func = web.application(self.urls, globals()).wsgifunc()
 
-    #--------------------------------------------------------------------------
     def run(self):
         raise NotImplemented
 
-    #--------------------------------------------------------------------------
     def _identify(self):
         pass
 
 
-#==============================================================================
 class WSGIServer(WebServerBase):
     """When running under a wsgi compatible Web server, modwsgi requires a
     reference to a "wsgifunc" In this varient of the WebServer class, the run
@@ -83,15 +78,12 @@ class WSGIServer(WebServerBase):
     The value of the variable must be the _wsgi_func.
     """
 
-    #--------------------------------------------------------------------------
     def run(self):
         return self._wsgi_func
 
-    #--------------------------------------------------------------------------
     def _identify(self):
         self.config.logger.info('this is WSGIServer')
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_socorro_config_path(wsgi_file):
         wsgi_path = os.path.dirname(os.path.realpath(wsgi_file))
@@ -101,7 +93,6 @@ class WSGIServer(WebServerBase):
 ApacheModWSGI = WSGIServer  # for backwards compatiblity
 
 
-#==============================================================================
 class StandAloneServer(WebServerBase):
     required_config = Namespace()
     required_config.add_option(
@@ -111,7 +102,6 @@ class StandAloneServer(WebServerBase):
     )
 
 
-#==============================================================================
 class CherryPy(StandAloneServer):
     required_config = Namespace()
     required_config.add_option(
@@ -120,14 +110,12 @@ class CherryPy(StandAloneServer):
         default='127.0.0.1'
     )
 
-    #--------------------------------------------------------------------------
     def run(self):
         web.runsimple(
             self._wsgi_func,
             (self.config.web_server.ip_address, self.config.web_server.port)
         )
 
-    #--------------------------------------------------------------------------
     def _identify(self):
         self.config.logger.info(
             'this is CherryPy from web.py running standalone at %s:%d',

@@ -35,7 +35,6 @@ from socorro.lib.util import (
 )
 
 
-#------------------------------------------------------------------------------
 def create_symbol_path_str(input_str):
     symbols_sans_commas = input_str.replace(',', ' ')
     quoted_symbols_list = ['"%s"' % x.strip()
@@ -43,7 +42,6 @@ def create_symbol_path_str(input_str):
     return ' '.join(quoted_symbols_list)
 
 
-#==============================================================================
 class HybridCrashProcessor(RequiredConfig):
     """this class is a refactoring of the original processor algorithm into
     a single class.  This class is suitable for use in the 'processor_app'
@@ -200,7 +198,7 @@ class HybridCrashProcessor(RequiredConfig):
             'to warrant a warning to the user',
         default='17',
     )
-    #--------------------------------------------------------------------------
+
     def __init__(self, config, quit_check_callback=None):
         super(HybridCrashProcessor, self).__init__()
         self.config = config
@@ -286,13 +284,11 @@ class HybridCrashProcessor(RequiredConfig):
         )
         self._statistics.incr('restarts')
 
-    #--------------------------------------------------------------------------
     def reject_raw_crash(self, crash_id, reason):
         self._log_job_start(crash_id)
         self.config.logger.warning('%s rejected: %s', crash_id, reason)
         self._log_job_end(utc_now(), False, crash_id)
 
-    #--------------------------------------------------------------------------
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         file_pathname = os.path.join(
@@ -309,7 +305,6 @@ class HybridCrashProcessor(RequiredConfig):
         finally:
             os.unlink(file_pathname)
 
-    #--------------------------------------------------------------------------
     def process_crash(self, raw_crash, raw_dumps, ignored_processed_crash):
         """ This function is run only by a worker thread.
             Given a job, fetch a thread local database connection and the json
@@ -326,7 +321,6 @@ class HybridCrashProcessor(RequiredConfig):
             crash_id = raw_crash.uuid
             started_timestamp = self._log_job_start(crash_id)
 
-            #..................................................................
             # apply transformations
             # in this section we apply the transformations that will take a
             # raw crash and convert it into the processed crash.  Eventually,
@@ -335,7 +329,6 @@ class HybridCrashProcessor(RequiredConfig):
             # descrete sections below and generalize them into a loop over
             # rule sets.
 
-            #..................................................................
             # apply raw_crash_transform rules
             # these rules modify the raw_crash to adjust product/version names
             # think of it as a preprocessing step before we start the actual
@@ -349,7 +342,6 @@ class HybridCrashProcessor(RequiredConfig):
                 self
             )
 
-            #..................................................................
             # apply raw to processed transform
             try:
                 submitted_timestamp = datetimeFromISOdateString(
@@ -391,7 +383,6 @@ class HybridCrashProcessor(RequiredConfig):
             )
             processed_crash.Winsock_LSP = raw_crash.get('Winsock_LSP', None)
 
-            #..................................................................
             # apply processed_transform rules
             try:
                 self.rule_system.processed_transform \
@@ -410,7 +401,6 @@ class HybridCrashProcessor(RequiredConfig):
                     exc_info=True
                 )
 
-            #..................................................................
             # apply skunk classifier rules
             try:
                 self.rule_system.skunk_classifier.apply_until_action_succeeds(
@@ -428,7 +418,6 @@ class HybridCrashProcessor(RequiredConfig):
                     exc_info=True
                 )
 
-            #..................................................................
             # apply support classifier rules
             try:
                 self.rule_system.support_classifier \
@@ -447,7 +436,6 @@ class HybridCrashProcessor(RequiredConfig):
                     exc_info=True
                 )
 
-            #..................................................................
             # end of transforms
             # the rest of this method is just clean up
 
@@ -474,7 +462,6 @@ class HybridCrashProcessor(RequiredConfig):
         )
         return processed_crash
 
-    #--------------------------------------------------------------------------
     def _create_minimal_processed_crash(self):
         processed_crash = DotDict()
         processed_crash.addons = None
@@ -523,7 +510,6 @@ class HybridCrashProcessor(RequiredConfig):
         processed_crash.Winsock_LSP = None
         return processed_crash
 
-    #--------------------------------------------------------------------------
     def _create_basic_processed_crash(self,
                                       uuid,
                                       raw_crash,
@@ -743,7 +729,6 @@ class HybridCrashProcessor(RequiredConfig):
 
         return processed_crash
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _addon_split_or_warn(addon_pair, processor_notes):
         addon_splits = addon_pair.split(':', 1)
@@ -755,7 +740,6 @@ class HybridCrashProcessor(RequiredConfig):
             addon_splits.append('')
         return tuple(unquote_plus(x) for x in addon_splits)
 
-    #--------------------------------------------------------------------------
     def _process_list_of_addons(self, raw_crash,
                                 processor_notes):
         original_addon_str = self._get_truncate_or_warn(
@@ -772,7 +756,6 @@ class HybridCrashProcessor(RequiredConfig):
         ]
         return addon_list
 
-    #--------------------------------------------------------------------------
     def _add_process_type_to_processed_crash(self, raw_crash):
         """ Electrolysis Support - Optional - raw_crash may contain a
         ProcessType of plugin. In the future this value would be default,
@@ -802,7 +785,6 @@ class HybridCrashProcessor(RequiredConfig):
 
         return process_type_additions_dict
 
-    #--------------------------------------------------------------------------
     def _invoke_minidump_stackwalk(self, dump_pathname, raw_crash_pathname):
         """ This function invokes breakpad_stackdump as an external process
         capturing and returning the text output of stdout.  This version
@@ -823,7 +805,6 @@ class HybridCrashProcessor(RequiredConfig):
         return (CachingIterator(subprocess_handle.stdout),
                 subprocess_handle)
 
-    #--------------------------------------------------------------------------
     def _do_breakpad_stack_dump_analysis(
         self,
         crash_id,
@@ -866,8 +847,6 @@ class HybridCrashProcessor(RequiredConfig):
         )
         return processed_crash_update
 
-
-    #--------------------------------------------------------------------------
     def transform_binary_file(
         self,
         crash_id,
@@ -904,7 +883,6 @@ class HybridCrashProcessor(RequiredConfig):
                     "%s  received as unexpected upload" % dump_pathname
                 )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _extract_memory_info(dump_pathname, processor_notes):
         """Extract and return the JSON data from the .json.gz memory report.
@@ -926,7 +904,6 @@ class HybridCrashProcessor(RequiredConfig):
 
         return memory_info
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _create_pipe_dump_entry(pipedump_lines):
         """make one string from all the cached lines of the stackwalker
@@ -939,7 +916,6 @@ class HybridCrashProcessor(RequiredConfig):
             return '\n'  # no pipe dump lines at all
         return '\n'.join(pipedump_lines) + '\n'
 
-    #--------------------------------------------------------------------------
     def _stackwalk_analysis(
         self,
         dump_analysis_line_iterator,
@@ -1056,7 +1032,6 @@ class HybridCrashProcessor(RequiredConfig):
 
         return processed_crash_update
 
-    #--------------------------------------------------------------------------
     def _analyze_header(self, crash_id, dump_analysis_line_iterator,
                         submitted_timestamp, processor_notes):
         """ Scan through the lines of the dump header:
@@ -1140,13 +1115,11 @@ class HybridCrashProcessor(RequiredConfig):
         processed_crash_update.flash_version = flash_version
         return processed_crash_update
 
-    #--------------------------------------------------------------------------
     flash_re = re.compile(r'NPSWF32_?(.*)\.dll|'
                           'FlashPlayerPlugin_?(.*)\.exe|'
                           'libflashplayer(.*)\.(.*)|'
                           'Flash ?Player-?(.*)')
 
-    #--------------------------------------------------------------------------
     def _get_flash_version(self, moduleData):
         """If (we recognize this module as Flash and figure out a version):
         Returns version; else (None or '')"""
@@ -1185,7 +1158,6 @@ class HybridCrashProcessor(RequiredConfig):
             version = None
         return version
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _decompose_frame_line(line, processor_notes):
         decomposed = [emptyFilter(x) for x in line.split('|')]
@@ -1199,7 +1171,6 @@ class HybridCrashProcessor(RequiredConfig):
             decomposed.extend([None] * 7)
             return decomposed[:7]
 
-    #--------------------------------------------------------------------------
     def _analyze_frames(self, hang_type, java_stack_trace,
                         make_modules_lower_case,
                         dump_analysis_line_iterator, submitted_timestamp,
@@ -1331,7 +1302,6 @@ class HybridCrashProcessor(RequiredConfig):
             "topmost_filenames": topmost_sourcefiles,
         })
 
-    #--------------------------------------------------------------------------
     def _generate_signature(self,
                             signature_list,
                             java_stack_trace,
@@ -1358,7 +1328,6 @@ class HybridCrashProcessor(RequiredConfig):
 
         return signature
 
-    #--------------------------------------------------------------------------
     def _load_transform_rules(self, rule_category):
         sql = (
             "select predicate, predicate_args, predicate_kwargs, "
@@ -1399,7 +1368,6 @@ class HybridCrashProcessor(RequiredConfig):
 
         return rule_system
 
-    #--------------------------------------------------------------------------
     @contextmanager
     def _temp_file_context(self, raw_dump_path):
         """this contextmanager implements conditionally deleting a pathname
@@ -1418,17 +1386,14 @@ class HybridCrashProcessor(RequiredConfig):
                         exc_info=True
                     )
 
-    #--------------------------------------------------------------------------
     def __call__(self, raw_crash, raw_dumps, processed_crash):
         self.process_crash(raw_crash, raw_dumps, processed_crash)
 
-    #--------------------------------------------------------------------------
     def _log_job_start(self, crash_id):
         self.config.logger.info("starting job: %s", crash_id)
         started_datetime = utc_now()
         return started_datetime
 
-    #--------------------------------------------------------------------------
     def _log_job_end(self, completed_datetime, success, crash_id):
         self.config.logger.info(
             "finishing %s job: %s",
@@ -1436,7 +1401,6 @@ class HybridCrashProcessor(RequiredConfig):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_truncate_or_warn(a_mapping, key, notes_list,
                               default=None, max_length=10000):
@@ -1452,7 +1416,6 @@ class HybridCrashProcessor(RequiredConfig):
             )
             return default
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _get_truncate_or_none(a_mapping, key, maxLength=10000):
         try:
@@ -1460,7 +1423,6 @@ class HybridCrashProcessor(RequiredConfig):
         except (KeyError, AttributeError, IndexError, TypeError):
             return None
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _truncate_or_none(a_string, maxLength=10000):
         try:
@@ -1468,7 +1430,6 @@ class HybridCrashProcessor(RequiredConfig):
         except TypeError:
             return None
 
-    #--------------------------------------------------------------------------
     def _load_product_id_map(self):
         try:
             sql = "SELECT product_name, productid, rewrite FROM " \
@@ -1487,12 +1448,10 @@ class HybridCrashProcessor(RequiredConfig):
                                             'rewrite': row[2]}
 
 
-#==============================================================================
 # TransformRules predicate and action function section
 #    * these function are used for the rewriting of the json file before it is
 #          put into Postgres.
 #    * these functions are used in the processor.json_rewrite category
-#------------------------------------------------------------------------------
 def json_equal_predicate(raw_crash, raw_dumps, processed_crash, processor, key, value):
     """a TransformRule predicate function that tests if a key in the json
     is equal to a certain value.  In a rule definition, use of this function
@@ -1515,7 +1474,6 @@ def json_equal_predicate(raw_crash, raw_dumps, processed_crash, processor, key, 
         return False
 
 
-#------------------------------------------------------------------------------
 def json_reformat_action(raw_crash, raw_dumps, processed_crash, processor, key, format_str):
     """a TransformRule action function that allows a single key in the target
     json file to be rewritten using a format string.  The json itself is used
@@ -1546,7 +1504,6 @@ def json_reformat_action(raw_crash, raw_dumps, processed_crash, processor, key, 
     raw_crash[key] = format_str % raw_crash
 
 
-#------------------------------------------------------------------------------
 def json_ProductID_predicate(raw_crash, raw_dumps, processed_crash, processor):
     """a TransformRule predicate that tests if the value of the json field,
     'ProductID' is present in the processor's _product_id_map.  If it is, then
@@ -1562,7 +1519,6 @@ def json_ProductID_predicate(raw_crash, raw_dumps, processed_crash, processor):
         return False
 
 
-#------------------------------------------------------------------------------
 def json_Product_rewrite_action(raw_crash, raw_dumps, processed_crash, processor):
     """a TransformRule action function that will change the name of a product.
     It finds the new name in by looking up the 'ProductID' in the processor's

@@ -7,17 +7,14 @@
 from collections import Sequence
 
 
-#==============================================================================
 class SQLDidNotReturnSingleValue (Exception):
     pass
 
 
-#==============================================================================
 class SQLDidNotReturnSingleRow (Exception):
     pass
 
 
-#==============================================================================
 class FetchAllSequence(Sequence):
     """A sequence wrapper for results of a PG cursor's fetchall()
     that when supplied with the cursor description gives you an
@@ -60,7 +57,6 @@ class FetchAllSequence(Sequence):
         return [dict(zip(names, x)) for x in self.rows]
 
 
-#------------------------------------------------------------------------------
 def single_value_sql(connection, sql, parameters=None):
     with connection.cursor() as a_cursor:
         a_cursor.execute(sql, parameters)
@@ -71,7 +67,6 @@ def single_value_sql(connection, sql, parameters=None):
             raise SQLDidNotReturnSingleValue("%s: %s" % (str(x), sql))
 
 
-#------------------------------------------------------------------------------
 def single_row_sql(connection, sql, parameters=None):
     with connection.cursor() as a_cursor:
         a_cursor.execute(sql, parameters)
@@ -82,7 +77,6 @@ def single_row_sql(connection, sql, parameters=None):
             raise SQLDidNotReturnSingleRow("%s: %s" % (str(x), sql))
 
 
-#------------------------------------------------------------------------------
 def execute_query_iter(connection, sql, parameters=None):
     with connection.cursor() as a_cursor:
         a_cursor.execute(sql, parameters)
@@ -94,7 +88,6 @@ def execute_query_iter(connection, sql, parameters=None):
                 break
 
 
-#------------------------------------------------------------------------------
 def execute_query_fetchall(connection, sql, parameters=None):
     with connection.cursor() as a_cursor:
         a_cursor.execute(sql, parameters)
@@ -104,7 +97,6 @@ def execute_query_fetchall(connection, sql, parameters=None):
         )
 
 
-#------------------------------------------------------------------------------
 def execute_no_results(connection, sql, parameters=None):
     with connection.cursor() as a_cursor:
         a_cursor.execute(sql, parameters)

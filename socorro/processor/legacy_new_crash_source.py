@@ -14,7 +14,6 @@ from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.lib.datetimeutil import utc_now
 
 
-#==============================================================================
 class LegacyNewCrashSource(RequiredConfig):
     """this class is a refactoring of the iteratior portion of the legacy
     Socorro processor.  It isolates just the part of fetching the ooids of
@@ -45,7 +44,6 @@ class LegacyNewCrashSource(RequiredConfig):
         from_string_converter=timedelta_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, processor_name, quit_check_callback=None):
         self.config = config
         self.database = self.config.database_class(config)
@@ -75,7 +73,6 @@ class LegacyNewCrashSource(RequiredConfig):
                 )
                 raise
 
-    #--------------------------------------------------------------------------
     def _create_priority_jobs(self, connection):
         self.processor_id = single_value_sql(
           connection,
@@ -99,7 +96,6 @@ class LegacyNewCrashSource(RequiredConfig):
         )
         return priority_jobs_table_name
 
-    #--------------------------------------------------------------------------
     def close(self):
         self.transaction.do_quit_check = False
         self.transaction(
@@ -111,7 +107,6 @@ class LegacyNewCrashSource(RequiredConfig):
           self.priority_jobs_table_name
         )
 
-    #--------------------------------------------------------------------------
     def _priority_jobs_iter(self):
         """
         Yields a list of JobTuples pulled from the 'jobs' table for all the
@@ -161,7 +156,6 @@ class LegacyNewCrashSource(RequiredConfig):
             else:
                 yield None
 
-    #--------------------------------------------------------------------------
     def _normal_jobs_iter(self):
         """
         Yields a list of job tuples pulled from the 'jobs' table for which the
@@ -198,7 +192,6 @@ class LegacyNewCrashSource(RequiredConfig):
             else:
                 yield None
 
-    #--------------------------------------------------------------------------
     def _job_iter(self):
         """
            a_job_tuple has this form: (jobId, jobUuid, jobPriority) ...
@@ -241,7 +234,6 @@ class LegacyNewCrashSource(RequiredConfig):
                 ooids_already_seen = set()
                 yield None  # nothing to do
 
-    #--------------------------------------------------------------------------
     def __iter__(self):
         """an adapter that allows this class can serve as an iterator in a
         fetch_transform_save app"""
@@ -251,9 +243,7 @@ class LegacyNewCrashSource(RequiredConfig):
             else:
                 yield None
 
-    #--------------------------------------------------------------------------
     new_crashes =  __iter__
 
-    #--------------------------------------------------------------------------
     def __call__(self):
         return self.__iter__()

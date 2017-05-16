@@ -8,7 +8,6 @@ from configman.converters import class_converter
 from functools import partial
 
 
-#==============================================================================
 class FSNewCrashSource(RequiredConfig):
     """An iterable of crashes from file sytem classes"""
 
@@ -21,18 +20,15 @@ class FSNewCrashSource(RequiredConfig):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, name=None, quit_check_callback=None):
         self.crash_store = config.crashstorage_class(
             config,
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def close(self):
         pass
 
-    #--------------------------------------------------------------------------
     def __iter__(self):
         """Return an iterator over crashes from RabbitMQ.
 
@@ -47,9 +43,7 @@ class FSNewCrashSource(RequiredConfig):
                 (a_crash_id,), {}
             )
 
-    #--------------------------------------------------------------------------
     new_crashes =  __iter__
 
-    #--------------------------------------------------------------------------
     def __call__(self):
         return self.__iter__()

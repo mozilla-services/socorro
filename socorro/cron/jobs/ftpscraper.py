@@ -211,7 +211,6 @@ class ScrapersMixin(object):
             yield (platform, version, kvpairs, bad_lines)
 
 
-#==============================================================================
 @with_postgres_transactions()
 @as_backfill_cron_app
 class FTPScraperCronApp(BaseCronApp, ScrapersMixin):

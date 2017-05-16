@@ -17,7 +17,6 @@ from socorro.lib.util import DotDict
 from socorro.lib.transform_rules import Rule
 
 
-#------------------------------------------------------------------------------
 def _create_symbol_path_str(input_str):
     symbols_sans_commas = input_str.replace(',', ' ')
     quoted_symbols_list = ['"%s"' % x.strip()
@@ -25,7 +24,6 @@ def _create_symbol_path_str(input_str):
     return ' '.join(quoted_symbols_list)
 
 
-#==============================================================================
 class BreakpadStackwalkerRule(Rule):
 
     required_config = Namespace()
@@ -68,7 +66,6 @@ class BreakpadStackwalkerRule(Rule):
         default=tempfile.gettempdir(),
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(BreakpadStackwalkerRule, self).__init__(config)
         # the code in this section originally hales from 2008 ExternalProcessor
@@ -92,11 +89,9 @@ class BreakpadStackwalkerRule(Rule):
         tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
         self.mdsw_command_line = tmp % config
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         file_pathname = os.path.join(
@@ -113,7 +108,6 @@ class BreakpadStackwalkerRule(Rule):
         finally:
             os.unlink(file_pathname)
 
-    #--------------------------------------------------------------------------
     @contextmanager
     def _temp_file_context(self, raw_dump_path):
         """this contextmanager implements conditionally deleting a pathname
@@ -131,7 +125,6 @@ class BreakpadStackwalkerRule(Rule):
                         raw_dump_path,
                     )
 
-    #--------------------------------------------------------------------------
     def _invoke_minidump_stackwalk(
         self,
         dump_name,
@@ -208,7 +201,6 @@ class BreakpadStackwalkerRule(Rule):
 
         return stackwalker_data
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
@@ -254,14 +246,11 @@ class BreakpadStackwalkerRule(Rule):
         return True
 
 
-#==============================================================================
 class CrashingThreadRule(Rule):
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         try:
             processed_crash.crashedThread = (
@@ -300,7 +289,6 @@ class CrashingThreadRule(Rule):
         return True
 
 
-#==============================================================================
 class ExternalProcessRule(Rule):
 
     required_config = Namespace()
@@ -338,15 +326,12 @@ class ExternalProcessRule(Rule):
             required_config.command_pathname.default.split('/')[-1],
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(ExternalProcessRule, self).__init__(config)
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
             return ujson.load(fp)
@@ -359,7 +344,6 @@ class ExternalProcessRule(Rule):
             )
             return {}
 
-    #--------------------------------------------------------------------------
     def _execute_external_process(self, command_line, processor_meta):
         if self.config.get('chatty', False):
             self.config.logger.debug(
@@ -380,7 +364,6 @@ class ExternalProcessRule(Rule):
         return_code = subprocess_handle.wait()
         return external_command_output, return_code
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def dot_save(a_mapping, key, value):
         if '.' not in key or isinstance(a_mapping, ConfigmanDotDict):
@@ -396,7 +379,6 @@ class ExternalProcessRule(Rule):
                 current_mapping = current_mapping[key_fragment]
         current_mapping[key_parts[-1]] = value
 
-    #--------------------------------------------------------------------------
     def _save_results(
         self,
         external_command_output,
@@ -416,7 +398,6 @@ class ExternalProcessRule(Rule):
             return_code
         )
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         command_parameters = dict(self.config)
         command_parameters['dump_file_pathname'] = raw_dumps[
@@ -437,7 +418,6 @@ class ExternalProcessRule(Rule):
         return True
 
 
-#==============================================================================
 class DumpLookupExternalRule(ExternalProcessRule):
 
     required_config = Namespace()
@@ -481,7 +461,6 @@ class DumpLookupExternalRule(ExternalProcessRule):
         'dump_lookup_return_code'
     )
 
-    #--------------------------------------------------------------------------
     def _predicate(
         self,
         raw_crash,
@@ -492,7 +471,6 @@ class DumpLookupExternalRule(ExternalProcessRule):
         return 'create_dump_lookup' in raw_crash
 
 
-#==============================================================================
 class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
     required_config = Namespace()
@@ -536,11 +514,9 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         default=tempfile.gettempdir(),
     )
 
-    #--------------------------------------------------------------------------
     def version(self):
         return '1.0'
 
-    #--------------------------------------------------------------------------
     @contextmanager
     def _temp_raw_crash_json_file(self, raw_crash, crash_id):
         file_pathname = os.path.join(
@@ -557,7 +533,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         finally:
             os.unlink(file_pathname)
 
-    #--------------------------------------------------------------------------
     def _execute_external_process(self, command_line, processor_meta):
         stackwalker_output, return_code = super(
             BreakpadStackwalkerRule2015,
@@ -595,7 +570,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
 
         return stackwalker_data, return_code
 
-    #--------------------------------------------------------------------------
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         if 'additional_minidumps' not in processed_crash:
             processed_crash.additional_minidumps = []
@@ -649,7 +623,6 @@ class BreakpadStackwalkerRule2015(ExternalProcessRule):
         return True
 
 
-#==============================================================================
 class JitCrashCategorizeRule(ExternalProcessRule):
 
     required_config = Namespace()
@@ -681,11 +654,9 @@ class JitCrashCategorizeRule(ExternalProcessRule):
         default=8
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(JitCrashCategorizeRule, self).__init__(config)
 
-    #--------------------------------------------------------------------------
     def _predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
         if (
             processed_crash.product != 'Firefox' or
@@ -712,7 +683,6 @@ class JitCrashCategorizeRule(ExternalProcessRule):
             processed_crash.signature.endswith('js::irregexp::ExecuteCode<T>')
         )
 
-    #--------------------------------------------------------------------------
     def _interpret_external_command_output(self, fp, processor_meta):
         try:
             result = fp.read()

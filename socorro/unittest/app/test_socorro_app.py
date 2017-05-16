@@ -19,10 +19,8 @@ from socorro.app.socorro_app import (
 from socorro.app.for_application_defaults import ApplicationDefaultsProxy
 
 
-#==============================================================================
 class TestSocorroApp(TestCase):
 
-    #--------------------------------------------------------------------------
     def test_instantiation(self):
         config = DotDict()
         sa = SocorroApp(config)
@@ -31,7 +29,6 @@ class TestSocorroApp(TestCase):
         assert_raises(NotImplementedError, sa.main)
         assert_raises(NotImplementedError, sa._do_run)
 
-    #--------------------------------------------------------------------------
     def test_run(self):
         class SomeOtherApp(SocorroApp):
             @classmethod
@@ -44,7 +41,6 @@ class TestSocorroApp(TestCase):
         x = SomeOtherApp.run()
         eq_(x, 17)
 
-    #--------------------------------------------------------------------------
     def test_run_with_alternate_config_path(self):
         class SomeOtherApp(SocorroApp):
             @classmethod
@@ -59,7 +55,6 @@ class TestSocorroApp(TestCase):
         eq_(x, 17)
         eq_(SomeOtherApp.config_path, 'my/other/path')
 
-    #--------------------------------------------------------------------------
     def test_run_with_alternate_values_source_list(self):
         class SomeOtherApp(SocorroApp):
             @classmethod
@@ -76,8 +71,6 @@ class TestSocorroApp(TestCase):
         eq_(SomeOtherApp.config_path, 'my/other/path')
         eq_(SomeOtherApp.values_source_list, [])
 
-
-    #--------------------------------------------------------------------------
     def test_do_run(self):
         config = DotDict()
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
@@ -113,7 +106,6 @@ class TestSocorroApp(TestCase):
                 ))
                 eq_(result, 17)
 
-    #--------------------------------------------------------------------------
     def test_do_run_with_alternate_class_path(self):
         config = DotDict()
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:
@@ -150,8 +142,6 @@ class TestSocorroApp(TestCase):
                 ))
                 eq_(result, 17)
 
-
-    #--------------------------------------------------------------------------
     def test_do_run_with_alternate_values_source_list(self):
         config = DotDict()
         with mock.patch('socorro.app.socorro_app.ConfigurationManager') as cm:

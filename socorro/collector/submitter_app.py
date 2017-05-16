@@ -27,7 +27,6 @@ from socorro.external.fs.filesystem import findFileGenerator
 from socorro.lib.util import DotDict
 
 
-#==============================================================================
 class SubmitterFileSystemWalkerSource(CrashStorageBase):
     """This is a crashstorage derivative that can walk an arbitrary file
     system path looking for crashes.  The new_crashes generator yields
@@ -51,7 +50,6 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
         default='upload_file_minidump'
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         if isinstance(quit_check_callback, basestring):
             # this class is being used as a 'new_crash_source' and the name
@@ -62,7 +60,6 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, (prefix, path_tuple)):
         """the default implemntation of fetching a raw_crash
         parameters:
@@ -71,7 +68,6 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
         with open(path_tuple[0]) as raw_crash_fp:
             return DotDict(json.load(raw_crash_fp))
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, (prefix, path_tuple)):
         """the default implemntation of fetching a processed_crash
         parameters:
@@ -80,12 +76,10 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
         with open(path_tuple[0]) as processed_crash_fp:
             return DotDict(json.load(processed_crash_fp))
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, prefix_path_tuple):
         file_dumps_mapping = self.get_raw_dumps_as_files(prefix_path_tuple)
         return file_dumps_mapping.as_memory_dumps_mapping()
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, prefix_path_tuple):
         """the default implemntation of fetching a dump.
         parameters:
@@ -99,9 +93,6 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             )
         )
 
-
-
-    #--------------------------------------------------------------------------
     def _dump_names_from_pathnames(self, pathnames):
         """Given a list of pathnames of this form:
 
@@ -133,7 +124,6 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             dump_names.append(dump_name)
         return dump_names
 
-    #--------------------------------------------------------------------------
     def new_crashes(self):
         # loop over all files under the search_root that have a suffix of
         # ".json"
@@ -155,7 +145,7 @@ class SubmitterFileSystemWalkerSource(CrashStorageBase):
             # this (args, kwargs) form instead
             yield (((prefix, crash_pathnames), ), {})
 
-#==============================================================================
+
 # this class was relocated to a more appropriate module and given a new name.
 # This import is offered for backwards compatibilty.  Note, that there has also
 # been an internal change to the required config, with the source
@@ -165,7 +155,6 @@ from socorro.external.postgresql.new_crash_source import (
 )
 
 
-#==============================================================================
 class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     app_name = 'submitter_app'
     app_version = '3.1'
@@ -186,7 +175,6 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         default=False
     )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         return {
@@ -197,12 +185,10 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
             "number_of_submissions": "all",
         }
 
-    #--------------------------------------------------------------------------
     def _action_between_each_iteration(self):
         if self.config.submitter.delay:
             time.sleep(self.config.submitter.delay)
 
-    #--------------------------------------------------------------------------
     def _action_after_iteration_completes(self):
         self.config.logger.info(
             'the queuing iterator is exhausted - waiting to quit'
@@ -213,14 +199,12 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
         )
         time.sleep(self.config.producer_consumer.number_of_threads * 2)
 
-    #--------------------------------------------------------------------------
     def _filter_disallowed_values(self, current_value):
         """in this base class there are no disallowed values coming from the
         iterators.  Other users of these iterator may have some standards and
         can detect and reject them here"""
         return current_value is None
 
-    #--------------------------------------------------------------------------
     def _transform(self, crash_id):
         """this transform function only transfers raw data from the
         source to the destination without changing the data."""

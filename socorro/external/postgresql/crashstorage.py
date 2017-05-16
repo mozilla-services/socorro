@@ -33,7 +33,6 @@ from socorro.external.postgresql.dbapi2_util import (
 )
 
 
-#==============================================================================
 class PostgreSQLBasicCrashStorage(CrashStorageBase):
     """this implementation of crashstorage saves processed crashes to
     an instance of Postgresql.  It only saves certain key values to the
@@ -99,7 +98,6 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         ("version", "version", 16),
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(PostgreSQLBasicCrashStorage, self).__init__(
             config,
@@ -112,16 +110,13 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
             quit_check_callback=quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         self.transaction(self._save_processed_transaction, processed_crash)
 
-    #--------------------------------------------------------------------------
     def _save_processed_transaction(self, connection, processed_crash):
         report_id = self._save_processed_report(connection, processed_crash)
         self._save_plugins(connection, processed_crash, report_id)
 
-    #--------------------------------------------------------------------------
     def _save_processed_report(self, connection, processed_crash):
         """ Here we INSERT or UPDATE a row in the reports table.
         This is the first stop before imported data gets into our normalized
@@ -214,7 +209,6 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
         report_id = single_value_sql(connection, upsert_sql, value_list)
         return report_id
 
-    #--------------------------------------------------------------------------
     def _save_plugins(self, connection, processed_crash, report_id):
         """ Electrolysis Support - Optional - processed_crash may contain a
         ProcessType of plugin. In the future this value would be default,
@@ -293,7 +287,6 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
                                plugins_reports_insert_sql,
                                values_tuple)
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def _table_suffix_for_crash_id(crash_id):
         """given an crash_id, return the name of its storage table"""
@@ -306,10 +299,8 @@ class PostgreSQLBasicCrashStorage(CrashStorageBase):
                                 previous_monday_date.day)
 
 
-#==============================================================================
 class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """the default implementation of fetching a raw_crash
 
@@ -320,7 +311,6 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     def _get_raw_crash_transaction(self, connection, crash_id):
         raw_crash_table_name = (
             'raw_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
@@ -337,7 +327,6 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
         except SQLDidNotReturnSingleValue:
             raise CrashIDNotFound(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """this method returns an unredacted processed crash
 
@@ -348,7 +337,6 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     def _get_processed_crash_transaction(self, connection, crash_id):
         processed_crash_table_name = (
             'processed_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
@@ -365,13 +353,11 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
         except SQLDidNotReturnSingleValue:
             raise CrashIDNotFound(crash_id)
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """nota bene: this function does not save the dumps in PG, only
         the raw crash json is saved."""
         self.transaction(self._save_raw_crash_transaction, raw_crash, crash_id)
 
-    #-------------------------------------------------------------------------
     def _save_raw_crash_transaction(self, connection, raw_crash, crash_id):
         raw_crash_table_name = (
             'raw_crashes_%s' % self._table_suffix_for_crash_id(crash_id)
@@ -413,14 +399,11 @@ class PostgreSQLCrashStorage(PostgreSQLBasicCrashStorage):
         }
         execute_no_results(connection, upsert_sql, values)
 
-
-    #--------------------------------------------------------------------------
     def _save_processed_transaction(self, connection, processed_crash):
         report_id = self._save_processed_report(connection, processed_crash)
         self._save_plugins(connection, processed_crash, report_id)
         self._save_processed_crash(connection, processed_crash)
 
-    #--------------------------------------------------------------------------
     def _save_processed_crash(self, connection, processed_crash):
         crash_id = processed_crash['uuid']
         processed_crashes_table_name = (

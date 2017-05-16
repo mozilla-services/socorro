@@ -40,7 +40,6 @@ from socorro.app.generic_app import App, main  # main not used here, but
                                                # class defined here.
 
 
-#==============================================================================
 class FetchTransformSaveApp(App):
     """base class for apps that follow the fetch/transform/save model"""
     app_name = 'generic_fetch_transform_save_app'
@@ -86,7 +85,6 @@ class FetchTransformSaveApp(App):
         default='forever'
     )
 
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         """this method allows an app to inject defaults into the configuration
@@ -106,7 +104,6 @@ class FetchTransformSaveApp(App):
             'socorro.external.fs.crashstorage.FSPermanentStorage',
         }
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(FetchTransformSaveApp, self).__init__(config)
         self.waiting_func = None
@@ -139,7 +136,6 @@ class FetchTransformSaveApp(App):
     # exhaustion of the innermost iterator.
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    #--------------------------------------------------------------------------
     def _create_iter(self):
         # the actual mechanism of creating the iterator to be overridden in
         # subclasses based on what they want to iterate over.  In this default,
@@ -148,13 +144,11 @@ class FetchTransformSaveApp(App):
         # source is the file system walking class.
         return self.source.new_crashes()
 
-    #--------------------------------------------------------------------------
     def _action_between_each_iteration(self):
         """an action to take after an item has been yielded by the iterator.
         This method is to be overridden by derived classes"""
         pass
 
-    #--------------------------------------------------------------------------
     def _action_after_iteration_completes(self):
         """an action to be done when the iterator returned by the
         "_create_iter" method is exhausted.  This method is to be overridden
@@ -163,7 +157,6 @@ class FetchTransformSaveApp(App):
         system for the next loop."""
         pass
 
-    #--------------------------------------------------------------------------
     def _basic_iterator(self):
         """this iterator yields individual crash_ids and/or Nones from the
         iterator specified by the "_create_iter" method. Bare values yielded
@@ -184,7 +177,6 @@ class FetchTransformSaveApp(App):
             yield None
         self._action_after_iteration_completes()
 
-    #--------------------------------------------------------------------------
     def _infinite_iterator(self):
         """this iterator wraps the "_basic_iterator" when the configuration
         specifies that the "number_of_submissions" is set to "forever".
@@ -199,7 +191,6 @@ class FetchTransformSaveApp(App):
                     continue
                 yield crash_id
 
-    #--------------------------------------------------------------------------
     def _all_iterator(self):
         """this is the iterator for the case when "number_of_submissions" is
         set to "all".  It goes through the innermost iterator exactly once
@@ -210,7 +201,6 @@ class FetchTransformSaveApp(App):
                 break
             yield crash_id
 
-    #--------------------------------------------------------------------------
     def _limited_iterator(self):
         """this is the iterator for the case when "number_of_submissions" is
         set to an integer.  It goes through the innermost iterator exactly the
@@ -240,14 +230,12 @@ class FetchTransformSaveApp(App):
             if i == int(self.config.number_of_submissions):
                 break
 
-    #--------------------------------------------------------------------------
     def _filter_disallowed_values(self, current_value):
         """in this base class there are no disallowed values coming from the
         iterators.  Other users of these iterator may have some standards and
         can detect and reject them here"""
         return False
 
-    #--------------------------------------------------------------------------
     def transform(
         self,
         crash_id,
@@ -273,7 +261,6 @@ class FetchTransformSaveApp(App):
                     exc_info=True
                 )
 
-    #--------------------------------------------------------------------------
     def _transform(self, crash_id):
         """this default transform function only transfers raw data from the
         source to the destination without changing the data.  While this may
@@ -316,15 +303,12 @@ class FetchTransformSaveApp(App):
                     exc_info=True
                 )
 
-    #--------------------------------------------------------------------------
     def quit_check(self):
         self.task_manager.quit_check()
 
-    #--------------------------------------------------------------------------
     def signal_quit(self):
         self.task_manager.stop()
 
-    #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
         """instantiate the classes that implement the source and destination
         crash storage systems."""
@@ -351,7 +335,6 @@ class FetchTransformSaveApp(App):
             )
             raise
 
-    #--------------------------------------------------------------------------
     def _setup_task_manager(self):
         """instantiate the threaded task manager to run the producer/consumer
         queue that is the heart of the processor."""
@@ -373,7 +356,6 @@ class FetchTransformSaveApp(App):
             )
         self.config.executor_identity = self.task_manager.executor_identity
 
-    #--------------------------------------------------------------------------
     def close(self):
         try:
             self.source.close()
@@ -386,7 +368,6 @@ class FetchTransformSaveApp(App):
             # this destination class has no close, we can ignore that & move on
             pass
 
-    #--------------------------------------------------------------------------
     def main(self):
         """this main routine sets up the signal handlers, the source and
         destination crashstorage systems at the  theaded task manager.  That
@@ -400,7 +381,6 @@ class FetchTransformSaveApp(App):
         self.config.logger.info('done.')
 
 
-#==============================================================================
 class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
     required_config = Namespace()
     required_config.namespace('new_crash_source')
@@ -411,7 +391,6 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def _create_iter(self):
         # while the base class ties the iterator to the class specified as the
         # crash data "source", this class introduces a different stream of
@@ -422,7 +401,6 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
         # PG query
         return self.new_crash_source.new_crashes()
 
-    #--------------------------------------------------------------------------
     def _setup_source_and_destination(self):
         """use the base class to setup the source and destinations but add to
         that setup the instantiation of the "new_crash_source" """
@@ -440,7 +418,6 @@ class FetchTransformSaveWithSeparateNewCrashSourceApp(FetchTransformSaveApp):
             # back to tying the "new_crash_source" to the "source".
             self.new_crash_source = self.source
 
-    #--------------------------------------------------------------------------
     def close(self):
         super(FetchTransformSaveWithSeparateNewCrashSourceApp, self).close()
         if self.source != self.new_crash_source:

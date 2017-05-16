@@ -6,9 +6,8 @@ from crontabber.mixins import (
     with_single_transaction
 )
 
-#==============================================================================
 # dedicated rabbitmq mixins
-#------------------------------------------------------------------------------
+#
 # this class decorator adds attributes to the class in the form:
 #     self.queuing_connection
 #     self.queuing_transaction
@@ -21,7 +20,7 @@ with_rabbitmq_transactions = partial(
     'socorro.external.rabbitmq.connection_context.ConnectionContext',
     'queuing'
 )
-#------------------------------------------------------------------------------
+
 # this class decorator adds a _run_proxy method to the class that will
 # acquire a database connection and then pass it to the invocation of the
 # class' "run" method.  Since the connection is in the form of a
@@ -35,7 +34,7 @@ with_rabbitmq_connection_as_argument = partial(
     with_resource_connection_as_argument,
     'queuing'
 )
-#------------------------------------------------------------------------------
+
 # this class decorator adds a _run_proxy method to the class that will
 # call the class' run method in the context of a database transaction.  It
 # passes the connection to the "run" function.  When "run" completes without

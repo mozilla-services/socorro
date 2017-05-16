@@ -17,7 +17,6 @@ from socorro.external.crashstorage_base import Redactor
 from socorro.unittest.testbase import TestCase
 
 
-#------------------------------------------------------------------------------
 def sequencer(*args):
     list_of_args =  list(args)
     def foo(*fargs, **fkwargs):
@@ -28,7 +27,6 @@ def sequencer(*args):
     return foo
 
 
-#------------------------------------------------------------------------------
 def generator_for_sequence(*args):
     list_of_args =  list(args)
     def foo(*fargs, **fkwargs):
@@ -39,10 +37,8 @@ def generator_for_sequence(*args):
     return foo
 
 
-#==============================================================================
 class TestSubmitterFileSystemWalkerSource(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_standard_config(self):
         config = DotDict()
         config.search_root = None
@@ -55,14 +51,12 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def test_setup(self):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
         eq_(sub_walker.config, config)
         eq_(sub_walker.config.logger, config.logger)
 
-    #--------------------------------------------------------------------------
     def test_get_raw_crash(self):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
@@ -81,7 +75,6 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
         ok_(isinstance(raw_crash, DotDict))
         eq_(raw_crash['name'], 'Gabi')
 
-    #--------------------------------------------------------------------------
     def test_get_raw_dumps_as_files(self):
         config = self.get_standard_config()
         sub_walker = SubmitterFileSystemWalkerSource(config)
@@ -108,7 +101,6 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
         ok_(isinstance(raw_dumps_files, dict))
         eq_(raw_dumps_files, dump_names)
 
-    #--------------------------------------------------------------------------
     def test_new_crashes(self):
         sequence =  [
             (
@@ -202,10 +194,8 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
                 eq_(result, expected)
 
 
-#==============================================================================
 class TestSubmitterApp(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_standard_config(self):
         config = DotDict()
 
@@ -243,7 +233,6 @@ class TestSubmitterApp(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def get_new_crash_source_config(self):
         config = DotDict()
 
@@ -285,15 +274,12 @@ class TestSubmitterApp(TestCase):
 
         return config
 
-
-    #--------------------------------------------------------------------------
     def test_setup(self):
         config = self.get_standard_config()
         sub = SubmitterApp(config)
         eq_(sub.config, config)
         eq_(sub.config.logger, config.logger)
 
-    #--------------------------------------------------------------------------
     def test_transform(self):
         config = self.get_standard_config()
         sub = SubmitterApp(config)
@@ -320,7 +306,6 @@ class TestSubmitterApp(TestCase):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     def test_source_iterator(self):
 
         # Test with number of submissions equal to all
@@ -389,7 +374,6 @@ class TestSubmitterApp(TestCase):
         eq_(itera.next(), ((1,), {}))
         assert_raises(StopIteration, itera.next)
 
-    #--------------------------------------------------------------------------
     def test_new_crash_source_iterator(self):
 
         # Test with number of submissions equal to all

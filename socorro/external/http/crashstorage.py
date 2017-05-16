@@ -13,7 +13,6 @@ import contextlib
 poster.streaminghttp.register_openers()
 
 
-#==============================================================================
 class HTTPPOSTCrashStorage(CrashStorageBase):
     """this a crashstorage derivative that just pushes a crash out to a
     Socorro collector waiting at a url"""
@@ -49,7 +48,6 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
         urllib2.HTTPError,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(HTTPPOSTCrashStorage, self).__init__(
             config,
@@ -61,7 +59,6 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         self.transaction(
             self.__class__._submit_crash_via_http_POST,
@@ -70,7 +67,6 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     def _submit_crash_via_http_POST(self, raw_crash, dumps, crash_id):
         in_memory_dumps = dumps.as_memory_dumps_mapping()
         for dump_name, dump in dumps.iteritems():
@@ -107,36 +103,30 @@ class HTTPPOSTCrashStorage(CrashStorageBase):
     # that it must have the following methods.  The really important one here
     # is the __call__ method.  That's the key method employed by the
     # transaction class.
-    #--------------------------------------------------------------------------
     def commit(self):
         """HTTP POST doesn't support transactions so this silently
         does nothing"""
 
-    #--------------------------------------------------------------------------
     def rollback(self):
         """HTTP POST doesn't support transactions so this silently
         does nothing"""
 
-    #--------------------------------------------------------------------------
     @contextlib.contextmanager
     def __call__(self):
         """this class will serve as its own context manager.  That enables it
         to use the transaction_executor class for retries"""
         yield self
 
-    #--------------------------------------------------------------------------
     def in_transaction(self, dummy):
         """HTTP POST doesn't support transactions, so it is never in
         a transaction."""
         return False
 
-    #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         lower_msg = msg.lower()
         if 'timed out' in lower_msg or 'timeout' in lower_msg:
             return True
         return False
 
-    #--------------------------------------------------------------------------
     def force_reconnect(self):
         pass

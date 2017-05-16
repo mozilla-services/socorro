@@ -39,7 +39,6 @@ def socorrodotdict_to_dict(sdotdict):
     return _dictify(sdotdict)
 
 
-#==============================================================================
 class MemoryDumpsMapping(dict):
     """there has been a bifurcation in the crash storage data throughout the
     history of the classes.  The crash dumps have two different
@@ -59,7 +58,6 @@ class MemoryDumpsMapping(dict):
     is going to need.
     """
 
-    #--------------------------------------------------------------------------
     def as_file_dumps_mapping(self, crash_id, temp_path, dump_file_suffix):
         """convert this MemoryDumpMapping into a FileDumpsMappng by writing
         each of the dump to a filesystem."""
@@ -80,14 +78,12 @@ class MemoryDumpsMapping(dict):
                 f.write(a_dump)
         return name_to_pathname_mapping
 
-    #--------------------------------------------------------------------------
     def as_memory_dumps_mapping(self):
         """this is alrady a MemoryDumpMapping so we can just return self
         without having to do any conversion."""
         return self
 
 
-#==============================================================================
 class FileDumpsMapping(dict):
     """there has been a bifurcation in the crash storage data throughout the
     history of the classes.  The crash dumps have two different
@@ -108,7 +104,6 @@ class FileDumpsMapping(dict):
     is going to need.
     """
 
-    #--------------------------------------------------------------------------
     def as_file_dumps_mapping(
         self,
         *args,
@@ -121,7 +116,6 @@ class FileDumpsMapping(dict):
         MemoryDumpsMapping class."""
         return self
 
-    #--------------------------------------------------------------------------
     def as_memory_dumps_mapping(self):
         """convert this into a MemoryDumpsMapping by opening and reading each
         of the dumps in the mapping."""
@@ -132,7 +126,6 @@ class FileDumpsMapping(dict):
         return in_memory_dumps
 
 
-#==============================================================================
 class Redactor(RequiredConfig):
     """This class is the implementation of a functor for in situ redacting
     of sensitive keys from a mapping.  Keys that are to be redacted are placed
@@ -152,14 +145,12 @@ class Redactor(RequiredConfig):
         reference_value_from='resource.redactor',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
         self.forbidden_keys = [
             x.strip() for x in self.config.forbidden_keys.split(',')
         ]
 
-    #--------------------------------------------------------------------------
     def redact(self, a_mapping):
         """this is the function that does the redaction."""
         for a_key in self.forbidden_keys:
@@ -174,17 +165,14 @@ class Redactor(RequiredConfig):
                 # another pattern that matched at a higher level
                 pass
 
-    #--------------------------------------------------------------------------
     def __call__(self, a_mapping):
         self.redact(a_mapping)
 
 
-#==============================================================================
 class CrashIDNotFound(Exception):
     pass
 
 
-#==============================================================================
 class CrashStorageBase(RequiredConfig):
     """the base class for all crash storage classes"""
     required_config = Namespace()
@@ -195,7 +183,6 @@ class CrashStorageBase(RequiredConfig):
         reference_value_from='resource.redactor',
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """base class constructor
 
@@ -227,7 +214,6 @@ class CrashStorageBase(RequiredConfig):
         self.exceptions_eligible_for_retry = ()
         self.redactor = config.redactor_class(config)
 
-    #--------------------------------------------------------------------------
     def close(self):
         """some implementations may need explicit closing."""
         pass
@@ -240,7 +226,6 @@ class CrashStorageBase(RequiredConfig):
         """
         return False
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """this method that saves  both the raw_crash and the dump, must be
         overridden in any implementation.
@@ -262,7 +247,6 @@ class CrashStorageBase(RequiredConfig):
             crash_id - the crash key to use for this crash"""
         pass
 
-    #--------------------------------------------------------------------------
     def save_raw_crash_with_file_dumps(self, raw_crash, dumps, crash_id):
         """this method that saves  both the raw_crash and the dump and must be
         overridden in any implementation that wants a different behavior.  It
@@ -282,7 +266,6 @@ class CrashStorageBase(RequiredConfig):
             crash_id
         )
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         """this method saves the processed_crash and must be overridden in
         anything that chooses to implement it.
@@ -300,7 +283,6 @@ class CrashStorageBase(RequiredConfig):
             processed_crash - a mapping containing the processed crash"""
         pass
 
-    #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
         """Mainly for the convenience and efficiency of the processor,
@@ -316,7 +298,6 @@ class CrashStorageBase(RequiredConfig):
         self.save_raw_crash(raw_crash, dumps, crash_id)
         self.save_processed(processed_crash)
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """the default implementation of fetching a raw_crash
 
@@ -324,7 +305,6 @@ class CrashStorageBase(RequiredConfig):
            crash_id - the id of a raw crash to fetch"""
         raise NotImplementedError("get_raw_crash is not implemented")
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         """the default implementation of fetching a dump
 
@@ -333,7 +313,6 @@ class CrashStorageBase(RequiredConfig):
            name - the name of the dump to fetch"""
         raise NotImplementedError("get_raw_dump is not implemented")
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """the default implementation of fetching all the dumps
 
@@ -341,7 +320,6 @@ class CrashStorageBase(RequiredConfig):
            crash_id - the id of a dump to fetch"""
         raise NotImplementedError("get_raw_dumps is not implemented")
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         """the default implementation of fetching all the dumps as files on
         a file system somewhere.  returns a list of pathnames.
@@ -350,7 +328,6 @@ class CrashStorageBase(RequiredConfig):
            crash_id - the id of a dump to fetch"""
         raise NotImplementedError("get_raw_dumps is not implemented")
 
-    #--------------------------------------------------------------------------
     def get_processed(self, crash_id):
         """the default implementation of fetching a processed_crash.  This
         method should not be overridden in subclasses unless the intent is to
@@ -362,7 +339,6 @@ class CrashStorageBase(RequiredConfig):
         self.redactor(processed_crash)
         return processed_crash
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """the implementation of fetching a processed_crash with no redaction
 
@@ -372,7 +348,6 @@ class CrashStorageBase(RequiredConfig):
             "get_unredacted_processed is not implemented"
         )
 
-    #--------------------------------------------------------------------------
     def remove(self, crash_id):
         """delete a crash from storage
 
@@ -380,7 +355,6 @@ class CrashStorageBase(RequiredConfig):
            crash_id - the id of a crash to fetch"""
         raise NotImplementedError("remove is not implemented")
 
-    #--------------------------------------------------------------------------
     def new_crashes(self):
         """a generator handing out a sequence of crash_ids of crashes that are
         considered to be new.  Each implementation can interpret the concept
@@ -389,18 +363,15 @@ class CrashStorageBase(RequiredConfig):
         """
         return []
 
-    #--------------------------------------------------------------------------
     def ack_crash(self, crash_id):
         """overridden by subclasses that must acknowledge a successful use of
         an item pulled from the 'new_crashes' generator. """
         return crash_id
 
 
-#==============================================================================
 class NullCrashStorage(CrashStorageBase):
     """a testing crashstorage that silently ignores everything it's told to do
     """
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """the default implementation of fetching a raw_crash
 
@@ -408,7 +379,6 @@ class NullCrashStorage(CrashStorageBase):
            crash_id - the id of a raw crash to fetch"""
         return SocorroDotDict()
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name):
         """the default implementation of fetching a dump
 
@@ -416,7 +386,6 @@ class NullCrashStorage(CrashStorageBase):
            crash_id - the id of a dump to fetch"""
         return ''
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """the default implementation of fetching all the dumps
 
@@ -424,7 +393,6 @@ class NullCrashStorage(CrashStorageBase):
            crash_id - the id of a dump to fetch"""
         return SocorroDotDict()
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         """the default implementation of fetching all the dumps
 
@@ -432,7 +400,6 @@ class NullCrashStorage(CrashStorageBase):
            crash_id - the id of a dump to fetch"""
         return SocorroDotDict()
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """the default implementation of fetching a processed_crash
 
@@ -440,7 +407,6 @@ class NullCrashStorage(CrashStorageBase):
            crash_id - the id of a processed_crash to fetch"""
         return SocorroDotDict()
 
-    #--------------------------------------------------------------------------
     def remove(self, crash_id):
         """delete a crash from storage
 
@@ -449,7 +415,6 @@ class NullCrashStorage(CrashStorageBase):
         pass
 
 
-#==============================================================================
 class PolyStorageError(Exception, collections.MutableSequence):
     """an exception container holding a sequence of exceptions with tracebacks.
 
@@ -500,7 +465,6 @@ class PolyStorageError(Exception, collections.MutableSequence):
                                    for e in self.exceptions))
 
 
-#==============================================================================
 class PolyCrashStorage(CrashStorageBase):
     """a crashstorage implementation that encapsulates a collection of other
     crashstorage instances.  Any save operation applied to an instance of this
@@ -531,7 +495,6 @@ class PolyCrashStorage(CrashStorageBase):
       likely_to_be_changed=True,
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """instantiate all the subordinate crashstorage instances
 
@@ -557,7 +520,6 @@ class PolyCrashStorage(CrashStorageBase):
                                       quit_check_callback
                                  )
 
-    #--------------------------------------------------------------------------
     def close(self):
         """iterate through the subordinate crash stores and close them.
         Even though the classes are closed in sequential order, all are
@@ -580,7 +542,6 @@ class PolyCrashStorage(CrashStorageBase):
         if storage_exception.has_exceptions():
             raise storage_exception
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """iterate through the subordinate crash stores saving the raw_crash
         and the dump to each of them.
@@ -601,7 +562,6 @@ class PolyCrashStorage(CrashStorageBase):
         if storage_exception.has_exceptions():
             raise storage_exception
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         """iterate through the subordinate crash stores saving the
         processed_crash to each of the.
@@ -620,7 +580,6 @@ class PolyCrashStorage(CrashStorageBase):
         if storage_exception.has_exceptions():
             raise storage_exception
 
-    #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dump, processed_crash,
                                crash_id):
         storage_exception = PolyStorageError()
@@ -667,7 +626,6 @@ class PolyCrashStorage(CrashStorageBase):
             raise storage_exception
 
 
-#==============================================================================
 class FallbackCrashStorage(CrashStorageBase):
     """This storage system has a primary and fallback subordinate storage
     systems.  If an exception is raised by the primary storage system during
@@ -691,7 +649,6 @@ class FallbackCrashStorage(CrashStorageBase):
       from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """instantiate the primary and secondary storage systems"""
         super(FallbackCrashStorage, self).__init__(config, quit_check_callback)
@@ -705,7 +662,6 @@ class FallbackCrashStorage(CrashStorageBase):
         )
         self.logger = self.config.logger
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close both storage systems.  The second will still be closed even
         if the first raises an exception. """
@@ -720,7 +676,6 @@ class FallbackCrashStorage(CrashStorageBase):
         if len(poly_exception.exceptions) > 1:
             raise poly_exception
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """save raw crash data to the primary.  If that fails save to the
         fallback.  If that fails raise the PolyStorageException
@@ -742,7 +697,6 @@ class FallbackCrashStorage(CrashStorageBase):
                 poly_exception.gather_current_exception()
                 raise poly_exception
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         """save processed crash data to the primary.  If that fails save to the
         fallback.  If that fails raise the PolyStorageException
@@ -762,7 +716,6 @@ class FallbackCrashStorage(CrashStorageBase):
                 poly_exception.gather_current_exception()
                 raise poly_exception
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """get a raw crash 1st from primary and if not found then try the
         fallback.
@@ -774,7 +727,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.fallback_store.get_raw_crash(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         """get a named crash dump 1st from primary and if not found then try
         the fallback.
@@ -786,7 +738,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.fallback_store.get_raw_dump(crash_id, name)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """get all crash dumps 1st from primary and if not found then try
         the fallback.
@@ -798,7 +749,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.fallback_store.get_raw_dumps(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         """get all crash dump pathnames 1st from primary and if not found then
         try the fallback.
@@ -810,7 +760,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.fallback_store.get_raw_dumps_as_files(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """fetch an unredacted processed_crash
 
@@ -821,7 +770,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.fallback_store.get_unredacted_processed(crash_id)
 
-    #--------------------------------------------------------------------------
     def remove(self, crash_id):
         """delete a crash from storage
 
@@ -832,7 +780,6 @@ class FallbackCrashStorage(CrashStorageBase):
         except CrashIDNotFound:
             self.fallback_store.remove(crash_id)
 
-    #--------------------------------------------------------------------------
     def new_crashes(self):
         """return an iterator that yields a list of crash_ids of raw crashes
         that were added to the file system since the last time this iterator
@@ -843,7 +790,6 @@ class FallbackCrashStorage(CrashStorageBase):
             yield a_crash
 
 
-#==============================================================================
 class MigrationCrashStorage(FallbackCrashStorage):
     required_config = Namespace()
     required_config.add_option(
@@ -853,7 +799,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
             "be used (YYYMMDD)",
     )
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """save raw crash data to the primary storage iff the date embedded
         in the crash_id is greater or equal to the threshold, otherwise save
@@ -869,7 +814,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             self.fallback_store.save_raw_crash(raw_crash, dumps, crash_id)
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         """save processed crash data to the primary storage iff the date
         embedded in the crash_id is greater or equal to the threshold,
@@ -882,7 +826,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             self.fallback_store.save_processed(processed_crash)
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """get a raw crash from the primary if the crash_id embedded date is
         greater than or equal to the threshold, otherwise use the fallback
@@ -894,7 +837,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             return self.fallback_store.get_raw_crash(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         """get a named crash dump 1from the primary if the crash_id embedded
         date is greater than or equal to the threshold, otherwise use the
@@ -907,7 +849,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             return self.fallback_store.get_raw_dump(crash_id, name)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """get all crash dumps from the primary if the crash_id embedded date
         is greater than or equal to the threshold, otherwise use the fallback
@@ -919,7 +860,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             return self.fallback_store.get_raw_dumps(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         """get all crash dump pathnames from the primary if the crash_id
         embedded date is greater than or equal to the threshold, otherwise
@@ -932,7 +872,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             return self.fallback_store.get_raw_dumps_as_files(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """fetch an unredacted processed_crash from the primary if the crash_id
         embedded date is greater than or equal to the threshold, otherwise use
@@ -945,7 +884,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
         else:
             return self.fallback_store.get_unredacted_processed(crash_id)
 
-    #--------------------------------------------------------------------------
     def remove(self, crash_id):
         """delete a crash from storage
 
@@ -957,7 +895,6 @@ class MigrationCrashStorage(FallbackCrashStorage):
             self.fallback_store.remove(crash_id)
 
 
-#==============================================================================
 class PrimaryDeferredStorage(CrashStorageBase):
     """
     PrimaryDeferredStorage reads information from a raw crash and, based on a
@@ -986,7 +923,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
       from_string_converter=eval
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         """instantiate the primary and deferred storage systems"""
         super(PrimaryDeferredStorage, self).__init__(
@@ -1003,7 +939,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         )
         self.logger = self.config.logger
 
-    #--------------------------------------------------------------------------
     def close(self):
         """close both storage systems.  The second will still be closed even
         if the first raises an exception. """
@@ -1018,7 +953,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         if len(poly_exception.exceptions) > 1:
             raise poly_exception
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """save crash data into either the primary or deferred storage,
         depending on the deferral criteria"""
@@ -1027,7 +961,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         else:
             self.deferred_store.save_raw_crash(raw_crash, dumps, crash_id)
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         """save processed crash data into either the primary or deferred
         storage, depending on the deferral criteria"""
@@ -1036,7 +969,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         else:
             self.deferred_store.save_processed(processed_crash)
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         """get a raw crash 1st from primary and if not found then try the
         deferred.
@@ -1048,7 +980,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.deferred_store.get_raw_crash(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         """get a named crash dump 1st from primary and if not found then try
         the deferred.
@@ -1061,7 +992,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.deferred_store.get_raw_dump(crash_id, name)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         """get all crash dumps 1st from primary and if not found then try
         the deferred.
@@ -1073,7 +1003,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.deferred_store.get_raw_dumps(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         """get all crash dump pathnames 1st from primary and if not found then
         try the deferred.
@@ -1085,7 +1014,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.deferred_store.get_raw_dumps_as_files(crash_id)
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """fetch an unredacted processed_crash
 
@@ -1096,7 +1024,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         except CrashIDNotFound:
             return self.deferred_store.get_unredacted_processed(crash_id)
 
-    #--------------------------------------------------------------------------
     def remove(self, crash_id):
         """delete a crash from storage
 
@@ -1107,7 +1034,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         except CrashIDNotFound:
             self.deferred_store.remove(crash_id)
 
-    #--------------------------------------------------------------------------
     def new_crashes(self):
         """return an iterator that yields a list of crash_ids of raw crashes
         that were added to the file system since the last time this iterator
@@ -1115,7 +1041,6 @@ class PrimaryDeferredStorage(CrashStorageBase):
         return self.primary_store.new_crashes()
 
 
-#==============================================================================
 class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
     """
     PrimaryDeferredProcessedStorage aggregates three methods of storage: it
@@ -1132,7 +1057,6 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
       from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(PrimaryDeferredProcessedStorage, self).__init__(
             config,
@@ -1143,18 +1067,15 @@ class PrimaryDeferredProcessedStorage(PrimaryDeferredStorage):
             quit_check_callback
         )
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         self.processed_store.save_processed(processed_crash)
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         """fetch an unredacted processed crash from the underlying
         storage implementation"""
         return self.processed_store.get_unredacted_processed(crash_id)
 
 
-#==============================================================================
 class BenchmarkingCrashStorage(CrashStorageBase):
     """a wrapper around crash stores that will benchmark the calls in the logs
     """
@@ -1171,7 +1092,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         from_string_converter=class_converter
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
         super(BenchmarkingCrashStorage, self).__init__(
             config,
@@ -1184,12 +1104,10 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         self.start_timer = datetime.datetime.now
         self.end_timer = datetime.datetime.now
 
-    #--------------------------------------------------------------------------
     def close(self):
         """some implementations may need explicit closing."""
         self.wrapped_crashstore.close()
 
-    #--------------------------------------------------------------------------
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_raw_crash(raw_crash, dumps, crash_id)
@@ -1200,7 +1118,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             end_time - start_time
         )
 
-    #--------------------------------------------------------------------------
     def save_processed(self, processed_crash):
         start_time = self.start_timer()
         self.wrapped_crashstore.save_processed(processed_crash)
@@ -1211,7 +1128,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             end_time - start_time
         )
 
-    #--------------------------------------------------------------------------
     def save_raw_and_processed(self, raw_crash, dumps, processed_crash,
                                crash_id):
         start_time = self.start_timer()
@@ -1228,7 +1144,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
             end_time - start_time
         )
 
-    #--------------------------------------------------------------------------
     def get_raw_crash(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_crash(crash_id)
@@ -1240,7 +1155,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
         return result
 
-    #--------------------------------------------------------------------------
     def get_raw_dump(self, crash_id, name=None):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dump(crash_id)
@@ -1252,7 +1166,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
         return result
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dumps(crash_id)
@@ -1264,7 +1177,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
         return result
 
-    #--------------------------------------------------------------------------
     def get_raw_dumps_as_files(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_raw_dumps_as_files(crash_id)
@@ -1276,7 +1188,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
         return result
 
-    #--------------------------------------------------------------------------
     def get_unredacted_processed(self, crash_id):
         start_time = self.start_timer()
         result = self.wrapped_crashstore.get_unredacted_processed(crash_id)
@@ -1288,7 +1199,6 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         )
         return result
 
-    #--------------------------------------------------------------------------
     def remove(self, crash_id):
         start_time = self.start_timer()
         self.wrapped_crashstore.remove(crash_id)

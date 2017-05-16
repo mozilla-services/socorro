@@ -51,8 +51,6 @@ class _MatViewBackfillBase(_MatViewBase):
         target_date = (date - datetime.timedelta(days=1)).date()
         self.run_proc(connection, [target_date])
 
-#------------------------------------------------------------------------------
-
 
 class ProductVersionsCronApp(_MatViewBase):
     proc_name = 'update_product_versions'

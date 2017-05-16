@@ -24,10 +24,9 @@ from socorro.unittest.lib.test_transform_rules import (
 from socorro.lib import transform_rules
 from socorro.external.statsd.dogstatsd import StatsClient
 
-#==============================================================================
+
 class TestStatsdCounterRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def setup_config(self, prefix=None):
         config = DotDict()
         config.chatty_rules = False
@@ -67,7 +66,6 @@ class TestStatsdCounterRule(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     @patch('socorro.external.statsd.dogstatsd.statsd')
     def test_apply_all(self, statsd_obj):
         config = self.setup_config('processor')
@@ -103,7 +101,7 @@ class TestStatsdCounterRule(TestCase):
                 ),
             ])
 
-#==============================================================================
+
 class TestStatsdCountAnythingRule(TestStatsdCounterRule):
 
     @patch('socorro.external.statsd.dogstatsd.statsd')

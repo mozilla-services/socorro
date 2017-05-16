@@ -5,7 +5,7 @@ import os
 from configman import RequiredConfig, Namespace
 from configman.converters import class_converter
 
-#------------------------------------------------------------------------------
+
 def default_task_func(a_param):
     """This default consumer function just doesn't do anything.  It is a
     placeholder just to demonstrate the api and not really for any other
@@ -13,7 +13,6 @@ def default_task_func(a_param):
     pass
 
 
-#------------------------------------------------------------------------------
 def default_iterator():
     """This default producer's iterator yields the integers 0 through 9 and
     then yields none forever thereafter.  It is a placeholder to demonstrate
@@ -23,7 +22,6 @@ def default_iterator():
     while True:
         yield None
 
-#------------------------------------------------------------------------------
 def respond_to_SIGTERM(signal_number, frame, target=None):
     """ these classes are instrumented to respond to a KeyboardInterrupt by
     cleanly shutting down.  This function, when given as a handler to for
@@ -53,7 +51,6 @@ def respond_to_SIGTERM(signal_number, frame, target=None):
         raise KeyboardInterrupt
 
 
-#==============================================================================
 class TaskManager(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
@@ -67,7 +64,6 @@ class TaskManager(RequiredConfig):
       doc='stop if the queue is empty'
     )
 
-    #--------------------------------------------------------------------------
     def __init__(self, config,
                  job_source_iterator=default_iterator,
                  task_func=default_task_func):
@@ -94,7 +90,6 @@ class TaskManager(RequiredConfig):
         self.quit = False
         self.logger.debug('TaskManager finished init')
 
-    #--------------------------------------------------------------------------
     def quit_check(self):
         """this is the polling function that the threads periodically look at.
         If they detect that the quit flag is True, then a KeyboardInterrupt
@@ -102,7 +97,6 @@ class TaskManager(RequiredConfig):
         if self.quit:
             raise KeyboardInterrupt
 
-    #--------------------------------------------------------------------------
     def _get_iterator(self):
         """The iterator passed in can take several forms: a class that can be
         instantiated and then iterated over; a function that when called
@@ -117,7 +111,6 @@ class TaskManager(RequiredConfig):
             except TypeError:
                 return self.job_param_source_iter
 
-    #--------------------------------------------------------------------------
     def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=''):
         """When there is litte work to do, the queuing thread sleeps a lot.
         It can't sleep for too long without checking for the quit flag and/or
@@ -146,7 +139,6 @@ class TaskManager(RequiredConfig):
                 self.quit_check()
             time.sleep(1.0)
 
-    #--------------------------------------------------------------------------
     def blocking_start(self, waiting_func=None):
         """this function starts the task manager running to do tasks.  The
         waiting_func is normally used to do something while other threads
@@ -184,7 +176,6 @@ class TaskManager(RequiredConfig):
             self.quit = True
             self.logger.debug("ThreadlessTaskManager dies quietly")
 
-    #--------------------------------------------------------------------------
     def executor_identity(self):
         """this function is likely to be called via the configuration parameter
         'executor_identity' at the root of the self.config attribute of the
@@ -194,4 +185,3 @@ class TaskManager(RequiredConfig):
         This is useful for maintaining transactional integrity on a resource
         connection."""
         return "%s-%s" % (self._pid, threading.currentThread().getName())
-

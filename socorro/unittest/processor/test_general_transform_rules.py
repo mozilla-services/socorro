@@ -102,24 +102,20 @@ canonical_processed_crash = DotDict({
 })
 
 
-#==============================================================================
 class TestIdentifierRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
 
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     def test_everything_we_hoped_for(self):
         config = self.get_basic_config()
 
@@ -139,7 +135,6 @@ class TestIdentifierRule(TestCase):
         # raw crash should be unchanged
         eq_(raw_crash, canonical_standard_raw_crash)
 
-    #--------------------------------------------------------------------------
     def test_stuff_missing(self):
         config = self.get_basic_config()
 
@@ -167,24 +162,20 @@ class TestIdentifierRule(TestCase):
         eq_(raw_crash, expected_raw_crash)
 
 
-#==============================================================================
 class TestCPUInfoRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
 
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     def test_everything_we_hoped_for(self):
         config = self.get_basic_config()
 
@@ -207,7 +198,6 @@ class TestCPUInfoRule(TestCase):
         # raw crash should be unchanged
         eq_(raw_crash, canonical_standard_raw_crash)
 
-    #--------------------------------------------------------------------------
     def test_stuff_missing(self):
         config = self.get_basic_config()
 
@@ -240,24 +230,20 @@ class TestCPUInfoRule(TestCase):
         eq_(raw_crash, canonical_standard_raw_crash)
 
 
-#==============================================================================
 class TestOSInfoRule(TestCase):
 
-    #--------------------------------------------------------------------------
     def get_basic_config(self):
         config = CDotDict()
         config.logger = Mock()
 
         return config
 
-    #--------------------------------------------------------------------------
     def get_basic_processor_meta(self):
         processor_meta = DotDict()
         processor_meta.processor_notes = []
 
         return processor_meta
 
-    #--------------------------------------------------------------------------
     def test_everything_we_hoped_for(self):
         config = self.get_basic_config()
 
@@ -277,7 +263,6 @@ class TestOSInfoRule(TestCase):
         # raw crash should be unchanged
         eq_(raw_crash, canonical_standard_raw_crash)
 
-    #--------------------------------------------------------------------------
     def test_stuff_missing(self):
         config = self.get_basic_config()
 
@@ -302,5 +287,3 @@ class TestOSInfoRule(TestCase):
 
         # raw crash should be unchanged
         eq_(raw_crash, canonical_standard_raw_crash)
-
-

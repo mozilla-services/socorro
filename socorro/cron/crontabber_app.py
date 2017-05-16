@@ -32,9 +32,7 @@ DEFAULT_JOBS = '''
 from socorro.app.socorro_app import App as App
 
 
-#==============================================================================
 class CronTabberApp(CronTabberBase, App):
-    #--------------------------------------------------------------------------
     @staticmethod
     def get_application_defaults():
         return {
@@ -48,7 +46,6 @@ class CronTabberApp(CronTabberBase, App):
 
         }
 
-#------------------------------------------------------------------------------
 
 from crontabber.app import CronTabber
 

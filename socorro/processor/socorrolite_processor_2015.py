@@ -5,7 +5,6 @@ from socorro.lib.converters import change_default
 
 from configman import Namespace
 
-#------------------------------------------------------------------------------
 # these are the steps that define minimal processing of a crash.
 # they are used to define the default rule configuration a
 # crash processor based on Procesor2015
@@ -41,7 +40,6 @@ socorrolite_processor_rule_sets = [
 ]
 
 
-#==============================================================================
 class SocorroLiteProcessorAlgorithm2015(Processor2015):
     """this is the class that processor uses to transform """
 

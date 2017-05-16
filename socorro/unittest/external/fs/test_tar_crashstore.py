@@ -22,14 +22,11 @@ from socorro.unittest.testbase import TestCase
 TEMP_DIR = tempfile.gettempdir()
 
 
-#==============================================================================
 class TestTarFileWritingCrashStorage(TestCase):
 
-    #--------------------------------------------------------------------------
     def setUp(self):
         super(TestTarFileWritingCrashStorage, self).setUp()
 
-    #--------------------------------------------------------------------------
     def _get_config(self):
         config = DotDict()
         config.logger = Mock()
@@ -40,7 +37,6 @@ class TestTarFileWritingCrashStorage(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def test_init(self):
         config = self._get_config()
 
@@ -56,7 +52,6 @@ class TestTarFileWritingCrashStorage(TestCase):
             'w'
         )
 
-    #--------------------------------------------------------------------------
     def test_save_processed(self):
         config = self._get_config()
         config.tarfile_module = tarfile
@@ -94,10 +89,8 @@ class TestTarFileWritingCrashStorage(TestCase):
         )
 
 
-#==============================================================================
 class TestTarFileSequentialReadingCrashStorage(TestCase):
 
-    #--------------------------------------------------------------------------
     def _get_config(self):
         config = DotDict()
         config.logger = Mock()
@@ -109,7 +102,6 @@ class TestTarFileSequentialReadingCrashStorage(TestCase):
 
         return config
 
-    #--------------------------------------------------------------------------
     def test_get_processed(self):
         config = self._get_config()
         config.tarfile_module = tarfile

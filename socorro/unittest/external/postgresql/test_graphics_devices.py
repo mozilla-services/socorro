@@ -10,7 +10,6 @@ from socorro.external.postgresql.graphics_devices import GraphicsDevices
 from .unittestbase import PostgreSQLTestCase
 
 
-#==============================================================================
 class IntegrationTestGraphicsDevices(PostgreSQLTestCase):
 
     def tearDown(self):
