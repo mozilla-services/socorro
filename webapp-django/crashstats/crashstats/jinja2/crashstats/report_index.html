@@ -265,6 +265,7 @@
                             <tr title="{{ fields_desc['processed_crash.process_type'] }}">
                                 <th scope="row">Process Type</th>
                                 <td>{{ report.process_type }}
+                                    ({{ raw.RemoteType and raw.RemoteType or 'web' }})
                                     {% if report.PluginName %}
                                     <strong class="name">{{ report.PluginName }}</strong>
                                     {% endif %}

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 import copy
 import csv
 import datetime
@@ -1493,6 +1494,47 @@ class TestViews(BaseTestViews):
         # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
         # the client output.
         ok_(u'Prénom'.encode('utf-8') in response.content)
+
+    def test_report_index_with_remote_type_raw_crash(self):
+        """If a processed crash has a 'process_type' value *and*
+        if the raw crash has as 'RemoteType' then both of these
+        values should be displayed in the HTML.
+        """
+
+        def mocked_raw_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'meta':
+                raw = copy.deepcopy(_SAMPLE_META)
+                raw['RemoteType'] = 'java-applet'
+                return raw
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = (
+            mocked_raw_crash_get
+        )
+
+        def mocked_processed_crash_get(**params):
+            assert 'datatype' in params
+            if params['datatype'] == 'unredacted':
+                processed = copy.deepcopy(_SAMPLE_UNREDACTED)
+                processed['process_type'] = 'contentish'
+                return processed
+
+            raise NotImplementedError(params)
+
+        models.UnredactedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        url = reverse(
+            'crashstats:report_index',
+            args=['11cb72f5-eb28-41e1-a8e4-849982120611']
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        assert 'Process Type' in response.content
+        # Expect that it displays '{process_type}\s+({raw_crash.RemoteType})'
+        ok_(re.findall('contentish\s+\(java-applet\)', response.content))
 
     def test_report_index_with_additional_raw_dump_links(self):
         # using \\n because it goes into the JSON string
