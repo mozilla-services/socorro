@@ -589,6 +589,7 @@ class PolyCrashStorage(CrashStorageBase):
         # processed crash which is a SocorroDotDict into a pure python
         # dict which we can more easily copy.deepcopy() operate on.
         processed_crash_as_dict = socorrodotdict_to_dict(processed_crash)
+        raw_crash_as_dict = socorrodotdict_to_dict(raw_crash)
 
         for a_store in self.stores.itervalues():
             self.quit_check()
@@ -601,14 +602,20 @@ class PolyCrashStorage(CrashStorageBase):
                     # you can't deepcopy those, so we deepcopy the
                     # pure dict version and then dress it back up as a
                     # DotDict.
-                    crash = SocorroDotDict(copy.deepcopy(processed_crash_as_dict))
+                    my_processed_crash = SocorroDotDict(
+                        copy.deepcopy(processed_crash_as_dict)
+                    )
+                    my_raw_crash = SocorroDotDict(
+                        copy.deepcopy(raw_crash_as_dict)
+                    )
                 else:
-                    crash = processed_crash
+                    my_processed_crash = processed_crash
+                    my_raw_crash = raw_crash
 
                 a_store.save_raw_and_processed(
-                    raw_crash,
+                    my_raw_crash,
                     dump,
-                    crash,
+                    my_processed_crash,
                     crash_id
                 )
             except Exception:
