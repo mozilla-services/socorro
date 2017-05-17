@@ -70,7 +70,8 @@ $ALEMBIC -c config/alembic.ini upgrade heads
 # Run tests
 $NOSE socorro -s
 
-# Test webapp
+# Collect static and then test webapp
 pushd webapp-django
+python manage.py collectstatic --noinput
 ./bin/ci.sh
 popd

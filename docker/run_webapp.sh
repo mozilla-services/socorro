@@ -5,15 +5,29 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Runs the webapp.
+#
+# Use the "--dev" argument to run the webapp in a docker container for
+# the purposes of local development.
 
 PORT=${PORT:-"8000"}
 NUM_WORKERS=${NUM_WORKERS:-"6"}
 
-uwsgi --pythonpath /app/socorro/webapp-django/ \
-      --master \
-      --need-app \
-      --wsgi webapp-django.wsgi.socorro-crashstats \
-      --buffer-size 16384 \
-      --enable-threads \
-      --processes $NUM_WORKERS \
-      --http-socket 0.0.0.0:${PORT}
+if [ "$1" == "--dev" ]; then
+    # Collect static files
+    cd /app/webapp-django/ && python manage.py collectstatic --noinput
+
+    # Run with manage.py
+    echo "Running webapp. Connect with browser using http://localhost:8000/ ."
+    cd /app/webapp-django/ && python manage.py runserver 0.0.0.0:8000
+
+else
+    # Run uwsgi
+    uwsgi --pythonpath /app/webapp-django/ \
+          --master \
+          --need-app \
+          --wsgi webapp-django.wsgi.socorro-crashstats \
+          --buffer-size 16384 \
+          --enable-threads \
+          --processes $NUM_WORKERS \
+          --http-socket 0.0.0.0:${PORT}
+fi

@@ -5,7 +5,11 @@ set -e
 
 echo "Starting build on executor $EXECUTOR_NUMBER..."
 
-source ${VIRTUAL_ENV:-"../socorro-virtualenv"}/bin/activate
+if [ "$1" != "--docker" ]; then
+    # When we're running in a docker environment, we don't need the
+    # virtualenv, so we can skip this.
+    source ${VIRTUAL_ENV:-"../socorro-virtualenv"}/bin/activate
+fi
 
 # Make sure there's no old pyc files around.
 find . -name '*.pyc' -exec rm {} \;

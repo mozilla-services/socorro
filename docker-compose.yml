@@ -3,30 +3,11 @@
 # Note: Requires docker-comopse 1.10+.
 version: "2"
 services:
-  # This builds the base image that service images extend
-  base:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile
-    image: local/socorro_base
-    volumes:
-      - .:/app
-
-  # Container for running unittests and webapp tests
-  test:
-    extends:
-      service: base
-    env_file:
-      - docker/config/docker_common.env
-      - docker/config/test.env
-    depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
-      - postgresql
-      - elasticsearch
-      - rabbitmq
-
   # Processor app
   processor:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.processor
     build:
       context: .
       dockerfile: ./docker/Dockerfile.processor
@@ -42,11 +23,18 @@ services:
     volumes:
       - .:/app
 
-  # Webapp app
-  webapp:
+  # Webapp base
+  webapp-base:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.webapp
+    volumes:
+      - .:/app
+
+  # Webapp app
+  webapp:
+    extends:
+      service: webapp-base
     env_file:
       - docker/config/docker_common.env
       - docker/config/webapp.env
@@ -56,8 +44,29 @@ services:
       - postgresql
       - elasticsearch
       - rabbitmq
+    command: ["--dev"]
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
+
+  # Container for running unittests and webapp tests--runs in webapp
+  # container because the webapp tests need static files.
+  #
+  # FIXME(willkg): Maybe we should split this up into two sets of tests--one
+  # that runs in the processor and one that runs in the webapp?
+  test:
+    extends:
+      service: webapp-base
+    env_file:
+      - docker/config/docker_common.env
+      - docker/config/test.env
+    depends_on:
+      # - statsd -- FIXME(willkg): broken for some reason
+      - postgresql
+      - elasticsearch
+      - rabbitmq
+    entrypoint: ["/app/docker/run_test.sh"]
     volumes:
       - .:/app
 

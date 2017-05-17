@@ -36,7 +36,7 @@ json_enhancements_pg_extension: bootstrap
 
 # Docker related rules
 
-.PHONY: dockerbuild dockershell dockerclean
+.PHONY: dockerbuild dockersetup dockerclean dockertest dockerrun
 
 DC := $(shell which docker-compose)
 
@@ -44,12 +44,10 @@ DC := $(shell which docker-compose)
 	make dockerbuild
 
 dockerbuild:
-	${DC} build base
 	${DC} build processor
+	${DC} build webapp
+	${DC} build test
 	touch .docker-build
-
-dockershell: .docker-build
-	${DC} run --service-ports --entrypoint bash base
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
 # postgres going forward and has the needed environment variables.
@@ -63,7 +61,7 @@ dockerclean:
 	rm .docker-build
 
 dockertest:
-	${DC} run test /app/docker/run_test.sh
+	${DC} run test
 
 dockerrun:
 	${DC} up webapp processor

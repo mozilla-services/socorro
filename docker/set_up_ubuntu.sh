@@ -25,5 +25,5 @@ apt-get install -y libsasl2-dev
 # Install cffi
 apt-get install -y libffi-dev
 
-# Install breakpad and stackwalk requirements
-apt-get install -y pkg-config git libcurl3 libcurl3-gnutls libcurl4-gnutls-dev
+# Install git
+apt-get install -y git
