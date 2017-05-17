@@ -34,7 +34,7 @@ services:
       - postgresql
       - elasticsearch
       - rabbitmq
-    command: ["--dev"]
+    command: ["/app/docker/run_webapp.sh", "--dev"]
     ports:
       - "8000:8000"
     volumes:
@@ -59,7 +59,7 @@ services:
       - postgresql
       - elasticsearch
       - rabbitmq
-    entrypoint: ["/app/docker/run_test.sh"]
+    command: ["/app/docker/run_test.sh"]
     volumes:
       - .:/app
 

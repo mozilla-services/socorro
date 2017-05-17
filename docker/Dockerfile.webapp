@@ -29,4 +29,4 @@ ENV PYTHONPATH /app:/app/webapp-django
 
 USER app
 
-ENTRYPOINT ["/app/docker/run_webapp.sh"]
+CMD ["/app/docker/run_webapp.sh"]

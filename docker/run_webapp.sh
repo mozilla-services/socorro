@@ -9,6 +9,7 @@
 # Use the "--dev" argument to run the webapp in a docker container for
 # the purposes of local development.
 
+BUFFER_SIZE=${BUFFER_SIZE:-"16384"}
 PORT=${PORT:-"8000"}
 NUM_WORKERS=${NUM_WORKERS:-"6"}
 
@@ -26,8 +27,8 @@ else
           --master \
           --need-app \
           --wsgi webapp-django.wsgi.socorro-crashstats \
-          --buffer-size 16384 \
+          --buffer-size ${BUFFER_SIZE} \
           --enable-threads \
-          --processes $NUM_WORKERS \
+          --processes ${NUM_WORKERS} \
           --http-socket 0.0.0.0:${PORT}
 fi

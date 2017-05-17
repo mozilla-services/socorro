@@ -6,6 +6,9 @@
 
 # Sets up Elasticsearch.
 
+# This should get run only to initialize an Elasticsearch cluster and probably
+# only in local development environments.
+
 cd /app/scripts/
 
 # FIXME(willkg): Make this idempotent so that running it after it's already been

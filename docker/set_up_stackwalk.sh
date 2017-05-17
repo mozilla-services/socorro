@@ -18,7 +18,9 @@ PREFIX=/tmp/stackwalk/ SKIP_TAR=1 ./build-breakpad.sh
 pushd minidump-stackwalk
 make
 popd
-# FIXME(willkg): do we want to copy these binary things somewhere less "tmp"?
-cp minidump-stackwalk/stackwalker stackwalk/bin
-cp minidump-stackwalk/jit-crash-categorize stackwalk/bin
-cp minidump-stackwalk/dumplookup stackwalk/bin
+
+# Put the final binaries in /stackwalk in the container
+mkdir /stackwalk
+cp minidump-stackwalk/stackwalker /stackwalk
+cp minidump-stackwalk/jit-crash-categorize /stackwalk
+cp minidump-stackwalk/dumplookup /stackwalk

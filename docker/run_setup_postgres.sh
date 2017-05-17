@@ -6,7 +6,8 @@
 
 # Sets up postgres tables, stored procedures, and such.
 
-POSTGRES_DB=${POSTGRES_DB:-"breakpad"}
+# This should get run only to initialize Postgres and probably only in local
+# development environments.
 
 cd /app
 
@@ -14,7 +15,7 @@ cd /app
 # run doesn't affect anything.
 echo "Setting up the db..."
 ./scripts/socorro setupdb \
-                  --database_name=${POSTGRES_DB} \
+                  --database_name=breakpad \
                   --fakedata \
                   --fakedata_days=3 \
                   --createdb

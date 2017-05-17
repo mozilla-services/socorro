@@ -27,4 +27,4 @@ ENV PYTHONPATH /app
 
 USER app
 
-ENTRYPOINT ["/app/docker/run_processor.sh"]
+CMD ["/app/docker/run_processor.sh"]

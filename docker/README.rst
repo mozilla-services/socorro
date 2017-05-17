@@ -85,7 +85,7 @@ test configuration.
 
 To run specific things, you'll want to do it manually in a shell::
 
-  $ docker-compose run --entrypoint /bin/bash test
+  $ docker-compose run test /bin/bash
 
 
 Then do whatever parts of ``docker/run_test.sh`` you need to set up the
@@ -106,7 +106,7 @@ configuration.
 
 To ease debugging in the container, you can run a shell::
 
-  $ docker-compose run --entrypoint /bin/bash processor
+  $ docker-compose run processor /bin/bash
 
 
 Then you can start and stop the processor and tweak files and all that jazz.
@@ -126,7 +126,7 @@ configuration.
 
 To ease debugging in the container, you can run a shell::
 
-  $ docker-compose run --entrypoint /bin/bash webapp
+  $ docker-compose run webapp /bin/bash
 
 
 Then you can start and stop the webapp and tweak files and all that jazz.
