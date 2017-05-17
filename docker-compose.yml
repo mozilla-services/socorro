@@ -8,9 +8,6 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.processor
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.processor
     env_file:
       - docker/config/docker_common.env
       - docker/config/processor.env
@@ -23,18 +20,11 @@ services:
     volumes:
       - .:/app
 
-  # Webapp base
-  webapp-base:
+  # Webapp app
+  webapp:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.webapp
-    volumes:
-      - .:/app
-
-  # Webapp app
-  webapp:
-    extends:
-      service: webapp-base
     env_file:
       - docker/config/docker_common.env
       - docker/config/webapp.env
@@ -50,14 +40,17 @@ services:
     volumes:
       - .:/app
 
-  # Container for running unittests and webapp tests--runs in webapp
-  # container because the webapp tests need static files.
+  # Container for running unittests and webapp tests. This runs in a webapp
+  # container because the webapp tests need static files and that container
+  # can build them.
   #
   # FIXME(willkg): Maybe we should split this up into two sets of tests--one
-  # that runs in the processor and one that runs in the webapp?
+  # that runs in the processor and one that runs in the webapp? Then we
+  # can nix the "test" service and just have special test scripts.
   test:
-    extends:
-      service: webapp-base
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.webapp
     env_file:
       - docker/config/docker_common.env
       - docker/config/test.env

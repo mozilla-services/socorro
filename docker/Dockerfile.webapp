@@ -15,7 +15,6 @@ COPY ./requirements.txt /tmp/requirements.txt
 RUN pip install -U 'pip>=8' && \
     pip install --no-cache-dir -r /tmp/requirements.txt
 
-# This is relative to docker/base/Dockerfile
 COPY . /app/
 
 RUN cd /app/webapp-django/ && npm install -g
@@ -24,7 +23,7 @@ ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONPATH /app:/app/webapp-django
 
-# Run collectstatic for the container which puts the files in
+# FIXME(willkg): Run collectstatic for the container which puts the files in
 # the default place for static files.
 #RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
 

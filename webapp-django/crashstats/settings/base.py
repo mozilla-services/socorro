@@ -48,8 +48,7 @@ MEDIA_ROOT = path('media')
 MEDIA_URL = '/media/'
 
 # Absolute path to the directory static files should be collected to.
-# Defaults to /tmp/crashstats-static/ in the container
-STATIC_ROOT = DEBUG = config('STATIC_ROOT', path('static'))
+STATIC_ROOT = config('STATIC_ROOT', path('static'))
 
 # URL prefix for static files
 STATIC_URL = '/static/'
