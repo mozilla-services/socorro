@@ -3,6 +3,13 @@
 # Note: Requires docker-comopse 1.10+.
 version: "2"
 services:
+  # Socorro base image
+  base:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    image: local/socorro_base
+
   # Processor app
   processor:
     build:
