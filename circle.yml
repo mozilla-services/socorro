@@ -1,0 +1,63 @@
+machine:
+  pre:
+    # install updated docker
+    - curl -sSL https://s3.amazonaws.com/circle-downloads/install-circleci-docker.sh | bash -s -- 1.10.0
+    - pip install docker-compose
+  services:
+    - docker
+
+dependencies:
+  cache_directories:
+    - "~/cache/"
+  override:
+    # create a version.json per https://github.com/mozilla-services/Dockerflow/blob/master/docs/version_object.md
+    - >
+        printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n'
+        "$CIRCLE_SHA1"
+        "$CIRCLE_TAG"
+        "$CIRCLE_PROJECT_USERNAME"
+        "$CIRCLE_PROJECT_REPONAME"
+        "$CIRCLE_BUILD_URL" > version.json
+    - cp version.json $CIRCLE_ARTIFACTS
+    - docker info
+    # use circleci's docker cache workaround
+    - mkdir -p ~/cache/
+    - if [ -e ~/cache/docker/image.tar ]; then echo "Loading image.tar"; docker load -i ~/cache/docker/image.tar || rm ~/cache/docker/image.tar; fi
+    # build images
+    - make dockerbuild
+    # Clean up old images and save the new one
+    - >
+      mkdir -p ~/cache/docker;
+      rm -f ~/cache/docker/socorro_processor.tar;
+      rm -f ~/cache/docker/socorro_webapp.tar;
+      rm -f ~/cache/docker/socorro_test.tar;
+
+      docker save socorro_processor:latest > ~/cache/docker/socorro_processor.tar;
+      docker save socorro_webapp:latest > ~/cache/docker/socorro_webapp.tar;
+      docker save socorro_test:latest > ~/cache/docker/socorro_test.tar;
+
+      ls -l ~/cache/docker
+test:
+  pre:
+    - chmod -R 777 $CIRCLE_TEST_REPORTS
+  override:
+    - make dockersetup
+    - make dockertest
+
+# appropriately tag and push the container to dockerhub
+deployment:
+  latest:
+    branch: master
+    commands:
+      # set DOCKER_DEPLOY=true in Circle UI to do deploys
+      - DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
+      - bin/ci/deploy-dockerhub.sh latest
+      - bin/ci/deploy-dockerhub.sh "circle_build_$CIRCLE_BUILD_NUM"
+
+  tags:
+    # push all tags
+    tag: /.*/
+    commands:
+      # set DOCKER_DEPLOY=true in Circle UI to do deploys
+      - DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
+      - bin/ci/deploy-dockerhub.sh "$CIRCLE_TAG"
