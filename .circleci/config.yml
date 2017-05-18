@@ -77,14 +77,17 @@ jobs:
 
       - run:
           name: Setup test environment
+          working_directory: /socorro
           command: make dockersetup
 
       - run:
           name: Run tests
+          working_directory: /socorro
           command: make dockertest
 
       - run:
           name: Push to Dockerhub
+          working_directory: /socorro
           command: |
             # set DOCKER_DEPLOY=true in Circle UI to push to Dockerhub
             DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
