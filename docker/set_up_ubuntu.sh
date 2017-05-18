@@ -11,19 +11,11 @@ set -v -e -x
 
 # Update the operating system and install OS-level dependencies
 apt-get update
-apt-get install -y gcc apt-transport-https build-essential python-dev
 
-# Install postgres requirements
-apt-get install -y libpq-dev
-
-# Install lxml requirements
-apt-get install -y libxml2-dev libxslt1-dev
-
-# Install sasl requirements
-apt-get install -y libsasl2-dev
-
-# Install cffi
-apt-get install -y libffi-dev
-
-# Install git
-apt-get install -y git
+# Install packages for building python packages, postgres, lxml, sasl, and cffi
+apt-get install -y gcc apt-transport-https build-essential python-dev \
+        libpq-dev \
+        libxml2-dev libxslt1-dev \
+        libsasl2-dev \
+        libffi-dev \
+        git
