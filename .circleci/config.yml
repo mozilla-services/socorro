@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # base image
-      - image: python:2.7.13-slim
+      - image: ubuntu:14.04
       # statsd
       - image: kamon/grafana_graphite
       - image: localstack-s3:0.40
@@ -41,6 +41,18 @@ jobs:
 
       - store_artifacts:
           path: /socorro/version.json
+
+      # FIXME: should use an image w/ docker installed by default
+      - run:
+          name: Install Docker client
+          command: |
+            set -x
+            VER="17.03.0-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv /tmp/docker/* /usr/bin
+
+      - setup_remote_docker
 
       - run:
           name: Build Docker images
