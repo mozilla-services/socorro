@@ -1,0 +1,32 @@
+FROM python:2.7.13-slim
+
+WORKDIR /app/
+RUN groupadd --gid 10001 app && useradd -g app --uid 10001 --shell /usr/sbin/nologin app
+
+# Install OS-level things
+COPY ./docker/set_up_ubuntu.sh /tmp/set_up_ubuntu.sh
+RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
+
+# Install nodejs and npm
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y npm nodejs nodejs-legacy
+
+# Install Socorro Python requirements
+COPY ./requirements.txt /tmp/requirements.txt
+RUN pip install -U 'pip>=8' && \
+    pip install --no-cache-dir -r /tmp/requirements.txt
+
+COPY . /app/
+
+RUN cd /app/webapp-django/ && npm install -g
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONPATH /app:/app/webapp-django
+
+# FIXME(willkg): Run collectstatic for the container which puts the files in
+# the default place for static files.
+#RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
+
+USER app
+
+CMD ["/app/docker/run_webapp.sh"]

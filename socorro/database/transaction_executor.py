@@ -115,11 +115,16 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                 # the test is for is a last ditch effort to see if
                 # we can retry
                 if not self.db_conn_context_source.is_operational_exception(x):
-                    self.config.logger.critical(
-                        'Unrecoverable %s transaction error',
-                        self.connection_source_type,
-                        exc_info=True
-                    )
+                    # If the logger exists, log the issue, otherwise print it
+                    # to stdout.
+                    if self.config.logger:
+                        self.config.logger.critical(
+                            'Unrecoverable %s transaction error',
+                            self.connection_source_type,
+                            exc_info=True
+                        )
+                    else:
+                        print('Unrecoverable %s transaction error' % self.connection_source_type)
                     raise
                 self.config.logger.critical(
                     '%s transaction error eligible for retry',
