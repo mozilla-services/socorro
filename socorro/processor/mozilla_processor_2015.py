@@ -57,6 +57,7 @@ mozilla_processor_rule_sets = [
         "socorro.processor.mozilla_transform_rules.ThemePrettyNameRule, "
         "socorro.processor.rules.memory_report_extraction"
         ".MemoryReportExtraction, "
+        "socorro.processor.rules.addons_rewrite.AddonsRewriteRule, "
         "socorro.processor.signature_utilities.SignatureGenerationRule,"
         "socorro.processor.signature_utilities.StackwalkerErrorSignatureRule, "
         "socorro.processor.signature_utilities.OOMSignature, "
