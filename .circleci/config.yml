@@ -6,12 +6,12 @@ jobs:
       - image: ubuntu:14.04
       # statsd
       - image: kamon/grafana_graphite
-      - image: localstack-s3:0.40
+      - image: atlassianlabs/localstack:0.4.0
         environment:
           - SERVICES=s3:5000
           - DEFAULT_REGION=us-east-1
           - HOSTNAME=localstack-s3
-      - image: postgresql:9.4
+      - image: postgres:9.4
         environment:
           # Create the superuser account
           - POSTGRES_USER=postgres
