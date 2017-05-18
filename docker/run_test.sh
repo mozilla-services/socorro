@@ -75,5 +75,5 @@ $NOSE socorro -s
 # Collect static and then test webapp
 pushd webapp-django
 python manage.py collectstatic --noinput
-./bin/ci.sh
+./bin/ci.sh --docker
 popd

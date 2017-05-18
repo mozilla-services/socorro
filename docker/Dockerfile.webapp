@@ -15,17 +15,21 @@ COPY ./requirements.txt /tmp/requirements.txt
 RUN pip install -U 'pip>=8' && \
     pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY . /app/
-
-RUN cd /app/webapp-django/ && npm install -g
-
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONPATH /app:/app/webapp-django
 
-# FIXME(willkg): Run collectstatic for the container which puts the files in
-# the default place for static files.
-#RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
+ENV LESS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/lessc
+ENV UGLIFYJS_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/uglifyjs
+ENV CSSMIN_BINARY /usr/local/lib/node_modules/socorro-webapp-django/node_modules/.bin/cssmin
+
+COPY . /app/
+
+RUN cd /app/webapp-django/ && npm install -g
+
+# Run collectstatic in container which puts files in the default place for
+# static files.
+RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
 
 USER app
 
