@@ -1,0 +1,71 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # base image
+      - image: python:2.7.13-slim
+      # statsd
+      - image: kamon/grafana_graphite
+      - image: localstack-s3:0.40
+        environment:
+          - SERVICES=s3:5000
+          - DEFAULT_REGION=us-east-1
+          - HOSTNAME=localstack-s3
+      - image: postgresql:9.4
+        environment:
+          # Create the superuser account
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=aPassword
+          - POSTGRES_DB=breakpad
+      - image: elasticsearch:1.4.5
+      - image: rabbitmq:3.6.9
+        environment:
+          - RABBITMQ_DEFAULT_USER=rabbituser
+          - RABBITMQ_DEFAULT_PASS=rabbitpwd
+          - RABBITMQ_DEFAULT_VHOST=rabbitvhost
+
+    steps:
+      - checkout:
+          path: /socorro
+      - run:
+          name: Create version.json
+          working_directory: /socorro
+          command: |
+            # create a version.json per https://github.com/mozilla-services/Dockerflow/blob/master/docs/version_object.md
+            printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' \
+            "$CIRCLE_SHA1" \
+            "$CIRCLE_TAG" \
+            "$CIRCLE_PROJECT_USERNAME" \
+            "$CIRCLE_PROJECT_REPONAME" \
+            "$CIRCLE_BUILD_URL" > /socorro/version.json
+
+      - store_artifacts:
+          path: /socorro/version.json
+
+      - run:
+          name: Build Docker images
+          working_directory: /socorro
+          command: |
+            docker info
+            make dockerbuild
+
+      - run:
+          name: Setup test environment
+          command: make dockersetup
+
+      - run:
+          name: Run tests
+          command: make dockertest
+
+      - run:
+          name: Push to Dockerhub
+          command: |
+            # set DOCKER_DEPLOY=true in Circle UI to push to Dockerhub
+            DOCKER_DEPLOY="${DOCKER_DEPLOY:-false}"
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              bin/ci/deploy-dockerhub.sh latest
+              bin/ci/deploy-dockerhub.sh "circle_build_$CIRCLE_BUILD_NUM"
+            fi
+            if [ -n "${CIRCLE_TAG}"]; then
+              bin/ci/deploy-dockerhub.sh "$CIRCLE_TAG"j
+            fi
