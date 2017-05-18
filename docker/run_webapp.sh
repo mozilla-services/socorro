@@ -27,8 +27,8 @@ else
           --master \
           --need-app \
           --wsgi webapp-django.wsgi.socorro-crashstats \
-          --buffer-size ${BUFFER_SIZE} \
+          --buffer-size "${BUFFER_SIZE}" \
           --enable-threads \
-          --processes ${NUM_WORKERS} \
-          --http-socket 0.0.0.0:${PORT}
+          --processes "${NUM_WORKERS}" \
+          --http-socket 0.0.0.0:"${PORT}"
 fi

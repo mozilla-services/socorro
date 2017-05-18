@@ -111,6 +111,10 @@ To ease debugging in the container, you can run a shell::
 
 Then you can start and stop the processor and tweak files and all that jazz.
 
+.. Note::
+
+   The stackwalk binaries are in ``/stackwalk`` in the container.
+
 
 Running the webapp
 ==================
