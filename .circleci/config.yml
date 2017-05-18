@@ -23,7 +23,7 @@ jobs:
           - RABBITMQ_DEFAULT_USER=rabbituser
           - RABBITMQ_DEFAULT_PASS=rabbitpwd
           - RABBITMQ_DEFAULT_VHOST=rabbitvhost
-
+    working_directory: /
     steps:
       - checkout:
           path: /socorro
