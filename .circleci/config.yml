@@ -75,15 +75,15 @@ jobs:
             docker info
             make dockerbuild
 
-      - run:
-          name: Setup test environment
-          working_directory: /socorro
-          command: make dockersetup
-
-      - run:
-          name: Run tests
-          working_directory: /socorro
-          command: make dockertest
+      # - run:
+      #     name: Setup test environment
+      #     working_directory: /socorro
+      #     command: make dockersetup
+      #
+      # - run:
+      #     name: Run tests
+      #     working_directory: /socorro
+      #     command: make dockertest
 
       - run:
           name: Push to Dockerhub
