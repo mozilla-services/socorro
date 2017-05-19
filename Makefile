@@ -45,8 +45,10 @@ DC := $(shell which docker-compose)
 
 dockerbuild:
 	${DC} build base
+	${DC} build webapp-base
 	${DC} build processor
 	${DC} build webapp
+	${DC} build test
 	touch .docker-build
 
 # NOTE(willkg): We run setup in the webapp container because the webapp will own
