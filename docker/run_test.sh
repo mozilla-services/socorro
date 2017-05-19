@@ -66,8 +66,8 @@ $SETUPDB --database_name=socorro_integration_test --dropdb --logging.stderr_erro
 # it. Maybe we don't need it?
 $SETUPDB --database_name=socorro_test --dropdb --no_schema --logging.stderr_error_logging_level=40 --unlogged --no_staticdata --createdb
 
-$ALEMBIC -c config/alembic.ini downgrade -1
-$ALEMBIC -c config/alembic.ini upgrade heads
+$ALEMBIC -c "${alembic_config}" downgrade -1
+$ALEMBIC -c "${alembic_config}" upgrade heads
 
 # Run tests
 $NOSE socorro -s
