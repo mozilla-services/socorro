@@ -4,7 +4,7 @@ echo "this is test.sh"
 
 source scripts/defaults
 
-NOSE="$VIRTUAL_ENV/bin/nosetests socorro -s"
+PYTEST="$VIRTUAL_ENV/bin/pytest"
 SETUPDB="$VIRTUAL_ENV/bin/python ./socorro/external/postgresql/setupdb_app.py"
 JENKINS_CONF=jenkins.py.dist
 
@@ -100,7 +100,7 @@ PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini downgrad
 PYTHONPATH=$PYTHONPATH ${VIRTUAL_ENV}/bin/alembic -c config/alembic.ini upgrade heads
 
 # run tests
-$ENV $FS_RESOURCES $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $NOSE
+$ENV $FS_RESOURCES $PG_RESOURCES $RMQ_RESOURCES $ES_RESOURCES PYTHONPATH=$PYTHONPATH $PYTEST
 
 # test webapp
 pushd webapp-django
