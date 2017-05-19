@@ -31,30 +31,46 @@ ___Running the tests on stage___
 ___Running tests against localhost___
 
 	$ export PYTEST_BASE_URL="http://localhost:8000"
-	$ tox -e tests
+	$ tox -e py27 
 
 	$ export PYTEST_BASE_URL="http://localhost:8000"
 	$ export PYTEST_ADDOPTS="--firefox-path=/path/to/firefox/binary"
-	$ tox -e tests
+	$ tox -e py27
 
 ___Running tests against production___
 
 	$ export PYTEST_BASE_URL="https://crash-stats.mozilla.com"
-	$ tox -e tests
+	$ tox -e py27
+	
+___Running tests on SauceLabs___
+
+To use SauceLabs instead of an instance of Firefox running locally, do the following:
+
+Create a text file called `.saucelabs` and put it in the e2e-tests directory. Get a username and key for SauceLabs and then add the following details to the `.saucelabs` file:
+
+	[credentials]
+	username = <SauceLabs user name>
+	key = <SauceLabs API key>
+	
+Then you can run the tests against staging using the following command
+
+	$ tox -e py27 -- --driver SauceLabs --capability browserName Firefox
+
+If you wish to run them against different environemts, set `PYTEST_BASE_URL` as indicated in the sections above for running tests against localhost or production
 
 ___Running specific tests___
 
 You can run tests in a given file::
 
-    $ tox -e tests -- tests/test_search.py
+    $ tox -e py27 -- tests/test_search.py
 
 You can run tests that match a specific name:
 
-    $ tox -e tests -- -k test_search_for_unrealistic_data
+    $ tox -e py27 -- -k test_search_for_unrealistic_data
 
 You can run tests whose names match a specific pattern:
 
-    $ tox -e tests -- -k test_search
+    $ tox -e py27 -- -k test_search
 
 __Output__
 
