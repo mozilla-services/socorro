@@ -28,10 +28,14 @@ services:
       - .:/app
 
   # Webapp app
-  webapp:
+  webapp-base:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.webapp
+
+  webapp:
+    extends:
+      service: webapp-base
     env_file:
       - docker/config/docker_common.env
       - docker/config/webapp.env
@@ -55,9 +59,8 @@ services:
   # that runs in the processor and one that runs in the webapp? Then we
   # can nix the "test" service and just have special test scripts.
   test:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.webapp
+    extends:
+      service: webapp-base
     env_file:
       - docker/config/docker_common.env
       - docker/config/test.env
