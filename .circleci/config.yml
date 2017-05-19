@@ -4,25 +4,6 @@ jobs:
     docker:
       # base image
       - image: ubuntu:14.04
-      # statsd
-      - image: kamon/grafana_graphite
-      - image: atlassianlabs/localstack:0.4.0
-        environment:
-          - SERVICES=s3:5000
-          - DEFAULT_REGION=us-east-1
-          - HOSTNAME=localstack-s3
-      - image: postgres:9.4
-        environment:
-          # Create the superuser account
-          - POSTGRES_USER=postgres
-          - POSTGRES_PASSWORD=aPassword
-          - POSTGRES_DB=breakpad
-      - image: elasticsearch:1.4.5
-      - image: rabbitmq:3.6.9
-        environment:
-          - RABBITMQ_DEFAULT_USER=rabbituser
-          - RABBITMQ_DEFAULT_PASS=rabbitpwd
-          - RABBITMQ_DEFAULT_VHOST=rabbitvhost
     working_directory: /
     steps:
       - run:
@@ -63,7 +44,7 @@ jobs:
           name: Install Docker Compose
           command: |
             set -x
-            curl -L https://github.com/docker/compose/releases/download/1.11.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+            curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
             chmod +x /usr/local/bin/docker-compose
 
       - setup_remote_docker
@@ -75,11 +56,6 @@ jobs:
             docker info
             make dockerbuild
 
-      # - run:
-      #     name: Setup test environment
-      #     working_directory: /socorro
-      #     command: make dockersetup
-      #
       - run:
           name: Run tests
           working_directory: /socorro

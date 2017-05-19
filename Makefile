@@ -61,7 +61,7 @@ dockerclean:
 	rm .docker-build
 
 dockertest:
-	${DC} run test
+	./docker/run_tests_in_docker.sh ${ARGS}
 
 dockerrun:
 	${DC} up webapp processor

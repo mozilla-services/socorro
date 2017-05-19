@@ -5,6 +5,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Runs tests.
+#
+# This should be called from inside a container and after the dependent
+# services have been launched. It depends on:
+#
+# * elasticsearch
+# * postgresql
+# * rabbitmq
 
 # Failures should cause setup to fail
 set -v -e -x
