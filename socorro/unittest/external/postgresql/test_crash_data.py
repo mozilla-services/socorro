@@ -131,9 +131,9 @@ class TestIntegrationPostgresCrashData(TestCase):
             values_source_list=[{'database': {
                 'logger': mock_logging,
                 'database_name': 'socorro_integration_test',
-                'database_hostname': os.environ['database_hostname'],
-                'database_username': os.environ['database_username'],
-                'database_password': os.environ['database_password'],
+                'database_hostname': os.environ.get('database_hostname', 'localhost'),
+                'database_username': os.environ.get('database_username', 'breakpad_rw'),
+                'database_password': os.environ.get('database_password', 'aPassword'),
             }}]
         )
         return config_manager

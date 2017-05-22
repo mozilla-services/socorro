@@ -37,7 +37,7 @@ class TestFSDatedRadixTreeStorage(TestCase):
           values_source_list=[{
             'logger': mock_logging,
             'minute_slice_interval': 1,
-            'fs_root': os.environ['resource.fs.fs_root'],
+            'fs_root': os.environ.get('resource.fs.fs_root', './crashes'),
           }],
           argv_source=[]
         )

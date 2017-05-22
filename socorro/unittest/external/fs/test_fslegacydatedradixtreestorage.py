@@ -15,7 +15,7 @@ from socorro.external.crashstorage_base import (
 from socorro.unittest.testbase import TestCase
 
 
-FS_ROOT = os.environ['resource.fs.fs_root']
+FS_ROOT = os.environ.get('resource.fs.fs_root', './crashes')
 
 
 class TestFSLegacyDatedRadixTreeStorage(TestCase):
