@@ -32,6 +32,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.webapp
+    image: local/socorro_webapp
     env_file:
       - docker/config/docker_common.env
       - docker/config/webapp.env
@@ -44,29 +45,6 @@ services:
     command: ["/app/docker/run_webapp.sh", "--dev"]
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
-
-  # Container for running unittests and webapp tests. This runs in a webapp
-  # container because the webapp tests need static files and that container
-  # can build them.
-  #
-  # FIXME(willkg): Maybe we should split this up into two sets of tests--one
-  # that runs in the processor and one that runs in the webapp? Then we
-  # can nix the "test" service and just have special test scripts.
-  test:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.webapp
-    env_file:
-      - docker/config/docker_common.env
-      - docker/config/test.env
-    depends_on:
-      # - statsd -- FIXME(willkg): broken for some reason
-      - postgresql
-      - elasticsearch
-      - rabbitmq
-    command: ["/app/docker/run_test.sh"]
     volumes:
       - .:/app
 
