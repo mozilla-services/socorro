@@ -324,3 +324,5 @@ pytest==3.0.7 \
 pytest-wholenodeid==0.2 \
     --hash=sha256:6bc4edaf560c8b45ac4669bb8b99d8fbbb7f6e5af8dc7727200cd4d3ef4668c2 \
     --hash=sha256:bdcb4df88ca182a19752ef95150c0881deaafc2c593ef67c61515894e5309206
+pytest-env==0.6.0 \
+    --hash=sha256:f4d61885b0befcb474e73e775597a798bd37808f8856ebb624b0822f054f6c0c
