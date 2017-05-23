@@ -9,8 +9,9 @@ import psycopg2
 import urllib
 import re
 
-from paste.fixture import TestApp, AppError
-from nose.tools import eq_, ok_, assert_raises
+from paste.fixture import TestApp as PasteTestApp
+from paste.fixture import AppError
+from nose.tools import eq_, assert_raises
 
 from configman import (
     ConfigurationManager,
@@ -141,7 +142,7 @@ class ImplementationWrapperTestCase(TestCase):
             ('/aux/(.*)', MadeUp),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.get('/aux/')
         eq_(response.status, 200)
         eq_(json.loads(response.body), {'age': 100})
@@ -170,7 +171,7 @@ class ImplementationWrapperTestCase(TestCase):
             ('/aux/(age|gender|misconfigured)/(.*)', MadeUp),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.get('/aux/age/')
         eq_(response.status, 200)
         eq_(json.loads(response.body), {'age': 100})
@@ -210,7 +211,7 @@ class ImplementationWrapperTestCase(TestCase):
             ('/aux/(.*)', MadeUp),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.post('/aux/')
         eq_(response.status, 200)
         eq_(json.loads(response.body), {'age': 100})
@@ -240,7 +241,7 @@ class ImplementationWrapperTestCase(TestCase):
             ('/aux/(.*)', MadeUp),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.put('/aux/', params={'add': 1})
         eq_(response.status, 200)
         eq_(json.loads(response.body), {'age': 101})
@@ -266,7 +267,7 @@ class ImplementationWrapperTestCase(TestCase):
             ('/aux/(.*)', MadeUp),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.get(
             '/aux/',
             {'foo': 'bar', 'names': ['peter', 'anders']},
@@ -313,7 +314,7 @@ class ImplementationWrapperTestCase(TestCase):
             ('/aux/bad', WithBadArgument),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
 
         # Test a Not Found error
         response = testapp.get('/aux/notfound', expect_errors=True)
@@ -399,7 +400,7 @@ class ImplementationWrapperTestCase(TestCase):
 
         raven_client_mocked.side_effect = fake_client
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.get('/aux/bla', expect_errors=True)
         eq_(response.status, 500)
         mock_logging.info.has_call([mock.call(
@@ -431,7 +432,7 @@ class MeasuringImplementationWrapperTestCase(TestCase):
             ('/aux/(.*)', MadeUp),
         ))
 
-        testapp = TestApp(server._wsgi_func)
+        testapp = PasteTestApp(server._wsgi_func)
         response = testapp.get('/aux/', params={'add': 1})
         eq_(response.status, 200)
         for call in logging_info.call_args_list:
@@ -557,7 +558,7 @@ class IntegrationTestMiddlewareApp(TestCase):
 
     def get(self, server, url, params=None, request_method='GET',
             expect_errors=False):
-        a = TestApp(server._wsgi_func)
+        a = PasteTestApp(server._wsgi_func)
         response = a.get(url, params=params, expect_errors=expect_errors)
         return self._respond(response, expect_errors)
 
@@ -571,7 +572,7 @@ class IntegrationTestMiddlewareApp(TestCase):
         return response
 
     def post(self, server, url, data=None, expect_errors=False):
-        a = TestApp(server._wsgi_func)
+        a = PasteTestApp(server._wsgi_func)
         data = data or ''
         if isinstance(data, dict):
             q = urllib.urlencode(data, True)
@@ -581,7 +582,7 @@ class IntegrationTestMiddlewareApp(TestCase):
         return self._respond(response, expect_errors)
 
     def put(self, server, url, data=None, expect_errors=False):
-        a = TestApp(server._wsgi_func)
+        a = PasteTestApp(server._wsgi_func)
         data = data or ''
         if isinstance(data, dict):
             q = urllib.urlencode(data, True)

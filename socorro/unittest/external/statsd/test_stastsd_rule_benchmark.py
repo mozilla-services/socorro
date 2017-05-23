@@ -18,8 +18,8 @@ from socorro.external.statsd.statsd_rule_benchmark import (
 )
 from socorro.external.statsd.statsd_base import StatsdCounter
 from socorro.unittest.lib.test_transform_rules import (
-    TestRuleTestLaughable,
-    TestRuleTestDangerous
+    RuleTestLaughable,
+    RuleTestDangerous
 )
 from socorro.lib import transform_rules
 from socorro.external.statsd.dogstatsd import StatsClient
@@ -36,33 +36,33 @@ class TestStatsdCounterRule(TestCase):
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestLaughable',
+                'RuleTestLaughable',
                 StatsdRuleBenchmarkWrapper,
-                'TestRuleTestLaughable'
+                'RuleTestLaughable'
             ),
             (
-                'TestRuleTestDangerous',
+                'RuleTestDangerous',
                 StatsdRuleBenchmarkWrapper,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous'
             )
         ]
-        config.TestRuleTestLaughable = DotDict()
-        config.TestRuleTestLaughable.laughable = 'wilma'
-        config.TestRuleTestLaughable.statsd_class =  StatsClient
-        config.TestRuleTestLaughable.statsd_host = 'some_statsd_host'
-        config.TestRuleTestLaughable.statsd_port =  3333
-        config.TestRuleTestLaughable.statsd_prefix = prefix if prefix else ''
-        config.TestRuleTestLaughable.wrapped_object_class = TestRuleTestLaughable
-        config.TestRuleTestLaughable.active_list = 'act'
+        config.RuleTestLaughable = DotDict()
+        config.RuleTestLaughable.laughable = 'wilma'
+        config.RuleTestLaughable.statsd_class =  StatsClient
+        config.RuleTestLaughable.statsd_host = 'some_statsd_host'
+        config.RuleTestLaughable.statsd_port =  3333
+        config.RuleTestLaughable.statsd_prefix = prefix if prefix else ''
+        config.RuleTestLaughable.wrapped_object_class = RuleTestLaughable
+        config.RuleTestLaughable.active_list = 'act'
 
-        config.TestRuleTestDangerous = DotDict()
-        config.TestRuleTestDangerous.dangerous = 'dwight'
-        config.TestRuleTestDangerous.statsd_class =  StatsClient
-        config.TestRuleTestDangerous.statsd_host = 'some_statsd_host'
-        config.TestRuleTestDangerous.statsd_port =  3333
-        config.TestRuleTestDangerous.statsd_prefix = prefix if prefix else ''
-        config.TestRuleTestDangerous.wrapped_object_class = TestRuleTestDangerous
-        config.TestRuleTestDangerous.active_list = 'act'
+        config.RuleTestDangerous = DotDict()
+        config.RuleTestDangerous.dangerous = 'dwight'
+        config.RuleTestDangerous.statsd_class =  StatsClient
+        config.RuleTestDangerous.statsd_host = 'some_statsd_host'
+        config.RuleTestDangerous.statsd_port =  3333
+        config.RuleTestDangerous.statsd_prefix = prefix if prefix else ''
+        config.RuleTestDangerous.wrapped_object_class = RuleTestDangerous
+        config.RuleTestDangerous.active_list = 'act'
 
         return config
 
@@ -72,9 +72,9 @@ class TestStatsdCounterRule(TestCase):
         trs = transform_rules.TransformRuleSystem(config)
 
         ok_(isinstance(trs.rules[0], StatsdRuleBenchmarkWrapper))
-        ok_(isinstance(trs.rules[0].wrapped_object, TestRuleTestLaughable))
+        ok_(isinstance(trs.rules[0].wrapped_object, RuleTestLaughable))
         ok_(isinstance(trs.rules[1], StatsdRuleBenchmarkWrapper))
-        ok_(isinstance(trs.rules[1].wrapped_object, TestRuleTestDangerous))
+        ok_(isinstance(trs.rules[1].wrapped_object, RuleTestDangerous))
 
         now_str = 'socorro.external.statsd.statsd_base.datetime'
         with patch(now_str) as now_mock:
@@ -92,11 +92,11 @@ class TestStatsdCounterRule(TestCase):
             trs.apply_all_rules()
             statsd_obj.timing.has_calls([
                 call(
-                    'timing.TestRuleTestLaughable.act',
+                    'timing.RuleTestLaughable.act',
                     1000  # 1 second
                 ),
                 call(
-                    'timing.TestRuleTestDangerous.act',
+                    'timing.RuleTestDangerous.act',
                     1000  # 1 second
                 ),
             ])

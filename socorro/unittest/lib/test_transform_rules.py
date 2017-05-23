@@ -18,9 +18,11 @@ def assert_expected(actual, expected):
     assert actual == expected, "expected:\n%s\nbut got:\n%s" % (str(expected),
                                                                 str(actual))
 
+
 def assert_expected_same(actual, expected):
     assert actual == expected, "expected:\n%s\nbut got:\n%s" % (expected,
                                                                 actual)
+
 
 def foo(s, d):
     pass
@@ -30,7 +32,7 @@ def bar(s, d):
     pass
 
 
-class TestRuleTestLaughable(transform_rules.Rule):
+class RuleTestLaughable(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('laughable', default='fred')
 
@@ -44,7 +46,7 @@ class TestRuleTestLaughable(transform_rules.Rule):
             self.close_counter = 1
 
 
-class TestRuleTestDangerous(transform_rules.Rule):
+class RuleTestDangerous(transform_rules.Rule):
     required_config = Namespace()
     required_config.add_option('dangerous', default='sally')
 
@@ -58,13 +60,13 @@ class TestRuleTestDangerous(transform_rules.Rule):
             self.close_counter = 1
 
 
-class TestRuleTestNoCloseMethod(transform_rules.Rule):
+class RuleTestNoCloseMethod(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
         return True
 
 
-class TestRuleTestBrokenCloseMethod(transform_rules.Rule):
+class RuleTestBrokenCloseMethod(transform_rules.Rule):
 
     def _action(self, *args, **kwargs):
         return true
@@ -704,25 +706,25 @@ class TestTransformRules(TestCase):
         config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
-        config['TestRuleTestLaughable.laughable'] = 'wilma'
-        config['TestRuleTestDangerous.dangerous'] = 'dwight'
+        config['RuleTestLaughable.laughable'] = 'wilma'
+        config['RuleTestDangerous.dangerous'] = 'dwight'
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestLaughable',
-                TestRuleTestLaughable,
-                'TestRuleTestLaughable'
+                'RuleTestLaughable',
+                RuleTestLaughable,
+                'RuleTestLaughable'
             ),
             (
-                'TestRuleTestDangerous',
-                TestRuleTestDangerous,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous',
+                RuleTestDangerous,
+                'RuleTestDangerous'
             )
         ]
         trs = transform_rules.TransformRuleSystem(config)
 
-        ok_(isinstance(trs.rules[0], TestRuleTestLaughable))
-        ok_(isinstance(trs.rules[1], TestRuleTestDangerous))
+        ok_(isinstance(trs.rules[0], RuleTestLaughable))
+        ok_(isinstance(trs.rules[1], RuleTestDangerous))
         ok_(trs.rules[0].predicate(None))
         ok_(trs.rules[1].action(None))
 
@@ -733,19 +735,19 @@ class TestTransformRules(TestCase):
         config.chatty = False
         config.tag = 'test.rule'
         config.action = 'apply_all_rules'
-        config['TestRuleTestLaughable.laughable'] = 'wilma'
-        config['TestRuleTestDangerous.dangerous'] = 'dwight'
+        config['RuleTestLaughable.laughable'] = 'wilma'
+        config['RuleTestDangerous.dangerous'] = 'dwight'
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestLaughable',
-                TestRuleTestLaughable,
-                'TestRuleTestLaughable'
+                'RuleTestLaughable',
+                RuleTestLaughable,
+                'RuleTestLaughable'
             ),
             (
-                'TestRuleTestDangerous',
-                TestRuleTestDangerous,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous',
+                RuleTestDangerous,
+                'RuleTestDangerous'
             )
         ]
         trs = transform_rules.TransformRuleSystem(config)
@@ -765,14 +767,14 @@ class TestTransformRules(TestCase):
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestNoCloseMethod',
-                TestRuleTestNoCloseMethod,
-                'TestRuleTestNoCloseMethod'
+                'RuleTestNoCloseMethod',
+                RuleTestNoCloseMethod,
+                'RuleTestNoCloseMethod'
             ),
             (
-                'TestRuleTestDangerous',
-                TestRuleTestDangerous,
-                'TestRuleTestDangerous'
+                'RuleTestDangerous',
+                RuleTestDangerous,
+                'RuleTestDangerous'
             )
         ]
         trs = transform_rules.TransformRuleSystem(config)
@@ -782,17 +784,17 @@ class TestTransformRules(TestCase):
         config.logger.debug.assert_any_call(
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestNoCloseMethod'
+            'RuleTestNoCloseMethod'
         )
         config.logger.debug.assert_any_call(
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestDangerous'
+            'RuleTestDangerous'
         )
         config.logger.debug.assert_any_call(
             '%s has no close',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestNoCloseMethod'
+            'RuleTestNoCloseMethod'
         )
 
     def test_rules_close_bubble_close_errors(self):
@@ -803,9 +805,9 @@ class TestTransformRules(TestCase):
         config.rules_list = DotDict()
         config.rules_list.class_list = [
             (
-                'TestRuleTestBrokenCloseMethod',
-                TestRuleTestBrokenCloseMethod,
-                'TestRuleTestBrokenCloseMethod'
+                'RuleTestBrokenCloseMethod',
+                RuleTestBrokenCloseMethod,
+                'RuleTestBrokenCloseMethod'
             ),
         ]
         trs = transform_rules.TransformRuleSystem(config)
@@ -818,5 +820,5 @@ class TestTransformRules(TestCase):
         config.logger.debug.assert_any_call(
             'trying to close %s',
             'socorro.unittest.lib.test_transform_rules.'
-            'TestRuleTestBrokenCloseMethod'
+            'RuleTestBrokenCloseMethod'
         )

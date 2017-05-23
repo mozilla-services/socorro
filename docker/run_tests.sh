@@ -25,7 +25,7 @@ DATABASE_URL=${database_url:-"postgres://postgres:aPassword@postgresql:5432/soco
 ELASTICSEARCH_URL=${elasticsearch_url:-"http://elasticsearch:9200"}
 
 export PYTHONPATH=/app/:$PYTHONPATH
-NOSE="$(which nosetests)"
+PYTEST="$(which pytest)"
 ALEMBIC="$(which alembic)"
 SETUPDB="$(which python) /app/socorro/external/postgresql/setupdb_app.py"
 
@@ -77,7 +77,7 @@ $ALEMBIC -c "${alembic_config}" downgrade -1
 $ALEMBIC -c "${alembic_config}" upgrade heads
 
 # Run tests
-$NOSE socorro -s
+$PYTEST
 
 # Collect static and then test webapp
 pushd webapp-django
