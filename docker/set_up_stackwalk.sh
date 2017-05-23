@@ -26,6 +26,7 @@ fi
 
 # Now build stackwalk
 pushd minidump-stackwalk
+make clean
 make
 popd
 
