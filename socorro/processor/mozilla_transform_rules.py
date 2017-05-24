@@ -151,6 +151,16 @@ class AddonsRule(Rule):
     def version(self):
         return '1.0'
 
+    def _get_formatted_addon(self, addon):
+        """Return a properly formatted addon string.
+
+        Format is: addon_identifier:addon_version
+
+        This is used because some addons are missing a version. In order to
+        simplify subsequent queries, we make sure the format is consistent.
+        """
+        return ':' in addon and addon or addon + ':NO_VERSION'
+
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
         processed_crash.addons_checked = None
@@ -185,7 +195,8 @@ class AddonsRule(Rule):
                         'AddonsRule: trying to split addons'
                     )
                 processed_crash.addons = [
-                    unquote_plus(x) for x in original_addon_str.split(',')
+                    unquote_plus(self._get_formatted_addon(x))
+                    for x in original_addon_str.split(',')
                 ]
             if self.config.chatty:
                 self.config.logger.debug(
