@@ -18,7 +18,7 @@ alternatives:
 
 * run your own: `electron/mini-breakpad-server <https://github.com/electron/mini-breakpad-server>`_
 * run your own: `wk8/sentry_breakpad <https://github.com/wk8/sentry_breakpad>`_
-* hosted: `Backtrace <https://backtrace.io/>`_
+* hosted/on-premise: `Backtrace <https://backtrace.io/>`_
 
 
 May 3rd, 2017 Update
