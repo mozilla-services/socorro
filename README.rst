@@ -16,8 +16,9 @@ to support external users.
 If you are looking to use Socorro for your product, maybe you want to consider
 alternatives:
 
-* `electron/mini-breakpad-server <https://github.com/electron/mini-breakpad-server>`_
-* `wk8/sentry_breakpad <https://github.com/wk8/sentry_breakpad>`_
+* run your own: `electron/mini-breakpad-server <https://github.com/electron/mini-breakpad-server>`_
+* run your own: `wk8/sentry_breakpad <https://github.com/wk8/sentry_breakpad>`_
+* hosted: `Backtrace <https://backtrace.io/>`_
 
 
 May 3rd, 2017 Update
