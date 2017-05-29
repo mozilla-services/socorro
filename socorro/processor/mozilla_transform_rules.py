@@ -159,7 +159,7 @@ class AddonsRule(Rule):
         This is used because some addons are missing a version. In order to
         simplify subsequent queries, we make sure the format is consistent.
         """
-        return ':' in addon and addon or addon + ':NO_VERSION'
+        return addon if ':' in addon else addon + ':NO_VERSION'
 
     def _action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
 
