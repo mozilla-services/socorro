@@ -476,7 +476,7 @@ class TestAddonsRule(TestCase):
         addons_rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
 
         expected_addon_list = [
-            'naoenut813teq;mz;<[`19ntaotannn8999anxse `',
+            'naoenut813teq;mz;<[`19ntaotannn8999anxse `:NO_VERSION',
         ]
         eq_(processed_crash.addons, expected_addon_list)
         ok_(processed_crash.addons_checked)
