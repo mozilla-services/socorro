@@ -31,7 +31,7 @@ if [ -n "$1" ]; then
     for image in "socorro_processor" "socorro_webapp"; do
         docker tag "$image:latest" "mozilla/$image:$TAG" ||
             (echo "Couldn't tag $image:latest as mozilla/$image:$TAG" && false)
-        retry 3 docker push "mozilla/socorro:$TAG" ||
+        retry 3 docker push "mozilla/$image:$TAG" ||
             (echo "Couldn't push mozilla/$image:$TAG" && false)
         echo "Pushed mozilla/$image:$TAG"
     done
