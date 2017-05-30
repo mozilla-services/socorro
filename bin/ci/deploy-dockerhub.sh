@@ -29,9 +29,9 @@ retry 3 docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWO
 if [ -n "$1" ]; then
     [ "$1" == master ] && TAG=latest || TAG="$1"
     for image in "socorro_processor" "socorro_webapp"; do
-        docker tag "$image:latest" "mozilla/$image:$TAG" ||
-            (echo "Couldn't tag $image:latest as mozilla/$image:$TAG" && false)
-        retry 3 docker push "mozilla/socorro:$TAG" ||
+        docker tag "local/$image:latest" "mozilla/$image:$TAG" ||
+            (echo "Couldn't tag local/$image:latest as mozilla/$image:$TAG" && false)
+        retry 3 docker push "mozilla/$image:$TAG" ||
             (echo "Couldn't push mozilla/$image:$TAG" && false)
         echo "Pushed mozilla/$image:$TAG"
     done
