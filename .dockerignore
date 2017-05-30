@@ -3,3 +3,4 @@
 **/*.pyc
 .vagrant
 Vagrantfile
+.cache
