@@ -18,6 +18,8 @@ PS4="+ (run_tests_in_docker.sh): "
 
 DC="$(which docker-compose)"
 DOCKER="$(which docker)"
+APP_UID="10001"
+APP_GID="10001"
 
 # Use the same image we use for building docker images because it'll be cached
 # already
@@ -33,7 +35,11 @@ ${DC} up -d rabbitmq
 # contents into it
 if [ "$(docker container ls --all | grep socorro-repo)" == "" ]; then
     echo "Creating socorro-repo container..."
-    docker create -v /app --name socorro-repo ${BASEIMAGENAME} /bin/true
+    docker create \
+           -v /app \
+           --user "${APP_UID}" \
+           --name socorro-repo \
+           ${BASEIMAGENAME} /bin/true
 fi
 echo "Copying contents..."
 docker cp . socorro-repo:/app
@@ -48,9 +54,17 @@ else
     DOCKER_ARGS=""
 fi
 
+# Fix permissions
+docker run \
+       --user root \
+       --volumes-from socorro-repo \
+       --workdir /app \
+       local/socorro_webapp chown -R "${APP_UID}:${APP_GID}" /app
+
 # Run cmd in that environment and then remove the container
 docker run \
        --rm \
+       --user "${APP_UID}" \
        --volumes-from socorro-repo \
        --workdir /app \
        --network socorro_default \
