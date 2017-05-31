@@ -22,17 +22,19 @@ function retry() {
     return 0
 }
 
-# configure docker creds
-retry 3 docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+if [[ "$DOCKER_DEPLOY" == true ]]; then
+    # configure docker creds
+    retry 3 docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 
-# docker tag and push git branch to dockerhub
-if [ -n "$1" ]; then
-    [ "$1" == master ] && TAG=latest || TAG="$1"
-    for image in "socorro_processor" "socorro_webapp"; do
-        docker tag "local/$image:latest" "mozilla/$image:$TAG" ||
-            (echo "Couldn't tag local/$image:latest as mozilla/$image:$TAG" && false)
-        retry 3 docker push "mozilla/$image:$TAG" ||
-            (echo "Couldn't push mozilla/$image:$TAG" && false)
-        echo "Pushed mozilla/$image:$TAG"
-    done
+    # docker tag and push git branch to dockerhub
+    if [ -n "$1" ]; then
+        [ "$1" == master ] && TAG=latest || TAG="$1"
+        for image in "socorro_processor" "socorro_webapp"; do
+            docker tag "local/$image:latest" "mozilla/$image:$TAG" ||
+                (echo "Couldn't tag local/$image:latest as mozilla/$image:$TAG" && false)
+            retry 3 docker push "mozilla/$image:$TAG" ||
+                (echo "Couldn't push mozilla/$image:$TAG" && false)
+            echo "Pushed mozilla/$image:$TAG"
+        done
+    fi
 fi
