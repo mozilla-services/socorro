@@ -71,6 +71,6 @@ jobs:
               bin/ci/deploy-dockerhub.sh latest
               bin/ci/deploy-dockerhub.sh "circle_build_$CIRCLE_BUILD_NUM"
             fi
-            if [ -n "${CIRCLE_TAG}"]; then
+            if [ -n "${CIRCLE_TAG}" ]; then
               bin/ci/deploy-dockerhub.sh "$CIRCLE_TAG"
             fi
