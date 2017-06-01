@@ -33,16 +33,8 @@ class TestApplicationDefaultsProxy(TestCase):
     def test_app_converter(self):
         # temp shim, cannot load the socorro classes to test
         #eq_(
-        #   self.proxy.str_to_application_class('collector'),
-        #   class_converter('socorro.collector.collector_app.CollectorApp')
-        #)
-        #eq_(
-        #   self.proxy.str_to_application_class('crashmover'),
-        #   class_converter('socorro.collector.crashmover_app.CrashMoverApp')
-        #)
-        #eq_(
         #   self.proxy.str_to_application_class('submitter'),
-        #   class_converter('socorro.collector.submitter_app.SubmitterApp')
+        #   class_converter('socorro.submitter.submitter_app.SubmitterApp')
         #)
         #eq_(
             #self.proxy.str_to_application_class('crontabber'),

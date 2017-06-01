@@ -2,7 +2,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-"""this app will submit crashes to a socorro collector"""
+"""This app will submit crashes to a socorro collector"""
 
 
 import time
@@ -179,9 +179,9 @@ class SubmitterApp(FetchTransformSaveWithSeparateNewCrashSourceApp):
     def get_application_defaults():
         return {
             "source.crashstorage_class": SubmitterFileSystemWalkerSource,
-            "destination.crashstorage_class":
-                'socorro.collector.breakpad_submitter_utilities'
-                '.BreakpadPOSTDestination',
+            "destination.crashstorage_class": (
+                'socorro.submitter.breakpad_submitter_utilities.BreakpadPOSTDestination'
+            ),
             "number_of_submissions": "all",
         }
 

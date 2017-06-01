@@ -10,7 +10,6 @@ By default, it is configured to move crashes from PostgreSQL to Elasticsearch.
 '''
 
 from socorro.app.fetch_transform_save_app import main
-from socorro.collector.crashmover_app import RawAndProcessedCopierApp
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.external.postgresql.crashstorage import PostgreSQLCrashStorage
 from socorro.external.postgresql.dbapi2_util import (
@@ -40,67 +39,6 @@ class DumbPostgreSQLCrashStorage(PostgreSQLCrashStorage):
             return single_value_sql(connection, fetch_sql, (crash_id,))
         except SQLDidNotReturnSingleValue:
             raise CrashIDNotFound(crash_id)
-
-
-class CrashMigrationApp(RawAndProcessedCopierApp):
-    app_name = 'crash_migration'
-    app_version = '1.0'
-    app_description = __doc__
-
-    required_config = Namespace()
-    required_config.add_option(
-        'no_dumps',
-        doc="don't copy binary dumps",
-        default=True
-    )
-
-    @staticmethod
-    def get_application_defaults():
-        return {
-            'source.crashstorage_class': DumbPostgreSQLCrashStorage,
-            'destination.crashstorage_class':
-                'socorro.external.es.crashstorage.'
-                'ESCrashStorageNoStackwalkerOutput',
-        }
-
-    def _create_iter(self):
-        connection = self.source.database.connection()
-        sql = 'select uuid from raw_crashes;'
-        return execute_query_iter(connection, sql)
-
-    def _transform(self, crash_id):
-        try:
-            raw_crash = self.source.get_raw_crash(crash_id)
-            if self.config.no_dumps:
-                dumps = {}
-            else:
-                dumps =  self.source.get_raw_dumps(crash_id)
-            processed_crash = self.source.get_unredacted_processed(
-                crash_id
-            )
-        except CrashIDNotFound:
-            self.config.logger.warning(
-                'cannot find crash %s',
-                crash_id,
-            )
-            return
-        except Exception:
-            self.config.logger.warning(
-                'error loading crash %s',
-                crash_id,
-                exc_info=True
-            )
-            return
-
-        if 'uuid' not in raw_crash:
-            raw_crash.uuid = crash_id
-        self.destination.save_raw_and_processed(
-            raw_crash,
-            dumps,
-            processed_crash,
-            crash_id
-        )
-        self.config.logger.info('saved - %s', crash_id)
 
 
 if __name__ == '__main__':

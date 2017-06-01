@@ -8,7 +8,7 @@ import json
 
 from nose.tools import eq_, ok_, assert_raises
 
-from socorro.collector.submitter_app import (
+from socorro.submitter.submitter_app import (
     SubmitterApp,
     SubmitterFileSystemWalkerSource,
 )
@@ -178,12 +178,12 @@ class TestSubmitterFileSystemWalkerSource(TestCase):
             ),
         ]
 
-        find_patch_path = 'socorro.collector.submitter_app.findFileGenerator'
+        find_patch_path = 'socorro.submitter.submitter_app.findFileGenerator'
         with mock.patch(
             find_patch_path,
             new_callable=lambda: findFileGenerator_mock_method
         ):
-            listdir_patch_path = 'socorro.collector.submitter_app.listdir'
+            listdir_patch_path = 'socorro.submitter.submitter_app.listdir'
             with mock.patch(
                 listdir_patch_path,
                 new_callable=lambda: listdir_mock_method

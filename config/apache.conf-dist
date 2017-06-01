@@ -9,19 +9,6 @@ WSGIPythonHome /data/socorro/socorro-virtualenv
     WSGIScriptAlias / "/data/socorro/webapp-django/wsgi/socorro-crashstats.py"
 </VirtualHost>
 
-# Crash collector, public HTTP POST only
-<VirtualHost  *:80>
-  ServerName crash-reports.example.com
-  TimeOut 300
-  WSGIScriptAlias / "/data/socorro/application/wsgi/collector.py"
-  # only allow crash reports up to 20MB
-  # compress incoming crashes by default
-  <Location /submit>
-      LimitRequestBody 20971520
-      SetInputFilter DEFLATE
-  </Location>
-</VirtualHost>
-
 # Middleware, internal-only API
 <VirtualHost *:80>
     ServerName socorro-api.example.com
